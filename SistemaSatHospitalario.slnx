@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SistemaSatHospitalario.Core.Application/SistemaSatHospitalario.Core.Application.csproj" />
+    <Project Path="src/SistemaSatHospitalario.Core.Domain/SistemaSatHospitalario.Core.Domain.csproj" />
+    <Project Path="src/SistemaSatHospitalario.Infrastructure/SistemaSatHospitalario.Infrastructure.csproj" />
+    <Project Path="src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SistemaSatHospitalario.Tests.Unit/SistemaSatHospitalario.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,6 @@
+@SistemaSatHospitalario.WebAPI_HostAddress = http://localhost:5218
+
+GET {{SistemaSatHospitalario.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

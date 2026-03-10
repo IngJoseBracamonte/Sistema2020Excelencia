@@ -1,0 +1,58 @@
+<div
+    class="min-h-screen bg-slate-900 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden text-slate-100">
+
+    <!-- Minimalist High-Contrast UI for Technical Personnel / Dark Mode Native -->
+    <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-hospital-500 to-indigo-500"></div>
+
+    <div class="w-full max-w-4xl flex justify-between items-center mb-10 animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-slate-800 rounded-lg border border-slate-700">
+                <svg class="h-6 w-6 text-hospital-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-widest">ESTACIÓN RX</h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest">Panel de Técnicos</p>
+            </div>
+        </div>
+        <button (click)="logout()"
+            class="px-4 py-2 border border-slate-700 hover:bg-slate-800 rounded-md text-sm transition-colors text-slate-300">
+            Cerrar Sesión
+        </button>
+    </div>
+
+    <div class="w-full max-w-4xl space-y-4 animate-fade-in" style="animation-delay: 0.1s;">
+        <!-- Minimalist Cards List (Solo N°, Nombre, y Botón) -->
+
+        <div *ngFor="let rx of incomingTickets()"
+            class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl flex items-center justify-between hover:border-hospital-500 transition-all">
+            <div class="flex items-center space-x-6">
+                <div class="text-4xl font-black text-slate-500">#{{ rx.orderId }}</div>
+                <div>
+                    <div class="text-xs text-hospital-400 uppercase font-bold tracking-widest mb-1">Paciente Asignado
+                    </div>
+                    <div class="text-xl font-bold text-white">{{ rx.patientName }}</div>
+                </div>
+            </div>
+            <div>
+                <button (click)="confirmarProceso(rx.orderId)"
+                    class="bg-hospital-600 hover:bg-hospital-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg shadow-hospital-600/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-wider">
+                    Procesado
+                </button>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="incomingTickets().length === 0"
+            class="flex flex-col items-center justify-center p-16 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/50">
+            <svg class="h-16 w-16 text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <h3 class="text-xl font-medium text-slate-400">Sin órdenes en espera</h3>
+        </div>
+    </div>
+
+</div>

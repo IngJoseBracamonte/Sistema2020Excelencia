@@ -1,0 +1,208 @@
+<div class="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in relative z-10">
+    <!-- Encabezado Módulo Facturación -->
+    <div class="flex items-center justify-between bg-white/60 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-slate-100/50">
+        <div class="flex items-center space-x-4">
+            <div class="h-14 w-14 bg-gradient-to-tr from-hospital-500 to-hospital-300 rounded-2xl shadow-lg flex items-center justify-center text-white">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Facturación Unificada</h2>
+                <div class="flex flex-wrap gap-2 mt-1">
+                    <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">{{ user()?.role }}</span>
+                    <span class="text-slate-500 text-xs">Modo: {{ tipoIngreso() }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col items-end">
+            <div class="bg-hospital-50 border border-hospital-200 text-hospital-800 px-4 py-2 rounded-xl text-sm font-semibold flex items-center shadow-inner">
+                <span class="mr-2">Tasa BCV:</span>
+                <span>Bs. {{ tasaCambioDia() | number:'1.2-2' }}</span>
+            </div>
+            <span *ngIf="cuentaId()" class="text-[10px] text-slate-400 mt-1 font-mono">Cuenta Activa: {{ cuentaId() }}</span>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div *ngIf="actionMessage()" class="bg-emerald-50/80 backdrop-blur-md p-4 rounded-xl border border-emerald-200 flex shadow-sm animate-fade-in">
+        <p class="text-emerald-800 font-medium text-sm">{{ actionMessage() }}</p>
+    </div>
+    <div *ngIf="errorMessage()" class="bg-emergency-light/20 backdrop-blur-md p-4 rounded-xl border border-emergency-light/50 flex shadow-sm animate-fade-in">
+        <p class="text-emergency-dark font-medium text-sm">{{ errorMessage() }}</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- Lado Izquierdo: Gestión de Ingreso y Servicios -->
+        <div class="lg:col-span-7 space-y-6">
+            
+            <!-- Bloque 1: Configuración de Ingreso -->
+            <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 p-8 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">PACIENTE (Cédula/ID)</label>
+                        <input type="text" [(ngModel)]="pacienteId" [disabled]="cuentaId()"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 transition-all font-mono"
+                            placeholder="V-12345678">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">TIPO DE INGRESO</label>
+                        <select [(ngModel)]="tipoIngreso" [disabled]="!isAdmin() || cuentaId()"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 transition-all">
+                            <option value="Particular">Particular</option>
+                            <option value="Seguro">Seguros/Convenio</option>
+                            <option value="Hospitalizacion">Hospitalización</option>
+                            <option value="Emergencia">Emergencias</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div *ngIf="tipoIngreso() === 'Seguro' || isAdmin()" class="pt-2 animate-fade-in">
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">CONVENIO / ASEGURADORA</label>
+                    <select [(ngModel)]="convenioId" [disabled]="cuentaId()"
+                        class="w-full px-4 py-3 bg-hospital-50 border border-hospital-100 rounded-xl focus:ring-2 focus:ring-hospital-500 transition-all">
+                        <option [value]="null">Seleccione un convenio...</option>
+                        <option *ngFor="let c of convenios" [value]="c.id">{{ c.nombre }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Bloque 2: Carga de Servicios -->
+            <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 overflow-hidden">
+                <div class="bg-slate-50 p-4 border-b border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+                        Añadir Servicios a la Cuenta
+                    </h3>
+                </div>
+
+                <div class="p-8 space-y-6">
+                    <!-- Selección Médica (Solo si se va a cargar una consulta) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Especialidad</label>
+                            <select (change)="selectedEspecialidad.set($any($event.target).value)" 
+                                class="w-full text-xs p-2 rounded-lg border-slate-200">
+                                <option value="">---</option>
+                                <option *ngFor="let esp of especialidades" [value]="esp">{{ esp }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Médico</label>
+                            <select (change)="selectedMedicoId.set($any($event.target).value)"
+                                class="w-full text-xs p-2 rounded-lg border-slate-200" [disabled]="!selectedEspecialidad()">
+                                <option value="">---</option>
+                                <option *ngFor="let m of medicosFiltrados()" [value]="m.id">{{ m.nombre }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hora Cita</label>
+                            <input type="time" (change)="horaCita.set($any($event.target).value)"
+                                class="w-full text-xs p-2 rounded-lg border-slate-200">
+                        </div>
+                    </div>
+
+                    <!-- Catálogo de Servicios Rápidos -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button *ngFor="let s of serviciosCatalogo" (click)="cargarServicio(s.id)"
+                            class="p-4 rounded-2xl border border-slate-200 hover:border-hospital-400 hover:bg-hospital-50 transition-all text-left flex flex-col justify-between group h-28">
+                            <span class="text-[10px] font-bold uppercase text-slate-400 group-hover:text-hospital-600">{{ s.tipo }}</span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-700 leading-tight mb-1">{{ s.descripcion }}</p>
+                                <span class="text-hospital-600 font-mono text-sm">${{ s.precio | number:'1.2-2' }}</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bloque 3: Formulario de Pago (Multi-divisa) -->
+            <div class="bg-slate-900 rounded-3xl shadow-2xl p-8 text-white space-y-6">
+                <h3 class="text-lg font-bold flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-hospital-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Abonar Pagos
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] text-slate-400 uppercase mb-1">Método</label>
+                        <select [(ngModel)]="currentPago.metodoPago" class="w-full bg-slate-800 border-none rounded-xl text-sm">
+                            <option *ngFor="let met of metodosDisponibles" [value]="met">{{ met }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 uppercase mb-1">Monto (Moneda Local/Divisa)</label>
+                        <input type="number" [(ngModel)]="currentPago.montoAbonadoMoneda" class="w-full bg-slate-800 border-none rounded-xl text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 uppercase mb-1">Facturar / Procesar</label>
+                        <button (click)="agregarPago()" 
+                            class="w-full bg-hospital-500 hover:bg-hospital-400 text-white font-bold py-2 rounded-xl text-xs transition-colors">
+                            AÑADIR PAGO
+                        </button>
+                    </div>
+                </div>
+                <input type="text" [(ngModel)]="currentPago.referenciaBancaria" placeholder="Referencia / Confirmación"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl text-xs p-3 focus:bg-white/10 transition-all">
+            </div>
+        </div>
+
+        <!-- Lado Derecho: Resumen de Cuenta y Cobro -->
+        <div class="lg:col-span-5 space-y-6">
+            <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 flex flex-col">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-widest">Detalle de Cuenta</h3>
+                    <span class="bg-hospital-100 text-hospital-700 text-[10px] font-bold px-2 py-1 rounded-md">SALDO: ${{ totalCargado() | number:'1.2-2' }}</span>
+                </div>
+                
+                <div class="p-6 h-64 overflow-y-auto space-y-3">
+                    <div *ngIf="serviciosCargados().length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-50">
+                        <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <p class="text-xs">Sin servicios cargados</p>
+                    </div>
+                    <div *ngFor="let s of serviciosCargados()" class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div>
+                            <p class="text-xs font-bold text-slate-700">{{ s.descripcion }}</p>
+                            <span *ngIf="s.hora" class="text-[10px] text-hospital-600 font-bold">CITA: {{ s.hora }}</span>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-slate-600">${{ s.precio | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-slate-100 bg-slate-50/50 rounded-b-3xl">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase mb-4">Abonos Registrados</h3>
+                    <div class="space-y-2">
+                        <div *ngFor="let p of pagos(); let i = index" class="flex justify-between items-center text-xs">
+                            <span class="text-slate-500">{{ p.metodoPago }}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="font-bold text-slate-800">${{ p.equivalenteAbonadoBase | number:'1.2-2' }}</span>
+                                <button (click)="removerPago(i)" class="text-rose-400 hover:text-rose-600 transition-colors">x</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 border-slate-200">
+
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Total a Pagar</p>
+                            <p class="text-2xl font-extrabold text-slate-900">${{ totalCargado() | number:'1.2-2' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-hospital-500 uppercase font-bold">Abonado</p>
+                            <p class="text-xl font-bold text-hospital-600">${{ totalFacturadoBase() | number:'1.2-2' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button (click)="procesarCobro()" [disabled]="isLoading() || totalFacturadoBase() <= 0"
+                class="w-full py-5 bg-hospital-600 hover:bg-hospital-700 text-white rounded-3xl font-extrabold text-lg shadow-xl shadow-hospital-200 transition-all flex items-center justify-center disabled:opacity-50 disabled:shadow-none translate-y-0 hover:-translate-y-1">
+                <span *ngIf="isLoading()" class="animate-spin mr-3">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </span>
+                CERRAR CUENTA Y FACTURAR
+            </button>
+        </div>
+    </div>
+</div>

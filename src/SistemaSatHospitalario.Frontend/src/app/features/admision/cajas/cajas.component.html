@@ -1,0 +1,157 @@
+<div class="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in relative z-10">
+    <!-- Encabezado Módulo Cajas -->
+    <div
+        class="flex items-center justify-between bg-white/60 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-slate-100/50">
+        <div class="flex items-center space-x-4">
+            <div
+                class="h-14 w-14 bg-gradient-to-tr from-hospital-500 to-hospital-300 rounded-2xl shadow-lg flex items-center justify-center text-white">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Módulo de Tesorería</h2>
+                <p class="text-slate-500 text-sm">Controle aperturas de cajas y turnos de facturación.</p>
+            </div>
+        </div>
+        <div>
+            <button tabindex="0" routerLink="/facturacion"
+                class="inline-flex items-center px-4 py-2 border border-hospital-200 rounded-xl shadow-sm text-sm font-bold text-hospital-700 bg-white hover:bg-hospital-50 hover:border-hospital-300 transform hover:-translate-y-0.5 transition-all mr-4">
+                <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                    </path>
+                </svg>
+                Nueva Facturación
+            </button>
+            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-all"
+                [ngClass]="isCajaAbierta() ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-800 border border-slate-200'">
+                <span class="w-2.5 h-2.5 rounded-full mr-2"
+                    [ngClass]="isCajaAbierta() ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+                Estado Global: {{ isCajaAbierta() ? 'Operativa' : 'Clausurada' }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div *ngIf="actionMessage()"
+        class="bg-emerald-50/80 backdrop-blur-md p-4 rounded-xl border border-emerald-200 flex">
+        <svg class="h-5 w-5 text-emerald-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-emerald-800 font-medium text-sm">{{ actionMessage() }}</p>
+    </div>
+
+    <div *ngIf="errorMessage()"
+        class="bg-emergency-light/20 backdrop-blur-md p-4 rounded-xl border border-emergency-light/50 flex">
+        <svg class="h-5 w-5 text-emergency-dark mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-emergency-dark font-medium text-sm">{{ errorMessage() }}</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Panel de Administración de Caja Matriz (Solo Administradores) -->
+        <div *ngIf="isAdministrador"
+            class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 overflow-hidden relative group transition-all hover:shadow-2xl">
+            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-hospital-500 to-hospital-300"></div>
+            <div class="p-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Caja Fuerte / Matriz</h3>
+                <p class="text-slate-500 text-sm mb-6">Administre el inicio y fin de operaciones del día. Requiere
+                    arqueo previo.</p>
+
+                <div *ngIf="!isCajaAbierta()">
+                    <form [formGroup]="mainCajaForm" (ngSubmit)="abrirCajaMatriz()" class="space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Monto
+                                    Base ($)</label>
+                                <input type="number" formControlName="montoInicialDivisa"
+                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 focus:border-hospital-500 transition-all font-mono text-lg"
+                                    placeholder="0.00">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Monto
+                                    Base (Bs)</label>
+                                <input type="number" formControlName="montoInicialBs"
+                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 focus:border-hospital-500 transition-all font-mono text-lg"
+                                    placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <button type="submit" [disabled]="isLoading()"
+                            class="w-full mt-4 flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-gradient-to-r from-hospital-600 to-hospital-500 hover:from-hospital-500 hover:to-hospital-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-hospital-500 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
+                            <span *ngIf="isLoading()" class="mr-2"><svg class="animate-spin h-5 w-5 text-white"
+                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg></span>
+                            Proceder a Apertura
+                        </button>
+                    </form>
+                </div>
+
+                <div *ngIf="isCajaAbierta()" class="space-y-6">
+                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado Actual</p>
+                            <p class="text-lg font-bold text-slate-800 mt-1">Recaudación en Proceso</p>
+                        </div>
+                        <div
+                            class="h-12 w-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-hospital-500">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                    <button (click)="cerrarCajaMatriz()" [disabled]="isLoading()"
+                        class="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-800 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
+                        <span *ngIf="isLoading()" class="mr-2"><svg class="animate-spin h-5 w-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg></span>
+                        Clausurar Caja y Cerrar Operaciones
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Panel Informativo o de Acceso Rápido (Reemplaza al de Turnos) -->
+        <div
+            class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 overflow-hidden relative group transition-all hover:shadow-2xl flex flex-col items-center justify-center p-8 text-center">
+            <div class="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-10 h-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Monitor de Recaudación</h3>
+            <p class="text-slate-500 text-sm max-w-sm">
+                Con la nueva gestión simplificada, todas las operaciones se registran directamente en la Caja Diaria
+                activa sin necesidad de gestionar turnos individuales.
+            </p>
+            <button routerLink="/facturacion"
+                class="mt-8 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all transform hover:-translate-y-0.5">
+                Ir a Facturación
+            </button>
+        </div>
+
+    </div>
+</div>
