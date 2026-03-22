@@ -45,14 +45,19 @@ export class FacturacionComponent {
 
   // Catálogos Reales (Sincronizados con Backend)
   public especialidades = ['Ginecologo', 'Pediatra', 'Traumatologo', 'Cardiologo', 'Medicina General'];
+  public convenios = signal<any[]>([
+    { id: 1, nombre: 'Particular' },
+    { id: 2, nombre: 'Seguro Universal' },
+    { id: 3, nombre: 'Aseguradora Regional' }
+  ]);
   
   // Filtros UI y Signals Reactivos
   public selectedEspecialidad = signal<string | null>(null);
   
-  public medicosFiltrados = toSignal<Doctor[]>(
+  public medicosFiltrados = toSignal(
     toObservable(this.selectedEspecialidad).pipe(
-      switchMap((esp: string | null) => esp ? this.appointmentsService.getDoctorsBySpecialty(esp) : of([]))
-    ), { initialValue: [] }
+      switchMap((esp: string | null) => esp ? this.appointmentsService.getDoctorsBySpecialty(esp) : of([] as Doctor[]))
+    ), { initialValue: [] as Doctor[] }
   );
 
   public selectedMedicoId = signal<string | null>(null);
@@ -187,7 +192,7 @@ export class FacturacionComponent {
 
   generarCierreTurno() {
     this.isLoading.set(true);
-    const currentUser = this.user()?.id || "Asistente";
+    const currentUser = this.user()?.username || "Asistente";
     this.cajaService.getPersonalReport(currentUser).subscribe({
       next: (report: DailyClosingReport) => {
         this.isLoading.set(false);

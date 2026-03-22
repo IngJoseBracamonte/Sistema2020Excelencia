@@ -69,10 +69,10 @@
                     <div class="relative">
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">BUSCAR PACIENTE (Cédula/Nombre)</label>
                         <div class="flex space-x-2">
-                            <input type="text" [(ngModel)]="busquedaTermino" (keyup.enter)="buscarPaciente()" [disabled]="cuentaId()"
+                            <input type="text" [(ngModel)]="busquedaTermino" (keyup.enter)="buscarPaciente()" [disabled]="!!cuentaId()"
                                 class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 transition-all font-mono"
                                 placeholder="V-12345678 o Nombre...">
-                            <button (click)="buscarPaciente()" [disabled]="cuentaId() || buscandoPaciente()"
+                            <button (click)="buscarPaciente()" [disabled]="!!cuentaId() || buscandoPaciente()"
                                 class="px-4 py-3 bg-hospital-100 text-hospital-700 rounded-xl hover:bg-hospital-200 transition-colors">
                                 <svg *ngIf="!buscandoPaciente()" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                                 <svg *ngIf="buscandoPaciente()" class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
@@ -107,7 +107,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">TIPO DE INGRESO</label>
-                        <select [(ngModel)]="tipoIngreso" [disabled]="!isAdmin() || cuentaId()"
+                        <select [(ngModel)]="tipoIngreso" [disabled]="!isAdmin() || !!cuentaId()"
                             class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 transition-all">
                             <option *ngIf="isAdmin() || isParticularAssistant()" value="Particular">Particular</option>
                             <option *ngIf="isAdmin() || isInsuranceAssistant()" value="Seguro">Seguros/Convenio</option>
@@ -120,10 +120,10 @@
                 <!-- Bloque Seguro: Solo si el rol lo permite o es admin -->
                 <div *ngIf="(tipoIngreso() === 'Seguro' && (isAdmin() || isInsuranceAssistant()))" class="pt-2 animate-fade-in">
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">CONVENIO / ASEGURADORA</label>
-                    <select [(ngModel)]="convenioId" [disabled]="cuentaId()"
+                    <select [(ngModel)]="convenioId" [disabled]="!!cuentaId()"
                         class="w-full px-4 py-3 bg-hospital-50 border border-hospital-100 rounded-xl focus:ring-2 focus:ring-hospital-500 transition-all">
                         <option [value]="null">Seleccione un convenio...</option>
-                        <option *ngFor="let c of convenios" [value]="c.id">{{ c.nombre }}</option>
+                        <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre }}</option>
                     </select>
                 </div>
             </div>

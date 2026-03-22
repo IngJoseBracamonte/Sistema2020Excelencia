@@ -1,10 +1,13 @@
 import { Injectable, signal } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
+import { environment } from '../../../environments/environment';
 
 export interface TicketUpdate {
   orderId: number;
   status: string;
   patientName: string;
+  servicioNombre: string;
+  pacienteId: number;
 }
 
 @Injectable({
@@ -22,7 +25,7 @@ export class SignalrService {
   public startConnection = (token: string) => {
     this.hubConnection = new signalR.HubConnectionBuilder()
       // URL de Kestrel para Hubs - Configurar el Access_Token factory para WS PWA
-      .withUrl('https://localhost:7019/hub/dashboard', {
+      .withUrl(`${environment.apiUrl.replace('/api', '')}/hub/dashboard`, {
         accessTokenFactory: () => token
       })
       .withAutomaticReconnect()

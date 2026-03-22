@@ -14,6 +14,7 @@ export interface AuthResponse {
   token: string;
   username: string;
   role: string;
+  id: string;
 }
 
 @Injectable({
@@ -32,9 +33,10 @@ export class AuthService {
     const token = localStorage.getItem('jwt_token');
     const username = localStorage.getItem('username');
     const role = localStorage.getItem('user_role');
+    const id = localStorage.getItem('user_id');
 
-    if (token && username && role) {
-      return { token, username, role };
+    if (token && username && role && id) {
+      return { token, username, role, id };
     }
     return null;
   }
@@ -46,6 +48,7 @@ export class AuthService {
         localStorage.setItem('jwt_token', response.token);
         localStorage.setItem('username', response.username);
         localStorage.setItem('user_role', response.role);
+        localStorage.setItem('user_id', response.id);
 
         // Actualizar UI reactiva
         this.currentUser.set(response);
@@ -58,6 +61,7 @@ export class AuthService {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('username');
     localStorage.removeItem('user_role');
+    localStorage.removeItem('user_id');
 
     this.currentUser.set(null);
     this.router.navigate(['/login']);

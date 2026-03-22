@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
-import { NgFor, NgIf, NgClass, CurrencyPipe, DecimalPipe, DatePipe } from '@angular/common';
+import { NgFor, NgIf, NgClass, CurrencyPipe, DecimalPipe, DatePipe, PercentPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SignalrService } from '../../core/services/signalr.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -8,7 +8,7 @@ import { DashboardService, BusinessInsights } from '../../core/services/dashboar
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NgFor, NgIf, NgClass, RouterLink, CurrencyPipe, DecimalPipe, DatePipe],
+  imports: [NgFor, NgIf, NgClass, DecimalPipe, DatePipe, PercentPipe],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
