@@ -1,0 +1,90 @@
+<div class="tickets-container fade-in">
+    <div class="header">
+      <h2>Sistema de Tickets de Error (Logs)</h2>
+      <p>Monitorea y resuelve las excepciones no controladas de la plataforma.</p>
+    </div>
+  
+    <div class="filters-container glass-panel">
+      <label for="filter">Filtrar por Estado:</label>
+      <select id="filter" class="form-control filter-select" (change)="onFilterChange($event)">
+        <option value="all">Todos</option>
+        <option value="pending" selected>Pendientes</option>
+        <option value="resolved">Resueltos</option>
+      </select>
+      <button class="btn btn-primary" (click)="loadTickets()" [disabled]="loading()">
+        <i class="fa fa-refresh"></i> Refrescar
+      </button>
+    </div>
+  
+    <div class="table-container fade-in">
+      <div *ngIf="loading()" class="loading-state">Cargando tickets de error...</div>
+      
+      <table class="table hospital-table" *ngIf="!loading() && tickets().length > 0">
+        <thead>
+          <tr>
+            <th>Fecha (UTC)</th>
+            <th>Ruta API</th>
+            <th>Mensaje</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of tickets()" [class.resolved-row]="t.resuelto">
+            <td>{{ t.fechaCreacion | date:'medium' }}</td>
+            <td><span class="badge" [class.method-get]="t.metodoHTTP === 'GET'" [class.method-post]="t.metodoHTTP === 'POST' || t.metodoHTTP === 'PUT'">{{ t.metodoHTTP }}</span> {{ t.requestPath }}</td>
+            <td class="error-msg">{{ t.mensajeExcepcion }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="t.resuelto ? 'status-ok' : 'status-danger'">
+                {{ t.resuelto ? 'Resuelto' : 'Crítico' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-secondary btn-sm" (click)="viewDetails(t)">Inspeccionar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+  
+      <div *ngIf="!loading() && tickets().length === 0" class="empty-state">
+        <i class="fa fa-check-circle" style="font-size: 3rem; color: var(--sat-green); margin-bottom: 1rem;"></i>
+        <p>No hay tickets de error reportados bajo este filtro.</p>
+      </div>
+    </div>
+  
+    <!-- Detalles / Resolver Modal -->
+    <div class="modal fade-in" *ngIf="selectedTicket()">
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h3>Detalle del Ticket: <span>{{ selectedTicket()?.id }}</span></h3>
+          <span class="close-btn" (click)="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p><strong>Mensaje:</strong> {{ selectedTicket()?.mensajeExcepcion }}</p>
+          <div class="stack-trace-container">
+            <strong>StackTrace:</strong>
+            <pre>{{ selectedTicket()?.stackTrace }}</pre>
+          </div>
+  
+          <div *ngIf="!selectedTicket()?.resuelto && isAdmin()" class="resolution-form">
+            <label for="comentarios">Comentarios de Resolución:</label>
+            <textarea id="comentarios" [(ngModel)]="comentarios" class="form-control" rows="3" placeholder="¿Cómo se solucionó o mitigó el error?"></textarea>
+          </div>
+          <div *ngIf="selectedTicket()?.resuelto" class="resolution-info">
+            <p><strong>Resuelto por Usuario ID:</strong> {{ selectedTicket()?.resueltoPor }}</p>
+            <p><strong>Fecha Resolución:</strong> {{ selectedTicket()?.fechaResolucion | date:'medium' }}</p>
+            <p><strong>Resumen:</strong> {{ selectedTicket()?.comentariosResolucion }}</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+          <button *ngIf="!selectedTicket()?.resuelto && isAdmin()" 
+                  class="btn btn-primary" 
+                  [disabled]="resolving()" 
+                  (click)="resolveTicket()">
+            {{ resolving() ? 'Resolviendo...' : 'Marcar como Resuelto' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

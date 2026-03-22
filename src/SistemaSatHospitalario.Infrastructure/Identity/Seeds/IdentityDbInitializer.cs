@@ -2,45 +2,81 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 using SistemaSatHospitalario.Infrastructure.Identity.Models;
+using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
 
 namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
 {
-    public static class IdentityDbInitializer
+    public class IdentityDbInitializer : IDatabaseInitializer
     {
-        public static async Task SeedAsync(UserManager<UsuarioHospital> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+        private readonly SatHospitalarioIdentityDbContext _context;
+        private readonly UserManager<UsuarioHospital> _userManager;
+        private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+        private readonly ILogger<IdentityDbInitializer> _logger;
+
+        public IdentityDbInitializer(
+            SatHospitalarioIdentityDbContext context,
+            UserManager<UsuarioHospital> userManager,
+            RoleManager<IdentityRole<Guid>> roleManager,
+            ILogger<IdentityDbInitializer> logger)
         {
-            // Seed Roles
-            var roles = new[] { "Admin", "Asistente Particular", "Asistente Seguro", "Asistente RX", "Supervisor" };
+            _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
+            _logger = logger;
+        }
 
-            foreach (var role in roles)
+        public async Task InitializeAsync()
+        {
+            try
             {
-                if (!await roleManager.RoleExistsAsync(role))
+                _logger.LogInformation("Aplicando migraciones a Identity Database...");
+                await _context.Database.MigrateAsync();
+
+                _logger.LogInformation("Poblando Identity Roles y Usuarios Defaults...");
+
+                // Seed Roles
+                var roles = new[] { "Admin", "Médico", "Asistente Particular", "Asistente Seguro", "Asistente RX", "Supervisor" };
+
+                foreach (var role in roles)
                 {
-                    await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
+                    if (!await _roleManager.RoleExistsAsync(role))
+                    {
+                        await _roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
+                    }
                 }
+
+                // Seed Admin User
+                if (_userManager.Users.All(u => u.UserName != "admin"))
+                {
+                    var defaultUser = new UsuarioHospital
+                    {
+                        UserName = "admin",
+                        Email = "admin@hospital.local",
+                        NombreReal = "Administrador",
+                        ApellidoReal = "Maestro",
+                        LegacyCajeroId = 1, 
+                        EmailConfirmed = true,
+                        PhoneNumberConfirmed = true,
+                        EsActivo = true
+                    };
+
+                    var result = await _userManager.CreateAsync(defaultUser, "Admin123*!");
+                    if (result.Succeeded)
+                    {
+                        await _userManager.AddToRoleAsync(defaultUser, "Admin");
+                    }
+                }
+
+                _logger.LogInformation("Identity Database Inicializada Correctamente.");
             }
-
-            // Seed Admin User
-            if (userManager.Users.All(u => u.UserName != "admin"))
+            catch (Exception ex)
             {
-                var defaultUser = new UsuarioHospital
-                {
-                    UserName = "admin",
-                    Email = "admin@hospital.local", // Se mantiene un email dummy por compatibilidad, pero no se usa para login
-                    NombreReal = "Administrador",
-                    ApellidoReal = "Maestro",
-                    LegacyCajeroId = 1, 
-                    EmailConfirmed = true,
-                    PhoneNumberConfirmed = true,
-                    EsActivo = true
-                };
-
-                var result = await userManager.CreateAsync(defaultUser, "Admin123*!");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(defaultUser, "Admin");
-                }
+                _logger.LogError(ex, "Ocurrió un error inicializando Identity Database.");
+                throw;
             }
         }
     }

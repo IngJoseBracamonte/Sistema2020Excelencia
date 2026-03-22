@@ -6,8 +6,18 @@ using SistemaSatHospitalario.Core.Application;
 using SistemaSatHospitalario.Infrastructure;
 using SistemaSatHospitalario.Infrastructure.Identity.Models;
 using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
+using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
+using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
+using Microsoft.AspNetCore.Identity;
+using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
+using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
+using SistemaSatHospitalario.WebAPI.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add Aspire ServiceDefaults for OpenTelemetry and HealthChecks
+builder.AddServiceDefaults();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -17,7 +27,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200", "http://localhost:51377")
+        policy.SetIsOriginAllowed(origin => true) // Permitir cualquier origen en Desarrollo para Aspire
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -55,9 +65,17 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAuthorization();
 
+// Add Exception Handler
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
+app.MapDefaultEndpoints();
+
 // Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -69,16 +87,23 @@ app.UseHttpsRedirection();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
-        var userManager = services.GetRequiredService<UserManager<UsuarioHospital>>();
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-        await IdentityDbInitializer.SeedAsync(userManager, roleManager);
+        logger.LogInformation("Iniciando secuencia de inicialización de Base de Datos...");
+        var initializers = services.GetServices<IDatabaseInitializer>();
+        
+        foreach (var initializer in initializers)
+        {
+            logger.LogInformation("Ejecutando inicializador: {InitializerType}", initializer.GetType().Name);
+            await initializer.InitializeAsync();
+            logger.LogInformation("Finalizado: {InitializerType}", initializer.GetType().Name);
+        }
+        logger.LogInformation("Secuencia de inicialización completada exitosamente.");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "A error occurred while seeding Identity DB");
+        logger.LogError(ex, "ERROR CRÍTICO durante la inicialización de bases de datos.");
     }
 }
 // --------------------------------

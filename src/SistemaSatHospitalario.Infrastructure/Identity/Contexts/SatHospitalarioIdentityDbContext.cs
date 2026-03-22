@@ -18,7 +18,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Contexts
             base.OnModelCreating(builder);
 
             // Personalización opcional del esquema genérico de Identity
-            builder.HasDefaultSchema("Identity");
+            // MySQL no soporta esquemas, se ignora para compatibilidad multi-proveedor
+            // builder.HasDefaultSchema("Identity");
 
             builder.Entity<UsuarioHospital>(entity =>
             {

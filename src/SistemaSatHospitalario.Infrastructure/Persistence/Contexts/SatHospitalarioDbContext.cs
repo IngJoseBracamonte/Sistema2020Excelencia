@@ -26,6 +26,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
         public DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; set; }
         public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
+        public DbSet<ErrorTicket> ErrorTickets { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
 
@@ -33,7 +34,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         {
             base.OnModelCreating(builder);
 
-            builder.HasDefaultSchema("Admision");
+            // MySQL no soporta esquemas, se ignora para compatibilidad multi-proveedor
+            // builder.HasDefaultSchema("Admision");
 
             builder.Entity<CajaDiaria>(entity =>
             {
@@ -184,6 +186,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasOne(c => c.Cuenta)
                       .WithMany()
                       .HasForeignKey(c => c.CuentaServicioId);
+            });
+
+            builder.Entity<ErrorTicket>(entity =>
+            {
+                entity.ToTable("ErrorTickets");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RequestPath).HasMaxLength(500);
+                entity.Property(e => e.MetodoHTTP).HasMaxLength(10);
             });
         }
     }

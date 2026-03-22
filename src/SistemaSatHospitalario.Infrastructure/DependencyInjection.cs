@@ -5,11 +5,14 @@ using Microsoft.Extensions.DependencyInjection;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
+using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Identity.Models;
 using SistemaSatHospitalario.Infrastructure.Identity.Services;
-using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
-using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using SistemaSatHospitalario.Infrastructure.Persistence.Repositories;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
+using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
+using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using SistemaSatHospitalario.Infrastructure.Integration;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
@@ -20,18 +23,46 @@ namespace SistemaSatHospitalario.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var identityConnectionString = configuration.GetConnectionString("IdentityConnection") 
-                                           ?? throw new InvalidOperationException("Connection string 'IdentityConnection' not found.");
+            var dbProvider = configuration.GetValue<string>("DatabaseProvider") ?? "SqlServer";
 
             services.AddDbContext<SatHospitalarioIdentityDbContext>(options =>
-                options.UseSqlServer(
-                    configuration.GetConnectionString("IdentityConnection"),
-                    b => b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName)));
+            {
+                if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+                {
+                    var conStr = configuration.GetConnectionString("IdentityConnection_MySql") 
+                                 ?? throw new InvalidOperationException("IdentityConnection_MySql not found.");
+                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
+                        b => b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName));
+                }
+                else
+                {
+                    var conStr = configuration.GetConnectionString("IdentityConnection_SqlServer") 
+                                 ?? throw new InvalidOperationException("IdentityConnection_SqlServer not found.");
+                    options.UseSqlServer(conStr, 
+                        b => b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName));
+                }
+            });
 
             services.AddDbContext<SatHospitalarioDbContext>(options =>
-                options.UseSqlServer(
-                    configuration.GetConnectionString("IdentityConnection"),
-                    b => b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName)));
+            {
+                if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+                {
+                    var conStr = configuration.GetConnectionString("SystemConnection_MySql") 
+                                 ?? throw new InvalidOperationException("SystemConnection_MySql not found.");
+                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
+                        b => {
+                            b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName);
+                            b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
+                        });
+                }
+                else
+                {
+                    var conStr = configuration.GetConnectionString("SystemConnection_SqlServer") 
+                                 ?? throw new InvalidOperationException("SystemConnection_SqlServer not found.");
+                    options.UseSqlServer(conStr, 
+                        b => b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName));
+                }
+            });
 
             // Registro de Interfaz para desacoplamiento (Micro-Ciclo 30 fix)
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<SatHospitalarioDbContext>());
@@ -56,6 +87,10 @@ namespace SistemaSatHospitalario.Infrastructure
 
             services.AddMemoryCache();
             services.AddScoped<IAuthService, JwtAuthService>();
+
+            // Configuración de Inicializadores de DB (Multi-Provider Seeders)
+            services.AddScoped<IDatabaseInitializer, IdentityDbInitializer>();
+            services.AddScoped<IDatabaseInitializer, SystemDbInitializer>();
             
             // Configuración de Repositorio Legacy con Caching (Decorator Pattern)
             services.AddScoped<LegacyLabRepository>();
@@ -71,6 +106,9 @@ namespace SistemaSatHospitalario.Infrastructure
             services.AddScoped<IOrdenRepository, OrdenRepository>();
             services.AddScoped<IBillingRepository, BillingRepository>();
             services.AddScoped<IOrdenExternaService, OrdenExternaService>();
+
+            // Email Integration
+            services.AddScoped<IEmailService, EmailService>();
 
             return services;
         }

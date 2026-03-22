@@ -1,12 +1,11 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// WebAPI
-var apiService = builder.AddProject<Projects.SistemaSatHospitalario_WebAPI>("apiservice");
+var api = builder.AddProject<Projects.SistemaSatHospitalario_WebAPI>("api");
 
-// Angular PWA
-builder.AddNpmApp("angular-frontend", "../SistemaSatHospitalario.Frontend", scriptName: "start")
-    .WithReference(apiService)
+builder.AddNpmApp("frontend", "../SistemaSatHospitalario.Frontend", "start")
+    .WithReference(api)
     .WithHttpEndpoint(env: "PORT")
-    .WaitFor(apiService);
+    .WithExternalHttpEndpoints()
+    .PublishAsDockerFile();
 
 builder.Build().Run();

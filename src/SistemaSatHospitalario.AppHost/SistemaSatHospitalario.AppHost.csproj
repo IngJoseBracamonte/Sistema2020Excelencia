@@ -1,19 +1,19 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.1.2">
+<Project Sdk="Aspire.AppHost.Sdk/13.1.3">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SistemaSatHospitalario.WebAPI\SistemaSatHospitalario.WebAPI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
+  </ItemGroup>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <UserSecretsId>e7a2c140-15c2-4d20-93d7-035974fa4f30</UserSecretsId>
+    <UserSecretsId>3ffbfbd2-5fed-4fad-9424-95ba099df509</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\SistemaSatHospitalario.WebAPI\SistemaSatHospitalario.WebAPI.csproj" />
-  </ItemGroup>
 
 </Project>

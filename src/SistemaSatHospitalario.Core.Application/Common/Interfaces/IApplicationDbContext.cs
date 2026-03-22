@@ -25,6 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<ServicioClinico> ServiciosClinicos { get; }
         DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; }
         DbSet<CuentaPorCobrar> CuentasPorCobrar { get; }
+        DbSet<ErrorTicket> ErrorTickets { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
