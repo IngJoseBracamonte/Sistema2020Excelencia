@@ -1,42 +1,62 @@
-import { Component, effect, inject, OnInit, OnDestroy } from '@angular/core';
-import { NgFor, NgIf, NgClass } from '@angular/common';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { NgFor, NgIf, NgClass, CurrencyPipe, DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { SignalrService, TicketUpdate } from '../../core/services/signalr.service';
+import { SignalrService } from '../../core/services/signalr.service';
 import { AuthService } from '../../core/services/auth.service';
+import { DashboardService, BusinessInsights } from '../../core/services/dashboard.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NgFor, NgIf, NgClass, RouterLink],
+  imports: [NgFor, NgIf, NgClass, RouterLink, CurrencyPipe, DecimalPipe, DatePipe],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   public signalRService = inject(SignalrService);
   public authService = inject(AuthService);
+  public dashboardService = inject(DashboardService);
 
-  // Derivando el Token Reactivamente
   private jwtToken = this.authService.getToken() || '';
 
   // Reactividad Directa
   public userName = this.authService.currentUser()?.username || 'Usuario';
-  public tickets = this.signalRService.incomingTickets;
+  public userRole = this.authService.currentUser()?.role || 'Asistente';
+  
+  public isAdmin = computed(() => this.userRole === 'Administrador');
+  public isRxAssistant = computed(() => this.userRole === 'Asistente Rx');
+  public isParticularAssistant = computed(() => this.userRole === 'Asistente Particular');
 
-  constructor() {
-    // Escucha cambios en tiempo real automáticamente con Effect si fuese necesario
-  }
+  public tickets = this.signalRService.incomingTickets;
+  public now = new Date();
+  
+  // Dashboard KPIs (Ciclo 17-23)
+  public insights = signal<BusinessInsights | null>(null);
+  public isLoading = signal<boolean>(false);
 
   ngOnInit(): void {
-    // Iniciar conexión WebSockets
-    this.signalRService.startConnection(this.jwtToken);
+    if (this.jwtToken) {
+      this.signalRService.startConnection(this.jwtToken);
+    }
+    this.refreshKPIs();
+  }
+
+  refreshKPIs() {
+    this.isLoading.set(true);
+    this.dashboardService.getInsights().subscribe({
+      next: (data: BusinessInsights) => {
+        this.insights.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+      }
+    });
   }
 
   ngOnDestroy(): void {
-    // Prevenir fugas de memoria y sockets fantasma (Mitigación del riesgo #2)
-    this.signalRService.stopConnection();
-  }
-
-  logout(): void {
-    this.authService.logout();
+    if (this.signalRService) {
+      this.signalRService.stopConnection();
+    }
   }
 
   getStatusColor(status: string): string {

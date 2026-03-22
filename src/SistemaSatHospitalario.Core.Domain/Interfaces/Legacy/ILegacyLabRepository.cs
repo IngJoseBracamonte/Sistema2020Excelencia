@@ -13,5 +13,16 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
             List<PerfilesFacturadosLegacy> perfilesAFacturar, 
             List<ResultadosPacienteLegacy> resultados,
             CancellationToken cancellationToken);
+
+        // Métodos de Lectura con Dapper (Capa Anticorrupción)
+        Task<DatosPersonalesLegacy?> GetPatientByCedulaAsync(string cedula, CancellationToken cancellationToken);
+        Task<int> CreatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken);
+        
+        // Búsqueda aproximada limitada para autocompletado
+        Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken);
+        
+        // Mantenimiento de Convenios Legacy
+        Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken);
+        Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken);
     }
 }

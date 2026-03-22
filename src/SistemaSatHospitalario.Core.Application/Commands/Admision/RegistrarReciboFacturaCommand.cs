@@ -48,7 +48,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (cuenta.Estado != "Abierta") throw new InvalidOperationException("La cuenta ya ha sido procesada.");
 
             // 3. Crear Recibo
-            var recibo = new ReciboFactura(request.CuentaServicioId, cajaAbierta.Id, request.TasaCambioDia, "Borrador");
+            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, "Borrador");
 
             foreach (var pago in request.PagosMultidivisa)
             {

@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap, catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -21,7 +22,7 @@ export interface AuthResponse {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private apiUrl = 'https://localhost:7019/api/Auth/Login'; // Mapear según la configuración de kestrel
+  private apiUrl = `${environment.apiUrl}/Auth/Login`;
 
   // Estado reactivo (Signal)
   public currentUser = signal<AuthResponse | null>(this.getUserFromStorage());

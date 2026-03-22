@@ -6,18 +6,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
     {
         public Guid Id { get; protected set; }
         public int NumeroLlegadaDiario { get; protected set; }
-        public Guid PacienteId { get; protected set; }
+        // Se cambió de Guid a int para sincronización con Legacy
+        public int PacienteId { get; protected set; }
         public string NombrePaciente { get; protected set; }
         public string TipoIngreso { get; protected set; } // Particular, Seguro, Hospitalizacion, Emergencia
         public string EstadoFacturacion { get; protected set; } // Sin Factura, Factura Fiscal
         public decimal TotalCobrado { get; protected set; }
         public DateTime FechaCreacion { get; protected set; }
         
-        public Guid? ConvenioId { get; protected set; } // Opcional, asociado a Seguros/Convenios
+        // Se cambió de Guid? a int? para sincronización con Legacy
+        public int? ConvenioId { get; protected set; } // Opcional, asociado a Seguros/Convenios
 
         protected OrdenDeServicio() { }
 
-        protected OrdenDeServicio(int numeroLlegada, Guid pacienteId, string nombrePaciente, string tipoIngreso, Guid? convenioId = null)
+        protected OrdenDeServicio(int numeroLlegada, int pacienteId, string nombrePaciente, string tipoIngreso, int? convenioId = null)
         {
             Id = Guid.NewGuid();
             NumeroLlegadaDiario = numeroLlegada;
@@ -36,7 +38,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
             TotalCobrado = nuevoTotal;
         }
 
-        public void AsignarConvenio(Guid convenioId)
+        public void AsignarConvenio(int convenioId)
         {
             ConvenioId = convenioId;
         }

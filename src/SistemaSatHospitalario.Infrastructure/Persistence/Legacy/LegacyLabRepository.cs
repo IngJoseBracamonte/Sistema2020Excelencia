@@ -5,16 +5,23 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
+using Microsoft.Extensions.Configuration;
+using MySqlConnector;
+using Dapper;
+using System.Linq;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
     public class LegacyLabRepository : ILegacyLabRepository
     {
         private readonly Sistema2020LegacyDbContext _context;
+        private readonly string _connectionString;
 
-        public LegacyLabRepository(Sistema2020LegacyDbContext context)
+        public LegacyLabRepository(Sistema2020LegacyDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _connectionString = configuration.GetConnectionString("LegacyConnection") 
+                                ?? throw new InvalidOperationException("LegacyConnection string not found.");
         }
 
         public async Task<int> GenerarOrdenLaboratorioAsync(
@@ -23,32 +30,24 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             List<ResultadosPacienteLegacy> resultados, 
             CancellationToken cancellationToken)
         {
-            // Transacción Explícita (ACID) para inserción masiva cruzada.
-            // Asegura que o entran todas las filas (Orden + Pruebas) o se descarta la Factura.
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // 1. Insertamos Orden para obtener su Id Autonumérico (Si la tabla lo permite, por ahora se inserta el DTO tal cual)
                 await _context.Orden.AddAsync(orden, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // 2. Insertamos la Relación en Sistema de Facturación
-                // (Si IdOrden fue autonumérico, Ef Core llenó 'orden.IdOrden' automáticamente, 
-                // pero si no, debemos actualizar nuestras listas hijas).
                 foreach (var perfil in perfilesAFacturar)
                 {
                     perfil.IdOrden = orden.IdOrden;
                 }
                 await _context.PerfilesFacturados.AddRangeAsync(perfilesAFacturar, cancellationToken);
                 
-                // 3. Insertamos el desglose Analítico
                 foreach (var res in resultados)
                 {
                     res.IdOrden = orden.IdOrden;
                 }
                 await _context.ResultadosPaciente.AddRangeAsync(resultados, cancellationToken);
 
-                // Guardamos cambios finales y hacemos Commit.
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
@@ -56,11 +55,58 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (Exception ex)
             {
-                // Un error genérico de DB (Timeouts, violaciones FK, Nulls).
-                // Revierte cualquier inserción de la Orden u otras tablas automáticamente.
                 await transaction.RollbackAsync(cancellationToken);
                 throw new InvalidOperationException("Fallo crítico en Facturación Laboratorio MySQL: " + ex.Message, ex);
             }
+        }
+
+        public async Task<DatosPersonalesLegacy?> GetPatientByCedulaAsync(string cedula, CancellationToken cancellationToken)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            // Mapeo manual a las propiedades del DTO si las columnas difieren
+            const string sql = @"SELECT IdPersona, Identificacion, Nombre1, Apellido1, FechaNacimiento, Telefono, Direccion 
+                                 FROM datospersonales WHERE Identificacion = @cedula LIMIT 1";
+            return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { cedula });
+        }
+
+        public async Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            const string sql = @"SELECT IdPersona, Identificacion, Nombre1, Apellido1, FechaNacimiento, Telefono, Direccion 
+                                 FROM datospersonales 
+                                 WHERE Identificacion LIKE @term OR Nombre1 LIKE @term OR Apellido1 LIKE @term 
+                                 LIMIT 20";
+            var result = await connection.QueryAsync<DatosPersonalesLegacy>(sql, new { term = $"%{term}%" });
+            return result.ToList();
+        }
+
+        public async Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            const string sql = "SELECT * FROM perfil WHERE Activo = 1";
+            var result = await connection.QueryAsync<PerfilLegacy>(sql);
+            return result.ToList();
+        }
+
+        public async Task<int> CreatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            const string sql = @"
+                INSERT INTO datospersonales (Identificacion, Nombre1, Apellido1, Telefono, FechaNacimiento, Direccion) 
+                VALUES (@Identificacion, @Nombre1, @Apellido1, @Telefono, @FechaNacimiento, @Direccion);
+                SELECT LAST_INSERT_ID();";
+                
+            var id = await connection.ExecuteScalarAsync<int>(sql, patient);
+            patient.IdPersona = id;
+            return id;
+        }
+
+        public async Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            const string sql = "SELECT IDConvenio FROM convenios"; // Basado en el nombre estándar
+            var result = await connection.QueryAsync<int>(sql);
+            return result.ToList();
         }
     }
 }

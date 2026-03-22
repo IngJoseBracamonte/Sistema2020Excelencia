@@ -6,7 +6,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     {
         public Guid Id { get; private set; }
         public Guid MedicoId { get; private set; }
-        public Guid PacienteId { get; private set; }
+        // Se cambió de Guid a int para sincronización con Legacy
+        public int PacienteId { get; private set; }
         public Guid CuentaServicioId { get; private set; }
         public DateTime HoraPautada { get; private set; }
         public string EstadoAtencion { get; private set; } // En Espera, Llamado, Atendido, Cancelado
@@ -14,7 +15,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CitaMedica() { }
 
-        public CitaMedica(Guid medicoId, Guid pacienteId, Guid cuentaServicioId, DateTime horaPautada)
+        public CitaMedica(Guid medicoId, int pacienteId, Guid cuentaServicioId, DateTime horaPautada)
         {
             Id = Guid.NewGuid();
             MedicoId = medicoId;

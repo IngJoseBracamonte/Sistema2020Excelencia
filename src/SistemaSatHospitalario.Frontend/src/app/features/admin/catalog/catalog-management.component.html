@@ -1,0 +1,138 @@
+<div class="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in relative z-10">
+    <!-- Header de Administración -->
+    <div class="flex items-center justify-between bg-white/60 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-sm border border-slate-100/50">
+        <div class="flex items-center space-x-6">
+            <div class="h-16 w-16 bg-gradient-to-tr from-slate-800 to-slate-600 rounded-3xl shadow-xl flex items-center justify-center text-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-3xl font-black text-slate-800 tracking-tighter uppercase">Gestión de Catálogo</h2>
+                <div class="flex items-center space-x-4 mt-2">
+                    <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200">SERVICIOS CLÍNICOS</span>
+                    <span class="text-slate-400 text-xs font-bold uppercase tracking-widest italic">Administrar precios y servicios nativos</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button (click)="refreshCatalog()" [disabled]="isLoading()"
+                class="bg-white hover:bg-slate-50 border border-slate-200 p-4 rounded-2xl shadow-sm transition-all active:scale-95 disabled:opacity-50">
+                <svg [class.animate-spin]="isLoading()" class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+            <button (click)="openCreate()"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 transition-all hover:scale-105 active:scale-95">
+                CREAR NUEVO SERVICIO
+            </button>
+        </div>
+    </div>
+
+    <!-- Lista de Servicios -->
+    <div class="bg-white rounded-[2.5rem] shadow-lg border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Código / Ref</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Descripción del Servicio</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tipo</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Precio Base ($)</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Estado</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <tr *ngFor="let item of catalog()" class="hover:bg-slate-50/50 transition-colors group">
+                        <td class="px-8 py-6">
+                            <span class="font-mono text-xs font-bold text-slate-400">{{ item.codigo || 'S/C' }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <p class="text-sm font-black text-slate-700 uppercase tracking-tight">{{ item.descripcion }}</p>
+                        </td>
+                        <td class="px-8 py-6 text-center">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border"
+                                [ngClass]="getTipoColor(item.tipo)">
+                                {{ item.tipo }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6 text-right">
+                            <span class="text-sm font-black text-slate-800">${{ item.precio | number:'1.2-2' }}</span>
+                        </td>
+                        <td class="px-8 py-6 text-center">
+                            <span class="h-2.5 w-2.5 rounded-full inline-block"
+                                [ngClass]="item.activo !== false ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'">
+                            </span>
+                        </td>
+                        <td class="px-8 py-6 text-center">
+                            <button (click)="openEdit(item)"
+                                class="bg-white hover:bg-slate-100 p-2.5 rounded-xl border border-slate-200 transition-all active:scale-95 group/btn">
+                                <svg class="w-4 h-4 text-slate-400 group-hover/btn:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de Creación/Edición -->
+    <div *ngIf="showModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-fade-in">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-md" (click)="showModal.set(false)"></div>
+        
+        <div class="relative bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in">
+            <div class="p-10 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter">
+                    {{ isEditing() ? 'Editar Servicio' : 'Nuevo Servicio' }}
+                </h3>
+                <button (click)="showModal.set(false)" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-10 space-y-8">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Código Barra / Ref</label>
+                        <input type="text" [(ngModel)]="currentItem().codigo"
+                            class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Tipo de Servicio</label>
+                        <select [(ngModel)]="currentItem().tipo"
+                            class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all appearance-none">
+                            <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Descripción Completa</label>
+                    <input type="text" [(ngModel)]="currentItem().descripcion"
+                        class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 items-end">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Precio Base ($)</label>
+                        <input type="number" [(ngModel)]="currentItem().precio"
+                            class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl font-black text-xl text-blue-600 focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all">
+                    </div>
+                    <div class="flex items-center space-x-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <input type="checkbox" [(ngModel)]="currentItem().activo" id="chkActivo" class="w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <label for="chkActivo" class="text-xs font-black text-slate-600 uppercase tracking-widest cursor-pointer">Servicio Activo</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-10 bg-slate-50/50 flex gap-4">
+                <button (click)="showModal.set(false)" class="flex-1 px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all">
+                    CANCELAR
+                </button>
+                <button (click)="save()" class="flex-1 px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-100 transition-all hover:scale-105 active:scale-95">
+                    {{ isEditing() ? 'GUARDAR CAMBIOS' : 'CREAR SERVICIO' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

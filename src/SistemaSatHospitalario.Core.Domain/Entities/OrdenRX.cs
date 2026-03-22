@@ -11,7 +11,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
 
         private OrdenRX() { }
 
-        public OrdenRX(int numeroLlegada, Guid pacienteId, string nombrePaciente, string tipoIngreso, string estudioSolicitado, Guid asistenteId, Guid? convenioId = null) 
+        // Se cambió pacienteId a int y convenioId a int? para paridad con Legacy
+        public OrdenRX(int numeroLlegada, int pacienteId, string nombrePaciente, string tipoIngreso, string estudioSolicitado, Guid asistenteId, int? convenioId = null) 
             : base(numeroLlegada, pacienteId, nombrePaciente, tipoIngreso, convenioId)
         {
             EstudioSolicitado = estudioSolicitado ?? throw new ArgumentNullException(nameof(estudioSolicitado));

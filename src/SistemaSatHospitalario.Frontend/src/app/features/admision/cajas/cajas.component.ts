@@ -1,8 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { CajaService } from '../../../core/services/caja.service';
+import { CajaService, ResumenCajaGlobalDto, CajaSummaryDto, DailyClosingReport } from '../../../core/services/caja.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -12,69 +12,73 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './cajas.component.html',
   styleUrl: './cajas.component.css'
 })
-export class CajasComponent {
+export class CajasComponent implements OnInit {
   private cajaService = inject(CajaService);
   public authService = inject(AuthService);
   private fb = inject(FormBuilder);
 
   // Estados Reactivos
-  public isCajaAbierta = this.cajaService.isCajaAbierta;
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
-
-  // Formularios
-  public mainCajaForm = this.fb.group({
-    montoInicialDivisa: [0, [Validators.min(0)]],
-    montoInicialBs: [0, [Validators.min(0)]]
-  });
+  
+  // Data para el Admin
+  public resumenCaja = signal<ResumenCajaGlobalDto | null>(null);
+  public historialAdmin = signal<CajaSummaryDto | null>(null);
+  
+  // Data para el Asistente/Cajero
+  public personalReport = signal<DailyClosingReport | null>(null);
+  public isMiCajaAbierta = signal<boolean>(false);
 
   get isAdministrador(): boolean {
     return this.authService.currentUser()?.role === 'Administrador';
   }
 
-  get cajeroUserId(): string {
-    return this.authService.currentUser()?.username || 'unknown';
+  ngOnInit() {
+    this.checkStatus();
+    if (this.isAdministrador) {
+      this.refrescarAdmin();
+    }
   }
 
-  abrirCajaMatriz() {
-    if (this.mainCajaForm.invalid) return;
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
-    this.actionMessage.set(null);
-
-    const ds = this.mainCajaForm.value;
-    this.cajaService.abrirCaja({
-      montoInicialDivisa: ds.montoInicialDivisa || 0,
-      montoInicialBs: ds.montoInicialBs || 0
-    }).subscribe({
+  checkStatus() {
+    // Si es asistente, simplemente intentamos cargar su reporte del día. 
+    // Si hay datos y no está cerrado, asumimos abierta (simplificado para Micro-Ciclo 28)
+    this.cajaService.getPersonalReport().subscribe({
       next: (res) => {
-        this.actionMessage.set(res.message || 'Caja Matriz Abierta exitosamente.');
-        this.isLoading.set(false);
+        this.personalReport.set(res);
+        // Si el total de órdenes > 0 y estamos en este componente, mostramos opción de cerrar.
+        this.isMiCajaAbierta.set(res.totalOrdenes > 0);
       },
-      error: (err) => {
-        this.errorMessage.set(err.error?.error || 'Error abriendo la caja matriz.');
-        this.isLoading.set(false);
-      }
+      error: (err) => console.log("Usuario sin actividad hoy todavía.")
     });
   }
 
-  cerrarCajaMatriz() {
+  // Los asistentes ya NO abren caja manualmente. 
+  // El backend lo hace al primer cobro.
+
+  cerrarMiCaja() {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     this.actionMessage.set(null);
 
     this.cajaService.cerrarCaja().subscribe({
-      next: (res) => {
-        this.actionMessage.set(res.message || 'Caja Matriz Clausurada exitosamente.');
+      next: (res: any) => {
+        this.actionMessage.set('Su sesión de caja ha sido cerrada con éxito.');
+        this.isMiCajaAbierta.set(false);
         this.isLoading.set(false);
+        this.checkStatus();
       },
-      error: (err) => {
-        this.errorMessage.set(err.error?.error || 'Error clausurando la caja matriz.');
+      error: (err: any) => {
+        this.errorMessage.set(err.error?.error || 'Error al cerrar su caja.');
         this.isLoading.set(false);
       }
     });
   }
 
-
+  refrescarAdmin() {
+    if (!this.isAdministrador) return;
+    this.cajaService.obtenerResumenDiario().subscribe(res => this.resumenCaja.set(res));
+    this.cajaService.obtenerHistorial().subscribe(res => this.historialAdmin.set(res));
+  }
 }

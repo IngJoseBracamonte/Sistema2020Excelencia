@@ -26,13 +26,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
             {
                 var defaultUser = new UsuarioHospital
                 {
-                    UserName = "admin@hospital.local",
-                    Email = "admin@hospital.local",
+                    UserName = "admin",
+                    Email = "admin@hospital.local", // Se mantiene un email dummy por compatibilidad, pero no se usa para login
                     NombreReal = "Administrador",
                     ApellidoReal = "Maestro",
-                    LegacyCajeroId = 1, // Ejemplo de mapeo con DB Legacy
+                    LegacyCajeroId = 1, 
                     EmailConfirmed = true,
-                    PhoneNumberConfirmed = true
+                    PhoneNumberConfirmed = true,
+                    EsActivo = true
                 };
 
                 var result = await userManager.CreateAsync(defaultUser, "Admin123*!");

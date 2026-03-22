@@ -9,9 +9,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class CargarServicioACuentaCommand : IRequest<Guid>
     {
-        public Guid PacienteId { get; set; }
+        // Se cambió de Guid a int para sincronización con Legacy
+        public int PacienteId { get; set; }
         public string TipoIngreso { get; set; } = string.Empty; // Particular, Seguro, Hospitalizacion, Emergencia
-        public Guid? ConvenioId { get; set; }
+        // Se cambió de Guid? a int? para sincronización con Legacy
+        public int? ConvenioId { get; set; }
         public Guid ServicioId { get; set; }
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
@@ -47,7 +49,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // 2. Validaciones específicas por tipo de servicio
-            if (request.TipoServicio == "Medico")
+            if (request.TipoServicio == "Medico" || request.TipoServicio == "CONSULTA")
             {
                 if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
                     throw new InvalidOperationException("Para servicios médicos se requiere Médico y Hora de Cita.");

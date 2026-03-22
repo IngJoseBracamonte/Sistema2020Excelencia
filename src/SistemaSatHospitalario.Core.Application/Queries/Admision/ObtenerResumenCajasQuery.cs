@@ -4,56 +4,68 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
-    // DTOs para la Vista del Administrador
     public class ResumenCajaGlobalDto
     {
-        public Guid CajaId { get; set; }
-        public DateTime FechaApertura { get; set; }
-        public decimal MontoInicialBase { get; set; }
-        public decimal TotalRecaudadoBase { get; set; }
-        public decimal GranTotalEnCajaBase { get; set; }
+        public List<ResumenTurnoDto> Turnos { get; set; } = new();
     }
 
-    // Query
+    public class ResumenTurnoDto
+    {
+        public Guid TurnoId { get; set; }
+        public string CajeroUserId { get; set; }
+        public string Estado { get; set; }
+        public decimal RecaudadoBase { get; set; }
+    }
+
     public class ObtenerResumenCajasQuery : IRequest<ResumenCajaGlobalDto>
     {
     }
 
-    // Handler
     public class ObtenerResumenCajasQueryHandler : IRequestHandler<ObtenerResumenCajasQuery, ResumenCajaGlobalDto>
     {
-        private readonly ICajaAdministrativaRepository _cajaRepository;
+        private readonly IApplicationDbContext _context;
 
-        public ObtenerResumenCajasQueryHandler(ICajaAdministrativaRepository cajaRepository)
+        public ObtenerResumenCajasQueryHandler(IApplicationDbContext context)
         {
-            _cajaRepository = cajaRepository;
+            _context = context;
         }
 
         public async Task<ResumenCajaGlobalDto> Handle(ObtenerResumenCajasQuery request, CancellationToken cancellationToken)
         {
-            var caja = await _cajaRepository.ObtenerCajaAbiertaConDetallesAsync(cancellationToken);
+            // Buscamos todas las cajas abiertas actualmente (una por usuario/turno)
+            var cajasAbiertas = await _context.CajasDiarias
+                .Where(c => c.Estado == "Abierta")
+                .ToListAsync(cancellationToken);
 
-            if (caja == null)
+            // Obtenemos los montos recaudados por cada caja abierta sumando sus recibos
+            var turnos = new List<ResumenTurnoDto>();
+
+            foreach (var caja in cajasAbiertas)
             {
-                throw new InvalidOperationException("No hay ninguna Caja Matriz abierta en este momento.");
+                var recaudado = await _context.RecibosFactura
+                    .Where(r => r.CajaDiariaId == caja.Id && r.EstadoFiscal != "Anulada")
+                    .SelectMany(r => r.DetallesPago)
+                    .SumAsync(p => p.EquivalenteAbonadoBase, cancellationToken);
+
+                turnos.Add(new ResumenTurnoDto
+                {
+                    TurnoId = caja.Id,
+                    CajeroUserId = caja.NombreUsuario,
+                    Estado = caja.Estado,
+                    RecaudadoBase = recaudado
+                });
             }
 
-            // Nota: El repositorio debe ser actualizado para incluir los Recibos asociados directamente a la Caja
-            // Por ahora mantenemos la estructura de cálculo base simplificada
-            var dto = new ResumenCajaGlobalDto
+            return new ResumenCajaGlobalDto
             {
-                CajaId = caja.Id,
-                FechaApertura = caja.FechaApertura,
-                MontoInicialBase = caja.MontoInicialDivisa,
-                TotalRecaudadoBase = 0 // Esto se calculará sumando recibos de la caja en el repositorio
+                Turnos = turnos
             };
-
-            dto.GranTotalEnCajaBase = dto.MontoInicialBase + dto.TotalRecaudadoBase;
-            return dto;
         }
     }
 }

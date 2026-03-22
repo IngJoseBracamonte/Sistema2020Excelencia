@@ -17,6 +17,10 @@ export const routes: Routes = [
             { path: 'rx-orders', loadComponent: () => import('./features/rx-orders/rx-orders.component').then(m => m.RxOrdersComponent) },
             { path: 'cajas', loadComponent: () => import('./features/admision/cajas/cajas.component').then(m => m.CajasComponent) },
             { path: 'facturacion', loadComponent: () => import('./features/admision/facturacion/facturacion.component').then(m => m.FacturacionComponent) },
+            { path: 'cxc', loadComponent: () => import('./features/admision/receivables/receivables.component').then(m => m.ReceivablesComponent) },
+            { path: 'expedientes', loadComponent: () => import('./features/admision/patient-history/patient-history.component').then(m => m.PatientHistoryComponent) },
+            { path: 'catalog', loadComponent: () => import('./features/admin/catalog/catalog-management.component').then(m => m.CatalogManagementComponent) },
+            { path: 'settings', loadComponent: () => import('./features/admin/settings/system-settings.component').then(m => m.SystemSettingsComponent) },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },

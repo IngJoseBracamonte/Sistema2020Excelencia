@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<CuentaServicios?> ObtenerCuentaAbiertaPorPacienteAsync(Guid pacienteId, CancellationToken cancellationToken)
+        public async Task<CuentaServicios?> ObtenerCuentaAbiertaPorPacienteAsync(int pacienteId, CancellationToken cancellationToken)
         {
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
@@ -31,6 +31,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
                 .FirstOrDefaultAsync(c => c.Id == cuentaId, cancellationToken);
+        }
+
+        public async Task<List<CuentaServicios>> ObtenerCuentasPorPacienteAsync(int pacienteId, CancellationToken cancellationToken)
+        {
+            return await _context.CuentasServicios
+                .Include(c => c.Detalles)
+                .Where(c => c.PacienteId == pacienteId)
+                .OrderByDescending(c => c.FechaCreacion)
+                .ToListAsync(cancellationToken);
         }
 
         public async Task AgregarCuentaAsync(CuentaServicios cuenta, CancellationToken cancellationToken)
@@ -51,8 +60,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task<bool> ExisteCitaSimultaneaAsync(Guid medicoId, DateTime hora, CancellationToken cancellationToken)
         {
-            // Validar si ya hay una cita en el mismo rango (ej. 30min) o exacto segun requerimiento
-            // El usuario menciono "8am", asumo validacion exacta de slot
             return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.EstadoAtencion != "Cancelado", cancellationToken);
         }
 

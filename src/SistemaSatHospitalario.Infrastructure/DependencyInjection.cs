@@ -11,6 +11,8 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using SistemaSatHospitalario.Infrastructure.Persistence.Repositories;
 using SistemaSatHospitalario.Infrastructure.Integration;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SistemaSatHospitalario.Infrastructure
 {
@@ -31,6 +33,9 @@ namespace SistemaSatHospitalario.Infrastructure
                     configuration.GetConnectionString("IdentityConnection"),
                     b => b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName)));
 
+            // Registro de Interfaz para desacoplamiento (Micro-Ciclo 30 fix)
+            services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<SatHospitalarioDbContext>());
+
             services.AddDbContext<Sistema2020LegacyDbContext>(options =>
             {
                 var constr = configuration.GetConnectionString("LegacyConnection");
@@ -44,13 +49,22 @@ namespace SistemaSatHospitalario.Infrastructure
                 options.Password.RequireLowercase = true;
                 options.Password.RequireUppercase = true;
                 options.Password.RequiredLength = 8;
-                options.User.RequireUniqueEmail = true;
+                options.User.RequireUniqueEmail = false; // Desactivado por solicitud (Micro-Ciclo 30)
             })
             .AddEntityFrameworkStores<SatHospitalarioIdentityDbContext>()
             .AddDefaultTokenProviders();
 
+            services.AddMemoryCache();
             services.AddScoped<IAuthService, JwtAuthService>();
-            services.AddScoped<ILegacyLabRepository, LegacyLabRepository>();
+            
+            // Configuración de Repositorio Legacy con Caching (Decorator Pattern)
+            services.AddScoped<LegacyLabRepository>();
+            services.AddScoped<ILegacyLabRepository>(provider => 
+                new CachedLegacyLabRepository(
+                    provider.GetRequiredService<LegacyLabRepository>(), 
+                    provider.GetRequiredService<IMemoryCache>())
+            );
+
             services.AddScoped<ITurnoMedicoRepository, TurnoMedicoRepository>();
             services.AddScoped<IAuditoriaIncidenciaRepository, AuditoriaIncidenciaRepository>();
             services.AddScoped<ICajaAdministrativaRepository, CajaAdministrativaRepository>();

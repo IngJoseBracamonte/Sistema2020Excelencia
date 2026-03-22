@@ -3,8 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 {
@@ -34,6 +37,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         public async Task<TurnoMedico> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.TurnosMedicos.FindAsync(new object[] { id }, cancellationToken);
+        }
+
+        public async Task<List<Medico>> ListBySpecialtyAsync(string specialty, CancellationToken cancellationToken)
+        {
+            return await _context.Medicos
+                .Where(m => m.Especialidad == specialty && m.Activo)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<TurnoMedico>> GetBusySlotsAsync(Guid medicoId, DateTime date, CancellationToken cancellationToken)
+        {
+            return await _context.TurnosMedicos
+                .Where(t => t.MedicoId == medicoId && t.FechaHoraToma.Date == date.Date)
+                .ToListAsync(cancellationToken);
         }
     }
 }

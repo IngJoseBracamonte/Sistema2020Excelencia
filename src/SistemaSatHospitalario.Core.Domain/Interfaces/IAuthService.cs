@@ -6,6 +6,6 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces
 {
     public interface IAuthService
     {
-        Task<JwtAuthResult> AuthenticateAsync(string email, string password, CancellationToken cancellationToken);
+        Task<JwtAuthResult> AuthenticateAsync(string username, string password, CancellationToken cancellationToken);
     }
 }

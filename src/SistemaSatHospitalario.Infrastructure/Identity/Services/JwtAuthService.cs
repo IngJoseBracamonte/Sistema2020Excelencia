@@ -25,9 +25,9 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
             _configuration = configuration;
         }
 
-        public async Task<JwtAuthResult> AuthenticateAsync(string email, string password, CancellationToken cancellationToken)
+        public async Task<JwtAuthResult> AuthenticateAsync(string username, string password, CancellationToken cancellationToken)
         {
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = await _userManager.FindByNameAsync(username);
             if (user == null || !user.EsActivo) return null;
 
             var result = await _userManager.CheckPasswordAsync(user, password);
@@ -46,7 +46,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? "unknown"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             

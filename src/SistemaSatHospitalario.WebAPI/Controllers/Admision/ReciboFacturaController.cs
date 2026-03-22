@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.DTOs.Admision;
+using SistemaSatHospitalario.Core.Application.Queries.Admision;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = "Administrador,Cajero")]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ReciboFacturaController : ControllerBase
@@ -20,12 +22,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             _mediator = mediator;
         }
 
-        /// <summary>
-        /// Cobra a un paciente mediante el soporte nativo de transacciones multidivisa.
-        /// </summary>
         [HttpPost("RegistrarPagoMultidivisa")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RegistrarPago([FromBody] RegistrarReciboFacturaCommand command)
         {
             try
@@ -37,15 +34,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     ReciboId = idRecibo 
                 });
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 return BadRequest(new { Error = ex.Message });
             }
-            catch (Exception ex)
-            {
-                // En producción los internal server err loggean al OpenTelemetry.
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
-            }
+        }
+
+        [HttpGet("{id}/Print")]
+        public async Task<ActionResult<ReciboPdfDto>> GetPrintData(Guid id)
+        {
+            var result = await _mediator.Send(new GetReciboPdfQuery { ReciboId = id });
+            if (result == null) return NotFound();
+            return Ok(result);
         }
     }
 }

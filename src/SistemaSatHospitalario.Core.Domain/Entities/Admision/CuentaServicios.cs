@@ -7,9 +7,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     public class CuentaServicios
     {
         public Guid Id { get; private set; }
-        public Guid PacienteId { get; private set; }
+        // Se cambió de Guid a int para sincronización con Legacy
+        public int PacienteId { get; private set; }
         public string TipoIngreso { get; private set; } // Particular, Seguro, Hospitalizacion, Emergencia
-        public Guid? ConvenioId { get; private set; }
+        // Se cambió de Guid? a int? para sincronización con Legacy
+        public int? ConvenioId { get; private set; }
         public string Estado { get; private set; } // Abierta, Facturada, Anulada
         public DateTime FechaCreacion { get; private set; }
         public DateTime? FechaCierre { get; private set; }
@@ -19,7 +21,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(Guid pacienteId, string tipoIngreso, Guid? convenioId = null)
+        public CuentaServicios(int pacienteId, string tipoIngreso, int? convenioId = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;

@@ -12,6 +12,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string NroControlFiscal { get; protected set; }
         public decimal TasaCambioDia { get; protected set; }
         public string EstadoFiscal { get; protected set; } // Borrador, Emitida, Anulada
+        public int PacienteId { get; protected set; }
+        public string NumeroRecibo { get; protected set; }
+        public decimal TotalFacturadoUSD { get; protected set; }
+        public decimal TasaBcvUsada => TasaCambioDia;
+        public DateTime FechaEmision { get; protected set; }
+        public string Estado => EstadoFiscal;
 
         public CuentaServicios CuentaServicio { get; protected set; }
         public CajaDiaria CajaDiaria { get; protected set; }
@@ -21,13 +27,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected ReciboFactura() { }
 
-        public ReciboFactura(Guid cuentaServicioId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = "Borrador")
+        public ReciboFactura(Guid cuentaServicioId, int pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = "Borrador")
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
+            PacienteId = pacienteId;
             CajaDiariaId = cajaDiariaId;
             TasaCambioDia = tasaCambioDia;
             EstadoFiscal = estadoFiscal;
+            FechaEmision = DateTime.UtcNow;
+            NumeroRecibo = $"REC-{DateTime.Now:yyyyMMdd}-{Id.ToString().Substring(0, 8)}";
         }
 
         public void Emitir(string nroControlFiscal)

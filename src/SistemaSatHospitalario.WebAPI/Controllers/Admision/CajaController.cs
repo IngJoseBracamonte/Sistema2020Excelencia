@@ -1,15 +1,18 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
+using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize] // Asegura que solo usuarios autenticados usen el sistema de Cajas.
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class CajaController : ControllerBase
@@ -22,7 +25,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         /// <summary>
-        /// Abre la Caja Diaria Administrativa Principal para comenzar la recaudación global.
+        /// Abre la Caja Diaria para el usuario actual. (Uso manual restringido a Administradores).
         /// </summary>
         [HttpPost("Abrir")]
         [Authorize(Roles = "Administrador")]
@@ -32,8 +35,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                command.NombreUsuario = User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? "Usuario";
+
                 var idCaja = await _mediator.Send(command);
-                return Ok(new { Message = "Caja Diaria abierta con éxito.", CajaId = idCaja });
+                return Ok(new { Message = "Caja abierta con éxito.", CajaId = idCaja });
             }
             catch (InvalidOperationException ex)
             {
@@ -42,18 +48,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         /// <summary>
-        /// Clausura la Caja Diaria Principal, parando cualquier turno restante.
+        /// Cierra la caja activa del usuario actual.
         /// </summary>
         [HttpPost("Cerrar")]
-        [Authorize(Roles = "Administrador")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CerrarCaja()
         {
             try
             {
-                var result = await _mediator.Send(new CerrarCajaCommand());
-                return Ok(new { Message = "La Caja Diaria fue clausurada con éxito." });
+                var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                var result = await _mediator.Send(new CerrarCajaCommand { UsuarioId = usuarioId });
+                return Ok(new { Message = "Caja cerrada con éxito." });
             }
             catch (InvalidOperationException ex)
             {
@@ -61,26 +67,38 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
         }
 
-
-
         /// <summary>
-        /// Obtiene un resumen en tiempo real de la recaudación de la caja matriz y el desglose de sus turnos.
+        /// Obtiene el historial de cierres para administración (Totales y por Usuario).
         /// </summary>
+        [HttpGet("Historial")]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> ObtenerHistorial([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta, [FromQuery] string? usuarioId)
+        {
+            var query = new GetCajaSummariesQuery 
+            { 
+                Desde = desde ?? DateTime.UtcNow.AddDays(-7),
+                Hasta = hasta ?? DateTime.UtcNow,
+                UsuarioId = usuarioId
+            };
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpGet("Resumen")]
         [Authorize(Roles = "Administrador")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ObtenerResumen()
         {
-            try
-            {
-                var resumen = await _mediator.Send(new ObtenerResumenCajasQuery());
-                return Ok(resumen);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
+            var resumen = await _mediator.Send(new ObtenerResumenCajasQuery());
+            return Ok(resumen);
+        }
+
+        [HttpGet("PersonalReport")]
+        public async Task<ActionResult<DailyClosingDto>> GetPersonalReport([FromQuery] string? userId)
+        {
+            var id = userId ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var query = new GetDailyClosingQuery { UserId = id, Fecha = DateTime.Today };
+            var result = await _mediator.Send(query);
+            return Ok(result);
         }
     }
 }

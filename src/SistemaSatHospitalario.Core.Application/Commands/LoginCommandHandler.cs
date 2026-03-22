@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
         {
             // La capa Application no sabe de EF Core ni IdentityUserManager,
             // sólo orquesta a través de IAuthService
-            return await _authService.AuthenticateAsync(request.Email, request.Password, cancellationToken);
+            return await _authService.AuthenticateAsync(request.Username, request.Password, cancellationToken);
         }
     }
 }

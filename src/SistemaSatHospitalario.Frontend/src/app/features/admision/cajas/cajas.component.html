@@ -12,26 +12,20 @@
                 </svg>
             </div>
             <div>
-                <h2 class="text-2xl font-bold text-slate-800">Módulo de Tesorería</h2>
-                <p class="text-slate-500 text-sm">Controle aperturas de cajas y turnos de facturación.</p>
+                <h2 class="text-2xl font-bold text-slate-800">Recaudación y Cierres</h2>
+                <p class="text-slate-500 text-sm">Controle sus cobros diarios y realice el cierre de su jornada.</p>
             </div>
         </div>
-        <div>
+        <div class="flex items-center space-x-3">
             <button tabindex="0" routerLink="/facturacion"
-                class="inline-flex items-center px-4 py-2 border border-hospital-200 rounded-xl shadow-sm text-sm font-bold text-hospital-700 bg-white hover:bg-hospital-50 hover:border-hospital-300 transform hover:-translate-y-0.5 transition-all mr-4">
+                class="inline-flex items-center px-4 py-2 border border-hospital-200 rounded-xl shadow-sm text-sm font-bold text-hospital-700 bg-white hover:bg-hospital-50 hover:border-hospital-300 transition-all">
                 <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
                     </path>
                 </svg>
-                Nueva Facturación
+                Factura Nueva
             </button>
-            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-all"
-                [ngClass]="isCajaAbierta() ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-800 border border-slate-200'">
-                <span class="w-2.5 h-2.5 rounded-full mr-2"
-                    [ngClass]="isCajaAbierta() ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
-                Estado Global: {{ isCajaAbierta() ? 'Operativa' : 'Clausurada' }}
-            </span>
         </div>
     </div>
 
@@ -54,104 +48,173 @@
         <p class="text-emergency-dark font-medium text-sm">{{ errorMessage() }}</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-        <!-- Panel de Administración de Caja Matriz (Solo Administradores) -->
-        <div *ngIf="isAdministrador"
-            class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 overflow-hidden relative group transition-all hover:shadow-2xl">
-            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-hospital-500 to-hospital-300"></div>
-            <div class="p-8">
-                <h3 class="text-xl font-bold text-slate-800 mb-2">Caja Fuerte / Matriz</h3>
-                <p class="text-slate-500 text-sm mb-6">Administre el inicio y fin de operaciones del día. Requiere
-                    arqueo previo.</p>
-
-                <div *ngIf="!isCajaAbierta()">
-                    <form [formGroup]="mainCajaForm" (ngSubmit)="abrirCajaMatriz()" class="space-y-5">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Monto
-                                    Base ($)</label>
-                                <input type="number" formControlName="montoInicialDivisa"
-                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 focus:border-hospital-500 transition-all font-mono text-lg"
-                                    placeholder="0.00">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Monto
-                                    Base (Bs)</label>
-                                <input type="number" formControlName="montoInicialBs"
-                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-hospital-500 focus:border-hospital-500 transition-all font-mono text-lg"
-                                    placeholder="0.00">
-                            </div>
-                        </div>
-
-                        <button type="submit" [disabled]="isLoading()"
-                            class="w-full mt-4 flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-gradient-to-r from-hospital-600 to-hospital-500 hover:from-hospital-500 hover:to-hospital-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-hospital-500 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
-                            <span *ngIf="isLoading()" class="mr-2"><svg class="animate-spin h-5 w-5 text-white"
-                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg></span>
-                            Proceder a Apertura
-                        </button>
-                    </form>
+    <!-- VISTA PARA ASISTENTES / CAJEROS -->
+    <div *ngIf="!isAdministrador" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Resumen Personal del Día -->
+        <div class="md:col-span-2 space-y-6">
+            <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 p-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-6">Mi Actividad Hoy</h3>
+                
+                <div *ngIf="personalReport()" class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <p class="text-xs font-bold text-slate-500 uppercase">Órdenes Facturadas</p>
+                        <p class="text-3xl font-black text-slate-800 mt-2">{{ personalReport()?.totalOrdenes }}</p>
+                    </div>
+                    <div class="bg-hospital-50 p-6 rounded-2xl border border-hospital-100">
+                        <p class="text-xs font-bold text-hospital-700 uppercase">Total Recaudado ($)</p>
+                        <p class="text-3xl font-black text-hospital-800 mt-2 font-mono">${{ personalReport()?.totalVendidoUSD | number:'1.2-2' }}</p>
+                    </div>
+                    <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+                        <p class="text-xs font-bold text-emerald-700 uppercase">Equivalente Bs</p>
+                        <p class="text-3xl font-black text-emerald-800 mt-2 font-mono">{{ personalReport()?.totalRecaudadoBase | number:'1.2-2' }}</p>
+                    </div>
                 </div>
 
-                <div *ngIf="isCajaAbierta()" class="space-y-6">
-                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado Actual</p>
-                            <p class="text-lg font-bold text-slate-800 mt-1">Recaudación en Proceso</p>
+                <div *ngIf="!personalReport()?.totalOrdenes" class="text-center py-12">
+                    <div class="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    </div>
+                    <p class="text-slate-500">Todavía no ha procesado ningún cobro hoy.</p>
+                    <p class="text-slate-400 text-xs mt-1 italic">Su caja se abrirá automáticamente con su primera factura.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acción de Cierre -->
+        <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 p-8 flex flex-col justify-center items-center text-center">
+            <div class="h-16 w-16 bg-slate-800 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Cierre de Jornada</h3>
+            <p class="text-slate-500 text-sm mb-8">Finalice sus actividades y bloquee su terminal para el arquero administrativo.</p>
+            
+            <button (click)="cerrarMiCaja()" [disabled]="isLoading() || !isMiCajaAbierta()"
+                class="w-full py-4 px-6 rounded-2xl shadow-lg font-bold text-white transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:grayscale"
+                [ngClass]="isMiCajaAbierta() ? 'bg-slate-900 hover:bg-slate-800 shadow-slate-200' : 'bg-slate-300 cursor-not-allowed'">
+                {{ isLoading() ? 'Procesando Cierre...' : 'Cerrar Mi Caja' }}
+            </button>
+            <p *ngIf="!isMiCajaAbierta()" class="text-[10px] text-slate-400 mt-4 leading-tight italic">
+                Debe procesar al menos un cobro para poder ejecutar el cierre.
+            </p>
+        </div>
+    </div>
+
+    <!-- VISTA PARA ADMINISTRADORES (Monitor Total y Por Usuario) -->
+    <div *ngIf="isAdministrador" class="space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Monitor de Turnos Activos (Solo Admin) -->
+            <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-xl font-bold text-slate-800">Cajeros Activos</h3>
+                    <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest">En Tiempo Real</span>
+                </div>
+
+                <div class="space-y-4 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div *ngFor="let t of resumenCaja()?.turnos" class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-hospital-300 transition-all">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-10 w-10 bg-white shadow-sm flex items-center justify-center rounded-xl text-slate-400 font-black">
+                                {{ t.cajeroUserId.substring(0,2).toUpperCase() }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">{{ t.cajeroUserId }}</p>
+                                <p class="text-[10px] text-slate-400 font-mono">ID Sesión: {{ t.turnoId.substring(0,8) }}</p>
+                            </div>
                         </div>
-                        <div
-                            class="h-12 w-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-hospital-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
-                                </path>
-                            </svg>
+                        <div class="text-right">
+                            <p class="text-sm font-black text-slate-800 font-mono">${{ t.recaudadoBase | number:'1.2-2' }}</p>
+                            <span class="text-[9px] text-emerald-500 font-bold uppercase">Abierta</span>
                         </div>
                     </div>
-                    <button (click)="cerrarCajaMatriz()" [disabled]="isLoading()"
-                        class="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-800 transition-all transform hover:-translate-y-0.5 disabled:opacity-50">
-                        <span *ngIf="isLoading()" class="mr-2"><svg class="animate-spin h-5 w-5 text-white"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg></span>
-                        Clausurar Caja y Cerrar Operaciones
+
+                    <div *ngIf="!resumenCaja()?.turnos?.length" class="h-full flex flex-col items-center justify-center opacity-40">
+                        <svg class="h-12 w-12 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                        <p class="text-sm font-medium text-slate-400">No hay cajeros activos en este momento.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen Total Global (Solo Admin) -->
+            <div class="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
+                <div class="absolute top-0 right-0 -m-12 h-64 w-64 bg-hospital-500/10 rounded-full blur-3xl"></div>
+                
+                <h3 class="text-xl font-bold mb-8 relative z-10">Cierre General Consolidado</h3>
+                
+                <div class="space-y-8 relative z-10">
+                    <div class="flex items-end justify-between border-b border-white/10 pb-6">
+                        <div>
+                            <p class="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">Total Divisa ($)</p>
+                            <p class="text-4xl font-black font-mono tracking-tighter">${{ historialAdmin()?.granTotalDivisa | number:'1.2-2' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">Equivalente (Bs)</p>
+                            <p class="text-2xl font-bold font-mono opacity-80">{{ historialAdmin()?.granTotalBs | number:'1.2-2' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-white/40 uppercase mb-1">Cajas Cerradas</p>
+                            <p class="text-xl font-bold">{{ historialAdmin()?.cierres?.length || 0 }}</p>
+                        </div>
+                         <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <p class="text-[10px] font-bold text-white/40 uppercase mb-1">Estado Global</p>
+                            <p class="text-xl font-bold text-emerald-400">OPERATIVO</p>
+                        </div>
+                    </div>
+
+                    <button (click)="refrescarAdmin()" class="w-full py-4 bg-white text-slate-900 rounded-2xl font-bold shadow-xl shadow-white/5 hover:bg-slate-100 transition-all flex justify-center items-center">
+                        <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Refrescar Datos Administrativos
                     </button>
                 </div>
-
             </div>
         </div>
 
-        <!-- Panel Informativo o de Acceso Rápido (Reemplaza al de Turnos) -->
-        <div
-            class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 overflow-hidden relative group transition-all hover:shadow-2xl flex flex-col items-center justify-center p-8 text-center">
-            <div class="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-                <svg class="w-10 h-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <!-- Tabla de Historial (Solo Admin) -->
+        <div class="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-xl border border-slate-100/50 overflow-hidden">
+            <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">Historial de Cierres Diarios</h3>
+                    <p class="text-slate-500 text-sm">Registro detallado de cierres per-usuario y totales del sistema.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Filters could go here -->
+                </div>
             </div>
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Monitor de Recaudación</h3>
-            <p class="text-slate-500 text-sm max-w-sm">
-                Con la nueva gestión simplificada, todas las operaciones se registran directamente en la Caja Diaria
-                activa sin necesidad de gestionar turnos individuales.
-            </p>
-            <button routerLink="/facturacion"
-                class="mt-8 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all transform hover:-translate-y-0.5">
-                Ir a Facturación
-            </button>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Usuario</th>
+                            <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Apertura</th>
+                            <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Cierre</th>
+                            <th class="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto Base ($)</th>
+                            <th class="px-8 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr *ngFor="let c of historialAdmin()?.cierres" class="hover:bg-slate-50/50 transition-all group">
+                            <td class="px-8 py-5">
+                                <div class="flex items-center space-x-3">
+                                    <div class="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase">
+                                        {{ c.usuario.substring(0,2) }}
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-700 group-hover:text-hospital-600 transition-colors">{{ c.usuario }}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-xs text-slate-500">{{ c.apertura | date:'short' }}</td>
+                            <td class="px-8 py-5 text-xs text-slate-500">{{ (c.cierre | date:'short') || 'N/A' }}</td>
+                            <td class="px-8 py-5 text-right font-mono font-bold text-slate-700 text-sm">${{ c.montoInicialDivisa | number:'1.2-2' }}</td>
+                            <td class="px-8 py-5 text-center">
+                                <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter"
+                                    [ngClass]="c.estado === 'Abierta' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'">
+                                    {{ c.estado }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-
     </div>
 </div>

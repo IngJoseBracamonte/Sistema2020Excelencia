@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -23,12 +25,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
                                  .FirstOrDefaultAsync(c => c.Estado == "Abierta", cancellationToken);
         }
 
+        public async Task<CajaDiaria?> ObtenerCajaAbiertaPorUsuarioAsync(string usuarioId, CancellationToken cancellationToken)
+        {
+            return await _context.CajasDiarias
+                                 .FirstOrDefaultAsync(c => c.Estado == "Abierta" && c.UsuarioId == usuarioId, cancellationToken);
+        }
+
         public async Task AgregarCajaAsync(CajaDiaria caja, CancellationToken cancellationToken)
         {
             await _context.CajasDiarias.AddAsync(caja, cancellationToken);
         }
-
-
 
         public async Task GuardarCambiosAsync(CancellationToken cancellationToken)
         {
@@ -39,6 +45,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         {
             return await _context.CajasDiarias
                                  .FirstOrDefaultAsync(c => c.Estado == "Abierta", cancellationToken);
+        }
+
+        public async Task<IEnumerable<CajaDiaria>> ObtenerHistorialCierresAsync(DateTime desde, DateTime hasta, string? usuarioId, CancellationToken cancellationToken)
+        {
+            var query = _context.CajasDiarias
+                                .Where(c => c.Estado == "Cerrada" && c.FechaCierre >= desde && c.FechaCierre <= hasta);
+
+            if (!string.IsNullOrEmpty(usuarioId))
+            {
+                query = query.Where(c => c.UsuarioId == usuarioId);
+            }
+
+            return await query.OrderByDescending(c => c.FechaCierre)
+                              .ToListAsync(cancellationToken);
         }
     }
 }

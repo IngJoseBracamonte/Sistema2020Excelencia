@@ -5,7 +5,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
     public class PacienteAdmision
     {
-        public Guid Id { get; protected set; }
+        // Se cambió de Guid a int para sincronización con Sistema Legacy (IdPersona)
+        public int Id { get; protected set; }
         public string CedulaPasaporte { get; protected set; }
         public string NombreCorto { get; protected set; }
         public string TelefonoContact { get; protected set; }
@@ -16,9 +17,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected PacienteAdmision() { }
 
-        public PacienteAdmision(string cedulaPasaporte, string nombreCorto, string telefonoContact)
+        public PacienteAdmision(int id, string cedulaPasaporte, string nombreCorto, string telefonoContact)
         {
-            Id = Guid.NewGuid();
+            Id = id;
             CedulaPasaporte = cedulaPasaporte ?? throw new ArgumentNullException(nameof(cedulaPasaporte));
             NombreCorto = nombreCorto ?? throw new ArgumentNullException(nameof(nombreCorto));
             TelefonoContact = telefonoContact;

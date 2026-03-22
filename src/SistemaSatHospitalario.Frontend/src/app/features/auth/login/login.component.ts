@@ -16,7 +16,7 @@ export class LoginComponent {
   private router = inject(Router);
 
   loginForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    username: ['', [Validators.required]],
     password: ['', Validators.required]
   });
 
@@ -30,7 +30,7 @@ export class LoginComponent {
     this.errorMessage.set('');
 
     this.authService.login({
-      email: this.loginForm.value.email!,
+      username: this.loginForm.value.username!,
       password: this.loginForm.value.password!
     }).subscribe({
       next: (res: any) => {

@@ -7,7 +7,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 {
     public class LoginCommand : IRequest<JwtAuthResult>
     {
-        public string Email { get; set; }
+        public string Username { get; set; }
         public string Password { get; set; }
     }
 }

@@ -10,7 +10,10 @@ import {
     Users,
     LogOut,
     Settings,
-    ClipboardList
+    ClipboardList,
+    CreditCard,
+    FileText,
+    Package
 } from 'lucide-angular';
 
 @Component({
@@ -41,25 +44,40 @@ import {
           Facturación
         </a>
 
-        <!-- Admin Only Sections -->
-        <ng-container *ngIf="isAdmin()">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mt-6 mb-2">Administración</div>
+        <a routerLink="/expedientes" routerLinkActive="active-link" class="nav-item">
+          <lucide-icon [name]="icons.History" class="w-5 h-5 mr-3"></lucide-icon>
+          Expedientes
+        </a>
+
+        <!-- Admin & Specialized Sections -->
+        <div *ngIf="isAdmin() || isRxAssistant()">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mt-6 mb-2">Operativo / Gestión</div>
           
-          <a routerLink="/cajas" routerLinkActive="active-link" class="nav-item">
+          <a *ngIf="isAdmin()" routerLink="/cajas" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.Cajas" class="w-5 h-5 mr-3"></lucide-icon>
             Gestión de Cajas
           </a>
 
-          <a routerLink="/rx-orders" routerLinkActive="active-link" class="nav-item">
+          <a *ngIf="isAdmin()" routerLink="/catalog" routerLinkActive="active-link" class="nav-item">
+            <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3"></lucide-icon>
+            Catálogo de Servicios
+          </a>
+
+          <a *ngIf="isAdmin()" routerLink="/cxc" routerLinkActive="active-link" class="nav-item">
+            <lucide-icon [name]="icons.AR" class="w-5 h-5 mr-3"></lucide-icon>
+            Cuentas por Cobrar
+          </a>
+
+          <a *ngIf="canSeeOrders()" routerLink="/rx-orders" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.Orders" class="w-5 h-5 mr-3"></lucide-icon>
             Ordenes Medicas
           </a>
 
-          <a routerLink="/settings" routerLinkActive="active-link" class="nav-item">
+          <a *ngIf="isAdmin()" routerLink="/settings" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.Settings" class="w-5 h-5 mr-3"></lucide-icon>
             Configuración
           </a>
-        </ng-container>
+        </div>
       </nav>
 
       <!-- User Profile -->
@@ -119,10 +137,25 @@ export class SidebarComponent {
         Orders: ClipboardList,
         Settings: Settings,
         User: Users,
-        Logout: LogOut
+        Logout: LogOut,
+        AR: CreditCard,
+        History: FileText,
+        Catalog: Package
     };
 
     isAdmin(): boolean {
         return this.auth.currentUser()?.role === 'Administrador';
+    }
+
+    isRxAssistant(): boolean {
+        return this.auth.currentUser()?.role === 'Asistente Rx';
+    }
+
+    canSeeAdminSection(): boolean {
+        return this.isAdmin();
+    }
+
+    canSeeOrders(): boolean {
+        return this.isAdmin() || this.isRxAssistant();
     }
 }

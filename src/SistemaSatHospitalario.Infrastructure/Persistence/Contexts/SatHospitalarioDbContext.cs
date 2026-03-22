@@ -1,15 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 {
-    public class SatHospitalarioDbContext : DbContext
+    public class SatHospitalarioDbContext : DbContext, IApplicationDbContext
     {
         public DbSet<CajaDiaria> CajasDiarias { get; set; }
         public DbSet<ReciboFactura> RecibosFactura { get; set; }
         public DbSet<DetallePago> DetallesPago { get; set; }
-        public DbSet<SeguroConvenio> SegurosConvenio { get; set; }
+        public DbSet<SeguroConvenio> SegurosConvenios { get; set; }
         public DbSet<PacienteAdmision> PacientesAdmision { get; set; }
         public DbSet<OrdenDeServicio> OrdenesDeServicio { get; set; }
         public DbSet<OrdenRX> OrdenesRX { get; set; } // TPH o TPT
@@ -21,6 +22,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<CuentaServicios> CuentasServicios { get; set; }
         public DbSet<DetalleServicioCuenta> DetallesServicioCuenta { get; set; }
         public DbSet<CitaMedica> CitasMedicas { get; set; }
+        public DbSet<Medico> Medicos { get; set; }
+        public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
+        public DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; set; }
+        public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
 
@@ -74,6 +79,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("SegurosConvenios");
                 entity.HasKey(s => s.Id);
+                entity.Property(s => s.Id).ValueGeneratedNever(); // IDs vienen del legado
                 entity.Property(s => s.PorcentajeCobertura).HasPrecision(5, 2);
             });
 
@@ -81,6 +87,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("PacientesAdmision");
                 entity.HasKey(p => p.Id);
+                entity.Property(p => p.Id).ValueGeneratedNever(); // IDPersona del legado
                 entity.HasIndex(p => p.CedulaPasaporte).IsUnique();
             });
 
@@ -136,6 +143,47 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("CitasMedicas");
                 entity.HasKey(c => c.Id);
+            });
+
+            builder.Entity<Medico>(entity =>
+            {
+                entity.ToTable("Medicos");
+                entity.HasKey(m => m.Id);
+            });
+
+            builder.Entity<ServicioClinico>(entity =>
+            {
+                entity.ToTable("ServiciosClinicos");
+                entity.HasKey(s => s.Id);
+                entity.Property(s => s.PrecioBase).HasPrecision(18, 2);
+            });
+
+            builder.Entity<PrecioServicioConvenio>(entity =>
+            {
+                entity.ToTable("PreciosServicioConvenio");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.PrecioDiferencial).HasPrecision(18, 2);
+
+                entity.HasOne(p => p.Servicio)
+                      .WithMany()
+                      .HasForeignKey(p => p.ServicioClinicoId);
+
+                entity.HasOne(p => p.Convenio)
+                      .WithMany()
+                      .HasForeignKey(p => p.SeguroConvenioId);
+            });
+
+            builder.Entity<CuentaPorCobrar>(entity =>
+            {
+                entity.ToTable("CuentasPorCobrar");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.MontoTotalBase).HasPrecision(18, 2);
+                entity.Property(c => c.MontoPagadoBase).HasPrecision(18, 2);
+                entity.Property(c => c.SaldoPendienteBase).HasPrecision(18, 2);
+
+                entity.HasOne(c => c.Cuenta)
+                      .WithMany()
+                      .HasForeignKey(c => c.CuentaServicioId);
             });
         }
     }
