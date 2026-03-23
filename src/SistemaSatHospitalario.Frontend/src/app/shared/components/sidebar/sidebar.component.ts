@@ -13,7 +13,10 @@ import {
     ClipboardList,
     CreditCard,
     FileText,
-    Package
+    Package,
+    Stethoscope,
+    Activity,
+    Bookmark
 } from 'lucide-angular';
 
 @Component({
@@ -60,7 +63,22 @@ import {
 
           <a *ngIf="isAdmin()" routerLink="/catalog" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3"></lucide-icon>
-            Catálogo de Servicios
+            Catálogo General
+          </a>
+
+          <a *ngIf="isAdmin()" routerLink="/catalog" [queryParams]="{type: 'RX'}" routerLinkActive="active-link" class="nav-item">
+            <lucide-icon [name]="icons.RX" class="w-5 h-5 mr-3"></lucide-icon>
+            Servicios de RX
+          </a>
+
+          <a *ngIf="isAdmin()" routerLink="/medicos" routerLinkActive="active-link" class="nav-item">
+            <lucide-icon [name]="icons.Doctor" class="w-5 h-5 mr-3"></lucide-icon>
+            Gestión de Médicos
+          </a>
+
+          <a *ngIf="isAdmin()" routerLink="/especialidades" routerLinkActive="active-link" class="nav-item">
+            <lucide-icon [name]="icons.Category" class="w-5 h-5 mr-3"></lucide-icon>
+            Especialidades
           </a>
 
           <a *ngIf="isAdmin()" routerLink="/cxc" routerLinkActive="active-link" class="nav-item">
@@ -90,7 +108,7 @@ import {
             <p class="text-xs font-black text-main truncate">{{ auth.currentUser()?.username }}</p>
             <p class="text-[9px] font-bold text-muted truncate uppercase tracking-widest">{{ auth.currentUser()?.role }}</p>
           </div>
-          <button (click)="auth.logout()" class="p-2 text-muted hover:text-rose-400 transition-colors">
+          <button (click)="auth.logout()" class="p-2 text-muted hover:text-primary transition-colors">
             <lucide-icon [name]="icons.Logout" class="w-5 h-5"></lucide-icon>
           </button>
         </div>
@@ -143,15 +161,19 @@ export class SidebarComponent {
         Logout: LogOut,
         AR: CreditCard,
         History: FileText,
-        Catalog: Package
+        Catalog: Package,
+        Doctor: Stethoscope,
+        RX: Activity,
+        Category: Bookmark
     };
 
     isAdmin(): boolean {
-        return this.auth.currentUser()?.role === 'Administrador';
+        const role = this.auth.currentUser()?.role?.toLowerCase();
+        return role === 'administrador' || role === 'admin';
     }
 
     isRxAssistant(): boolean {
-        return this.auth.currentUser()?.role === 'Asistente Rx';
+        return this.auth.currentUser()?.role?.toLowerCase().includes('rx') || false;
     }
 
     canSeeAdminSection(): boolean {

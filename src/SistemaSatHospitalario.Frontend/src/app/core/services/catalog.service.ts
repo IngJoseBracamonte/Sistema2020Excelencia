@@ -40,4 +40,8 @@ export class CatalogService {
       activo: item.activo ?? true
     });
   }
+
+  deleteItem(id: string): Observable<boolean> {
+    return this.http.delete<boolean>(`${this.apiUrl}/${id}`);
+  }
 }

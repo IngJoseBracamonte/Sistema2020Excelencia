@@ -23,10 +23,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<DetalleServicioCuenta> DetallesServicioCuenta { get; set; }
         public DbSet<CitaMedica> CitasMedicas { get; set; }
         public DbSet<Medico> Medicos { get; set; }
+        public DbSet<TasaCambio> TasaCambio { get; set; }
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
         public DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; set; }
         public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
         public DbSet<ErrorTicket> ErrorTickets { get; set; }
+        public DbSet<Especialidad> Especialidades { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
 
@@ -188,12 +190,25 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(c => c.CuentaServicioId);
             });
 
+            builder.Entity<TasaCambio>(entity =>
+            {
+                entity.ToTable("TasaCambio");
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Monto).HasPrecision(18, 4);
+            });
+
             builder.Entity<ErrorTicket>(entity =>
             {
                 entity.ToTable("ErrorTickets");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.RequestPath).HasMaxLength(500);
                 entity.Property(e => e.MetodoHTTP).HasMaxLength(10);
+            });
+
+            builder.Entity<Especialidad>(entity =>
+            {
+                entity.ToTable("Especialidades");
+                entity.HasKey(e => e.Id);
             });
         }
     }

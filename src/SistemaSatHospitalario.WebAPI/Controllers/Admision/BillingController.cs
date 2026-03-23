@@ -60,6 +60,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 return BadRequest(new { Error = ex.Message });
             }
+        [HttpDelete("RemoveServicio")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RemoveServicio([FromQuery] Guid cuentaId, [FromQuery] Guid servicioId)
+        {
+            try
+            {
+                var command = new RemoveServicioDeCuentaCommand { CuentaId = cuentaId, ServicioId = servicioId };
+                await _mediator.Send(command);
+                return Ok(new { Message = "Servicio removido exitosamente de la cuenta." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
     }
 }

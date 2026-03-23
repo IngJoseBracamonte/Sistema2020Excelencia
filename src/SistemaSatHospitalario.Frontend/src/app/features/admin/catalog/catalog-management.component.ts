@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-catalog-management',
@@ -11,9 +12,12 @@ import { CatalogService, CatalogItem } from '../../../core/services/catalog.serv
 })
 export class CatalogManagementComponent implements OnInit {
   private catalogService = inject(CatalogService);
+  private route = inject(ActivatedRoute);
 
   public catalog = signal<CatalogItem[]>([]);
+  public filteredCatalog = signal<CatalogItem[]>([]);
   public isLoading = signal<boolean>(false);
+  public typeFilter = signal<string | null>(null);
   
   // Modal State
   public showModal = signal<boolean>(false);
@@ -29,18 +33,31 @@ export class CatalogManagementComponent implements OnInit {
   public tipos = ['CONSULTA', 'LABORATORIO', 'RX', 'PROCEDIMIENTO', 'MEDICINA', 'SERVICIO'];
 
   ngOnInit() {
-    this.refreshCatalog();
+    this.route.queryParams.subscribe((params: any) => {
+      this.typeFilter.set(params['type'] || null);
+      this.refreshCatalog();
+    });
   }
 
   refreshCatalog() {
     this.isLoading.set(true);
     this.catalogService.getUnifiedCatalog().subscribe({
-      next: (res) => {
+      next: (res: CatalogItem[]) => {
         this.catalog.set(res);
+        this.applyFilter();
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
     });
+  }
+
+  applyFilter() {
+    const filter = this.typeFilter();
+    if (filter) {
+      this.filteredCatalog.set(this.catalog().filter((i: CatalogItem) => i.tipo?.toUpperCase() === filter.toUpperCase()));
+    } else {
+      this.filteredCatalog.set(this.catalog());
+    }
   }
 
   openCreate() {
@@ -76,12 +93,22 @@ export class CatalogManagementComponent implements OnInit {
     }
   }
 
-  getTipoColor(tipo: string): string {
-    switch (tipo?.toUpperCase()) {
-      case 'CONSULTA': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'LABORATORIO': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'RX': return 'bg-rose-100 text-rose-700 border-rose-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+  delete(id: string) {
+    if (confirm('¿Estás seguro de eliminar este servicio?')) {
+      this.catalogService.deleteItem(id).subscribe(() => this.refreshCatalog());
     }
+  }
+
+  getTipoColorPremium(tipo: string): string {
+    switch (tipo?.toUpperCase()) {
+      case 'CONSULTA': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'LABORATORIO': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case 'RX': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+    }
+  }
+
+  getTipoColor(tipo: string): string {
+    return this.getTipoColorPremium(tipo);
   }
 }

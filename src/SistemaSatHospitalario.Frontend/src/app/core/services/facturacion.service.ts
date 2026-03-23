@@ -67,6 +67,10 @@ export class FacturacionService {
     return this.http.post<any>(`${this.receiptUrl}/RegistrarPagoMultidivisa`, payload);
   }
 
+  quitarServicio(cuentaId: string, servicioId: string): Observable<any> {
+    return this.http.delete<any>(`${this.billingUrl}/RemoveServicio?cuentaId=${cuentaId}&servicioId=${servicioId}`);
+  }
+
   getReceiptPrintData(reciboId: string): Observable<ReceiptPrintData> {
     return this.http.get<ReceiptPrintData>(`${this.receiptUrl}/${reciboId}/Print`);
   }

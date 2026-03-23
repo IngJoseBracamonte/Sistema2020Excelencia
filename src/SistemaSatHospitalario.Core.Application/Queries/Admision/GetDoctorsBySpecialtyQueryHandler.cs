@@ -21,8 +21,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<DoctorDto>> Handle(GetDoctorsBySpecialtyQuery request, CancellationToken cancellationToken)
         {
+            var search = request.Especialidad.ToUpper().Trim();
             return await _context.Medicos
-                .Where(m => m.Especialidad == request.Especialidad && m.Activo)
+                .Where(m => m.Especialidad.ToUpper().Contains(search) && m.Activo)
                 .Select(m => new DoctorDto
                 {
                     Id = m.Id,

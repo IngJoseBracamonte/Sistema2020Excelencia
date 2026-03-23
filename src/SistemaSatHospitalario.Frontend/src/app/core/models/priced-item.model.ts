@@ -24,20 +24,30 @@ export abstract class BasePricedItem {
   }
 
   /**
-   * Calcula el precio en Bs basado en una tasa local si no viene del servidor
+   * Obtiene el precio formateado en Bs basado en la tasa actual
    */
-  getCalculatedBs(tasa: number): number {
-    return (this.precioUsd ?? this.PrecioUsd ?? 0) * tasa;
+  getFormattedBs(tasa: number): string {
+    const val = (this.precioUsd ?? this.PrecioUsd ?? 0) * tasa;
+    const finalVal = val > 0 ? val : (this.precioBs ?? this.PrecioBs ?? this.precio);
+    return finalVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /**
+   * Obtiene el valor numérico en Bs basado en la tasa actual
+   */
+  getRawBs(tasa: number): number {
+    const val = (this.precioUsd ?? this.PrecioUsd ?? 0) * tasa;
+    return val > 0 ? val : (this.precioBs ?? this.PrecioBs ?? this.precio);
   }
 
   get displayPriceBs(): string {
      const val = this.precioBs ?? this.PrecioBs ?? this.precio;
-     return val.toLocaleString('es-VE', { minimumFractionDigits: 2 });
+     return val.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   get displayPriceUsd(): string {
      const val = this.precioUsd ?? this.PrecioUsd ?? 0;
-     return val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+     return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 }
 

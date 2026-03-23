@@ -1,98 +1,98 @@
-<div class="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+<div class="min-h-screen bg-surface flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden text-main">
 
-  <!-- Estética Premium: Elementos ornamentales de fondo (Glassmorphism effect elements) -->
+  <!-- Estética Premium: Elementos ornamentales de fondo (Rose Glow Effects) -->
   <div
-    class="absolute -top-[10rem] -left-[10rem] w-[40rem] h-[40rem] rounded-full bg-hospital-200/40 blur-3xl mix-blend-multiply opacity-70 animate-pulse">
+    class="absolute -top-[10rem] -left-[10rem] w-[40rem] h-[40rem] rounded-full bg-primary/10 blur-[120px] mix-blend-screen opacity-50 animate-pulse">
   </div>
   <div
-    class="absolute top-[10rem] -right-[10rem] w-[40rem] h-[40rem] rounded-full bg-hospital-300/30 blur-3xl mix-blend-multiply opacity-70">
+    class="absolute bottom-[-10rem] -right-[10rem] w-[40rem] h-[40rem] rounded-full bg-primary/5 blur-[120px] mix-blend-screen opacity-30">
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
     <div class="flex justify-center">
-      <!-- Logo Premium -->
+      <!-- Logo Premium with Glow -->
       <div
-        class="h-24 w-auto flex items-center justify-center transform transition-transform hover:scale-105 duration-300">
-        <img src="assets/logo_premium.png" alt="SAT Logo" class="h-20 w-auto drop-shadow-2xl">
+        class="h-24 w-auto flex items-center justify-center transform transition-transform hover:scale-105 duration-500 relative">
+        <div class="absolute inset-0 bg-primary/20 blur-2xl rounded-full"></div>
+        <img src="assets/logo_premium.png" alt="SAT Logo" class="h-20 w-auto drop-shadow-[0_0_20px_rgba(255,255,255,0.1)] relative z-10">
       </div>
     </div>
-    <h2 class="mt-6 text-center text-3xl font-extrabold tracking-tight text-slate-900">
-      Satélite Hospitalario
+    <h2 class="mt-8 text-center text-4xl font-black tracking-tighter uppercase text-main">
+      Satélite <span class="text-primary-glow">Hospitalario</span>
     </h2>
-    <p class="mt-2 text-center text-sm text-slate-600">
-      Accede con tus credenciales seguras
+    <p class="mt-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-muted opacity-60">
+      SISTEMA DE GESTIÓN DE EXCELENCIA
     </p>
   </div>
 
-  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in" style="animation-delay: 0.1s;">
+  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-1000 delay-100">
     <div
-      class="bg-white/80 backdrop-blur-xl py-8 px-4 shadow-2xl sm:rounded-3xl sm:px-10 border border-slate-100/50 relative overflow-hidden">
+      class="glass-panel py-10 px-6 shadow-2xl sm:rounded-[2.5rem] sm:px-12 border border-glass-border relative overflow-hidden bg-surface-card/40 backdrop-blur-2xl">
 
-      <!-- Efecto brillo top panel -->
-      <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-hospital-400 via-hospital-500 to-hospital-300">
+      <!-- Efecto brillo superior (Rose Accent) -->
+      <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50">
       </div>
 
-      <form class="space-y-6" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <form class="space-y-8" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
 
         <div *ngIf="errorMessage()"
-          class="rounded-xl bg-emergency-light/20 p-4 border border-emergency-light/50 flex animate-fade-in">
+          class="rounded-2xl bg-rose-500/10 p-4 border border-rose-500/30 flex animate-in fade-in slide-in-from-top-4">
           <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-emergency-dark" viewBox="0 0 20 20" fill="currentColor">
+            <svg class="h-5 w-5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                 clip-rule="evenodd" />
             </svg>
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-emergency-dark">{{ errorMessage() }}</h3>
+            <h3 class="text-xs font-black uppercase tracking-tight text-rose-500">{{ errorMessage() }}</h3>
           </div>
         </div>
 
-        <div>
-          <label for="username" class="block text-sm font-medium text-slate-700"> Usuario </label>
-          <div class="mt-1 relative rounded-md shadow-sm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="space-y-2">
+          <label for="username" class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1"> Usuario </label>
+          <div class="mt-1 relative group">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-primary">
+              <svg class="h-5 w-5 text-muted/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
                 </path>
               </svg>
             </div>
             <input id="username" formControlName="username" type="text" autocomplete="username" required
-              class="appearance-none block w-full pl-10 px-3 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-hospital-500 focus:border-hospital-500 sm:text-sm transition-all duration-200 bg-white/50"
+              class="appearance-none block w-full pl-14 pr-5 py-4 bg-surface border border-glass-border rounded-2xl shadow-sm placeholder:text-muted/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all duration-300 font-medium"
               placeholder="admin">
           </div>
         </div>
 
-        <div>
-          <label for="password" class="block text-sm font-medium text-slate-700"> Contraseña </label>
-          <div class="mt-1 relative rounded-md shadow-sm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="space-y-2">
+          <label for="password" class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1"> Contraseña </label>
+          <div class="mt-1 relative group">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-primary">
+              <svg class="h-5 w-5 text-muted/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
                 </path>
               </svg>
             </div>
             <input id="password" formControlName="password" type="password" autocomplete="current-password" required
-              class="appearance-none block w-full pl-10 px-3 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-hospital-500 focus:border-hospital-500 sm:text-sm transition-all duration-200 bg-white/50"
+              class="appearance-none block w-full pl-14 pr-5 py-4 bg-surface border border-glass-border rounded-2xl shadow-sm placeholder:text-muted/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all duration-300 font-medium"
               placeholder="••••••••">
           </div>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div class="text-sm">
-            <a href="#" class="font-medium text-hospital-600 hover:text-hospital-500 transition-colors"> ¿Olvidó su
-              contraseña? </a>
+        <div class="flex items-center justify-end">
+          <div class="text-[10px] font-black uppercase tracking-widest">
+            <a href="#" class="text-muted hover:text-primary transition-colors"> ¿Olvidó su contraseña? </a>
           </div>
         </div>
 
-        <div>
+        <div class="pt-2">
           <button type="submit" [disabled]="loginForm.invalid || isLoading()"
-            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-gradient-to-r from-hospital-600 to-hospital-500 hover:from-hospital-500 hover:to-hospital-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-hospital-500 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-            <span *ngIf="!isLoading()">Ingresar al Sistema</span>
-            <span *ngIf="isLoading()" class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+            class="group w-full flex justify-center py-4 px-4 rounded-2xl shadow-xl shadow-primary/20 text-xs font-black uppercase tracking-widest text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-surface transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden">
+            <span *ngIf="!isLoading()" class="relative z-10">Ingresar al Sistema</span>
+            <span *ngIf="isLoading()" class="flex items-center relative z-10">
+              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
                 viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor"
@@ -101,9 +101,17 @@
               </svg>
               Autenticando...
             </span>
+            <!-- Subtle Reflection Effect -->
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
           </button>
         </div>
       </form>
+      
+      <div class="mt-8 text-center pt-8 border-t border-glass-border/50">
+        <p class="text-[9px] font-black uppercase tracking-widest text-muted/30">
+          Powered by DeepMind Advanced Agency • 2026
+        </p>
+      </div>
     </div>
   </div>
 </div>

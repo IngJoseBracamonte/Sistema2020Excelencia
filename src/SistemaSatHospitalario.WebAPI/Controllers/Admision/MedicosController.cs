@@ -13,32 +13,30 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class CatalogController : ControllerBase
+    public class MedicosController : ControllerBase
     {
         private readonly IMediator _mediator;
 
-        public CatalogController(IMediator mediator)
+        public MedicosController(IMediator mediator)
         {
             _mediator = mediator;
         }
 
-        [HttpGet("unified")]
-        public async Task<ActionResult<List<CatalogItemDto>>> GetUnifiedCatalog([FromQuery] int? convenioId)
+        [HttpGet]
+        public async Task<ActionResult<List<MedicoDto>>> GetAll()
         {
-            var query = new GetUnifiedCatalogQuery { ConvenioId = convenioId };
-            var result = await _mediator.Send(query);
-            return Ok(result);
+            return Ok(await _mediator.Send(new GetAllMedicosQuery()));
         }
 
         [HttpPost]
-        public async Task<ActionResult<Guid>> Create([FromBody] CreateCatalogItemCommand command)
+        public async Task<ActionResult<Guid>> Create([FromBody] CreateMedicoCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPut]
-        public async Task<ActionResult<bool>> Update([FromBody] UpdateCatalogItemCommand command)
+        public async Task<ActionResult<bool>> Update([FromBody] UpdateMedicoCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
@@ -47,7 +45,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpDelete("{id}")]
         public async Task<ActionResult<bool>> Delete(Guid id)
         {
-            var result = await _mediator.Send(new DeleteCatalogItemCommand { Id = id });
+            var result = await _mediator.Send(new DeleteMedicoCommand { Id = id });
             return Ok(result);
         }
     }

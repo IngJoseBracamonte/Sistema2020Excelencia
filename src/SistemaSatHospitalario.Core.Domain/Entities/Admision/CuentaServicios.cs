@@ -40,6 +40,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             _detalles.Add(detalle);
         }
 
+        public void RemoverServicio(Guid servicioId)
+        {
+            if (Estado != "Abierta")
+                throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
+
+            var detalle = _detalles.FirstOrDefault(d => d.ServicioId == servicioId);
+            if (detalle != null)
+            {
+                _detalles.Remove(detalle);
+            }
+        }
+
         public decimal CalcularTotal() => _detalles.Sum(d => d.Precio * d.Cantidad);
 
         public void Facturar()

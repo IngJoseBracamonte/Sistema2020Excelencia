@@ -39,32 +39,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<Guid> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
         {
-            // 1. Obtener o crear cuenta abierta para el paciente
-            var cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(request.PacienteId, cancellationToken);
-            
-            if (cuenta == null)
+            // 1. Asegurar cuenta activa (SRP: Delegado a lógica de orquestación mínima)
+            var cuenta = await GetOrCreateCuentaAsync(request, cancellationToken);
+
+            // 2. Procesar lógica específica de Consultas/Citas
+            bool esConsulta = EsTipoConsulta(request.TipoServicio);
+            if (esConsulta)
             {
-                cuenta = new CuentaServicios(request.PacienteId, request.TipoIngreso, request.ConvenioId);
-                await _repository.AgregarCuentaAsync(cuenta, cancellationToken);
+                await ProcesarCitaMedicaAsync(request, cuenta.Id, cancellationToken);
             }
 
-            // 2. Validaciones específicas por tipo de servicio
-            if (request.TipoServicio == "Medico" || request.TipoServicio == "CONSULTA")
-            {
-                if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
-                    throw new InvalidOperationException("Para servicios médicos se requiere Médico y Hora de Cita.");
-
-                // Validar solapamiento de cola
-                bool existeCita = await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, request.HoraCita.Value, cancellationToken);
-                if (existeCita)
-                    throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {request.HoraCita.Value:HH:mm}.");
-
-                // Crear Cita Médica (Cola)
-                var cita = new CitaMedica(request.MedicoId.Value, request.PacienteId, cuenta.Id, request.HoraCita.Value);
-                await _repository.AgregarCitaMedicaAsync(cita, cancellationToken);
-            }
-
-            // 3. Agregar el servicio a la cuenta
+            // 3. Persistir el servicio con la descripción dinámica recibida
             cuenta.AgregarServicio(
                 request.ServicioId, 
                 request.Descripcion, 
@@ -73,18 +58,54 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.TipoServicio, 
                 request.UsuarioCarga);
 
-            // 4. Triggers para sistemas externos
-            if (request.TipoServicio == "RX")
-            {
-                await _externaService.EnviarOrdenRXAsync(request.Descripcion, "PacienteID:" + request.PacienteId, cancellationToken);
-            }
-            
-            // Integración Legacy (Siempre se envía un cargo si es necesario segun lógica del usuario)
-            await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, cancellationToken);
+            // 4. Notificaciones e Integraciones Externas
+            await NotificarSistemasExternosAsync(request, cancellationToken);
 
             await _repository.GuardarCambiosAsync(cancellationToken);
 
             return cuenta.Id;
+        }
+
+        private async Task<CuentaServicios> GetOrCreateCuentaAsync(CargarServicioACuentaCommand request, CancellationToken ct)
+        {
+            var cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(request.PacienteId, ct);
+            if (cuenta == null)
+            {
+                cuenta = new CuentaServicios(request.PacienteId, request.TipoIngreso, request.ConvenioId);
+                await _repository.AgregarCuentaAsync(cuenta, ct);
+            }
+            return cuenta;
+        }
+
+        private async Task ProcesarCitaMedicaAsync(CargarServicioACuentaCommand request, Guid cuentaId, CancellationToken ct)
+        {
+            if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
+                throw new InvalidOperationException("Los servicios de consulta requieren Médico y Hora de Cita.");
+
+            // Validar disponibilidad (Principio de Fallo Rápido)
+            if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, request.HoraCita.Value, ct))
+                throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {request.HoraCita.Value:HH:mm}.");
+
+            var cita = new CitaMedica(request.MedicoId.Value, request.PacienteId, cuentaId, request.HoraCita.Value);
+            await _repository.AgregarCitaMedicaAsync(cita, ct);
+        }
+
+        private async Task NotificarSistemasExternosAsync(CargarServicioACuentaCommand request, CancellationToken ct)
+        {
+            if (request.TipoServicio.Equals("RX", StringComparison.OrdinalIgnoreCase))
+            {
+                await _externaService.EnviarOrdenRXAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
+            }
+            
+            // Sincronización con Facturación Legacy
+            await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, ct);
+        }
+
+        private bool EsTipoConsulta(string tipo)
+        {
+            if (string.IsNullOrEmpty(tipo)) return false;
+            var t = tipo.ToUpper();
+            return t.Contains("CONSULTA") || t.Contains("MEDICO") || t.Contains("MÉDICO");
         }
     }
 }

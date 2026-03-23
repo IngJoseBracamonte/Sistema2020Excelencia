@@ -1,27 +1,29 @@
 :root {
-  /* Paleta Dark Premium Evolution - HSL */
-  --primary-raw: 224 71% 60%; /* Más brillante para contraste en oscuro */
+  /* Paleta "Rose on Slate" Premium Evolution - HSL */
+  --primary-raw: 343 85% 55%; 
   --primary: hsl(var(--primary-raw));
-  --primary-soft: hsl(224 71% 20%);
-  --primary-glow: hsla(224, 71%, 60%, 0.15);
+  --primary-soft: hsl(343 85% 15%);
+  --primary-glow: hsla(343, 85%, 55%, 0.15);
   
   --accent-raw: 175 84% 50%;
   --accent: hsl(var(--accent-raw));
   --accent-soft: hsl(175 84% 15%);
   
-  /* Fondos Profundos (Slate 950 / 800) */
-  --surface: hsl(222, 47%, 7%);
-  --surface-card: hsl(222, 47%, 11%);
-  --glass: rgba(15, 23, 42, 0.85);
+  /* Jerarquía de Superficies (Slate 950 / 900 / 800) */
+  --surface: hsl(222, 47%, 4%);       /* Fondo Base - Casi Negro */
+  --surface-card: hsl(222, 47%, 8%);  /* Contenedores Principales */
+  --surface-light: hsl(222, 47%, 15%); /* Elevación / Modales / Hover */
+  
+  --glass: rgba(15, 23, 42, 0.4);
   --glass-border: rgba(255, 255, 255, 0.08);
   
   /* Texto Optimizado para Oscuro */
   --text-main: hsl(210, 40%, 98%);
   --text-muted: hsl(215, 20%, 65%);
   
-  --radius-xl: 1.5rem;   /* 24px */
-  --radius-lg: 1.25rem;  /* 20px */
-  --radius-md: 0.75rem;  /* 12px */
+  --radius-xl: 1.5rem;   
+  --radius-lg: 1.25rem;  
+  --radius-md: 0.75rem;  
 }
 
 @tailwind base;
@@ -63,12 +65,10 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -79,8 +79,13 @@ body {
 /* Dark Mode Utilities */
 .bg-surface { background-color: var(--surface); }
 .bg-surface-card { background-color: var(--surface-card); }
+.bg-surface-light { background-color: var(--surface-light); }
 .text-main { color: var(--text-main); }
 .text-muted { color: var(--text-muted); }
+.text-primary-glow { 
+  color: var(--primary); 
+  text-shadow: 0 0 15px var(--primary-glow); 
+}
 .border-premium { border-color: var(--glass-border); }
 
 /* Scrollbar styling for Dark Mode */

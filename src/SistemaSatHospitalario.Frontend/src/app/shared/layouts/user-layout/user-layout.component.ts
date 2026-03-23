@@ -17,7 +17,7 @@ import { SidebarComponent } from '../../components/sidebar/sidebar.component';
         <!-- Top Bar / Header si se requiere luego -->
         
         <!-- Vista de contenido con scroll -->
-        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="flex-1 overflow-y-auto pt-0 px-2 md:px-6 pb-6">
           <div class="max-w-7xl mx-auto animate-fade-in-up">
             <router-outlet></router-outlet>
           </div>
@@ -38,8 +38,8 @@ import { SidebarComponent } from '../../components/sidebar/sidebar.component';
       to { transform: translateX(0); opacity: 1; }
     }
     @keyframes fadeInUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .animate-slide-in {
       animation: slideIn 0.5s ease-out forwards;

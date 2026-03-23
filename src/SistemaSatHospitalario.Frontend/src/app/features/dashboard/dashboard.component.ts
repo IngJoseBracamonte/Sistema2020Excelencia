@@ -24,12 +24,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public userName = computed(() => this.authService.currentUser()?.username || 'Usuario');
   public userRole = computed(() => this.authService.currentUser()?.role || 'Asistente');
   
-  public isAdmin = computed(() => this.authService.currentUser()?.role === 'Administrador');
-  public isRxAssistant = computed(() => this.authService.currentUser()?.role === 'Asistente Rx');
-  public isParticularAssistant = computed(() => this.authService.currentUser()?.role === 'Asistente Particular');
-  public isInsuranceAssistant = computed(() => this.authService.currentUser()?.role === 'Asistente Seguro');
-  public isHospitalAssistant = computed(() => this.authService.currentUser()?.role === 'Asistente Hospitalario');
-  public isEmergencyAssistant = computed(() => this.authService.currentUser()?.role === 'Asistente Emergencia');
+  public isAdmin = computed(() => {
+    const role = this.authService.currentUser()?.role?.toLowerCase();
+    return role === 'administrador' || role === 'admin';
+  });
+
+  public isRxAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('rx'));
+  public isParticularAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('particular'));
+  public isInsuranceAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('seguro'));
+  public isHospitalAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('hospitalario'));
+  public isEmergencyAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('emergencia'));
 
   public tickets = this.signalRService.incomingTickets;
   public now = new Date();

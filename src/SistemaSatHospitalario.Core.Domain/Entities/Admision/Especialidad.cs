@@ -2,27 +2,24 @@ using System;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
-    public class Medico
+    public class Especialidad
     {
         public Guid Id { get; private set; }
         public string Nombre { get; private set; }
-        public string Especialidad { get; private set; }
         public bool Activo { get; private set; }
 
-        private Medico() { }
+        private Especialidad() { }
 
-        public Medico(string nombre, string especialidad)
+        public Especialidad(string nombre)
         {
             Id = Guid.NewGuid();
             Nombre = nombre;
-            Especialidad = especialidad;
             Activo = true;
         }
 
-        public void Update(string nombre, string especialidad)
+        public void Update(string nombre)
         {
             Nombre = nombre;
-            Especialidad = especialidad;
         }
 
         public void SetEstado(bool activo)

@@ -22,10 +22,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<DetalleServicioCuenta> DetallesServicioCuenta { get; }
         DbSet<CitaMedica> CitasMedicas { get; }
         DbSet<Medico> Medicos { get; }
+        DbSet<TasaCambio> TasaCambio { get; }
         DbSet<ServicioClinico> ServiciosClinicos { get; }
         DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; }
         DbSet<CuentaPorCobrar> CuentasPorCobrar { get; }
         DbSet<ErrorTicket> ErrorTickets { get; }
+        DbSet<Especialidad> Especialidades { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }
