@@ -21,18 +21,18 @@ import {
     standalone: true,
     imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule],
     template: `
-    <div class="h-screen w-64 glass-sidebar flex flex-col border-r border-slate-200/50">
+    <div class="h-screen w-64 glass-sidebar flex flex-col border-r border-glass-border">
       <!-- Logo Section -->
       <div class="p-6 flex items-center space-x-3">
-        <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+        <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
            <span class="text-white font-bold text-xl">S</span>
         </div>
-        <span class="text-xl font-bold text-slate-800 tracking-tight">SAT <span class="text-blue-600">Hosp</span></span>
+        <span class="text-xl font-bold text-main tracking-tight uppercase">SAT <span class="text-primary-glow">Hosp</span></span>
       </div>
 
       <!-- Navigation -->
       <nav class="flex-1 px-4 space-y-1 mt-4">
-        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Menu Principal</div>
+        <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mb-2 opacity-60">Menu Principal</div>
         
         <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-item">
           <lucide-icon [name]="icons.Dashboard" class="w-5 h-5 mr-3"></lucide-icon>
@@ -51,7 +51,7 @@ import {
 
         <!-- Admin & Specialized Sections -->
         <div *ngIf="isAdmin() || isRxAssistant()">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mt-6 mb-2">Operativo / Gestión</div>
+          <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
           
           <a *ngIf="isAdmin()" routerLink="/cajas" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.Cajas" class="w-5 h-5 mr-3"></lucide-icon>
@@ -81,16 +81,16 @@ import {
       </nav>
 
       <!-- User Profile -->
-      <div class="p-4 border-t border-slate-200/50 bg-slate-50/50">
+      <div class="p-4 border-t border-glass-border bg-surface/30">
         <div class="flex items-center p-2 rounded-lg">
-          <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center mr-3">
-            <lucide-icon [name]="icons.User" class="w-4 h-4 text-slate-600"></lucide-icon>
+          <div class="w-8 h-8 rounded-full bg-surface-card border border-glass-border flex items-center justify-center mr-3">
+            <lucide-icon [name]="icons.User" class="w-4 h-4 text-muted"></lucide-icon>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-slate-900 truncate">{{ auth.currentUser()?.username }}</p>
-            <p class="text-xs text-slate-500 truncate">{{ auth.currentUser()?.role }}</p>
+            <p class="text-xs font-black text-main truncate">{{ auth.currentUser()?.username }}</p>
+            <p class="text-[9px] font-bold text-muted truncate uppercase tracking-widest">{{ auth.currentUser()?.role }}</p>
           </div>
-          <button (click)="auth.logout()" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+          <button (click)="auth.logout()" class="p-2 text-muted hover:text-rose-400 transition-colors">
             <lucide-icon [name]="icons.Logout" class="w-5 h-5"></lucide-icon>
           </button>
         </div>
@@ -99,28 +99,31 @@ import {
   `,
     styles: [`
     .glass-sidebar {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(10px);
+      background: rgba(10, 15, 25, 0.4);
+      backdrop-filter: blur(20px);
     }
     .nav-item {
       display: flex;
       items: center;
       padding: 0.75rem 0.75rem;
       border-radius: 0.75rem;
-      color: #64748b;
-      font-size: 0.875rem;
-      font-weight: 500;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .nav-item:hover {
-      background: rgba(235, 245, 255, 0.5);
-      color: #2563eb;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      transform: translateX(4px);
     }
     .active-link {
-      background: #eff6ff !important;
-      color: #2563eb !important;
-      font-weight: 600;
-      box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
+      background: var(--primary) !important;
+      color: white !important;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
     :host ::ng-deep lucide-icon svg {
       stroke-width: 2px;

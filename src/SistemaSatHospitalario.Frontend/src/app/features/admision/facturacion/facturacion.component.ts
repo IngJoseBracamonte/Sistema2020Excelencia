@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { FacturacionService, DetallePagoDto, CargarServicioACuentaRequest, ReceiptPrintData } from '../../../core/services/facturacion.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppointmentsService, Doctor, ScheduleEntry } from '../../../core/services/appointments.service';
-import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
+import { CatalogService } from '../../../core/services/catalog.service';
+import { CatalogItem } from '../../../core/models/priced-item.model';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
 import { CajaService, DailyClosingReport } from '../../../core/services/caja.service';
 import { PrintService } from '../../../core/services/print.service';
@@ -24,7 +25,6 @@ export class FacturacionComponent {
   private appointmentsService = inject(AppointmentsService);
   private catalogService = inject(CatalogService);
   private patientService = inject(PatientService);
-  private cajaService = inject(CajaService);
   private printService = inject(PrintService);
 
   // Estados de Usuario y Rol
@@ -37,11 +37,16 @@ export class FacturacionComponent {
   public isEmergencyAssistant = computed(() => this.user()?.role === 'Asistente Emergencia');
 
   // Estados de Facturación
-  public pacienteId = signal<number | null>(null); // Se unificó a ID numérico del Legacy
+  public pacienteId = signal<number | null>(null);
+  public pacienteSeleccionado = computed(() => !!this.pacienteId());
   public cuentaId = signal<string | null>(null);
   public tipoIngreso = signal<string>('Particular');
   public convenioId = signal<number | null>(null); // Se unificó a ID numérico del Legacy
   public tasaCambioDia = signal<number>(45.50);
+  
+  // Estado del Wizard (UX Improvement)
+  public currentStep = signal<number>(1);
+  public maxSteps = 3;
 
   // Catálogos Reales (Sincronizados con Backend)
   public especialidades = ['Ginecologo', 'Pediatra', 'Traumatologo', 'Cardiologo', 'Medicina General'];
@@ -67,17 +72,29 @@ export class FacturacionComponent {
   public selectedSlot = signal<string | null>(null);
   public horaCita = signal<string>('08:00');
 
-  // Catálogo Real Filtrado por Rol (Micro-Ciclo 10)
+  // Catálogo Real Filtrado por Rol y Búsqueda (UX Improvement)
   public serviciosCatalogo = signal<CatalogItem[]>([]);
   public serviciosFiltradosPorRol = computed(() => {
     const raw = this.serviciosCatalogo();
-    if (this.isAdmin()) return raw;
-    if (this.isRxAssistant()) return raw.filter((s: CatalogItem) => s.tipo === 'RX');
-    return raw;
+    const roleFiltered = this.isAdmin() ? raw : (this.isRxAssistant() ? raw.filter(s => s.tipo === 'RX') : raw);
+    
+    // Null check for searchTermServicio
+    const term = (this.searchTermServicio() || '').toLowerCase().trim();
+    if (!term) return roleFiltered;
+    
+    return roleFiltered.filter(s => {
+      const desc = (s.descripcion || '').toLowerCase();
+      const tipo = (s.tipo || '').toLowerCase();
+      return desc.includes(term) || tipo.includes(term);
+    });
   });
 
-  // Carrito de Servicios (Servicios ya cargados en la cuenta)
-  public serviciosCargados = signal<any[]>([]);
+  // Carrito de Servicios (Servicios ya persistidos en la cuenta)
+  public serviciosEnBackend = signal<any[]>([]);
+  public carritoLocal = signal<any[]>([]);
+  
+  // Vista unificada del Carrito
+  public serviciosCargados = computed(() => [...this.serviciosEnBackend(), ...this.carritoLocal()]);
 
   // Array de Pagos
   public pagos = signal<DetallePagoDto[]>([]);
@@ -86,6 +103,9 @@ export class FacturacionComponent {
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
+
+  // States for Service Search (UX Improvement)
+  public searchTermServicio = signal<string>('');
 
   // States for Patient Search (Micro-Ciclo 9)
   public busquedaTermino = signal<string>('');
@@ -101,10 +121,6 @@ export class FacturacionComponent {
     telefono: ''
   };
 
-  // States for Cash Closing (Micro-Ciclo 12)
-  public showClosingModal = signal<boolean>(false);
-  public closingReport = signal<DailyClosingReport | null>(null);
-
   // Nuevo Elemento Form (Pagos)
   public currentPago = {
     metodoPago: 'Punto de Venta Bs',
@@ -114,9 +130,9 @@ export class FacturacionComponent {
 
   public metodosDisponibles = ['Punto de Venta Bs', 'Pago Móvil', 'Efectivo Divisas', 'Zelle'];
 
-  // Cierre de Caja Local (Sesión actual)
-  public serviciosFacturadosHoy = signal<any[]>([]);
-  public totalCierreCaja = computed(() => this.serviciosFacturadosHoy().reduce((acc: number, curr: any) => acc + curr.precio, 0));
+  // Impuestos y Totales (Calculados)
+  public totalCargado = computed(() => this.serviciosCargados().reduce((acc: number, curr: any) => acc + curr.precio, 0));
+  public totalFacturadoBase = computed(() => this.pagos().reduce((acc: number, curr: DetallePagoDto) => acc + curr.equivalenteAbonadoBase, 0));
 
   constructor() {
     // Inicialización de Estados Seguros según Rol
@@ -134,6 +150,36 @@ export class FacturacionComponent {
       const convId = this.convenioId();
       this.refreshCatalog(convId);
     });
+  }
+
+  // Navegación del Wizard
+  nextStep() {
+    if (this.currentStep() < this.maxSteps) {
+      // Validación Paso 1: Servicios (Ahora es el primero)
+      if (this.currentStep() === 1 && this.serviciosCargados().length === 0) {
+        this.errorMessage.set("Debe añadir al menos un servicio para continuar.");
+        return;
+      }
+      // Validación Paso 2: Convenio (Ahora es el segundo)
+      if (this.currentStep() === 2 && this.tipoIngreso() === 'Seguro' && !this.convenioId()) {
+        this.errorMessage.set("Debe seleccionar un convenio para continuar.");
+        return;
+      }
+      this.errorMessage.set(null);
+      this.currentStep.update(s => s + 1);
+    }
+  }
+
+  prevStep() {
+    if (this.currentStep() > 1) {
+      this.currentStep.update(s => s - 1);
+    }
+  }
+
+  goToStep(step: number) {
+    if (step < this.currentStep()) {
+      this.currentStep.set(step);
+    }
   }
 
   buscarPaciente() {
@@ -157,10 +203,57 @@ export class FacturacionComponent {
   seleccionarPaciente(p: PatientRecord) {
     if (p.id) {
        this.pacienteId.set(p.id);
+       
+       // Sincronizar Carrito Local al identificar al paciente
+       if (this.carritoLocal().length > 0) {
+         this.sincronizarCarrito();
+       }
     }
     this.showResultadosBusqueda.set(false);
     this.busquedaTermino.set(p.cedula);
     this.actionMessage.set(`Paciente seleccionado: ${p.nombre} ${p.apellidos}`);
+  }
+
+  private sincronizarCarrito() {
+    const items = [...this.carritoLocal()];
+    this.carritoLocal.set([]); // Limpiar local temporalmente mientras se procesa
+    this.isLoading.set(true);
+
+    // Cargar cada item en el backend de forma secuencial o paralela según el servicio
+    items.forEach(s => {
+      this.procesarCargaBackend(s);
+    });
+  }
+
+  private procesarCargaBackend(s: CatalogItem) {
+    const pId = this.pacienteId();
+    if (!pId) return;
+
+    const payload: CargarServicioACuentaRequest = {
+      pacienteId: pId,
+      tipoIngreso: this.tipoIngreso(),
+      convenioId: this.convenioId() || undefined,
+      servicioId: s.id,
+      descripcion: s.descripcion,
+      precio: s.precio,
+      cantidad: 1,
+      tipoServicio: s.tipo,
+      usuarioCarga: this.user()?.username || 'admin'
+    };
+
+    this.facturacionService.cargarServicio(payload).subscribe({
+      next: (res: any) => {
+        this.cuentaId.set(res.cuentaId);
+        this.serviciosEnBackend.update(prev => [...prev, { 
+          ...s, 
+          precio: payload.precio,
+          precioBs: s.precioBs,
+          precioUsd: s.precioUsd 
+        }]);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
   }
 
   abrirRegistroPaciente() {
@@ -190,26 +283,18 @@ export class FacturacionComponent {
     });
   }
 
-  generarCierreTurno() {
-    this.isLoading.set(true);
-    const currentUser = this.user()?.username || "Asistente";
-    this.cajaService.getPersonalReport(currentUser).subscribe({
-      next: (report: DailyClosingReport) => {
-        this.isLoading.set(false);
-        this.closingReport.set(report);
-        this.showClosingModal.set(true);
-      },
-      error: (err: any) => {
-        this.isLoading.set(false);
-        this.errorMessage.set("No se pudo generar el reporte de cierre.");
-      }
-    });
-  }
-
   private refreshCatalog(convenioId?: number | null) {
     this.catalogService.getUnifiedCatalog(convenioId).subscribe({
       next: (items: CatalogItem[]) => {
         this.serviciosCatalogo.set(items);
+        
+        // Actualizar precios del carrito local si ya hay items y cambió el catálogo
+        if (this.carritoLocal().length > 0) {
+          this.carritoLocal.update(cart => cart.map(localItem => {
+            const updated = items.find(i => i.id === localItem.id);
+            return updated ? { ...localItem, precio: updated.precio } : localItem;
+          }));
+        }
       },
       error: () => {
         this.errorMessage.set("No se pudo cargar el catálogo de servicios.");
@@ -244,12 +329,23 @@ export class FacturacionComponent {
 
   cargarServicio(servId: string) {
     const s = this.serviciosCatalogo().find(x => x.id === servId);
+    if (!s) return;
+
     const pId = this.pacienteId();
-    if (!s || pId === null) {
-      this.errorMessage.set("Seleccione un paciente antes de cargar servicios.");
+    
+    // Si no hay paciente, agregar al carrito local (No bloqueante)
+    if (pId === null) {
+      const yaEnCarrito = this.carritoLocal().some(x => x.id === s.id);
+      if (!yaEnCarrito) {
+        this.carritoLocal.update(prev => [...prev, s]);
+        this.actionMessage.set(`Estudio "${s.descripcion}" añadido al carrito temporal.`);
+      } else {
+        this.errorMessage.set("Este servicio ya está en el carrito.");
+      }
       return;
     }
 
+    // Si hay paciente, cargar directamente al backend
     this.isLoading.set(true);
     const payload: CargarServicioACuentaRequest = {
       pacienteId: pId,
@@ -268,8 +364,13 @@ export class FacturacionComponent {
     this.facturacionService.cargarServicio(payload).subscribe({
       next: (res: any) => {
         this.cuentaId.set(res.cuentaId);
-        const servicioConPrecioAjustado = { ...s, hora: this.horaCita(), precio: payload.precio };
-        this.serviciosCargados.update((prev: any[]) => [...prev, servicioConPrecioAjustado]);
+        this.serviciosEnBackend.update((prev: any[]) => [...prev, { 
+          ...s, 
+          hora: this.horaCita(), 
+          precio: payload.precio,
+          precioBs: s.precioBs,
+          precioUsd: s.precioUsd 
+        }]);
         this.actionMessage.set("Servicio cargado exitosamente.");
         this.errorMessage.set(null);
         this.isLoading.set(false);
@@ -307,8 +408,6 @@ export class FacturacionComponent {
     this.pagos.update((ps: DetallePagoDto[]) => ps.filter((_, i) => i !== index));
   }
 
-  public totalCargado = computed(() => this.serviciosCargados().reduce((acc: number, curr: any) => acc + curr.precio, 0));
-  public totalFacturadoBase = computed(() => this.pagos().reduce((acc: number, curr: DetallePagoDto) => acc + curr.equivalenteAbonadoBase, 0));
 
   procesarCobro() {
     if (!this.cuentaId() || this.pagos().length === 0) {
@@ -325,7 +424,6 @@ export class FacturacionComponent {
     }).subscribe({
       next: (res: any) => {
         this.actionMessage.set(`¡Facturación Exitosa! Recibo: ${res.reciboId}`);
-        this.serviciosFacturadosHoy.update((prev: any[]) => [...prev, ...this.serviciosCargados()]);
         
         this.imprimirRecibo(res.reciboId);
         
@@ -351,7 +449,8 @@ export class FacturacionComponent {
 
   private resetForm() {
     this.pagos.set([]);
-    this.serviciosCargados.set([]);
+    this.serviciosEnBackend.set([]);
+    this.carritoLocal.set([]);
     this.cuentaId.set(null);
     this.pacienteId.set(null);
   }

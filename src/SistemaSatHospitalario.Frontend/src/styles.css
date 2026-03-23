@@ -1,3 +1,29 @@
+:root {
+  /* Paleta Dark Premium Evolution - HSL */
+  --primary-raw: 224 71% 60%; /* Más brillante para contraste en oscuro */
+  --primary: hsl(var(--primary-raw));
+  --primary-soft: hsl(224 71% 20%);
+  --primary-glow: hsla(224, 71%, 60%, 0.15);
+  
+  --accent-raw: 175 84% 50%;
+  --accent: hsl(var(--accent-raw));
+  --accent-soft: hsl(175 84% 15%);
+  
+  /* Fondos Profundos (Slate 950 / 800) */
+  --surface: hsl(222, 47%, 7%);
+  --surface-card: hsl(222, 47%, 11%);
+  --glass: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  
+  /* Texto Optimizado para Oscuro */
+  --text-main: hsl(210, 40%, 98%);
+  --text-muted: hsl(215, 20%, 65%);
+  
+  --radius-xl: 1.5rem;   /* 24px */
+  --radius-lg: 1.25rem;  /* 20px */
+  --radius-md: 0.75rem;  /* 12px */
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,11 +32,31 @@ html,
 body {
   height: 100%;
   margin: 0;
-  font-family: 'Inter', Roboto, "Helvetica Neue", sans-serif;
-  background-color: #f8fafc;
-  /* Slate 50 para entorno médico premium */
-  color: #0f172a;
-  /* Slate 900 */
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  background-color: var(--surface);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism & Premium Utilities */
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
+.premium-card {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* Animaciones personalizadas */
@@ -30,21 +76,29 @@ body {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* Scrollbar styling */
+/* Dark Mode Utilities */
+.bg-surface { background-color: var(--surface); }
+.bg-surface-card { background-color: var(--surface-card); }
+.text-main { color: var(--text-main); }
+.text-muted { color: var(--text-muted); }
+.border-premium { border-color: var(--glass-border); }
+
+/* Scrollbar styling for Dark Mode */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: var(--surface-card);
+  border: 2px solid var(--surface);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--primary-glow);
 }

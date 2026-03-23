@@ -22,7 +22,10 @@ Este documento es el mapa maestro para el agente. Contiene las decisiones técni
 
 ## 🌐 Zona UI (Frontend)
 - **Comando de Inicio**: Se utiliza `npm run start` en lugar de llamada directa al binario `ng.js` para evitar errores de vinculación en Windows.
-- **Ruta Crítica**: `src/SistemaSatHospitalario.Frontend/package.json`
+- **Puntos de Control**: 
+  - `serviciosFiltradosPorRol`: Se implementó un guardián de nulidad (`?.toLowerCase()`) para evitar errores de renderizado.
+  - **Wizard Flow**: Estandarizado en: `1. Servicios` -> `2. Convenio` -> `3. Paciente/Pago`.
+- **Ruta Crítica**: `src/SistemaSatHospitalario.Frontend/src/app/features/admision/facturacion/facturacion.component.ts`
 
 ## ⚠️ Decisiones Técnicas Críticas
 - **Downgrade EF Core**: Se bajó de v10 a v9.0.2 para mantener compatibilidad con `Pomelo.EntityFrameworkCore.MySql`.

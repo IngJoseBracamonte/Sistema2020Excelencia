@@ -8,7 +8,7 @@ import { SidebarComponent } from '../../components/sidebar/sidebar.component';
     standalone: true,
     imports: [CommonModule, RouterOutlet, SidebarComponent],
     template: `
-    <div class="flex h-screen bg-[#f8fafc] overflow-hidden">
+    <div class="flex h-screen bg-surface overflow-hidden">
       <!-- Sidebar fijo -->
       <app-sidebar class="flex-shrink-0 animate-slide-in"></app-sidebar>
 

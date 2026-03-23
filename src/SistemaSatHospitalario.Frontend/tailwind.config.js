@@ -6,6 +6,11 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                primary: {
+                    DEFAULT: 'hsl(var(--primary-raw) / <alpha-value>)',
+                    soft: 'var(--primary-soft)',
+                    glow: 'var(--primary-glow)',
+                },
                 hospital: {
                     50: '#f0f9ff',
                     100: '#e0f2fe',

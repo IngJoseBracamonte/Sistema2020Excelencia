@@ -83,7 +83,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         public async Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken)
         {
             using var connection = new MySqlConnection(_connectionString);
-            const string sql = "SELECT * FROM perfil WHERE Activo = 1";
+            // El esquema real según Conexion.cs es: Tabla 'Perfil', Columnas 'NombrePerfil', 'Precio', 'Activo'
+            const string sql = "SELECT IdPerfil, NombrePerfil AS Descripcion, PrecioDOlar, Activo AS Estado FROM perfil";
             var result = await connection.QueryAsync<PerfilLegacy>(sql);
             return result.ToList();
         }

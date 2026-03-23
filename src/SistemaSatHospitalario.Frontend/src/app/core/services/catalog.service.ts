@@ -1,17 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-
-export interface CatalogItem {
-  id: string; // Puede ser Guid (Nativo) o stringified int (Legacy)
-  codigo: string;
-  descripcion: string;
-  precio: number;
-  tipo: string;
-  esLegacy: boolean;
-  activo?: boolean;
-}
+import { CatalogItem } from '../models/priced-item.model';
+export { CatalogItem };
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +15,9 @@ export class CatalogService {
   // convenioId ahora es numérico para coincidir con Legacy
   getUnifiedCatalog(convenioId?: number | null): Observable<CatalogItem[]> {
     const url = convenioId ? `${this.apiUrl}/unified?convenioId=${convenioId}` : `${this.apiUrl}/unified`;
-    return this.http.get<CatalogItem[]>(url);
+    return this.http.get<any[]>(url).pipe(
+      map(items => items.map(i => new CatalogItem(i)))
+    );
   }
 
   createItem(item: Partial<CatalogItem>): Observable<string> {

@@ -59,7 +59,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken)
         {
-            const string cacheKey = "AvailableProfiles";
+            const string cacheKey = "AvailableProfiles_vF";
             
             return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {

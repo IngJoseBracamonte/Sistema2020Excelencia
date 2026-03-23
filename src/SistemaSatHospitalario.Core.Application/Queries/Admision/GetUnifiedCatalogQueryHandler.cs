@@ -26,48 +26,59 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         {
             var result = new List<CatalogItemDto>();
 
+            // Obtener la tasa de cambio más reciente
+            var tasa = await _context.TasaCambio
+                .OrderByDescending(t => t.Fecha)
+                .Select(t => t.Monto)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (tasa <= 0) tasa = 1; // Fallback de seguridad
+
             // 1. Obtener servicios nativos (RX, Consultas, etc.)
             var serviciosNativos = await _context.ServiciosClinicos
-                .Where(s => s.Activo)
+                .Where(s => s.Activo && s.Descripcion != "LABORATORIO")
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener precios por convenio si aplica
             var preciosConvenio = new Dictionary<Guid, decimal>();
             if (request.ConvenioId.HasValue)
             {
-                // SeguroConvenioId ahora es int
                 preciosConvenio = await _context.PreciosServicioConvenio
                     .Where(p => p.SeguroConvenioId == request.ConvenioId.Value)
                     .ToDictionaryAsync(p => p.ServicioClinicoId, p => p.PrecioDiferencial, cancellationToken);
             }
 
-            // 3. Mapear servicios nativos aplicando precio de convenio si existe
+            // 3. Mapear servicios nativos (Asumimos PrecioBase en USD)
             foreach (var s in serviciosNativos)
             {
-                result.Add(new CatalogItemDto
+                var item = new CatalogItemDto
                 {
                     Id = s.Id.ToString(),
                     Codigo = s.Codigo,
                     Descripcion = s.Descripcion,
                     Tipo = s.TipoServicio,
                     EsLegacy = false,
-                    Precio = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase
-                });
+                    PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase
+                };
+                item.CalculatePrices(tasa);
+                result.Add(item);
             }
 
             // 4. Obtener perfiles de Laboratorio del sistema Legacy
             var perfilesLegacy = await _legacyRepository.GetAvailableProfilesAsync(cancellationToken);
             foreach (var p in perfilesLegacy)
             {
-                result.Add(new CatalogItemDto
+                var item = new CatalogItemDto
                 {
                     Id = p.IdPerfil.ToString(),
                     Codigo = "LAB-" + p.IdPerfil,
                     Descripcion = p.Descripcion,
                     Tipo = "LABORATORIO",
                     EsLegacy = true,
-                    Precio = p.Precio // Precio is already decimal and non-nullable
-                });
+                    PrecioUsd = (decimal)p.PrecioDOlar
+                };
+                item.CalculatePrices(tasa);
+                result.Add(item);
             }
 
             return result;
