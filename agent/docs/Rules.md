@@ -1,0 +1,46 @@
+# ⚖️ Leyes y Estándares de Ingeniería (Rules.md)
+
+Este documento define las directrices inquebrantables de desarrollo para garantizar la consistencia, calidad y mantenibilidad del sistema.
+
+## 🏛️ Leyes del Proyecto (Unbreakable Laws)
+1. **Legacy Intocable**: El sistema original de WinForms/C# NO SE MODIFICA. Cualquier discrepancia o error en el Legacy se reporta pero no se intenta solventar en este repositorio.
+2. **EF Core 9 Control**: Mantener `Microsoft.EntityFrameworkCore` en la versión `9.0.2`. El uso de v10 está prohibido por incompatibilidades con el proveedor Pomelo MySQL.
+3. **Bypass de Migración**: No regenerar la migración `20260309004403_InitialIdentityMigration`. Si falla la sincronización, limpiar manualmente `__EFMigrationsHistory` antes de reintentar.
+4. **OTEL Obligatorio**: Todo nuevo servicio o controlador debe incluir instrumentación personalizada (`ActivitySource` y `Meter`) registrada en `DiagnosticsConfig`.
+
+## 💻 Patrones de Código (Engineering Patterns)
+### Backend (WebAPI / Core)
+- **CQRS con MediatR**: No se inyectan servicios de aplicación en los controladores. Se usan estrictamente `Commands` y `Queries`.
+- **Dependency Isolation**: La infraestructura no debe exponer sus modelos internos a la API; se deben usar DTOs o resultados de autenticación (`JwtAuthResult`).
+- **Result Pattern**: Los comandos deben devolver un objeto de resultado que maneje el éxito/error, evitando el uso de excepciones para el flujo de control.
+
+### Frontend (Angular 19)
+- **Signals First**: Priorizar el uso de `Signal`, `computed` y `effect` sobre `BehaviorSubject` para el manejo de estado local.
+- **Standalone Components**: No se permiten `NgModules`. Cada componente, directiva o pipe debe ser standalone.
+- **Strong Typing**: Todos los servicios de API deben devolver interfaces TypeScript que coincidan exactamente con la estructura del Backend.
+- **Telemetry Integration**: Usar siempre el `TelemetryService` para trazas y métricas OTel.
+
+## 🎨 Estándar UI/UX ("Rose on Slate" Premium)
+### 1. Sistema de Color (HSL)
+| Token | Uso | HSL Value | Hex (Approx) |
+| :--- | :--- | :--- | :--- |
+| `--primary` | Identidad / Acciones / Rose | `343 85% 55%` | `#f43f5e` |
+| `--surface` | Fondo Base (Slate 950) | `222 47% 4%` | `#020617` |
+| `--surface-card` | Contenedores (Slate 900) | `222 47% 8%` | `#0f172a` |
+| `--text-main` | Títulos / Datos Críticos | `210 40% 98%` | `#f8fafc` |
+
+### 2. Especificaciones de Diseño
+- **Glassmorphism**: 
+  - `backdrop-filter: blur(20px)`
+  - Border: `1px solid rgba(255, 255, 255, 0.08)`
+  - Shadow: `0 8px 32px 0 rgba(0, 0, 0, 0.37)`
+- **Transiciones**:
+  - `transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)`
+- **Micro-interacciones**:
+  - Hovers con `scale(1.02)` y `box-shadow` pulsante con opacidad primaria del 15%.
+
+## 🔡 Naming & Git
+- **Git Strategy**: Conventional Commits en español.
+- **Naming**: 
+  - Backend: `IRequest<T>`, `IRequestHandler<T, R>`.
+  - Frontend: Componentes con sufijo `.component.ts`, Servicios con `.service.ts`.

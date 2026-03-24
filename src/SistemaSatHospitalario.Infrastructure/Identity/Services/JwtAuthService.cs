@@ -70,6 +70,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 Token = tokenHandler.WriteToken(token),
                 Expiration = expiration,
                 UserId = user.Id,
+                Username = user.UserName,
                 Role = userRole
             };
         }

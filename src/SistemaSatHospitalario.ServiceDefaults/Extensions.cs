@@ -57,7 +57,8 @@ public static class Extensions
             {
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    .AddMeter(DiagnosticsConfig.ServiceName);
             })
             .WithTracing(tracing =>
             {
@@ -70,7 +71,11 @@ public static class Extensions
                     )
                     // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
                     //.AddGrpcClientInstrumentation()
-                    .AddHttpClientInstrumentation();
+                    .AddHttpClientInstrumentation()
+                    .AddEntityFrameworkCoreInstrumentation(options => {
+                        options.SetDbStatementForText = true;
+                    })
+                    .AddSource(DiagnosticsConfig.ServiceName);
             });
 
         builder.AddOpenTelemetryExporters();
@@ -85,6 +90,11 @@ public static class Extensions
         if (useOtlpExporter)
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
+            Console.WriteLine($"[OTEL DEBUG] OTLP Exporter enabled for endpoint: {builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]}");
+        }
+        else
+        {
+            Console.WriteLine("[OTEL DEBUG] OTLP Exporter NOT enabled (missing OTEL_EXPORTER_OTLP_ENDPOINT config)");
         }
 
         // Uncomment the following lines to enable the Azure Monitor exporter (requires the Azure.Monitor.OpenTelemetry.AspNetCore package)

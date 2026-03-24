@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             // 1. Obtener todas las cuentas creadas hoy por el usuario
             var cuentasHoy = await _context.CuentasPorCobrar
-                .Where(c => c.FechaCreacion >= today && c.FechaCreacion < tomorrow)
+                .Where(c => c.FechaEmision >= today && c.FechaEmision < tomorrow)
                 // Nota: Idealmente filtrar por UserId si lo tenemos en la entidad
                 .ToListAsync(cancellationToken);
 

@@ -42,16 +42,24 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(this.apiUrl, credentials).pipe(
+    return this.http.post<any>(this.apiUrl, credentials).pipe(
       tap(response => {
+        const id = response.userId || response.id;
+        const authResp: AuthResponse = {
+          token: response.token,
+          username: response.username,
+          role: response.role,
+          id: id
+        };
+
         // Almacenar en local storage (PWA friendly offline checks in future)
-        localStorage.setItem('jwt_token', response.token);
-        localStorage.setItem('username', response.username);
-        localStorage.setItem('user_role', response.role);
-        localStorage.setItem('user_id', response.id);
+        localStorage.setItem('jwt_token', authResp.token);
+        localStorage.setItem('username', authResp.username);
+        localStorage.setItem('user_role', authResp.role);
+        localStorage.setItem('user_id', authResp.id);
 
         // Actualizar UI reactiva
-        this.currentUser.set(response);
+        this.currentUser.set(authResp);
       }),
       catchError(err => throwError(() => new Error('Credenciales inválidas o Error en el Servidor')))
     );

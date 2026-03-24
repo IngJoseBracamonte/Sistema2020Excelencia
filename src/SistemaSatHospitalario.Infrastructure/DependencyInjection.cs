@@ -14,8 +14,9 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
 using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
 using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using SistemaSatHospitalario.Infrastructure.Integration;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Infrastructure.Persistence.Providers;
 using Microsoft.Extensions.Caching.Memory;
+using System;
 
 namespace SistemaSatHospitalario.Infrastructure
 {
@@ -23,55 +24,19 @@ namespace SistemaSatHospitalario.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var dbProvider = configuration.GetValue<string>("DatabaseProvider") ?? "SqlServer";
+            var dbProviderName = configuration.GetValue<string>("DatabaseProvider") ?? "SqlServer";
+            
+            IDatabaseProvider dbProvider = dbProviderName.Equals("MySql", StringComparison.OrdinalIgnoreCase)
+                ? new MySqlDatabaseProvider()
+                : new SqlServerDatabaseProvider();
 
-            services.AddDbContext<SatHospitalarioIdentityDbContext>(options =>
-            {
-                if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
-                {
-                    var conStr = configuration.GetConnectionString("IdentityConnection_MySql") 
-                                 ?? throw new InvalidOperationException("IdentityConnection_MySql not found.");
-                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
-                        b => b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName));
-                }
-                else
-                {
-                    var conStr = configuration.GetConnectionString("IdentityConnection_SqlServer") 
-                                 ?? throw new InvalidOperationException("IdentityConnection_SqlServer not found.");
-                    options.UseSqlServer(conStr, 
-                        b => b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName));
-                }
-            });
-
-            services.AddDbContext<SatHospitalarioDbContext>(options =>
-            {
-                if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
-                {
-                    var conStr = configuration.GetConnectionString("SystemConnection_MySql") 
-                                 ?? throw new InvalidOperationException("SystemConnection_MySql not found.");
-                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
-                        b => {
-                            b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName);
-                            b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
-                        });
-                }
-                else
-                {
-                    var conStr = configuration.GetConnectionString("SystemConnection_SqlServer") 
-                                 ?? throw new InvalidOperationException("SystemConnection_SqlServer not found.");
-                    options.UseSqlServer(conStr, 
-                        b => b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName));
-                }
-            });
+            // Configure Contexts using the selected strategy (SOLID: Strategy Pattern)
+            dbProvider.ConfigureIdentityContext(services, configuration);
+            dbProvider.ConfigureApplicationContext(services, configuration);
+            dbProvider.ConfigureLegacyContext(services, configuration);
 
             // Registro de Interfaz para desacoplamiento (Micro-Ciclo 30 fix)
             services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<SatHospitalarioDbContext>());
-
-            services.AddDbContext<Sistema2020LegacyDbContext>(options =>
-            {
-                var constr = configuration.GetConnectionString("LegacyConnection");
-                options.UseMySql(constr, ServerVersion.AutoDetect(constr));
-            });
 
             services.AddIdentity<UsuarioHospital, IdentityRole<Guid>>(options =>
             {
