@@ -2,15 +2,29 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import {
+  LucideAngularModule,
+  User,
+  Lock,
+  AlertCircle,
+  RefreshCcw
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf],
-  templateUrl: './login.component.html'
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.css'
 })
 export class LoginComponent {
+  readonly icons = {
+    User,
+    Lock,
+    AlertCircle,
+    RefreshCcw
+  };
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);

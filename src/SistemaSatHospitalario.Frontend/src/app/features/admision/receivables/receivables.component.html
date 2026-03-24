@@ -1,149 +1,180 @@
-<div class="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in relative z-10">
-    <!-- Encabezado de Cuentas por Cobrar (V2.0 Midnight Blue Legítimo) -->
-    <div class="flex items-center justify-between bg-slate-950/60 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden">
+<div class="space-y-8 animate-fade-in p-6 md:p-8 relative z-10">
+    <!-- Header Premium (V2.0 Midnight Blue Legítimo) -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <!-- Pattern decorativo -->
         <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
         <div class="flex items-center space-x-6">
             <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <lucide-icon [name]="icons.DollarSign" class="w-8 h-8"></lucide-icon>
             </div>
             <div>
-                <h2 class="text-3xl font-black text-white tracking-tighter uppercase">Gestión de Cuentas por Cobrar</h2>
-                <div class="flex items-center space-x-4 mt-2">
-                    <span class="bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-500/30">MANTENIMIENTO AR</span>
-                    <span class="text-slate-500 text-xs font-bold uppercase tracking-widest italic">Cobros y Liquidaciones</span>
-                </div>
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Cuentas por Cobrar</h1>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">Gestión de Cobros y Liquidaciones AR</p>
             </div>
         </div>
-        
-        <div class="flex items-center gap-4">
+
+        <!-- Acciones Rápidas del Header -->
+        <div class="flex items-center gap-3 mt-6 md:mt-0">
             <div class="relative group">
-                <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="refresh()" placeholder="Buscar paciente/ID..."
-                    class="pl-12 pr-6 py-4 bg-surface border border-white/5 rounded-2xl w-64 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-black text-xs uppercase tracking-widest text-white">
-                <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()" placeholder="Buscar paciente/ID..."
+                    class="pl-12 pr-6 py-4 bg-surface border border-white/5 rounded-2xl w-64 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-black text-xs uppercase tracking-widest text-white shadow-inner">
+                <lucide-icon [name]="icons.Search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors"></lucide-icon>
             </div>
-            <select (change)="onFilterChange($any($event.target).value)" 
-                class="px-6 py-4 bg-surface border border-white/5 rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-4 focus:ring-primary/20 text-white transition-all outline-none">
-                <option value="Pendiente" class="bg-slate-900">PENDIENTES</option>
-                <option value="Cobrada" class="bg-slate-900">LIQUIDADAS</option>
-            </select>
+            
+            <div class="relative">
+                <select (change)="onFilterChange($any($event.target).value)" 
+                    class="pl-6 pr-10 py-4 bg-surface border border-white/5 rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-4 focus:ring-primary/20 text-white transition-all outline-none appearance-none cursor-pointer">
+                    <option value="Pendiente">PENDIENTES</option>
+                    <option value="Cobrada">LIQUIDADAS</option>
+                </select>
+                <lucide-icon [name]="icons.ChevronRight" class="w-3.5 h-3.5 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+            </div>
+
             <button (click)="refresh()" class="p-4 bg-surface border border-white/5 rounded-2xl hover:bg-slate-800 transition-all shadow-sm active:scale-95 text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <lucide-icon [name]="icons.RefreshCcw" class="w-5 h-5"></lucide-icon>
             </button>
         </div>
     </div>
 
-    <!-- Alertas -->
-    <div *ngIf="actionMessage()" class="bg-emerald-50/80 backdrop-blur-md p-6 rounded-3xl border border-emerald-200 flex justify-between items-center shadow-lg animate-fade-in">
-        <div class="flex items-center">
-            <div class="h-10 w-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white mr-4 shadow-lg">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>
+    <!-- Alertas con Estilo Premium -->
+    <div *ngIf="actionMessage()" class="bg-emerald-500/10 backdrop-blur-md p-4 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <div class="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
             </div>
-            <p class="text-emerald-900 font-extrabold uppercase tracking-widest text-xs">{{ actionMessage() }}</p>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ actionMessage() }}</span>
         </div>
-        <button (click)="actionMessage.set(null)" class="text-emerald-400 hover:text-emerald-600 font-black text-xs">OK</button>
+        <button (click)="actionMessage.set(null)" class="text-[10px] uppercase tracking-widest font-black opacity-60 hover:opacity-100 italic transition-opacity">Entendido</button>
     </div>
 
-    <!-- Lista de Cuentas -->
+    <!-- Listado con Estética Refinada -->
     <div class="space-y-4">
-        <div *ngIf="isLoading()" class="flex flex-col items-center justify-center py-20 opacity-40">
-            <svg class="animate-spin h-10 w-10 text-hospital-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
-            <p class="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Sincronizando cuentas pendientes...</p>
+        <!-- Loading con estilo -->
+        <div *ngIf="isLoading()" class="flex flex-col items-center justify-center py-24 opacity-30">
+            <lucide-icon [name]="icons.RefreshCcw" class="w-12 h-12 animate-spin text-primary mb-6"></lucide-icon>
+            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Sincronizando cuentas maestras...</p>
         </div>
 
-        <div *ngIf="!isLoading() && receivables().length === 0" class="bg-surface-card border-2 border-dashed border-white/5 rounded-[2.5rem] p-20 text-center shadow-inner">
-            <p class="text-slate-500 font-black uppercase tracking-widest text-xs italic">No hay registros para este filtro.</p>
+        <!-- Empty State -->
+        <div *ngIf="!isLoading() && receivables().length === 0" class="bg-surface-card border-2 border-dashed border-white/5 rounded-[3rem] p-24 text-center shadow-inner mt-4 overflow-hidden relative group">
+            <div class="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <lucide-icon [name]="icons.Info" class="w-16 h-16 text-slate-700 mx-auto mb-6 opacity-20"></lucide-icon>
+            <p class="text-slate-500 font-black uppercase tracking-widest text-xs">No hay registros bajo el filtro: <span class="text-rose-500">{{ filterEstado() | uppercase }}</span></p>
         </div>
 
+        <!-- Cards de AR Estilo Premium (V2.0 Core) -->
         <div *ngFor="let ar of receivables()" 
-            class="bg-surface-card hover:bg-white/5 border border-white/5 rounded-[2rem] p-6 shadow-2xl transition-all group flex items-center justify-between animate-scale-in">
-            <div class="flex items-center gap-6">
-                <div class="h-14 w-14 rounded-2xl flex flex-col items-center justify-center transition-colors shadow-inner"
-                    [ngClass]="ar.estado === 'Pendiente' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'">
-                    <span class="text-[10px] font-black uppercase leading-none mb-1">AR</span>
-                    <span class="text-xs font-black">{{ ar.fechaEmision | date:'MMM' }}</span>
+            class="group bg-surface-card hover:bg-white/5 border border-white/5 rounded-[2.5rem] p-6 shadow-2xl transition-all duration-500 transform hover:scale-[1.01] flex items-center justify-between animate-scale-in">
+            
+            <div class="flex items-center gap-8">
+                <!-- Icono de Estado Dinámico -->
+                <div class="h-16 w-16 rounded-[1.5rem] flex flex-col items-center justify-center transition-all bg-black/20 relative overflow-hidden group-hover:bg-black/30 shadow-inner"
+                    [ngClass]="ar.estado === 'Pendiente' ? 'text-amber-500 border border-amber-500/20' : 'text-emerald-500 border border-emerald-500/20'">
+                    <div class="absolute inset-0 opacity-5" [ngClass]="ar.estado === 'Pendiente' ? 'bg-amber-500' : 'bg-emerald-500'"></div>
+                    <span class="text-[9px] font-black uppercase leading-none mb-1 tracking-widest">AR</span>
+                    <span class="text-xs font-black tracking-tight font-mono">{{ ar.fechaEmision | date:'MMM' | uppercase }}</span>
                 </div>
+
                 <div>
-                    <h4 class="text-sm font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors">{{ ar.pacienteNombre }}</h4>
-                    <p class="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-widest">{{ ar.pacienteCedula }} · {{ ar.seguroNombre }}</p>
+                    <h4 class="text-base font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors">{{ ar.pacienteNombre }}</h4>
+                    <div class="flex items-center gap-3 mt-1.5">
+                        <span class="text-[9px] font-black text-slate-400 bg-black/30 px-2 py-0.5 rounded-md border border-white/5 uppercase tracking-widest">{{ ar.pacienteCedula }}</span>
+                        <div class="h-1 w-1 bg-slate-700 rounded-full"></div>
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest italic font-mono">{{ ar.seguroNombre }}</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-12">
-                <div class="text-right">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Monto Total</p>
-                    <p class="text-sm font-bold text-white">${{ ar.montoTotal | number:'1.2-2' }}</p>
+            <!-- Detalles Financieros y Acciones Refinadas -->
+            <div class="flex items-center gap-12 lg:gap-20">
+                <div class="text-right hidden sm:block">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5 opacity-60">Monto Facturado</p>
+                    <p class="text-base font-bold text-white font-mono opacity-80">${{ ar.montoTotal | number:'1.2-2' }}</p>
                 </div>
+                
                 <div class="text-right">
-                    <p class="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Saldo Pendiente</p>
-                    <p class="text-xl font-black" [ngClass]="ar.saldoPendiente > 0 ? 'text-rose-500' : 'text-slate-500'">${{ ar.saldoPendiente | number:'1.2-2' }}</p>
+                    <div class="flex items-center justify-end gap-2 mb-1.5">
+                        <div *ngIf="ar.estado === 'Pendiente'" class="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.6)]"></div>
+                        <p class="text-[9px] font-black uppercase tracking-widest" [ngClass]="ar.estado === 'Pendiente' ? 'text-rose-400' : 'text-slate-500'">Saldo Pendiente</p>
+                    </div>
+                    <p class="text-2xl font-black font-mono tracking-tighter" [ngClass]="ar.estado === 'Pendiente' ? 'text-rose-500' : 'text-slate-500'">${{ ar.saldoPendiente | number:'1.2-2' }}</p>
                 </div>
-                <div class="pl-6 border-l border-white/5">
+
+                <div class="pl-10 border-l border-white/5">
                     <button *ngIf="ar.estado === 'Pendiente'" (click)="abrirCobro(ar)"
-                        class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-95">
-                        LIQUIDAR COBRO
+                        class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-95 flex items-center group/btn">
+                        LIQUIDAR CUENTA
+                        <lucide-icon [name]="icons.ChevronRight" class="w-3.5 h-3.5 ml-3 group-hover/btn:translate-x-1 transition-transform"></lucide-icon>
                     </button>
-                    <div *ngIf="ar.estado === 'Cobrada'" class="flex items-center text-emerald-400 font-black text-[10px] uppercase tracking-widest px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>
-                        COMPLETO
+                    <div *ngIf="ar.estado === 'Cobrada'" class="flex items-center text-emerald-400 font-black text-[10px] uppercase tracking-widest px-6 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl shadow-inner animate-fade-in">
+                        <lucide-icon [name]="icons.Check" class="w-4 h-4 mr-3"></lucide-icon>
+                        OPERACIÓN LIQUIDADA
                     </div>
                 </div>
             </div>
         </div>
-    </div>    <!-- Modal para Liquidación (V2.0) -->
+    </div>
+
+    <!-- Modal para Liquidación Premium (V2.0) -->
     <div *ngIf="selectedAR()" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="selectedAR.set(null)"></div>
-        <div class="relative bg-surface-card rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-lg overflow-hidden border border-white/5 animate-scale-in">
-            
-            <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
-                <div class="flex items-center space-x-4">
-                    <div class="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="relative bg-surface-card rounded-[3rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-lg overflow-hidden border border-white/5 animate-scale-in">
+            <!-- Header Modal -->
+            <div class="p-10 pb-6 flex items-center justify-between border-b border-white/5 relative">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 blur-2xl"></div>
+                <div class="flex items-center space-x-5">
+                    <div class="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+                        <lucide-icon [name]="icons.DollarSign" class="w-7 h-7"></lucide-icon>
                     </div>
                     <div>
-                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Liquidar Cuenta</h3>
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 italic">{{ selectedAR()?.seguroNombre }}</p>
+                        <h3 class="text-2xl font-black text-white tracking-tight uppercase">Confirmar Cobro</h3>
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">{{ selectedAR()?.seguroNombre }}</p>
                     </div>
                 </div>
-                <button (click)="selectedAR.set(null)" class="p-2 text-slate-500 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button (click)="selectedAR.set(null)" class="p-3 text-slate-500 hover:text-white bg-white/5 rounded-xl hover:bg-white/10 transition-all">
+                    <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
                 </button>
             </div>
 
-            <div class="p-8 pb-0">
-                <div class="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex justify-between items-center">
-                    <span class="text-[10px] font-black text-slate-500 uppercase">Monto a liquidar</span>
-                    <span class="text-3xl font-black text-primary">${{ selectedAR()?.saldoPendiente | number:'1.2-2' }}</span>
+            <div class="p-10 space-y-8">
+                <!-- Info Display -->
+                <div class="bg-black/30 border border-white/5 rounded-[2rem] p-8 flex flex-col items-center text-center">
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Monto Total a Liquidar</span>
+                    <div class="text-4xl font-black text-primary font-mono tracking-tighter shadow-lg shadow-primary/5">${{ selectedAR()?.saldoPendiente | number:'1.2-2' }}</div>
+                    <div class="mt-4 px-4 py-1.5 bg-primary/5 border border-primary/10 rounded-full text-[8px] font-black text-primary uppercase tracking-[0.2em]">CONCILIACIÓN AR</div>
                 </div>
-            </div>
 
-
-            <!-- Form Cobro -->
-            <div class="p-8 space-y-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Referencia de Pago</label>
-                        <input type="text" [(ngModel)]="settlementData.referenciaPago" placeholder="CHEQUE / TRANSFERENCIA..."
-                            class="w-full px-5 py-4 bg-surface border border-white/5 rounded-2xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-black text-xs uppercase tracking-widest text-white">
+                <!-- Fields -->
+                <div class="space-y-6">
+                    <div class="space-y-2.5 px-1">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Referencia de Conciliación</label>
+                        <input type="text" [(ngModel)]="settlementData.referenciaPago" placeholder="EJ. CHEQUE #12345 / TRANSFERENCIA PROVINCIAL"
+                            class="w-full px-6 py-5 bg-surface border border-glass-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-black text-sm text-white uppercase placeholder:text-slate-700 shadow-inner outline-none">
                     </div>
-                    <div>
-                        <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Observaciones</label>
+                    <div class="space-y-2.5 px-1">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notas de Auditoría</label>
                         <textarea [(ngModel)]="settlementData.observaciones" rows="3"
-                            class="w-full px-5 py-4 bg-surface border border-white/5 rounded-2xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-xs font-bold text-slate-300"
-                            placeholder="NOTAS INTERNAS..."></textarea>
+                            class="w-full px-6 py-5 bg-surface border border-glass-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-slate-300 placeholder:text-slate-700 outline-none"
+                            placeholder="DESCRIPCIÓN DEL COBRO..."></textarea>
                     </div>
                 </div>
 
-                <div class="flex flex-col space-y-3 pt-4">
+                <!-- Footer Buttons -->
+                <div class="flex flex-col space-y-4">
                     <button (click)="liquidar()" [disabled]="isSettling() || !settlementData.referenciaPago"
-                        class="w-full py-5 bg-rose-500 hover:bg-rose-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-500/20 transition-all active:scale-95 disabled:opacity-50">
-                        <span *ngIf="!isSettling()">CONFIRMAR LIQUIDACIÓN</span>
-                        <span *ngIf="isSettling()" class="flex items-center justify-center">
-                            <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
-                            PROCESANDO...
+                        class="w-full py-6 bg-rose-500 hover:bg-rose-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-rose-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center group">
+                        <span *ngIf="!isSettling()" class="flex items-center">
+                            <lucide-icon [name]="icons.Check" class="w-5 h-5 mr-3 group-hover:scale-110 transition-all"></lucide-icon>
+                            PROCESAR LIQUIDACIÓN FINAL
+                        </span>
+                        <span *ngIf="isSettling()" class="flex items-center">
+                            <lucide-icon [name]="icons.RefreshCcw" class="w-5 h-5 mr-3 animate-spin"></lucide-icon>
+                            VALIDANDO TRANSACCIÓN...
                         </span>
                     </button>
-                    <button (click)="selectedAR.set(null)" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-[0.3em] py-2 transition-colors">CANCELAR</button>
+                    <button (click)="selectedAR.set(null)" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-[0.3em] py-2 transition-colors">CANCELAR OPERACIÓN</button>
                 </div>
+            </div>
         </div>
     </div>
 </div>

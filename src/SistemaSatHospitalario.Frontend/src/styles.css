@@ -10,9 +10,12 @@
   --accent-soft: #064e3b;
   
   /* Superficies Profundas (Dashboard & Agenda Sync) */
-  --surface: #0a0f1a;       /* Fondo Base - Negro Azulado Profundo */
-  --surface-card: #0f172a;  /* Contenedores Principales (Fondo Agenda) */
-  --surface-light: #1e293b; /* Elevación / Hover */
+  --surface-raw: 222 47% 4%;
+  --surface: #0a0f1a;
+  --surface-card-raw: 222 47% 8%;
+  --surface-card: #0f172a;
+  --surface-light-raw: 222 47% 12%; 
+  --surface-light: #1e293b;
   
   --glass: rgba(15, 23, 42, 0.6);
   --glass-border: rgba(255, 255, 255, 0.05);

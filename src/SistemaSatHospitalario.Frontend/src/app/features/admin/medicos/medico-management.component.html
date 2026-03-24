@@ -1,13 +1,14 @@
 <div class="space-y-8 animate-fade-in p-6 md:p-8 relative z-10">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-2xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+    <!-- Header Section (V2.0 Midnight Blue Legítimo - Sincronizado con Catálogo) -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
         <div class="flex items-center space-x-6">
-            <div class="h-16 w-16 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 border border-rose-500/20 shadow-lg shadow-rose-500/5">
+            <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
                 <lucide-icon [name]="icons.Doctor" class="w-8 h-8"></lucide-icon>
             </div>
             <div>
                 <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Nómina Médica</h1>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1 italic">Gestión Integral de Especialistas</p>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">Gestión Integral de Especialistas</p>
             </div>
         </div>
         <button (click)="openCreate()" 

@@ -1,16 +1,37 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { 
+  LucideAngularModule, 
+  DollarSign, 
+  Search, 
+  RefreshCcw, 
+  Check, 
+  X, 
+  ChevronRight, 
+  AlertCircle, 
+  Info 
+} from 'lucide-angular';
 import { ReceivablesService, PendingAR, SettleARRequest } from '../../../core/services/receivables.service';
 
 @Component({
   selector: 'app-receivables',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './receivables.component.html',
   styleUrl: './receivables.component.css'
 })
 export class ReceivablesComponent implements OnInit {
+  readonly icons = {
+    DollarSign,
+    Search,
+    RefreshCcw,
+    Check,
+    X,
+    ChevronRight,
+    AlertCircle,
+    Info
+  };
   private arService = inject(ReceivablesService);
 
   // Signals para estado

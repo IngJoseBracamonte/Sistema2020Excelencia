@@ -1,42 +1,45 @@
-<div class="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in relative z-10">
-    <!-- Encabezado Módulo Cajas (V2.0 Midnight Blue Legítimo) -->
-    <div class="flex items-center justify-between bg-slate-950/60 backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden">
+<div class="space-y-8 animate-fade-in p-6 md:p-8 relative z-10">
+    <!-- Header Section (V2.0 Midnight Blue Legítimo - Sincronizado con Catálogo) -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
         <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
         <div class="flex items-center space-x-6">
             <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <lucide-icon [name]="icons.DollarSign" class="w-8 h-8"></lucide-icon>
             </div>
             <div>
-                <h2 class="text-3xl font-black text-white tracking-tighter uppercase">Recaudación y Cierres</h2>
-                <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Control de Flujo de Caja & Operaciones</p>
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Recaudación y Cierres</h1>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">Control de Flujo de Caja & Operaciones</p>
             </div>
         </div>
-        <div class="flex items-center space-x-4">
-            <button routerLink="/facturacion"
-                class="bg-white/5 hover:bg-rose-500/10 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 flex items-center group active:scale-95">
-                <svg class="mr-3 h-5 w-5 text-rose-500 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                Factura Nueva
+        
+        <div class="flex flex-col md:flex-row gap-4 mt-6 md:mt-0">
+            <button routerLink="/facturacion" 
+                class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20 flex items-center group active:scale-95">
+                <lucide-icon [name]="icons.CreditCard" class="w-4 h-4 mr-3 group-hover:scale-110 transition-transform"></lucide-icon>
+                FACTURA NUEVA
             </button>
         </div>
     </div>
 
-    <!-- Alertas -->
-    <div *ngIf="actionMessage()"
-        class="bg-emerald-50/80 backdrop-blur-md p-4 rounded-xl border border-emerald-200 flex">
-        <svg class="h-5 w-5 text-emerald-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-emerald-800 font-medium text-sm">{{ actionMessage() }}</p>
+    <!-- Alertas con Estilo Premium -->
+    <div *ngIf="actionMessage()" class="bg-emerald-500/10 backdrop-blur-md p-4 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <div class="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ actionMessage() }}</span>
+        </div>
+        <button (click)="actionMessage.set(null)" class="text-[10px] uppercase tracking-widest font-black opacity-60 hover:opacity-100 italic transition-opacity">Entendido</button>
     </div>
 
-    <div *ngIf="errorMessage()"
-        class="bg-emergency-light/20 backdrop-blur-md p-4 rounded-xl border border-emergency-light/50 flex">
-        <svg class="h-5 w-5 text-emergency-dark mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-emergency-dark font-medium text-sm">{{ errorMessage() }}</p>
+    <div *ngIf="errorMessage()" class="bg-rose-500/10 backdrop-blur-md p-4 rounded-xl border border-rose-500/20 text-rose-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <div class="h-8 w-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.AlertCircle" class="w-4 h-4"></lucide-icon>
+            </div>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ errorMessage() }}</span>
+        </div>
+        <button (click)="errorMessage.set(null)" class="text-[10px] uppercase tracking-widest font-black opacity-60 hover:opacity-100 italic transition-opacity">Cerrar</button>
     </div>
 
     <!-- VISTA PARA ASISTENTES / CAJEROS -->
@@ -61,20 +64,20 @@
                     </div>
                 </div>
 
-                <div *ngIf="!personalReport()?.totalOrdenes" class="text-center py-16 opacity-30">
-                    <div class="h-20 w-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-6 text-slate-500 border border-white/5 shadow-inner">
-                        <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                <div *ngIf="!personalReport()?.totalOrdenes" class="text-center py-16 opacity-30 group">
+                    <div class="h-20 w-20 bg-surface rounded-full flex items-center justify-center mx-auto mb-6 text-slate-500 border border-white/5 shadow-inner group-hover:scale-110 transition-transform">
+                        <lucide-icon [name]="icons.DollarSign" class="h-10 w-10"></lucide-icon>
                     </div>
-                    <p class="text-sm font-black text-white uppercase tracking-widest">Sin operaciones registradas</p>
-                    <p class="text-[9px] text-slate-500 mt-2 italic uppercase font-bold">La caja se activará con la primera factura.</p>
+                    <p class="text-sm font-black text-white uppercase tracking-[0.2em]">Sin operaciones registradas</p>
+                    <p class="text-[9px] text-slate-500 mt-2 italic uppercase font-bold tracking-widest">La caja se activará con la primera factura.</p>
                 </div>
             </div>
         </div>
 
         <!-- Acción de Cierre -->
         <div class="bg-surface-card rounded-[2.5rem] shadow-2xl border border-white/5 p-10 flex flex-col justify-center items-center text-center">
-            <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-rose-500/5">
-                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-rose-500/5 transition-transform group-hover:scale-110">
+                <lucide-icon [name]="icons.Lock" class="h-8 w-8"></lucide-icon>
             </div>
             <h3 class="text-xl font-black text-white mb-3 uppercase tracking-tight">Cierre de Jornada</h3>
             <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-10 leading-relaxed italic">Bloqueo de terminal & Sincronización operativa.</p>
@@ -117,8 +120,8 @@
                         </div>
                     </div>
 
-                    <div *ngIf="!resumenCaja()?.turnos?.length" class="h-full flex flex-col items-center justify-center opacity-20">
-                        <svg class="h-16 w-16 text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <div *ngIf="!resumenCaja()?.turnos?.length" class="h-full flex flex-col items-center justify-center opacity-20 group">
+                        <lucide-icon [name]="icons.Users" class="h-16 w-16 text-slate-500 mb-4 group-hover:scale-110 transition-transform"></lucide-icon>
                         <p class="text-[10px] font-black text-white uppercase tracking-[0.3em]">Cola de red vacía</p>
                     </div>
                 </div>
@@ -154,7 +157,7 @@
                     </div>
 
                     <button (click)="refrescarAdmin()" class="w-full py-5 bg-white text-slate-950 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-200 transition-all flex justify-center items-center group">
-                        <svg class="mr-3 h-5 w-5 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <lucide-icon [name]="icons.RefreshCcw" class="mr-3 h-5 w-5 group-hover:rotate-180 transition-transform duration-500"></lucide-icon>
                         Refrescar Inteligencia
                     </button>
                 </div>

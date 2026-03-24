@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import {
     LucideAngularModule,
@@ -16,7 +16,8 @@ import {
     Package,
     Stethoscope,
     Activity,
-    Bookmark
+    Bookmark,
+    ChevronDown
 } from 'lucide-angular';
 
 @Component({
@@ -34,7 +35,7 @@ import {
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 px-4 space-y-1 mt-4">
+      <nav class="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar pb-10">
         <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mb-2 opacity-60">Menu Principal</div>
         
         <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-item">
@@ -56,30 +57,42 @@ import {
         <div *ngIf="isAdmin() || isRxAssistant()">
           <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
           
-          <a *ngIf="isAdmin()" routerLink="/cajas" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.Cajas" class="w-5 h-5 mr-3"></lucide-icon>
-            Gestión de Cajas
-          </a>
+          <!-- Dropdown: Caja y Catálogos -->
+          <div *ngIf="isAdmin()" class="space-y-1">
+            <button (click)="toggleDropdown('caja')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().caja }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Cajas" class="w-5 h-5 mr-3 text-rose-500"></lucide-icon>
+                    Caja y Catálogos
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().caja"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().caja" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/cajas" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Cajas</a>
+                <a routerLink="/catalog" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active-sublink" class="nav-subitem">Catálogo General</a>
+                <a routerLink="/catalog" [queryParams]="{type: 'RX'}" routerLinkActive="active-sublink" class="nav-subitem">Servicios de RX</a>
+            </div>
+          </div>
 
-          <a *ngIf="isAdmin()" routerLink="/catalog" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3"></lucide-icon>
-            Catálogo General
-          </a>
-
-          <a *ngIf="isAdmin()" routerLink="/catalog" [queryParams]="{type: 'RX'}" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.RX" class="w-5 h-5 mr-3"></lucide-icon>
-            Servicios de RX
-          </a>
-
-          <a *ngIf="isAdmin()" routerLink="/medicos" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.Doctor" class="w-5 h-5 mr-3"></lucide-icon>
-            Gestión de Médicos
-          </a>
-
-          <a *ngIf="isAdmin()" routerLink="/especialidades" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.Category" class="w-5 h-5 mr-3"></lucide-icon>
-            Especialidades
-          </a>
+          <!-- Dropdown: Gestión Médica -->
+          <div *ngIf="isAdmin()" class="space-y-1">
+            <button (click)="toggleDropdown('medica')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().medica }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Doctor" class="w-5 h-5 mr-3 text-blue-500"></lucide-icon>
+                    Gestión Médica
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().medica"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().medica" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Médicos Nominal</a>
+                <a routerLink="/especialidades" routerLinkActive="active-sublink" class="nav-subitem">Especialidades</a>
+            </div>
+          </div>
 
           <a *ngIf="isAdmin()" routerLink="/cxc" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.AR" class="w-5 h-5 mr-3"></lucide-icon>
@@ -117,39 +130,79 @@ import {
   `,
     styles: [`
     .glass-sidebar {
-      background: rgba(10, 15, 26, 0.8);
+      background: rgba(10, 15, 26, 0.85);
       backdrop-filter: blur(30px);
     }
     .nav-item {
       display: flex;
-      items: center;
-      padding: 0.75rem 0.75rem;
-      border-radius: 0.75rem;
-      color: var(--text-muted);
-      font-size: 0.8125rem;
-      font-weight: 600;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      border-radius: 1rem;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.025em;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      letter-spacing: 0.05em;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
     }
     .nav-item:hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-main);
-      transform: translateX(4px);
+      background: rgba(255, 255, 255, 0.03);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+    .nav-subitem {
+      display: block;
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.75rem;
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      transition: all 0.2s;
+    }
+    .nav-subitem:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.02);
     }
     .active-link {
-      background: var(--primary) !important;
-      color: white !important;
-      font-weight: 800;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      background: rgba(225, 29, 72, 0.1) !important;
+      color: #f43f5e !important;
+      border-color: rgba(225, 29, 72, 0.2) !important;
+      box-shadow: 0 4px 20px rgba(225, 29, 72, 0.1);
     }
-    :host ::ng-deep lucide-icon svg {
-      stroke-width: 2px;
+    .active-sublink {
+      color: #f43f5e !important;
+      background: rgba(225, 29, 72, 0.05) !important;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
     }
   `]
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
     auth = inject(AuthService);
+    private router = inject(Router);
+
+    public dropdownsOpen = signal({
+        caja: false,
+        medica: false
+    });
+
+    ngOnInit() {
+        const url = this.router.url;
+        if (url.includes('/cajas') || url.includes('/catalog')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), caja: true });
+        }
+        if (url.includes('/medicos') || url.includes('/especialidades')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), medica: true });
+        }
+    }
 
     readonly icons = {
         Dashboard: LayoutDashboard,
@@ -164,8 +217,16 @@ export class SidebarComponent {
         Catalog: Package,
         Doctor: Stethoscope,
         RX: Activity,
-        Category: Bookmark
+        Category: Bookmark,
+        ChevronDown: ChevronDown
     };
+
+    toggleDropdown(key: 'caja' | 'medica') {
+        this.dropdownsOpen.update(prev => ({
+            ...prev,
+            [key]: !prev[key as keyof typeof prev]
+        }));
+    }
 
     isAdmin(): boolean {
         const role = this.auth.currentUser()?.role?.toLowerCase();

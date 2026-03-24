@@ -11,16 +11,53 @@ import { PatientService, PatientRecord } from '../../../core/services/patient.se
 import { CajaService, DailyClosingReport } from '../../../core/services/caja.service';
 import { PrintService } from '../../../core/services/print.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { 
+  LucideAngularModule, 
+  CreditCard, 
+  RefreshCcw, 
+  Check, 
+  Plus, 
+  User, 
+  Calendar, 
+  Search, 
+  Package, 
+  Clock, 
+  SearchX,
+  Info,
+  ChevronRight,
+  Trash2,
+  X,
+  Lock,
+  UserPlus
+} from 'lucide-angular';
 import { switchMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-facturacion',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './facturacion.component.html',
   styleUrl: './facturacion.component.css'
 })
 export class FacturacionComponent {
+  readonly icons = {
+    CreditCard,
+    RefreshCcw,
+    Check,
+    Plus,
+    User,
+    Calendar,
+    Search,
+    Package,
+    Clock,
+    SearchX,
+    Info,
+    ChevronRight,
+    Trash2,
+    X,
+    Lock,
+    UserPlus
+  };
   private facturacionService = inject(FacturacionService);
   private authService = inject(AuthService);
   private appointmentsService = inject(AppointmentsService);

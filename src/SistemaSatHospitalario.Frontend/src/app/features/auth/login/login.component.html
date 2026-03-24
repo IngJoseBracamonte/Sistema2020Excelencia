@@ -38,11 +38,7 @@
         <div *ngIf="errorMessage()"
           class="rounded-2xl bg-rose-500/10 p-4 border border-rose-500/30 flex animate-in fade-in slide-in-from-top-4">
           <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd" />
-            </svg>
+            <lucide-icon [name]="icons.AlertCircle" class="h-5 w-5 text-rose-500"></lucide-icon>
           </div>
           <div class="ml-3">
             <h3 class="text-xs font-black uppercase tracking-tight text-rose-500">{{ errorMessage() }}</h3>
@@ -53,11 +49,7 @@
           <label for="username" class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1"> Usuario </label>
           <div class="mt-1 relative group">
             <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-primary">
-              <svg class="h-5 w-5 text-muted/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
-                </path>
-              </svg>
+              <lucide-icon [name]="icons.User" class="h-5 w-5 text-muted/60 transition-colors"></lucide-icon>
             </div>
             <input id="username" formControlName="username" type="text" autocomplete="username" required
               class="appearance-none block w-full pl-14 pr-5 py-4 bg-surface border border-glass-border rounded-2xl shadow-sm placeholder:text-muted/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all duration-300 font-medium"
@@ -69,11 +61,7 @@
           <label for="password" class="block text-[10px] font-black uppercase tracking-widest text-muted ml-1"> Contraseña </label>
           <div class="mt-1 relative group">
             <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-primary">
-              <svg class="h-5 w-5 text-muted/60 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
-                </path>
-              </svg>
+              <lucide-icon [name]="icons.Lock" class="h-5 w-5 text-muted/60 transition-colors"></lucide-icon>
             </div>
             <input id="password" formControlName="password" type="password" autocomplete="current-password" required
               class="appearance-none block w-full pl-14 pr-5 py-4 bg-surface border border-glass-border rounded-2xl shadow-sm placeholder:text-muted/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all duration-300 font-medium"
@@ -92,13 +80,7 @@
             class="group w-full flex justify-center py-4 px-4 rounded-2xl shadow-xl shadow-primary/20 text-xs font-black uppercase tracking-widest text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-surface transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden">
             <span *ngIf="!isLoading()" class="relative z-10">Ingresar al Sistema</span>
             <span *ngIf="isLoading()" class="flex items-center relative z-10">
-              <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
-              </svg>
+              <lucide-icon [name]="icons.RefreshCcw" class="animate-spin h-4 w-4 mr-3"></lucide-icon>
               Autenticando...
             </span>
             <!-- Subtle Reflection Effect -->

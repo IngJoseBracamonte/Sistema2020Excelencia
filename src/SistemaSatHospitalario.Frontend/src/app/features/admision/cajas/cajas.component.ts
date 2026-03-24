@@ -2,17 +2,38 @@ import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { 
+  LucideAngularModule, 
+  DollarSign, 
+  CreditCard, 
+  RefreshCcw, 
+  AlertCircle, 
+  Check, 
+  LayoutDashboard, 
+  Users, 
+  Lock 
+} from 'lucide-angular';
 import { CajaService, ResumenCajaGlobalDto, CajaSummaryDto, DailyClosingReport } from '../../../core/services/caja.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-cajas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule],
   templateUrl: './cajas.component.html',
   styleUrl: './cajas.component.css'
 })
 export class CajasComponent implements OnInit {
+  readonly icons = {
+    DollarSign,
+    CreditCard,
+    RefreshCcw,
+    AlertCircle,
+    Check,
+    LayoutDashboard,
+    Users,
+    Lock
+  };
   private cajaService = inject(CajaService);
   public authService = inject(AuthService);
   private fb = inject(FormBuilder);

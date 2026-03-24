@@ -27,10 +27,41 @@ module.exports = {
                     light: '#fca5a5',
                     DEFAULT: '#ef4444',
                     dark: '#b91c1c'
+                },
+                surface: {
+                    DEFAULT: 'hsl(var(--surface-raw) / <alpha-value>)',
+                    card: 'hsl(var(--surface-card-raw) / <alpha-value>)',
+                    light: 'hsl(var(--surface-light-raw) / <alpha-value>)',
+                    glass: 'var(--glass)'
+                },
+                slate: {
+                    950: '#020617',
+                    900: '#0f172a',
+                    800: '#1e293b'
                 }
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
+            },
+            keyframes: {
+                fadeIn: {
+                    '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+                scaleIn: {
+                    '0%': { opacity: '0', transform: 'scale(0.95)' },
+                    '100%': { opacity: '1', transform: 'scale(1)' },
+                },
+                slideUp: {
+                    '0%': { transform: 'translateY(100%)' },
+                    '100%': { transform: 'translateY(0)' },
+                }
+            },
+            animation: {
+                'fade-in': 'fadeIn 0.5s ease-out forwards',
+                'scale-in': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'slide-up': 'slideUp 0.4s ease-out',
+                'fade-in-slow': 'fadeIn 0.8s ease-out forwards',
             }
         },
     },

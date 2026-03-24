@@ -3,15 +3,15 @@
 }
 
 .step-inactive {
-    @apply bg-white border-slate-200 text-slate-400;
+    @apply bg-surface-card border-white/5 text-slate-500;
 }
 
 .step-active {
-    @apply bg-white border-primary text-primary shadow-xl shadow-primary/20 scale-110 ring-4 ring-primary/5;
+    @apply bg-surface border-primary text-primary shadow-2xl shadow-primary/20 scale-110 ring-4 ring-primary/5;
 }
 
 .step-completed {
-    @apply bg-primary border-primary text-white shadow-md;
+    @apply bg-primary border-primary text-white shadow-lg;
 }
 
 .animate-slide-in {
@@ -34,10 +34,14 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-300/60 rounded-full hover:bg-slate-400/80;
+    @apply bg-slate-800 rounded-full hover:bg-primary/40 transition-colors;
 }
 
 .service-card {
-    @apply flex items-center justify-between p-5 bg-white border border-slate-200/60 rounded-[1.25rem] transition-all duration-300 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1;
+    @apply flex items-center justify-between p-5 bg-surface-card border border-white/5 rounded-[1.25rem] transition-all duration-300 hover:border-primary/40 hover:bg-white/5 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1;
     content-visibility: auto;
+}
+
+.glass-panel {
+    @apply bg-surface-card/60 backdrop-blur-3xl border border-white/5 shadow-2xl;
 }
