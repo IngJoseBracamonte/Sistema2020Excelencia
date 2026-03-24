@@ -11,11 +11,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid CuentaServicioId { get; private set; }
         public DateTime HoraPautada { get; private set; }
         public string EstadoAtencion { get; private set; } // En Espera, Llamado, Atendido, Cancelado
+        public string? Comentario { get; private set; }
         public DateTime FechaRegistro { get; private set; }
 
         protected CitaMedica() { }
 
-        public CitaMedica(Guid medicoId, int pacienteId, Guid cuentaServicioId, DateTime horaPautada)
+        public CitaMedica(Guid medicoId, int pacienteId, Guid cuentaServicioId, DateTime horaPautada, string? comentario = null)
         {
             Id = Guid.NewGuid();
             MedicoId = medicoId;
@@ -23,8 +24,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CuentaServicioId = cuentaServicioId;
             HoraPautada = horaPautada;
             EstadoAtencion = "En Espera";
+            Comentario = comentario;
             FechaRegistro = DateTime.UtcNow;
         }
+
+        public void ActualizarComentario(string? comentario) => Comentario = comentario;
 
         public void MarcarComoLlamado() => EstadoAtencion = "Llamado";
         public void MarcarComoAtendido() => EstadoAtencion = "Atendido";

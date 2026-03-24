@@ -1,29 +1,56 @@
 :root {
-  /* Paleta "Rose on Slate" Premium Evolution - HSL */
+  /* Paleta "Midnight Blue" Premium V2.0 */
   --primary-raw: 343 85% 55%; 
-  --primary: hsl(var(--primary-raw));
-  --primary-soft: hsl(343 85% 15%);
-  --primary-glow: hsla(343, 85%, 55%, 0.15);
+  --primary: #e11d48; /* Crimson / Rose Premium */
+  --primary-soft: #4c0519;
+  --primary-glow: rgba(225, 29, 72, 0.15);
   
   --accent-raw: 175 84% 50%;
-  --accent: hsl(var(--accent-raw));
-  --accent-soft: hsl(175 84% 15%);
+  --accent: #10b981; /* Emerald / Accent */
+  --accent-soft: #064e3b;
   
-  /* Jerarquía de Superficies (Slate 950 / 900 / 800) */
-  --surface: hsl(222, 47%, 4%);       /* Fondo Base - Casi Negro */
-  --surface-card: hsl(222, 47%, 8%);  /* Contenedores Principales */
-  --surface-light: hsl(222, 47%, 15%); /* Elevación / Modales / Hover */
+  /* Superficies Profundas (Dashboard & Agenda Sync) */
+  --surface: #0a0f1a;       /* Fondo Base - Negro Azulado Profundo */
+  --surface-card: #0f172a;  /* Contenedores Principales (Fondo Agenda) */
+  --surface-light: #1e293b; /* Elevación / Hover */
   
-  --glass: rgba(15, 23, 42, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.05);
   
-  /* Texto Optimizado para Oscuro */
-  --text-main: hsl(210, 40%, 98%);
-  --text-muted: hsl(215, 20%, 65%);
+  /* Texto V2.0 */
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
   
-  --radius-xl: 1.5rem;   
-  --radius-lg: 1.25rem;  
-  --radius-md: 0.75rem;  
+  --radius-xl: 3rem;     /* Bordes más pronunciados como en la agenda */
+  --radius-lg: 2rem;  
+  --radius-md: 1.25rem;  
+}
+
+.header-glass {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.icon-circle-primary {
+  background: rgba(225, 29, 72, 0.1);
+  color: #e11d48;
+  border: 1px solid rgba(225, 29, 72, 0.2);
+}
+
+.btn-primary-v2 {
+  background-color: #e11d48;
+  color: white;
+  box-shadow: 0 10px 20px -5px rgba(225, 29, 72, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary-v2:hover {
+  background-color: #be123c;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 30px -10px rgba(225, 29, 72, 0.5);
 }
 
 @tailwind base;

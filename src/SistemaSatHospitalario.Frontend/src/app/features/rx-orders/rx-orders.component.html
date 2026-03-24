@@ -1,58 +1,62 @@
-<div
-    class="min-h-screen bg-slate-900 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden text-slate-100">
+<div class="min-h-screen bg-surface flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden text-slate-100">
 
-    <!-- Minimalist High-Contrast UI for Technical Personnel / Dark Mode Native -->
-    <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-hospital-500 to-indigo-500"></div>
+    <!-- Decorative gradients -->
+    <div class="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -z-10"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -z-10"></div>
 
-    <div class="w-full max-w-4xl flex justify-between items-center mb-10 animate-fade-in">
-        <div class="flex items-center space-x-3">
-            <div class="p-2 bg-slate-800 rounded-lg border border-slate-700">
-                <svg class="h-6 w-6 text-hospital-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                </svg>
+    <!-- Header Section (V2.0 Midnight Blue Sync) -->
+    <div class="w-full max-w-4xl flex justify-between items-center mb-12 animate-fade-in relative">
+            <div class="flex items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] relative overflow-hidden w-full border border-white/5">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
+                <div class="flex items-center space-x-6">
+                    <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tighter uppercase">Estación de Órdenes RX</h2>
+                        <div class="flex items-center space-x-4 mt-2">
+                            <span class="bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-500/30">MONITOR LIVE</span>
+                            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest italic">Estudios por procesar</span>
+                        </div>
+                    </div>
+                </div>
+                <button (click)="logout()"
+                    class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-95">
+                    Cerrar Sesión
+                </button>
             </div>
-            <div>
-                <h1 class="text-2xl font-bold text-white tracking-widest">ESTACIÓN RX</h1>
-                <p class="text-xs text-slate-400 uppercase tracking-widest">Panel de Técnicos</p>
-            </div>
-        </div>
-        <button (click)="logout()"
-            class="px-4 py-2 border border-slate-700 hover:bg-slate-800 rounded-md text-sm transition-colors text-slate-300">
-            Cerrar Sesión
-        </button>
     </div>
 
-    <div class="w-full max-w-4xl space-y-4 animate-fade-in" style="animation-delay: 0.1s;">
-        <!-- Minimalist Cards List (Solo N°, Nombre, y Botón) -->
-
+    <div class="w-full max-w-4xl space-y-6 animate-fade-in relative" style="animation-delay: 0.1s;">
+        <!-- Order Cards (V2.0) -->
         <div *ngFor="let rx of incomingTickets()"
-            class="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-xl flex items-center justify-between hover:border-hospital-500 transition-all">
-            <div class="flex items-center space-x-6">
-                <div class="text-4xl font-black text-slate-500">#{{ rx.orderId }}</div>
-                <div>
-                    <div class="text-xs text-hospital-400 uppercase font-bold tracking-widest mb-1">Paciente Asignado
-                    </div>
-                    <div class="text-xl font-bold text-white">{{ rx.patientName }}</div>
+            class="bg-surface-card rounded-[2.5rem] p-10 border border-white/5 shadow-2xl flex flex-col md:flex-row items-center justify-between hover:bg-white/5 transition-all group relative overflow-hidden">
+            
+            <div class="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-br-full -z-10 blur-3xl"></div>
+            
+            <div class="flex flex-col md:flex-row items-center gap-10">
+                <div class="text-6xl font-black text-white/5 tracking-tighter group-hover:text-primary/10 transition-colors">#{{ rx.orderId }}</div>
+                <div class="text-center md:text-left">
+                    <div class="text-[9px] text-primary uppercase font-black tracking-[0.3em] mb-2 opacity-60">Paciente Asignado</div>
+                    <div class="text-2xl font-black text-white tracking-tight uppercase group-hover:text-primary transition-colors leading-tight">{{ rx.patientName }}</div>
                 </div>
             </div>
-            <div>
+            
+            <div class="mt-8 md:mt-0">
                 <button (click)="confirmarProceso(rx.orderId)"
-                    class="bg-hospital-600 hover:bg-hospital-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg shadow-hospital-600/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-wider">
-                    Procesado
+                    class="bg-primary hover:bg-red-700 text-white font-black py-5 px-10 rounded-2xl shadow-2xl shadow-primary/20 transition-all transform hover:scale-[1.05] active:scale-95 text-xs uppercase tracking-[0.2em]">
+                    PROCESADO
                 </button>
             </div>
         </div>
 
-        <!-- Empty State -->
+        <!-- Empty State V2.0 -->
         <div *ngIf="incomingTickets().length === 0"
-            class="flex flex-col items-center justify-center p-16 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/50">
-            <svg class="h-16 w-16 text-slate-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            class="flex flex-col items-center justify-center p-24 rounded-[3rem] border-2 border-dashed border-white/5 bg-surface-card/40 backdrop-blur-xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-primary/5 opacity-20 -z-10 blur-3xl"></div>
+            <svg class="h-20 w-20 text-slate-800 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            <h3 class="text-xl font-medium text-slate-400">Sin órdenes en espera</h3>
-        </div>
-    </div>
-
-</div>
+            <h3 class="text-xl font-black text-slate-700 uppercase tracking-[0.3em]">Sin órdenes activas</h3>
+</div>

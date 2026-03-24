@@ -61,7 +61,7 @@ import {
             Gestión de Cajas
           </a>
 
-          <a *ngIf="isAdmin()" routerLink="/catalog" routerLinkActive="active-link" class="nav-item">
+          <a *ngIf="isAdmin()" routerLink="/catalog" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active-link" class="nav-item">
             <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3"></lucide-icon>
             Catálogo General
           </a>
@@ -117,8 +117,8 @@ import {
   `,
     styles: [`
     .glass-sidebar {
-      background: rgba(10, 15, 25, 0.4);
-      backdrop-filter: blur(20px);
+      background: rgba(10, 15, 26, 0.8);
+      backdrop-filter: blur(30px);
     }
     .nav-item {
       display: flex;

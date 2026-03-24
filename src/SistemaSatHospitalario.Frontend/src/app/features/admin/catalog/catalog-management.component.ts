@@ -3,11 +3,24 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
 import { ActivatedRoute } from '@angular/router';
+import { 
+    LucideAngularModule, 
+    Package, 
+    Search, 
+    Plus, 
+    Edit, 
+    Trash2,
+    Database,
+    Stethoscope,
+    Microscope,
+    Scan,
+    X
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-catalog-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './catalog-management.component.html'
 })
 export class CatalogManagementComponent implements OnInit {
@@ -31,6 +44,19 @@ export class CatalogManagementComponent implements OnInit {
   });
 
   public tipos = ['CONSULTA', 'LABORATORIO', 'RX', 'PROCEDIMIENTO', 'MEDICINA', 'SERVICIO'];
+
+  readonly icons = {
+    Package,
+    Search,
+    Plus,
+    Edit,
+    Trash2,
+    Database,
+    Stethoscope,
+    Microscope,
+    Scan,
+    X
+  };
 
   ngOnInit() {
     this.route.queryParams.subscribe((params: any) => {
@@ -101,9 +127,9 @@ export class CatalogManagementComponent implements OnInit {
 
   getTipoColorPremium(tipo: string): string {
     switch (tipo?.toUpperCase()) {
-      case 'CONSULTA': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      case 'CONSULTA': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
       case 'LABORATORIO': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'RX': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      case 'RX': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
       default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
     }
   }

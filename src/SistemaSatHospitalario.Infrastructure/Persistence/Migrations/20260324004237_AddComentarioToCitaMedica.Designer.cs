@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SatHospitalarioDbContext))]
-    partial class SatHospitalarioDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260324004237_AddComentarioToCitaMedica")]
+    partial class AddComentarioToCitaMedica
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,33 +24,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.BloqueoHorario", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("FechaRegistro")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("HoraPautada")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("MedicoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Motivo")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MedicoId", "HoraPautada")
-                        .IsUnique();
-
-                    b.ToTable("BloqueosHorarios", (string)null);
-                });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CajaDiaria", b =>
                 {
@@ -400,33 +376,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.HasIndex("CuentaServicioId");
 
                     b.ToTable("RecibosFacturas", (string)null);
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ReservaTemporal", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("ExpiracionUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("HoraPautada")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("MedicoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("UsuarioId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MedicoId", "HoraPautada")
-                        .IsUnique();
-
-                    b.ToTable("ReservasTemporales", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.SeguroConvenio", b =>

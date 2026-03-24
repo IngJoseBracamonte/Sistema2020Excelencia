@@ -27,6 +27,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         public DateTime Hora { get; set; }
         public bool Ocupado { get; set; }
+        public bool Reservado { get; set; }
+        public bool Bloqueado { get; set; }
         public string Comentario { get; set; }
     }
 }

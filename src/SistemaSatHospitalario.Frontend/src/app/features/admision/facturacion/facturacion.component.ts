@@ -115,7 +115,49 @@ export class FacturacionComponent {
   public scheduleLoading = signal<boolean>(false);
   public availableSlots = signal<ScheduleEntry[]>([]);
   public selectedSlot = signal<string | null>(null);
+  public comentarioCita = signal<string | null>(null);
   public horaCita = signal<string>('08:00');
+
+  public nombreMedicoSeleccionado = computed(() => {
+    const id = this.selectedMedicoId();
+    if (!id) return '';
+    return this.medicosFiltrados().find(m => m.id === id)?.nombre || '';
+  });
+
+  public getHoraRango(hora: string): string {
+    if (!hora) return '--:--';
+    
+    // Si viene como ISO (2026-03-23T08:00:00), extraer la parte de la hora
+    let timePart = hora;
+    if (hora.includes('T')) {
+      timePart = hora.split('T')[1].substring(0, 5); // "08:00"
+    } else if (hora.length > 5 && hora.includes(':')) {
+      // Por si viene como "08:00:00"
+      timePart = hora.substring(0, 5);
+    }
+
+    if (!timePart.includes(':')) return timePart;
+
+    const [h, m] = timePart.split(':');
+    const startNum = parseInt(h);
+    const endNum = (startNum + 1) % 24;
+    const endStr = endNum.toString().padStart(2, '0') + ':' + m;
+    
+    return `${timePart} - ${endStr}`;
+  }
+
+  // Helpers de Precio para Template (Fix micro-ciclo 34)
+  public getFormattedBs(item: any): string {
+    const tasa = this.tasaCambioDia();
+    const usd = item.precioUsd ?? item.PrecioUsd ?? 0;
+    const priceBs = usd > 0 ? (usd * tasa) : (item.precioBs ?? item.PrecioBs ?? item.precio ?? 0);
+    return priceBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  public getDisplayPriceUsd(item: any): string {
+    const usd = item.precioUsd ?? item.PrecioUsd ?? 0;
+    return usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
 
   // Catálogo Real Filtrado por Rol y Búsqueda (UX Improvement)
   public serviciosCatalogo = signal<CatalogItem[]>([]);
@@ -379,10 +421,61 @@ export class FacturacionComponent {
     });
   }
 
-  seleccionarTurno(hora: string) {
-    this.selectedSlot.set(hora);
-    this.horaCita.set(hora);
-    this.showScheduleModal.set(false);
+  seleccionarTurno(slot: ScheduleEntry) {
+    if (slot.ocupado || slot.bloqueado) {
+      this.errorMessage.set("Este horario no está disponible.");
+      return;
+    }
+
+    if (slot.reservado) {
+       this.errorMessage.set("Este horario está siendo facturado por otro usuario.");
+       return;
+    }
+
+    this.isLoading.set(true);
+    this.facturacionService.reservarTurno({
+      medicoId: this.selectedMedicoId()!,
+      horaPautada: slot.hora
+    }).subscribe({
+      next: () => {
+        this.selectedSlot.set(this.getHoraRango(slot.hora));
+        this.horaCita.set(slot.hora);
+        this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
+        this.showScheduleModal.set(false);
+        this.isLoading.set(false);
+        this.actionMessage.set("Horario reservado temporalmente para esta facturación.");
+      },
+      error: (err) => {
+        this.errorMessage.set(err.error?.error || "No se pudo reservar el turno. Intente con otro.");
+        this.isLoading.set(false);
+        // Refrescar agenda por si cambió
+        this.abrirModalHorarios();
+      }
+    });
+  }
+
+  bloquearHorario(slot: ScheduleEntry) {
+    if (!this.isAdmin()) return;
+    
+    const motivo = prompt("Motivo del bloqueo administrativo:", "Reunión/Descanso");
+    if (!motivo) return;
+
+    this.isLoading.set(true);
+    this.facturacionService.bloquearHorario({
+      medicoId: this.selectedMedicoId()!,
+      horaPautada: slot.hora,
+      motivo: motivo
+    }).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.actionMessage.set("Horario bloqueado exitosamente.");
+        this.abrirModalHorarios(); // Refrescar
+      },
+      error: (err) => {
+        this.errorMessage.set(err.error?.error || "Error al bloquear horario.");
+        this.isLoading.set(false);
+      }
+    });
   }
 
   // Método para Filtrado Inverso (Servicio -> Especialidad)
@@ -459,7 +552,8 @@ export class FacturacionComponent {
       tipoServicio: s.tipo,
       usuarioCarga: this.user()?.username || 'admin',
       medicoId: esConsulta ? this.selectedMedicoId() || undefined : undefined,
-      horaCita: fullHoraCita
+      horaCita: fullHoraCita,
+      comentario: this.comentarioCita() || undefined
     };
 
     this.facturacionService.cargarServicio(payload).subscribe({

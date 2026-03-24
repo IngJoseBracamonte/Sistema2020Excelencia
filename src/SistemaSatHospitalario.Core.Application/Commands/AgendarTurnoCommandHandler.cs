@@ -21,15 +21,28 @@ namespace SistemaSatHospitalario.Core.Application.Commands
         public async Task<Guid> Handle(AgendarTurnoCommand request, CancellationToken cancellationToken)
         {
             // 1. Validar disponibilidad (Evitar colisión de horario exacto)
-            var colision = await _context.CitasMedicas
+            var colisionCita = await _context.CitasMedicas
                 .AnyAsync(c => c.MedicoId == request.MedicoId 
                             && c.HoraPautada == request.FechaHoraToma 
                             && c.EstadoAtencion != "Cancelado", 
                             cancellationToken);
 
-            if (colision)
+            var colisionBloqueo = await _context.BloqueosHorarios
+                .AnyAsync(b => b.MedicoId == request.MedicoId && b.HoraPautada == request.FechaHoraToma, cancellationToken);
+
+            if (colisionCita || colisionBloqueo)
             {
-                throw new InvalidOperationException("El horario solicitado ya se encuentra ocupado por otra cita.");
+                throw new InvalidOperationException("El horario solicitado ya se encuentra ocupado o bloqueado.");
+            }
+
+            // 2. Limpiar reservas temporales para este horario al confirmar la cita real
+            var reservasAsociadas = await _context.ReservasTemporales
+                .Where(r => r.MedicoId == request.MedicoId && r.HoraPautada == request.FechaHoraToma)
+                .ToListAsync(cancellationToken);
+            
+            if (reservasAsociadas.Any())
+            {
+                _context.ReservasTemporales.RemoveRange(reservasAsociadas);
             }
 
             // 2. Crear Cita Médica
@@ -37,7 +50,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands
                 request.MedicoId,
                 request.PacienteId,
                 request.CuentaServicioId,
-                request.FechaHoraToma
+                request.FechaHoraToma,
+                request.Comentario
             );
 
             _context.CitasMedicas.Add(cita);

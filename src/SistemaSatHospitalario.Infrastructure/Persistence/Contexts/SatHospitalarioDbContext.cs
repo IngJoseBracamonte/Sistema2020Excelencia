@@ -27,6 +27,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
         public DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; set; }
         public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
+        public DbSet<ReservaTemporal> ReservasTemporales { get; set; }
+        public DbSet<BloqueoHorario> BloqueosHorarios { get; set; }
         public DbSet<ErrorTicket> ErrorTickets { get; set; }
         public DbSet<Especialidad> Especialidades { get; set; }
 
@@ -209,6 +211,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("Especialidades");
                 entity.HasKey(e => e.Id);
+            });
+
+            builder.Entity<ReservaTemporal>(entity =>
+            {
+                entity.ToTable("ReservasTemporales");
+                entity.HasKey(r => r.Id);
+                entity.HasIndex(r => new { r.MedicoId, r.HoraPautada }).IsUnique();
+            });
+
+            builder.Entity<BloqueoHorario>(entity =>
+            {
+                entity.ToTable("BloqueosHorarios");
+                entity.HasKey(b => b.Id);
+                entity.HasIndex(b => new { b.MedicoId, b.HoraPautada }).IsUnique();
             });
         }
     }

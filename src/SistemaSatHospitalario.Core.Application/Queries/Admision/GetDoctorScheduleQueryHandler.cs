@@ -33,19 +33,35 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Where(c => c.MedicoId == request.MedicoId && c.HoraPautada.Date == request.Fecha.Date && c.EstadoAtencion != "Cancelado")
                 .ToListAsync(cancellationToken);
 
-            // 2. Generar slots de agenda (ej. de 8:00 AM a 4:00 PM cada 30 min)
-            var start = request.Fecha.Date.AddHours(8);
-            var end = request.Fecha.Date.AddHours(16);
+            var reservas = await _context.ReservasTemporales
+                .Where(r => r.MedicoId == request.MedicoId && r.HoraPautada.Date == request.Fecha.Date && r.ExpiracionUtc > DateTime.UtcNow)
+                .ToListAsync(cancellationToken);
+
+            var bloqueos = await _context.BloqueosHorarios
+                .Where(b => b.MedicoId == request.MedicoId && b.HoraPautada.Date == request.Fecha.Date)
+                .ToListAsync(cancellationToken);
+
+            var start = request.Fecha.Date.AddHours(8); // 8 AM
+            var end = request.Fecha.Date.AddHours(18.5); // 6:30 PM (Último turno 6:00 - 6:30)
 
             for (var current = start; current < end; current = current.AddMinutes(30))
             {
                 var citaOcupada = citas.FirstOrDefault(c => c.HoraPautada.TimeOfDay == current.TimeOfDay);
+                var reservaVigente = reservas.FirstOrDefault(r => r.HoraPautada.TimeOfDay == current.TimeOfDay);
+                var bloqueoAdmin = bloqueos.FirstOrDefault(b => b.HoraPautada.TimeOfDay == current.TimeOfDay);
                 
+                var comentario = "Disponible";
+                if (citaOcupada != null) comentario = citaOcupada.Comentario ?? "Ocupado";
+                else if (bloqueoAdmin != null) comentario = bloqueoAdmin.Motivo ?? "Bloqueado Administrativamente";
+                else if (reservaVigente != null) comentario = "En proceso de facturación...";
+
                 response.Turnos.Add(new ScheduleEntry
                 {
                     Hora = current,
                     Ocupado = citaOcupada != null,
-                    Comentario = citaOcupada != null ? "Ocupado" : "Disponible"
+                    Reservado = reservaVigente != null,
+                    Bloqueado = bloqueoAdmin != null,
+                    Comentario = comentario
                 });
             }
 

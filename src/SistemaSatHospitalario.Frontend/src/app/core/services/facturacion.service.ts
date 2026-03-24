@@ -30,6 +30,18 @@ export interface CargarServicioACuentaRequest {
   usuarioCarga: string;
   medicoId?: string;
   horaCita?: string;
+  comentario?: string;
+}
+
+export interface ReservarTurnoRequest {
+  medicoId: string;
+  horaPautada: string; // ISO
+}
+
+export interface BloquearHorarioRequest {
+  medicoId: string;
+  horaPautada: string; // ISO
+  motivo: string;
 }
 
 export interface ReceiptPrintData {
@@ -73,5 +85,13 @@ export class FacturacionService {
 
   getReceiptPrintData(reciboId: string): Observable<ReceiptPrintData> {
     return this.http.get<ReceiptPrintData>(`${this.receiptUrl}/${reciboId}/Print`);
+  }
+
+  reservarTurno(payload: ReservarTurnoRequest): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/ReservarTurno`, payload);
+  }
+
+  bloquearHorario(payload: BloquearHorarioRequest): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/BloquearHorario`, payload);
   }
 }

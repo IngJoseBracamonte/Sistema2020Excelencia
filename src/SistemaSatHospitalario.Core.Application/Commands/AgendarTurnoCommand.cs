@@ -10,5 +10,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands
         public int PacienteId { get; set; }
         public Guid CuentaServicioId { get; set; }
         public DateTime FechaHoraToma { get; set; }
+        public string? Comentario { get; set; }
     }
 }

@@ -12,6 +12,8 @@ export interface Doctor {
 export interface ScheduleEntry {
   hora: string;
   ocupado: boolean;
+  reservado: boolean;
+  bloqueado: boolean;
   comentario: string;
 }
 

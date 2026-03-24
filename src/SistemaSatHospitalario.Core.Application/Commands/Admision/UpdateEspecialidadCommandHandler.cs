@@ -14,16 +14,15 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _context = context;
         }
 
-        public async Task<Unit> Handle(UpdateEspecialidadCommand request, CancellationToken cancellationToken)
+        public async Task Handle(UpdateEspecialidadCommand request, CancellationToken cancellationToken)
         {
             var entity = await _context.Especialidades.FindAsync(request.Id);
-            if (entity == null) return Unit.Value;
+            if (entity == null) return;
 
             entity.Update(request.Nombre);
             entity.SetEstado(request.Activo);
 
             await _context.SaveChangesAsync(cancellationToken);
-            return Unit.Value;
         }
     }
 }

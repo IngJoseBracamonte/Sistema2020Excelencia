@@ -24,6 +24,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<Medico> Medicos { get; }
         DbSet<TasaCambio> TasaCambio { get; }
         DbSet<ServicioClinico> ServiciosClinicos { get; }
+        DbSet<ReservaTemporal> ReservasTemporales { get; }
+        DbSet<BloqueoHorario> BloqueosHorarios { get; }
         DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; }
         DbSet<CuentaPorCobrar> CuentasPorCobrar { get; }
         DbSet<ErrorTicket> ErrorTickets { get; }

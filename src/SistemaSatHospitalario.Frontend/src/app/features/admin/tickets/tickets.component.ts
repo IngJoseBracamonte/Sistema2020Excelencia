@@ -4,13 +4,25 @@ import { TicketService } from '../../../core/services/ticket.service';
 import { TicketError } from '../../../core/models/ticket.model';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { 
+    LucideAngularModule, 
+    AlertTriangle, 
+    Search, 
+    RefreshCw, 
+    Eye, 
+    CheckCircle, 
+    MessageSquare,
+    Terminal,
+    X,
+    Clipboard,
+    HardDrive
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-admin-tickets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './tickets.component.html',
-  styleUrls: ['./tickets.component.css']
+  imports: [CommonModule, FormsModule, LucideAngularModule],
+  templateUrl: './tickets.component.html'
 })
 export class AdminTicketsComponent implements OnInit {
   private ticketService = inject(TicketService);
@@ -24,6 +36,19 @@ export class AdminTicketsComponent implements OnInit {
   // Modal State
   selectedTicket = signal<TicketError | null>(null);
   comentarios = signal<string>('');
+
+  readonly icons = {
+    AlertTriangle,
+    Search,
+    RefreshCw,
+    Eye,
+    CheckCircle,
+    MessageSquare,
+    Terminal,
+    X,
+    Clipboard,
+    HardDrive
+  };
 
   ngOnInit() {
     this.loadTickets();

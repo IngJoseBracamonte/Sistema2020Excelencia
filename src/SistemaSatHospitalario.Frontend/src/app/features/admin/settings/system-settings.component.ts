@@ -9,68 +9,76 @@ import { LucideAngularModule, Settings, Save, RefreshCw, Database } from 'lucide
   imports: [CommonModule, FormsModule, LucideAngularModule],
   template: `
     <div class="p-8 space-y-8 animate-fade-in relative z-10">
-      <div class="flex items-center justify-between bg-white/60 backdrop-blur-2xl p-8 rounded-[2.5rem] shadow-sm border border-slate-100/50">
+      <!-- Header Section (V2.0 Midnight Blue Legítimo) -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
         <div class="flex items-center space-x-6">
-          <div class="h-16 w-16 bg-slate-800 rounded-3xl shadow-xl flex items-center justify-center text-white">
-            <lucide-icon [name]="'Settings'" class="w-8 h-8"></lucide-icon>
+          <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
+            <lucide-icon [name]="icons.Settings" class="w-8 h-8"></lucide-icon>
           </div>
           <div>
-            <h1 class="text-3xl font-black text-slate-800 tracking-tighter uppercase">Configuración del Sistema</h1>
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Ajustes Globales y Parámetros del Establecimiento</p>
+            <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Configuración del Sistema</h1>
+            <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Parámetros Maestros & Establecimiento</p>
           </div>
         </div>
-        <button (click)="saveSettings()" class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl shadow-lg transition-all active:scale-95">
-          <lucide-icon [name]="'Save'" class="w-4 h-4"></lucide-icon>
-          <span class="text-sm font-black uppercase tracking-widest">Guardar Cambios</span>
+        <button (click)="saveSettings()" class="mt-4 md:mt-0 bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20 flex items-center group active:scale-95">
+          <lucide-icon [name]="icons.Save" class="w-4 h-4 mr-3"></lucide-icon>
+          Guardar Cambios
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Columna de Navegación de Ajustes -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Navigation Menu (V2.0 Card Style) -->
         <div class="lg:col-span-1 space-y-4">
-          <div class="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-100 italic text-xs font-bold text-slate-400 text-center uppercase tracking-widest">
+          <div class="bg-surface-card p-4 rounded-[1.5rem] border border-white/5 italic text-[8px] font-black text-slate-500 text-center uppercase tracking-widest">
             Secciones de Ajustes
           </div>
-          <button class="w-full text-left p-6 rounded-3xl bg-blue-50 border border-blue-100 text-blue-700 flex items-center space-x-4">
-            <lucide-icon [name]="'Database'" class="w-5 h-5"></lucide-icon>
-            <span class="font-black text-sm uppercase tracking-tight">General & Moneda</span>
+          <button class="w-full text-left p-6 rounded-[1.5rem] bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center space-x-4 shadow-lg shadow-rose-500/5 transition-all">
+            <lucide-icon [name]="icons.Database" class="w-5 h-5"></lucide-icon>
+            <span class="font-black text-xs uppercase tracking-tight">General & Moneda</span>
           </button>
         </div>
 
-        <!-- Formulario de Ajustes -->
-        <div class="lg:col-span-2 bg-white rounded-[2.5rem] shadow-xl border border-slate-100 p-10">
-          <div class="space-y-10">
-            <!-- Sección: Moneda y Tasa -->
+        <!-- Form Context (Premium Card) -->
+        <div class="lg:col-span-3 bg-surface-card rounded-[2.5rem] shadow-2xl border border-white/5 p-10 relative overflow-hidden">
+          <div class="space-y-12">
+            <!-- Section: Currency & Tax -->
             <div>
-              <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 border-b border-slate-50 pb-4">Parámetros Financieros</h3>
+              <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center">
+                <span class="h-1.5 w-1.5 rounded-full bg-rose-500 mr-3 animate-pulse"></span>
+                Parámetros Financieros
+              </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tasa de Cambio del Día (Bs/$)</label>
+                <div class="space-y-3">
+                  <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Tasa de Cambio del Día (BS/$)</label>
                   <div class="relative">
-                    <input type="number" [(ngModel)]="tasaCambio" class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold text-slate-700" placeholder="0.00">
-                    <div class="absolute right-4 top-1/2 -translate-y-1/2">
-                       <lucide-icon [name]="'RefreshCw'" class="w-4 h-4 text-slate-300"></lucide-icon>
+                    <input type="number" [(ngModel)]="tasaCambio" class="w-full bg-black/20 border border-white/5 p-5 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none font-black text-white text-sm" placeholder="0.00">
+                    <div class="absolute right-5 top-1/2 -translate-y-1/2">
+                       <lucide-icon [name]="icons.RefreshCw" class="w-4 h-4 text-slate-600"></lucide-icon>
                     </div>
                   </div>
                 </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Impuesto (IVA %)</label>
-                  <input type="number" [(ngModel)]="iva" class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold text-slate-700" placeholder="16">
+                <div class="space-y-3">
+                  <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Impuesto (IVA %)</label>
+                  <input type="number" [(ngModel)]="iva" class="w-full bg-black/20 border border-white/5 p-5 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none font-black text-white text-sm" placeholder="16">
                 </div>
               </div>
             </div>
 
-            <!-- Sección: Establecimiento -->
+            <!-- Section: Establishment -->
             <div>
-              <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 border-b border-slate-50 pb-4">Datos del Establecimiento</h3>
-              <div class="space-y-6">
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
-                  <input type="text" [(ngModel)]="nombreHosp" class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold text-slate-700">
+              <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-3 animate-pulse"></span>
+                Datos del Establecimiento
+              </h3>
+              <div class="space-y-8">
+                <div class="space-y-3">
+                  <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
+                  <input type="text" [(ngModel)]="nombreHosp" class="w-full bg-black/20 border border-white/5 p-5 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none font-black text-white text-sm uppercase">
                 </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">RIF / Identificación Fiscal</label>
-                  <input type="text" [(ngModel)]="rif" class="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold text-slate-700">
+                <div class="space-y-3">
+                  <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">RIF / Identificación Fiscal</label>
+                  <input type="text" [(ngModel)]="rif" class="w-full bg-black/20 border border-white/5 p-5 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all outline-none font-black text-white text-sm uppercase">
                 </div>
               </div>
             </div>
@@ -81,10 +89,10 @@ import { LucideAngularModule, Settings, Save, RefreshCw, Database } from 'lucide
   `,
   styles: [`
     .animate-fade-in {
-      animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(15px); }
       to { opacity: 1; transform: translateY(0); }
     }
   `]

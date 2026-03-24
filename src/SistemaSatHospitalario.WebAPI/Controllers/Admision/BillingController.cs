@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Commands;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = "Administrador,Asistente Particular,Asistente de Seguros,Cajero")]
+    [Authorize(Roles = "Admin,Administrador,Asistente Particular,Asistente Seguro,Asistente de Seguros,Asistente RX,Médico,Cajero")]
     [ApiController]
     [Route("api/[controller]")]
     public class BillingController : ControllerBase
@@ -60,6 +61,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 return BadRequest(new { Error = ex.Message });
             }
+        }
+
         [HttpDelete("RemoveServicio")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -70,6 +73,42 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 var command = new RemoveServicioDeCuentaCommand { CuentaId = cuentaId, ServicioId = servicioId };
                 await _mediator.Send(command);
                 return Ok(new { Message = "Servicio removido exitosamente de la cuenta." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("ReservarTurno")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ReservarTurno([FromBody] ReservarTurnoTemporalCommand command)
+        {
+            try
+            {
+                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Anonimo";
+                var exito = await _mediator.Send(command);
+                if (exito) return Ok(new { Message = "Turno reservado temporalmente." });
+                return BadRequest(new { Error = "El turno ya no está disponible o ha sido reservado por otro usuario." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("BloquearHorario")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> BloquearHorario([FromBody] BloquearHorarioCommand command)
+        {
+            try
+            {
+                var exito = await _mediator.Send(command);
+                if (exito) return Ok(new { Message = "Horario bloqueado administrativamente." });
+                return BadRequest(new { Error = "No se pudo bloquear el horario (podría tener una cita activa)." });
             }
             catch (Exception ex)
             {
