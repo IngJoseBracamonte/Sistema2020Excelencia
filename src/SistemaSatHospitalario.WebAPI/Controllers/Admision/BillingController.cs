@@ -87,14 +87,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Anonimo";
-                var exito = await _mediator.Send(command);
-                if (exito) return Ok(new { Message = "Turno reservado temporalmente." });
-                return BadRequest(new { Error = "El turno ya no está disponible o ha sido reservado por otro usuario." });
+                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "Anonimo";
+                await _mediator.Send(command);
+                return Ok(new { Message = "Turno reservado temporalmente." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = "Error inesperado: " + ex.Message });
             }
         }
 

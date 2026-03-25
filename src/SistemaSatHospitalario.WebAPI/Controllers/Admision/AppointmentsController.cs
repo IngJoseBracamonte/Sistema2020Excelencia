@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
     [Authorize]
@@ -31,7 +34,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpGet("Schedule/{doctorId}/{date}")]
         public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, DateTime date)
         {
-            var schedule = await _mediator.Send(new GetDoctorScheduleQuery(doctorId, date));
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+                        ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+                        ?? "Anonimo";
+
+            var schedule = await _mediator.Send(new GetDoctorScheduleQuery(doctorId, date, userId));
             return Ok(schedule);
         }
 

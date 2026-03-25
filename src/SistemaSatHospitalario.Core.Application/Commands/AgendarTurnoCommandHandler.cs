@@ -20,15 +20,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
         public async Task<Guid> Handle(AgendarTurnoCommand request, CancellationToken cancellationToken)
         {
+            // Normalización para garantizar paridad con el sistema de Reservas y prevenir errores de índice único
+            var targetHora = new DateTime(
+                request.FechaHoraToma.Year, request.FechaHoraToma.Month, request.FechaHoraToma.Day, 
+                request.FechaHoraToma.Hour, request.FechaHoraToma.Minute, 0, 
+                DateTimeKind.Unspecified);
+
             // 1. Validar disponibilidad (Evitar colisión de horario exacto)
             var colisionCita = await _context.CitasMedicas
                 .AnyAsync(c => c.MedicoId == request.MedicoId 
-                            && c.HoraPautada == request.FechaHoraToma 
+                            && c.HoraPautada == targetHora 
                             && c.EstadoAtencion != "Cancelado", 
                             cancellationToken);
 
             var colisionBloqueo = await _context.BloqueosHorarios
-                .AnyAsync(b => b.MedicoId == request.MedicoId && b.HoraPautada == request.FechaHoraToma, cancellationToken);
+                .AnyAsync(b => b.MedicoId == request.MedicoId && b.HoraPautada == targetHora, cancellationToken);
 
             if (colisionCita || colisionBloqueo)
             {
@@ -37,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
             // 2. Limpiar reservas temporales para este horario al confirmar la cita real
             var reservasAsociadas = await _context.ReservasTemporales
-                .Where(r => r.MedicoId == request.MedicoId && r.HoraPautada == request.FechaHoraToma)
+                .Where(r => r.MedicoId == request.MedicoId && r.HoraPautada == targetHora)
                 .ToListAsync(cancellationToken);
             
             if (reservasAsociadas.Any())
@@ -50,7 +56,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
                 request.MedicoId,
                 request.PacienteId,
                 request.CuentaServicioId,
-                request.FechaHoraToma,
+                targetHora,
                 request.Comentario
             );
 

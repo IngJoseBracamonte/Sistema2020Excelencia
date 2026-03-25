@@ -41,8 +41,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Where(b => b.MedicoId == request.MedicoId && b.HoraPautada.Date == request.Fecha.Date)
                 .ToListAsync(cancellationToken);
 
-            var start = request.Fecha.Date.AddHours(8); // 8 AM
-            var end = request.Fecha.Date.AddHours(18.5); // 6:30 PM (Último turno 6:00 - 6:30)
+            // Normalizar inicio a precisión estable (Micro-Ciclo 40 Optimization)
+            var baseDate = request.Fecha.Date;
+            var start = new DateTime(baseDate.Year, baseDate.Month, baseDate.Day, 8, 0, 0, DateTimeKind.Unspecified); // 8 AM exacto
+            var end = start.AddHours(10.5); // 6:30 PM (Último turno 6:00 - 6:30)
 
             for (var current = start; current < end; current = current.AddMinutes(30))
             {
@@ -51,15 +53,21 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var bloqueoAdmin = bloqueos.FirstOrDefault(b => b.HoraPautada.TimeOfDay == current.TimeOfDay);
                 
                 var comentario = "Disponible";
+                bool esReservaPropia = reservaVigente != null && reservaVigente.UsuarioId == request.UsuarioId;
+                
                 if (citaOcupada != null) comentario = citaOcupada.Comentario ?? "Ocupado";
                 else if (bloqueoAdmin != null) comentario = bloqueoAdmin.Motivo ?? "Bloqueado Administrativamente";
-                else if (reservaVigente != null) comentario = "En proceso de facturación...";
+                else if (reservaVigente != null) 
+                {
+                    comentario = esReservaPropia ? "Tu reserva actual (Vigente)" : "En proceso de facturación...";
+                }
 
                 response.Turnos.Add(new ScheduleEntry
                 {
                     Hora = current,
                     Ocupado = citaOcupada != null,
-                    Reservado = reservaVigente != null,
+                    // Si es reserva propia, lo mostramos como NO reservado por terceros para permitir re-selección
+                    Reservado = reservaVigente != null && !esReservaPropia,
                     Bloqueado = bloqueoAdmin != null,
                     Comentario = comentario
                 });

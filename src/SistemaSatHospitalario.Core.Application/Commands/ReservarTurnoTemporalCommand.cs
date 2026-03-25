@@ -12,7 +12,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
     {
         public Guid MedicoId { get; set; }
         public DateTime HoraPautada { get; set; }
-        public string UsuarioId { get; set; }
+        public string? UsuarioId { get; set; }
     }
 
     public class ReservarTurnoTemporalCommandHandler : IRequestHandler<ReservarTurnoTemporalCommand, bool>
@@ -26,7 +26,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
         public async Task<bool> Handle(ReservarTurnoTemporalCommand request, CancellationToken cancellationToken)
         {
-            // 1. Limpiar reservas expiradas para este médico (mantenimiento preventivo)
+            // Normalizar a precisión de minuto para comparativa estable en DB y MySQL
+            var targetHora = new DateTime(request.HoraPautada.Year, request.HoraPautada.Month, request.HoraPautada.Day, 
+                                          request.HoraPautada.Hour, request.HoraPautada.Minute, 0, DateTimeKind.Unspecified);
+
+            if (request.MedicoId == Guid.Empty)
+                throw new InvalidOperationException("El ID del médico es requerido.");
+
+            // 1. Limpiar reservas expiradas para este médico
             var expiradas = _context.ReservasTemporales
                 .Where(r => r.MedicoId == request.MedicoId && r.ExpiracionUtc < DateTime.UtcNow)
                 .ToList();
@@ -34,30 +41,51 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             if (expiradas.Any())
             {
                 _context.ReservasTemporales.RemoveRange(expiradas);
+                await _context.SaveChangesAsync(cancellationToken);
             }
 
             // 2. Verificar que no haya una cita real ya agendada
             var citaExistente = _context.CitasMedicas.Any(c => 
                 c.MedicoId == request.MedicoId && 
-                c.HoraPautada == request.HoraPautada && 
+                c.HoraPautada == targetHora && 
                 c.EstadoAtencion != "Cancelado");
 
-            if (citaExistente) return false;
+            if (citaExistente) 
+                throw new InvalidOperationException("Ya existe una cita médica(En Espera/Atendida) en este horario exacto.");
 
-            // 3. Verificar que no haya otra reserva temporal vigente
-            var reservaExistente = _context.ReservasTemporales.Any(r => 
+            // 3. Verificar si hay reserva vigente (Excluyendo al mismo usuario para permitir re-agendamiento tras refresh)
+            var reservaMismaHora = _context.ReservasTemporales.FirstOrDefault(r => 
                 r.MedicoId == request.MedicoId && 
-                r.HoraPautada == request.HoraPautada &&
+                r.HoraPautada == targetHora &&
                 r.ExpiracionUtc > DateTime.UtcNow);
 
-            if (reservaExistente) return false;
+            if (reservaMismaHora != null)
+            {
+                if (reservaMismaHora.UsuarioId != request.UsuarioId)
+                {
+                    throw new InvalidOperationException("Este turno ya está siendo procesado por otro cajero. Intente en un momento.");
+                }
+                else
+                {
+                    // Si es el mismo usuario, eliminamos la anterior para dejar la nueva (Refresh de 15 min)
+                    _context.ReservasTemporales.Remove(reservaMismaHora);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
 
-            // 4. Crear nueva reserva
-            var nuevaReserva = new ReservaTemporal(request.MedicoId, request.HoraPautada, request.UsuarioId);
-            _context.ReservasTemporales.Add(nuevaReserva);
+            try 
+            {
+                // 4. Crear nueva reserva
+                var nuevaReserva = new ReservaTemporal(request.MedicoId, targetHora, request.UsuarioId ?? "Anonimo");
+                _context.ReservasTemporales.Add(nuevaReserva);
 
-            await _context.SaveChangesAsync(cancellationToken);
-            return true;
+                await _context.SaveChangesAsync(cancellationToken);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error interno de base de datos al reservar: {ex.Message}");
+            }
         }
     }
 }

@@ -28,6 +28,12 @@ export class AuthService {
   // Estado reactivo (Signal)
   public currentUser = signal<AuthResponse | null>(this.getUserFromStorage());
 
+  // Helpers de Roles (Computed logic)
+  public isAdministrador = (): boolean => this.currentUser()?.role?.toLowerCase() === 'administrador';
+  public isCajero = (): boolean => this.currentUser()?.role?.toLowerCase() === 'asistente' || this.isAdministrador();
+  public isMedico = (): boolean => this.currentUser()?.role?.toLowerCase() === 'medico';
+  public isFarmacia = (): boolean => this.currentUser()?.role?.toLowerCase() === 'rx' || this.isAdministrador();
+
   // Recupera la sesión persistida previamente (PWA LocalStorage)
   private getUserFromStorage(): AuthResponse | null {
     const token = localStorage.getItem('jwt_token');

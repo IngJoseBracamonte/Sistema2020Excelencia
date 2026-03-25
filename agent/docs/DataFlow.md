@@ -26,6 +26,17 @@ Este flujo es secuencial y debe respetarse para garantizar la integridad de los 
    - Generación de factura y recibo.
    - Cálculo automático de tasas y USD en `FacturaConvenioAsterisco`.
 
+### 3. Proceso de Agendamiento (Scheduling Flow)
+Integrado en el Wizard de Facturación (Micro-Ciclo 38):
+- **Reserva Temporal**:
+  - `FacturacionComponent` -> `ReservarTurnoTemporalCommand`.
+  - Crea `ReservaTemporal` (15 min) para bloquear el slot mientras se procesa la cuenta.
+  - Valida contra `CitasMedicas` y otras `ReservasTemporales` vigentes.
+- **Persistencia de Cita**:
+  - `CargarServicioACuentaCommand` -> `ProcesarCitaMedicaAsync`.
+  - Crea `CitaMedica` vinculada a la `CuentaServicios`.
+  - Marca estado "En Espera" por defecto.
+
 ## 📡 Arquitectura de Telemetría (Observability Flow)
 El sistema utiliza un pipeline de OpenTelemetry distribuido:
 

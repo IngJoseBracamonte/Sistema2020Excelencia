@@ -82,11 +82,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
                 throw new InvalidOperationException("Los servicios de consulta requieren Médico y Hora de Cita.");
 
-            // Validar disponibilidad (Principio de Fallo Rápido)
-            if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, request.HoraCita.Value, ct))
-                throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {request.HoraCita.Value:HH:mm}.");
+            // Normalización de Horario Profesional (V3.1): Seguros de colisión exactos a nivel de minuto
+            var horaNormalizada = new DateTime(
+                request.HoraCita.Value.Year, request.HoraCita.Value.Month, request.HoraCita.Value.Day,
+                request.HoraCita.Value.Hour, request.HoraCita.Value.Minute, 0, 
+                DateTimeKind.Unspecified);
 
-            var cita = new CitaMedica(request.MedicoId.Value, request.PacienteId, cuentaId, request.HoraCita.Value);
+            // Validar disponibilidad (Principio de Fallo Rápido)
+            if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
+                throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {horaNormalizada:HH:mm}.");
+
+            var cita = new CitaMedica(request.MedicoId.Value, request.PacienteId, cuentaId, horaNormalizada);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
         }
 
@@ -105,7 +111,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             if (string.IsNullOrEmpty(tipo)) return false;
             var t = tipo.ToUpper();
-            return t.Contains("CONSULTA") || t.Contains("MEDICO") || t.Contains("MÉDICO");
+            return t.Contains("CONSULTA") || 
+                   t.Contains("MEDICO") || 
+                   t.Contains("MÉDICO") || 
+                   t.Contains("OBSTETRI") || 
+                   t.Contains("GINECO");
         }
     }
 }

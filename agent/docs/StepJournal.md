@@ -23,6 +23,11 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Razón**: El backend devolvía `userId` y no incluía `username`, lo que causaba que el frontend invalidara la sesión al no encontrar campos esperados, dejando de enviar el token Bearer en las peticiones.
 - **Resultado**: Sesión persistente y fin de los errores 401 en el catálogo.
 
+### 5. Verificación de la Ruta de Agendamiento (Scheduling Path)
+- **Acción**: Auditoría completa del flujo desde `FacturacionComponent` -> `BillingController` -> `MediatR` (ReservarTurno y CargarServicio) -> `MySQL`.
+- **Contexto**: El usuario solicitó verificar "toda la ruta para agendar" usando skills de arquitectura.
+- **Resultado**: Ruta validada con consistencia en normalización de fechas (minutos) y protección de slots mediante `ReservaTemporal` (15 min) y `CitaMedica`. Documentación actualizada en `DataFlow.md`.
+
 ## 📌 Lecciones del Día
 - **Serialization Mismatch**: Recordar que `.NET` serializa Guid como string `userId` (camelCase) por defecto, mientras que el frontend esperaba `id`. Siempre mapear explícitamente en el pipe `tap` del `AuthService`.
 - **PowerShell Policies**: No usar `npm run build` directo en Windows; preferir `npm.cmd` o bypass de políticas para evitar fallos de seguridad en la terminal.

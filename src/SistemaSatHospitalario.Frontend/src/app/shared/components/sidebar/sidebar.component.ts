@@ -104,10 +104,24 @@ import {
             Ordenes Medicas
           </a>
 
-          <a *ngIf="isAdmin()" routerLink="/settings" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.Settings" class="w-5 h-5 mr-3"></lucide-icon>
-            Configuración
-          </a>
+          <!-- Dropdown: Configuración -->
+          <div *ngIf="isAdmin()" class="space-y-1">
+            <button (click)="toggleDropdown('settings')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().settings }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Settings" class="w-5 h-5 mr-3 text-emerald-500"></lucide-icon>
+                    Configuración
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().settings"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().settings" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">Ajustes Globales</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Usuarios</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios / Seguros</a>
+            </div>
+          </div>
         </div>
       </nav>
 
@@ -191,7 +205,8 @@ export class SidebarComponent implements OnInit {
 
     public dropdownsOpen = signal({
         caja: false,
-        medica: false
+        medica: false,
+        settings: false
     });
 
     ngOnInit() {
@@ -201,6 +216,9 @@ export class SidebarComponent implements OnInit {
         }
         if (url.includes('/medicos') || url.includes('/especialidades')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), medica: true });
+        }
+        if (url.includes('/settings')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), settings: true });
         }
     }
 
@@ -221,7 +239,7 @@ export class SidebarComponent implements OnInit {
         ChevronDown: ChevronDown
     };
 
-    toggleDropdown(key: 'caja' | 'medica') {
+    toggleDropdown(key: 'caja' | 'medica' | 'settings') {
         this.dropdownsOpen.update(prev => ({
             ...prev,
             [key]: !prev[key as keyof typeof prev]

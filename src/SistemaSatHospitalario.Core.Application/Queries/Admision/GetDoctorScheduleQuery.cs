@@ -9,10 +9,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public Guid MedicoId { get; set; }
         public DateTime Fecha { get; set; }
 
-        public GetDoctorScheduleQuery(Guid medicoId, DateTime fecha)
+        public string? UsuarioId { get; set; }
+
+        public GetDoctorScheduleQuery(Guid medicoId, DateTime fecha, string? usuarioId = null)
         {
             MedicoId = medicoId;
             Fecha = fecha;
+            UsuarioId = usuarioId;
         }
     }
 

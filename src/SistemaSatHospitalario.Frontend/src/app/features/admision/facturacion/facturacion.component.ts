@@ -87,17 +87,18 @@ export class FacturacionComponent {
   private specialtySearchMap: Record<string, string> = {
     'Ginecologo': 'GINECO',
     'Ginecólogo': 'GINECO',
+    'Ginecología': 'GINECO',
+    'Ginecologia': 'GINECO',
     'Pediatra': 'PEDIAT',
+    'Pediatría': 'PEDIAT',
     'Traumatologo': 'TRAUMA',
-    'Traumatólogo': 'TRAUMA',
     'Cardiologo': 'CARDIO',
-    'Cardiólogo': 'CARDIO',
     'Medicina General': 'GENERAL',
+    'Obstetricia': 'OBSTETRI',
+    'Obstetrica': 'OBSTETRI',
+    'Obstétrica': 'OBSTETRI',
     'Urologo': 'UROLO',
-    'Urólogo': 'UROLO',
-    'Oftalmologo': 'OFTALMO',
-    'Oftalmólogo': 'OFTALMO',
-    'Obstetricia': 'OBSTETRI'
+    'Oftalmologo': 'OFTALMO'
   };
 
   public suggestedServiceId = signal<string | null>(null);
@@ -153,6 +154,7 @@ export class FacturacionComponent {
   public availableSlots = signal<ScheduleEntry[]>([]);
   public selectedSlot = signal<string | null>(null);
   public comentarioCita = signal<string | null>(null);
+  public fechaCita = signal<string>(new Date().toISOString().split('T')[0]);
   public horaCita = signal<string>('08:00');
 
   public nombreMedicoSeleccionado = computed(() => {
@@ -202,15 +204,40 @@ export class FacturacionComponent {
     const raw = this.serviciosCatalogo();
     const roleFiltered = this.isAdmin() ? raw : (this.isRxAssistant() ? raw.filter(s => s.tipo === 'RX') : raw);
 
-    // Null check for searchTermServicio
+    let filtered = roleFiltered;
     const term = (this.searchTermServicio() || '').toLowerCase().trim();
-    if (!term) return roleFiltered;
+    const esp = this.selectedEspecialidad();
 
-    return roleFiltered.filter(s => {
-      const desc = (s.descripcion || '').toLowerCase();
-      const tipo = (s.tipo || '').toLowerCase();
-      return desc.includes(term) || tipo.includes(term);
-    });
+    // 1. Aplicar filtro de Especialidad Inteligente (V2.3 Robustness)
+    if (!term && esp) {
+      // Intentar identificar la palabra clave base (ej: de "Ginecología y Obstetricia" -> "GINECO")
+      const normalizedEsp = esp.toUpperCase();
+      let searchKey = normalizedEsp;
+      
+      const match = Object.entries(this.specialtySearchMap).find(([key, val]) => 
+        normalizedEsp.includes(key.toUpperCase())
+      );
+      
+      if (match) {
+        searchKey = match[1].toUpperCase();
+      }
+
+      filtered = filtered.filter(s => 
+        s.descripcion.toUpperCase().includes(searchKey) ||
+        s.tipo.toUpperCase().includes(searchKey)
+      );
+    }
+
+    // 2. Aplicar búsqueda manual (Prioritario)
+    if (term) {
+      filtered = filtered.filter(s => {
+        const desc = (s.descripcion || '').toLowerCase();
+        const tipo = (s.tipo || '').toLowerCase();
+        return desc.includes(term) || tipo.includes(term);
+      });
+    }
+
+    return filtered;
   });
 
   // Carrito de Servicios (Servicios ya persistidos en la cuenta)
@@ -223,10 +250,22 @@ export class FacturacionComponent {
   // Array de Pagos
   public pagos = signal<DetallePagoDto[]>([]);
 
-  // Feedback UI
+  // Feedback UI (Sistema de Toasts Premium V2.5)
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
+
+  private _toastEffect = effect(() => {
+    const action = this.actionMessage();
+    const error = this.errorMessage();
+
+    if (action || error) {
+      setTimeout(() => {
+        this.actionMessage.set(null);
+        this.errorMessage.set(null);
+      }, 5000); // 5 segundos de permanencia
+    }
+  });
 
   // States for Service Search (UX Improvement)
   public searchTermServicio = signal<string>('');
@@ -371,11 +410,14 @@ export class FacturacionComponent {
       tipoIngreso: this.tipoIngreso(),
       convenioId: this.convenioId() || undefined,
       servicioId: s.id,
-      descripcion: s.descripcion,
+      descripcion: (s as any).descripcion || s.descripcion,
       precio: s.precio,
       cantidad: 1,
       tipoServicio: s.tipo,
-      usuarioCarga: this.user()?.username || 'admin'
+      usuarioCarga: this.user()?.username || 'admin',
+      medicoId: (s as any).medicoId, 
+      horaCita: (s as any).horaCita,
+      comentario: (s as any).comentario
     };
 
     this.facturacionService.cargarServicio(payload).subscribe({
@@ -385,7 +427,8 @@ export class FacturacionComponent {
           ...s,
           precio: payload.precio,
           precioBs: s.precioBs,
-          precioUsd: s.precioUsd
+          precioUsd: s.precioUsd,
+          medicoNombre: (s as any).medicoNombre
         }]);
         this.isLoading.set(false);
       },
@@ -439,14 +482,22 @@ export class FacturacionComponent {
     });
   }
 
+  resetCitaSelection() {
+    this.selectedMedicoId.set(null);
+    this.selectedSlot.set(null);
+    this.horaCita.set('08:00');
+    this.comentarioCita.set(null);
+    this.selectedEspecialidad.set(null);
+  }
+
   abrirModalHorarios() {
     if (!this.selectedMedicoId()) return;
 
     this.scheduleLoading.set(true);
     this.showScheduleModal.set(true);
-    const today = new Date().toISOString().split('T')[0];
+    const dateToSearch = this.fechaCita();
 
-    this.appointmentsService.getDoctorSchedule(this.selectedMedicoId()!, today).subscribe({
+    this.appointmentsService.getDoctorSchedule(this.selectedMedicoId()!, dateToSearch).subscribe({
       next: (res: any) => {
         this.availableSlots.set(res.turnos);
         this.scheduleLoading.set(false);
@@ -470,16 +521,27 @@ export class FacturacionComponent {
     }
 
     this.isLoading.set(true);
-    this.facturacionService.reservarTurno({
+    // Normalización robusta para evitar desfases de zona horaria o milisegundos
+    const d = new Date(slot.hora);
+    const horaNormalizada = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:00`;
+
+    const payload = {
       medicoId: this.selectedMedicoId()!,
-      horaPautada: slot.hora
-    }).subscribe({
+      horaPautada: horaNormalizada
+    };
+    
+    console.log("DEBUG: Intentando reservar turno:", payload);
+
+    this.facturacionService.reservarTurno(payload)
+      .subscribe({
       next: () => {
         this.selectedSlot.set(this.getHoraRango(slot.hora));
-        this.horaCita.set(slot.hora);
+        // Guardar la fecha y hora completa de la reserva
+        this.horaCita.set(slot.hora); 
         this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
         this.showScheduleModal.set(false);
         this.isLoading.set(false);
+        this.errorMessage.set(null); // Limpiar error si logró agendar
         this.actionMessage.set("Horario reservado temporalmente para esta facturación.");
       },
       error: (err) => {
@@ -519,14 +581,28 @@ export class FacturacionComponent {
   seleccionarTipoConsulta(s: CatalogItem) {
     if (!s.tipo.toUpperCase().includes('CONSULTA')) return;
 
-    // Buscar si alguna especialidad coincide con la descripción
+    // Buscar si alguna especialidad coincide con la descripción (V2.0 Smart Match)
     const match = Object.entries(this.specialtySearchMap).find(([key, val]) =>
-      s.descripcion.toUpperCase().includes(val)
+      s.descripcion.toUpperCase().includes(val) || s.tipo.toUpperCase().includes(val)
     );
 
     if (match) {
       this.selectedEspecialidad.set(match[0]);
-      this.actionMessage.set(`Filtrando médicos para: ${s.descripcion}`);
+      this.selectedMedicoId.set(null); // Reset para forzar selección
+      this.actionMessage.set(`Especialidad ${match[0]} detectada. Seleccione su médico.`);
+      
+      // Feedback visual y automatización de selección (V2.1)
+      setTimeout(() => {
+        const el = document.getElementById('seccion-medica');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Si solo hay un médico, seleccionarlo automáticamente
+        const medicos = this.medicosFiltrados();
+        if (medicos.length === 1) {
+          this.selectedMedicoId.set(medicos[0].id);
+          this.actionMessage.set(`Especialidad ${match[0]} detectada. Médico sugerido: ${medicos[0].nombre}`);
+        }
+      }, 300); // Un poco más de tiempo para que medicosFiltrados reaccione al cambio de especialidad
     }
   }
 
@@ -534,15 +610,26 @@ export class FacturacionComponent {
     const s = this.serviciosCatalogo().find(x => x.id === servId);
     if (!s) return;
 
-    const esConsulta = s.tipo.toUpperCase().includes('CONSULTA') || s.tipo.toUpperCase().includes('MEDICO') || s.tipo.toUpperCase().includes('MÉDICO');
-    const esConsultaEspecializada = s.tipo.toUpperCase().includes('CONSULTA') && s.id !== 'S001';
+    const esConsulta = s.tipo.toUpperCase().includes('CONSULTA') || 
+                       s.tipo.toUpperCase().includes('MEDICO') || 
+                       s.tipo.toUpperCase().includes('MÉDICO') ||
+                       s.tipo.toUpperCase().includes('OBSTETRI') ||
+                       s.tipo.toUpperCase().includes('GINECO');
 
-    if (esConsultaEspecializada && !this.selectedMedicoId()) {
-      this.seleccionarTipoConsulta(s);
-      this.errorMessage.set(`Por favor, seleccione un médico para la ${s.descripcion}`);
-      // Hacemos scroll hacia arriba para que vea el selector de médicos
-      window.scrollTo({ top: 100, behavior: 'smooth' });
-      return;
+    // Validación estricta V3.0 (Micro-Ciclo 38): Consulta requiere Médico Y Turno Agendado
+    if (esConsulta) {
+      if (!this.selectedMedicoId()) {
+        this.seleccionarTipoConsulta(s);
+        this.errorMessage.set(`⚠️ El servicio "${s.descripcion}" requiere asignar un Médico.`);
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+        return;
+      }
+      
+      if (!this.selectedSlot()) {
+        this.errorMessage.set(`⚠️ Por favor, haga clic en "AGENDAR CITA" para seleccionar un horario para la ${s.descripcion}.`);
+        window.scrollTo({ top: 100, behavior: 'smooth' });
+        return;
+      }
     }
 
     let finalDescripcion = s.descripcion;
@@ -559,8 +646,16 @@ export class FacturacionComponent {
     if (pId === null) {
       const yaEnCarrito = this.carritoLocal().some(x => x.id === s.id);
       if (!yaEnCarrito) {
-        this.carritoLocal.update(prev => [...prev, { ...s, descripcion: finalDescripcion }]);
-        this.actionMessage.set(`Estudio "${finalDescripcion}" añadido al carrito temporal.`);
+        this.carritoLocal.update(prev => [...prev, { 
+          ...s, 
+          descripcion: finalDescripcion,
+          medicoId: esConsulta ? this.selectedMedicoId() : undefined,
+          medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
+          horaCita: esConsulta ? this.horaCita() : undefined,
+          comentario: this.comentarioCita()
+        }]);
+        this.resetCitaSelection();
+        this.actionMessage.set(`Servicio "${finalDescripcion}" añadido al carrito temporal.`);
       } else {
         this.errorMessage.set("Este servicio ya está en el carrito.");
       }
@@ -569,13 +664,12 @@ export class FacturacionComponent {
 
     // Si hay paciente, cargar directamente al backend
     this.isLoading.set(true);
-    // Lógica de Horario Profesional (ISO)
+    
+    // Lógica de Horario Profesional (V2.0 Core Fix)
+    // El backend espera 'horaCita' como el ISO que viene del servidor (slot.hora)
     let fullHoraCita: string | undefined = undefined;
     if (esConsulta && this.horaCita()) {
-      const now = new Date();
-      const [hours, minutes] = this.horaCita().split(':');
-      now.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      fullHoraCita = now.toISOString();
+      fullHoraCita = this.horaCita(); // Ya es un ISO string válido desde la reserva
     }
 
     const payload: CargarServicioACuentaRequest = {
@@ -599,10 +693,12 @@ export class FacturacionComponent {
         this.serviciosEnBackend.update((prev: any[]) => [...prev, {
           ...s,
           hora: this.horaCita(),
+          medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
           precio: payload.precio,
           precioBs: s.precioBs,
           precioUsd: s.precioUsd
         }]);
+        this.resetCitaSelection();
         this.actionMessage.set("Servicio cargado exitosamente.");
         this.errorMessage.set(null);
         this.isLoading.set(false);

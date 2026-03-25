@@ -24,12 +24,37 @@
         </div>
     </div>
 
-    <!-- Alertas (V2.0 Neon Style) -->
-    <div *ngIf="actionMessage()" class="bg-emerald-500/10 backdrop-blur-md p-4 rounded-xl border border-emerald-500/20 flex shadow-sm animate-fade-in text-emerald-400 font-bold text-sm">
-        {{ actionMessage() }}
-    </div>
-    <div *ngIf="errorMessage()" class="bg-rose-500/10 backdrop-blur-md p-4 rounded-xl border border-rose-500/20 flex shadow-sm animate-fade-in text-rose-400 font-bold text-sm">
-        {{ errorMessage() }}
+    <!-- Sistema de Notificaciones Emergentes (Toasts V2.5 Premium) -->
+    <div class="fixed top-8 right-8 z-[110] space-y-4 max-w-sm pointer-events-none">
+        <!-- Notificación de Éxito -->
+        <div *ngIf="actionMessage()" 
+             class="pointer-events-auto bg-[#0a0f1d]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-emerald-500/30 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] animate-toast-in flex items-center gap-4 group">
+            <div class="h-10 w-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-60">Operación Exitosa</p>
+                <p class="text-sm font-black text-white leading-tight mt-0.5">{{ actionMessage() }}</p>
+            </div>
+            <button (click)="actionMessage.set(null)" class="text-slate-500 hover:text-white transition-colors">
+                <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Notificación de Error -->
+        <div *ngIf="errorMessage()" 
+             class="pointer-events-auto bg-[#1a0f16]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-rose-500/30 shadow-[0_20px_60px_-15px_rgba(225,29,72,0.3)] animate-toast-in flex items-center gap-4 group">
+            <div class="h-10 w-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform">
+                <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-rose-500 uppercase tracking-widest opacity-60">Atención / Error</p>
+                <p class="text-sm font-black text-white leading-tight mt-0.5">{{ errorMessage() }}</p>
+            </div>
+            <button (click)="errorMessage.set(null)" class="text-slate-500 hover:text-white transition-colors">
+                <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+            </button>
+        </div>
     </div>
     <!-- Stepper Stepping (V2.0 Core Visuals) -->
     <div class="max-w-4xl mx-auto px-4 py-4">
@@ -87,7 +112,7 @@
 
                     <div class="space-y-10">
                         <!-- Selección Médica Refinada -->
-                        <div *ngIf="!isRxAssistant()" class="relative p-8 rounded-[2rem] bg-black/20 border border-white/5 group-hover:border-primary/20 transition-all">
+                        <div id="seccion-medica" *ngIf="!isRxAssistant()" class="relative p-8 rounded-[2rem] bg-black/20 border border-white/5 group-hover:border-primary/20 transition-all scroll-mt-20">
                             <div class="flex items-center space-x-3 mb-6">
                                 <lucide-icon [name]="icons.User" class="w-4 h-4 text-primary"></lucide-icon>
                                 <label class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">1. Selección Médica (Prioritario)</label>
@@ -296,13 +321,19 @@
                             <div class="h-8 w-1.5 bg-rose-500/20 rounded-full group-hover:bg-rose-500 transition-all flex-shrink-0"></div>
                             <div class="truncate">
                                 <p class="text-sm font-black text-white group-hover:text-rose-500 transition-all truncate">{{ s.descripcion }}</p>
-                                <span *ngIf="s.hora" class="text-[8px] text-rose-400 font-black uppercase mt-0.5 block tracking-wider italic">Turno: {{ s.hora }}</span>
+                                <div class="flex flex-col mt-0.5 space-y-0.5">
+                                    <span *ngIf="s.medicoNombre" class="text-[9px] text-emerald-400 font-black uppercase tracking-widest flex items-center">
+                                         <lucide-icon [name]="icons.User" class="w-2.5 h-2.5 mr-1"></lucide-icon>
+                                         Dr. {{ s.medicoNombre }}
+                                    </span>
+                                    <span *ngIf="s.hora" class="text-[8px] text-rose-400/60 font-black uppercase tracking-wider italic">Turno: {{ getHoraRango(s.hora) }}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="flex items-center space-x-4 flex-shrink-0">
                             <div class="text-right">
                                 <p class="text-base font-black text-white font-mono tracking-tighter">Bs. {{ getFormattedBs(s) }}</p>
-                                <p class="text-[9px] font-bold text-slate-500 font-mono" *ngIf="s.precioUsd || s.PrecioUsd">${{ getDisplayPriceUsd(s) }} USD</p>
+                                <p class="text-sm font-black text-slate-400 font-mono" *ngIf="s.precioUsd || s.PrecioUsd">${{ getDisplayPriceUsd(s) }} USD</p>
                             </div>
                             <button (click)="quitarServicio(i)" 
                                 class="p-2.5 text-slate-600 hover:text-rose-500 bg-white/2 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
@@ -354,19 +385,24 @@
         <div class="relative bg-[#0f172a] rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
             
             <!-- Header Modal Premium -->
-            <div class="p-8 pb-4 flex items-center justify-between">
+            <div class="p-8 pb-4 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div class="flex items-center space-x-5">
-                    <div class="h-14 w-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shadow-lg shadow-red-500/5">
+                    <div class="h-14 w-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg shadow-rose-500/5">
                         <lucide-icon [name]="icons.Calendar" class="w-7 h-7"></lucide-icon>
                     </div>
                     <div>
-                        <h3 class="text-2xl font-black text-white tracking-tight">Agenda Diaria: {{ nombreMedicoSeleccionado() }}</h3>
+                        <h3 class="text-2xl font-black text-white tracking-tight">Agenda: {{ nombreMedicoSeleccionado() }}</h3>
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Control de Pacientes por Horario</p>
                     </div>
                 </div>
-                <button (click)="showScheduleModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
-                    <lucide-icon [name]="icons.X" class="w-8 h-8"></lucide-icon>
-                </button>
+
+                <div class="flex items-center space-x-4 bg-black/20 p-2 rounded-2xl border border-white/5">
+                    <input type="date" [ngModel]="fechaCita()" (ngModelChange)="fechaCita.set($event); abrirModalHorarios()"
+                        class="bg-transparent border-none text-white font-black text-xs uppercase tracking-widest outline-none px-4 py-2 cursor-pointer">
+                    <button (click)="showScheduleModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
+                        <lucide-icon [name]="icons.X" class="w-8 h-8"></lucide-icon>
+                    </button>
+                </div>
             </div>
             
             <!-- Cuerpo Modal (Tabla de Horarios) -->

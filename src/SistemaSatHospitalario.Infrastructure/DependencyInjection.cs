@@ -52,6 +52,7 @@ namespace SistemaSatHospitalario.Infrastructure
 
             services.AddMemoryCache();
             services.AddScoped<IAuthService, JwtAuthService>();
+            services.AddScoped<IIdentityService, IdentityService>();
 
             // Configuración de Inicializadores de DB (Multi-Provider Seeders)
             services.AddScoped<IDatabaseInitializer, IdentityDbInitializer>();

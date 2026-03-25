@@ -32,6 +32,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedMedicosAsync();
                 await SeedPacientesAsync();
                 await SeedCajaDiariaAsync();
+                await SeedConfiguracionAsync();
 
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
@@ -85,6 +86,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 // Un cajero genérico asumiendo un ID de de admin
                 _context.CajasDiarias.Add(
                     new CajaDiaria(50.00m, 1500.00m, "1", "admin")
+                );
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        private async Task SeedConfiguracionAsync()
+        {
+            if (!await _context.ConfiguracionGeneral.AnyAsync())
+            {
+                _context.ConfiguracionGeneral.Add(
+                    new ConfiguracionGeneral("SAT HOSPITALARIO - EXCELENCIA", "J-12345678-9", 16.00m)
                 );
                 await _context.SaveChangesAsync();
             }

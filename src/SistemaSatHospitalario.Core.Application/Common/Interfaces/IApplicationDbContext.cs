@@ -30,6 +30,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<CuentaPorCobrar> CuentasPorCobrar { get; }
         DbSet<ErrorTicket> ErrorTickets { get; }
         DbSet<Especialidad> Especialidades { get; }
+        DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }

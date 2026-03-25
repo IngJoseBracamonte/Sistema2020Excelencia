@@ -20,7 +20,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Activo = true;
         }
 
+        public void Actualizar(string nombre, decimal porcentajeCobertura)
+        {
+            Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+            PorcentajeCobertura = porcentajeCobertura;
+        }
+
         public void Desactivar() => Activo = false;
         public void Activar() => Activo = true;
+        public void SetActivo(bool activo) => Activo = activo;
     }
 }

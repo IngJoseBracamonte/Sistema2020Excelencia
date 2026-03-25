@@ -21,6 +21,7 @@ var smtpPass = builder.AddParameter("smtp-pass", secret: true);
 // Inyectamos como variables de entorno directas con el prefijo ConnectionStrings__
 // Esto evita el error de formato 'uri' de los componentes de Aspire al tratar con recursos externos.
 var api = builder.AddProject<Projects.SistemaSatHospitalario_WebAPI>("api")
+    .WithHttpsEndpoint(port: 7019, name: "endpoint-api")
     .WithEnvironment("ConnectionStrings__mysql-system", systemConStr)
     .WithEnvironment("ConnectionStrings__mysql-identity", identityConStr)
     .WithEnvironment("ConnectionStrings__LegacyConnection", legacyConStr)
