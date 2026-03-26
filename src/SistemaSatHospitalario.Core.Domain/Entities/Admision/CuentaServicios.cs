@@ -31,13 +31,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaCreacion = DateTime.UtcNow;
         }
 
-        public void AgregarServicio(Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga)
+        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga)
         {
             if (Estado != "Abierta")
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
 
             var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, cantidad, tipoServicio, usuarioCarga);
             _detalles.Add(detalle);
+            return detalle;
         }
 
         public void RemoverServicio(Guid servicioId)
@@ -46,6 +47,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.ServicioId == servicioId);
+            if (detalle != null)
+            {
+                _detalles.Remove(detalle);
+            }
+        }
+
+        public void RemoverServicioPorDetalleId(Guid detalleId)
+        {
+            if (Estado != "Abierta")
+                throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
+
+            var detalle = _detalles.FirstOrDefault(d => d.Id == detalleId);
             if (detalle != null)
             {
                 _detalles.Remove(detalle);

@@ -36,29 +36,41 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 3. Crear primero en Legacy para obtener el IdPersona (ID Numérico unificado)
             var legacyPatient = new DatosPersonalesLegacy
             {
-                Identificacion = request.Cedula,
-                Nombre1 = request.Nombre,
-                Apellido1 = "",
-                Telefono = request.Telefono,
-                FechaNacimiento = DateTime.Now.AddYears(-30) // Default o solicitado por UI
+                Cedula = request.Cedula,
+                Nombre = request.Nombre,
+                Apellidos = request.Apellidos ?? "",
+                Sexo = request.Sexo ?? "ND", 
+                Fecha = !string.IsNullOrEmpty(request.FechaNacimiento) ? request.FechaNacimiento : DateTime.Now.AddYears(-30).ToString("yyyy-MM-dd"), 
+                Correo = request.Correo ?? "",
+                TipoCorreo = request.TipoCorreo ?? "",
+                Celular = request.Celular ?? "",
+                CodigoCelular = request.CodigoCelular ?? "",
+                Telefono = request.Telefono ?? "",
+                CodigoTelefono = request.CodigoTelefono ?? "",
+                Visible = 1
             };
 
             int unifiedId = await _legacyRepository.CreatePatientLegacyAsync(legacyPatient, cancellationToken);
 
-            // 4. Crear en Native usando el ID del Legacy para mantener paridad
-            var newPatient = new PacienteAdmision(unifiedId, request.Cedula, request.Nombre, request.Telefono);
+            // 4. Crear en Native usando el ID del Legacy para mantener paridad de Relaciones (OS, Facturas)
+            var fullName = $"{request.Nombre} {request.Apellidos}".Trim();
+            var mainPhone = !string.IsNullOrEmpty(request.Celular) ? request.Celular : request.Telefono;
+
+            var newPatient = new PacienteAdmision(unifiedId, request.Cedula, fullName, mainPhone ?? "");
             await _context.PacientesAdmision.AddAsync(newPatient, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
             return new PatientDto
             {
-                Id = newPatient.Id,
-                Cedula = newPatient.CedulaPasaporte,
-                Nombre = newPatient.NombreCorto,
-                Apellidos = "",
-                Celular = newPatient.TelefonoContact,
-                Source = "Nativo",
-                EsLegacy = false
+                Id = unifiedId,
+                Cedula = legacyPatient.Cedula,
+                Nombre = legacyPatient.Nombre,
+                Apellidos = legacyPatient.Apellidos,
+                Sexo = legacyPatient.Sexo,
+                Correo = legacyPatient.Correo,
+                Celular = legacyPatient.Celular,
+                Source = "Legacy",
+                EsLegacy = true
             };
         }
     }

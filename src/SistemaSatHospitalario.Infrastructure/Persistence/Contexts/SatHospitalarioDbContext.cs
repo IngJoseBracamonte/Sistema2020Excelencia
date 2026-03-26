@@ -32,6 +32,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<ErrorTicket> ErrorTickets { get; set; }
         public DbSet<Especialidad> Especialidades { get; set; }
         public DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; set; }
+        public DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
 
@@ -86,8 +87,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("SegurosConvenios");
                 entity.HasKey(s => s.Id);
-                entity.Property(s => s.Id).ValueGeneratedNever(); // IDs vienen del legado
-                entity.Property(s => s.PorcentajeCobertura).HasPrecision(5, 2);
+                entity.Property(s => s.Nombre).IsRequired().HasMaxLength(200);
+                entity.Property(s => s.Rtn).HasMaxLength(50);
+                entity.Property(s => s.Direccion).HasMaxLength(500);
+                entity.Property(s => s.Telefono).HasMaxLength(50);
+                entity.Property(s => s.Email).HasMaxLength(150);
             });
 
             builder.Entity<PacienteAdmision>(entity =>
@@ -178,6 +182,22 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasOne(p => p.Convenio)
                       .WithMany()
                       .HasForeignKey(p => p.SeguroConvenioId);
+            });
+
+            builder.Entity<ConvenioPerfilPrecio>(entity =>
+            {
+                entity.ToTable("ConvenioPerfilPrecios");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.PrecioHNL).HasPrecision(18, 2);
+                entity.Property(c => c.PrecioUSD).HasPrecision(18, 2);
+
+                entity.HasOne(c => c.Convenio)
+                      .WithMany()
+                      .HasForeignKey(c => c.SeguroConvenioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                
+                // Índice para búsqueda rápida por convenio y perfil
+                entity.HasIndex(c => new { c.SeguroConvenioId, c.PerfilId }).IsUnique();
             });
 
             builder.Entity<CuentaPorCobrar>(entity =>

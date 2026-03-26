@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         {
             // Escritura: Delegamos e invalidamos la búsqueda por cédula si existe
             var id = await _innerRepository.CreatePatientLegacyAsync(patient, cancellationToken);
-            var cacheKey = $"Patient_{patient.Identificacion}";
+            var cacheKey = $"Patient_{patient.Cedula}";
             _cache.Remove(cacheKey);
             return id;
         }

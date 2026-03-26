@@ -32,14 +32,28 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("Schedule/{doctorId}/{date}")]
-        public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, DateTime date)
+        public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, DateTime date, [FromQuery] int? pacienteId = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
                         ?? "Anonimo";
 
-            var schedule = await _mediator.Send(new GetDoctorScheduleQuery(doctorId, date, userId));
+            var schedule = await _mediator.Send(new GetDoctorScheduleQuery(doctorId, date, userId, pacienteId));
             return Ok(schedule);
+        }
+
+        [HttpPost("Admin/Manage")]
+        public async Task<IActionResult> AdminManageSchedule([FromBody] AdminManageScheduleCommand command)
+        {
+            // Verificación simple de rol para entorno de desarrollo/producción
+            var role = User.FindFirst(ClaimTypes.Role)?.Value?.ToLower();
+            if (role != "admin" && role != "administrador")
+            {
+                return Forbid();
+            }
+
+            var result = await _mediator.Send(command);
+            return result ? Ok(new { Success = true }) : NotFound(new { Success = false });
         }
 
         [HttpPost("Agendar")]

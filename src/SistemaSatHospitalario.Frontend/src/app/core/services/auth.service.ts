@@ -28,11 +28,30 @@ export class AuthService {
   // Estado reactivo (Signal)
   public currentUser = signal<AuthResponse | null>(this.getUserFromStorage());
 
-  // Helpers de Roles (Computed logic)
-  public isAdministrador = (): boolean => this.currentUser()?.role?.toLowerCase() === 'administrador';
-  public isCajero = (): boolean => this.currentUser()?.role?.toLowerCase() === 'asistente' || this.isAdministrador();
+  // Helpers de Roles Normalizados (Pachón Pro)
+  public isAdministrador = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role === 'administrador' || role === 'admin';
+  };
+  
+  public isParticularAssistant = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role === 'asistente' || role === 'asistente particular' || this.isAdministrador();
+  };
+
+  public isInsuranceAssistant = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role === 'seguros' || role === 'seguro' || role === 'asistente seguro' || this.isAdministrador();
+  };
+
+  public isCajero = (): boolean => this.isParticularAssistant() || this.isInsuranceAssistant();
+  
   public isMedico = (): boolean => this.currentUser()?.role?.toLowerCase() === 'medico';
-  public isFarmacia = (): boolean => this.currentUser()?.role?.toLowerCase() === 'rx' || this.isAdministrador();
+  
+  public isFarmacia = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role === 'rx' || role === 'farmacia' || role === 'asistente rx' || this.isAdministrador();
+  };
 
   // Recupera la sesión persistida previamente (PWA LocalStorage)
   private getUserFromStorage(): AuthResponse | null {

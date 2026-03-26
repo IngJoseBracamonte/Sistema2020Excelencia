@@ -32,7 +32,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
             modelBuilder.Entity<DatosPersonalesLegacy>(entity =>
             {
-                entity.ToTable("DatosPersonales");
+                entity.ToTable("datospersonales");
                 entity.HasKey(e => e.IdPersona);
             });
 

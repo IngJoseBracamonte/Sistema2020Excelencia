@@ -28,7 +28,24 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Contexto**: El usuario solicitó verificar "toda la ruta para agendar" usando skills de arquitectura.
 - **Resultado**: Ruta validada con consistencia en normalización de fechas (minutos) y protección de slots mediante `ReservaTemporal` (15 min) y `CitaMedica`. Documentación actualizada en `DataFlow.md`.
 
+## 🗓️ 2026-03-26 (Sincronización de Memoria y AppHost)
+### 1. Corrección de Error CS1061 en Agenda
+- **Acción**: Se eliminó la referencia a `UsuarioCarga` en `GetDoctorScheduleQueryHandler.cs`.
+- **Razón**: La entidad `CitaMedica` no posee dicha propiedad, lo que causaba el fallo del build tras una actualización previa.
+- **Resultado**: Compilación exitosa del ensamblado `Application`.
+
+### 2. Despliegue Exitoso desde AppHost
+- **Acción**: Ejecución de `dotnet run` sobre el proyecto Aspire AppHost.
+- **Resultado**: Orquestación activa. Dashboard disponible con token: `37a9817797ed5ee25a224774d6dc6548`.
+
+### 3. Fix: Identity Migration Bypass (Table 'roles' already exists)
+- **Acción**: INSERT directo en `__EFMigrationsHistory` de la base `SatHospitalarioIdentity`.
+- **Razón**: La migración `20260325015815_RebuildIdentityPachonPro` no estaba registrada aunque el DDL ya existía en MySQL. EF Core intentaba ejecutarla de nuevo causando `MySqlException: Table 'roles' already exists`.
+- **Comando**: `INSERT INTO __EFMigrationsHistory VALUES ('20260325015815_RebuildIdentityPachonPro', '9.0.2')`
+- **Resultado**: Los 4 registros de migración están sincronizados. El `IdentityDbInitializer` ya no lanzará excepción al inicio.
+- **Patrón**: Esta es la aplicación estricta de la **Ley #3** de `Rules.md` (Bypass de Migración).
+
 ## 📌 Lecciones del Día
-- **Serialization Mismatch**: Recordar que `.NET` serializa Guid como string `userId` (camelCase) por defecto, mientras que el frontend esperaba `id`. Siempre mapear explícitamente en el pipe `tap` del `AuthService`.
-- **PowerShell Policies**: No usar `npm run build` directo en Windows; preferir `npm.cmd` o bypass de políticas para evitar fallos de seguridad en la terminal.
-- **File Locking**: Matar siempre el proceso de la API antes de compilar `ServiceDefaults`, de lo contrario, la DLL estará bloqueada.
+- **Entity Consistency**: Siempre verificar las propiedades de la entidad en `Domain` antes de manipular Handlers en `Application`.
+- **Distributed App Stability**: El AppHost de Aspire 13.1.3 es estable tras limpiar bloqueos de procesos `.exe` previos.
+- **Migration Bypass Pattern**: Cuando MySQL tiene las tablas pero EF Core no tiene registro en `__EFMigrationsHistory`, el fix es un INSERT directo. No se regenera la migración. Ver `Rules.md Ley #3`.

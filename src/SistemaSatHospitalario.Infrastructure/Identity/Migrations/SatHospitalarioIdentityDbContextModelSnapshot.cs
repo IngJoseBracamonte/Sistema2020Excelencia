@@ -8,7 +8,7 @@ using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 
 #nullable disable
 
-namespace SistemaSatHospitalario.Infrastructure.Migrations
+namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
 {
     [DbContext(typeof(SatHospitalarioIdentityDbContext))]
     partial class SatHospitalarioIdentityDbContextModelSnapshot : ModelSnapshot

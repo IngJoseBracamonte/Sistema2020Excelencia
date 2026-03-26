@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Commands;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
@@ -30,8 +31,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                var idCuenta = await _mediator.Send(command);
-                return Ok(new { Message = "Servicio cargado exitosamente a la cuenta.", CuentaId = idCuenta });
+                var result = await _mediator.Send(command);
+                return Ok(new { 
+                    Message = "Servicio cargado exitosamente.", 
+                    CuentaId = result.CuentaId,
+                    DetalleId = result.DetalleId
+                });
             }
             catch (InvalidOperationException ex)
             {
@@ -66,13 +71,51 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpDelete("RemoveServicio")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> RemoveServicio([FromQuery] Guid cuentaId, [FromQuery] Guid servicioId)
+        public async Task<IActionResult> RemoveServicio([FromQuery] Guid cuentaId, [FromQuery] Guid detalleId, [FromQuery] Guid? medicoId = null, [FromQuery] DateTime? horaCita = null)
         {
             try
             {
-                var command = new RemoveServicioDeCuentaCommand { CuentaId = cuentaId, ServicioId = servicioId };
+                var command = new RemoveServicioDeCuentaCommand 
+                { 
+                    CuentaId = cuentaId, 
+                    DetalleId = detalleId,
+                    MedicoId = medicoId,
+                    HoraCita = horaCita
+                };
                 await _mediator.Send(command);
                 return Ok(new { Message = "Servicio removido exitosamente de la cuenta." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("CancelAppointment/{appointmentId}")]
+        [Authorize(Roles = "Admin,Administrador")]
+        public async Task<IActionResult> CancelAppointment(Guid appointmentId)
+        {
+            try
+            {
+                var command = new AdminCancelAppointmentCommand { AppointmentId = appointmentId };
+                await _mediator.Send(command);
+                return Ok(new { Message = "Cita anulada administrativamente exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpGet("Appointments")]
+        [Authorize(Roles = "Admin,Administrador")]
+        public async Task<IActionResult> GetAppointments([FromQuery] DateTime? fecha, [FromQuery] Guid? medicoId)
+        {
+            try
+            {
+                var query = new GetActiveAppointmentsQuery { Fecha = fecha, MedicoId = medicoId };
+                var results = await _mediator.Send(query);
+                return Ok(results);
             }
             catch (Exception ex)
             {

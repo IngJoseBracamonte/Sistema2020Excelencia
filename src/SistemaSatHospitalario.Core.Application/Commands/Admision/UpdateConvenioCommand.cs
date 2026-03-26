@@ -10,7 +10,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public int Id { get; set; }
         public string Nombre { get; set; }
-        public decimal PorcentajeCobertura { get; set; }
+        public string Rtn { get; set; }
+        public string Direccion { get; set; }
+        public string Telefono { get; set; }
+        public string Email { get; set; }
         public bool Activo { get; set; }
     }
 
@@ -28,7 +31,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var convenio = await _context.SegurosConvenios.FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken);
             if (convenio == null) return false;
 
-            convenio.Actualizar(request.Nombre, request.PorcentajeCobertura);
+            convenio.Actualizar(
+                request.Nombre, 
+                request.Rtn, 
+                request.Direccion, 
+                request.Telefono, 
+                request.Email);
+                
             convenio.SetActivo(request.Activo);
             
             return await _context.SaveChangesAsync(cancellationToken) > 0;

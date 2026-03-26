@@ -20,8 +20,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         public LegacyLabRepository(Sistema2020LegacyDbContext context, IConfiguration configuration)
         {
             _context = context;
-            _connectionString = configuration.GetConnectionString("LegacyConnection") 
-                                ?? throw new InvalidOperationException("LegacyConnection string not found.");
+            _connectionString = configuration.GetConnectionString("LegacyConnection") ?? "";
         }
 
         public async Task<int> GenerarOrdenLaboratorioAsync(
@@ -62,52 +61,97 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<DatosPersonalesLegacy?> GetPatientByCedulaAsync(string cedula, CancellationToken cancellationToken)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            // Mapeo manual a las propiedades del DTO si las columnas difieren
-            const string sql = @"SELECT IdPersona, Identificacion, Nombre1, Apellido1, FechaNacimiento, Telefono, Direccion 
-                                 FROM datospersonales WHERE Identificacion = @cedula LIMIT 1";
-            return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { cedula });
+            if (string.IsNullOrEmpty(_connectionString)) return null;
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Visible
+                                     FROM datospersonales WHERE Cedula = @cedula LIMIT 1";
+                return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { cedula });
+            }
+            catch (global::System.Exception ex)
+            {
+                // Logueamos pero no rompemos el flujo principal (visto como 500)
+                global::System.Console.WriteLine($"[LEGACY ERROR] GetPatientByCedulaAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            const string sql = @"SELECT IdPersona, Identificacion, Nombre1, Apellido1, FechaNacimiento, Telefono, Direccion 
-                                 FROM datospersonales 
-                                 WHERE Identificacion LIKE @term OR Nombre1 LIKE @term OR Apellido1 LIKE @term 
-                                 LIMIT 20";
-            var result = await connection.QueryAsync<DatosPersonalesLegacy>(sql, new { term = $"%{term}%" });
-            return result.ToList();
+            if (string.IsNullOrEmpty(_connectionString)) return new List<DatosPersonalesLegacy>();
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Visible
+                                     FROM datospersonales 
+                                     WHERE Cedula LIKE @term OR Nombre LIKE @term OR Apellidos LIKE @term 
+                                     LIMIT 20";
+                var result = await connection.QueryAsync<DatosPersonalesLegacy>(sql, new { term = $"%{term}%" });
+                return result.ToList();
+            }
+            catch (global::System.Exception ex)
+            {
+                global::System.Console.WriteLine($"[LEGACY ERROR] SearchPatientsLimitedAsync: {ex.Message}");
+                return new List<DatosPersonalesLegacy>();
+            }
         }
 
         public async Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            // El esquema real según Conexion.cs es: Tabla 'Perfil', Columnas 'NombrePerfil', 'Precio', 'Activo'
-            const string sql = "SELECT IdPerfil, NombrePerfil AS Descripcion, PrecioDOlar, Activo AS Estado FROM perfil";
-            var result = await connection.QueryAsync<PerfilLegacy>(sql);
-            return result.ToList();
+            if (string.IsNullOrEmpty(_connectionString)) return new List<PerfilLegacy>();
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                // El esquema real según Conexion.cs es: Tabla 'Perfil', Columnas 'NombrePerfil', 'Precio', 'Activo'
+                const string sql = "SELECT IdPerfil, NombrePerfil AS Descripcion, PrecioDOlar, Activo AS Estado FROM perfil";
+                var result = await connection.QueryAsync<PerfilLegacy>(sql);
+                return result.ToList();
+            }
+            catch (global::System.Exception ex)
+            {
+                global::System.Console.WriteLine($"[LEGACY ERROR] GetAvailableProfilesAsync: {ex.Message}");
+                return new List<PerfilLegacy>();
+            }
         }
 
         public async Task<int> CreatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            const string sql = @"
-                INSERT INTO datospersonales (Identificacion, Nombre1, Apellido1, Telefono, FechaNacimiento, Direccion) 
-                VALUES (@Identificacion, @Nombre1, @Apellido1, @Telefono, @FechaNacimiento, @Direccion);
-                SELECT LAST_INSERT_ID();";
-                
-            var id = await connection.ExecuteScalarAsync<int>(sql, patient);
-            patient.IdPersona = id;
-            return id;
+            if (string.IsNullOrEmpty(_connectionString)) return 0;
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                const string sql = @"
+                    INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono) 
+                    VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono);
+                    SELECT LAST_INSERT_ID();";
+                    
+                var id = await connection.ExecuteScalarAsync<int>(sql, patient);
+                patient.IdPersona = id;
+                return id;
+            }
+            catch (global::System.Exception ex)
+            {
+                global::System.Console.WriteLine($"[LEGACY ERROR] CreatePatientLegacyAsync: {ex.Message}");
+                return 0;
+            }
         }
 
         public async Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            const string sql = "SELECT IDConvenio FROM convenios"; // Basado en el nombre estándar
-            var result = await connection.QueryAsync<int>(sql);
-            return result.ToList();
+            if (string.IsNullOrEmpty(_connectionString)) return new List<int>();
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                const string sql = "SELECT IDConvenio FROM convenios"; // Basado en el nombre estándar
+                var result = await connection.QueryAsync<int>(sql);
+                return result.ToList();
+            }
+            catch (global::System.Exception ex)
+            {
+                global::System.Console.WriteLine($"[LEGACY ERROR] GetLegacyAgreementsIdsAsync: {ex.Message}");
+                return new List<int>();
+            }
         }
     }
 }

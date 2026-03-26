@@ -21,7 +21,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
             
             services.AddDbContext<SatHospitalarioIdentityDbContext>(options =>
                 options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
-                    b => b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName)));
+                    b => {
+                        b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName);
+                        b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
+                    }));
         }
 
         public void ConfigureApplicationContext(IServiceCollection services, IConfiguration configuration)
@@ -42,11 +45,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
         public void ConfigureLegacyContext(IServiceCollection services, IConfiguration configuration)
         {
             var conStr = configuration.GetConnectionString("LegacyConnection");
-            if (!string.IsNullOrEmpty(conStr))
+            
+            // Registramos siempre el DbContext para evitar fallos de DI en el repositorio
+            services.AddDbContext<Sistema2020LegacyDbContext>(options =>
             {
-                services.AddDbContext<Sistema2020LegacyDbContext>(options =>
-                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr)));
-            }
+                if (!string.IsNullOrEmpty(conStr))
+                {
+                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr));
+                }
+            });
         }
     }
 }

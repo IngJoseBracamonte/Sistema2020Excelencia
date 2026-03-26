@@ -24,4 +24,12 @@ export class ConveniosService {
   delete(id: number): Observable<any> { 
     return this.http.delete(`${this.apiUrl}/${id}`); 
   }
+
+  getPrecios(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${id}/precios`);
+  }
+
+  updatePrecio(command: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/precios`, command);
+  }
 }

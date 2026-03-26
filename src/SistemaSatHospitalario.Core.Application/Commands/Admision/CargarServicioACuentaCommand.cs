@@ -7,7 +7,7 @@ using SistemaSatHospitalario.Core.Domain.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
-    public class CargarServicioACuentaCommand : IRequest<Guid>
+    public class CargarServicioACuentaCommand : IRequest<CargarServicioResult>
     {
         // Se cambió de Guid a int para sincronización con Legacy
         public int PacienteId { get; set; }
@@ -26,7 +26,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public DateTime? HoraCita { get; set; }
     }
 
-    public class CargarServicioACuentaCommandHandler : IRequestHandler<CargarServicioACuentaCommand, Guid>
+    public record CargarServicioResult(Guid CuentaId, Guid DetalleId);
+
+    public class CargarServicioACuentaCommandHandler : IRequestHandler<CargarServicioACuentaCommand, CargarServicioResult>
     {
         private readonly IBillingRepository _repository;
         private readonly IOrdenExternaService _externaService;
@@ -37,9 +39,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _externaService = externaService;
         }
 
-        public async Task<Guid> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
+        public async Task<CargarServicioResult> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
         {
-            // 1. Asegurar cuenta activa (SRP: Delegado a lógica de orquestación mínima)
+            // 1. Asegurar cuenta activa
             var cuenta = await GetOrCreateCuentaAsync(request, cancellationToken);
 
             // 2. Procesar lógica específica de Consultas/Citas
@@ -49,21 +51,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 await ProcesarCitaMedicaAsync(request, cuenta.Id, cancellationToken);
             }
 
-            // 3. Persistir el servicio con la descripción dinámica recibida
-            cuenta.AgregarServicio(
+            // 3. Persistir el servicio
+            // CAPTURA DEL DETALLE PARA RETORNO (V4.2 Precision Fix)
+            var detalle = cuenta.AgregarServicio(
                 request.ServicioId, 
                 request.Descripcion, 
                 request.Precio, 
                 request.Cantidad, 
                 request.TipoServicio, 
                 request.UsuarioCarga);
-
+            
             // 4. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 
             await _repository.GuardarCambiosAsync(cancellationToken);
 
-            return cuenta.Id;
+            return new CargarServicioResult(cuenta.Id, detalle.Id);
         }
 
         private async Task<CuentaServicios> GetOrCreateCuentaAsync(CargarServicioACuentaCommand request, CancellationToken ct)

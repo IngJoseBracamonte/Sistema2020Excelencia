@@ -10,25 +10,31 @@ import { CatalogItem } from '../../../core/models/priced-item.model';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
 import { CajaService, DailyClosingReport } from '../../../core/services/caja.service';
 import { PrintService } from '../../../core/services/print.service';
+import { ConveniosService } from '../../../core/services/convenios.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { 
-  LucideAngularModule, 
-  CreditCard, 
-  RefreshCcw, 
-  Check, 
-  Plus, 
-  User, 
-  Calendar, 
-  Search, 
-  Package, 
-  Clock, 
+import {
+  LucideAngularModule,
+  CreditCard,
+  RefreshCcw,
+  Check,
+  Plus,
+  User,
+  Calendar,
+  Search,
+  Package,
+  Clock,
   SearchX,
   Info,
   ChevronRight,
   Trash2,
   X,
   Lock,
-  UserPlus
+  UserPlus,
+  Phone,
+  Mail,
+  Layout,
+  ShieldAlert,
+  CalendarCheck
 } from 'lucide-angular';
 import { switchMap, of } from 'rxjs';
 
@@ -56,7 +62,12 @@ export class FacturacionComponent {
     Trash2,
     X,
     Lock,
-    UserPlus
+    UserPlus,
+    Phone,
+    Mail,
+    Layout,
+    ShieldAlert,
+    CalendarCheck
   };
   private facturacionService = inject(FacturacionService);
   private authService = inject(AuthService);
@@ -65,15 +76,26 @@ export class FacturacionComponent {
   private catalogService = inject(CatalogService);
   private patientService = inject(PatientService);
   private printService = inject(PrintService);
+  private conveniosService = inject(ConveniosService);
 
   // Estados de Usuario y Rol
+  // Estados de Usuario y Rol Normalizados (V2.5)
   public user = this.authService.currentUser;
-  public isAdmin = computed(() => this.user()?.role === 'Administrador');
-  public isParticularAssistant = computed(() => this.user()?.role === 'Asistente Particular');
-  public isInsuranceAssistant = computed(() => this.user()?.role === 'Asistente Seguro');
-  public isRxAssistant = computed(() => this.user()?.role === 'Asistente Rx');
-  public isHospitalAssistant = computed(() => this.user()?.role === 'Asistente Hospitalario');
-  public isEmergencyAssistant = computed(() => this.user()?.role === 'Asistente Emergencia');
+  public isAdmin = computed(() => this.authService.isAdministrador());
+  public isParticularAssistant = computed(() => this.authService.isParticularAssistant());
+  public isInsuranceAssistant = computed(() => this.authService.isInsuranceAssistant());
+  public isRxAssistant = computed(() => {
+    const role = this.user()?.role?.toLowerCase() || '';
+    return (role === 'rx' || role === 'farmacia' || role === 'asistente rx') && !this.isAdmin();
+  });
+  public isHospitalAssistant = computed(() => {
+    const role = this.user()?.role?.toLowerCase() || '';
+    return role.includes('hospitalario') || this.isAdmin();
+  });
+  public isEmergencyAssistant = computed(() => {
+    const role = this.user()?.role?.toLowerCase() || '';
+    return role.includes('emergencia') || this.isAdmin();
+  });
 
   // Estados de Facturación
   public pacienteId = signal<number | null>(null);
@@ -109,11 +131,7 @@ export class FacturacionComponent {
 
   // Catálogos Reales (Sincronizados con Backend)
   public especialidades = signal<string[]>([]);
-  public convenios = signal<any[]>([
-    { id: 1, nombre: 'Particular' },
-    { id: 2, nombre: 'Seguro Universal' },
-    { id: 3, nombre: 'Aseguradora Regional' }
-  ]);
+  public convenios = signal<any[]>([]);
 
   // Filtros UI y Signals Reactivos
   public selectedEspecialidad = signal<string | null>(null);
@@ -148,6 +166,29 @@ export class FacturacionComponent {
     }
   });
 
+  // Estado para Flujo Automatizado de Consultas (Step -> Doctor -> Agenda)
+  public isPendingConsultation = signal<boolean>(false);
+
+  // Efecto para Auto-abrir Agenda al seleccionar Médico (Restauración de Comportamiento Classic)
+  private _autoAgendaEffect = effect(() => {
+    const medId = this.selectedMedicoId();
+
+    if (medId) {
+      // Pequeño delay para asegurar que el componente esté listo y el usuario vea el cambio
+      setTimeout(() => {
+        this.abrirModalHorarios();
+        this.isPendingConsultation.set(false); // Limpiar flag por si se usó desde servicios
+      }, 400);
+    }
+  });
+
+  // Efecto para Resetear Convenio si no es Seguro (Consistency V2.5)
+  private _convenioResetEffect = effect(() => {
+    if (this.tipoIngreso() !== 'Seguro') {
+      this.convenioId.set(null);
+    }
+  });
+
   public selectedMedicoId = signal<string | null>(null);
   public showScheduleModal = signal<boolean>(false);
   public scheduleLoading = signal<boolean>(false);
@@ -165,7 +206,7 @@ export class FacturacionComponent {
 
   public getHoraRango(hora: string): string {
     if (!hora) return '--:--';
-    
+
     // Si viene como ISO (2026-03-23T08:00:00), extraer la parte de la hora
     let timePart = hora;
     if (hora.includes('T')) {
@@ -181,7 +222,7 @@ export class FacturacionComponent {
     const startNum = parseInt(h);
     const endNum = (startNum + 1) % 24;
     const endStr = endNum.toString().padStart(2, '0') + ':' + m;
-    
+
     return `${timePart} - ${endStr}`;
   }
 
@@ -213,16 +254,16 @@ export class FacturacionComponent {
       // Intentar identificar la palabra clave base (ej: de "Ginecología y Obstetricia" -> "GINECO")
       const normalizedEsp = esp.toUpperCase();
       let searchKey = normalizedEsp;
-      
-      const match = Object.entries(this.specialtySearchMap).find(([key, val]) => 
+
+      const match = Object.entries(this.specialtySearchMap).find(([key, val]) =>
         normalizedEsp.includes(key.toUpperCase())
       );
-      
+
       if (match) {
         searchKey = match[1].toUpperCase();
       }
 
-      filtered = filtered.filter(s => 
+      filtered = filtered.filter(s =>
         s.descripcion.toUpperCase().includes(searchKey) ||
         s.tipo.toUpperCase().includes(searchKey)
       );
@@ -276,12 +317,22 @@ export class FacturacionComponent {
   public buscandoPaciente = signal<boolean>(false);
   public showResultadosBusqueda = signal<boolean>(false);
 
-  // States for New Patient Modal (Micro-Ciclo 11)
+  // States for New Patient Modal (Micro-Ciclo 29)
   public showRegisterModal = signal<boolean>(false);
-  public newPatientData = {
+  public noResultsFound = signal<boolean>(false);
+
+  public newPatientData: Partial<PatientRecord> = {
     cedula: '',
     nombre: '',
-    telefono: ''
+    apellidos: '',
+    sexo: 'M',
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    correo: '',
+    tipoCorreo: '@gmail.com',
+    celular: '',
+    codigoCelular: '0414',
+    telefono: '',
+    codigoTelefono: '0212'
   };
 
   // Nuevo Elemento Form (Pagos)
@@ -292,6 +343,11 @@ export class FacturacionComponent {
   };
 
   public metodosDisponibles = ['Punto de Venta Bs', 'Pago Móvil', 'Efectivo Divisas', 'Zelle'];
+
+  // Listas para Registro de Pacientes (Pachón Pro V2.9)
+  public tiposCorreo = ['@gmail.com', '@hotmail.com', '@outlook.com', '@yahoo.com'];
+  public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
+  public codigosTelefono = ['0273', '0251', '0212', '0281', '0241'];
 
   // Impuestos y Totales (Calculados reactivamente a la tasa)
   public totalCargado = computed(() => {
@@ -306,16 +362,27 @@ export class FacturacionComponent {
   public totalFacturadoBase = computed(() => this.pagos().reduce((acc: number, curr: DetallePagoDto) => acc + curr.equivalenteAbonadoBase, 0));
 
   constructor() {
+    // Debug de Roles para el Usuario (Pachón Pro V2.5)
+    console.log("DEBUG [Pachón Pro]: Usuario Conectado:", this.user()?.username);
+    console.log("DEBUG [Pachón Pro]: Rol Detectado:", this.user()?.role);
+    console.log("DEBUG [Pachón Pro]: ¿Es Admin?:", this.isAdmin());
+    console.log("DEBUG [Pachón Pro]: ¿Es Asistente Seguro?:", this.isInsuranceAssistant());
+
     // Inicialización de Estados Seguros según Rol
-    if (this.isParticularAssistant()) this.tipoIngreso.set('Particular');
-    if (this.isInsuranceAssistant()) this.tipoIngreso.set('Seguro');
-    if (this.isRxAssistant()) this.tipoIngreso.set('Hospitalizacion');
-    if (this.isHospitalAssistant()) this.tipoIngreso.set('Hospitalizacion');
-    if (this.isEmergencyAssistant()) this.tipoIngreso.set('Emergencia');
+    if (this.isInsuranceAssistant()) {
+      this.tipoIngreso.set('Seguro');
+    } else if (this.isParticularAssistant()) {
+      this.tipoIngreso.set('Particular');
+    }
 
     // Cargar Especialidades Dinámicas
     this.specialtyService.getAll().subscribe(res => {
       this.especialidades.set(res.filter(e => e.activo).map(e => e.nombre));
+    });
+
+    // Cargar Convenios Dinámicos (Pachón Pro)
+    this.conveniosService.getAll().subscribe((res: any[]) => {
+      this.convenios.set(res);
     });
 
     // Cargar Catálogo Inicial
@@ -331,14 +398,14 @@ export class FacturacionComponent {
   // Navegación del Wizard
   nextStep() {
     if (this.currentStep() < this.maxSteps) {
-      // Validación Paso 1: Servicios (Ahora es el primero)
-      if (this.currentStep() === 1 && this.serviciosCargados().length === 0) {
-        this.errorMessage.set("Debe añadir al menos un servicio para continuar.");
+      // Paso 1: Convenio (Nuevo Orden)
+      if (this.currentStep() === 1 && this.tipoIngreso() === 'Seguro' && !this.convenioId()) {
+        this.errorMessage.set("Debe seleccionar un convenio para continuar.");
         return;
       }
-      // Validación Paso 2: Convenio (Ahora es el segundo)
-      if (this.currentStep() === 2 && this.tipoIngreso() === 'Seguro' && !this.convenioId()) {
-        this.errorMessage.set("Debe seleccionar un convenio para continuar.");
+      // Paso 2: Estudios (Nuevo Orden)
+      if (this.currentStep() === 2 && this.serviciosCargados().length === 0) {
+        this.errorMessage.set("Debe añadir al menos un servicio para continuar.");
         return;
       }
       this.errorMessage.set(null);
@@ -364,14 +431,18 @@ export class FacturacionComponent {
 
     this.buscandoPaciente.set(true);
     this.showResultadosBusqueda.set(true);
+    this.noResultsFound.set(false);
+
     this.patientService.searchPatients(term).subscribe({
       next: (res: PatientRecord[]) => {
         this.resultadosPacientes.set(res);
         this.buscandoPaciente.set(false);
+        this.noResultsFound.set(res.length === 0);
       },
       error: () => {
         this.errorMessage.set("Error al buscar pacientes.");
         this.buscandoPaciente.set(false);
+        this.noResultsFound.set(true);
       }
     });
   }
@@ -379,6 +450,7 @@ export class FacturacionComponent {
   seleccionarPaciente(p: PatientRecord) {
     if (p.id) {
       this.pacienteId.set(p.id);
+      this.noResultsFound.set(false);
 
       // Sincronizar Carrito Local al identificar al paciente
       if (this.carritoLocal().length > 0) {
@@ -415,7 +487,7 @@ export class FacturacionComponent {
       cantidad: 1,
       tipoServicio: s.tipo,
       usuarioCarga: this.user()?.username || 'admin',
-      medicoId: (s as any).medicoId, 
+      medicoId: (s as any).medicoId,
       horaCita: (s as any).horaCita,
       comentario: (s as any).comentario
     };
@@ -437,9 +509,24 @@ export class FacturacionComponent {
   }
 
   abrirRegistroPaciente() {
-    this.newPatientData.cedula = this.busquedaTermino();
+    const term = this.busquedaTermino();
+    // Resetear data y asignar cedula buscada
+    this.newPatientData = {
+      cedula: term,
+      nombre: '',
+      apellidos: '',
+      sexo: 'M',
+      fechaNacimiento: new Date().toISOString().split('T')[0],
+      correo: '',
+      tipoCorreo: '@gmail.com',
+      celular: '',
+      codigoCelular: '0414',
+      telefono: '',
+      codigoTelefono: '0212'
+    };
     this.showRegisterModal.set(true);
     this.showResultadosBusqueda.set(false);
+    this.noResultsFound.set(false);
   }
 
   guardarNuevoPaciente() {
@@ -490,6 +577,9 @@ export class FacturacionComponent {
     this.selectedEspecialidad.set(null);
   }
 
+  public showAdminAppointmentsModal = signal(false); // Fase 10 Panel
+  public activeAppointments = signal<any[]>([]); // Fase 10 Info
+
   abrirModalHorarios() {
     if (!this.selectedMedicoId()) return;
 
@@ -497,7 +587,12 @@ export class FacturacionComponent {
     this.showScheduleModal.set(true);
     const dateToSearch = this.fechaCita();
 
-    this.appointmentsService.getDoctorSchedule(this.selectedMedicoId()!, dateToSearch).subscribe({
+    // Ahora pasamos el pacienteId para detectar "Tu Cita" (V4.9)
+    this.appointmentsService.getDoctorScheduleWithPatient(
+      this.selectedMedicoId()!,
+      dateToSearch,
+      this.pacienteId() || undefined
+    ).subscribe({
       next: (res: any) => {
         this.availableSlots.set(res.turnos);
         this.scheduleLoading.set(false);
@@ -516,8 +611,8 @@ export class FacturacionComponent {
     }
 
     if (slot.reservado) {
-       this.errorMessage.set("Este horario está siendo facturado por otro usuario.");
-       return;
+      this.errorMessage.set("Este horario está siendo facturado por otro usuario.");
+      return;
     }
 
     this.isLoading.set(true);
@@ -529,33 +624,33 @@ export class FacturacionComponent {
       medicoId: this.selectedMedicoId()!,
       horaPautada: horaNormalizada
     };
-    
+
     console.log("DEBUG: Intentando reservar turno:", payload);
 
     this.facturacionService.reservarTurno(payload)
       .subscribe({
-      next: () => {
-        this.selectedSlot.set(this.getHoraRango(slot.hora));
-        // Guardar la fecha y hora completa de la reserva
-        this.horaCita.set(slot.hora); 
-        this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
-        this.showScheduleModal.set(false);
-        this.isLoading.set(false);
-        this.errorMessage.set(null); // Limpiar error si logró agendar
-        this.actionMessage.set("Horario reservado temporalmente para esta facturación.");
-      },
-      error: (err) => {
-        this.errorMessage.set(err.error?.error || "No se pudo reservar el turno. Intente con otro.");
-        this.isLoading.set(false);
-        // Refrescar agenda por si cambió
-        this.abrirModalHorarios();
-      }
-    });
+        next: () => {
+          this.selectedSlot.set(this.getHoraRango(slot.hora));
+          // Guardar la fecha y hora completa de la reserva
+          this.horaCita.set(slot.hora);
+          this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
+          this.showScheduleModal.set(false);
+          this.isLoading.set(false);
+          this.errorMessage.set(null); // Limpiar error si logró agendar
+          this.actionMessage.set("Horario reservado temporalmente para esta facturación.");
+        },
+        error: (err) => {
+          this.errorMessage.set(err.error?.error || "No se pudo reservar el turno. Intente con otro.");
+          this.isLoading.set(false);
+          // Refrescar agenda por si cambió
+          this.abrirModalHorarios();
+        }
+      });
   }
 
   bloquearHorario(slot: ScheduleEntry) {
     if (!this.isAdmin()) return;
-    
+
     const motivo = prompt("Motivo del bloqueo administrativo:", "Reunión/Descanso");
     if (!motivo) return;
 
@@ -589,13 +684,14 @@ export class FacturacionComponent {
     if (match) {
       this.selectedEspecialidad.set(match[0]);
       this.selectedMedicoId.set(null); // Reset para forzar selección
+      this.isPendingConsultation.set(true); // Marcar como pendiente para auto-agenda (UX V3.5)
       this.actionMessage.set(`Especialidad ${match[0]} detectada. Seleccione su médico.`);
-      
+
       // Feedback visual y automatización de selección (V2.1)
       setTimeout(() => {
         const el = document.getElementById('seccion-medica');
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
+
         // Si solo hay un médico, seleccionarlo automáticamente
         const medicos = this.medicosFiltrados();
         if (medicos.length === 1) {
@@ -610,24 +706,24 @@ export class FacturacionComponent {
     const s = this.serviciosCatalogo().find(x => x.id === servId);
     if (!s) return;
 
-    const esConsulta = s.tipo.toUpperCase().includes('CONSULTA') || 
-                       s.tipo.toUpperCase().includes('MEDICO') || 
-                       s.tipo.toUpperCase().includes('MÉDICO') ||
-                       s.tipo.toUpperCase().includes('OBSTETRI') ||
-                       s.tipo.toUpperCase().includes('GINECO');
+    const esConsulta = s.tipo.toUpperCase().includes('CONSULTA') ||
+      s.tipo.toUpperCase().includes('MEDICO') ||
+      s.tipo.toUpperCase().includes('MÉDICO') ||
+      s.tipo.toUpperCase().includes('OBSTETRI') ||
+      s.tipo.toUpperCase().includes('GINECO');
 
     // Validación estricta V3.0 (Micro-Ciclo 38): Consulta requiere Médico Y Turno Agendado
     if (esConsulta) {
       if (!this.selectedMedicoId()) {
         this.seleccionarTipoConsulta(s);
-        this.errorMessage.set(`⚠️ El servicio "${s.descripcion}" requiere asignar un Médico.`);
-        window.scrollTo({ top: 100, behavior: 'smooth' });
+        this.errorMessage.set(`Indique el médico para procesar la ${s.descripcion}.`);
         return;
       }
-      
+
       if (!this.selectedSlot()) {
-        this.errorMessage.set(`⚠️ Por favor, haga clic en "AGENDAR CITA" para seleccionar un horario para la ${s.descripcion}.`);
-        window.scrollTo({ top: 100, behavior: 'smooth' });
+        this.isPendingConsultation.set(true); // Activar por si acaso el usuario vuelve a darle
+        this.abrirModalHorarios();
+        this.errorMessage.set(`Por favor, seleccione un horario disponible.`);
         return;
       }
     }
@@ -646,8 +742,8 @@ export class FacturacionComponent {
     if (pId === null) {
       const yaEnCarrito = this.carritoLocal().some(x => x.id === s.id);
       if (!yaEnCarrito) {
-        this.carritoLocal.update(prev => [...prev, { 
-          ...s, 
+        this.carritoLocal.update(prev => [...prev, {
+          ...s,
           descripcion: finalDescripcion,
           medicoId: esConsulta ? this.selectedMedicoId() : undefined,
           medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
@@ -664,7 +760,7 @@ export class FacturacionComponent {
 
     // Si hay paciente, cargar directamente al backend
     this.isLoading.set(true);
-    
+
     // Lógica de Horario Profesional (V2.0 Core Fix)
     // El backend espera 'horaCita' como el ISO que viene del servidor (slot.hora)
     let fullHoraCita: string | undefined = undefined;
@@ -692,6 +788,8 @@ export class FacturacionComponent {
         this.cuentaId.set(res.cuentaId);
         this.serviciosEnBackend.update((prev: any[]) => [...prev, {
           ...s,
+          detalleId: res.detalleId, // Guárdalo para eliminación precisa (V4.8)
+          medicoId: esConsulta ? this.selectedMedicoId() : undefined, // Guardar ID para limpieza de cita
           hora: this.horaCita(),
           medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
           precio: payload.precio,
@@ -785,10 +883,10 @@ export class FacturacionComponent {
     // Si el item está en el backend (ya persistido)
     if (index < backendCount) {
       const cId = this.cuentaId();
-      if (!cId) return;
+      if (!cId || !item.detalleId) return;
 
       this.isLoading.set(true);
-      this.facturacionService.quitarServicio(cId, item.id).subscribe({
+      this.facturacionService.quitarServicio(cId, item.detalleId, item.medicoId, item.hora).subscribe({
         next: () => {
           this.serviciosEnBackend.update(prev => prev.filter((_, i) => i !== index));
           this.actionMessage.set("Servicio removido de la cuenta.");
@@ -805,6 +903,65 @@ export class FacturacionComponent {
       this.carritoLocal.update(prev => prev.filter((_, i) => i !== localIndex));
       this.actionMessage.set("Servicio removido del carrito temporal.");
     }
+  }
+
+  // Métodos de Gestión Administrativa (Fase 10)
+  verCitasActivas() {
+    if (!this.isAdmin()) return;
+
+    this.isLoading.set(true);
+    this.showAdminAppointmentsModal.set(true);
+    // Por ahora listamos las del día actual, o todas si no se especifica
+    this.facturacionService.getAppointments(this.fechaCita()).subscribe({
+      next: (res) => {
+        this.activeAppointments.set(res);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.errorMessage.set("Error al cargar citas activas.");
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  anularCitaAdmin(citaId: string) {
+    if (!confirm("¿Está seguro de anular esta cita? Esta acción liberará el horario de forma permanente.")) return;
+
+    this.isLoading.set(true);
+    this.facturacionService.cancelAppointment(citaId).subscribe({
+      next: () => {
+        this.actionMessage.set("Cita anulada exitosamente.");
+        this.verCitasActivas(); // Refrescar lista
+        this.abrirModalHorarios(); // Refrescar calendario si está abierto
+      },
+      error: () => {
+        this.errorMessage.set("No se pudo anular la cita.");
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  onAdminManage(slot: ScheduleEntry, action: 'Delete' | 'Update') {
+    if (!this.isAdmin() || !slot.targetId || !slot.type) return;
+
+    if (action === 'Delete' && !confirm("¿Está seguro de anular administrativamente este turno?")) return;
+
+    this.isLoading.set(true);
+    this.appointmentsService.adminManageSchedule({
+      action,
+      type: slot.type,
+      targetId: slot.targetId
+    }).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.actionMessage.set(`Acción administrativa realizada con éxito.`);
+        this.abrirModalHorarios(); // Refrescar agenda
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.error || "Error al realizar acción administrativa.");
+      }
+    });
   }
 
   private resetForm() {

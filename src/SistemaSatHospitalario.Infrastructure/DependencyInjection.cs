@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var dbProviderName = configuration.GetValue<string>("DatabaseProvider") ?? "SqlServer";
+            var dbProviderName = configuration.GetValue<string>("DatabaseProvider") ?? "MySql";
             
             IDatabaseProvider dbProvider = dbProviderName.Equals("MySql", StringComparison.OrdinalIgnoreCase)
                 ? new MySqlDatabaseProvider()

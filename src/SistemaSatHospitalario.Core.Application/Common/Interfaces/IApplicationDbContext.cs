@@ -31,6 +31,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<ErrorTicket> ErrorTickets { get; }
         DbSet<Especialidad> Especialidades { get; }
         DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; }
+        DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     }

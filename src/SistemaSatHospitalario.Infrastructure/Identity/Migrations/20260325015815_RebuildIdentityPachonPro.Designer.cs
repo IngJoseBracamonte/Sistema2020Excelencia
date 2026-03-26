@@ -12,8 +12,8 @@ using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
 {
     [DbContext(typeof(SatHospitalarioIdentityDbContext))]
-    [Migration("20260325015001_UpdateIdentityPachonPro")]
-    partial class UpdateIdentityPachonPro
+    [Migration("20260325015815_RebuildIdentityPachonPro")]
+    partial class RebuildIdentityPachonPro
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

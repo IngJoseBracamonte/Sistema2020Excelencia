@@ -42,5 +42,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             return Ok(await _mediator.Send(new DeleteConvenioCommand { Id = id }));
         }
+
+        [HttpGet("{id}/precios")]
+        public async Task<IActionResult> GetPrecios(int id)
+        {
+            return Ok(await _mediator.Send(new GetPreciosPorConvenioQuery(id)));
+        }
+
+        [HttpPost("precios")]
+        public async Task<IActionResult> UpdatePrecio([FromBody] UpdateConvenioPerfilPrecioCommand command)
+        {
+            return Ok(await _mediator.Send(command));
+        }
     }
 }

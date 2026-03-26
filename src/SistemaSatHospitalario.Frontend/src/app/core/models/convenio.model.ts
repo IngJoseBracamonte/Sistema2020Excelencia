@@ -1,6 +1,9 @@
 export interface SeguroConvenio {
-  id: number;
+  id?: number;
   nombre: string;
-  porcentajeCobertura: number;
+  rtn?: string;
+  direccion?: string;
+  telefono?: string;
+  email?: string;
   activo: boolean;
 }

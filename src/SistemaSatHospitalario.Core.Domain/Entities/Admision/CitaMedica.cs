@@ -33,5 +33,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void MarcarComoLlamado() => EstadoAtencion = "Llamado";
         public void MarcarComoAtendido() => EstadoAtencion = "Atendido";
         public void Cancelar() => EstadoAtencion = "Cancelado";
+        public void ActualizarHoraPautada(DateTime nuevaHora) => HoraPautada = nuevaHora;
     }
 }

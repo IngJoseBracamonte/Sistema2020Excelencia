@@ -63,6 +63,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.EstadoAtencion != "Cancelado", cancellationToken);
         }
 
+        public async Task CancelarCitaMedicaAsync(Guid cuentaId, Guid medicoId, DateTime hora, CancellationToken cancellationToken)
+        {
+            var cita = await _context.CitasMedicas
+                .FirstOrDefaultAsync(c => c.CuentaServicioId == cuentaId && c.MedicoId == medicoId && c.HoraPautada == hora, cancellationToken);
+            
+            if (cita != null)
+            {
+                _context.CitasMedicas.Remove(cita);
+            }
+        }
+
+        public async Task CancelarCitaPorIdAsync(Guid citaId, CancellationToken cancellationToken)
+        {
+            var cita = await _context.CitasMedicas.FindAsync(new object[] { citaId }, cancellationToken);
+            if (cita != null)
+            {
+                _context.CitasMedicas.Remove(cita);
+            }
+        }
+
         public async Task GuardarCambiosAsync(CancellationToken cancellationToken)
         {
             await _context.SaveChangesAsync(cancellationToken);

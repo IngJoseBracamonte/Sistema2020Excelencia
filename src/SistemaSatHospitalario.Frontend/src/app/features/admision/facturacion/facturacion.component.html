@@ -69,7 +69,7 @@
                     <span *ngIf="currentStep() <= 1">1</span>
                     <lucide-icon *ngIf="currentStep() > 1" [name]="icons.Check" class="w-5 h-5"></lucide-icon>
                 </div>
-                <span class="text-[10px] font-black mt-4 uppercase tracking-[0.2em]" [class.text-primary]="currentStep() >= 1" [class.text-slate-300]="currentStep() < 1">SERVICIOS</span>
+                <span class="text-[10px] font-black mt-4 uppercase tracking-[0.2em]" [class.text-primary]="currentStep() >= 1" [class.text-slate-300]="currentStep() < 1">CONVENIO</span>
             </div>
 
             <!-- Paso 2 -->
@@ -78,7 +78,7 @@
                     <span *ngIf="currentStep() <= 2">2</span>
                     <lucide-icon *ngIf="currentStep() > 2" [name]="icons.Check" class="w-5 h-5"></lucide-icon>
                 </div>
-                <span class="text-[10px] font-black mt-4 uppercase tracking-[0.2em]" [class.text-primary]="currentStep() >= 2" [class.text-slate-300]="currentStep() < 2">CONVENIO</span>
+                <span class="text-[10px] font-black mt-4 uppercase tracking-[0.2em]" [class.text-primary]="currentStep() >= 2" [class.text-slate-300]="currentStep() < 2">ESTUDIOS</span>
             </div>
 
             <!-- Paso 3 -->
@@ -87,7 +87,7 @@
                     <span *ngIf="currentStep() <= 3">3</span>
                     <lucide-icon *ngIf="currentStep() > 3" [name]="icons.Check" class="w-5 h-5"></lucide-icon>
                 </div>
-                <span class="text-[10px] font-black mt-4 uppercase tracking-[0.2em]" [class.text-primary]="currentStep() >= 3" [class.text-slate-300]="currentStep() < 3">PACIENTE & PAGO</span>
+                <span class="text-[10px] font-black mt-4 uppercase tracking-[0.2em]" [class.text-primary]="currentStep() >= 3" [class.text-slate-300]="currentStep() < 3">CLIENTE & PAGO</span>
             </div>
         </div>
     </div>
@@ -96,8 +96,8 @@
         <!-- Lado Izquierdo: Gestión del Wizard (Pasos) -->
         <div class="lg:col-span-7 space-y-6">
             
-            <!-- PASO 1: SERVICIOS -->
-            <div *ngIf="currentStep() === 1" class="animate-slide-in space-y-6">
+            <!-- PASO 2: ESTUDIOS -->
+            <div *ngIf="currentStep() === 2" class="animate-slide-in space-y-6">
                 <div class="bg-surface-card rounded-[3rem] border border-white/5 p-10 shadow-2xl relative overflow-hidden group">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
                     <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
@@ -107,7 +107,8 @@
                             </div>
                             <h3 class="text-xl font-black text-white tracking-tighter uppercase">Selección de Estudios</h3>
                         </div>
-                        <span class="bg-primary text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg shadow-primary/20 uppercase tracking-widest">Paso 1</span>
+                        <button (click)="nextStep()" [disabled]="serviciosCargados().length === 0"
+                            class="bg-primary text-white text-[10px] font-black px-5 py-2.5 rounded-full shadow-lg shadow-primary/20 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 disabled:opacity-30 cursor-pointer">Paso 2 → Continuar</button>
                     </div>
 
                     <div class="space-y-10">
@@ -123,7 +124,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Especialidad</label>
-                                    <select (change)="selectedEspecialidad.set($any($event.target).value)" 
+                                    <select (change)="selectedEspecialidad.set($any($event.target).value); selectedMedicoId.set(null)" 
                                         class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all uppercase appearance-none cursor-pointer shadow-inner">
                                         <option value="">--- SELECCIONE ESPECIALIDAD ---</option>
                                         <option *ngFor="let esp of especialidades()" [value]="esp">{{ esp | uppercase }}</option>
@@ -207,33 +208,38 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Estado Vacío -->
                             <div *ngIf="serviciosFiltradosPorRol().length === 0" class="py-12 text-center opacity-30">
                                 <lucide-icon [name]="icons.SearchX" class="w-12 h-12 mx-auto text-slate-300 mb-2"></lucide-icon>
                                 <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sin resultados para "{{ searchTermServicio() }}"</p>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- PASO 2: CONVENIO -->
-            <div *ngIf="currentStep() === 2" class="animate-slide-in space-y-4">
-                <div class="glass-panel rounded-[2rem] shadow-2xl border-white/40 p-6 space-y-6">
-                    <div class="flex items-center space-x-5 border-b border-slate-100 pb-4">
-                        <div class="h-12 w-12 bg-primary/10 rounded-[1.25rem] flex items-center justify-center text-primary shadow-inner">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <!-- PASO 1: CONVENIO -->
+            <div *ngIf="currentStep() === 1" class="animate-slide-in space-y-4">
+                <div class="glass-panel rounded-[2rem] shadow-2xl border-white/40 p-10 space-y-6 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+                    <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                        <div class="flex items-center space-x-5">
+                            <div class="h-12 w-12 bg-primary/10 rounded-[1.25rem] flex items-center justify-center text-primary shadow-inner border border-primary/20">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black text-main tracking-tight uppercase">Convenio & Acuerdo</h3>
+                                <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Responsabilidad de Pago</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-black text-main tracking-tight">Tipo de Ingreso</h3>
-                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Responsabilidad de Pago</p>
-                        </div>
+                        <button (click)="nextStep()"
+                            class="bg-primary text-white text-[10px] font-black px-5 py-2.5 rounded-full shadow-lg shadow-primary/20 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 cursor-pointer">Paso 1 → Continuar</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div class="space-y-4">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Responsable Principal</label>
-                            <select [(ngModel)]="tipoIngreso" [disabled]="!isAdmin() || !!cuentaId()"
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Tipo de Responsable Principal</label>
+                            <select [ngModel]="tipoIngreso()" (ngModelChange)="tipoIngreso.set($event)" [disabled]="!isAdmin() || !!cuentaId()"
                                 class="w-full px-6 py-5 bg-surface-card border border-glass-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-main shadow-sm appearance-none cursor-pointer">
                                 <option *ngIf="isAdmin() || isParticularAssistant()" value="Particular">👥 Particular</option>
                                 <option *ngIf="isAdmin() || isInsuranceAssistant()" value="Seguro">🛡️ Seguro / Empresa</option>
@@ -244,7 +250,7 @@
 
                         <div *ngIf="tipoIngreso() === 'Seguro'" class="animate-scale-in space-y-4">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Institución / Aseguradora</label>
-                            <select [(ngModel)]="convenioId" [disabled]="!!cuentaId()"
+                            <select [ngModel]="convenioId()" (ngModelChange)="convenioId.set($event)" [disabled]="!!cuentaId()"
                                 class="w-full px-6 py-5 bg-primary/5 border border-primary/10 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-primary shadow-sm cursor-pointer">
                                 <option [value]="null">--- Seleccione ---</option>
                                 <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre }}</option>
@@ -255,9 +261,10 @@
                     <div class="bg-primary/5 p-6 rounded-2xl border border-primary/10 flex items-start space-x-4">
                         <lucide-icon [name]="icons.Info" class="w-5 h-5 text-primary mt-0.5"></lucide-icon>
                         <p class="text-xs text-primary/80 font-bold leading-relaxed">
-                            La selección del convenio aplica automáticamente los tabuladores de precios acordados con la institución seleccionada.
+                            La selección del convenio aplica automáticamente los tabuladores de precios acordados con la institución seleccionada para el paso siguiente.
                         </p>
                     </div>
+
                 </div>
             </div>
 
@@ -272,7 +279,7 @@
                     <div class="relative">
                         <div class="flex space-x-4">
                             <div class="relative flex-1">
-                                <input type="text" [(ngModel)]="busquedaTermino" (keyup.enter)="buscarPaciente()" [disabled]="!!cuentaId()"
+                                <input type="text" [ngModel]="busquedaTermino()" (ngModelChange)="busquedaTermino.set($event)" (keyup.enter)="buscarPaciente()" [disabled]="!!cuentaId()"
                                     class="w-full px-6 py-5 bg-surface-card border border-glass-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-main tracking-tight placeholder:text-slate-600 shadow-inner"
                                     placeholder="Ingrese Cédula o Apellidos...">
                                 <div *ngIf="buscandoPaciente()" class="absolute right-6 top-1/2 -translate-y-1/2">
@@ -291,14 +298,100 @@
                             class="absolute z-[80] w-full mt-4 bg-surface/95 backdrop-blur-3xl rounded-[2rem] shadow-2xl border border-glass-border overflow-hidden animate-scale-in ring-1 ring-slate-100">
                             <button *ngFor="let p of resultadosPacientes()" (click)="seleccionarPaciente(p)"
                                 class="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-all border-b border-white/5 last:border-none group text-left">
-                                <div class="flex flex-col">
+                                <div class="flex flex-col flex-1">
                                     <span class="text-sm font-black text-main group-hover:text-primary transition-colors">{{ p.nombre }} {{ p.apellidos }}</span>
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{{ p.cedula }}</span>
+                                    <div class="flex items-center space-x-3 mt-1">
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ p.cedula }}</span>
+                                        <div class="h-1 w-1 bg-slate-300 rounded-full" *ngIf="p.celular || p.correo"></div>
+                                        <span *ngIf="p.celular" class="text-[9px] font-black text-emerald-500/70 flex items-center">
+                                            <lucide-icon [name]="icons.Phone" class="w-2.5 h-2.5 mr-1"></lucide-icon>
+                                            {{ p.celular }}
+                                        </span>
+                                        <span *ngIf="p.correo" class="text-[9px] font-black text-rose-500/70 flex items-center">
+                                            <lucide-icon [name]="icons.Mail" class="w-2.5 h-2.5 mr-1"></lucide-icon>
+                                            {{ p.correo }}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div class="h-8 w-10 bg-white/5 group-hover:bg-primary group-hover:text-white rounded-lg flex items-center justify-center transition-all">
                                     <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4"></lucide-icon>
                                 </div>
                             </button>
+                        </div>
+
+                        <!-- CTA: No Resultados -> Registrar Nuevo (Skill Micro-Ciclo 30) -->
+                        <div *ngIf="showResultadosBusqueda() && noResultsFound() && !buscandoPaciente()" 
+                            class="absolute z-[80] w-full mt-4 bg-surface/90 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-rose-500/20 p-10 animate-scale-in text-center group">
+                            <div class="h-16 w-16 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 mx-auto mb-6 border border-rose-500/20 group-hover:scale-110 transition-transform">
+                                <lucide-icon [name]="icons.UserPlus" class="w-8 h-8"></lucide-icon>
+                            </div>
+                            <h4 class="text-xl font-black text-white tracking-tight uppercase mb-2">Beneficiario no encontrado</h4>
+                            <p class="text-xs text-slate-400 font-bold mb-8 italic">La cédula <span class="text-rose-500 font-mono">{{ busquedaTermino() }}</span> no existe en el legado.</p>
+                            
+                            <button (click)="abrirRegistroPaciente()" 
+                                class="w-full py-5 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-rose-500/20 transition-all active:scale-95 flex items-center justify-center">
+                                <lucide-icon [name]="icons.Plus" class="w-4 h-4 mr-3"></lucide-icon>
+                                REGISTRAR NUEVO PACIENTE AHORA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestión de Abonos Multidivisa (Restaurado V2.1) -->
+                <div class="glass-panel rounded-[2rem] shadow-xl border-white/40 p-10 space-y-8 animate-scale-in">
+                    <div class="flex items-center space-x-4 mb-2">
+                        <div class="h-10 w-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-500/20">
+                            <lucide-icon [name]="icons.CreditCard" class="w-6 h-6"></lucide-icon>
+                        </div>
+                        <h4 class="text-xl font-black text-white tracking-tight uppercase">Carga de Abonos</h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/20 p-8 rounded-[2rem] border border-white/5">
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Método de Pago</label>
+                            <select [(ngModel)]="currentPago.metodoPago" 
+                                class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all uppercase appearance-none cursor-pointer">
+                                <option *ngFor="let m of metodosDisponibles" [value]="m">{{ m }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Referencia / Observación</label>
+                            <input type="text" [(ngModel)]="currentPago.referenciaBancaria" placeholder="Ej: 4567 / NA"
+                                class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-700">
+                        </div>
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto en Moneda Elegida</label>
+                            <div class="relative">
+                                <input type="number" [(ngModel)]="currentPago.montoAbonadoMoneda"
+                                    class="w-full bg-surface border border-white/5 rounded-2xl px-8 py-5 text-2xl font-black text-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-mono tracking-tighter">
+                                <button (click)="agregarPago()" [disabled]="currentPago.montoAbonadoMoneda <= 0"
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95 disabled:opacity-30">
+                                    Añadir Abono
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Listado de Pagos Registrados -->
+                    <div class="space-y-3">
+                        <div *ngFor="let p of pagos(); let i = index" 
+                            class="flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2xl animate-fade-in group">
+                            <div class="flex items-center space-x-5">
+                                <div class="h-10 w-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center font-black text-[10px]">#{{ i+1 }}</div>
+                                <div>
+                                    <p class="text-xs font-black text-white uppercase tracking-tight">{{ p.metodoPago }}</p>
+                                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Ref: {{ p.referenciaBancaria }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-6 text-right">
+                                <div>
+                                    <p class="text-sm font-black text-emerald-400 font-mono tracking-tighter">{{ p.metodoPago.includes('Divisas') || p.metodoPago.includes('Zelle') ? '$' : 'Bs.' }} {{ p.montoAbonadoMoneda | number:'1.2-2' }}</p>
+                                    <p class="text-[9px] font-bold text-slate-500 font-mono mt-0.5" *ngIf="!p.metodoPago.includes('Divisas') && !p.metodoPago.includes('Zelle')">Eq. ${{ p.equivalenteAbonadoBase | number:'1.2-2' }} USD</p>
+                                </div>
+                                <button (click)="removerPago(i)" class="p-3 text-slate-600 hover:text-rose-500 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all">
+                                    <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -311,7 +404,14 @@
                 <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-bl-full -z-10 blur-3xl"></div>
                 <div class="flex items-center justify-between mb-10 pb-4 border-b border-white/5">
                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Servicios en Cuenta</h3>
-                    <span class="text-[9px] bg-black text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest">{{ serviciosCargados().length }} ITEMS</span>
+                    <div class="flex items-center space-x-3">
+                        <button *ngIf="isAdmin()" (click)="verCitasActivas()" 
+                            class="text-[9px] bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-rose-500/20 transition-all">
+                            <lucide-icon [name]="icons.Layout" class="w-3 h-3 mr-1 inline-block"></lucide-icon>
+                            Gestionar Citas
+                        </button>
+                        <span class="text-[9px] bg-black text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest">{{ serviciosCargados().length }} ITEMS</span>
+                    </div>
                 </div>
                 
                 <div class="space-y-3 max-h-[300px] overflow-y-auto px-1 custom-scrollbar mb-10">
@@ -428,11 +528,11 @@
                             <div class="col-span-3 space-y-2">
                                 <p class="text-lg font-black text-white font-mono tracking-tighter">{{ getHoraRango(slot.hora) }}</p>
                                 <div class="flex items-center space-x-2">
-                                    <span [class]="slot.ocupado ? 'bg-rose-500 shadow-rose-500/20' : (slot.bloqueado ? 'bg-slate-700' : (slot.reservado ? 'bg-amber-500 animate-pulse shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20'))" 
+                                    <span [class]="slot.comentario.includes('Tu Cita') ? 'bg-emerald-500 shadow-emerald-500/40 animate-pulse' : (slot.ocupado ? 'bg-rose-500 shadow-rose-500/20' : (slot.bloqueado ? 'bg-slate-700' : (slot.reservado ? 'bg-amber-500 animate-pulse shadow-amber-500/20' : 'bg-emerald-500 shadow-emerald-500/20')))" 
                                           class="w-2.5 h-2.5 rounded-full shadow-lg"></span>
-                                    <span [class]="slot.ocupado ? 'text-rose-500' : (slot.bloqueado ? 'text-slate-500' : (slot.reservado ? 'text-amber-500' : 'text-emerald-500'))"
+                                    <span [class]="slot.comentario.includes('Tu Cita') ? 'text-emerald-400 font-black' : (slot.ocupado ? 'text-rose-500' : (slot.bloqueado ? 'text-slate-500' : (slot.reservado ? 'text-amber-500' : 'text-emerald-500')))"
                                           class="text-[9px] font-black uppercase tracking-widest italic">
-                                        {{ slot.ocupado ? 'Ocupado' : (slot.bloqueado ? 'No Disponible' : (slot.reservado ? 'Reservando...' : 'Libre')) }}
+                                        {{ slot.comentario.includes('Tu Cita') ? 'Tu Cita (Agregada)' : (slot.ocupado ? 'Ocupado' : (slot.bloqueado ? 'No Disponible' : (slot.reservado ? 'Reservando...' : 'Libre'))) }}
                                     </span>
                                 </div>
                             </div>
@@ -455,13 +555,19 @@
                                         title="Bloquear administrativamente">
                                     <lucide-icon [name]="icons.Lock" class="w-4 h-4"></lucide-icon>
                                 </button>
+                                <button *ngIf="isAdmin() && (slot.ocupado || slot.reservado || slot.bloqueado)" 
+                                         (click)="onAdminManage(slot, 'Delete')"
+                                         class="p-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all active:scale-95 border border-white/5"
+                                         title="Anulación Administrativa Forzosa">
+                                     <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                                 </button>
 
-                                <button (click)="seleccionarTurno(slot)" 
-                                    [disabled]="slot.ocupado || slot.bloqueado || slot.reservado"
-                                    [class.opacity-30]="slot.ocupado || slot.bloqueado || slot.reservado"
-                                    class="bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/10 flex items-center group/add active:scale-95">
-                                    {{ slot.reservado ? 'RESERVADO' : (slot.bloqueado ? 'BLOQUEADO' : (slot.ocupado ? 'OCUPADO' : 'AGREGAR')) }}
-                                </button>
+                                 <button (click)="seleccionarTurno(slot)" 
+                                     [disabled]="slot.ocupado || slot.bloqueado"
+                                     [class.opacity-30]="slot.ocupado || slot.bloqueado"
+                                     class="bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/10 flex items-center group/add active:scale-95">
+                                     {{ slot.reservado ? 'RESERVANDO...' : (slot.bloqueado ? 'BLOQUEADO' : (slot.ocupado ? 'OCUPADO' : (slot.comentario === 'Tu reserva actual (Vigente)' ? 'CAMBIAR' : 'AGREGAR'))) }}
+                                 </button>
                             </div>
                         </div>
 
@@ -485,7 +591,7 @@
     <!-- Modal de Registro de Paciente (Premium Redesign V2.0) -->
     <div *ngIf="showRegisterModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showRegisterModal.set(false)"></div>
-        <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-md overflow-hidden border border-white/5 animate-scale-in">
+        <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
             
             <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
                 <div class="flex items-center space-x-4">
@@ -493,8 +599,8 @@
                         <lucide-icon [name]="icons.UserPlus" class="w-6 h-6"></lucide-icon>
                     </div>
                     <div>
-                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Nuevo Paciente</h3>
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Registro Rápido de Admisión</p>
+                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Registro de Paciente Legacy</h3>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Compleción Obligatoria para Tabla 'datospersonales'</p>
                     </div>
                 </div>
                 <button (click)="showRegisterModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
@@ -502,39 +608,194 @@
                 </button>
             </div>
             
-            <div class="p-8 space-y-6">
+            <div class="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                
+                <!-- Sección 1: Datos Personales -->
                 <div class="space-y-4">
-                    <div class="space-y-1.5">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte</label>
-                        <input type="text" [(ngModel)]="newPatientData.cedula"
-                            class="w-full px-5 py-4 bg-surface border border-glass-border rounded-2xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main uppercase">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="h-1.5 w-1.5 bg-primary rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Identidad y Demografía</h4>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres Completos</label>
-                        <input type="text" [(ngModel)]="newPatientData.nombre"
-                            class="w-full px-5 py-4 bg-surface border border-glass-border rounded-2xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte</label>
+                            <input type="text" [(ngModel)]="newPatientData.cedula"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main uppercase">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres</label>
+                            <input type="text" [(ngModel)]="newPatientData.nombre"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos</label>
+                            <input type="text" [(ngModel)]="newPatientData.apellidos"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+                        </div>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Teléfono (Opcional)</label>
-                        <input type="text" [(ngModel)]="newPatientData.telefono"
-                            class="w-full px-5 py-4 bg-surface border border-glass-border rounded-2xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sexo</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button *ngFor="let s of ['M', 'F', 'ND']" (click)="newPatientData.sexo = s"
+                                    [class]="newPatientData.sexo === s ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-surface text-slate-400 border-glass-border hover:bg-white/5'"
+                                    class="py-3.5 rounded-xl border font-black text-xs transition-all uppercase tracking-widest">
+                                    {{ s === 'ND' ? 'Otro' : (s === 'M' ? 'Masculino' : 'Femenino') }}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha de Nacimiento</label>
+                            <input type="date" [(ngModel)]="newPatientData.fechaNacimiento"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-xs font-black text-main uppercase">
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col space-y-3 pt-4">
+                <!-- Sección 2: Contacto y Localización -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Medios de Contacto</h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Celular -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular Principal</label>
+                            <div class="flex space-x-2">
+                                <select [(ngModel)]="newPatientData.codigoCelular" 
+                                    class="w-24 bg-surface border border-glass-border rounded-xl px-2 py-3.5 text-[10px] font-black text-white outline-none">
+                                    <option *ngFor="let c of codigosCelular" [value]="c">{{ c }}</option>
+                                </select>
+                                <input type="text" [(ngModel)]="newPatientData.celular" placeholder="0000000"
+                                    class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main">
+                            </div>
+                        </div>
+                        <!-- Teléfono Local -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Teléfono Local</label>
+                            <div class="flex space-x-2">
+                                <select [(ngModel)]="newPatientData.codigoTelefono" 
+                                    class="w-24 bg-surface border border-glass-border rounded-xl px-2 py-3.5 text-[10px] font-black text-white outline-none">
+                                    <option *ngFor="let c of codigosTelefono" [value]="c">{{ c }}</option>
+                                </select>
+                                <input type="text" [(ngModel)]="newPatientData.telefono" placeholder="0000000"
+                                    class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Correo Electrónico</label>
+                            <div class="flex space-x-2">
+                                <input type="text" [(ngModel)]="newPatientData.correo" placeholder="usuario"
+                                    class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main">
+                                <select [(ngModel)]="newPatientData.tipoCorreo" 
+                                    class="w-40 bg-surface border border-glass-border rounded-xl px-4 py-3.5 text-[10px] font-black text-white outline-none">
+                                    <option *ngFor="let t of tiposCorreo" [value]="t">{{ t }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col space-y-4 pt-4">
                     <button (click)="guardarNuevoPaciente()" [disabled]="isLoading()"
-                        class="w-full py-5 bg-primary hover:bg-red-700 text-white rounded-[1.5rem] font-black shadow-2xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 uppercase text-xs tracking-[0.2em] flex items-center justify-center">
+                        class="w-full py-6 bg-primary hover:bg-rose-600 text-white rounded-[1.5rem] font-black shadow-2xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 uppercase text-xs tracking-[0.3em] flex items-center justify-center group">
                         <span *ngIf="!isLoading()" class="flex items-center">
-                             <lucide-icon [name]="icons.Check" class="w-5 h-5 mr-3"></lucide-icon>
-                             Completar Registro
+                             <lucide-icon [name]="icons.Check" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></lucide-icon>
+                             PROCEDER AL REGISTRO LEGACY
                         </span>
                         <span *ngIf="isLoading()" class="flex items-center">
-                            <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
-                            PROCESANDO...
+                            <svg class="animate-spin h-6 w-6 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
+                            GUARDANDO EN LEGACY...
                         </span>
                     </button>
-                    <button (click)="showRegisterModal.set(false)" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-[0.3em] py-2 transition-colors">DESCARTAR</button>
+                    <button (click)="showRegisterModal.set(false)" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-[0.4em] py-2 transition-all opacity-50 hover:opacity-100">CANCELAR ADMISIÓN</button>
                 </div>
+            </div>
+        </div>
+    
+    <!-- Panel Administrativo: Control de Citas Activas (Fase 10) -->
+    <div *ngIf="showAdminAppointmentsModal()" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl animate-fade-in-slow" (click)="showAdminAppointmentsModal.set(false)"></div>
+        <div class="relative bg-[#020617] rounded-[2.5rem] shadow-[0_0_80px_rgba(225,29,72,0.15)] w-full max-w-5xl overflow-hidden border border-white/10 animate-scale-in">
+            
+            <div class="p-10 pb-6 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-rose-500/5 to-transparent">
+                <div class="flex items-center space-x-6">
+                    <div class="h-16 w-16 rounded-[1.5rem] bg-rose-500 flex items-center justify-center text-white shadow-2xl shadow-rose-500/30">
+                        <lucide-icon [name]="icons.ShieldAlert" class="w-8 h-8"></lucide-icon>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-black text-white tracking-tighter uppercase">Panel de Control de Agenda</h3>
+                        <p class="text-[10px] font-black text-rose-500 uppercase tracking-[0.4em] mt-1 flex items-center">
+                            <span class="w-2 h-2 bg-rose-500 rounded-full mr-2 animate-pulse"></span>
+                            Modo Administrativo: Rescate de Horarios Bloqueados
+                        </p>
+                    </div>
+                </div>
+                <button (click)="showAdminAppointmentsModal.set(false)" class="p-3 text-slate-500 hover:text-white transition-all bg-white/5 rounded-2xl">
+                    <lucide-icon [name]="icons.X" class="w-8 h-8"></lucide-icon>
+                </button>
+            </div>
+
+            <div class="p-10 space-y-6">
+                 <div class="grid grid-cols-12 gap-4 px-6 py-4 bg-black/40 rounded-2xl border border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <div class="col-span-2">Paciente / ID</div>
+                    <div class="col-span-3">Doctor / Especialidad</div>
+                    <div class="col-span-3">Fecha y Hora Pautada</div>
+                    <div class="col-span-2">ID Cuenta</div>
+                    <div class="col-span-2 text-right">Acción</div>
+                </div>
+
+                <div class="max-h-[50vh] overflow-y-auto custom-scrollbar space-y-4 pr-3">
+                    <div *ngFor="let cita of activeAppointments()" 
+                         class="grid grid-cols-12 gap-4 items-center bg-white/2 hover:bg-white/5 p-6 rounded-[2rem] border border-white/5 transition-all group">
+                        
+                        <div class="col-span-2 space-y-1">
+                            <p class="text-sm font-black text-white italic">ID: {{ cita.pacienteId }}</p>
+                            <span class="text-[9px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-black uppercase">Activo</span>
+                        </div>
+
+                        <div class="col-span-3">
+                            <p class="text-[11px] font-black text-white">MEDICO ID:</p>
+                            <p class="text-[9px] font-bold text-slate-500 truncate">{{ cita.medicoId }}</p>
+                        </div>
+
+                        <div class="col-span-3">
+                            <p class="text-base font-black text-rose-500 font-mono tracking-tighter">{{ cita.horaPautada | date:'short' }}</p>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Sincronizado</p>
+                        </div>
+
+                        <div class="col-span-2">
+                            <p class="text-[10px] font-mono text-slate-300 truncate">{{ cita.cuentaId || 'Sin Cuenta' }}</p>
+                        </div>
+
+                        <div class="col-span-2 flex justify-end">
+                            <button (click)="anularCitaAdmin(cita.id)"
+                                class="flex items-center justify-center p-4 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-2xl transition-all border border-rose-500/20 shadow-lg shadow-rose-500/5 group/del">
+                                <lucide-icon [name]="icons.Trash2" class="w-5 h-5 mr-3 group-hover/del:scale-110 transition-transform"></lucide-icon>
+                                <span class="text-[10px] font-black uppercase tracking-widest">ANULAR</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="activeAppointments().length === 0" class="text-center py-20 bg-white/2 rounded-[2rem] border border-dashed border-white/10">
+                        <lucide-icon [name]="icons.CalendarCheck" class="w-16 h-16 text-slate-700 mx-auto mb-6"></lucide-icon>
+                        <p class="text-sm font-black text-slate-500 uppercase tracking-[0.3em]">No hay citas activas para gestionar</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-10 border-t border-white/5 bg-black/20 text-center">
+                <p class="text-[9px] font-bold text-slate-600 uppercase tracking-widest leading-loose">
+                    * Use esta herramienta solo para corregir errores de "Horario Ocupado" causados por fallos en el proceso de facturación. <br>
+                    La anulación es permanente y no se puede deshacer.
+                </p>
             </div>
         </div>
     </div>

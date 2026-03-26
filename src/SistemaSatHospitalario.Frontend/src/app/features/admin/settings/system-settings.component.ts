@@ -2,9 +2,10 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { LucideAngularModule, Settings, Save, RefreshCw, Database, Users, Shield, Plus, Trash2, Edit } from 'lucide-angular';
+import { LucideAngularModule, Settings, Save, RefreshCw, Database, Users, Shield, Plus, Trash2, Edit, Clock, Calendar, Stethoscope } from 'lucide-angular';
 import { SettingsService } from '../../../core/services/settings.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
+import { AppointmentsService } from '../../../core/services/appointments.service';
 import { ConfiguracionGeneral, UserDto } from '../../../core/models/settings.model';
 import { SeguroConvenio } from '../../../core/models/convenio.model';
 
@@ -60,6 +61,15 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
             <div *ngIf="activeTab === 'usuarios'" class="absolute inset-y-0 left-0 w-1 bg-blue-500 rounded-full"></div>
             <lucide-icon [name]="icons.Users" class="w-6 h-6 text-blue-500"></lucide-icon>
             <span class="font-black text-xs uppercase tracking-tight text-slate-300">Accesos & Roles</span>
+          </button>
+
+          <button 
+            (click)="setTab('citas')" 
+            [ngClass]="activeTab === 'citas' ? 'bg-amber-500/10 border-amber-500/50' : 'border-white/5'"
+            class="w-full text-left p-8 rounded-[2rem] border flex items-center space-x-5 transition-all hover:bg-white/5 group relative overflow-hidden">
+            <div *ngIf="activeTab === 'citas'" class="absolute inset-y-0 left-0 w-1 bg-amber-500 rounded-full"></div>
+            <lucide-icon [name]="icons.Clock" class="w-6 h-6 text-amber-500"></lucide-icon>
+            <span class="font-black text-xs uppercase tracking-tight text-slate-300">Gestión de Citas</span>
           </button>
         </div>
 
@@ -125,12 +135,18 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
                     </div>
                     <div>
                       <h4 class="text-sm font-black text-white uppercase">{{c.nombre}}</h4>
-                      <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mt-1">ID Legado: <span class="text-rose-500">{{c.id}}</span> • Cobertura: <span class="text-emerald-500">{{c.porcentajeCobertura}}%</span></p>
+                      <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter mt-1">
+                        RTN: <span class="text-rose-500">{{c.rtn || 'N/A'}}</span> • 
+                        TEL: <span class="text-emerald-500">{{c.telefono || 'N/A'}}</span>
+                      </p>
                     </div>
                   </div>
                   <div class="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button (click)="deleteConvenio(c.id)" class="h-10 w-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
-                      <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                    <button (click)="managePrices(c.id!)" class="h-10 px-4 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest">
+                       Configurar Precios
+                    </button>
+                    <button (click)="deleteConvenio(c.id!)" class="h-10 w-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all">
+                       <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
                     </button>
                   </div>
                 </div>
@@ -171,8 +187,125 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
              </div>
           </div>
 
+          <!-- TAB: CITAS ADMINISTRATIVAS -->
+          <div *ngIf="activeTab === 'citas'" class="space-y-10 animate-in fade-in slide-in-from-top-4 duration-700">
+             <div class="flex justify-between items-end border-b border-white/5 pb-8">
+                <div>
+                  <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Control de Agenda Global</h2>
+                  <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Supervisión y Anulación de Bloqueos</p>
+                </div>
+                <div class="flex space-x-4">
+                  <input type="date" [(ngModel)]="fechaFiltroCitas" (change)="loadAppointments()" class="bg-black/30 border border-white/10 p-3 rounded-xl text-white text-[10px] font-black uppercase outline-none focus:border-amber-500">
+                  <button 
+                    (click)="loadAppointments()" 
+                    class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center shadow-xl shadow-amber-500/20">
+                    <lucide-icon [name]="icons.RefreshCw" class="w-4 h-4 mr-2"></lucide-icon> Refrescar
+                  </button>
+                </div>
+             </div>
+
+             <div class="grid grid-cols-1 gap-4">
+                <div *ngIf="activeAppointments().length === 0" class="p-12 text-center bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                   <lucide-icon [name]="icons.Clock" class="w-12 h-12 text-slate-700 mx-auto mb-4 opacity-20"></lucide-icon>
+                   <p class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">No hay citas registradas para este filtro</p>
+                </div>
+
+                <div *ngFor="let a of activeAppointments()" class="bg-black/20 p-8 rounded-[2rem] border border-white/5 hover:border-amber-500/30 transition-all flex items-center justify-between group">
+                   <div class="flex items-center space-x-6">
+                      <div [ngClass]="a.estado.includes('PAGADO') ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'" 
+                           class="h-14 w-14 rounded-2xl flex items-center justify-center border border-white/5">
+                        <lucide-icon [name]="icons.Calendar" class="w-6 h-6"></lucide-icon>
+                      </div>
+                      <div>
+                        <div class="flex items-center space-x-2">
+                           <h4 class="text-sm font-black text-white uppercase">{{a.pacienteNombre || (a.type === 'Reserva' ? 'Reserva Temporal' : 'Paciente #' + a.pacienteId)}}</h4>
+                           <span [ngClass]="a.type === 'Reserva' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'" 
+                                 class="text-[8px] px-2 py-0.5 rounded-full border border-white/10 font-black uppercase tracking-tighter">
+                             {{a.type === 'Reserva' ? 'RESERVA' : (a.estado || 'ACTIVA')}}
+                           </span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                           MÉDICO ID: <span class="text-blue-400">{{a.medicoId.substring(0,8)}}...</span> • 
+                           HORA: <span class="text-amber-500">{{a.horaPautada | date:'shortTime'}}</span>
+                        </p>
+                      </div>
+                   </div>
+                   <div class="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button (click)="cancelarCitaAdmin(a)" class="h-10 px-5 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest">
+                         Anular Cita
+                      </button>
+                   </div>
+                </div>
+             </div>
+          </div>
+
         </div>
       </div>
+    </div>
+
+    <!-- Modal Gestión de Precios por Perfil -->
+    <div *ngIf="managingPricesConvenioId" class="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[110] flex items-center justify-center p-8 animate-in fade-in duration-300">
+       <div class="bg-surface-card border border-white/10 p-12 rounded-[4rem] w-full max-w-5xl h-[85vh] flex flex-col space-y-8 shadow-3xl animate-in zoom-in-95 duration-500 relative overflow-hidden">
+         <div class="absolute -top-40 -right-40 w-96 h-96 bg-emerald-500/5 rounded-full blur-[120px]"></div>
+         
+         <div class="flex justify-between items-start">
+            <div>
+              <h2 class="text-3xl font-black text-white uppercase tracking-tighter">Precios Personalizados</h2>
+              <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-2">
+                Convenio ID: <span class="text-emerald-500">#{{managingPricesConvenioId}}</span> • Excepciones de Precios Legacy
+              </p>
+            </div>
+            <button (click)="closePriceManager()" class="h-12 w-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-slate-400 transition-all">
+               <lucide-icon [name]="icons.RefreshCw" (click)="loadPricesForConvenio(managingPricesConvenioId!)" class="w-5 h-5"></lucide-icon>
+            </button>
+         </div>
+
+         <!-- Filtro Búsqueda Perfil -->
+         <div class="relative">
+            <input 
+              type="text" 
+              [(ngModel)]="searchPerfilesQuery" 
+              placeholder="Buscar Perfil en Catálogo Legacy (ej. Dengue, Hemograma...)" 
+              class="w-full bg-black/40 border border-white/10 p-6 rounded-3xl text-white outline-none focus:border-emerald-500 transition-all font-black uppercase text-xs placeholder:text-slate-700">
+         </div>
+
+         <!-- Grilla de Precios -->
+         <div class="flex-1 overflow-y-auto pr-4 custom-scrollbar space-y-4">
+            <div *ngFor="let p of filteredPrices()" class="bg-white/5 p-6 rounded-[2rem] border border-white/5 hover:border-emerald-500/20 transition-all flex items-center justify-between group">
+               <div class="flex items-center space-x-6">
+                  <div [ngClass]="p.tienePrecioPersonalizado ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-500/10 text-slate-500'" 
+                       class="h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xs border border-white/5">
+                    {{p.perfilId}}
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-black text-white uppercase tracking-tight">{{p.nombrePerfil}}</h4>
+                    <p class="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Base Legacy: <span class="text-slate-400">{{p.precioBaseHNL}} HNL / {{p.precioBaseUSD}} USD</span></p>
+                  </div>
+               </div>
+
+               <div class="flex items-center space-x-4">
+                  <!-- Inputs para Precios Personalizados -->
+                  <div class="flex space-x-2">
+                     <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-600">HNL</span>
+                        <input type="number" [(ngModel)]="p.precioPersonalizadoHNL" placeholder="-" class="w-28 bg-black/40 border border-white/5 p-4 pl-10 rounded-xl text-white font-black text-[11px] outline-none focus:border-emerald-500">
+                     </div>
+                     <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-600">USD</span>
+                        <input type="number" [(ngModel)]="p.precioPersonalizadoUSD" placeholder="-" class="w-28 bg-black/40 border border-white/5 p-4 pl-10 rounded-xl text-white font-black text-[11px] outline-none focus:border-emerald-500">
+                     </div>
+                  </div>
+                  <button (click)="savePriceOverride(p)" class="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">
+                     Asignar
+                  </button>
+               </div>
+            </div>
+         </div>
+
+         <div class="pt-6 border-t border-white/5">
+            <button (click)="closePriceManager()" class="w-full bg-white/5 hover:bg-white/10 text-slate-400 font-black uppercase py-6 rounded-[2rem] active:scale-95 transition-all text-xs tracking-widest">Cerrar Gestor Pachón Pro</button>
+         </div>
+       </div>
     </div>
 
     <!-- Modal Nuevo Convenio -->
@@ -184,19 +317,27 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
            <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-2">Sincronización Legacy Pachón Pro</p>
          </div>
          
-         <div class="space-y-6">
-           <div class="space-y-2">
-             <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">ID Único</label>
-             <input type="number" [(ngModel)]="newC.id" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black">
-           </div>
-           <div class="space-y-2">
-             <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre</label>
-             <input type="text" [(ngModel)]="newC.nombre" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black uppercase">
-           </div>
-           <div class="space-y-2">
-             <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Cobertura (%)</label>
-             <input type="number" [(ngModel)]="newC.porcentajeCobertura" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black">
-           </div>
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2 col-span-2">
+              <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre Comercial / Empresa</label>
+              <input type="text" [(ngModel)]="newC.nombre" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black uppercase shadow-inner">
+            </div>
+            <div class="space-y-2">
+              <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">RTN / Registro Fiscal</label>
+              <input type="text" [(ngModel)]="newC.rtn" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black uppercase shadow-inner">
+            </div>
+            <div class="space-y-2">
+              <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Teléfono de Contacto</label>
+              <input type="text" [(ngModel)]="newC.telefono" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black shadow-inner">
+            </div>
+            <div class="space-y-2 col-span-2">
+              <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Correo Electrónico</label>
+              <input type="email" [(ngModel)]="newC.email" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black shadow-inner">
+            </div>
+            <div class="space-y-2 col-span-2">
+              <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Dirección Física</label>
+              <textarea [(ngModel)]="newC.direccion" rows="2" class="w-full bg-black/40 border border-white/5 p-5 rounded-2xl text-white outline-none focus:border-emerald-500 transition-all font-black uppercase shadow-inner"></textarea>
+            </div>
          </div>
 
          <div class="flex space-x-5">
@@ -258,6 +399,7 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
 export class SystemSettingsComponent implements OnInit {
   private settingsService = inject(SettingsService);
   private conveniosService = inject(ConveniosService);
+  private appointmentsService = inject(AppointmentsService);
   private route = inject(ActivatedRoute);
 
   public activeTab = 'general';
@@ -266,20 +408,63 @@ export class SystemSettingsComponent implements OnInit {
   public convenios = signal<SeguroConvenio[]>([]);
   public users = signal<UserDto[]>([]);
   public roles = signal<string[]>([]);
+  public activeAppointments = signal<any[]>([]);
+  public fechaFiltroCitas = new Date().toISOString().split('T')[0];
 
   public showConvenioModal = false;
   public showUserModal = false;
-  public newC: Partial<SeguroConvenio> = { id: 0, nombre: '', porcentajeCobertura: 100 };
+  public managingPricesConvenioId: number | null = null;
+  public perfilPrices = signal<any[]>([]);
+  public searchPerfilesQuery = '';
+  
+  public newCHost: any = { nombre: '', rtn: '', direccion: '', telefono: '', email: '' };
+  public newC = this.newCHost; // Proxy para evitar errores de tipo en template
   public newU: any = { username: '', email: '', password: '', roles: [] };
 
-  public readonly icons = { Settings, Save, RefreshCw, Database, Users, Shield, Plus, Trash2, Edit };
+  public filteredPrices = () => {
+    return this.perfilPrices().filter(p => 
+      p.nombrePerfil.toLowerCase().includes(this.searchPerfilesQuery.toLowerCase()) ||
+      p.perfilId.toString().includes(this.searchPerfilesQuery)
+    );
+  };
+
+  public readonly icons = { Settings, Save, RefreshCw, Database, Users, Shield, Plus, Trash2, Edit, Clock, Calendar, Stethoscope };
 
   ngOnInit() { 
     this.loadData(); 
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
         this.activeTab = params['tab'];
+        if (this.activeTab === 'citas') this.loadAppointments();
       }
+    });
+  }
+
+  setTab(tab: string) {
+    this.activeTab = tab;
+    if (tab === 'citas') this.loadAppointments();
+  }
+
+  loadAppointments() {
+    this.appointmentsService.getActiveAppointments(this.fechaFiltroCitas).subscribe(data => {
+      this.activeAppointments.set(data);
+    });
+  }
+
+  cancelarCitaAdmin(cita: any) {
+    const label = cita.type === 'Reserva' ? 'reserva' : 'cita';
+    if (!confirm(`¿Está seguro de anular esta ${label} de forma administrativa?`)) return;
+
+    this.appointmentsService.adminManageSchedule({
+      action: 'Delete',
+      type: cita.type,
+      targetId: cita.id
+    }).subscribe({
+      next: () => {
+        alert('Cita anulada con éxito.');
+        this.loadAppointments();
+      },
+      error: (err) => alert(err.error?.error || 'Error al anular cita')
     });
   }
 
@@ -302,8 +487,13 @@ export class SystemSettingsComponent implements OnInit {
     this.conveniosService.create(this.newC).subscribe(() => {
       this.showConvenioModal = false;
       this.loadData();
-      this.newC = { id: 0, nombre: '', porcentajeCobertura: 100 };
+      this.resetNewConvenio();
     });
+  }
+
+  resetNewConvenio() {
+     this.newCHost = { nombre: '', rtn: '', direccion: '', telefono: '', email: '' };
+     this.newC = this.newCHost;
   }
 
   saveUser() {
@@ -328,5 +518,34 @@ export class SystemSettingsComponent implements OnInit {
     if (confirm('¿Eliminar convenio?')) {
       this.conveniosService.delete(id).subscribe(() => this.loadData());
     }
+  }
+
+  managePrices(id: number) {
+    this.managingPricesConvenioId = id;
+    this.loadPricesForConvenio(id);
+  }
+
+  loadPricesForConvenio(id: number) {
+    this.conveniosService.getPrecios(id).subscribe(data => this.perfilPrices.set(data));
+  }
+
+  closePriceManager() {
+    this.managingPricesConvenioId = null;
+    this.perfilPrices.set([]);
+    this.searchPerfilesQuery = '';
+  }
+
+  savePriceOverride(p: any) {
+    const cmd = {
+      convenioId: this.managingPricesConvenioId,
+      perfilId: p.perfilId,
+      precioHNL: p.precioPersonalizadoHNL || 0,
+      precioUSD: p.precioPersonalizadoUSD || 0
+    };
+
+    this.conveniosService.updatePrecio(cmd).subscribe(() => {
+       alert('Precio personalizado asignado Pachón Pro. 🏆');
+       this.loadPricesForConvenio(this.managingPricesConvenioId!);
+    });
   }
 }

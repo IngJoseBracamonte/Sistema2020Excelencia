@@ -48,28 +48,48 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             for (var current = start; current < end; current = current.AddMinutes(30))
             {
-                var citaOcupada = citas.FirstOrDefault(c => c.HoraPautada.TimeOfDay == current.TimeOfDay);
-                var reservaVigente = reservas.FirstOrDefault(r => r.HoraPautada.TimeOfDay == current.TimeOfDay);
-                var bloqueoAdmin = bloqueos.FirstOrDefault(b => b.HoraPautada.TimeOfDay == current.TimeOfDay);
+                // Comparación robusta por DateTime completo (Normalizado a minutos)
+                var citaOcupada = citas.FirstOrDefault(c => c.HoraPautada == current);
+                var reservaVigente = reservas.FirstOrDefault(r => r.HoraPautada == current);
+                var bloqueoAdmin = bloqueos.FirstOrDefault(b => b.HoraPautada == current);
                 
-                var comentario = "Disponible";
-                bool esReservaPropia = reservaVigente != null && reservaVigente.UsuarioId == request.UsuarioId;
+                // Determinamos si el slot pertenece al contexto actual (V4.8 Precision)
+                bool esCitaPropia = (request.PacienteId.HasValue && citaOcupada?.PacienteId == request.PacienteId.Value);
+                                 
+                bool esReservaPropia = request.UsuarioId != null && reservaVigente?.UsuarioId == request.UsuarioId;
                 
-                if (citaOcupada != null) comentario = citaOcupada.Comentario ?? "Ocupado";
-                else if (bloqueoAdmin != null) comentario = bloqueoAdmin.Motivo ?? "Bloqueado Administrativamente";
+                string comentario = "Libre";
+                Guid? targetId = null;
+                string? type = null;
+
+                if (citaOcupada != null)
+                {
+                    comentario = esCitaPropia ? "Tu Cita (Agregada)" : (citaOcupada.Comentario ?? "Ocupado");
+                    targetId = citaOcupada.Id;
+                    type = "Cita";
+                }
+                else if (bloqueoAdmin != null) 
+                {
+                    comentario = bloqueoAdmin.Motivo ?? "Bloqueado Administrativamente";
+                    targetId = bloqueoAdmin.Id;
+                    type = "Bloqueo";
+                }
                 else if (reservaVigente != null) 
                 {
                     comentario = esReservaPropia ? "Tu reserva actual (Vigente)" : "En proceso de facturación...";
+                    targetId = reservaVigente.Id;
+                    type = "Reserva";
                 }
 
                 response.Turnos.Add(new ScheduleEntry
                 {
                     Hora = current,
-                    Ocupado = citaOcupada != null,
-                    // Si es reserva propia, lo mostramos como NO reservado por terceros para permitir re-selección
-                    Reservado = reservaVigente != null && !esReservaPropia,
+                    Ocupado = citaOcupada != null && !esCitaPropia,
+                    Reservado = (reservaVigente != null && !esReservaPropia) || (citaOcupada != null && !esCitaPropia),
                     Bloqueado = bloqueoAdmin != null,
-                    Comentario = comentario
+                    Comentario = comentario,
+                    TargetId = targetId,
+                    Type = type
                 });
             }
 

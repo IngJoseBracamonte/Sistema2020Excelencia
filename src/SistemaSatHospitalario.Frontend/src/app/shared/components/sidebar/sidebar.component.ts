@@ -48,6 +48,16 @@ import {
           Facturación
         </a>
 
+        <a *ngIf="isAdmin()" routerLink="/cxc" routerLinkActive="active-link" class="nav-item">
+          <lucide-icon [name]="icons.AR" class="w-5 h-5 mr-3"></lucide-icon>
+          Cuentas por Cobrar
+        </a>
+
+        <a *ngIf="canSeeOrders()" routerLink="/rx-orders" routerLinkActive="active-link" class="nav-item">
+          <lucide-icon [name]="icons.Orders" class="w-5 h-5 mr-3"></lucide-icon>
+          Ordenes Medicas
+        </a>
+
         <a routerLink="/expedientes" routerLinkActive="active-link" class="nav-item">
           <lucide-icon [name]="icons.History" class="w-5 h-5 mr-3"></lucide-icon>
           Expedientes
@@ -93,16 +103,6 @@ import {
                 <a routerLink="/especialidades" routerLinkActive="active-sublink" class="nav-subitem">Especialidades</a>
             </div>
           </div>
-
-          <a *ngIf="isAdmin()" routerLink="/cxc" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.AR" class="w-5 h-5 mr-3"></lucide-icon>
-            Cuentas por Cobrar
-          </a>
-
-          <a *ngIf="canSeeOrders()" routerLink="/rx-orders" routerLinkActive="active-link" class="nav-item">
-            <lucide-icon [name]="icons.Orders" class="w-5 h-5 mr-3"></lucide-icon>
-            Ordenes Medicas
-          </a>
 
           <!-- Dropdown: Configuración -->
           <div *ngIf="isAdmin()" class="space-y-1">

@@ -145,6 +145,40 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.ToTable("ConfiguracionGeneral", (string)null);
                 });
 
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ConvenioPerfilPrecio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("PerfilId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PrecioHNL")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrecioUSD")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SeguroConvenioId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UltimaActualizacion")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SeguroConvenioId", "PerfilId")
+                        .IsUnique();
+
+                    b.ToTable("ConvenioPerfilPrecios", (string)null);
+                });
+
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CuentaPorCobrar", b =>
                 {
                     b.Property<Guid>("Id")
@@ -458,18 +492,38 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.SeguroConvenio", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Activo")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("Direccion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
-                    b.Property<decimal>("PorcentajeCobertura")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                    b.Property<string>("Rtn")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Telefono")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 
@@ -728,6 +782,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.HasDiscriminator().HasValue("OrdenRX");
+                });
+
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ConvenioPerfilPrecio", b =>
+                {
+                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.SeguroConvenio", "Convenio")
+                        .WithMany()
+                        .HasForeignKey("SeguroConvenioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Convenio");
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CuentaPorCobrar", b =>

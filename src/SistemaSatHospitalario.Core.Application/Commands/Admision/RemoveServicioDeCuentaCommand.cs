@@ -10,7 +10,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class RemoveServicioDeCuentaCommand : IRequest<bool>
     {
         public Guid CuentaId { get; set; }
-        public Guid ServicioId { get; set; }
+        public Guid DetalleId { get; set; }
+        public Guid? MedicoId { get; set; } // V4.6 Precision Metadata
+        public DateTime? HoraCita { get; set; } // V4.6 Precision Metadata
     }
 
     public class RemoveServicioDeCuentaCommandHandler : IRequestHandler<RemoveServicioDeCuentaCommand, bool>
@@ -29,7 +31,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (cuenta == null)
                 throw new InvalidOperationException("La cuenta especificada no existe.");
 
-            cuenta.RemoverServicio(request.ServicioId);
+            // Buscar el detalle antes de removerlo (V4.6 Logic)
+            var detalle = cuenta.Detalles.FirstOrDefault(d => d.Id == request.DetalleId);
+            if (detalle != null)
+            {
+                // Si es consulta y tenemos metadata, liberar el slot
+                if (request.MedicoId.HasValue && request.HoraCita.HasValue)
+                {
+                    await _repository.CancelarCitaMedicaAsync(request.CuentaId, request.MedicoId.Value, request.HoraCita.Value, cancellationToken);
+                }
+
+                cuenta.RemoverServicioPorDetalleId(request.DetalleId);
+            }
 
             await _repository.GuardarCambiosAsync(cancellationToken);
             return true;

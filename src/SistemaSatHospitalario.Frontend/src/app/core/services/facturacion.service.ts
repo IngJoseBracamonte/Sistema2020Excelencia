@@ -79,8 +79,11 @@ export class FacturacionService {
     return this.http.post<any>(`${this.receiptUrl}/RegistrarPagoMultidivisa`, payload);
   }
 
-  quitarServicio(cuentaId: string, servicioId: string): Observable<any> {
-    return this.http.delete<any>(`${this.billingUrl}/RemoveServicio?cuentaId=${cuentaId}&servicioId=${servicioId}`);
+  quitarServicio(cuentaId: string, detalleId: string, medicoId?: string, hora?: string): Observable<any> {
+    let url = `${this.billingUrl}/RemoveServicio?cuentaId=${cuentaId}&detalleId=${detalleId}`;
+    if (medicoId) url += `&medicoId=${medicoId}`;
+    if (hora) url += `&horaCita=${encodeURIComponent(hora)}`;
+    return this.http.delete<any>(url);
   }
 
   getReceiptPrintData(reciboId: string): Observable<ReceiptPrintData> {
@@ -93,5 +96,19 @@ export class FacturacionService {
 
   bloquearHorario(payload: BloquearHorarioRequest): Observable<any> {
     return this.http.post<any>(`${this.billingUrl}/BloquearHorario`, payload);
+  }
+
+  // Panel de Gestión Administrativa (Fase 10)
+  getAppointments(fecha?: string, medicoId?: string): Observable<any[]> {
+    let url = `${this.billingUrl}/Appointments`;
+    const params = [];
+    if (fecha) params.push(`fecha=${fecha}`);
+    if (medicoId) params.push(`medicoId=${medicoId}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return this.http.get<any[]>(url);
+  }
+
+  cancelAppointment(appointmentId: string): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/CancelAppointment/${appointmentId}`, {});
   }
 }

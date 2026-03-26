@@ -22,5 +22,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         }
 
         public bool EstaExpirada() => DateTime.UtcNow > ExpiracionUtc;
+        public void ActualizarHoraPautada(DateTime nuevaHora) => HoraPautada = nuevaHora;
     }
 }

@@ -66,8 +66,27 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             // 4. Obtener perfiles de Laboratorio del sistema Legacy
             var perfilesLegacy = await _legacyRepository.GetAvailableProfilesAsync(cancellationToken);
+            
+            // 5. Obtener excepciones de precios para perfiles legacy
+            var excepcionesPerfiles = new Dictionary<int, (decimal hnl, decimal usd)>();
+            if (request.ConvenioId.HasValue)
+            {
+                excepcionesPerfiles = await _context.ConvenioPerfilPrecios
+                    .Where(x => x.SeguroConvenioId == request.ConvenioId.Value)
+                    .ToDictionaryAsync(x => x.PerfilId, x => (x.PrecioHNL, x.PrecioUSD), cancellationToken);
+            }
+
             foreach (var p in perfilesLegacy)
             {
+                decimal finalUsd = (decimal)p.PrecioDOlar;
+                decimal? overrideHnl = null;
+
+                if (excepcionesPerfiles.TryGetValue(p.IdPerfil, out var exc))
+                {
+                    if (exc.usd > 0) finalUsd = exc.usd;
+                    if (exc.hnl > 0) overrideHnl = exc.hnl;
+                }
+
                 var item = new CatalogItemDto
                 {
                     Id = p.IdPerfil.ToString(),
@@ -75,9 +94,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Descripcion = p.Descripcion,
                     Tipo = "LABORATORIO",
                     EsLegacy = true,
-                    PrecioUsd = (decimal)p.PrecioDOlar
+                    PrecioUsd = finalUsd
                 };
+
+                // Si hay un precio específico en HNL para este convenio, lo forzamos después del cálculo base
                 item.CalculatePrices(tasa);
+                if (overrideHnl.HasValue)
+                {
+                    item.PrecioBs = overrideHnl.Value;
+                    item.Precio = item.PrecioBs;
+                }
+
                 result.Add(item);
             }
 

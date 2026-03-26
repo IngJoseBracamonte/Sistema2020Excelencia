@@ -9,9 +9,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class CreateConvenioCommand : IRequest<int>
     {
-        public int Id { get; set; }
         public string Nombre { get; set; }
-        public decimal PorcentajeCobertura { get; set; }
+        public string Rtn { get; set; }
+        public string Direccion { get; set; }
+        public string Telefono { get; set; }
+        public string Email { get; set; }
     }
 
     public class CreateConvenioCommandHandler : IRequestHandler<CreateConvenioCommand, int>
@@ -25,13 +27,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<int> Handle(CreateConvenioCommand request, CancellationToken cancellationToken)
         {
-            // Verificar si ya existe para evitar duplicados en legacy sync
-            if (await _context.SegurosConvenios.AnyAsync(s => s.Id == request.Id, cancellationToken))
-            {
-                return 0;
-            }
-
-            var convenio = new SeguroConvenio(request.Id, request.Nombre, request.PorcentajeCobertura);
+            var convenio = new SeguroConvenio(
+                request.Nombre, 
+                request.Rtn, 
+                request.Direccion, 
+                request.Telefono, 
+                request.Email);
+                
             _context.SegurosConvenios.Add(convenio);
             
             await _context.SaveChangesAsync(cancellationToken);

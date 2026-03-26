@@ -10,12 +10,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public DateTime Fecha { get; set; }
 
         public string? UsuarioId { get; set; }
+        public int? PacienteId { get; set; } // Precision Enhancement V4.7
 
-        public GetDoctorScheduleQuery(Guid medicoId, DateTime fecha, string? usuarioId = null)
+        public GetDoctorScheduleQuery(Guid medicoId, DateTime fecha, string? usuarioId = null, int? pacienteId = null)
         {
             MedicoId = medicoId;
             Fecha = fecha;
             UsuarioId = usuarioId;
+            PacienteId = pacienteId;
         }
     }
 
@@ -33,5 +35,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public bool Reservado { get; set; }
         public bool Bloqueado { get; set; }
         public string Comentario { get; set; }
+        public Guid? TargetId { get; set; }
+        public string? Type { get; set; }
     }
 }

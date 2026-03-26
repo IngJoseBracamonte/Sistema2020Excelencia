@@ -14,6 +14,8 @@ Este documento rastrea la efectividad operativa y la evolución técnica del Sis
 | `2026-03-24` | Fix OTel TS2693 | **Éxito** | OTel JS v2.6.0 cambió `Resource` de clase a interfaz. |
 | `2026-03-24` | Fix SQL Tracing | **Éxito** | `SetDbStatementForText` es necesario para ver queries reales. |
 | `2026-03-24` | Restart AppHost | **Bloqueo** | La DLL de `ServiceDefaults` se bloquea si el proceso API no se mata antes. |
+| `2026-03-26` | Fix Agenda CS1061 | **Éxito** | `UsuarioCarga` no existía en la entidad `CitaMedica`. |
+| `2026-03-26` | Start AppHost | **Éxito** | Aspire Dashboard levantado exitosamente tras el build fix. |
 
 ## 🚀 Log de Tiempos de Build
 - **Angular (Build)**: ~20.5 segundos.

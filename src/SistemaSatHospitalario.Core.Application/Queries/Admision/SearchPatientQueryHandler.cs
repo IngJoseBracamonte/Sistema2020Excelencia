@@ -28,44 +28,30 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             
             if (string.IsNullOrEmpty(term)) return results;
 
-            // 1. Buscar en Sistema Nativo
-            var nativePatients = await _context.PacientesAdmision
-                .Where(p => p.CedulaPasaporte.Contains(term) || p.NombreCorto.Contains(term))
-                .Take(10)
-                .ToListAsync(cancellationToken);
-
-            foreach (var p in nativePatients)
+            // EXCLUSIVIDAD LEGACY: Según requerimiento Corporativo Pachón Pro, 
+            // no se busca en el sistema nativo para evitar duplicidad o colisión de Cédulas.
+            try
             {
-                results.Add(new PatientDto
+                var legacyPatients = await _legacyRepository.SearchPatientsLimitedAsync(term, cancellationToken);
+                foreach (var p in legacyPatients)
                 {
-                    Id = p.Id, // ID numérico unificado
-                    Cedula = p.CedulaPasaporte,
-                    Nombre = p.NombreCorto,
-                    Apellidos = "",
-                    Celular = p.TelefonoContact,
-                    Source = "Nativo",
-                    EsLegacy = false
-                });
+                    results.Add(new PatientDto
+                    {
+                        Id = p.IdPersona,
+                        Cedula = p.Cedula,
+                        Nombre = p.Nombre,
+                        Apellidos = p.Apellidos,
+                        Sexo = p.Sexo,
+                        Correo = (p.Correo ?? "") + (p.TipoCorreo ?? ""),
+                        Celular = (p.CodigoCelular ?? "") + (p.Celular ?? ""),
+                        Source = "Legacy",
+                        EsLegacy = true
+                    });
+                }
             }
-
-            // 2. Buscar en Sistema Legacy
-            // Nota: El repositorio legacy debe devolver DatosPersonalesLegacy u otro DTO con IdPersona
-            var legacyPatients = await _legacyRepository.SearchPatientsLimitedAsync(term, cancellationToken);
-            foreach (var p in legacyPatients)
+            catch (global::System.Exception ex)
             {
-                // Evitar duplicados si ya está en el nativo por ID o Cédula
-                if (results.Any(r => r.Id == p.IdPersona || r.Cedula == p.Identificacion)) continue;
-
-                results.Add(new PatientDto
-                {
-                    Id = p.IdPersona, // ID numérico original del legado
-                    Cedula = p.Identificacion,
-                    Nombre = p.Nombre1,
-                    Apellidos = p.Apellido1,
-                    Celular = p.Telefono,
-                    Source = "Legacy",
-                    EsLegacy = true
-                });
+                global::System.Console.WriteLine($"[LEGACY EXCLUSIVE SEARCH ERROR] {ex.Message}");
             }
 
             return results;

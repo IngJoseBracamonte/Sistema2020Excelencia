@@ -8,12 +8,17 @@ export interface PatientRecord {
   id?: number;
   cedula: string;
   nombre: string;
-  apellidos: string;
-  sexo: string;
-  correo: string;
-  celular: string;
-  source: string;
-  esLegacy: boolean;
+  apellidos?: string;
+  sexo?: string;
+  fechaNacimiento?: string;
+  correo?: string;
+  tipoCorreo?: string;
+  celular?: string;
+  codigoCelular?: string;
+  telefono?: string;
+  codigoTelefono?: string;
+  source?: string;
+  esLegacy?: boolean;
 }
 
 export interface HistoryServiceDetail {

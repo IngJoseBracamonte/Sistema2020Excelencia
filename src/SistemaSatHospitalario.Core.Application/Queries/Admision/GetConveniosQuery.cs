@@ -27,7 +27,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     Id = s.Id,
                     Nombre = s.Nombre,
-                    PorcentajeCobertura = s.PorcentajeCobertura,
+                    Rtn = s.Rtn,
+                    Direccion = s.Direccion,
+                    Telefono = s.Telefono,
+                    Email = s.Email,
                     Activo = s.Activo
                 })
                 .ToListAsync(cancellationToken);
