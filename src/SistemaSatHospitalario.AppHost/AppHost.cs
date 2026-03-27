@@ -28,7 +28,9 @@ var api = builder.AddProject<Projects.SistemaSatHospitalario_WebAPI>("api")
     .WithEnvironment("JwtConfig__Secret", effectiveJwtSecret)
     .WithEnvironment("EmailSettings__SmtpUser", smtpUser)
     .WithEnvironment("EmailSettings__SmtpPass", smtpPass)
-    .WithEnvironment("DatabaseProvider", dbProviderName);
+    .WithEnvironment("DatabaseProvider", dbProviderName)
+    .WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
+    .WithEnvironment("JwtConfig__Audience", builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA");
 
 // Orquestación del Frontend (Angular 19)
 builder.AddNpmApp("frontend", "../SistemaSatHospitalario.Frontend", "start")

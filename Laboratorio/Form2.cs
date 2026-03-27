@@ -197,26 +197,6 @@ namespace Laboratorio
                 }
             }
         }
-        private void NotificacionListaDePrecioVet()
-        {
-            DataSet AvisoListaDePrecio = new DataSet();
-            AvisoListaDePrecio = ConexionVeterinaria.CambiarListaPrecio();
-            if (AvisoListaDePrecio.Tables.Count != 0)
-            {
-                if (AvisoListaDePrecio.Tables[0].Rows.Count != 0)
-                {
-                    NotificacionListaDePreciostr = AvisoListaDePrecio.Tables[0].Rows[0][1].ToString();
-                    if (AvisoListaDePrecio.Tables[0].Rows[0][0].ToString() == "0")
-                    {
-                        label21.Visible = true;
-                    }
-                    else
-                    {
-                        label21.Visible = false;
-                    }
-                }
-            }
-        }
         private async Task NotificacionListaDePrecioASync()
         {
 

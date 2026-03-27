@@ -54,6 +54,7 @@ graph TD
 | **Backend** | ASP.NET Core | v10.0 | API REST y servicios de negocio. |
 | **Frontend** | Angular | v19.2.0 | SPA con Signals y Standalone components. |
 | **Persistencia** | EF Core | v9.0.2 | ORM con soporte para MySQL (Pomelo). |
+| **Backend (Legacy)** | .NET Framework | v4.8 | Librerías de conexión y lógica WinForms heredada. |
 | **Base de Datos** | MySQL | v8.0+ | Almacenamiento distribuido (System, Identity, Legacy). |
 | **Telemetría** | OpenTelemetry | v1.x (SDK) | Trazas, métricas y logs estructurados. |
 

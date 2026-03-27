@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -26,14 +27,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             PacienteId = pacienteId;
             CuentaServicioId = cuentaServicioId;
             HoraPautada = horaPautada;
-            Estado = "Pendiente";
+            Estado = EstadoConstants.Pendiente;
             Comentario = comentario;
             FechaRegistro = DateTime.UtcNow;
         }
 
         public void ActualizarComentario(string? comentario) => Comentario = comentario;
 
-        public void Cancelar() => Estado = "Cancelado";
+        public void Cancelar() => Estado = EstadoConstants.Cancelado;
         public void ActualizarHoraPautada(DateTime nuevaHora) => HoraPautada = nuevaHora;
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -18,7 +19,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class ActiveAppointmentDto
     {
         public Guid Id { get; set; }
-        public string Type { get; set; } = "Cita"; // "Cita", "Reserva"
+        public string Type { get; set; } = EstadoConstants.TypeCita; // "Cita", "Reserva"
         public Guid MedicoId { get; set; }
         public string MedicoNombre { get; set; } = string.Empty;
         public string MedicoEspecialidad { get; set; } = string.Empty;
@@ -42,10 +43,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public async Task<List<ActiveAppointmentDto>> Handle(GetActiveAppointmentsQuery request, CancellationToken cancellationToken)
         {
             var targetDate = request.Fecha?.Date;
+            var nextDay = targetDate?.AddDays(1);
 
             // 1. Obtener Citas (Excluyendo canceladas)
             var citasQuery = _context.CitasMedicas.AsQueryable();
-            if (targetDate.HasValue) citasQuery = citasQuery.Where(c => c.HoraPautada.Date == targetDate.Value);
+            if (targetDate.HasValue) citasQuery = citasQuery.Where(c => c.HoraPautada >= targetDate.Value && c.HoraPautada < nextDay!.Value);
             if (request.MedicoId.HasValue) citasQuery = citasQuery.Where(c => c.MedicoId == request.MedicoId.Value);
 
             var citas = await (from c in citasQuery
@@ -56,10 +58,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                select new ActiveAppointmentDto
                                {
                                    Id = c.Id,
-                                   Type = "Cita",
+                                   Type = EstadoConstants.TypeCita,
                                    MedicoId = c.MedicoId,
                                    MedicoNombre = m != null ? m.Nombre : "ID: " + c.MedicoId.ToString().Substring(0, 8),
-                                   MedicoEspecialidad = m != null ? m.Especialidad : "No Vinculado",
+                                   MedicoEspecialidad = m != null ? m.Especialidad : EstadoConstants.NoVinculado,
                                    PacienteId = c.PacienteId,
                                    PacienteLegacyId = p != null ? p.IdPacienteLegacy : null,
                                    PacienteNombre = p != null ? p.NombreCorto : "Paciente #" + c.PacienteId,
@@ -71,7 +73,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             // 2. Obtener Reservas Temporales (Vigentes)
             var reservasQuery = _context.ReservasTemporales.Where(r => r.ExpiracionUtc > DateTime.UtcNow);
-            if (targetDate.HasValue) reservasQuery = reservasQuery.Where(r => r.HoraPautada.Date == targetDate.Value);
+            if (targetDate.HasValue) reservasQuery = reservasQuery.Where(r => r.HoraPautada >= targetDate.Value && r.HoraPautada < nextDay!.Value);
             if (request.MedicoId.HasValue) reservasQuery = reservasQuery.Where(r => r.MedicoId == request.MedicoId.Value);
 
             var reservas = await (from r in reservasQuery
@@ -80,14 +82,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                   select new ActiveAppointmentDto
                                   {
                                       Id = r.Id,
-                                      Type = "Reserva",
-                                      MedicoId = r.MedicoId,
-                                      MedicoNombre = m != null ? m.Nombre : "ID: " + r.MedicoId.ToString().Substring(0, 8),
-                                      MedicoEspecialidad = m != null ? m.Especialidad : "No Vinculado",
-                                      PacienteId = Guid.Empty,
-                                      PacienteNombre = "RESERVA TEMPORAL",
-                                      HoraPautada = r.HoraPautada,
-                                      Estado = "RESERVADO"
+                                   Type = EstadoConstants.TypeReserva,
+                                   MedicoId = r.MedicoId,
+                                   MedicoNombre = m != null ? m.Nombre : "ID: " + r.MedicoId.ToString().Substring(0, 8),
+                                   MedicoEspecialidad = m != null ? m.Especialidad : EstadoConstants.NoVinculado,
+                                   PacienteId = Guid.Empty,
+                                   PacienteNombre = EstadoConstants.ReservaTemporal,
+                                   HoraPautada = r.HoraPautada,
+                                   Estado = EstadoConstants.Reservado
                                   })
                                   .ToListAsync(cancellationToken);
 

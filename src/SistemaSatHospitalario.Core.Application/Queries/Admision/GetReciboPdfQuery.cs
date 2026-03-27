@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -44,9 +45,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 Id = recibo.Id,
                 NumeroRecibo = recibo.NumeroRecibo,
                 FechaEmision = recibo.FechaEmision,
-                PacienteNombre = recibo.PacienteId.ToString() == "0" ? "Particular" : (paciente?.NombreCorto ?? "Desconocido"),
-                PacienteCedula = paciente?.CedulaPasaporte ?? "Desconocido",
-                TipoIngreso = cuenta?.TipoIngreso ?? "Particular",
+                PacienteNombre = recibo.PacienteId == Guid.Empty ? EstadoConstants.Particular : (paciente?.NombreCorto ?? EstadoConstants.Desconocido),
+                PacienteCedula = paciente?.CedulaPasaporte ?? EstadoConstants.Desconocido,
+                TipoIngreso = cuenta?.TipoIngreso ?? EstadoConstants.Particular,
                 TotalUSD = recibo.TotalFacturadoUSD,
                 TasaBcv = recibo.TasaBcvUsada,
                 TotalBS = recibo.TotalFacturadoUSD * recibo.TasaBcvUsada,

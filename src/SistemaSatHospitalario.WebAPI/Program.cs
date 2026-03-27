@@ -66,6 +66,11 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAuthorization();
 
+// [DIAGNOSTIC] Validar Parámetros JWT para evitar 401 por Mismatch (V11.8)
+Console.WriteLine($"[JWT AUTH CONFIG] Issuer: {builder.Configuration["JwtConfig:Issuer"]}");
+Console.WriteLine($"[JWT AUTH CONFIG] Audience: {builder.Configuration["JwtConfig:Audience"]}");
+Console.WriteLine($"[JWT AUTH CONFIG] Secret Configured: {!string.IsNullOrEmpty(jwtSecret)}");
+
 // Add Exception Handler
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

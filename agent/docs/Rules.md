@@ -3,7 +3,7 @@
 Este documento define las directrices inquebrantables de desarrollo para garantizar la consistencia, calidad y mantenibilidad del sistema.
 
 ## 🏛️ Leyes del Proyecto (Unbreakable Laws) - V11.7
-1. **Legacy Intocable**: El sistema original de WinForms/C# NO SE MODIFICA. Cualquier discrepancia o error en el Legacy se reporta pero no se intenta solventar en este repositorio.
+1. **Legacy Build Integrity**: El sistema original de WinForms/C# NO SE MODIFICA en su lógica de negocio. Sin embargo, los archivos de proyecto (`.csproj`) deben mantenerse sincronizados con rutas relativas y frameworks soportados (v4.8) para garantizar el build de la solución.
 2. **EF Core 9 Control**: Mantener `Microsoft.EntityFrameworkCore` en la versión `9.0.2`. El uso de v10 está prohibido por incompatibilidades con el proveedor Pomelo MySQL.
 4. **Identidad por GUID**: Todos los nuevos registros de pacientes y entidades transaccionales DEBEN usar `Guid` como clave primaria. El uso de `int` para PKs queda prohibido para nuevas entidades.
 5. **Admission Atomicity (MD-001)**: Cada finalización del Wizard de Facturación genera un **NUEVO** objeto `CuentaServicios`. Prohibido reutilizar cuentas abiertas previas para garantizar unicidad clínica.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -28,14 +29,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             PacienteId = pacienteId;
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
             FechaCarga = DateTime.UtcNow;
-            Estado = "Abierta";
-            TipoIngreso = tipoIngreso ?? "Particular";
+            Estado = EstadoConstants.Abierta;
+            TipoIngreso = tipoIngreso ?? EstadoConstants.Particular;
             ConvenioId = convenioId;
         }
 
         public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga)
         {
-            if (Estado != "Abierta")
+            if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
 
             var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, cantidad, tipoServicio, usuarioCarga);
@@ -45,7 +46,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RemoverServicio(Guid servicioId)
         {
-            if (Estado != "Abierta")
+            if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.ServicioId == servicioId);
@@ -57,7 +58,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RemoverServicioPorDetalleId(Guid detalleId)
         {
-            if (Estado != "Abierta")
+            if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.Id == detalleId);
@@ -71,16 +72,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Facturar()
         {
-            if (Estado != "Abierta")
+            if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("Solo se pueden facturar cuentas abiertas.");
             
-            Estado = "Facturada";
+            Estado = EstadoConstants.Facturada;
             FechaCierre = DateTime.UtcNow;
         }
 
         public void Anular()
         {
-            Estado = "Anulada";
+            Estado = EstadoConstants.Anulada;
             FechaCierre = DateTime.UtcNow;
         }
     }

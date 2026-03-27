@@ -9,6 +9,7 @@ using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -37,7 +38,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             // 1. Obtener servicios nativos (RX, Consultas, etc.)
             var serviciosNativos = await _context.ServiciosClinicos
-                .Where(s => s.Activo && s.Descripcion != "LABORATORIO")
+                .Where(s => s.Activo && s.Descripcion != EstadoConstants.Laboratorio)
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener precios por convenio si aplica
@@ -92,9 +93,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var item = new CatalogItemDto
                 {
                     Id = p.IdPerfil.ToString(),
-                    Codigo = "LAB-" + p.IdPerfil,
+                    Codigo = EstadoConstants.PrefixLab + p.IdPerfil,
                     Descripcion = p.Descripcion,
-                    Tipo = "LABORATORIO",
+                    Tipo = EstadoConstants.Laboratorio,
                     CategoryId = (int)ServiceCategory.Laboratory,
                     EsLegacy = true,
                     PrecioUsd = finalUsd

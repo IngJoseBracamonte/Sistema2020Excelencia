@@ -6,16 +6,19 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 
 namespace SistemaSatHospitalario.Core.Application.Commands
 {
     public class AgendarTurnoCommandHandler : IRequestHandler<AgendarTurnoCommand, Guid>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ILegacyLabRepository _legacyRepository;
 
-        public AgendarTurnoCommandHandler(IApplicationDbContext context)
+        public AgendarTurnoCommandHandler(IApplicationDbContext context, ILegacyLabRepository legacyRepository)
         {
             _context = context;
+            _legacyRepository = legacyRepository;
         }
 
         public async Task<Guid> Handle(AgendarTurnoCommand request, CancellationToken cancellationToken)
@@ -27,8 +30,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
             if (paciente == null)
             {
-                // Auto-Stub: Registro mínimo para integridad referencial
-                paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
+                // Auto-Stub: Registro de alta calidad (V11.8)
+                // Consultamos al legado para obtener datos reales antes de crear el stub local
+                var legacyResult = await _legacyRepository.GetPatientByIdAsync(request.PacienteId.ToString(), cancellationToken);
+                
+                if (legacyResult != null)
+                {
+                    var fullName = $"{legacyResult.Nombre} {legacyResult.Apellidos}".Trim();
+                    var mainPhone = !string.IsNullOrEmpty(legacyResult.Celular) ? legacyResult.Celular : legacyResult.Telefono;
+                    
+                    paciente = new PacienteAdmision(legacyResult.Cedula, fullName, mainPhone ?? "", legacyResult.IdPersona);
+                }
+                else
+                {
+                    // Fallback de seguridad (solo si no existe en legado, aunque el ID provenga de una búsqueda)
+                    paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
+                }
+
                 _context.PacientesAdmision.Add(paciente);
             }
 

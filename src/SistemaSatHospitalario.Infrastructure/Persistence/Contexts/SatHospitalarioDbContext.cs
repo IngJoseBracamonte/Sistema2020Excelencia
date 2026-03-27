@@ -69,6 +69,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(r => r.CuentaServicioId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Ignore(r => r.Estado);
             });
 
             builder.Entity<DetallePago>(entity =>

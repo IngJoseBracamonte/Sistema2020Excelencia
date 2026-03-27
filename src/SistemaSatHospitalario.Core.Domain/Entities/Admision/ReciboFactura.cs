@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -27,7 +28,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected ReciboFactura() { }
 
-        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = "Borrador")
+        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = EstadoConstants.Borrador)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -41,19 +42,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Emitir(string nroControlFiscal)
         {
-            if (EstadoFiscal != "Borrador") throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
+            if (EstadoFiscal != EstadoConstants.Borrador) throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
             NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
-            EstadoFiscal = "Emitida";
+            EstadoFiscal = EstadoConstants.Emitida;
         }
 
         public void Anular()
         {
-            EstadoFiscal = "Anulada";
+            EstadoFiscal = EstadoConstants.Anulada;
         }
 
         public void AgregarDetallePago(string metodoPago, string referencia, decimal montoCambiario, decimal equivalenteBase)
         {
-            if (EstadoFiscal != "Borrador") throw new InvalidOperationException("No se pueden agregar pagos a un recibo ya emitido o anulado.");
+            if (EstadoFiscal != EstadoConstants.Borrador) throw new InvalidOperationException("No se pueden agregar pagos a un recibo ya emitido o anulado.");
             _detallesPago.Add(new DetallePago(Id, metodoPago, referencia, montoCambiario, equivalenteBase));
         }
 

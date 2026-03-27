@@ -163,15 +163,7 @@ namespace Laboratorio
         {
             string results;
             //Conexion Al Servidor
-            if (LocalServer == "Laboratorio")
-            {
-                results = await Conexion.AsyncTestConnection(cmd);
-            }
-            else
-            {
-                results = await ConexionVeterinaria.AsyncTestConnection(cmd);
-            }
-
+            results = await Conexion.AsyncTestConnection(cmd);
             if (results == "Conectado")
             {
                 ServidoresCheck.IconChar = FontAwesome.Sharp.IconChar.Check;
@@ -232,18 +224,6 @@ namespace Laboratorio
                 Conexion.Connection(ConfigurationManager.ConnectionStrings["PARAVET REMOTO"].ConnectionString, "PARAVET REMOTO");
                 Mensaje = "Se ha conectado a Divetech";
             }
-            else if (Server == 7)
-            {
-                LocalServer = "Veterinaria";
-                ConexionVeterinaria.Connection(ConfigurationManager.ConnectionStrings["PARAVET"].ConnectionString, "PARAVET");
-                Mensaje = "Se ha conectado a Paravet";
-            }
-            else if (Server == 8)
-            {
-                LocalServer = "Laboratorio";
-                ConexionVeterinaria.Connection(ConfigurationManager.ConnectionStrings["ARCOS PARADA 2"].ConnectionString, "ARCOS PARADA 2");
-                Mensaje = "Se ha conectado a Arcos Parada 2";
-            }
 
         }
         private void DatosDeServidores()
@@ -254,9 +234,6 @@ namespace Laboratorio
             Server.Add(new Servidores() { idServer = 3, iPServer = "NARDO", tiposerver = "Laboratorio" });
             Server.Add(new Servidores() { idServer = 4, iPServer = "ARO", tiposerver = "Laboratorio" });
             Server.Add(new Servidores() { idServer = 5, iPServer = "ESPECIALES", tiposerver = "Laboratorio" });
-            Server.Add(new Servidores() { idServer = 6, iPServer = "DIVETECH", tiposerver = "Veterinaria" });
-            Server.Add(new Servidores() { idServer = 7, iPServer = "PARAVET", tiposerver = "Veterinaria" });
-            Server.Add(new Servidores() { idServer = 8, iPServer = "PARAVET", tiposerver = "Veterinaria" });
         }
 
 
@@ -331,30 +308,15 @@ namespace Laboratorio
 
         private void Login_Load(object sender, EventArgs e)
         {
-             DatosDeServidores();
-            if (LocalServer == "Laboratorio")
+            
+            DatosDeServidores();
+            var cmd1 = ConfigurationManager.ConnectionStrings["Server"].ConnectionString;
+            Conexion.Connection(cmd1, "Server");
+            if (ServidoresCBox.Visible == false)
             {
-                var cmd1 = ConfigurationManager.ConnectionStrings["Server"].ConnectionString;
-                Conexion.Connection(cmd1, "Server");
-                if (ServidoresCBox.Visible == false)
-                {
-                    label3.Visible = true;
-                    ActualizarSecuencia(sender, e);
-                }
+                label3.Visible = true;
+                ActualizarSecuencia(sender, e);
             }
-            else
-            {
-                var cmd1 = ConfigurationManager.ConnectionStrings["Server"].ConnectionString;
-                ConexionVeterinaria.Connection(cmd1, "Server");
-                if (ServidoresCBox.Visible == false)
-                {
-                    label3.Visible = true;
-                    ActualizarSecuencia(sender, e);
-                }
-            }
-
-
-
         }
 
         private void CaptahuellasBtn_Click(object sender, EventArgs e)

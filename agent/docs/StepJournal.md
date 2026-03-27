@@ -190,14 +190,20 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Documentation as Code**: Mantener los 7 archivos maestros de arquitectura sincronizados previene la degradación del conocimiento técnico y acelera la inducción de nuevos agentes de IA.
 - **Atomic Persistence**: La creación de entidades frescas en cada comando simplifica drásticamente el manejo de excepciones de concurrencia de base de datos.
 - **Legacy Interop**: El patrón "Just-In-Time Onboarding" es superior a las migraciones masivas por lotes para sistemas legacy altamente activos.
+- **Legacy Build Integrity**: El sistema original de WinForms/C# NO SE MODIFICA en su lógica de negocio. Sin embargo, los archivos de proyecto (`.csproj`) deben mantenerse sincronizados con rutas relativas y frameworks soportados (v4.8) para garantizar el build de la solución.
 
 ### 🛠️ Parche de Estabilización V11.7.3
 - **Fix**: Flexibilización de `NroControlFiscal` (Null permitido).
 - **Fix**: Prevención de `Ghost Inserts` mediante el uso de `NoTracking` en `ICajaAdministrativaRepository`.
 - **Lección**: EF Core 9 marca como `Added` las entidades de navegación si el objeto base no es rastreado por el MISMO contexto de base de datos durante la asociación.
 
-### 🛠️ Estabilización V11.7.4 (Concurrency & Purge)
-- **Fix**: Onboarding idempotente con recuperación de colisiones (`try-catch` + `ChangeTracker.Clear()`).
-- **UI**: Bloqueo de botones ([disabled]) durante sincronización para evitar Double Submit.
-- **Mantenimiento**: Purga profunda de procesos (`taskkill`) y limpieza de builds (`dotnet clean`, bin/obj).
-- **Estado**: Sistema blindado contra errores de concurrencia de usuario. 🏺🛡️.
+
+### 🛠️ Estabilización V11.8 (Legacy Build & UnitTests)
+- **Fix**: Re-habilitación del proyecto `Conexiones`.
+    - Eliminada referencia a `HojadeTrabajo.cs` (movido a Laboratorio).
+    - Actualizadas referencias NuGet a rutas relativas (`..\packages\`).
+    - Upgrade de Framework a `v4.8` para compatibilidad con `MySql.Data 8.0.29`.
+- **Fix**: Resolución de `CS1503` en `SistemaSatHospitalario.UnitTests`.
+    - Sincronizados constructores de `CitaMedica` con el nuevo esquema de identidad `Guid`.
+- **Database**: Aplicada migración `V11_8_ModelSync` para sincronizar cambios pendientes en `SatHospitalarioDbContext`.
+- **Resultado**: Solución `Sistema2020Excelencia.sln` con compilación 100% exitosa y base de datos sincronizada. 🏗️✅

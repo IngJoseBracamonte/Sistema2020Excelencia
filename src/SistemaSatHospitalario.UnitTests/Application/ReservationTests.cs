@@ -59,7 +59,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             
             var citas = new List<CitaMedica> 
             { 
-                new CitaMedica(medicoId, 1, Guid.NewGuid(), hora) 
+                new CitaMedica(medicoId, Guid.NewGuid(), Guid.NewGuid(), hora) 
             }.BuildMockDbSet<CitaMedica>();
             
             var reservas = new List<ReservaTemporal>().BuildMockDbSet<ReservaTemporal>();
