@@ -34,6 +34,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+        Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }
         Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken);
     }
 }

@@ -9,7 +9,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; protected set; }
         public Guid CuentaServicioId { get; protected set; }
         public Guid? CajaDiariaId { get; protected set; }
-        public string NroControlFiscal { get; protected set; }
+        public string? NroControlFiscal { get; protected set; }
         public decimal TasaCambioDia { get; protected set; }
         public string EstadoFiscal { get; protected set; } // Borrador, Emitida, Anulada
         public Guid PacienteId { get; protected set; }

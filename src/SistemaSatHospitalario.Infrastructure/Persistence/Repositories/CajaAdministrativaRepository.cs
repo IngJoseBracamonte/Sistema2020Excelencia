@@ -25,6 +25,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
                                  .FirstOrDefaultAsync(c => c.Estado == "Abierta", cancellationToken);
         }
 
+        public async Task<CajaDiaria?> ObtenerCajaAbiertaNoTrackingAsync(CancellationToken cancellationToken)
+        {
+            return await _context.CajasDiarias
+                                 .AsNoTracking()
+                                 .FirstOrDefaultAsync(c => c.Estado == "Abierta", cancellationToken);
+        }
+
         public async Task<CajaDiaria?> ObtenerCajaAbiertaPorUsuarioAsync(string usuarioId, CancellationToken cancellationToken)
         {
             return await _context.CajasDiarias

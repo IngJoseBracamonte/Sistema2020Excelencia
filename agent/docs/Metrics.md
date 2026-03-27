@@ -11,17 +11,12 @@ Este documento rastrea la efectividad operativa y la evolución técnica del Sis
 ## 🛠️ Historial de Operaciones Críticas
 | Fecha | Operación | Resultado | Lección Aprendida |
 | :--- | :--- | :--- | :--- |
-| `2026-03-24` | Fix OTel TS2693 | **Éxito** | OTel JS v2.6.0 cambió `Resource` de clase a interfaz. |
-| `2026-03-24` | Fix SQL Tracing | **Éxito** | `SetDbStatementForText` es necesario para ver queries reales. |
-| `2026-03-24` | Restart AppHost | **Bloqueo** | La DLL de `ServiceDefaults` se bloquea si el proceso API no se mata antes. |
-| `2026-03-26` | Fix Agenda CS1061 | **Éxito** | `UsuarioCarga` no existía en la entidad `CitaMedica`. |
-| `2026-03-26` | Start AppHost | **Éxito** | Aspire Dashboard levantado exitosamente tras el build fix. |
-| `2026-03-26` | Identity Migration Bypass | **Éxito** | INSERT directo en `__EFMigrationsHistory`. Ley #3 aplicada. |
-| `2026-03-26` | Fix Concurrencia Reservas | **Éxito** | `ExecuteDeleteAsync` elimina sin tracking → sin `DbUpdateConcurrencyException`. |
-| `2026-03-26` | Fix Cart Sync (UI) | **Éxito** | No vaciar signal-array antes de confirmar persistencia backend. |
-| `2026-03-26` | Patient Card + Cambiar | **Éxito** | Card condicional con `selectedPatientData` signal y método `cambiarPaciente()`. |
-| `2026-03-26` | Tasa Dinámica + Edit Admin | **Éxito** | `GET/POST api/Settings/tasa` + inline edit en header solo para admin. Hardcoded 45.50 eliminado. |
-| `2026-03-26` | Abonado format = Total Final | **Éxito** | Bs. principal + USD secundario en ambas cards de resumen financiero. |
+| `2026-03-27` | Reingeniería Facturación V11.5 | **Éxito** | Cambio a Ingresos Atómicos para evitar colisiones de IDs y mejorar auditoría. |
+| `2026-03-27` | Interoperabilidad Legacy V11.6 | **Éxito** | El Onboarding JIT resuelve la fragmentación de identidades entre sistemas MySQL. |
+| `2026-03-27` | Observabilidad Pro (OTel) | **Éxito** | Instrumentación de Handlers con ActivitySource permite ver el flujo de cobro en tiempo real. |
+| `2026-03-27` | Cierre Condicional (Deuda) | **Éxito** | `CuentaPorCobrar` como entidad de dominio previene fugas de cobro por pagos parciales. |
+| `2026-03-27` | Fix Build (ID/Cache) | **Éxito** | `CachedLegacyLabRepository` requiere implementación de todos los nuevos métodos de la interfaz. |
+| `2026-03-27` | Fix Build (Diagnostics) | **Éxito** | La Capa Application requiere Referencia de Proyecto a `ServiceDefaults` para usar Trazo. |
 
 ## 🚀 Log de Tiempos de Build
 - **Angular (Build)**: ~20.5 segundos.

@@ -13,7 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -96,10 +98,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         var mainPhone = !string.IsNullOrEmpty(legacyPatient.Celular) ? legacyPatient.Celular : legacyPatient.Telefono;
                         
                         paciente = new PacienteAdmision(legacyPatient.Cedula, fullName, mainPhone ?? "", legacyPatient.IdPersona);
-                        await _context.PacientesAdmision.AddAsync(paciente, ct);
-                        await _context.SaveChangesAsync(ct);
-                        
-                        _logger.LogInformation("[SYNC/ONBOARD] Identidad Nativa Creada: {NewId}", paciente.Id);
+                        try 
+                        {
+                            await _context.PacientesAdmision.AddAsync(paciente, ct);
+                            await _context.SaveChangesAsync(ct);
+                            _logger.LogInformation("[SYNC/ONBOARD] Identidad Nativa Creada: {NewId}", paciente.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning("[SYNC/ONBOARD] Colisión detectada durante creación de paciente. Re-consultando identidad... Detalle: {Msg}", ex.Message);
+                            // Limpiar el estado de seguimiento para evitar conflictos de tracking
+                            _context.ChangeTracker.Clear();
+                            paciente = await _context.PacientesAdmision.FirstOrDefaultAsync(p => p.CedulaPasaporte == legacyPatient.Cedula, ct);
+                            
+                            if (paciente == null) throw; // Si aún es null, el error es otro
+                            _logger.LogInformation("[SYNC/ONBOARD] Paciente recuperado de colisión exitosamente: {Id}", paciente.Id);
+                        }
                     }
                 }
 

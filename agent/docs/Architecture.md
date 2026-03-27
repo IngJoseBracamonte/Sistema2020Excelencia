@@ -5,7 +5,7 @@ Este es el **Índice de Inteligencia de Alto Nivel** del Sistema Sat Hospitalari
 ## 🏗️ Visión General del Sistema
 El sistema es una plataforma de gestión hospitalaria moderna diseñada para orquestar la admisión, facturación y seguimiento de pacientes en un entorno distribuido y altamente observable.
 
-### 🧩 Arquitectura de Alto Nivel (Mermaid)
+### 🧩 Arquitectura de Alto Nivel (Mermaid) - V11.7
 ```mermaid
 graph TD
     subgraph "Frontend Layer (Angular 19)"
@@ -23,19 +23,19 @@ graph TD
     subgraph "Backend Layer (ASP.NET Core 10)"
         API[WebAPI Controllers]
         Med[MediatR CQRS]
-        Auth[Identity / JWT]
+        Sync[Sync/Admission Logic]
     end
 
     subgraph "Infrastructure & Data"
         EF[EF Core 9 / Pomelo]
-        DB_Sys[(MySQL System)]
+        DB_Sys[(MySQL System: Admissions/Admisión)]
         DB_Id[(MySQL Identity)]
-        DB_Leg[(MySQL Legacy)]
+        DB_Leg[(MySQL Legacy: Concatenación Activa)]
     end
 
     UI --> API
     API --> Med
-    Med --> EF
+    Sync --> EF
     EF --> DB_Sys
     EF --> DB_Id
     EF --> DB_Leg
@@ -57,6 +57,11 @@ graph TD
 | **Base de Datos** | MySQL | v8.0+ | Almacenamiento distribuido (System, Identity, Legacy). |
 | **Telemetría** | OpenTelemetry | v1.x (SDK) | Trazas, métricas y logs estructurados. |
 
+## 🎨 Principios de Diseño Maestro (Strategic Rules)
+1. **Admission Atomicity**: Cada sincronización de carrito genera un ingreso clínico y contable único.
+2. **Conditional Closure**: El cierre de cuentas está supeditado al balance cero.
+3. **Legacy Concatenation**: Identidad dual entre el sistema nativo y el sistema WinForms MySQL.
+
 ## 📚 Módulos de Memoria (Deep Context)
 Para un análisis profundo sin re-análisis redundante, consulta los archivos especializados:
 
@@ -67,14 +72,10 @@ Para un análisis profundo sin re-análisis redundante, consulta los archivos es
 5. **[Performance de IA (Metrics.md)](Metrics.md)**: Registro histórico de efectividad y consumo del agente.
 6. **[Registro de Acción (StepJournal.md)](StepJournal.md)**: Diario técnico detallado de micro-contexto.
 
-## 🤖 Guía de Consumo por Agente
-- **Gemini Flash**: Prioriza `Rules.md` y `Parameters.md` para ejecución rápida y precisa.
-- **Gemini 3.1 Pro (High)**: Analiza `Architecture.md` y `DataFlow.md` para entender el impacto colateral de refactorizaciones grandes.
-- **Gemini 3.1 Pro (Low)**: Sigue estrictamente `Checks.md` y `StepJournal.md` para tareas iterativas de mantenimiento.
-
 ## 📍 Puntos de Control Macro (Paths Críticos)
 - **Host**: `src/SistemaSatHospitalario.AppHost/AppHost.cs`
 - **Core Logic**: `src/SistemaSatHospitalario.Core.Application/`
+- **Admission Module**: `src/SistemaSatHospitalario.Core.Application/Commands/Admision/`
 - **Data Access**: `src/SistemaSatHospitalario.Infrastructure/Persistence/`
 - **Frontend Core**: `src/SistemaSatHospitalario.Frontend/src/app/core/`
 - **Billing Module**: `src/SistemaSatHospitalario.Frontend/src/app/features/admision/facturacion/` (Arquitectura Smart/Dumb V9.0)

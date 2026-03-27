@@ -15,7 +15,12 @@ El sistema utiliza una estrategia Multi-DB sobre MySQL 8.0, orquestada por Aspir
 
 - **`mysql-system`**: Almacena el núcleo del sistema hospitalario (Médicos, Especialidades, Admisiones, Facturación).
 - **`mysql-identity`**: Gestión de usuarios, roles y autenticación (ASP.NET Core Identity).
-- **`LegacyConnection`**: Sólo lectura o integración con el sistema heredado de WinForms.
+- **`LegacyConnection`**: Acceso a la base de datos `sistema2020` MySQL de WinForms.
+
+### Parámetros Críticos de Comando (DTOs)
+- **`IdPacienteLegacy`**: (string?) Identificador numérico del sistema anterior. Se usa para "Onboarding JIT" en `SyncCarritoCommand`.
+- **`IdCuenta`**: (Guid) Identificador nativo de la admisión atómica.
+- **`MontoPagado`**: (decimal) Base para el cálculo del balance y generación automática de deuda.
 
 ### Convenciones de Tablas
 - **Prefijos**: `AspNet*` para tablas de Identity.

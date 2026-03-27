@@ -44,8 +44,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<Guid> Handle(RegistrarReciboFacturaCommand request, CancellationToken cancellationToken)
         {
-            // 1. Validar Caja Abierta
-            var cajaAbierta = await _cajaRepository.ObtenerCajaAbiertaAsync(cancellationToken);
+            // 1. Validar Caja Abierta (NoTracking para evitar re-inserción fantasmal)
+            var cajaAbierta = await _cajaRepository.ObtenerCajaAbiertaNoTrackingAsync(cancellationToken);
             if (cajaAbierta == null) throw new InvalidOperationException("No se pueden registrar pagos si no hay una Caja Abierta.");
             
             // 2. Obtener Cuenta de Servicios

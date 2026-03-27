@@ -173,18 +173,31 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Técnica**: Se editó la migración `V11_ModernIdentity_AutoStub` para incluir `DropForeignKey` y `AddForeignKey` manuales para `OrdenesDeServicio`.
 - **Resultado**: Base de datos MySQL sincronizada con éxito tras corregir una migración previa corrupta (`UpdateConvenioToCompanyModel`) que tenía FK drops comentados.
 
-## 📌 Lecciones del Día
-- **MySQL FK Rigidity**: El cambio de tipo `int` -> `char(36)` en una PK requiere eliminar TODOS los FKs que la referencian antes de intentar el `AlterColumn`. EF Core a veces falla en automatizar esto si hay dependencias complejas.
-- **Domain Property Safety**: No confiar en que EF Core ignore propiedades sin setter automáticamente si hay configuraciones de precisión relacionadas.
-- **Clean Slate Pattern**: En cambios de arquitectura de identidad profundos (como int -> Guid), es más seguro limpiar la base### Transición de Identidad (V11.x)
-- **Guid as Primary Key**: Todas las nuevas entidades y las migradas (Pacientes) utilizan `Guid` (`char(36)` en MySQL) para evitar enumeración y facilitar sincronización offline.
-- **Legacy Shadow Keys**: Para interoperabilidad con sistemas antiguos (e.g., Lab Legacy), se utiliza el patrón `IdPacienteLegacy` como índice único secundario.
+## 🛠️ Registro de Actividad - 27 Marzo 2026 (Mediodía)
 
-```mermaid
-graph TD
-    LegacyDB[(Legacy SQL Server)] -->|Fetch by ID| App[Sat Hospitalario Core]
-    App -->|Check Local Stub| LocalDB[(MySQL SatHospitalario)]
-    LocalDB -->|Match| ExistingGuid[Guid Local]
-    LocalDB -->|No Match| CreateStub[Crear Paciente con Guid + IdLegacy]
-```
-ory`.
+### 🚀 Ciclo: Refinamiento de Facturación Atómica (V11.5 - V11.7)
+- **Hito Final**: Consolidación de la **Memoria de Arquitectura** (7 documentos actualizados).
+- **Logros Clave**:
+    - **Admission Atomicity**: Cada sync = nueva cuenta. Prohibido el reciclaje de IDs.
+    - **Debt Management**: Pagos parciales disparan `CuentaPorCobrar`.
+    - **Legacy Concatenation**: Onboarding dinámico y semilla inicial sincronizada.
+    - **Observability**: Visibilidad total en Aspire Dashboard de la lógica de negocio.
+- **Estado**: Sistema certificado bajo las leyes MD-001, MD-002 y MD-003.
+
+---
+
+## 📌 Lecciones del Día
+- **Documentation as Code**: Mantener los 7 archivos maestros de arquitectura sincronizados previene la degradación del conocimiento técnico y acelera la inducción de nuevos agentes de IA.
+- **Atomic Persistence**: La creación de entidades frescas en cada comando simplifica drásticamente el manejo de excepciones de concurrencia de base de datos.
+- **Legacy Interop**: El patrón "Just-In-Time Onboarding" es superior a las migraciones masivas por lotes para sistemas legacy altamente activos.
+
+### 🛠️ Parche de Estabilización V11.7.3
+- **Fix**: Flexibilización de `NroControlFiscal` (Null permitido).
+- **Fix**: Prevención de `Ghost Inserts` mediante el uso de `NoTracking` en `ICajaAdministrativaRepository`.
+- **Lección**: EF Core 9 marca como `Added` las entidades de navegación si el objeto base no es rastreado por el MISMO contexto de base de datos durante la asociación.
+
+### 🛠️ Estabilización V11.7.4 (Concurrency & Purge)
+- **Fix**: Onboarding idempotente con recuperación de colisiones (`try-catch` + `ChangeTracker.Clear()`).
+- **UI**: Bloqueo de botones ([disabled]) durante sincronización para evitar Double Submit.
+- **Mantenimiento**: Purga profunda de procesos (`taskkill`) y limpieza de builds (`dotnet clean`, bin/obj).
+- **Estado**: Sistema blindado contra errores de concurrencia de usuario. 🏺🛡️.

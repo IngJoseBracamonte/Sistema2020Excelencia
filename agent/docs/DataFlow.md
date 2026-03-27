@@ -1,70 +1,55 @@
-# 🔄 Flujo de Identidad GUID (V11.1 Determinista)
+# 🔄 Flujo de Identidad e Ingreso (V11.7 Atómico)
 
 ```mermaid
 sequenceDiagram
-    participant UI as Frontend (Selector)
-    participant API as WebAPI Identity
+    participant UI as Frontend (Wizard)
+    participant API as WebAPI Billing
     participant DB as Local MySQL
-    participant BILL as Billing Handlers
+    participant CL as Legacy MySQL
     
-    UI->>API: Buscar Paciente (Cedula / Apellidos)
-    API->>DB: Query Local GUID
-    DB-->>API: Paciente Guid Record
-    API-->>UI: Return PatientRecord (Guid ID)
+    UI->>API: SyncCarritoCommand (IdPacienteLegacy?)
     
-    Note over UI, BILL: Fase 2: Transacción Garantizada
-    UI->>BILL: CargarServicioCommand (Guid PacienteId)
-    BILL->>DB: Validar Existencia de Guid
-    BILL->>DB: Persistir Cuenta / Cita
+    Note over API, CL: Escenario Onboarding JIT
+    API->>DB: Buscar GUID Local
+    DB-->>API: No Encontrado
+    API->>CL: Buscar Datos en Legacy
+    CL-->>API: Datos Encontrados
+    API->>DB: Crear PacienteAdmision (Nuevo GUID)
+    
+    Note over API, DB: Fase 2: Ingreso Atómico
+    API->>DB: Crear NUEVA CuentaServicios
+    API->>DB: Vincular Cargos y Citas
+    API-->>UI: SyncCarritoResult (IdCuenta)
+    
+    Note over UI, DB: Fase 3: Pago y Deuda
+    UI->>API: RegistrarReciboCommand
+    API->>DB: Calcular Balance (Total vs Pagado)
+    alt Balance Cero
+        API->>DB: estado=Facturada (Cerrar)
+    else Balance Parcial
+        API->>DB: Crear CuentaPorCobrar (Saldo)
+    end
+    API-->>UI: Success (IdRecibo)
 ```
 
-1. **Resolución en Front**: El `PatientSelector` resuelve la identidad nativa (GUID) ANTES de cualquier acción de facturación.
-2. **Identidad Nativa**: Todos los comandos transaccionales requieren un `Guid PacienteId` válido.
-3. **Consistencia**: Si el paciente no tiene GUID, debe registrarse formalmente (Stage 1), no se crean stubs temporales durante la carga de cargos.
+## 🏎️ Flujos de Lógica de Negocio (Workflows) - V11.7
 
-Este documento mapea la vida de la información a través del Sistema Sat Hospitalario, desde la interacción del usuario hasta la persistencia y observabilidad.
-
-## 🏎️ Flujos de Lógica de Negocio (Workflows)
-### 1. Inicio de Sesión (Auth Flow)
-- **Input**: `LoginCommand` (Username, Password).
+### 1. Admisión Atómica (SyncCarrito)
+- **Input**: `SyncCarritoCommand` con `IdPacienteLegacy` opcional.
 - **Proceso**: 
-  - `AuthController` capta el comando.
-  - `Manual Activity` iniciada en `DiagnosticsConfig.ActivitySource`.
-  - `MediatR` despacha el comando al `Handler` correspondiente.
-  - `IdentityDbContext` valida contra MySQL `mysql-identity`.
-- **Output**: `JwtAuthResult` con token y expiración.
-- **Side Effect**: Incrementar `auth.login_attempts` en el `Meter`.
+  - Resolución de identidad (Onboarding si es necesario).
+  - **Unicidad**: Una ejecución = Una nueva `CuentaServicios`. Se ignora cualquier cuenta abierta previa.
+  - Generación de folios y vinculación de médicos/citas.
+- **Output**: Identificador de la nueva cuenta para el proceso de pago.
 
-## 🧪 Verificaciones de Identidad (V11.2)
-- [x] **Primary Key Type**: `PacienteAdmision.Id` es `Guid`.
-- [x] **Foreign Key Parity**: Todas las tablas referenciales usan `Guid PacienteId`.
-- [x] **Legacy Index**: `IdPacienteLegacy` tiene un índice único en MySQL.
-- [x] **Computed Mapping**: Propiedades calculadas (ej. `SaldoPendienteBase`) han sido marcadas con `.Ignore()` en el `DbContext`.
-- [x] **Clean Migrations**: El historial de migraciones incluye `V11_ModernIdentity_AutoStub` con parches manuales de FKs.
+### 2. Proceso de Pago y Balance (Billing Module)
+- **Validación de Caja**: Solo opera si existe una `CajaDiaria` abierta.
+- **Diferenciación de Saldo**:
+    - **Pago Total**: Cierra el ciclo de vida de la cuenta.
+    - **Pago Parcial**: Registra el recibo y traslada el saldo a la entidad `CuentaPorCobrar`.
 
-### 2. Proceso de Admisión y Facturación (Wizard Flow)
-Este flujo es secuencial y debe respetarse para garantizar la integridad de los datos:
-1. **Paso 1: Selección de Servicios**:
-   - Carga de catálogo filtrado por rol y disponibilidad.
-   - Guardián de nulidad en `serviciosFiltradosPorRol`.
-2. **Paso 2: Selección de Convenio**:
-   - Selección del convenio (Asterisco, Descuento, etc.).
-   - Mapeo de `Convenios` en la capa de persistencia `mysql-system`.
-3. **Paso 3: Identificación Paciente / Pago**:
-   - Búsqueda de paciente existente o creación (Solo Admin).
-   - Generación de factura y recibo.
-   - Cálculo automático de tasas y USD en `FacturaConvenioAsterisco`.
-
-### 3. Proceso de Agendamiento (Scheduling Flow)
-Integrado en el Wizard de Facturación (Micro-Ciclo 38):
-- **Reserva Temporal**:
-  - `FacturacionComponent` -> `ReservarTurnoTemporalCommand`.
-  - Crea `ReservaTemporal` (15 min) para bloquear el slot mientras se procesa la cuenta.
-  - Valida contra `CitasMedicas` y otras `ReservasTemporales` vigentes.
-- **Persistencia de Cita**:
-  - `CargarServicioACuentaCommand` -> `ProcesarCitaMedicaAsync`.
-  - Crea `CitaMedica` vinculada a la `CuentaServicios`.
-  - Marca estado "En Espera" por defecto.
+### 3. Registro de Pacientes (Dual-Write)
+- Al registrar un paciente nuevo desde el formulario dedicado, el sistema escribe el registro maestro en la base de datos nativa y sincroniza los datos básicos en la tabla `datospersonales` de la base legacy para interoperabilidad con sistemas satélite (Laboratorio/Imagen).
 
 ## 📡 Arquitectura de Telemetría (Observability Flow)
 El sistema utiliza un pipeline de OpenTelemetry distribuido:
