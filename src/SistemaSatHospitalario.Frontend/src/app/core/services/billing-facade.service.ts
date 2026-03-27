@@ -142,10 +142,10 @@ export class BillingFacadeService {
     this.cuentaId.set(null);
   }
 
-  /**
-   * Sincroniza el carrito local con el backend mediante una única transacción atómica (V10.0 Pro)
+   /**
+   * Sincroniza el carrito local con el backend mediante una única transacción atómica (V11.1 Guid)
    */
-  public syncCartWithBackend(pacienteId: number, tipoIngreso: string, usuarioCarga?: string, convenioId?: number | null): Observable<any> {
+  public syncCartWithBackend(pacienteId: string, tipoIngreso: string, usuarioCarga?: string, convenioId?: number | null): Observable<any> {
     const items: any[] = [...this.carritoLocal()];
     if (items.length === 0) return of(null);
 

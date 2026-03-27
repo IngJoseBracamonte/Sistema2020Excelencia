@@ -21,15 +21,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<DoctorScheduleResponse> Handle(GetDoctorScheduleQuery request, CancellationToken cancellationToken)
         {
-            // V11.0 Identity Translation: Traducir ID Legacy a GUID si existe
-            Guid? internalPacienteId = null;
-            if (request.PacienteId.HasValue)
-            {
-                internalPacienteId = await _context.PacientesAdmision
-                    .Where(p => p.IdPacienteLegacy == request.PacienteId.Value)
-                    .Select(p => (Guid?)p.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-            }
+            // V11.1 Identity Alignment: Uso directo de GUID nativo
+            Guid? internalPacienteId = request.PacienteId;
 
             var response = new DoctorScheduleResponse
             {

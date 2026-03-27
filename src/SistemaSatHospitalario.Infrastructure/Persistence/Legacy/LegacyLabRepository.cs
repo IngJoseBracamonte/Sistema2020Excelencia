@@ -77,6 +77,23 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
         }
 
+        public async Task<DatosPersonalesLegacy?> GetPatientByIdAsync(string legacyId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(_connectionString)) return null;
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Visible
+                                     FROM datospersonales WHERE IdPersona = @legacyId LIMIT 1";
+                return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { legacyId });
+            }
+            catch (global::System.Exception ex)
+            {
+                global::System.Console.WriteLine($"[LEGACY ERROR] GetPatientByIdAsync: {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(_connectionString)) return new List<DatosPersonalesLegacy>();

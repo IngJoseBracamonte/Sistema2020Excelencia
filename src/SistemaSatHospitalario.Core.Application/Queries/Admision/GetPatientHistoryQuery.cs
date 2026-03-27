@@ -13,8 +13,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
     public class GetPatientHistoryQuery : IRequest<List<PatientHistoryDto>>
     {
-        // Se cambió de Guid a int para sincronización con Legacy
-        public int PacienteId { get; set; }
+        // Se estandarizó de int a Guid para identidad nativa (V11.1)
+        public Guid PacienteId { get; set; }
     }
 
     public class GetPatientHistoryQueryHandler : IRequestHandler<GetPatientHistoryQuery, List<PatientHistoryDto>>
@@ -30,15 +30,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<PatientHistoryDto>> Handle(GetPatientHistoryQuery request, CancellationToken cancellationToken)
         {
-            // V11.0: Traducimos la identidad legacy a la interna para la búsqueda de historial
-            var internalId = await _context.PacientesAdmision
-                .Where(p => p.IdPacienteLegacy == request.PacienteId)
-                .Select(p => (Guid?)p.Id)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (!internalId.HasValue) return new List<PatientHistoryDto>();
-
-            var cuentas = await _billingRepository.ObtenerCuentasPorPacienteAsync(internalId.Value, cancellationToken);
+            // V11.1: Búsqueda directa por identidad nativa
+            var cuentas = await _billingRepository.ObtenerCuentasPorPacienteAsync(request.PacienteId, cancellationToken);
 
             return cuentas.Select(c => new PatientHistoryDto
             {

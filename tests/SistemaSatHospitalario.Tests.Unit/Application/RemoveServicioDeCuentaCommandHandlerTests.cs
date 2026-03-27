@@ -30,7 +30,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var detalleId = Guid.NewGuid();
             var medicoId = Guid.NewGuid();
             var horaCita = DateTime.Today.AddHours(10);
-            var pacienteId = 123;
+            var pacienteId = Guid.NewGuid();
 
             var cuenta = new CuentaServicios(pacienteId, "Particular");
             // Usamos reflection para setear el ID o simplemente confiamos en el flujo
@@ -65,7 +65,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         {
             // Arrange
             var cuentaId = Guid.NewGuid();
-            var pacienteId = 456;
+            var pacienteId = Guid.NewGuid();
             var cuenta = new CuentaServicios(pacienteId, "Particular");
             var detalle = cuenta.AgregarServicio(Guid.NewGuid(), "Examen RX", 50, 1, "RX", "Admin");
 

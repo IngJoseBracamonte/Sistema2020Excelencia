@@ -11,10 +11,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class CargarServicioACuentaCommand : IRequest<CargarServicioResult>
     {
-        // Se cambió de Guid a int para sincronización con Legacy
-        public int PacienteId { get; set; }
+        // Se estandarizó de int a Guid para identidad nativa (V11.1)
+        public Guid PacienteId { get; set; }
         public string TipoIngreso { get; set; } = string.Empty; // Particular, Seguro, Hospitalizacion, Emergencia
-        // Se cambió de Guid? a int? para sincronización con Legacy
+        // Se mantiene int? para ConvenioId por ahora (referencia Legacy)
         public int? ConvenioId { get; set; }
         public Guid ServicioId { get; set; }
         public string Descripcion { get; set; } = string.Empty;
@@ -45,14 +45,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<CargarServicioResult> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
         {
-            // 1. Asegurar Existencia Local del Paciente (V11.0 Sync Pro)
+            // 1. Obtención Directa del Paciente (V11.1 Identity Alignment)
             var paciente = await _context.PacientesAdmision.FirstOrDefaultAsync(
-                p => p.IdPacienteLegacy == request.PacienteId, cancellationToken);
+                p => p.Id == request.PacienteId, cancellationToken);
 
             if (paciente == null)
             {
-                paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
-                _context.PacientesAdmision.Add(paciente);
+                throw new InvalidOperationException($"No se encontró un paciente con el ID: {request.PacienteId}. Asegúrese de registrarlo primero.");
             }
 
             // 2. Asegurar cuenta activa usando el GUID local

@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface PatientRecord {
-  // Id numérico igual a IdPersona del Sistema Legacy
-  id?: number;
+  // Identidad GUID del sistema nuevo (V11.1)
+  id: string;
+  // Referencia histórica legado
+  idPacienteLegacy?: number;
   cedula: string;
   nombre: string;
   apellidos?: string;
@@ -19,6 +21,7 @@ export interface PatientRecord {
   codigoTelefono?: string;
   source?: string;
   esLegacy?: boolean;
+  activo?: boolean;
 }
 
 export interface HistoryServiceDetail {
@@ -53,8 +56,8 @@ export class PatientService {
     return this.http.post<PatientRecord>(this.apiUrl, patient);
   }
 
-  // patientId ahora es numérico para coincidir con Legacy
-  getHistory(patientId: number): Observable<PatientHistory[]> {
+  // patientId ahora es GUID (V11.1 Identity Synchronization)
+  getHistory(patientId: string): Observable<PatientHistory[]> {
     return this.http.get<PatientHistory[]>(`${this.apiUrl}/${patientId}/history`);
   }
 }

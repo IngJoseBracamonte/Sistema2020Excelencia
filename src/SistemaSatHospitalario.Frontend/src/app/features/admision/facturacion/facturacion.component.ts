@@ -128,8 +128,8 @@ export class FacturacionComponent {
   public currentStep = signal<number>(1);
   public maxSteps = 3;
 
-  // --- Estados de Cuenta y Carrito (Delegados al Facade V7.0) ---
-  public pacienteId = signal<number | null>(null);
+  // --- Estados de Cuenta y Carrito (Delegados al Facade V11.1 Guid) ---
+  public pacienteId = signal<string | null>(null);
   public selectedPatientData = signal<PatientRecord | null>(null);
   public pacienteSeleccionado = computed(() => !!this.pacienteId());
   

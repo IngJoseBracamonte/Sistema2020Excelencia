@@ -10,9 +10,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public DateTime Fecha { get; set; }
 
         public string? UsuarioId { get; set; }
-        public int? PacienteId { get; set; } // Precision Enhancement V4.7
+        public Guid? PacienteId { get; set; } // Identidad Nativa GUID (V11.1)
 
-        public GetDoctorScheduleQuery(Guid medicoId, DateTime fecha, string? usuarioId = null, int? pacienteId = null)
+        public GetDoctorScheduleQuery(Guid medicoId, DateTime fecha, string? usuarioId = null, Guid? pacienteId = null)
         {
             MedicoId = medicoId;
             Fecha = fecha;

@@ -4,11 +4,11 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
 {
     public class PatientDto
     {
-        // Se mantiene el Id numérico reflejando el IdPersona del legacy para compatibilidad frontend
-        public int Id { get; set; }
+        // Identidad nativa del sistema nuevo (V11.1 Standard)
+        public Guid Id { get; set; }
         
-        // Nueva identidad interna robusta (V11.0 Sync Pro)
-        public Guid InternalId { get; set; }
+        // Referencia al Sistema 2020 Legacy (Opcional)
+        public int? IdPacienteLegacy { get; set; }
         
         public string Cedula { get; set; }
         public string Nombre { get; set; }

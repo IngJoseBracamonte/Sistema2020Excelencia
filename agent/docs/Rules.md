@@ -7,9 +7,11 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 2. **EF Core 9 Control**: Mantener `Microsoft.EntityFrameworkCore` en la versión `9.0.2`. El uso de v10 está prohibido por incompatibilidades con el proveedor Pomelo MySQL.
 3. **Bypass de Migración**: No regenerar la migración `20260309004403_InitialIdentityMigration`. Si falla la sincronización, limpiar manualmente `__EFMigrationsHistory` antes de reintentar.
 45. **Identidad por GUID**: Todos los nuevos registros de pacientes y entidades transaccionales DEBEN usar `Guid` como clave primaria. El uso de `int` para PKs queda prohibido para nuevas entidades.
-6. **Legacy Stubbing**: Siempre buscar primero por `Cedula` en la base local (GUID) y luego en la Legacy (Int). Si se encuentra en Legacy, se DEBE crear un stub local persistente con el `IdPacienteLegacy`.
+6. **Legacy Stubbing (Stage 1 Only)**: La creación de stubs locales basados en Legacy es responsabilidad EXCLUSIVA del flujo de Búsqueda/Sincronización (`PatientService`). Queda prohibida la creación automática de stubs en handlers de facturación o agenda para evitar duplicidad.
+7. **Tipado Estricto de Identidad (V11.1)**: Todos los `Commands` (IRequest), `Queries` y sus respectivos Handlers DEBEN recibir `Guid` para `PacienteId`. El frontend debe enviar siempre el GUID nativo obtenido tras la identificación.
 7. **Mapeo Seguro en DbContext**: Propiedades calculadas en el dominio (sin setters) DEBEN ignorarse explícitamente en el `DbContext` con `.Ignore()` para evitar fallos de inicialización de EF Core.
-8. **Transición MySQL Destructiva**: Cambios de tipo `int` -> `Guid` en PK/FK requieren la eliminación manual de restricciones en la migración ANTES de alterar las columnas, debido a las restricciones de Pomelo MySQL.
+9. **Transición MySQL Destructiva**: Cambios de tipo `int` -> `Guid` en PK/FK requieren la eliminación manual de restricciones en la migración ANTES de alterar las columnas, debido a las restricciones de Pomelo MySQL.
+10. **Checklist de Anti-Patrones (Obligatorio)**: Antes de finalizar cualquier tarea de identidad, revisar la sección '🚫 Anti-Patrones' en `architecture_memory.md`.
 
 ## 💻 Patrones de Código (Engineering Patterns)
 ### Backend (WebAPI / Core)

@@ -32,7 +32,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("Schedule/{doctorId}/{date}")]
-        public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, DateTime date, [FromQuery] int? pacienteId = null)
+        public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, DateTime date, [FromQuery] Guid? pacienteId = null)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SistemaSatHospitalario.Core.Domain\SistemaSatHospitalario.Core.Domain.csproj" />
+    <ProjectReference Include="..\SistemaSatHospitalario.ServiceDefaults\SistemaSatHospitalario.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>

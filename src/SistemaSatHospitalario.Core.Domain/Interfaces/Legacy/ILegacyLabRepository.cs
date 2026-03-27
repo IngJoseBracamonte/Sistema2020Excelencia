@@ -16,6 +16,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
 
         // Métodos de Lectura con Dapper (Capa Anticorrupción)
         Task<DatosPersonalesLegacy?> GetPatientByCedulaAsync(string cedula, CancellationToken cancellationToken);
+        Task<DatosPersonalesLegacy?> GetPatientByIdAsync(string legacyId, CancellationToken cancellationToken);
         Task<int> CreatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken);
         
         // Búsqueda aproximada limitada para autocompletado

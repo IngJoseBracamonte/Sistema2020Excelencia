@@ -12,16 +12,16 @@ export interface DetallePagoDto {
 
 export interface RegistrarReciboFacturaRequest {
   cuentaServicioId: string; // Guid
-  pacienteId: number; // Unificado con Legacy
+  pacienteId: string; // Identidad Nativa GUID (V11.1)
   cajeroUserId: string;
   tasaCambioDia: number;
   pagosMultidivisa: DetallePagoDto[];
 }
 
 export interface CargarServicioACuentaRequest {
-  pacienteId: number; // Unificado con Legacy
+  pacienteId: string; // Identidad Nativa GUID (V11.1)
   tipoIngreso: string;
-  convenioId?: number; // Unificado con Legacy
+  convenioId?: number; // Referencia Legacy
   servicioId: string; // Guid (Nativo) o stringified int (Legacy)
   descripcion: string;
   precio: number;
@@ -46,7 +46,7 @@ export interface BloquearHorarioRequest {
 }
 
 export interface SyncCarritoMasivoRequest {
-  pacienteId: number;
+  pacienteId: string; // Identidad Nativa GUID (V11.1)
   tipoIngreso: string;
   convenioId?: number;
   usuarioCarga: string;

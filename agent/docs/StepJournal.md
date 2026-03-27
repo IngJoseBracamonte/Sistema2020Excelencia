@@ -8,6 +8,27 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Contexto**: El error `TS2693` bloqueaba el build de Angular 19.
 - **Resultado**: Build exitosa en 20s.
 
+## 🛠️ Registro de Actividad - 27 Marzo 2026 (Mañana)
+
+### 🚀 Ciclo: Estandarización de Identidad GUID (V11.1)
+- **Fase 1-5 Finalizadas**: Alineación total del stack (Backend -> DB -> Frontend -> Tests).
+- **Correcciones Críticas**:
+  - Eliminado "Auto-Stub" en handlers transaccionales para evitar duplicidad.
+  - Sincronizada firma de `PatientService.getHistory` (Guid).
+  - Corregida referencia `p.nombre` -> `s.descripcion` en catálogo de servicios.
+- **Estado**: Sistema 100% operativo sin errores 400 en facturación.
+
+---
+
+## 📈 Tareas Activas (Prioridad Alta)
+- [x] Sincronizar Memoria de Arquitectura (Skill).
+
+---
+
+## 🏛️ Decisiones Estructurales Recientes
+1. **Identidad Determinista**: La resolución de identidad ES responsabilidad del selector, no de la carga de servicios.
+2. **GUID Only**: Prohibido el uso de `int` para IDs de paciente en cualquier comando nuevo.
+
 ### 2. Visibilidad Total de Base de Datos
 - **Acción**: Se activó `SetDbStatementForText` en `Extensions.cs`.
 - **Razón**: El usuario no veía las operaciones SQL en Aspire.

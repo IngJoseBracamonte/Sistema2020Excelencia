@@ -3,11 +3,6 @@
     <div class="flex items-center justify-between mb-10 pb-4 border-b border-white/5">
         <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Servicios en Cuenta</h3>
         <div class="flex items-center space-x-3">
-            <button *ngIf="isAdmin" (click)="verCitas.emit()" 
-                class="text-[9px] bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-rose-500/20 transition-all">
-                <lucide-icon name="layout" class="w-3 h-3 mr-1 inline-block"></lucide-icon>
-                Gestionar Citas
-            </button>
             <span class="text-[9px] bg-black text-white px-4 py-1.5 rounded-full font-black uppercase tracking-widest">{{ serviciosCargados().length }} ITEMS</span>
         </div>
     </div>
@@ -18,7 +13,7 @@
             <div class="flex items-center space-x-4 overflow-hidden">
                 <div class="h-8 w-1.5 bg-rose-500/20 rounded-full group-hover:bg-rose-500 transition-all flex-shrink-0"></div>
                 <div class="truncate">
-                    <p class="text-sm font-black text-white group-hover:text-rose-500 transition-all truncate">{{ s.descripcion || s.Descripcion }}</p>
+                    <p class="text-sm font-black text-white group-hover:text-rose-500 transition-all truncate uppercase tracking-tight">{{ (s.descripcion || s.Descripcion) | uppercase }}</p>
                     <div class="flex flex-col mt-0.5 space-y-0.5">
                         <span *ngIf="s.medicoNombre" class="text-[9px] text-emerald-400 font-black uppercase tracking-widest flex items-center">
                              <lucide-icon name="user" class="w-2.5 h-2.5 mr-1"></lucide-icon>

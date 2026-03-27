@@ -1,33 +1,26 @@
-# 🔄 Flujo de Registro de Pacientes (V11.2)
+# 🔄 Flujo de Identidad GUID (V11.1 Determinista)
 
 ```mermaid
 sequenceDiagram
-    participant UI as Frontend (Facturación)
-    participant API as WebAPI Handler
+    participant UI as Frontend (Selector)
+    participant API as WebAPI Identity
     participant DB as Local MySQL
-    participant EXT as Legacy Lab DB
+    participant BILL as Billing Handlers
     
-    UI->>API: Buscar Paciente (Cedula)
+    UI->>API: Buscar Paciente (Cedula / Apellidos)
     API->>DB: Query Local GUID
-    alt Encontrado
-        DB-->>API: Paciente Guid Record
-    else No Encontrado
-        API->>EXT: Query Legacy Lab (Int ID)
-        alt Encontrado en Legacy
-            EXT-->>API: Data (Nombre, IdLegacy)
-            API->>DB: Crear STUB (Guid + IdLegacy)
-            DB-->>API: Nuevo Guid
-        else No existe en ningún sistema
-            API-->>UI: 404 - Requiere Registro Manual
-        end
-    end
-    API-->>UI: Map PacienteDto (InternalId = Guid)
+    DB-->>API: Paciente Guid Record
+    API-->>UI: Return PatientRecord (Guid ID)
+    
+    Note over UI, BILL: Fase 2: Transacción Garantizada
+    UI->>BILL: CargarServicioCommand (Guid PacienteId)
+    BILL->>DB: Validar Existencia de Guid
+    BILL->>DB: Persistir Cuenta / Cita
 ```
 
-1. **Local Lookup**: `_context.PacientesAdmision.FirstOrDefault(p => p.Cedula == input)`.
-2. **Legacy Lookup**: Si falla local, se consulta el `ILegacyLabRepository`.
-3. **Auto-Stubbing**: Si se encuentra en Legacy, se persiste localmente con un nuevo GUID y el `IdPacienteLegacy`.
-4. **Respuesta**: El sistema siempre devuelve un `Guid` como `InternalId` para el resto de la transacción.
+1. **Resolución en Front**: El `PatientSelector` resuelve la identidad nativa (GUID) ANTES de cualquier acción de facturación.
+2. **Identidad Nativa**: Todos los comandos transaccionales requieren un `Guid PacienteId` válido.
+3. **Consistencia**: Si el paciente no tiene GUID, debe registrarse formalmente (Stage 1), no se crean stubs temporales durante la carga de cargos.
 
 Este documento mapea la vida de la información a través del Sistema Sat Hospitalario, desde la interacción del usuario hasta la persistencia y observabilidad.
 

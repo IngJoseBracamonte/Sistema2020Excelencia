@@ -9,6 +9,8 @@ using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Commands;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -18,10 +20,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class BillingController : ControllerBase
     {
         private readonly IMediator _mediator;
-
-        public BillingController(IMediator mediator)
+        private readonly ILogger<BillingController> _logger;
+ 
+        public BillingController(IMediator mediator, ILogger<BillingController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpPost("CargarServicio")]
@@ -40,10 +44,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (InvalidOperationException ex)
             {
+                _logger.LogWarning(ex, "Validación de negocio fallida en CargarServicio");
                 return BadRequest(new { Error = ex.Message });
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Error de base de datos al cargar servicio");
+                return BadRequest(new { Error = "Error de integridad de datos. Verifique que los IDs de paciente y servicio sean correctos.", Details = ex.InnerException?.Message });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error inesperado en CargarServicio");
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
             }
         }
@@ -65,10 +76,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (InvalidOperationException ex)
             {
+                _logger.LogWarning(ex, "Validación de negocio fallida en SincronizarCarrito");
                 return BadRequest(new { Error = ex.Message });
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Error de persistencia masiva en SincronizarCarrito");
+                return BadRequest(new { Error = "Error de persistencia masiva/integridad. Detalle: " + ex.InnerException?.Message });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Fallo crítico en SincronizarCarrito");
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
             }
         }

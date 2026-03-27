@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -29,11 +30,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly ICajaAdministrativaRepository _cajaRepository;
         private readonly IBillingRepository _billingRepository;
+        private readonly IApplicationDbContext _context;
 
-        public RegistrarReciboFacturaCommandHandler(ICajaAdministrativaRepository cajaRepository, IBillingRepository billingRepository)
+        public RegistrarReciboFacturaCommandHandler(
+            ICajaAdministrativaRepository cajaRepository, 
+            IBillingRepository billingRepository,
+            IApplicationDbContext context)
         {
             _cajaRepository = cajaRepository;
             _billingRepository = billingRepository;
+            _context = context;
         }
 
         public async Task<Guid> Handle(RegistrarReciboFacturaCommand request, CancellationToken cancellationToken)
@@ -55,23 +61,25 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 recibo.AgregarDetallePago(pago.MetodoPago, pago.ReferenciaBancaria, pago.MontoAbonadoMoneda, pago.EquivalenteAbonadoBase);
             }
 
-            // 4. Validar montos y cerrar cuenta
+            // 4. Validar montos y cierre condicional (V11.5 Senior Pattern)
             decimal totalPagado = recibo.ObtenerTotalPagadoBase();
             decimal totalCuenta = cuenta.CalcularTotal();
 
-            // Nota: En un sistema real se permite pago parcial, aqui simplificamos a cierre total si el monto cuadra
-            // o segun requerimiento del usuario "anexar los pagos y todos hacen el mismo proceso"
-            if (totalPagado < totalCuenta)
+            if (totalPagado >= totalCuenta)
             {
-                // Manejar deuda persistente o pago parcial segun sea el caso
+                // Pago total o excedente: Cerrar Cuenta
+                cuenta.Facturar();
+            }
+            else
+            {
+                // Pago parcial: Generar Deuda (Cuentas por Cobrar)
+                var deuda = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
+                await _context.CuentasPorCobrar.AddAsync(deuda, cancellationToken);
             }
 
-            cuenta.Facturar(); // Cierra la cuenta
-
+            // 5. Persistencia Atómica
+            await _context.RecibosFactura.AddAsync(recibo, cancellationToken);
             await _billingRepository.ActualizarCuentaAsync(cuenta, cancellationToken);
-            // El recibo se guardaria a traves del DbContext o un Repositorio específico si existiera uno solo de pagos.
-            // Para simplificar, asumimos que el UnitOfWork (DbContext) maneja el rastro.
-            
             await _billingRepository.GuardarCambiosAsync(cancellationToken);
 
             return recibo.Id;

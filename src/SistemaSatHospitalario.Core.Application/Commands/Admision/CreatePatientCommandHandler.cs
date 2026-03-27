@@ -62,8 +62,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             return new PatientDto
             {
-                Id = unifiedId,
-                InternalId = newPatient.Id,
+                Id = newPatient.Id,
+                IdPacienteLegacy = unifiedId,
                 Cedula = legacyPatient.Cedula,
                 Nombre = legacyPatient.Nombre,
                 Apellidos = legacyPatient.Apellidos,

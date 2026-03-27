@@ -38,9 +38,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("{id}/history")]
-        public async Task<ActionResult<List<PatientHistoryDto>>> GetHistory(int id)
+        public async Task<ActionResult<List<PatientHistoryDto>>> GetHistory(Guid id)
         {
-            // Se cambió id a int para coincidir con la unificación de identidades numéricas (Legacy)
             var query = new GetPatientHistoryQuery { PacienteId = id };
             var result = await _mediator.Send(query);
             return Ok(result);

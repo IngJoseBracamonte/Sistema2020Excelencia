@@ -6,15 +6,24 @@ using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using System.Diagnostics;
+using System.Text.Json;
+using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class SyncCarritoCommand : IRequest<SyncCarritoResult>
     {
-        public int PacienteId { get; set; }
+        public Guid PacienteId { get; set; }
+        public int? IdPacienteLegacy { get; set; } // V11.6: Soporte para Onboarding dinámico
+        public string UsuarioCarga { get; set; } = string.Empty;
         public string TipoIngreso { get; set; } = "Particular";
         public int? ConvenioId { get; set; }
-        public string UsuarioCarga { get; set; } = string.Empty;
         public List<ServicioCarritoDto> Items { get; set; } = new();
     }
 
@@ -39,59 +48,108 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IBillingRepository _repository;
         private readonly IApplicationDbContext _context;
+        private readonly ILegacyLabRepository _legacyRepository;
+        private readonly ILogger<SyncCarritoCommandHandler> _logger;
 
-        public SyncCarritoCommandHandler(IBillingRepository repository, IApplicationDbContext context)
+        public SyncCarritoCommandHandler(
+            IBillingRepository repository, 
+            IApplicationDbContext context, 
+            ILegacyLabRepository legacyRepository,
+            ILogger<SyncCarritoCommandHandler> logger)
         {
             _repository = repository;
             _context = context;
+            _legacyRepository = legacyRepository;
+            _logger = logger;
         }
 
         public async Task<SyncCarritoResult> Handle(SyncCarritoCommand request, CancellationToken ct)
         {
-            // 1. Asegurar Existencia Local del Paciente (V11.0 Sync Pro)
-            // Traducimos el ID de la base de datos vieja a la identidad GUID de la nueva
-            var paciente = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-                _context.PacientesAdmision, p => p.IdPacienteLegacy == request.PacienteId, ct);
+            using var activity = DiagnosticsConfig.ActivitySource.StartActivity("SyncCarrito.Handle");
+            activity?.SetTag("paciente.id", request.PacienteId);
+            activity?.SetTag("paciente.id_legacy", request.IdPacienteLegacy);
+            activity?.SetTag("items.count", request.Items.Count);
 
-            if (paciente == null)
+            _logger.LogInformation("[SYNC] Iniciando sincronización de carrito (Nuevo Ingreso) - Paciente: {PacienteId}, Legacy: {LegacyId}", request.PacienteId, request.IdPacienteLegacy);
+            
+            try 
             {
-                // Auto-Stub: Registro mínimo para integridad referencial
-                paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
-                _context.PacientesAdmision.Add(paciente);
-                // No guardamos aún, lo haremos al final con el GuardarCambios del repo (misma transacción EF)
-            }
+                PacienteAdmision? paciente = null;
 
-            // 2. Sincronizar Cuenta usando el GUID local
-            var cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(paciente.Id, ct);
-            if (cuenta == null)
-            {
-                cuenta = new CuentaServicios(paciente.Id, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
-                await _repository.AgregarCuentaAsync(cuenta, ct);
-            }
-
-            var detallesRes = new List<DetalleSyncDto>();
-
-            foreach (var item in request.Items)
-            {
-                if (EsTipoConsulta(item.TipoServicio) && item.MedicoId.HasValue && item.HoraCita.HasValue)
+                // 1. Resolución de Identidad (V11.6 Onboarding)
+                if (request.PacienteId != Guid.Empty)
                 {
-                    await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
+                    paciente = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                        _context.PacientesAdmision, p => p.Id == request.PacienteId, ct);
+                }
+                
+                // Si no se encontró por GUID, intentar Onboarding por Legacy ID (Concatenación V11.6)
+                if (paciente == null && request.IdPacienteLegacy.HasValue)
+                {
+                    _logger.LogInformation("[SYNC/ONBOARD] Paciente nativo no encontrado. Consultando Legacy ID: {LegacyId}", request.IdPacienteLegacy);
+                    var legacyPatient = await _legacyRepository.GetPatientByIdAsync(request.IdPacienteLegacy.Value.ToString(), ct);
+                    
+                    if (legacyPatient != null)
+                    {
+                        _logger.LogInformation("[SYNC/ONBOARD] Migrando paciente {Nombre} {Apellidos} desde Legacy...", legacyPatient.Nombre, legacyPatient.Apellidos);
+                        var fullName = $"{legacyPatient.Nombre} {legacyPatient.Apellidos}".Trim();
+                        var mainPhone = !string.IsNullOrEmpty(legacyPatient.Celular) ? legacyPatient.Celular : legacyPatient.Telefono;
+                        
+                        paciente = new PacienteAdmision(legacyPatient.Cedula, fullName, mainPhone ?? "", legacyPatient.IdPersona);
+                        await _context.PacientesAdmision.AddAsync(paciente, ct);
+                        await _context.SaveChangesAsync(ct);
+                        
+                        _logger.LogInformation("[SYNC/ONBOARD] Identidad Nativa Creada: {NewId}", paciente.Id);
+                    }
                 }
 
-                var detalle = cuenta.AgregarServicio(
-                    item.ServicioId, 
-                    item.Descripcion, 
-                    item.Precio, 
-                    item.Cantidad, 
-                    item.TipoServicio, 
-                    request.UsuarioCarga);
-                
-                detallesRes.Add(new DetalleSyncDto(item.ServicioId, detalle.Id));
+                if (paciente == null)
+                {
+                    _logger.LogWarning("[SYNC] Fallo de Identidad: No se encontró registro nativo ni legacy para la solicitud.");
+                    throw new InvalidOperationException($"No se pudo resolver la identidad del paciente. Verifique que exista en el sistema Legacy o registro nativo.");
+                }
+
+                // 2. CREACIÓN OBLIGATORIA DE CUENTA (Ingreso Nuevo por Wizard - V11.5)
+                // Se abandona la búsqueda de cuentas abiertas para garantizar atomicidad por Ingreso.
+                _logger.LogInformation("[SYNC] Creando NUEVO INGRESO para el paciente {PacienteId}", paciente.Id);
+                var cuenta = new CuentaServicios(paciente.Id, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
+                await _repository.AgregarCuentaAsync(cuenta, ct);
+
+                _logger.LogDebug("[SYNC] Cuenta de Ingreso establecida: {CuentaId}. Procesando {Count} items.", cuenta.Id, request.Items.Count);
+
+                var detallesRes = new List<DetalleSyncDto>();
+
+                foreach (var item in request.Items)
+                {
+                    if (EsTipoConsulta(item.TipoServicio) && item.MedicoId.HasValue && item.HoraCita.HasValue)
+                    {
+                        _logger.LogInformation("[SYNC] Registrando cita médica - Medico: {MedicoId}, Hora: {Hora}", item.MedicoId, item.HoraCita);
+                        await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
+                    }
+
+                    var detalle = cuenta.AgregarServicio(
+                        item.ServicioId, 
+                        item.Descripcion, 
+                        item.Precio, 
+                        item.Cantidad, 
+                        item.TipoServicio, 
+                        request.UsuarioCarga);
+                    
+                    detallesRes.Add(new DetalleSyncDto(item.ServicioId, detalle.Id));
+                }
+
+                _logger.LogInformation("[SYNC] Persistiendo cambios en base de datos para Cuenta: {CuentaId}", cuenta.Id);
+                await _repository.GuardarCambiosAsync(ct);
+
+                _logger.LogInformation("[SYNC] Sincronización exitosa. Total Items: {Count}", detallesRes.Count);
+                return new SyncCarritoResult(cuenta.Id, detallesRes);
             }
-
-            await _repository.GuardarCambiosAsync(ct);
-
-            return new SyncCarritoResult(cuenta.Id, detallesRes);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[SYNC] ERROR CRÍTICO sincronizando carrito para Paciente {PacienteId}. Tipo: {ExceptionType}", request.PacienteId, ex.GetType().Name);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
         }
 
         private async Task ProcesarCitaMedicaAsync(ServicioCarritoDto item, Guid pacienteId, Guid cuentaId, CancellationToken ct)

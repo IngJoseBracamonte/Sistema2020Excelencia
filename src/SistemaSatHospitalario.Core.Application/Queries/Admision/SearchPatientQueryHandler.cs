@@ -46,8 +46,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     results.Add(new PatientDto
                     {
-                        Id = p.IdPersona,
-                        InternalId = nativeMappings.ContainsKey(p.IdPersona) ? nativeMappings[p.IdPersona] : Guid.Empty,
+                        // Identidad Nativa (GUID) si existe, de lo contrario Guid.Empty (V11.1 Standard)
+                        Id = nativeMappings.ContainsKey(p.IdPersona) ? nativeMappings[p.IdPersona] : Guid.Empty,
+                        IdPacienteLegacy = p.IdPersona,
                         Cedula = p.Cedula,
                         Nombre = p.Nombre,
                         Apellidos = p.Apellidos,

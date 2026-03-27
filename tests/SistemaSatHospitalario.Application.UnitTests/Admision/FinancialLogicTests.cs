@@ -15,7 +15,7 @@ namespace SistemaSatHospitalario.Application.UnitTests.Admision
             // Requirement: Total USD Balance must be 0 regardless of rates.
 
             // 1. Setup Account
-            var cuenta = new CuentaServicios(1, "Particular");
+            var cuenta = new CuentaServicios(Guid.NewGuid(), "Particular");
             cuenta.AgregarServicio(Guid.NewGuid(), "Consulta Médica", 60.00m, 1, "MEDICO", "test-user");
 
             decimal totalCuentaUSD = cuenta.CalcularTotal();
@@ -51,7 +51,7 @@ namespace SistemaSatHospitalario.Application.UnitTests.Admision
         public void MixedPayment_DivisasAndBs_ShouldSyncCorrectly()
         {
             // Scenario: 100$ total. 50$ cash. Remaining in Bs at rate 50.
-            var cuenta = new CuentaServicios(1, "Particular");
+            var cuenta = new CuentaServicios(Guid.NewGuid(), "Particular");
             cuenta.AgregarServicio(Guid.NewGuid(), "Cirugía Menor", 100.00m, 1, "MEDICO", "test-user");
 
             decimal tasa = 50.00m;

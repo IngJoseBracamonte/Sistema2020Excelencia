@@ -41,6 +41,19 @@ description: Mantiene un registro actualizado de la arquitectura, rutas clave, d
 - **Model Awareness**: Al cambiar de modelo (Flash <-> Pro), invoca este skill para sincronizar y adaptar tu nivel de razonamiento al contexto documentado.
 - **Persistencia y Calidad**: Estos archivos son el "cerebro" del proyecto; su calidad determina tu éxito como IA. Mantenlos impecables.
 
+## 🚫 Anti-Patrones y Errores Frecuentes (Checklist de Seguridad)
+Antes de dar una tarea por finalizada, revisa que no hayas cometido estos errores documentados en ciclos previos:
+
+1.  **Migración de Identidad Parcial**: Modificar entidades en el Dominio (ej. de `int` a `Guid`) pero olvidar actualizar los Comandos (`IRequest`), DTOs o Interfaces del Frontend. 
+    *   *Check*: ¿Todos los campos `PacienteId` e `Id` en el flujo completo usan el mismo tipo de dato?
+2.  **La "Falacia del Auto-Stub"**: Diseñar lógica que crea un registro temporal (stub) si no encuentra un ID. Esto causa duplicidad y fragmentación.
+    *   *Check*: ¿Estoy forzando la existencia del registro en el Stage 1 (Registro) o estoy creando "basura" en Stage 2 (Carga)?
+3.  **Desincronización de Signals**: Cambiar el tipo de retorno en el API pero no actualizar la `Signal` correspondiente en Angular.
+    *   *Check*: ¿El tipo de la Signal en el componente coincide exactamente con el JSON devuelto?
+4.  **Enmascaramiento de Errores con `.Ignore()`**: Usar configuraciones de Fluent API para ignorar propiedades que fallan durante la validación de EF Core.
+    *   *Check*: ¿Estoy resolviendo la causa raíz de la inconsistencia o simplemente ocultando el síntoma?
+5.  **Hardcoding de Cuentas Lab**: Intentar mapear IDs de laboratorio sin verificar si el paciente está correctamente sincronizado con el sistema legado.
+
 ## Output (formato exacto)
 Devuelve siempre:
 1) **Estado de Sincronización**: Qué archivos se han actualizado.

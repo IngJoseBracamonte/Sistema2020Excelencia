@@ -46,6 +46,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             });
         }
 
+        public async Task<DatosPersonalesLegacy?> GetPatientByIdAsync(string legacyId, CancellationToken cancellationToken)
+        {
+            var cacheKey = $"PatientId_{legacyId}";
+            
+            return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = DefaultCacheDuration;
+                entry.SlidingExpiration = TimeSpan.FromMinutes(20);
+                return await _innerRepository.GetPatientByIdAsync(legacyId, cancellationToken);
+            });
+        }
+
         public async Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken)
         {
             var cacheKey = $"PatientSearch_{term.ToLower().Trim()}";

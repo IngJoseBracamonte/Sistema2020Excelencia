@@ -40,7 +40,7 @@ export class AppointmentsService {
     return this.http.get<DoctorScheduleResponse>(`${this.baseUrl}/Schedule/${doctorId}/${date}`);
   }
 
-  getDoctorScheduleWithPatient(doctorId: string, date: string, pacienteId?: number): Observable<DoctorScheduleResponse> {
+  getDoctorScheduleWithPatient(doctorId: string, date: string, pacienteId?: string): Observable<DoctorScheduleResponse> {
     let url = `${this.baseUrl}/Schedule/${doctorId}/${date}`;
     if (pacienteId) url += `?pacienteId=${pacienteId}`;
     return this.http.get<DoctorScheduleResponse>(url);
