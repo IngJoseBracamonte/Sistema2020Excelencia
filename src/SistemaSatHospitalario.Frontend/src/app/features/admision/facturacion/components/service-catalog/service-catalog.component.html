@@ -1,0 +1,144 @@
+<div class="animate-slide-in space-y-6">
+    <div class="bg-surface-card rounded-[3rem] border border-white/5 p-10 shadow-2xl relative overflow-hidden group">
+        <div
+            class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 blur-3xl group-hover:bg-primary/10 transition-colors">
+        </div>
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+            <div class="flex items-center space-x-4">
+                <div class="h-10 w-10 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 shadow-lg border border-rose-500/20">
+                    <lucide-icon name="plus" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                   <h3 class="text-xl font-black text-white tracking-tighter uppercase">Selección de Estudios</h3>
+                   <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Añada servicios al presupuesto actual</p>
+                </div>
+            </div>
+            
+            <button (click)="next.emit()" [disabled]="serviciosCargados().length === 0"
+                class="bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black px-10 py-4 rounded-[2rem] shadow-[0_0_30px_rgba(244,63,94,0.4)] hover:shadow-[0_0_40px_rgba(244,63,94,0.6)] uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-30 disabled:grayscale disabled:shadow-none cursor-pointer">
+                Paso 2 → Continuar
+            </button>
+        </div>
+
+        <div class="space-y-10">
+            <!-- Selección Médica Refinada -->
+            <div id="seccion-medica" *ngIf="!isRxAssistant"
+                class="relative p-8 rounded-[2rem] bg-black/20 border border-white/5 group-hover:border-primary/20 transition-all scroll-mt-20">
+                <div class="flex items-center space-x-3 mb-6">
+                    <lucide-icon name="user" class="w-4 h-4 text-primary"></lucide-icon>
+                    <label class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">1. Selección Médica
+                        (Prioritario)</label>
+                    <div class="flex-1 h-px bg-primary/10 ml-4"></div>
+                    <span
+                        class="bg-primary/10 text-primary text-[8px] font-black px-3 py-1 rounded-full border border-primary/20 tracking-widest uppercase">Requerido
+                        para Consultas</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label
+                            class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Especialidad</label>
+                        <select [(ngModel)]="selectedEsp"
+                            class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all uppercase appearance-none cursor-pointer shadow-inner">
+                            <option value="">--- SELECCIONE ESPECIALIDAD ---</option>
+                            <option *ngFor="let esp of especialidades()" [value]="esp">{{ esp | uppercase }}</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Médico
+                            Especialista</label>
+                        <select [(ngModel)]="selectedMedId"
+                            class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all uppercase appearance-none cursor-pointer shadow-inner disabled:opacity-30"
+                            [disabled]="!selectedEsp">
+                            <option value="">--- SELECCIONE MÉDICO ---</option>
+                            <option *ngFor="let m of medicosFiltrados()" [value]="m.id">{{ m.nombre | uppercase }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <button (click)="agendar.emit()" [disabled]="!selectedMedId"
+                    class="w-full mt-6 py-4 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 border-dashed rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center">
+                    <lucide-icon name="calendar" class="w-4 h-4 mr-3"></lucide-icon>
+                    AGENDAR CITA / SOLICITAR TURNO
+                </button>
+            </div>
+
+            <!-- Buscador de Catálogo -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3 mb-2 px-1">
+                    <lucide-icon name="search" class="w-4 h-4 text-slate-500"></lucide-icon>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">2. Búsqueda de
+                        Servicios y Estudios</label>
+                </div>
+                <div class="relative group">
+                    <input type="text" [(ngModel)]="searchTerm"
+                        placeholder="Buscar estudio de laboratorio, RX o consulta..."
+                        class="w-full px-8 py-6 bg-surface-card border border-white/10 rounded-[2rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-sm tracking-tight text-white placeholder:text-slate-600 shadow-2xl">
+                    <div
+                        class="absolute right-6 top-1/2 -translate-y-1/2 h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-focus-within:bg-primary group-focus-within:text-white transition-all">
+                        <lucide-icon name="package" class="w-5 h-5"></lucide-icon>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="selectedSlot"
+                class="bg-primary/5 p-4 rounded-xl border border-primary/10 animate-fade-in flex items-center justify-between">
+                <span class="text-[10px] font-black text-primary/60 uppercase tracking-widest">Cita Confirmada:</span>
+                <span class="text-xl font-black text-primary font-mono">{{ selectedSlot }}</span>
+            </div>
+
+            <!-- Catálogo de Servicios Optimizado -->
+            <div class="space-y-3 max-h-[500px] overflow-y-auto pr-3 custom-scrollbar">
+                <div *ngFor="let s of serviciosFiltrados()"
+                    [class]="'group p-4 rounded-2xl border transition-all hover:shadow-xl ' + 
+                             (suggestedServiceId === s.id ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10 scale-[1.02]' : 'bg-surface hover:bg-surface-card border-glass-border')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div
+                                [class]="'h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ' + 
+                                         (suggestedServiceId === s.id ? 'bg-primary text-white' : 'bg-primary/10 text-primary-glow')">
+                                <span class="text-[10px] font-black">{{ s.tipo.substring(0,2).toUpperCase() }}</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-sm font-black text-main uppercase tracking-tight">{{ s.descripcion
+                                        }}</h4>
+                                    <span *ngIf="suggestedServiceId === s.id"
+                                        class="bg-primary text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-pulse uppercase tracking-widest">Sugerido</span>
+                                </div>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <p class="text-[9px] text-muted font-bold uppercase tracking-widest">{{ s.tipo }}
+                                    </p>
+                                    <button *ngIf="s.tipo.toUpperCase().includes('CONSULTA')"
+                                        (click)="seleccionarTipoConsulta(s); $event.stopPropagation()"
+                                        class="text-[8px] text-primary hover:text-primary-glow font-black uppercase tracking-widest flex items-center gap-1 group/btn">
+                                        <lucide-icon name="search" class="w-2.5 h-2.5"></lucide-icon>
+                                        Ver Especialistas
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4 text-right">
+                            <div class="hidden sm:block">
+                                <p class="text-base font-black text-primary font-mono tracking-tighter">Bs. {{
+                                    calculatePriceBs(s) | currencyBs }}</p>
+                                <p class="text-[9px] font-bold text-slate-400 font-mono tracking-tighter mt-0.5">${{
+                                    s.displayPriceUsd }} USD</p>
+                            </div>
+                            <button (click)="cargar.emit(s.id)"
+                                class="h-10 w-10 bg-surface-light group-hover:bg-primary text-white rounded-xl shadow-lg transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center ring-4 ring-transparent hover:ring-primary/20">
+                                <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="serviciosFiltrados().length === 0" class="py-12 text-center opacity-30">
+                    <lucide-icon name="search-x" class="w-12 h-12 mx-auto text-slate-300 mb-2"></lucide-icon>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Sin resultados</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

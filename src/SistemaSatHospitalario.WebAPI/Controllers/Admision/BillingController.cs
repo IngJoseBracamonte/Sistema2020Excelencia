@@ -47,6 +47,31 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
             }
         }
+        
+        [HttpPost("SincronizarCarrito")]
+        [ActionName("SincronizarCarrito")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> SincronizarCarrito([FromBody] SyncCarritoCommand command)
+        {
+            try
+            {
+                var result = await _mediator.Send(command);
+                return Ok(new { 
+                    Message = "Carrito sincronizado exitosamente.", 
+                    CuentaId = result.CuentaId,
+                    Detalles = result.Detalles
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
+            }
+        }
 
         [HttpPost("CloseAccount")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -147,7 +172,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpPost("BloquearHorario")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [Authorize(Roles = "Administrador")]
+        [Authorize] // Permite a cualquier usuario autenticado (Cajero, Asistente, etc.)
         public async Task<IActionResult> BloquearHorario([FromBody] BloquearHorarioCommand command)
         {
             try

@@ -10,7 +10,8 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal Precio { get; set; } // Compatibilidad (será Bs)
         public decimal PrecioBs { get; set; }
         public decimal PrecioUsd { get; set; }
-        public string Tipo { get; set; } // CONSULTA, RX, LABORATORIO, etc.
+        public string Tipo { get; set; } // Legacy compatibility
+        public int CategoryId { get; set; } // Consultation=1, Lab=2, etc. (V5.2)
         public bool EsLegacy { get; set; }
 
         public void CalculatePrices(decimal tasa)

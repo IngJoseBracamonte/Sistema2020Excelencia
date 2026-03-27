@@ -72,8 +72,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             if (!await _context.PacientesAdmision.AnyAsync())
             {
                 _context.PacientesAdmision.AddRange(
-                    new PacienteAdmision(1, "0999999999", "John Doe", "0987654321"),
-                    new PacienteAdmision(2, "0888888888", "Jane Smith", "0912345678")
+                    new PacienteAdmision("0999999999", "John Doe", "0987654321", 1),
+                    new PacienteAdmision("0888888888", "Jane Smith", "0912345678", 2)
                 );
                 await _context.SaveChangesAsync();
             }

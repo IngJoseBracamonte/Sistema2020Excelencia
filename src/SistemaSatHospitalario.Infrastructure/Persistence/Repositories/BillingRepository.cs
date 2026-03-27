@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<CuentaServicios?> ObtenerCuentaAbiertaPorPacienteAsync(int pacienteId, CancellationToken cancellationToken)
+        public async Task<CuentaServicios?> ObtenerCuentaAbiertaPorPacienteAsync(Guid pacienteId, CancellationToken cancellationToken)
         {
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
@@ -33,12 +33,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(c => c.Id == cuentaId, cancellationToken);
         }
 
-        public async Task<List<CuentaServicios>> ObtenerCuentasPorPacienteAsync(int pacienteId, CancellationToken cancellationToken)
+        public async Task<List<CuentaServicios>> ObtenerCuentasPorPacienteAsync(Guid pacienteId, CancellationToken cancellationToken)
         {
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
                 .Where(c => c.PacienteId == pacienteId)
-                .OrderByDescending(c => c.FechaCreacion)
+                .OrderByDescending(c => c.FechaCarga)
                 .ToListAsync(cancellationToken);
         }
 
@@ -53,6 +53,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             return Task.CompletedTask;
         }
 
+        public async Task ForzarCierreCuentaAsync(Guid cuentaId, DateTime fechaCierre, CancellationToken cancellationToken)
+        {
+            string sql = "UPDATE CuentasServicios SET Estado = 'Facturada', FechaCierre = @p0 WHERE Id = @p1";
+            await _context.Database.ExecuteSqlRawAsync(sql, new object[] { fechaCierre, cuentaId }, cancellationToken);
+        }
+
         public async Task AgregarCitaMedicaAsync(CitaMedica cita, CancellationToken cancellationToken)
         {
             await _context.CitasMedicas.AddAsync(cita, cancellationToken);
@@ -60,7 +66,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task<bool> ExisteCitaSimultaneaAsync(Guid medicoId, DateTime hora, CancellationToken cancellationToken)
         {
-            return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.EstadoAtencion != "Cancelado", cancellationToken);
+            return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.Estado != "Cancelado", cancellationToken);
         }
 
         public async Task CancelarCitaMedicaAsync(Guid cuentaId, Guid medicoId, DateTime hora, CancellationToken cancellationToken)

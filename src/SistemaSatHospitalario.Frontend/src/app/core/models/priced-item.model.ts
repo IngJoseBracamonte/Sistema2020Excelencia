@@ -8,6 +8,7 @@ export abstract class BasePricedItem {
   PrecioBs?: number; // PascalCase del backend (mapeo seguro)
   PrecioUsd?: number; // PascalCase del backend (mapeo seguro)
   tipo: string;
+  categoryId: number; // V5.2 structural classification
   esLegacy: boolean;
   activo?: boolean;
 
@@ -19,6 +20,7 @@ export abstract class BasePricedItem {
     this.precioBs = data.precioBs ?? data.PrecioBs;
     this.precioUsd = data.precioUsd ?? data.PrecioUsd;
     this.tipo = data.tipo || data.Tipo;
+    this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;
     this.activo = data.activo ?? data.Activo;
   }
@@ -38,6 +40,10 @@ export abstract class BasePricedItem {
   getRawBs(tasa: number): number {
     const val = (this.precioUsd ?? this.PrecioUsd ?? 0) * tasa;
     return val > 0 ? val : (this.precioBs ?? this.PrecioBs ?? this.precio);
+  }
+
+  get priceBs(): number {
+    return this.precioBs ?? this.PrecioBs ?? this.precio;
   }
 
   get displayPriceBs(): string {

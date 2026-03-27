@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var conCita = _context.CitasMedicas.Any(c => 
                 c.MedicoId == request.MedicoId && 
                 c.HoraPautada == request.HoraPautada && 
-                c.EstadoAtencion != "Cancelado");
+                c.Estado != "Cancelado");
 
             if (conCita) return false;
 

@@ -39,6 +39,7 @@ builder.Services.AddApplicationServices();
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddSignalR();
+builder.Services.AddScoped<SistemaSatHospitalario.Core.Application.Common.Interfaces.ITasaNotificationService, SistemaSatHospitalario.WebAPI.Infrastructure.TasaNotificationService>();
 
 // Add JWT Authentication
 var jwtSecret = builder.Configuration["JwtConfig:Secret"];
@@ -115,5 +116,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<SistemaSatHospitalario.WebAPI.Hubs.DashboardHub>("/hub/dashboard");
+app.MapHub<SistemaSatHospitalario.WebAPI.Hubs.TasaHub>("/hub/tasa");
 
 app.Run();

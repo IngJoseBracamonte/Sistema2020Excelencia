@@ -7,28 +7,30 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     public class CuentaServicios
     {
         public Guid Id { get; private set; }
-        // Se cambió de Guid a int para sincronización con Legacy
-        public int PacienteId { get; private set; }
+        // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
+        public Guid PacienteId { get; private set; }
+        public string UsuarioCarga { get; private set; }
+        public DateTime FechaCarga { get; private set; }
+        public DateTime? FechaCierre { get; private set; }
+        public string Estado { get; private set; } // Abierta, Facturada, Anulada
         public string TipoIngreso { get; private set; } // Particular, Seguro, Hospitalizacion, Emergencia
         // Se cambió de Guid? a int? para sincronización con Legacy
         public int? ConvenioId { get; private set; }
-        public string Estado { get; private set; } // Abierta, Facturada, Anulada
-        public DateTime FechaCreacion { get; private set; }
-        public DateTime? FechaCierre { get; private set; }
 
         private readonly List<DetalleServicioCuenta> _detalles = new();
         public IReadOnlyCollection<DetalleServicioCuenta> Detalles => _detalles.AsReadOnly();
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(int pacienteId, string tipoIngreso, int? convenioId = null)
+        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
-            TipoIngreso = tipoIngreso ?? throw new ArgumentNullException(nameof(tipoIngreso));
-            ConvenioId = convenioId;
+            UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
+            FechaCarga = DateTime.UtcNow;
             Estado = "Abierta";
-            FechaCreacion = DateTime.UtcNow;
+            TipoIngreso = tipoIngreso ?? "Particular";
+            ConvenioId = convenioId;
         }
 
         public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga)

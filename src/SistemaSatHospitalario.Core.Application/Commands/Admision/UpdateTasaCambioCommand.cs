@@ -16,26 +16,48 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class UpdateTasaCambioCommandHandler : IRequestHandler<UpdateTasaCambioCommand, bool>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ITasaNotificationService _notificationService;
 
-        public UpdateTasaCambioCommandHandler(IApplicationDbContext context)
+        public UpdateTasaCambioCommandHandler(IApplicationDbContext context, ITasaNotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<bool> Handle(UpdateTasaCambioCommand request, CancellationToken cancellationToken)
         {
-            // Desactivar tasas anteriores (si el modelo lo requiere) o simplemente agregar nueva
-            var tasasActivas = await _context.TasaCambio.Where(t => t.Activo).ToListAsync(cancellationToken);
-            foreach (var t in tasasActivas)
+            using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+            try
             {
-                // Como las propiedades son private set, solo si hay método de desactivación
-                // Pero por ahora, creamos una nueva y listo (histórico)
+                // 1. Sanear base de datos: desactivar todas las previas (independientemente de estado actual)
+                var todasLasTasas = await _context.TasaCambio
+                    .ToListAsync(cancellationToken);
+
+                foreach (var t in todasLasTasas)
+                {
+                    t.Deactivate();
+                }
+
+                // 2. Agregar nueva tasa
+                var nuevaTasa = new TasaCambio(request.Monto);
+                _context.TasaCambio.Add(nuevaTasa);
+
+                var success = await _context.SaveChangesAsync(cancellationToken) > 0;
+                
+                if (success)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                    await _notificationService.NotifyTasaUpdatedAsync(request.Monto, cancellationToken);
+                    return true;
+                }
+
+                return false;
             }
-
-            var nuevaTasa = new TasaCambio(request.Monto);
-            _context.TasaCambio.Add(nuevaTasa);
-
-            return await _context.SaveChangesAsync(cancellationToken) > 0;
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
     }
 }

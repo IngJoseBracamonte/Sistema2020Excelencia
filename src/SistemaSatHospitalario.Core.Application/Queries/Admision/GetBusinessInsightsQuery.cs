@@ -44,7 +44,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 // Turnos Pautados Hoy
                 response.TurnosPautadosHoy = await _context.CitasMedicas
-                    .Where(c => c.HoraPautada.Date == today && c.EstadoAtencion != "Cancelado")
+                    .Where(c => c.HoraPautada.Date == today && c.Estado != "Cancelado")
                     .CountAsync(cancellationToken);
             }
 

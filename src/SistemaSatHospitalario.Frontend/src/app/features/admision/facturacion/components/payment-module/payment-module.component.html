@@ -1,0 +1,66 @@
+<div class="glass-panel rounded-[2rem] shadow-xl border-white/40 p-10 space-y-8 animate-scale-in">
+    <div class="flex items-center space-x-4 mb-2">
+        <div class="h-10 w-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-500/20">
+            <lucide-icon [name]="icons.CreditCard" class="w-6 h-6"></lucide-icon>
+        </div>
+        <h4 class="text-xl font-black text-white tracking-tight uppercase">Carga de Abonos</h4>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-black/20 p-8 rounded-[2rem] border border-white/5">
+        <div class="space-y-2">
+            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Método de Pago</label>
+            <select [(ngModel)]="currentPago.metodoPago" 
+                class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all uppercase appearance-none cursor-pointer">
+                <option *ngFor="let m of metodosDisponibles" [value]="m">{{ m }}</option>
+            </select>
+        </div>
+        <div class="space-y-2">
+            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Referencia / Observación</label>
+            <input type="text" [(ngModel)]="currentPago.referenciaBancaria" placeholder="Ej: 4567 / NA"
+                class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-700">
+        </div>
+        <div class="md:col-span-2 space-y-2">
+            <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto en Moneda Elegida</label>
+            <div class="relative">
+                <input type="text" 
+                    [appAtmAmount]="currentPago.metodoPago.toLowerCase().includes('bs') || currentPago.metodoPago.toLowerCase().includes('móvil')"
+                    [value]="displayMonto"
+                    (amountChanged)="onMontoChanged($event)"
+                    inputmode="numeric"
+                    class="w-full bg-surface border border-white/5 rounded-2xl px-8 py-5 text-2xl font-black text-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-mono tracking-tighter shadow-inner">
+                <button (click)="agregarPago()" [disabled]="currentPago.montoAbonadoMoneda <= 0"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95 disabled:opacity-30">
+                    Añadir Abono
+                </button>
+            </div>
+            <p class="text-[8px] font-black text-emerald-400/60 uppercase tracking-widest ml-4 mt-2 italic">* Se aplicará conversión automática según tasa oficial</p>
+        </div>
+    </div>
+
+    <!-- Listado de Pagos Registrados -->
+    <div class="space-y-3">
+        <div *ngFor="let p of pagos(); let i = index" 
+            class="flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2xl animate-fade-in group hover:border-emerald-500/30 transition-all">
+            <div class="flex items-center space-x-5">
+                <div class="h-10 w-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center font-black text-[10px] border border-emerald-500/20">#{{ i+1 }}</div>
+                <div>
+                    <p class="text-xs font-black text-white uppercase tracking-tight">{{ p.metodoPago }}</p>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Ref: {{ p.referenciaBancaria || 'S/N' }}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-6 text-right">
+                <div>
+                    <p class="text-sm font-black text-emerald-400 font-mono tracking-tighter">{{ p.metodoPago.includes('Divisas') || p.metodoPago.includes('Zelle') ? '$' : 'Bs.' }} {{ p.montoAbonadoMoneda | number:'1.2-2' }}</p>
+                    <p class="text-[9px] font-bold text-slate-500 font-mono mt-0.5" *ngIf="!p.metodoPago.includes('Divisas') && !p.metodoPago.includes('Zelle')">Eq. ${{ p.equivalenteAbonadoBase | number:'1.2-2' }} USD</p>
+                </div>
+                <button (click)="removerPago(i)" class="p-3 text-slate-600 hover:text-rose-500 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all focus:opacity-100">
+                    <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                </button>
+            </div>
+        </div>
+        <div *ngIf="pagos().length === 0" class="py-12 border border-dashed border-white/5 rounded-[2rem] text-center opacity-30">
+            <lucide-icon [name]="icons.CreditCard" class="w-12 h-12 mx-auto text-slate-400 mb-2"></lucide-icon>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">No hay abonos registrados en esta cuenta</p>
+        </div>
+    </div>
+</div>

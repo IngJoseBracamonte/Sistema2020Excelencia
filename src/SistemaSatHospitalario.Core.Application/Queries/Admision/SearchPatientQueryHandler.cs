@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -33,11 +34,20 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             try
             {
                 var legacyPatients = await _legacyRepository.SearchPatientsLimitedAsync(term, cancellationToken);
+                
+                // V11.0: Recuperamos mapeos existentes para vinculación inmediata
+                var legacyIds = legacyPatients.Select(p => p.IdPersona).ToList();
+                var nativeMappings = await _context.PacientesAdmision
+                    .AsNoTracking()
+                    .Where(p => p.IdPacienteLegacy.HasValue && legacyIds.Contains(p.IdPacienteLegacy.Value))
+                    .ToDictionaryAsync(p => p.IdPacienteLegacy!.Value, p => p.Id, cancellationToken);
+
                 foreach (var p in legacyPatients)
                 {
                     results.Add(new PatientDto
                     {
                         Id = p.IdPersona,
+                        InternalId = nativeMappings.ContainsKey(p.IdPersona) ? nativeMappings[p.IdPersona] : Guid.Empty,
                         Cedula = p.Cedula,
                         Nombre = p.Nombre,
                         Apellidos = p.Apellidos,

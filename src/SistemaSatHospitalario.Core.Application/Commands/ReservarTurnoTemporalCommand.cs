@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using System;
@@ -13,6 +14,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
         public Guid MedicoId { get; set; }
         public DateTime HoraPautada { get; set; }
         public string? UsuarioId { get; set; }
+        public string? Comentario { get; set; }
     }
 
     public class ReservarTurnoTemporalCommandHandler : IRequestHandler<ReservarTurnoTemporalCommand, bool>
@@ -33,31 +35,31 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             if (request.MedicoId == Guid.Empty)
                 throw new InvalidOperationException("El ID del médico es requerido.");
 
-            // 1. Limpiar reservas expiradas para este médico
-            var expiradas = _context.ReservasTemporales
+            // 1. Limpiar reservas expiradas
+            var expiradas = await _context.ReservasTemporales
                 .Where(r => r.MedicoId == request.MedicoId && r.ExpiracionUtc < DateTime.UtcNow)
-                .ToList();
-            
+                .ToListAsync(cancellationToken);
+
             if (expiradas.Any())
             {
                 _context.ReservasTemporales.RemoveRange(expiradas);
-                await _context.SaveChangesAsync(cancellationToken);
+                // No guardamos cambios aún, esperamos al final del handle
             }
 
             // 2. Verificar que no haya una cita real ya agendada
-            var citaExistente = _context.CitasMedicas.Any(c => 
+            var citaExistente = await _context.CitasMedicas.AnyAsync(c => 
                 c.MedicoId == request.MedicoId && 
                 c.HoraPautada == targetHora && 
-                c.EstadoAtencion != "Cancelado");
+                c.Estado != "Cancelado", cancellationToken);
 
             if (citaExistente) 
                 throw new InvalidOperationException("Ya existe una cita médica(En Espera/Atendida) en este horario exacto.");
 
             // 3. Verificar si hay reserva vigente (Excluyendo al mismo usuario para permitir re-agendamiento tras refresh)
-            var reservaMismaHora = _context.ReservasTemporales.FirstOrDefault(r => 
+            var reservaMismaHora = await _context.ReservasTemporales.FirstOrDefaultAsync(r => 
                 r.MedicoId == request.MedicoId && 
                 r.HoraPautada == targetHora &&
-                r.ExpiracionUtc > DateTime.UtcNow);
+                r.ExpiracionUtc > DateTime.UtcNow, cancellationToken);
 
             if (reservaMismaHora != null)
             {
@@ -67,16 +69,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands
                 }
                 else
                 {
-                    // Si es el mismo usuario, eliminamos la anterior para dejar la nueva (Refresh de 15 min)
-                    _context.ReservasTemporales.Remove(reservaMismaHora);
-                    await _context.SaveChangesAsync(cancellationToken);
+                    // Si es el mismo usuario, eliminar la anterior con DELETE directo
+                    await _context.ReservasTemporales
+                        .Where(r => r.Id == reservaMismaHora.Id)
+                        .ExecuteDeleteAsync(cancellationToken);
                 }
             }
 
             try 
             {
                 // 4. Crear nueva reserva
-                var nuevaReserva = new ReservaTemporal(request.MedicoId, targetHora, request.UsuarioId ?? "Anonimo");
+                var nuevaReserva = new ReservaTemporal(request.MedicoId, targetHora, request.UsuarioId ?? "Anonimo", request.Comentario);
                 _context.ReservasTemporales.Add(nuevaReserva);
 
                 await _context.SaveChangesAsync(cancellationToken);
@@ -89,3 +92,5 @@ namespace SistemaSatHospitalario.Core.Application.Commands
         }
     }
 }
+
+

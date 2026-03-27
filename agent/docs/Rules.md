@@ -6,7 +6,10 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 1. **Legacy Intocable**: El sistema original de WinForms/C# NO SE MODIFICA. Cualquier discrepancia o error en el Legacy se reporta pero no se intenta solventar en este repositorio.
 2. **EF Core 9 Control**: Mantener `Microsoft.EntityFrameworkCore` en la versión `9.0.2`. El uso de v10 está prohibido por incompatibilidades con el proveedor Pomelo MySQL.
 3. **Bypass de Migración**: No regenerar la migración `20260309004403_InitialIdentityMigration`. Si falla la sincronización, limpiar manualmente `__EFMigrationsHistory` antes de reintentar.
-4. **OTEL Obligatorio**: Todo nuevo servicio o controlador debe incluir instrumentación personalizada (`ActivitySource` y `Meter`) registrada en `DiagnosticsConfig`.
+45. **Identidad por GUID**: Todos los nuevos registros de pacientes y entidades transaccionales DEBEN usar `Guid` como clave primaria. El uso de `int` para PKs queda prohibido para nuevas entidades.
+6. **Legacy Stubbing**: Siempre buscar primero por `Cedula` en la base local (GUID) y luego en la Legacy (Int). Si se encuentra en Legacy, se DEBE crear un stub local persistente con el `IdPacienteLegacy`.
+7. **Mapeo Seguro en DbContext**: Propiedades calculadas en el dominio (sin setters) DEBEN ignorarse explícitamente en el `DbContext` con `.Ignore()` para evitar fallos de inicialización de EF Core.
+8. **Transición MySQL Destructiva**: Cambios de tipo `int` -> `Guid` en PK/FK requieren la eliminación manual de restricciones en la migración ANTES de alterar las columnas, debido a las restricciones de Pomelo MySQL.
 
 ## 💻 Patrones de Código (Engineering Patterns)
 ### Backend (WebAPI / Core)
@@ -16,6 +19,9 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 
 ### Frontend (Angular 19)
 - **Signals First**: Priorizar el uso de `Signal`, `computed` y `effect` sobre `BehaviorSubject` para el manejo de estado local.
+- **Smart/Dumb Pattern**: Los componentes de características (Features) deben dividirse en un orquestador (Smart) y componentes de presentación (Dumb) que se comunican mediante inputs/outputs.
+- **Facade Pattern**: Todo estado compartido entre componentes modulares debe gestionarse a través de un servicio Facade único que exponga Signals.
+- **Global Icon Provider**: No usar `.pick()` en componentes individuales. Configurar `provideLucideIcons` o `importProvidersFrom` en la configuración global de la app.
 - **Standalone Components**: No se permiten `NgModules`. Cada componente, directiva o pipe debe ser standalone.
 - **Strong Typing**: Todos los servicios de API deben devolver interfaces TypeScript que coincidan exactamente con la estructura del Backend.
 - **Telemetry Integration**: Usar siempre el `TelemetryService` para trazas y métricas OTel.
@@ -44,3 +50,12 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 - **Naming**: 
   - Backend: `IRequest<T>`, `IRequestHandler<T, R>`.
   - Frontend: Componentes con sufijo `.component.ts`, Servicios con `.service.ts`.
+## 🔄 Flujo de Registro de Pacientes (V11.2)
+
+1. **Entrada**: Cédula/Pasaporte.
+2. **Local Lookup**: `_context.PacientesAdmision.FirstOrDefault(p => p.Cedula == input)`.
+3. **Legacy Lookup (Si falla Local)**: `_legacyRepo.ObtenerPorCedula(input)`.
+4. **Auto-Stubbing**:
+   - Si se encuentra en Legacy: `new PacienteAdmision(data.Nombre, data.Cedula, ...) { IdPacienteLegacy = data.Id }`.
+   - Si no se encuentra en ninguno: Registro manual (Nuevo GUID, sin IdLegacy).
+5. **Persistencia**: Se guarda en local y se asocia el GUID a la `CuentaServicio` activa.

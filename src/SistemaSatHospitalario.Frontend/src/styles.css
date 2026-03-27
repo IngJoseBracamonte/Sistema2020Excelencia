@@ -68,6 +68,13 @@ body {
   background-color: var(--surface);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  color-scheme: dark; /* Fuerza widgets nativos (select, scroll, etc) a modo oscuro */
+}
+
+/* Fix para menús desplegables nativos en modo oscuro */
+select option {
+  background-color: var(--surface-card);
+  color: var(--text-main);
 }
 
 /* Glassmorphism & Premium Utilities */

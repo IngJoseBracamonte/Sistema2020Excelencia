@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -32,27 +34,38 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IBillingRepository _repository;
         private readonly IOrdenExternaService _externaService;
+        private readonly IApplicationDbContext _context;
 
-        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService)
+        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService, IApplicationDbContext context)
         {
             _repository = repository;
             _externaService = externaService;
+            _context = context;
         }
 
         public async Task<CargarServicioResult> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
         {
-            // 1. Asegurar cuenta activa
-            var cuenta = await GetOrCreateCuentaAsync(request, cancellationToken);
+            // 1. Asegurar Existencia Local del Paciente (V11.0 Sync Pro)
+            var paciente = await _context.PacientesAdmision.FirstOrDefaultAsync(
+                p => p.IdPacienteLegacy == request.PacienteId, cancellationToken);
 
-            // 2. Procesar lógica específica de Consultas/Citas
+            if (paciente == null)
+            {
+                paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
+                _context.PacientesAdmision.Add(paciente);
+            }
+
+            // 2. Asegurar cuenta activa usando el GUID local
+            var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
+
+            // 3. Procesar lógica específica de Consultas/Citas
             bool esConsulta = EsTipoConsulta(request.TipoServicio);
             if (esConsulta)
             {
-                await ProcesarCitaMedicaAsync(request, cuenta.Id, cancellationToken);
+                await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
             }
 
-            // 3. Persistir el servicio
-            // CAPTURA DEL DETALLE PARA RETORNO (V4.2 Precision Fix)
+            // 4. Persistir el servicio
             var detalle = cuenta.AgregarServicio(
                 request.ServicioId, 
                 request.Descripcion, 
@@ -61,7 +74,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.TipoServicio, 
                 request.UsuarioCarga);
             
-            // 4. Notificaciones e Integraciones Externas
+            // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 
             await _repository.GuardarCambiosAsync(cancellationToken);
@@ -69,33 +82,31 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             return new CargarServicioResult(cuenta.Id, detalle.Id);
         }
 
-        private async Task<CuentaServicios> GetOrCreateCuentaAsync(CargarServicioACuentaCommand request, CancellationToken ct)
+        private async Task<CuentaServicios> GetOrCreateCuentaAsync(Guid pacienteId, CargarServicioACuentaCommand request, CancellationToken ct)
         {
-            var cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(request.PacienteId, ct);
+            var cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, ct);
             if (cuenta == null)
             {
-                cuenta = new CuentaServicios(request.PacienteId, request.TipoIngreso, request.ConvenioId);
+                cuenta = new CuentaServicios(pacienteId, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
                 await _repository.AgregarCuentaAsync(cuenta, ct);
             }
             return cuenta;
         }
 
-        private async Task ProcesarCitaMedicaAsync(CargarServicioACuentaCommand request, Guid cuentaId, CancellationToken ct)
+        private async Task ProcesarCitaMedicaAsync(CargarServicioACuentaCommand request, Guid pacienteId, Guid cuentaId, CancellationToken ct)
         {
             if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
                 throw new InvalidOperationException("Los servicios de consulta requieren Médico y Hora de Cita.");
 
-            // Normalización de Horario Profesional (V3.1): Seguros de colisión exactos a nivel de minuto
             var horaNormalizada = new DateTime(
                 request.HoraCita.Value.Year, request.HoraCita.Value.Month, request.HoraCita.Value.Day,
                 request.HoraCita.Value.Hour, request.HoraCita.Value.Minute, 0, 
                 DateTimeKind.Unspecified);
 
-            // Validar disponibilidad (Principio de Fallo Rápido)
             if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
                 throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {horaNormalizada:HH:mm}.");
 
-            var cita = new CitaMedica(request.MedicoId.Value, request.PacienteId, cuentaId, horaNormalizada);
+            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
         }
 
@@ -106,7 +117,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 await _externaService.EnviarOrdenRXAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
             }
             
-            // Sincronización con Facturación Legacy
             await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, ct);
         }
 
@@ -114,11 +124,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             if (string.IsNullOrEmpty(tipo)) return false;
             var t = tipo.ToUpper();
-            return t.Contains("CONSULTA") || 
-                   t.Contains("MEDICO") || 
-                   t.Contains("MÉDICO") || 
-                   t.Contains("OBSTETRI") || 
-                   t.Contains("GINECO");
+            return t.Contains("CONSULTA") || t.Contains("MEDICO") || t.Contains("MÉDICO") || t.Contains("OBSTETRI") || t.Contains("GINECO");
         }
     }
 }

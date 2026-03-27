@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             SeguroNombre = conv != null ? conv.Nombre : "Particular",
                             MontoTotal = ar.MontoTotalBase,
                             SaldoPendiente = ar.SaldoPendienteBase,
-                            FechaEmision = ar.FechaEmision,
+                            FechaEmision = ar.FechaCreacion,
                             Estado = ar.Estado
                         };
 

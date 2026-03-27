@@ -6,8 +6,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
     {
         public Guid Id { get; protected set; }
         public int NumeroLlegadaDiario { get; protected set; }
-        // Se cambió de Guid a int para sincronización con Legacy
-        public int PacienteId { get; protected set; }
+        // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
+        public Guid PacienteId { get; protected set; }
         public string NombrePaciente { get; protected set; }
         public string TipoIngreso { get; protected set; } // Particular, Seguro, Hospitalizacion, Emergencia
         public string EstadoFacturacion { get; protected set; } // Sin Factura, Factura Fiscal
@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
 
         protected OrdenDeServicio() { }
 
-        protected OrdenDeServicio(int numeroLlegada, int pacienteId, string nombrePaciente, string tipoIngreso, int? convenioId = null)
+        protected OrdenDeServicio(int numeroLlegada, Guid pacienteId, string nombrePaciente, string tipoIngreso, int? convenioId = null)
         {
             Id = Guid.NewGuid();
             NumeroLlegadaDiario = numeroLlegada;

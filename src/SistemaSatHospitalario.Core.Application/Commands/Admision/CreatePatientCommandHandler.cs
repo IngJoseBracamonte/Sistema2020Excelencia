@@ -56,13 +56,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var fullName = $"{request.Nombre} {request.Apellidos}".Trim();
             var mainPhone = !string.IsNullOrEmpty(request.Celular) ? request.Celular : request.Telefono;
 
-            var newPatient = new PacienteAdmision(unifiedId, request.Cedula, fullName, mainPhone ?? "");
+            var newPatient = new PacienteAdmision(request.Cedula, fullName, mainPhone ?? "", unifiedId);
             await _context.PacientesAdmision.AddAsync(newPatient, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
             return new PatientDto
             {
                 Id = unifiedId,
+                InternalId = newPatient.Id,
                 Cedula = legacyPatient.Cedula,
                 Nombre = legacyPatient.Nombre,
                 Apellidos = legacyPatient.Apellidos,

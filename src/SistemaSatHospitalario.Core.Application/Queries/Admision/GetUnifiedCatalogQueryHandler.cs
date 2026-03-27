@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -57,6 +58,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Codigo = s.Codigo,
                     Descripcion = s.Descripcion,
                     Tipo = s.TipoServicio,
+                    CategoryId = (int)s.Category,
                     EsLegacy = false,
                     PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase
                 };
@@ -93,6 +95,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Codigo = "LAB-" + p.IdPerfil,
                     Descripcion = p.Descripcion,
                     Tipo = "LABORATORIO",
+                    CategoryId = (int)ServiceCategory.Laboratory,
                     EsLegacy = true,
                     PrecioUsd = finalUsd
                 };

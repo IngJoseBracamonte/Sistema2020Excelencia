@@ -35,6 +35,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
+        public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -98,7 +99,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("PacientesAdmision");
                 entity.HasKey(p => p.Id);
-                entity.Property(p => p.Id).ValueGeneratedNever(); // IDPersona del legado
+                // Guid generado por el sistema nuevo (V11.0 Sync Pro)
+                entity.HasIndex(p => p.IdPacienteLegacy).IsUnique();
                 entity.HasIndex(p => p.CedulaPasaporte).IsUnique();
             });
 
@@ -206,7 +208,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.MontoTotalBase).HasPrecision(18, 2);
                 entity.Property(c => c.MontoPagadoBase).HasPrecision(18, 2);
-                entity.Property(c => c.SaldoPendienteBase).HasPrecision(18, 2);
+                entity.Ignore(c => c.SaldoPendienteBase);
 
                 entity.HasOne(c => c.Cuenta)
                       .WithMany()
@@ -215,9 +217,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             builder.Entity<TasaCambio>(entity =>
             {
-                entity.ToTable("TasaCambio");
+                entity.ToTable("tasacambio"); // Forzar minúsculas para compatibilidad MySQL/Linux
                 entity.HasKey(t => t.Id);
                 entity.Property(t => t.Monto).HasPrecision(18, 4);
+                entity.Property(t => t.Activo).IsRequired(); // Mapeo implícito a TINYINT(1)/BIT
             });
 
             builder.Entity<ErrorTicket>(entity =>

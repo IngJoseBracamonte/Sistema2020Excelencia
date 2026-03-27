@@ -36,12 +36,30 @@ export interface CargarServicioACuentaRequest {
 export interface ReservarTurnoRequest {
   medicoId: string;
   horaPautada: string; // ISO
+  comentario?: string;
 }
 
 export interface BloquearHorarioRequest {
   medicoId: string;
   horaPautada: string; // ISO
   motivo: string;
+}
+
+export interface SyncCarritoMasivoRequest {
+  pacienteId: number;
+  tipoIngreso: string;
+  convenioId?: number;
+  usuarioCarga: string;
+  items: Array<{
+    servicioId: string;
+    descripcion: string;
+    precio: number;
+    cantidad: number;
+    tipoServicio: string;
+    medicoId?: string;
+    horaCita?: string;
+    comentario?: string;
+  }>;
 }
 
 export interface ReceiptPrintData {
@@ -96,6 +114,10 @@ export class FacturacionService {
 
   bloquearHorario(payload: BloquearHorarioRequest): Observable<any> {
     return this.http.post<any>(`${this.billingUrl}/BloquearHorario`, payload);
+  }
+
+  syncBulk(payload: SyncCarritoMasivoRequest): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/SincronizarCarrito`, payload);
   }
 
   // Panel de Gestión Administrativa (Fase 10)

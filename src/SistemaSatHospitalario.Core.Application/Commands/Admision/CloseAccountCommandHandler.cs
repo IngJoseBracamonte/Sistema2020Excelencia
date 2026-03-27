@@ -20,15 +20,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly ICajaAdministrativaRepository _cajaRepository;
+        private readonly IBillingRepository _billingRepository;
 
         public CloseAccountCommandHandler(
             IApplicationDbContext context, 
             ILegacyLabRepository legacyRepository,
-            ICajaAdministrativaRepository cajaRepository)
+            ICajaAdministrativaRepository cajaRepository,
+            IBillingRepository billingRepository)
         {
             _context = context;
             _legacyRepository = legacyRepository;
             _cajaRepository = cajaRepository;
+            _billingRepository = billingRepository;
         }
 
         public async Task<Guid> Handle(CloseAccountCommand request, CancellationToken cancellationToken)
@@ -61,31 +64,59 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             decimal totalCuenta = cuenta.CalcularTotal();
             decimal totalPagado = recibo.ObtenerTotalPagadoBase();
 
-            if (totalPagado < totalCuenta)
+            // 4. Finalizar Cuenta (V10.9 SQL Direct Fix)
+            // Usamos SQL Directo para puentear el Change Tracker de EF y evitar el error "Affected 0 rows"
+            using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+            try 
             {
-                var ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
-                _context.CuentasPorCobrar.Add(ar);
-            }
+                // 4.1 Validamos existencia física (AsNoTracking para frescura total)
+                var existe = await _context.CuentasServicios
+                    .AsNoTracking()
+                    .AnyAsync(c => c.Id == request.CuentaId && c.Estado == "Abierta", cancellationToken);
+                
+                if (!existe) throw new Exception("La cuenta no existe o ya fue procesada.");
 
-            // 3. Sincronizar con legado si hay Laboratorio
-            var itemsLab = cuenta.Detalles.Where(d => d.TipoServicio == "LABORATORIO" || d.TipoServicio == "Laboratorio").ToList();
-            if (itemsLab.Any())
+                // 4.2 Lógica de Negocio (AR y Legacy usando la cuenta original cargada al inicio)
+                if (totalPagado < totalCuenta)
+                {
+                    var ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
+                    _context.CuentasPorCobrar.Add(ar);
+                }
+
+                var itemsLab = cuenta.Detalles.Where(d => d.TipoServicio == "LABORATORIO" || d.TipoServicio == "Laboratorio").ToList();
+                if (itemsLab.Any())
+                {
+                    await ProcessLegacyOrder(cuenta, itemsLab, cancellationToken);
+                }
+
+                // 4.3 EJECUCIÓN NUCLEAR: Actualización Directa en DB vía Repositorio
+                // Previene DbUpdateConcurrencyException (V10.9 SQL Direct)
+                await _billingRepository.ForzarCierreCuentaAsync(request.CuentaId, DateTime.UtcNow, cancellationToken);
+
+                // 4.4 Persistimos los demás objetos (Recibo, AR)
+                _context.RecibosFactura.Add(recibo);
+                await _context.SaveChangesAsync(cancellationToken);
+                
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (Exception ex)
             {
-                await ProcessLegacyOrder(cuenta, itemsLab, cancellationToken);
+                await transaction.RollbackAsync(cancellationToken);
+                throw new Exception($"Error crítico en el cierre de cuenta (V10.9): {ex.Message}", ex);
             }
-
-            // 4. Finalizar Cuenta
-            cuenta.Facturar();
-            _context.RecibosFactura.Add(recibo);
-
-            await _context.SaveChangesAsync(cancellationToken);
 
             return recibo.Id;
         }
 
         private async Task ProcessLegacyOrder(CuentaServicios cuenta, List<DetalleServicioCuenta> items, CancellationToken cancellationToken)
         {
-            int idPersonaLegacy = cuenta.PacienteId;
+            // V11.0: Recuperamos el ID del legado desde la entidad maestra del paciente
+            var paciente = await _context.PacientesAdmision
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, cancellationToken);
+            
+            int idPersonaLegacy = paciente?.IdPacienteLegacy ?? 0;
+            if (idPersonaLegacy == 0) return; // No hay vínculo legacy
 
             var idsServicios = items.Select(i => i.ServicioId).Distinct().ToList();
             var serviciosInfo = await _context.ServiciosClinicos

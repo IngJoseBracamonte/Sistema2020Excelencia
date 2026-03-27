@@ -12,7 +12,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string NroControlFiscal { get; protected set; }
         public decimal TasaCambioDia { get; protected set; }
         public string EstadoFiscal { get; protected set; } // Borrador, Emitida, Anulada
-        public int PacienteId { get; protected set; }
+        public Guid PacienteId { get; protected set; }
         public string NumeroRecibo { get; protected set; }
         public decimal TotalFacturadoUSD { get; protected set; }
         public decimal TasaBcvUsada => TasaCambioDia;
@@ -27,7 +27,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected ReciboFactura() { }
 
-        public ReciboFactura(Guid cuentaServicioId, int pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = "Borrador")
+        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = "Borrador")
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;

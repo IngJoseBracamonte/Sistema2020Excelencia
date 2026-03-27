@@ -51,7 +51,7 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
             class="w-full text-left p-8 rounded-[2rem] border flex items-center space-x-5 transition-all hover:bg-white/5 group relative overflow-hidden">
             <div *ngIf="activeTab === 'convenios'" class="absolute inset-y-0 left-0 w-1 bg-emerald-500 rounded-full"></div>
             <lucide-icon [name]="icons.Shield" class="w-6 h-6 text-emerald-500"></lucide-icon>
-            <span class="font-black text-xs uppercase tracking-tight text-slate-300">Convenios CRUD</span>
+            <span class="font-black text-xs uppercase tracking-tight text-slate-300">Convenios</span>
           </button>
 
           <button 
@@ -99,16 +99,44 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
                 <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">RIF / Identificación</label>
                 <input type="text" [(ngModel)]="configData.rif" class="w-full bg-black/30 border border-white/10 p-6 rounded-2xl text-white font-black text-sm focus:border-rose-500 focus:ring-4 focus:ring-rose-500/5 transition-all outline-none uppercase">
               </div>
-              <div class="space-y-4">
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Tasa de Cambio Oficial</label>
-                <div class="relative">
-                   <input type="number" [(ngModel)]="nuevaTasa" class="w-full bg-black/30 border border-white/10 p-6 rounded-2xl text-white font-black text-sm focus:border-rose-500 transition-all outline-none">
-                   <span class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-600 font-black text-[10px] uppercase">BS / $</span>
-                </div>
-              </div>
+
               <div class="space-y-4">
                 <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">IVA Aplicable (%)</label>
                 <input type="number" [(ngModel)]="configData.iva" class="w-full bg-black/30 border border-white/10 p-6 rounded-2xl text-white font-black text-sm focus:border-rose-500 transition-all outline-none">
+              </div>
+
+              <!-- Tasa de Cambio (Angular Pro Card) -->
+              <div class="md:col-span-2 mt-8">
+                <div class="bg-gradient-to-br from-rose-500/5 to-transparent p-8 rounded-[3rem] border border-white/5 relative overflow-hidden group hover:border-rose-500/20 transition-all">
+                  <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl -z-10"></div>
+                  <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex items-center space-x-6">
+                      <div class="h-16 w-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center border border-rose-500/20 shadow-lg shadow-rose-500/5 transition-transform group-hover:scale-110">
+                        <lucide-icon [name]="icons.RefreshCw" class="w-8 h-8"></lucide-icon>
+                      </div>
+                      <div>
+                        <h3 class="text-xl font-black text-white uppercase tracking-tighter">Tasa de Cambio (BCV)</h3>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Sincronización Multidivisa Activa</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-6">
+                      <div class="text-right">
+                        <p class="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] mb-1">Precio actual</p>
+                        <p class="text-3xl font-black text-rose-500 font-mono tracking-tighter animate-pulse">Bs. {{ tasaActual() | number:'1.2-2' }}</p>
+                      </div>
+                      <div class="h-12 w-px bg-white/5 hidden md:block"></div>
+                      <div class="flex items-center space-x-4 bg-black/40 p-3 rounded-2xl border border-white/5">
+                        <input type="number" [(ngModel)]="tasaEditValue" (focus)="editandoTasa.set(true)"
+                          class="w-32 bg-transparent border-none text-white font-black text-xl font-mono text-center outline-none focus:text-rose-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                        <button (click)="saveTasa()" 
+                          class="bg-rose-500 hover:bg-rose-600 text-white h-12 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
+                          Actualizar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -225,7 +253,7 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
                            </span>
                         </div>
                         <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
-                           MÉDICO ID: <span class="text-blue-400">{{a.medicoId.substring(0,8)}}...</span> • 
+                           DR. <span class="text-blue-400">{{a.medicoNombre}} ({{a.medicoEspecialidad}})</span> • 
                            HORA: <span class="text-amber-500">{{a.horaPautada | date:'shortTime'}}</span>
                         </p>
                       </div>
@@ -404,7 +432,6 @@ export class SystemSettingsComponent implements OnInit {
 
   public activeTab = 'general';
   public configData: ConfiguracionGeneral = { nombreEmpresa: '', rif: '', iva: 16 };
-  public nuevaTasa = 36.50;
   public convenios = signal<SeguroConvenio[]>([]);
   public users = signal<UserDto[]>([]);
   public roles = signal<string[]>([]);
@@ -416,13 +443,18 @@ export class SystemSettingsComponent implements OnInit {
   public managingPricesConvenioId: number | null = null;
   public perfilPrices = signal<any[]>([]);
   public searchPerfilesQuery = '';
-  
+
   public newCHost: any = { nombre: '', rtn: '', direccion: '', telefono: '', email: '' };
   public newC = this.newCHost; // Proxy para evitar errores de tipo en template
   public newU: any = { username: '', email: '', password: '', roles: [] };
+  
+  // Tasa de Cambio (Angular Pro v2.5)
+  public tasaActual = signal<number>(0);
+  public tasaEditValue = signal<number>(0);
+  public editandoTasa = signal<boolean>(false);
 
   public filteredPrices = () => {
-    return this.perfilPrices().filter(p => 
+    return this.perfilPrices().filter(p =>
       p.nombrePerfil.toLowerCase().includes(this.searchPerfilesQuery.toLowerCase()) ||
       p.perfilId.toString().includes(this.searchPerfilesQuery)
     );
@@ -430,12 +462,22 @@ export class SystemSettingsComponent implements OnInit {
 
   public readonly icons = { Settings, Save, RefreshCw, Database, Users, Shield, Plus, Trash2, Edit, Clock, Calendar, Stethoscope };
 
-  ngOnInit() { 
-    this.loadData(); 
+  ngOnInit() {
+    this.loadData();
+    this.setupTasaSubscription();
     this.route.queryParams.subscribe(params => {
       if (params['tab']) {
         this.activeTab = params['tab'];
         if (this.activeTab === 'citas') this.loadAppointments();
+      }
+    });
+  }
+
+  private setupTasaSubscription() {
+    this.settingsService.tasa$.subscribe(monto => {
+      this.tasaActual.set(monto);
+      if (!this.editandoTasa()) {
+        this.tasaEditValue.set(monto);
       }
     });
   }
@@ -477,9 +519,23 @@ export class SystemSettingsComponent implements OnInit {
 
   saveGeneral() {
     this.settingsService.updateConfig(this.configData).subscribe(() => {
-      this.settingsService.updateTasa(this.nuevaTasa).subscribe(() => {
-        alert('Ajustes guardados Pachón Pro.');
-      });
+      alert('Ajustes generales guardados Pachón Pro.');
+    });
+  }
+
+  saveTasa() {
+    const nuevoMonto = this.tasaEditValue();
+    if (nuevoMonto <= 0) {
+      alert('La tasa debe ser mayor a 0');
+      return;
+    }
+
+    this.settingsService.updateTasa(nuevoMonto).subscribe({
+      next: () => {
+        this.editandoTasa.set(false);
+        // El SignalR actualizará tasaActual automáticamente
+      },
+      error: (err) => alert(err.error?.error || 'Error al actualizar tasa')
     });
   }
 
@@ -492,8 +548,8 @@ export class SystemSettingsComponent implements OnInit {
   }
 
   resetNewConvenio() {
-     this.newCHost = { nombre: '', rtn: '', direccion: '', telefono: '', email: '' };
-     this.newC = this.newCHost;
+    this.newCHost = { nombre: '', rtn: '', direccion: '', telefono: '', email: '' };
+    this.newC = this.newCHost;
   }
 
   saveUser() {
@@ -544,8 +600,8 @@ export class SystemSettingsComponent implements OnInit {
     };
 
     this.conveniosService.updatePrecio(cmd).subscribe(() => {
-       alert('Precio personalizado asignado Pachón Pro. 🏆');
-       this.loadPricesForConvenio(this.managingPricesConvenioId!);
+      alert('Precio personalizado asignado Pachón Pro. 🏆');
+      this.loadPricesForConvenio(this.managingPricesConvenioId!);
     });
   }
 }

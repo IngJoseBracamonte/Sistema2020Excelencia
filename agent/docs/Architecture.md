@@ -77,3 +77,4 @@ Para un análisis profundo sin re-análisis redundante, consulta los archivos es
 - **Core Logic**: `src/SistemaSatHospitalario.Core.Application/`
 - **Data Access**: `src/SistemaSatHospitalario.Infrastructure/Persistence/`
 - **Frontend Core**: `src/SistemaSatHospitalario.Frontend/src/app/core/`
+- **Billing Module**: `src/SistemaSatHospitalario.Frontend/src/app/features/admision/facturacion/` (Arquitectura Smart/Dumb V9.0)

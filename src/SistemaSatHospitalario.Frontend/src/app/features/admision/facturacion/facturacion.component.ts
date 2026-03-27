@@ -1,17 +1,29 @@
+import { ServiceCategory } from '../../../core/models/service-category.enum';
+import { AtmAmountDirective } from '../../../shared/directives/atm-amount.directive';
+import { CurrencyBsPipe } from '../../../shared/pipes/currency-bs.pipe';
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject, first, from, of, switchMap, firstValueFrom } from 'rxjs';
+import { concatMap, tap, catchError, finalize } from 'rxjs/operators';
 import { FacturacionService, DetallePagoDto, CargarServicioACuentaRequest, ReceiptPrintData } from '../../../core/services/facturacion.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppointmentsService, Doctor, ScheduleEntry } from '../../../core/services/appointments.service';
 import { SpecialtyService, Especialidad as Specialty } from '../../../core/services/specialty.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { CatalogItem } from '../../../core/models/priced-item.model';
+import { BillingFacadeService } from '../../../core/services/billing-facade.service';
+import { PatientSelectorComponent } from './components/patient-selector/patient-selector.component';
+import { ServiceCatalogComponent } from './components/service-catalog/service-catalog.component';
+import { BillingCartComponent } from './components/billing-cart/billing-cart.component';
+import { PaymentModuleComponent } from './components/payment-module/payment-module.component';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
 import { CajaService, DailyClosingReport } from '../../../core/services/caja.service';
 import { PrintService } from '../../../core/services/print.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { SettingsService } from '../../../core/services/settings.service';
+import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   LucideAngularModule,
   CreditCard,
@@ -34,14 +46,23 @@ import {
   Mail,
   Layout,
   ShieldAlert,
-  CalendarCheck
+  CalendarCheck,
+  Edit3
 } from 'lucide-angular';
-import { switchMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-facturacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule, 
+    CurrencyBsPipe, 
+    PatientSelectorComponent, 
+    ServiceCatalogComponent, 
+    BillingCartComponent, 
+    PaymentModuleComponent
+  ],
   templateUrl: './facturacion.component.html',
   styleUrl: './facturacion.component.css'
 })
@@ -67,7 +88,8 @@ export class FacturacionComponent {
     Mail,
     Layout,
     ShieldAlert,
-    CalendarCheck
+    CalendarCheck,
+    Edit3
   };
   private facturacionService = inject(FacturacionService);
   private authService = inject(AuthService);
@@ -75,72 +97,124 @@ export class FacturacionComponent {
   private specialtyService = inject(SpecialtyService);
   private catalogService = inject(CatalogService);
   private patientService = inject(PatientService);
+  private cajaService = inject(CajaService);
   private printService = inject(PrintService);
   private conveniosService = inject(ConveniosService);
+  private settingsService = inject(SettingsService);
+  public billingFacade = inject(BillingFacadeService);
 
-  // Estados de Usuario y Rol
-  // Estados de Usuario y Rol Normalizados (V2.5)
+  // --- Estados de Facturación y Usuario (Senior Design Patterns) ---
   public user = this.authService.currentUser;
   public isAdmin = computed(() => this.authService.isAdministrador());
   public isParticularAssistant = computed(() => this.authService.isParticularAssistant());
   public isInsuranceAssistant = computed(() => this.authService.isInsuranceAssistant());
+  
   public isRxAssistant = computed(() => {
     const role = this.user()?.role?.toLowerCase() || '';
     return (role === 'rx' || role === 'farmacia' || role === 'asistente rx') && !this.isAdmin();
   });
+
   public isHospitalAssistant = computed(() => {
     const role = this.user()?.role?.toLowerCase() || '';
     return role.includes('hospitalario') || this.isAdmin();
   });
+
   public isEmergencyAssistant = computed(() => {
     const role = this.user()?.role?.toLowerCase() || '';
     return role.includes('emergencia') || this.isAdmin();
   });
 
-  // Estados de Facturación
-  public pacienteId = signal<number | null>(null);
-  public pacienteSeleccionado = computed(() => !!this.pacienteId());
-  public cuentaId = signal<string | null>(null);
-  public tipoIngreso = signal<string>('Particular');
-  public convenioId = signal<number | null>(null); // Se unificó a ID numérico del Legacy
-  public tasaCambioDia = signal<number>(45.50);
-
-  // Mapeo de Especialidades para Búsqueda en Catálogo (Fase 30)
-  private specialtySearchMap: Record<string, string> = {
-    'Ginecologo': 'GINECO',
-    'Ginecólogo': 'GINECO',
-    'Ginecología': 'GINECO',
-    'Ginecologia': 'GINECO',
-    'Pediatra': 'PEDIAT',
-    'Pediatría': 'PEDIAT',
-    'Traumatologo': 'TRAUMA',
-    'Cardiologo': 'CARDIO',
-    'Medicina General': 'GENERAL',
-    'Obstetricia': 'OBSTETRI',
-    'Obstetrica': 'OBSTETRI',
-    'Obstétrica': 'OBSTETRI',
-    'Urologo': 'UROLO',
-    'Oftalmologo': 'OFTALMO'
-  };
-
-  public suggestedServiceId = signal<string | null>(null);
-
-  // Estado del Wizard (UX Improvement)
+  // --- Estados del Wizard (SSoT) ---
   public currentStep = signal<number>(1);
   public maxSteps = 3;
 
-  // Catálogos Reales (Sincronizados con Backend)
-  public especialidades = signal<string[]>([]);
+  // --- Estados de Cuenta y Carrito (Delegados al Facade V7.0) ---
+  public pacienteId = signal<number | null>(null);
+  public selectedPatientData = signal<PatientRecord | null>(null);
+  public pacienteSeleccionado = computed(() => !!this.pacienteId());
+  
+  public cuentaId = this.billingFacade.cuentaId;
+  public carritoLocal = this.billingFacade.carritoLocal;
+  public serviciosEnBackend = this.billingFacade.serviciosEnBackend;
+  public pagos = this.billingFacade.pagos;
+  public serviciosCargados = this.billingFacade.serviciosCargados;
+  public totalCargadoUSD = this.billingFacade.totalCargadoUSD;
+  public totalCargadoBS = this.billingFacade.totalCargadoBS;
+
+  public tipoIngreso = signal<string>('Particular');
+  public convenioId = signal<number | null>(null); 
+  public tasaCambioDia = this.billingFacade.tasaCambioDia;
+  public editandoTasa = signal<boolean>(false);
+  public tasaEditValue = signal<number>(0);
+
+  // --- Catálogos y Búsqueda (Delegados al Facade V7.0) ---
+  public especialidades = this.billingFacade.especialidades;
+  public medicosFiltrados = this.billingFacade.medicosFiltrados;
+  public serviciosFiltradosPorRol = this.billingFacade.serviciosFiltrados;
+  public searchTermServicio = this.billingFacade.searchTermServicio;
+  public selectedEspecialidad = this.billingFacade.selectedEspecialidad;
+  public selectedMedicoId = this.billingFacade.selectedMedicoId;
+  public suggestedServiceId = signal<string | null>(null);
   public convenios = signal<any[]>([]);
 
-  // Filtros UI y Signals Reactivos
-  public selectedEspecialidad = signal<string | null>(null);
+  constructor() {
+    // 1. Sincronización Real-time de Tasa via SignalR
+    this.settingsService.tasa$.pipe(takeUntilDestroyed()).subscribe(monto => {
+      this.tasaCambioDia.set(monto);
+    });
 
-  public medicosFiltrados = toSignal(
-    toObservable(this.selectedEspecialidad).pipe(
-      switchMap((esp: string | null) => esp ? this.appointmentsService.getDoctorsBySpecialty(esp) : of([] as Doctor[]))
-    ), { initialValue: [] as Doctor[] }
-  );
+    // 2. Cargar Tasa de Cambio Inicial desde Backend
+    this.settingsService.getTasa().pipe(takeUntilDestroyed()).subscribe({
+      next: (res) => this.tasaCambioDia.set(res.monto),
+      error: () => this.tasaCambioDia.set(36.5) // Fallback
+    });
+
+    // 4. Inicialización de Estados Seguros según Rol
+    if (this.isInsuranceAssistant()) {
+      this.tipoIngreso.set('Seguro');
+    } else if (this.isParticularAssistant()) {
+      this.tipoIngreso.set('Particular');
+    }
+
+    // 5. Cargar Especialidades Dinámicas
+    this.specialtyService.getAll().pipe(takeUntilDestroyed()).subscribe(res => {
+      this.billingFacade.especialidades.set(res.filter(e => e.activo).map(e => e.nombre));
+    });
+
+    // 6. Cargar Convenios Dinámicos (Pachón Pro)
+    this.conveniosService.getAll().pipe(takeUntilDestroyed()).subscribe((res: any[]) => {
+      this.convenios.set(res);
+    });
+
+    // 7. Cargar Catálogo Inicial
+    this.refreshCatalog();
+
+    // 8. Reaccionar a cambios en convenio para actualizar precios (Fase 39)
+    effect(() => {
+      const convId = this.convenioId();
+      this.refreshCatalog(convId);
+    });
+  }
+
+  // --- Handlers de Interfaz (Angular Pro) ---
+  onComentarioInput(event: Event, slot: ScheduleEntry) {
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      slot.comentario = input.value;
+    }
+  }
+
+  // Motor de Búsqueda Dinámica: Stemming de 4 caracteres (Pachón Pro V5.0)
+  private getSearchKey(text: string | null | undefined): string {
+    if (!text) return '';
+    return text.toUpperCase().substring(0, 4);
+  }
+
+
+
+
+  // Efectos de Negocio
+  // (Sin duplicados de señales)
 
   // Efecto para Auto-sugerir Servicio según Especialidad
   private _specialtyEffect = effect(() => {
@@ -150,9 +224,9 @@ export class FacturacionComponent {
       return;
     }
 
-    const searchTerm = this.specialtySearchMap[esp] || esp.toUpperCase();
-    const service = this.serviciosCatalogo().find(s =>
-      s.tipo.toUpperCase().includes('CONSULTA') &&
+    const searchTerm = this.getSearchKey(esp);
+    const service = this.billingFacade.servicesCatalog().find((s: CatalogItem) =>
+      s.categoryId === ServiceCategory.Consultation &&
       s.descripcion.toUpperCase().includes(searchTerm)
     );
 
@@ -161,7 +235,7 @@ export class FacturacionComponent {
       // Opcional: Si el usuario quiere "todo automático", podríamos hacer auto-scroll o pre-selección
     } else {
       // Fallback a General si no hay específico
-      const general = this.serviciosCatalogo().find(s => s.id === 'S001' || s.descripcion.includes('GENERAL'));
+      const general = this.billingFacade.servicesCatalog().find((s: CatalogItem) => s.id === 'S001' || s.descripcion.includes('GENERAL'));
       this.suggestedServiceId.set(general?.id || null);
     }
   });
@@ -189,7 +263,6 @@ export class FacturacionComponent {
     }
   });
 
-  public selectedMedicoId = signal<string | null>(null);
   public showScheduleModal = signal<boolean>(false);
   public scheduleLoading = signal<boolean>(false);
   public availableSlots = signal<ScheduleEntry[]>([]);
@@ -239,58 +312,6 @@ export class FacturacionComponent {
     return usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  // Catálogo Real Filtrado por Rol y Búsqueda (UX Improvement)
-  public serviciosCatalogo = signal<CatalogItem[]>([]);
-  public serviciosFiltradosPorRol = computed(() => {
-    const raw = this.serviciosCatalogo();
-    const roleFiltered = this.isAdmin() ? raw : (this.isRxAssistant() ? raw.filter(s => s.tipo === 'RX') : raw);
-
-    let filtered = roleFiltered;
-    const term = (this.searchTermServicio() || '').toLowerCase().trim();
-    const esp = this.selectedEspecialidad();
-
-    // 1. Aplicar filtro de Especialidad Inteligente (V2.3 Robustness)
-    if (!term && esp) {
-      // Intentar identificar la palabra clave base (ej: de "Ginecología y Obstetricia" -> "GINECO")
-      const normalizedEsp = esp.toUpperCase();
-      let searchKey = normalizedEsp;
-
-      const match = Object.entries(this.specialtySearchMap).find(([key, val]) =>
-        normalizedEsp.includes(key.toUpperCase())
-      );
-
-      if (match) {
-        searchKey = match[1].toUpperCase();
-      }
-
-      filtered = filtered.filter(s =>
-        s.descripcion.toUpperCase().includes(searchKey) ||
-        s.tipo.toUpperCase().includes(searchKey)
-      );
-    }
-
-    // 2. Aplicar búsqueda manual (Prioritario)
-    if (term) {
-      filtered = filtered.filter(s => {
-        const desc = (s.descripcion || '').toLowerCase();
-        const tipo = (s.tipo || '').toLowerCase();
-        return desc.includes(term) || tipo.includes(term);
-      });
-    }
-
-    return filtered;
-  });
-
-  // Carrito de Servicios (Servicios ya persistidos en la cuenta)
-  public serviciosEnBackend = signal<any[]>([]);
-  public carritoLocal = signal<any[]>([]);
-
-  // Vista unificada del Carrito
-  public serviciosCargados = computed(() => [...this.serviciosEnBackend(), ...this.carritoLocal()]);
-
-  // Array de Pagos
-  public pagos = signal<DetallePagoDto[]>([]);
-
   // Feedback UI (Sistema de Toasts Premium V2.5)
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
@@ -307,9 +328,6 @@ export class FacturacionComponent {
       }, 5000); // 5 segundos de permanencia
     }
   });
-
-  // States for Service Search (UX Improvement)
-  public searchTermServicio = signal<string>('');
 
   // States for Patient Search (Micro-Ciclo 9)
   public busquedaTermino = signal<string>('');
@@ -335,65 +353,12 @@ export class FacturacionComponent {
     codigoTelefono: '0212'
   };
 
-  // Nuevo Elemento Form (Pagos)
-  public currentPago = {
-    metodoPago: 'Punto de Venta Bs',
-    referenciaBancaria: '',
-    montoAbonadoMoneda: 0
-  };
-
-  public metodosDisponibles = ['Punto de Venta Bs', 'Pago Móvil', 'Efectivo Divisas', 'Zelle'];
-
   // Listas para Registro de Pacientes (Pachón Pro V2.9)
   public tiposCorreo = ['@gmail.com', '@hotmail.com', '@outlook.com', '@yahoo.com'];
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
   public codigosTelefono = ['0273', '0251', '0212', '0281', '0241'];
 
-  // Impuestos y Totales (Calculados reactivamente a la tasa)
-  public totalCargado = computed(() => {
-    const tasa = this.tasaCambioDia();
-    return this.serviciosCargados().reduce((acc: number, curr: any) => {
-      // Intentar calcular desde USD si existe, si no usar precio base
-      const usd = curr.precioUsd ?? curr.PrecioUsd ?? 0;
-      const priceBs = usd > 0 ? (usd * tasa) : (curr.precioBs ?? curr.PrecioBs ?? curr.precio);
-      return acc + priceBs;
-    }, 0);
-  });
-  public totalFacturadoBase = computed(() => this.pagos().reduce((acc: number, curr: DetallePagoDto) => acc + curr.equivalenteAbonadoBase, 0));
 
-  constructor() {
-    // Debug de Roles para el Usuario (Pachón Pro V2.5)
-    console.log("DEBUG [Pachón Pro]: Usuario Conectado:", this.user()?.username);
-    console.log("DEBUG [Pachón Pro]: Rol Detectado:", this.user()?.role);
-    console.log("DEBUG [Pachón Pro]: ¿Es Admin?:", this.isAdmin());
-    console.log("DEBUG [Pachón Pro]: ¿Es Asistente Seguro?:", this.isInsuranceAssistant());
-
-    // Inicialización de Estados Seguros según Rol
-    if (this.isInsuranceAssistant()) {
-      this.tipoIngreso.set('Seguro');
-    } else if (this.isParticularAssistant()) {
-      this.tipoIngreso.set('Particular');
-    }
-
-    // Cargar Especialidades Dinámicas
-    this.specialtyService.getAll().subscribe(res => {
-      this.especialidades.set(res.filter(e => e.activo).map(e => e.nombre));
-    });
-
-    // Cargar Convenios Dinámicos (Pachón Pro)
-    this.conveniosService.getAll().subscribe((res: any[]) => {
-      this.convenios.set(res);
-    });
-
-    // Cargar Catálogo Inicial
-    this.refreshCatalog();
-
-    // Reaccionar a cambios en convenio para actualizar precios
-    effect(() => {
-      const convId = this.convenioId();
-      this.refreshCatalog(convId);
-    });
-  }
 
   // Navegación del Wizard
   nextStep() {
@@ -450,63 +415,72 @@ export class FacturacionComponent {
   seleccionarPaciente(p: PatientRecord) {
     if (p.id) {
       this.pacienteId.set(p.id);
+      this.selectedPatientData.set(p);
       this.noResultsFound.set(false);
-
-      // Sincronizar Carrito Local al identificar al paciente
-      if (this.carritoLocal().length > 0) {
-        this.sincronizarCarrito();
-      }
     }
     this.showResultadosBusqueda.set(false);
     this.busquedaTermino.set(p.cedula);
     this.actionMessage.set(`Paciente seleccionado: ${p.nombre} ${p.apellidos}`);
   }
 
-  private sincronizarCarrito() {
-    const items = [...this.carritoLocal()];
-    this.carritoLocal.set([]); // Limpiar local temporalmente mientras se procesa
-    this.isLoading.set(true);
-
-    // Cargar cada item en el backend de forma secuencial o paralela según el servicio
-    items.forEach(s => {
-      this.procesarCargaBackend(s);
-    });
-  }
-
-  private procesarCargaBackend(s: CatalogItem) {
+  /**
+   * Sincroniza los items del carrito local con el backend (Facade Delegation V10.2)
+   */
+  private async sincronizarCarrito(): Promise<boolean> {
     const pId = this.pacienteId();
-    if (!pId) return;
+    if (!pId) return false;
 
-    const payload: CargarServicioACuentaRequest = {
-      pacienteId: pId,
-      tipoIngreso: this.tipoIngreso(),
-      convenioId: this.convenioId() || undefined,
-      servicioId: s.id,
-      descripcion: (s as any).descripcion || s.descripcion,
-      precio: s.precio,
-      cantidad: 1,
-      tipoServicio: s.tipo,
-      usuarioCarga: this.user()?.username || 'admin',
-      medicoId: (s as any).medicoId,
-      horaCita: (s as any).horaCita,
-      comentario: (s as any).comentario
-    };
+    this.isLoading.set(true);
+    try {
+      await firstValueFrom(this.billingFacade.syncCartWithBackend(
+        pId, 
+        this.tipoIngreso(), 
+        this.user()?.username || '', 
+        this.convenioId()
+      ));
+      this.isLoading.set(false);
+      return true;
+    } catch (err: any) {
+      this.errorMessage.set(err?.error?.error || "Error al sincronizar carrito con el servidor.");
+      this.isLoading.set(false);
+      return false;
+    }
+  }
 
-    this.facturacionService.cargarServicio(payload).subscribe({
-      next: (res: any) => {
-        this.cuentaId.set(res.cuentaId);
-        this.serviciosEnBackend.update(prev => [...prev, {
-          ...s,
-          precio: payload.precio,
-          precioBs: s.precioBs,
-          precioUsd: s.precioUsd,
-          medicoNombre: (s as any).medicoNombre
-        }]);
-        this.isLoading.set(false);
+  cambiarPaciente() {
+    if (this.cuentaId()) {
+      this.errorMessage.set('No puede cambiar el paciente después de iniciar la cuenta.');
+      return;
+    }
+    this.pacienteId.set(null);
+    this.selectedPatientData.set(null);
+    this.busquedaTermino.set('');
+    this.showResultadosBusqueda.set(false);
+    this.resultadosPacientes.set([]);
+    this.noResultsFound.set(false);
+  }
+
+  editarTasa() {
+    this.tasaEditValue.set(this.tasaCambioDia());
+    this.editandoTasa.set(true);
+  }
+
+  guardarTasa() {
+    const newTasa = this.tasaEditValue();
+    if (newTasa <= 0) {
+      this.errorMessage.set('La tasa debe ser mayor a 0.');
+      return;
+    }
+    this.settingsService.updateTasa(newTasa).subscribe({
+      next: () => {
+        this.tasaCambioDia.set(newTasa);
+        this.editandoTasa.set(false);
+        this.actionMessage.set(`Tasa actualizada a Bs. ${newTasa}`);
       },
-      error: () => this.isLoading.set(false)
+      error: () => this.errorMessage.set('Error al actualizar la tasa.')
     });
   }
+
 
   abrirRegistroPaciente() {
     const term = this.busquedaTermino();
@@ -550,14 +524,14 @@ export class FacturacionComponent {
     });
   }
 
-  private refreshCatalog(convenioId?: number | null) {
+  public refreshCatalog(convenioId?: number | null) {
     this.catalogService.getUnifiedCatalog(convenioId).subscribe({
       next: (items: CatalogItem[]) => {
-        this.serviciosCatalogo.set(items);
-
-        // Actualizar precios del carrito local si ya hay items y cambió el catálogo
+        this.billingFacade.servicesCatalog.set(items);
+        
+        // Sincronización de precios si hay items en carrito (Legacy Fix V2.1)
         if (this.carritoLocal().length > 0) {
-          this.carritoLocal.update(cart => cart.map(localItem => {
+          this.billingFacade.carritoLocal.update(cart => cart.map(localItem => {
             const updated = items.find(i => i.id === localItem.id);
             return updated ? { ...localItem, precio: updated.precio } : localItem;
           }));
@@ -622,7 +596,8 @@ export class FacturacionComponent {
 
     const payload = {
       medicoId: this.selectedMedicoId()!,
-      horaPautada: horaNormalizada
+      horaPautada: horaNormalizada,
+      comentario: (slot.comentario === 'Libre' || slot.comentario === 'Disponible') ? '' : slot.comentario
     };
 
     console.log("DEBUG: Intentando reservar turno:", payload);
@@ -649,10 +624,8 @@ export class FacturacionComponent {
   }
 
   bloquearHorario(slot: ScheduleEntry) {
-    if (!this.isAdmin()) return;
-
-    const motivo = prompt("Motivo del bloqueo administrativo:", "Reunión/Descanso");
-    if (!motivo) return;
+    const motivo = prompt("Motivo del bloqueo (Opcional):", slot.comentario === 'Libre' ? '' : slot.comentario);
+    if (motivo === null) return;
 
     this.isLoading.set(true);
     this.facturacionService.bloquearHorario({
@@ -674,18 +647,22 @@ export class FacturacionComponent {
 
   // Método para Filtrado Inverso (Servicio -> Especialidad)
   seleccionarTipoConsulta(s: CatalogItem) {
-    if (!s.tipo.toUpperCase().includes('CONSULTA')) return;
+    if (s.categoryId !== ServiceCategory.Consultation) return;
 
-    // Buscar si alguna especialidad coincide con la descripción (V2.0 Smart Match)
-    const match = Object.entries(this.specialtySearchMap).find(([key, val]) =>
-      s.descripcion.toUpperCase().includes(val) || s.tipo.toUpperCase().includes(val)
-    );
+    const serviceKey = this.getSearchKey(s.descripcion);
+    const tipoKey = this.getSearchKey(s.tipo);
+
+    // Detección Dinámica de Especialidad (Pachón Pro V5.0)
+    const match = this.especialidades().find(esp => {
+      const espKey = this.getSearchKey(esp);
+      return s.descripcion.toUpperCase().includes(espKey) || s.tipo.toUpperCase().includes(espKey);
+    });
 
     if (match) {
-      this.selectedEspecialidad.set(match[0]);
+      this.selectedEspecialidad.set(match);
       this.selectedMedicoId.set(null); // Reset para forzar selección
       this.isPendingConsultation.set(true); // Marcar como pendiente para auto-agenda (UX V3.5)
-      this.actionMessage.set(`Especialidad ${match[0]} detectada. Seleccione su médico.`);
+      this.actionMessage.set(`Especialidad ${match} detectada. Seleccione su médico.`);
 
       // Feedback visual y automatización de selección (V2.1)
       setTimeout(() => {
@@ -696,21 +673,18 @@ export class FacturacionComponent {
         const medicos = this.medicosFiltrados();
         if (medicos.length === 1) {
           this.selectedMedicoId.set(medicos[0].id);
-          this.actionMessage.set(`Especialidad ${match[0]} detectada. Médico sugerido: ${medicos[0].nombre}`);
+          this.actionMessage.set(`Especialidad ${match} detectada. Médico sugerido: ${medicos[0].nombre}`);
         }
       }, 300); // Un poco más de tiempo para que medicosFiltrados reaccione al cambio de especialidad
     }
   }
 
   cargarServicio(servId: string) {
-    const s = this.serviciosCatalogo().find(x => x.id === servId);
+    const s = this.billingFacade.servicesCatalog().find((x: CatalogItem) => x.id === servId);
     if (!s) return;
 
-    const esConsulta = s.tipo.toUpperCase().includes('CONSULTA') ||
-      s.tipo.toUpperCase().includes('MEDICO') ||
-      s.tipo.toUpperCase().includes('MÉDICO') ||
-      s.tipo.toUpperCase().includes('OBSTETRI') ||
-      s.tipo.toUpperCase().includes('GINECO');
+    // Abstracción Senior: Identificación por Categoría de Dominio (V5.2)
+    const esConsulta = s.categoryId === ServiceCategory.Consultation;
 
     // Validación estricta V3.0 (Micro-Ciclo 38): Consulta requiere Médico Y Turno Agendado
     if (esConsulta) {
@@ -777,7 +751,7 @@ export class FacturacionComponent {
       precio: s.precio,
       cantidad: 1,
       tipoServicio: s.tipo,
-      usuarioCarga: this.user()?.username || 'admin',
+      usuarioCarga: this.user()?.username || '',
       medicoId: esConsulta ? this.selectedMedicoId() || undefined : undefined,
       horaCita: fullHoraCita,
       comentario: this.comentarioCita() || undefined
@@ -808,56 +782,103 @@ export class FacturacionComponent {
     });
   }
 
-  agregarPago() {
-    if (this.currentPago.montoAbonadoMoneda <= 0) return;
-
-    let eqBase = 0;
-    const bsMethods = ['Punto de Venta Bs', 'Pago Móvil', 'Transferencia Bs'];
-    if (bsMethods.includes(this.currentPago.metodoPago)) {
-      eqBase = this.currentPago.montoAbonadoMoneda / this.tasaCambioDia();
-    } else {
-      eqBase = this.currentPago.montoAbonadoMoneda;
-    }
-
-    const nuevoPago: DetallePagoDto = {
-      metodoPago: this.currentPago.metodoPago,
-      referenciaBancaria: this.currentPago.referenciaBancaria || 'NA',
-      montoAbonadoMoneda: this.currentPago.montoAbonadoMoneda,
-      equivalenteAbonadoBase: parseFloat(eqBase.toFixed(2))
-    };
-
-    this.pagos.update((ps: DetallePagoDto[]) => [...ps, nuevoPago]);
-    this.currentPago = { metodoPago: 'Punto de Venta Bs', referenciaBancaria: '', montoAbonadoMoneda: 0 };
-  }
-
-  removerPago(index: number) {
-    this.pagos.update((ps: DetallePagoDto[]) => ps.filter((_, i) => i !== index));
-  }
 
 
-  procesarCobro() {
-    if (!this.cuentaId() || this.pagos().length === 0) {
-      this.errorMessage.set("No hay una cuenta activa o pagos registrados.");
+
+  async procesarCobro() {
+    if (!this.pacienteSeleccionado()) {
+      this.errorMessage.set("Debe identificar y seleccionar un beneficiario antes de emitir.");
       return;
     }
 
     this.isLoading.set(true);
+
+    // Si hay items locales, sincronizar primero antes de cerrar (V10.2 Timing Fix)
+    if (this.carritoLocal().length > 0) {
+      const synced = await this.sincronizarCarrito();
+      if (!synced) {
+        this.isLoading.set(false);
+        return; // Error ya manejado en sincronizarCarrito
+      }
+      // Delay Estratégico (V10.8 Force Robustness)
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (!this.cuentaId()) {
+      this.errorMessage.set("No hay una cuenta activa sincronizada.");
+      this.isLoading.set(false);
+      return;
+    }
+
     this.facturacionService.closeAccount({
       cuentaId: this.cuentaId()!,
-      usuarioCajero: this.user()?.username || 'admin',
+      usuarioCajero: this.user()?.username || '',
+      usuarioId: this.user()?.id || '',
       tasaCambio: this.tasaCambioDia(),
       pagos: this.pagos()
     }).subscribe({
       next: (res: any) => {
         this.actionMessage.set(`¡Facturación Exitosa! Recibo: ${res.reciboId}`);
 
-        this.imprimirRecibo(res.reciboId);
+        // Confirmación de Impresión No Intrínseca (Requerimiento Pro)
+        const deseaImprimir = confirm("¿Desea imprimir el comprobante de pago ahora?");
+        if (deseaImprimir) {
+          this.imprimirRecibo(res.reciboId);
+        }
 
         this.resetForm();
         this.isLoading.set(false);
       },
       error: (err: any) => {
         this.errorMessage.set(err.error?.error || "Error al procesar cobro.");
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  /**
+   * Strategy Pattern: Cierra la cuenta omitiendo deliberadamente la impresión.
+   * Ideal para casos donde el comprobante se entregó previamente o no es requerido.
+   */
+  async omitirComprobante() {
+    if (!this.pacienteSeleccionado()) {
+      this.errorMessage.set("⚠️ Debe seleccionar un paciente en el Paso 3 antes de cerrar la cuenta.");
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    // Si hay items locales, sincronizar primero antes de cerrar (V10.2 Timing Fix)
+    if (this.carritoLocal().length > 0) {
+      const synced = await this.sincronizarCarrito();
+      if (!synced) {
+        this.isLoading.set(false);
+        return; // Error ya manejado en sincronizarCarrito
+      }
+      // Delay Estratégico (V10.8 Force Robustness)
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (!this.cuentaId()) {
+      this.errorMessage.set("⚠️ No hay una cuenta activa en el servidor.");
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.facturacionService.closeAccount({
+      cuentaId: this.cuentaId()!,
+      usuarioCajero: this.user()?.username || '',
+      usuarioId: this.user()?.id || '',
+      tasaCambio: this.tasaCambioDia(),
+      pagos: this.pagos()
+    }).subscribe({
+      next: (res: any) => {
+        this.actionMessage.set(`Cuenta cerrada sin comprobante. Recibo: ${res.reciboId}`);
+        this.resetForm();
+        this.isLoading.set(false);
+      },
+      error: (err: any) => {
+        this.errorMessage.set(err.error?.error || "Error al cerrar cuenta.");
         this.isLoading.set(false);
       }
     });
@@ -874,35 +895,20 @@ export class FacturacionComponent {
   }
 
   quitarServicio(index: number) {
-    const servicios = this.serviciosCargados();
-    if (index < 0 || index >= servicios.length) return;
-
-    const item = servicios[index];
     const backendCount = this.serviciosEnBackend().length;
+    const isBackend = index < backendCount;
 
-    // Si el item está en el backend (ya persistido)
-    if (index < backendCount) {
-      const cId = this.cuentaId();
-      if (!cId || !item.detalleId) return;
-
-      this.isLoading.set(true);
-      this.facturacionService.quitarServicio(cId, item.detalleId, item.medicoId, item.hora).subscribe({
-        next: () => {
-          this.serviciosEnBackend.update(prev => prev.filter((_, i) => i !== index));
-          this.actionMessage.set("Servicio removido de la cuenta.");
-          this.isLoading.set(false);
-        },
-        error: (err: any) => {
-          this.errorMessage.set(err.error?.error || "Error al remover servicio.");
-          this.isLoading.set(false);
-        }
-      });
-    } else {
-      // Si el item está en el carrito local
-      const localIndex = index - backendCount;
-      this.carritoLocal.update(prev => prev.filter((_, i) => i !== localIndex));
-      this.actionMessage.set("Servicio removido del carrito temporal.");
-    }
+    this.isLoading.set(true);
+    this.billingFacade.removeService(index, isBackend).subscribe({
+      next: () => {
+        this.actionMessage.set("Servicio removido.");
+        this.isLoading.set(false);
+      },
+      error: (err: any) => {
+        this.errorMessage.set(err.error?.error || "Error al remover servicio.");
+        this.isLoading.set(false);
+      }
+    });
   }
 
   // Métodos de Gestión Administrativa (Fase 10)
@@ -970,5 +976,7 @@ export class FacturacionComponent {
     this.carritoLocal.set([]);
     this.cuentaId.set(null);
     this.pacienteId.set(null);
+    this.selectedPatientData.set(null);
+    this.currentStep.set(1);
   }
 }

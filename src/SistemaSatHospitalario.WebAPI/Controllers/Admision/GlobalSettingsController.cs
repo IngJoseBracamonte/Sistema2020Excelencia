@@ -10,12 +10,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
-    public class SettingsController : ControllerBase
+    [Route("api/global-settings")]
+    public class GlobalSettingsController : ControllerBase
     {
         private readonly IMediator _mediator;
 
-        public SettingsController(IMediator mediator)
+        public GlobalSettingsController(IMediator mediator)
         {
             _mediator = mediator;
         }
@@ -30,6 +30,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public async Task<IActionResult> UpdateConfig([FromBody] UpdateConfiguracionCommand command)
         {
             return Ok(await _mediator.Send(command));
+        }
+
+        [HttpGet("tasa")]
+        public async Task<IActionResult> GetTasa()
+        {
+            var tasa = await _mediator.Send(new GetTasaCambioQuery());
+            return Ok(new { monto = tasa });
         }
 
         [HttpPost("tasa")]

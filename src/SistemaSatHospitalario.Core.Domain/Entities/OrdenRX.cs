@@ -11,8 +11,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
 
         private OrdenRX() { }
 
-        // Se cambió pacienteId a int y convenioId a int? para paridad con Legacy
-        public OrdenRX(int numeroLlegada, int pacienteId, string nombrePaciente, string tipoIngreso, string estudioSolicitado, Guid asistenteId, int? convenioId = null) 
+        // Se cambió pacienteId a Guid para paridad con el nuevo sistema de identidad (V11.0 Sync Pro)
+        public OrdenRX(int numeroLlegada, Guid pacienteId, string nombrePaciente, string tipoIngreso, string estudioSolicitado, Guid asistenteId, int? convenioId = null) 
             : base(numeroLlegada, pacienteId, nombrePaciente, tipoIngreso, convenioId)
         {
             EstudioSolicitado = estudioSolicitado ?? throw new ArgumentNullException(nameof(estudioSolicitado));

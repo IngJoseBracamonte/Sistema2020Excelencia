@@ -21,6 +21,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<DoctorScheduleResponse> Handle(GetDoctorScheduleQuery request, CancellationToken cancellationToken)
         {
+            // V11.0 Identity Translation: Traducir ID Legacy a GUID si existe
+            Guid? internalPacienteId = null;
+            if (request.PacienteId.HasValue)
+            {
+                internalPacienteId = await _context.PacientesAdmision
+                    .Where(p => p.IdPacienteLegacy == request.PacienteId.Value)
+                    .Select(p => (Guid?)p.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+
             var response = new DoctorScheduleResponse
             {
                 MedicoId = request.MedicoId,
@@ -30,7 +40,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             // 1. Obtener citas existentes para ese doctor y día
             var citas = await _context.CitasMedicas
-                .Where(c => c.MedicoId == request.MedicoId && c.HoraPautada.Date == request.Fecha.Date && c.EstadoAtencion != "Cancelado")
+                .Where(c => c.MedicoId == request.MedicoId && c.HoraPautada.Date == request.Fecha.Date && c.Estado != "Cancelado")
                 .ToListAsync(cancellationToken);
 
             var reservas = await _context.ReservasTemporales
@@ -54,7 +64,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var bloqueoAdmin = bloqueos.FirstOrDefault(b => b.HoraPautada == current);
                 
                 // Determinamos si el slot pertenece al contexto actual (V4.8 Precision)
-                bool esCitaPropia = (request.PacienteId.HasValue && citaOcupada?.PacienteId == request.PacienteId.Value);
+                bool esCitaPropia = (internalPacienteId.HasValue && citaOcupada?.PacienteId == internalPacienteId.Value);
                                  
                 bool esReservaPropia = request.UsuarioId != null && reservaVigente?.UsuarioId == request.UsuarioId;
                 
@@ -76,7 +86,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }
                 else if (reservaVigente != null) 
                 {
-                    comentario = esReservaPropia ? "Tu reserva actual (Vigente)" : "En proceso de facturación...";
+                    comentario = esReservaPropia 
+                        ? (string.IsNullOrEmpty(reservaVigente.Comentario) ? "Tu reserva actual (Vigente)" : reservaVigente.Comentario) 
+                        : "En proceso de facturación...";
                     targetId = reservaVigente.Id;
                     type = "Reserva";
                 }

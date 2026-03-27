@@ -23,24 +23,20 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var today = request.Fecha.Date;
             var tomorrow = today.AddDays(1);
 
-            // 1. Obtener todas las cuentas creadas hoy por el usuario
-            var cuentasHoy = await _context.CuentasPorCobrar
-                .Where(c => c.FechaEmision >= today && c.FechaEmision < tomorrow)
-                // Nota: Idealmente filtrar por UserId si lo tenemos en la entidad
+            // V11.0: Cargamos los recibos emitidos hoy para el desglose financiero real
+            var recibosHoy = await _context.RecibosFactura
+                .Include(r => r.DetallesPago)
+                .Where(r => r.FechaEmision >= today && r.FechaEmision < tomorrow && r.EstadoFiscal != "Anulada")
                 .ToListAsync(cancellationToken);
 
-            // 2. Obtener todos los abonos procesados hoy
-            // (Asumiendo que los abonos estan dentro de las cuentas o en una tabla aparte)
-            // Por simplicidad en este MVP, agregamos los abonos que estan en memoria de las cuentas cargadas
-            
-            var allPayments = cuentasHoy.SelectMany(c => c.Abonos).ToList();
+            var allPayments = recibosHoy.SelectMany(r => r.DetallesPago).ToList();
 
             var summary = new DailyClosingDto
             {
                 Fecha = today,
-                Usuario = request.UserId ?? "Asistente",
-                TotalOrdenes = cuentasHoy.Count,
-                TotalVendidoUSD = cuentasHoy.Sum(c => c.TotalCargadoBase),
+                Usuario = request.UserId ?? "Cajero",
+                TotalOrdenes = recibosHoy.Count,
+                TotalVendidoUSD = recibosHoy.Sum(r => r.TotalFacturadoUSD),
                 TotalRecaudadoBase = allPayments.Sum(p => p.EquivalenteAbonadoBase),
                 DesgloseMetodos = allPayments
                     .GroupBy(p => p.MetodoPago)

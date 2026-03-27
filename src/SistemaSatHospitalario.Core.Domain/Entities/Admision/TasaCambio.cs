@@ -18,5 +18,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Monto = monto;
             Activo = true;
         }
+
+        public void Deactivate()
+        {
+            Activo = false;
+        }
     }
 }

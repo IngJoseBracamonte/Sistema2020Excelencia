@@ -1,4 +1,33 @@
-# 🔄 Arquitectura de Flujo de Datos (DataFlow.md)
+# 🔄 Flujo de Registro de Pacientes (V11.2)
+
+```mermaid
+sequenceDiagram
+    participant UI as Frontend (Facturación)
+    participant API as WebAPI Handler
+    participant DB as Local MySQL
+    participant EXT as Legacy Lab DB
+    
+    UI->>API: Buscar Paciente (Cedula)
+    API->>DB: Query Local GUID
+    alt Encontrado
+        DB-->>API: Paciente Guid Record
+    else No Encontrado
+        API->>EXT: Query Legacy Lab (Int ID)
+        alt Encontrado en Legacy
+            EXT-->>API: Data (Nombre, IdLegacy)
+            API->>DB: Crear STUB (Guid + IdLegacy)
+            DB-->>API: Nuevo Guid
+        else No existe en ningún sistema
+            API-->>UI: 404 - Requiere Registro Manual
+        end
+    end
+    API-->>UI: Map PacienteDto (InternalId = Guid)
+```
+
+1. **Local Lookup**: `_context.PacientesAdmision.FirstOrDefault(p => p.Cedula == input)`.
+2. **Legacy Lookup**: Si falla local, se consulta el `ILegacyLabRepository`.
+3. **Auto-Stubbing**: Si se encuentra en Legacy, se persiste localmente con un nuevo GUID y el `IdPacienteLegacy`.
+4. **Respuesta**: El sistema siempre devuelve un `Guid` como `InternalId` para el resto de la transacción.
 
 Este documento mapea la vida de la información a través del Sistema Sat Hospitalario, desde la interacción del usuario hasta la persistencia y observabilidad.
 
@@ -12,6 +41,13 @@ Este documento mapea la vida de la información a través del Sistema Sat Hospit
   - `IdentityDbContext` valida contra MySQL `mysql-identity`.
 - **Output**: `JwtAuthResult` con token y expiración.
 - **Side Effect**: Incrementar `auth.login_attempts` en el `Meter`.
+
+## 🧪 Verificaciones de Identidad (V11.2)
+- [x] **Primary Key Type**: `PacienteAdmision.Id` es `Guid`.
+- [x] **Foreign Key Parity**: Todas las tablas referenciales usan `Guid PacienteId`.
+- [x] **Legacy Index**: `IdPacienteLegacy` tiene un índice único en MySQL.
+- [x] **Computed Mapping**: Propiedades calculadas (ej. `SaldoPendienteBase`) han sido marcadas con `.Ignore()` en el `DbContext`.
+- [x] **Clean Migrations**: El historial de migraciones incluye `V11_ModernIdentity_AutoStub` con parches manuales de FKs.
 
 ### 2. Proceso de Admisión y Facturación (Wizard Flow)
 Este flujo es secuencial y debe respetarse para garantizar la integridad de los datos:

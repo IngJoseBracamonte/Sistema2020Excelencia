@@ -11,8 +11,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Dropping foreign keys and indexes that depend on SegurosConvenios.Id
-            /*migrationBuilder.DropForeignKey(
+            migrationBuilder.DropForeignKey(
                 name: "FK_PreciosServicioConvenio_SegurosConvenios_SeguroConvenioId",
                 table: "PreciosServicioConvenio");
 
@@ -22,11 +21,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropIndex(
                 name: "IX_ConvenioPerfilPrecios_SeguroConvenioId_PerfilId",
-                table: "ConvenioPerfilPrecios");*/
+                table: "ConvenioPerfilPrecios");
 
-            /*migrationBuilder.DropColumn(
+            migrationBuilder.DropColumn(
                 name: "PorcentajeCobertura",
-                table: "SegurosConvenios");*/
+                table: "SegurosConvenios");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Nombre",

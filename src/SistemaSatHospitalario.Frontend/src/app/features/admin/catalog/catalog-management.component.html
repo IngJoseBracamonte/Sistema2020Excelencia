@@ -115,7 +115,7 @@
                             <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Categoría</label>
                             <select [(ngModel)]="currentItem().tipo"
                                 class="w-full bg-black/20 border border-white/5 p-3.5 rounded-xl font-black focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-white text-xs appearance-none cursor-pointer">
-                                <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+                                <option *ngFor="let t of tipos" [value]="t" class="bg-surface-card text-white">{{ t }}</option>
                             </select>
                         </div>
                     </div>

@@ -20,6 +20,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
         public async Task<Guid> Handle(AgendarTurnoCommand request, CancellationToken cancellationToken)
         {
+            // 0. Asegurar Existencia Local del Paciente (V11.0 Sync Pro)
+            // Traducimos el ID de la base de datos vieja a la identidad GUID de la nueva
+            var paciente = await _context.PacientesAdmision.FirstOrDefaultAsync(
+                p => p.IdPacienteLegacy == request.PacienteId, cancellationToken);
+
+            if (paciente == null)
+            {
+                // Auto-Stub: Registro mínimo para integridad referencial
+                paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
+                _context.PacientesAdmision.Add(paciente);
+            }
+
             // Normalización para garantizar paridad con el sistema de Reservas y prevenir errores de índice único
             var targetHora = new DateTime(
                 request.FechaHoraToma.Year, request.FechaHoraToma.Month, request.FechaHoraToma.Day, 
@@ -30,7 +42,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var colisionCita = await _context.CitasMedicas
                 .AnyAsync(c => c.MedicoId == request.MedicoId 
                             && c.HoraPautada == targetHora 
-                            && c.EstadoAtencion != "Cancelado", 
+                            && c.Estado != "Cancelado", 
                             cancellationToken);
 
             var colisionBloqueo = await _context.BloqueosHorarios
@@ -51,10 +63,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands
                 _context.ReservasTemporales.RemoveRange(reservasAsociadas);
             }
 
-            // 2. Crear Cita Médica
+            // 2. Crear Cita Médica usando el GUID local
             var cita = new CitaMedica(
                 request.MedicoId,
-                request.PacienteId,
+                paciente.Id,
                 request.CuentaServicioId,
                 targetHora,
                 request.Comentario

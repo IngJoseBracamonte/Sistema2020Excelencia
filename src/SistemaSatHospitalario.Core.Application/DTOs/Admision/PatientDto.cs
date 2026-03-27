@@ -4,8 +4,12 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
 {
     public class PatientDto
     {
-        // Se añadió el Id numérico reflejando el IdPersona del legacy
+        // Se mantiene el Id numérico reflejando el IdPersona del legacy para compatibilidad frontend
         public int Id { get; set; }
+        
+        // Nueva identidad interna robusta (V11.0 Sync Pro)
+        public Guid InternalId { get; set; }
+        
         public string Cedula { get; set; }
         public string Nombre { get; set; }
         public string Apellidos { get; set; }

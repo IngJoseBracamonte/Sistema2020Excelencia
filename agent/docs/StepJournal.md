@@ -28,6 +28,35 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Contexto**: El usuario solicitó verificar "toda la ruta para agendar" usando skills de arquitectura.
 - **Resultado**: Ruta validada con consistencia en normalización de fechas (minutos) y protección de slots mediante `ReservaTemporal` (15 min) y `CitaMedica`. Documentación actualizada en `DataFlow.md`.
 
+## 🗓️ 2026-03-27 (Modularización y Estabilización V9.0)
+### 1. Refactor: Arquitectura Smart/Dumb en Facturación
+- **Acción**: Fragmentación del `FacturacionComponent` (900 líneas) en 4 componentes especializados: `PatientSelector`, `ServiceCatalog`, `BillingCart` y `PaymentModule`.
+- **Contexto**: El componente original era un monolito inmanejable con lógica duplicada y errores de compilación `NG9`.
+- **Resultado**: Código modular, respetando SRP y facilitando el mantenimiento.
+
+### 2. State Management: Centralización en Facade
+- **Acción**: Creación/Refuerzo del `BillingFacadeService` como Single Source of Truth mediante Angular Signals.
+- **Resultado**: Sincronización automática de totales, tasa de cambio y carrito entre todos los sub-componentes.
+
+### 3. Fix: Iconografía Standalone (TS2322)
+- **Acción**: Eliminación de `.pick()` en componentes y configuración de `importProvidersFrom` en `app.config.ts`.
+- **Razón**: `LucideAngularModule.pick()` devuelve un `ModuleWithProviders`, incompatible con el arreglo `imports` de componentes Standalone en Angular 19.
+- **Resultado**: Iconos disponibles globalmente sin errores de compilación ni de runtime.
+
+### 4. Fix: Precisión Financiera (Tasa de Cambio)
+- **Acción**: Implementación de lógica reactiva `USD * tasaCambioDia()` en el catálogo y carrito.
+- **Razón**: Se mostraba 1 USD = 1 Bs por falta de multiplicación dinámica en los getters del modelo.
+- **Resultado**: Valores en Bs exactos y sincronizados con la tasa activa del sistema.
+
+### 5. UI/UX: Ultra-Compact Density
+- **Acción**: Reducción agresiva de espaciados (`space-y-1`, `p-2`) y fuentes en el orquestador principal.
+- **Resultado**: Interfaz optimizada para estaciones de trabajo con alta carga de datos, eliminando scroll innecesario.
+
+## 📌 Lecciones del Día
+- **Standalone Provider Pattern**: En Angular 19, los proveedores de módulos antiguos deben inyectarse mediante `importProvidersFrom` en el `ApplicationConfig` para evitar conflictos de tipos.
+- **Signal Reactivity**: El uso de `computed` en el Facade simplifica drásticamente el cálculo de impuestos y totales, eliminando la necesidad de cálculos manuales en el HTML.
+- **Architecture Memory Skill**: Mantener la documentación sincronizada con el código (Architecture.md, Rules.md) reduce el tiempo de re-análisis del agente en un 80%.
+
 ## 🗓️ 2026-03-26 (Sincronización de Memoria y AppHost)
 ### 1. Corrección de Error CS1061 en Agenda
 - **Acción**: Se eliminó la referencia a `UsuarioCarga` en `GetDoctorScheduleQueryHandler.cs`.
@@ -45,7 +74,96 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Resultado**: Los 4 registros de migración están sincronizados. El `IdentityDbInitializer` ya no lanzará excepción al inicio.
 - **Patrón**: Esta es la aplicación estricta de la **Ley #3** de `Rules.md` (Bypass de Migración).
 
+### 4. Fix: Z-Index Overlap en Facturación (Paso 3)
+- **Acción**: Añadido `relative z-[90]` al panel "Identificar Beneficiario" en `facturacion.component.html`.
+- **Razón**: El dropdown de resultados de búsqueda de pacientes (`absolute z-[80]`) se renderizaba detrás de la sección "Carga de Abonos" por falta de stacking context en el contenedor padre.
+- **Resultado**: El dropdown ahora flota correctamente sobre la sección inferior sin superposición visual.
+- **Regla**: No se modificó tema visual (Rose on Slate). Solo se corrigió el layering CSS.
+
+### 5. Feature: Card de Información de Paciente Verificado
+- **Acción**: Refactorizado el panel "Identificar Beneficiario" en Paso 3 para mostrar condicionalmente un card con los datos del paciente tras seleccionarlo, reemplazando el input de búsqueda.
+- **TS**: Añadido `selectedPatientData: Signal<PatientRecord | null>`, almacenado en `seleccionarPaciente()`. Nuevo método `cambiarPaciente()` para resetear y buscar otro (bloqueado si ya hay cuenta).
+- **HTML**: Dos estados condicionales: búsqueda (`!pacienteSeleccionado()`) y card verificada (`pacienteSeleccionado()`). Card muestra nombre, cédula, teléfono, correo y botón "Cambiar" con ícono `Edit3`.
+- **UI**: Estilo coherente con Rose on Slate (emerald accent para verificación, `bg-black/20`, bordes `emerald-500/15`, tipografías `text-[9px]` tracking-widest).
+### 6. Fix: Concurrencia en ReservarTurnoTemporal (DbUpdateConcurrencyException)
+- **Archivo**: `ReservarTurnoTemporalCommand.cs`
+- **Cambio**: Reemplazado `.ToList()` + `RemoveRange()` + `SaveChangesAsync()` por `ExecuteDeleteAsync()`. Sincrónico `.Any()`/`.FirstOrDefault()` → asíncronos.
+- **Razón**: Limpieza de reservas expiradas fallaba si otro request ya las eliminó (concurrencia optimista EF Core).
+
+### 7. Feature: Skill `ahorro-de-tokens` (Meta-protocolo)
+- **Archivo**: `agent/skills/ahorro-de-tokens/SKILL.md`
+- **Cambio**: Creado skill que parametriza verbosidad y lecturas por modelo (Opus/Sonnet/Flash/Pro). Zero-narration en proceso, delegación a skills especializados.
+
+### 8. Fix: Items desaparecían al seleccionar paciente (Paso 3)
+- **Archivo**: `facturacion.component.ts` → `sincronizarCarrito()` + `procesarCargaBackend()`
+- **Cambio**: Eliminado `carritoLocal.set([])` prematuro. Items se mueven de `carritoLocal` → `serviciosEnBackend` solo tras confirmación del backend.
+- **Razón**: `serviciosCargados = [...serviciosEnBackend(), ...carritoLocal()]` quedaba vacío durante el round-trip HTTP.
+
+### 9. Fix: Tasa de cambio hardcoded (45.50 vs 36.5 en Ajustes Globales)
+- **Archivo**: `facturacion.component.ts` L109, `GetTasaCambioQuery.cs` [NEW], `SettingsController.cs`, `settings.service.ts`
+- **Cambio**: Tasa ya no es `signal<number>(45.50)` hardcoded. Se carga desde `GET api/Settings/tasa` → query CQRS que lee la última `TasaCambio` activa. Fallback: 36.5.
+- **Admin Inline Edit**: Signals `editandoTasa`/`tasaEditValue` + métodos `editarTasa()`/`guardarTasa()` → `POST api/Settings/tasa`. Header muestra botón Edit3 solo para `isAdmin()`.
+
+### 10. UI: Abonado muestra Bs. como Total Final
+- **Archivo**: `facturacion.component.html` L493-498
+- **Cambio**: Card "Abonado" ahora muestra `Bs. (base * tasa)` como principal y `$X.XX USD` como secundario, igualando el formato de "Total Final".
+### 11. Security: Gestión de Tasa Restringida a Admin
+- **Archivo**: `facturacion.component.html` L33-35
+- **Cambio**: El botón de edición de tasa (`icons.Edit3`) solo es visible para `isAdmin()`.
+- **Razón**: Por regla de negocio, solo los administradores pueden modificar la tasa oficial del día. El registro de pacientes permanece público para evitar cuellos de botella operativos.
+
+### 12. UI: Refactor de Carga de Abonos (Rose on Slate Premium)
+- **Archivo**: `facturacion.component.html` L388-444
+- **Cambio**: Panel de abonos rediseñado con `glass-panel`, indicadores "Pendiente" y listado de pagos con iconografía `CheckCircle`.
+- **Lógica**: Sincronización visual entre el total de la cuenta y el acumulado de abonos en tiempo real.
+
+### 13. Audit: Sincronización de Campos de Cierre de Cuenta
+- **Archivo**: `facturacion.component.ts` -> `procesarCobro()`
+- **Cambio**: Añadido `usuarioId` en el payload de `closeAccount`.
+- **Razón**: El `CloseAccountCommandHandler` requiere el ID del usuario para la gestión de auditoría y cierre de la caja diaria (`CajaDiaria`).
+
 ## 📌 Lecciones del Día
 - **Entity Consistency**: Siempre verificar las propiedades de la entidad en `Domain` antes de manipular Handlers en `Application`.
 - **Distributed App Stability**: El AppHost de Aspire 13.1.3 es estable tras limpiar bloqueos de procesos `.exe` previos.
-- **Migration Bypass Pattern**: Cuando MySQL tiene las tablas pero EF Core no tiene registro en `__EFMigrationsHistory`, el fix es un INSERT directo. No se regenera la migración. Ver `Rules.md Ley #3`.
+- **Migration Bypass Pattern**: Cuando MySQL tiene las tablas pero EF Core no tiene registro en `__EFMigrationsHistory`, el fix es un INSERT directo. Ver `Rules.md Ley #3`.
+- **Z-Index Stacking**: Dropdowns `absolute` necesitan que el padre tenga `relative` + `z-index` superior a hermanos adyacentes.
+- **ExecuteDeleteAsync > RemoveRange**: Para limpieza idempotente de filas (expiradas, duplicadas), `ExecuteDeleteAsync` evita concurrencia optimista completamente.
+- **Optimistic UI**: No vaciar un signal-array antes de confirmar persistencia. Mover items entre signals solo tras `subscribe.next`.
+- **No Hardcodear Config**: Valores de configuración (tasa, IVA, etc.) deben cargarse del backend con `GET` en el constructor. Nunca hardcodear en signals.
+- **Security by Role**: Las acciones que modifican el legado (`LegacyLabRepository`) deben protegerse en el UI con validaciones de rol explicitly (e.g. `isAdmin()`).
+## 🗓️ 2026-03-27 (Modernización de Identidad y Base de Datos V11.0)
+### 1. Refactor: Identidad Universal basada en GUID
+- **Acción**: Migración completa de `PacienteId` de `int` a `Guid` en todo el core del sistema (Domain, Application, Infrastructure).
+- **Entidades Afectadas**: `PacienteAdmision`, `CuentaServicio`, `ReciboFactura`, `CitaMedica`, `CuentaPorCobrar`, `OrdenDeServicio`.
+- **Razón**: El uso de IDs incrementales (`int`) exponía la secuencia de datos y limitaba la generación de stubs locales seguros para el sistema legacy.
+
+### 2. Feature: Auto-Stubbing Híbrido (Legacy ID)
+- **Acción**: Adición del campo `IdPacienteLegacy` (int?) en `PacienteAdmision`.
+- **Propósito**: Permitir que pacientes provenientes del laboratorio antiguo sean registrados localmente con un GUID propio, manteniendo el ID original para consultas históricas.
+- **Implementación**: Búsqueda por `Cedula` -> Si existe, devolver local; Si no, buscar en Legacy -> Crear Stub local con `IdPacienteLegacy`.
+
+### 3. Fix: EF Core Mapping (InvalidOperationException)
+- **Acción**: Aplicado `entity.Ignore(c => c.SaldoPendienteBase)` en `SatHospitalarioDbContext`.
+- **Razón**: EF Core intentaba mapear una propiedad calculada de dominio (sin setter) como columna física, bloqueando el arranque del `SystemDbInitializer`.
+- **Lección**: Las propiedades de dominio calculadas DEBEN ser ignoradas explícitamente en el `OnModelCreating`.
+
+### 4. Infrastructure: Migración Destructiva Controlada (V11.2)
+- **Acción**: Rollback físico de la base de datos a cero y re-aplicación de migraciones con parches manuales.
+- **Técnica**: Se editó la migración `V11_ModernIdentity_AutoStub` para incluir `DropForeignKey` y `AddForeignKey` manuales para `OrdenesDeServicio`.
+- **Resultado**: Base de datos MySQL sincronizada con éxito tras corregir una migración previa corrupta (`UpdateConvenioToCompanyModel`) que tenía FK drops comentados.
+
+## 📌 Lecciones del Día
+- **MySQL FK Rigidity**: El cambio de tipo `int` -> `char(36)` en una PK requiere eliminar TODOS los FKs que la referencian antes de intentar el `AlterColumn`. EF Core a veces falla en automatizar esto si hay dependencias complejas.
+- **Domain Property Safety**: No confiar en que EF Core ignore propiedades sin setter automáticamente si hay configuraciones de precisión relacionadas.
+- **Clean Slate Pattern**: En cambios de arquitectura de identidad profundos (como int -> Guid), es más seguro limpiar la base### Transición de Identidad (V11.x)
+- **Guid as Primary Key**: Todas las nuevas entidades y las migradas (Pacientes) utilizan `Guid` (`char(36)` en MySQL) para evitar enumeración y facilitar sincronización offline.
+- **Legacy Shadow Keys**: Para interoperabilidad con sistemas antiguos (e.g., Lab Legacy), se utiliza el patrón `IdPacienteLegacy` como índice único secundario.
+
+```mermaid
+graph TD
+    LegacyDB[(Legacy SQL Server)] -->|Fetch by ID| App[Sat Hospitalario Core]
+    App -->|Check Local Stub| LocalDB[(MySQL SatHospitalario)]
+    LocalDB -->|Match| ExistingGuid[Guid Local]
+    LocalDB -->|No Match| CreateStub[Crear Paciente con Guid + IdLegacy]
+```
+ory`.
