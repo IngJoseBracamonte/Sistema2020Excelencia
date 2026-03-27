@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -26,7 +27,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // V11.0: Cargamos los recibos emitidos hoy para el desglose financiero real
             var recibosHoy = await _context.RecibosFactura
                 .Include(r => r.DetallesPago)
-                .Where(r => r.FechaEmision >= today && r.FechaEmision < tomorrow && r.EstadoFiscal != "Anulada")
+                .Where(r => r.FechaEmision >= today && r.FechaEmision < tomorrow && r.EstadoFiscal != EstadoConstants.Anulada)
                 .ToListAsync(cancellationToken);
 
             var allPayments = recibosHoy.SelectMany(r => r.DetallesPago).ToList();
@@ -34,7 +35,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var summary = new DailyClosingDto
             {
                 Fecha = today,
-                Usuario = request.UserId ?? "Cajero",
+                Usuario = request.UserId ?? EstadoConstants.DefaultCajero,
                 TotalOrdenes = recibosHoy.Count,
                 TotalVendidoUSD = recibosHoy.Sum(r => r.TotalFacturadoUSD),
                 TotalRecaudadoBase = allPayments.Sum(p => p.EquivalenteAbonadoBase),

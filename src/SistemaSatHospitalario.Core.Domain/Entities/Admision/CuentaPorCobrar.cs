@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -26,12 +27,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoTotalBase = total;
             MontoPagadoBase = pagado;
             FechaCreacion = DateTime.UtcNow;
-            Estado = "Pendiente";
+            Estado = EstadoConstants.Pendiente;
         }
 
         public void MarcarComoCobrada()
         {
-            Estado = "Cobrada";
+            Estado = EstadoConstants.Cobrada;
             MontoPagadoBase = MontoTotalBase;
         }
     }

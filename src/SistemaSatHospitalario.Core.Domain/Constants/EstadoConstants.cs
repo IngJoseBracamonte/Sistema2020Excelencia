@@ -26,12 +26,50 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         // Tipos de Appointments / UI
         public const string TypeCita = "Cita";
         public const string TypeReserva = "Reserva";
+        public const string TypeBloqueo = "Bloqueo";
+
+        // UI Labels para Calendario / Turnos
+        public const string LabelLibre = "Libre";
+        public const string LabelTuCita = "Tu Cita (Agregada)";
+        public const string LabelOcupado = "Ocupado";
+        public const string LabelBloqueadoAdmin = "Bloqueado Administrativamente";
+        public const string LabelTuReserva = "Tu reserva actual (Vigente)";
+        public const string LabelEnProceso = "En proceso de facturación...";
+
+        public const string DefaultCajero = "Cajero";
+
+        // Acciones Administrativas
+        public const string ActionDelete = "Delete";
+        public const string ActionUpdate = "Update";
+
         public const string Reservado = "RESERVADO";
         public const string NoVinculado = "No Vinculado";
         public const string ReservaTemporal = "RESERVA TEMPORAL";
         public const string Desconocido = "Desconocido";
         public const string Laboratorio = "LABORATORIO";
         public const string PrefixLab = "LAB-";
+        public const string RX = "RX";
+
+        public static bool EsLaboratorio(string tipo)
+        {
+            if (string.IsNullOrWhiteSpace(tipo)) return false;
+            return tipo.Equals(Laboratorio, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Prefijos para Identificación de Consultas (Senior Recognition Pattern)
+        public static readonly string[] ConsultaPrefixes = { "CONS", "MEDI", "MÉDI", "OBST", "GINE" };
+
+        public static bool EsConsulta(string tipo)
+        {
+            if (string.IsNullOrWhiteSpace(tipo)) return false;
+            var t = tipo.ToUpper();
+            // Senior Logic: Match by first 4 characters or presence of prefix
+            foreach (var prefix in ConsultaPrefixes)
+            {
+                if (t.Contains(prefix)) return true;
+            }
+            return false;
+        }
 
         // Estados de Citas Médicas
         public const string Pendiente = "Pendiente";

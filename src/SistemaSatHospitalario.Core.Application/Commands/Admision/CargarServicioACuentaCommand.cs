@@ -5,6 +5,7 @@ using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
@@ -58,7 +59,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
 
             // 3. Procesar lógica específica de Consultas/Citas
-            bool esConsulta = EsTipoConsulta(request.TipoServicio);
+            bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio);
             if (esConsulta)
             {
                 await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
@@ -111,19 +112,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         private async Task NotificarSistemasExternosAsync(CargarServicioACuentaCommand request, CancellationToken ct)
         {
-            if (request.TipoServicio.Equals("RX", StringComparison.OrdinalIgnoreCase))
+            if (request.TipoServicio.Equals(EstadoConstants.RX, StringComparison.OrdinalIgnoreCase))
             {
                 await _externaService.EnviarOrdenRXAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
             }
             
             await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, ct);
-        }
-
-        private bool EsTipoConsulta(string tipo)
-        {
-            if (string.IsNullOrEmpty(tipo)) return false;
-            var t = tipo.ToUpper();
-            return t.Contains("CONSULTA") || t.Contains("MEDICO") || t.Contains("MÉDICO") || t.Contains("OBSTETRI") || t.Contains("GINECO");
         }
     }
 }

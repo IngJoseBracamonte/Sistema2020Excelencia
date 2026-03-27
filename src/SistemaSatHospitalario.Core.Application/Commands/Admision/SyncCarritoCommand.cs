@@ -16,6 +16,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -135,7 +136,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 foreach (var item in request.Items)
                 {
-                    if (EsTipoConsulta(item.TipoServicio) && item.MedicoId.HasValue && item.HoraCita.HasValue)
+                    if (EstadoConstants.EsConsulta(item.TipoServicio) && item.MedicoId.HasValue && item.HoraCita.HasValue)
                     {
                         _logger.LogInformation("[SYNC] Registrando cita médica - Medico: {MedicoId}, Hora: {Hora}", item.MedicoId, item.HoraCita);
                         await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
@@ -179,14 +180,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             var cita = new CitaMedica(item.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, item.Comentario);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
-        }
-
-        private bool EsTipoConsulta(string tipo)
-        {
-            if (string.IsNullOrEmpty(tipo)) return false;
-            var t = tipo.ToUpper();
-            return t.Contains("CONSULTA") || t.Contains("MEDICO") || t.Contains("MÉDICO") || 
-                   t.Contains("GINECO") || t.Contains("OBSTETRI");
         }
     }
 }

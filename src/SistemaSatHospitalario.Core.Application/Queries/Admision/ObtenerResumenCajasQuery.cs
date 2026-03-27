@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -40,7 +41,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         {
             // Buscamos todas las cajas abiertas actualmente (una por usuario/turno)
             var cajasAbiertas = await _context.CajasDiarias
-                .Where(c => c.Estado == "Abierta")
+                .Where(c => c.Estado == EstadoConstants.Abierta)
                 .ToListAsync(cancellationToken);
 
             // Obtenemos los montos recaudados por cada caja abierta sumando sus recibos
@@ -49,7 +50,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             foreach (var caja in cajasAbiertas)
             {
                 var recaudado = await _context.RecibosFactura
-                    .Where(r => r.CajaDiariaId == caja.Id && r.EstadoFiscal != "Anulada")
+                    .Where(r => r.CajaDiariaId == caja.Id && r.EstadoFiscal != EstadoConstants.Anulada)
                     .SelectMany(r => r.DetallesPago)
                     .SumAsync(p => p.EquivalenteAbonadoBase, cancellationToken);
 

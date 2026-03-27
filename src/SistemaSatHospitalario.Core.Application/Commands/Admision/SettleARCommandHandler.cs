@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -22,7 +23,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var ar = await _context.CuentasPorCobrar.FindAsync(new object[] { request.ARId }, cancellationToken);
 
             if (ar == null) throw new Exception("Cuenta por cobrar no encontrada.");
-            if (ar.Estado == "Cobrada") throw new Exception("Esta cuenta ya ha sido cobrada.");
+            if (ar.Estado == EstadoConstants.Cobrada) throw new Exception("Esta cuenta ya ha sido cobrada.");
 
             // Liquidar
             ar.MarcarComoCobrada();

@@ -30,24 +30,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
             if (paciente == null)
             {
-                // Auto-Stub: Registro de alta calidad (V11.8)
-                // Consultamos al legado para obtener datos reales antes de crear el stub local
+                // Consultamos al legado para obtener datos reales (V11.8)
                 var legacyResult = await _legacyRepository.GetPatientByIdAsync(request.PacienteId.ToString(), cancellationToken);
-                
+
                 if (legacyResult != null)
                 {
                     var fullName = $"{legacyResult.Nombre} {legacyResult.Apellidos}".Trim();
                     var mainPhone = !string.IsNullOrEmpty(legacyResult.Celular) ? legacyResult.Celular : legacyResult.Telefono;
                     
                     paciente = new PacienteAdmision(legacyResult.Cedula, fullName, mainPhone ?? "", legacyResult.IdPersona);
+                    _context.PacientesAdmision.Add(paciente);
+                    // No persistimos aún para permitir atomicidad con la Cita
                 }
                 else
                 {
-                    // Fallback de seguridad (solo si no existe en legado, aunque el ID provenga de una búsqueda)
-                    paciente = new PacienteAdmision("LEGACY", $"Paciente del Legado {request.PacienteId}", "", request.PacienteId);
+                    // Senior Identity Guard: No permitimos stubs de baja calidad (V11.8)
+                    throw new InvalidOperationException($"No se pudo resolver la identidad del paciente (Legacy ID: {request.PacienteId}). El registro original no existe en el sistema base.");
                 }
-
-                _context.PacientesAdmision.Add(paciente);
             }
 
             // Normalización para garantizar paridad con el sistema de Reservas y prevenir errores de índice único
@@ -60,7 +59,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var colisionCita = await _context.CitasMedicas
                 .AnyAsync(c => c.MedicoId == request.MedicoId 
                             && c.HoraPautada == targetHora 
-                            && c.Estado != "Cancelado", 
+                            && c.Estado != EstadoConstants.Cancelado, 
                             cancellationToken);
 
             var colisionBloqueo = await _context.BloqueosHorarios

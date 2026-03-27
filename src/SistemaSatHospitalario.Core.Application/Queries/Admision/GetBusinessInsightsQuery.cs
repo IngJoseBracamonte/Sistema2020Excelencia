@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Saldo Pendiente AR Total (Visible ahora gracias a corrección de "Admin" string)
                 response.SaldoPendienteAR = await _context.CuentasPorCobrar
                     .Where(ar => ar.Estado == EstadoConstants.Pendiente || ar.Estado == EstadoConstants.Parcial)
-                    .SumAsync(ar => ar.SaldoPendienteBase, cancellationToken);
+                    .SumAsync(ar => ar.MontoTotalBase - ar.MontoPagadoBase, cancellationToken);
 
                 // Ventas por Especialidad (Top 5 hoy)
                 response.VentasPorEspecialidad = await _context.CuentasServicios

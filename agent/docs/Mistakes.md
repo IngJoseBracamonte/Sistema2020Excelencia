@@ -49,10 +49,13 @@ Este documento registra los errores cometidos, problemas de diseño y fallos té
 - **Causa**: Hardcoding de roles en el backend (`Administrador`, `Asistente Rx`) que no coincidían con los roles sembrados (`Admin`, `Asistente RX`). La comparación `==` de C# es sensible a mayúsculas.
 - **Corrección**: Implementar `AuthorizationConstants` (Senior Pattern) y usar `StringComparison.OrdinalIgnoreCase`.
 - **Lección**: Centralizar siempre los roles en constantes de dominio y usar comparaciones proactivas e insensibles a mayúsculas para evitar bloqueos por strings "mágicos".
-52: 
-53: ### 8. Error de Traducción LINQ por Propiedad No Mapeada (Dashboard Error)
-54: - **Error**: Intentar filtrar `ReciboFactura` en el Dashboard usando la propiedad `Estado`.
-55: - **Impacto**: Excepción `System.InvalidOperationException` y error 500 en el frontend.
-56: - **Causa**: `Estado` era una propiedad calculada (get-only) sin setter, no mapeada en la DB. EF Core no puede traducir lógica de C# puro a SQL.
-57: - **Corrección**: Usar la propiedad persistida `EstadoFiscal` en la consulta y agregar un `Ignore()` explícito en el `DbContext` para cumplir con la Regla de Mapeo Seguro (Rule #9).
-58: - **Lección**: Nunca usar propiedades calculadas de dominio en expresiones `Where`/`Select` de `IQueryable`. Centralizar estados en `EstadoConstants` para evitar errores de tipeo o género ("Anulado" vs "Anulada").
+
+### 8. Error de Traducción LINQ por Propiedades No Mapeadas (Dashboard & AR)
+- **Error**: Intentar filtrar, proyectar o agregar (`Sum`, `Where`, `Select`) usando propiedades calculadas como `ReciboFactura.Estado` o `CuentaPorCobrar.SaldoPendienteBase`.
+- **Impacto**: Excepción `System.InvalidOperationException` y error 500.
+- **Causa**: Las propiedades que solo tienen `get` y no están mapeadas en el `DbContext` (o están marcadas con `.Ignore()`) no pueden ser traducidas a SQL por EF Core. 
+- **Corrección**: 
+  - Usar los miembros de persistencia subyacentes en la consulta (ej: `r.EstadoFiscal`).
+  - Para cálculos, escribir la expresión directamente en el LINQ (ej: `ar.MontoTotalBase - ar.MontoPagadoBase`).
+  - Asegurar que estas propiedades estén en `.Ignore()` en el `DbContext` (Rule #9).
+- **Lección**: La capa de `IQueryable` debe operar estrictamente sobre el esquema de base de datos. Si se necesita lógica compleja reutilizable en LINQ, usar `Expressions` o realizar el cálculo tras materializar con `ToListAsync()` (si el volumen de datos lo permite).

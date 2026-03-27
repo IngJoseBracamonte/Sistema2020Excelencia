@@ -7,6 +7,7 @@ using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -51,10 +52,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 2. Obtener Cuenta de Servicios
             var cuenta = await _billingRepository.ObtenerCuentaPorIdAsync(request.CuentaServicioId, cancellationToken);
             if (cuenta == null) throw new InvalidOperationException("La cuenta de servicio referenciada no existe.");
-            if (cuenta.Estado != "Abierta") throw new InvalidOperationException("La cuenta ya ha sido procesada.");
+            if (cuenta.Estado != EstadoConstants.Abierta) throw new InvalidOperationException("La cuenta ya ha sido procesada.");
 
             // 3. Crear Recibo
-            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, "Borrador");
+            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, EstadoConstants.Borrador);
 
             foreach (var pago in request.PagosMultidivisa)
             {

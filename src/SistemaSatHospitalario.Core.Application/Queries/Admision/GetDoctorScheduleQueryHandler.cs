@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -31,17 +32,25 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 Turnos = new List<ScheduleEntry>()
             };
 
-            // 1. Obtener citas existentes para ese doctor y día
+            // 1. Obtener citas, reservas y bloqueos para ese doctor y día (Rango optimizado V11.8)
+            var today = request.Fecha.Date;
+            var tomorrow = today.AddDays(1);
+
             var citas = await _context.CitasMedicas
-                .Where(c => c.MedicoId == request.MedicoId && c.HoraPautada.Date == request.Fecha.Date && c.Estado != "Cancelado")
+                .Where(c => c.MedicoId == request.MedicoId 
+                         && c.HoraPautada >= today && c.HoraPautada < tomorrow 
+                         && c.Estado != EstadoConstants.Cancelado)
                 .ToListAsync(cancellationToken);
 
             var reservas = await _context.ReservasTemporales
-                .Where(r => r.MedicoId == request.MedicoId && r.HoraPautada.Date == request.Fecha.Date && r.ExpiracionUtc > DateTime.UtcNow)
+                .Where(r => r.MedicoId == request.MedicoId 
+                         && r.HoraPautada >= today && r.HoraPautada < tomorrow 
+                         && r.ExpiracionUtc > DateTime.UtcNow)
                 .ToListAsync(cancellationToken);
 
             var bloqueos = await _context.BloqueosHorarios
-                .Where(b => b.MedicoId == request.MedicoId && b.HoraPautada.Date == request.Fecha.Date)
+                .Where(b => b.MedicoId == request.MedicoId 
+                         && b.HoraPautada >= today && b.HoraPautada < tomorrow)
                 .ToListAsync(cancellationToken);
 
             // Normalizar inicio a precisión estable (Micro-Ciclo 40 Optimization)
@@ -61,29 +70,29 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                  
                 bool esReservaPropia = request.UsuarioId != null && reservaVigente?.UsuarioId == request.UsuarioId;
                 
-                string comentario = "Libre";
+                string comentario = EstadoConstants.LabelLibre;
                 Guid? targetId = null;
                 string? type = null;
 
                 if (citaOcupada != null)
                 {
-                    comentario = esCitaPropia ? "Tu Cita (Agregada)" : (citaOcupada.Comentario ?? "Ocupado");
+                    comentario = esCitaPropia ? EstadoConstants.LabelTuCita : (citaOcupada.Comentario ?? EstadoConstants.LabelOcupado);
                     targetId = citaOcupada.Id;
-                    type = "Cita";
+                    type = EstadoConstants.TypeCita;
                 }
                 else if (bloqueoAdmin != null) 
                 {
-                    comentario = bloqueoAdmin.Motivo ?? "Bloqueado Administrativamente";
+                    comentario = bloqueoAdmin.Motivo ?? EstadoConstants.LabelBloqueadoAdmin;
                     targetId = bloqueoAdmin.Id;
-                    type = "Bloqueo";
+                    type = EstadoConstants.TypeBloqueo;
                 }
                 else if (reservaVigente != null) 
                 {
                     comentario = esReservaPropia 
-                        ? (string.IsNullOrEmpty(reservaVigente.Comentario) ? "Tu reserva actual (Vigente)" : reservaVigente.Comentario) 
-                        : "En proceso de facturación...";
+                        ? (string.IsNullOrEmpty(reservaVigente.Comentario) ? EstadoConstants.LabelTuReserva : reservaVigente.Comentario) 
+                        : EstadoConstants.LabelEnProceso;
                     targetId = reservaVigente.Id;
-                    type = "Reserva";
+                    type = EstadoConstants.TypeReserva;
                 }
 
                 response.Turnos.Add(new ScheduleEntry

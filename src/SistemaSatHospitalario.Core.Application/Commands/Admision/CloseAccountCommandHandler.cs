@@ -12,6 +12,7 @@ using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -41,7 +42,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .FirstOrDefaultAsync(c => c.Id == request.CuentaId, cancellationToken);
 
             if (cuenta == null) throw new Exception("Cuenta no encontrada.");
-            if (cuenta.Estado != "Abierta") throw new Exception("La cuenta ya ha sido procesada.");
+            if (cuenta.Estado != EstadoConstants.Abierta) throw new Exception("La cuenta ya ha sido procesada.");
 
             // 0. Gestión Automática de Caja (Micro-Ciclo 28)
             // Si el usuario no tiene una caja abierta, la abrimos automáticamente
@@ -72,7 +73,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // 4.1 Validamos existencia física (AsNoTracking para frescura total)
                 var existe = await _context.CuentasServicios
                     .AsNoTracking()
-                    .AnyAsync(c => c.Id == request.CuentaId && c.Estado == "Abierta", cancellationToken);
+                    .AnyAsync(c => c.Id == request.CuentaId && c.Estado == EstadoConstants.Abierta, cancellationToken);
                 
                 if (!existe) throw new Exception("La cuenta no existe o ya fue procesada.");
 
@@ -83,7 +84,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.CuentasPorCobrar.Add(ar);
                 }
 
-                var itemsLab = cuenta.Detalles.Where(d => d.TipoServicio == "LABORATORIO" || d.TipoServicio == "Laboratorio").ToList();
+                var itemsLab = cuenta.Detalles.Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio)).ToList();
                 if (itemsLab.Any())
                 {
                     await ProcessLegacyOrder(cuenta, itemsLab, cancellationToken);

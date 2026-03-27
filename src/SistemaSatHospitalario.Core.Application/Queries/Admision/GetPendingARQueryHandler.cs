@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -34,9 +35,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             PacienteNombre = pac.NombreCorto,
                             PacienteCedula = pac.CedulaPasaporte,
                             TipoIngreso = cta.TipoIngreso,
-                            SeguroNombre = conv != null ? conv.Nombre : "Particular",
+                            SeguroNombre = conv != null ? conv.Nombre : EstadoConstants.Particular,
                             MontoTotal = ar.MontoTotalBase,
-                            SaldoPendiente = ar.SaldoPendienteBase,
+                            SaldoPendiente = ar.MontoTotalBase - ar.MontoPagadoBase,
                             FechaEmision = ar.FechaCreacion,
                             Estado = ar.Estado
                         };
