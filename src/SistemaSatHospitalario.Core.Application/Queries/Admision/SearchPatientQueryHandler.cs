@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -35,19 +36,38 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 var legacyPatients = await _legacyRepository.SearchPatientsLimitedAsync(term, cancellationToken);
                 
-                // V11.0: Recuperamos mapeos existentes para vinculación inmediata
+                // V11.0: Recuperamos mapeos existents para vinculación inmediata
                 var legacyIds = legacyPatients.Select(p => p.IdPersona).ToList();
                 var nativeMappings = await _context.PacientesAdmision
                     .AsNoTracking()
                     .Where(p => p.IdPacienteLegacy.HasValue && legacyIds.Contains(p.IdPacienteLegacy.Value))
                     .ToDictionaryAsync(p => p.IdPacienteLegacy!.Value, p => p.Id, cancellationToken);
 
+                bool changes = false;
                 foreach (var p in legacyPatients)
                 {
+                    Guid nativeId = Guid.Empty;
+                    
+                    if (nativeMappings.ContainsKey(p.IdPersona))
+                    {
+                        nativeId = nativeMappings[p.IdPersona];
+                    }
+                    else 
+                    {
+                        // AUTOMATIC ONBOARDING (V11.8 Requirement)
+                        // Si no existe localmente, lo creamos de inmediato para garantizar consistencia GUID
+                        var fullName = $"{p.Nombre} {p.Apellidos}".Trim();
+                        var mainPhone = !string.IsNullOrEmpty(p.Celular) ? p.Celular : p.Telefono;
+                        
+                        var newNativePatient = new PacienteAdmision(p.Cedula, fullName, mainPhone ?? "", p.IdPersona);
+                        await _context.PacientesAdmision.AddAsync(newNativePatient, cancellationToken);
+                        nativeId = newNativePatient.Id;
+                        changes = true;
+                    }
+
                     results.Add(new PatientDto
                     {
-                        // Identidad Nativa (GUID) si existe, de lo contrario Guid.Empty (V11.1 Standard)
-                        Id = nativeMappings.ContainsKey(p.IdPersona) ? nativeMappings[p.IdPersona] : Guid.Empty,
+                        Id = nativeId,
                         IdPacienteLegacy = p.IdPersona,
                         Cedula = p.Cedula,
                         Nombre = p.Nombre,
@@ -58,6 +78,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Source = "Legacy",
                         EsLegacy = true
                     });
+                }
+
+                if (changes) {
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
             }
             catch (global::System.Exception ex)

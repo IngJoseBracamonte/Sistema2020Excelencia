@@ -32,7 +32,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
     public class ServicioCarritoDto
     {
-        public Guid ServicioId { get; set; }
+        public string ServicioId { get; set; } = string.Empty; // V11.9: Soporte String para IDs Legacy (Lab)
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
         public int Cantidad { get; set; } = 1;
@@ -142,15 +142,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
                     }
 
+                    // Resolución de Guid para Detalle (V11.9)
+                    // 4. Persistir el servicio con resolución de GUID (V11.9)
+                    if (!Guid.TryParse(item.ServicioId, out var serviceGuid))
+                    {
+                        serviceGuid = Guid.Empty;
+                    }
+
                     var detalle = cuenta.AgregarServicio(
-                        item.ServicioId, 
+                        serviceGuid, 
                         item.Descripcion, 
                         item.Precio, 
                         item.Cantidad, 
                         item.TipoServicio, 
                         request.UsuarioCarga);
                     
-                    detallesRes.Add(new DetalleSyncDto(item.ServicioId, detalle.Id));
+                    detallesRes.Add(new DetalleSyncDto(serviceGuid, detalle.Id));
                 }
 
                 _logger.LogInformation("[SYNC] Persistiendo cambios en base de datos para Cuenta: {CuentaId}", cuenta.Id);

@@ -23,6 +23,12 @@ export class SignalrService {
   constructor() { }
 
   public startConnection = (token: string) => {
+    // Evitar múltiples llamadas al inicializador (Senior Patterns V11.0)
+    if (this.hubConnection && this.hubConnection.state !== signalR.HubConnectionState.Disconnected) {
+      console.log(`[SIGNALR DEBUG] Ignorando inicio: Estado actual es ${this.hubConnection.state}`);
+      return;
+    }
+
     this.hubConnection = new signalR.HubConnectionBuilder()
       // URL de Kestrel para Hubs - Configurar el Access_Token factory para WS PWA
       .withUrl(`${environment.apiUrl.replace('/api', '')}/hub/dashboard`, {
@@ -36,8 +42,9 @@ export class SignalrService {
       .then(() => {
         this.connectionStatus.set('Conectado');
         this.addTicketUpdatesListener();
+        console.log('[SIGNALR DEBUG] Conexión establecida exitosamente.');
       })
-      .catch(err => console.log('Error estableciendo conexión PWA-SignalR: ' + err));
+      .catch(err => console.error('[SIGNALR DEBUG] Error estableciendo conexión: ' + err));
 
     this.hubConnection.onreconnecting(() => this.connectionStatus.set('Reconectando...'));
     this.hubConnection.onreconnected(() => this.connectionStatus.set('Conectado'));
@@ -45,6 +52,7 @@ export class SignalrService {
   }
 
   private addTicketUpdatesListener = () => {
+    this.incomingTickets.set([]); // Limpiar previas (Reset V2.5)
     this.hubConnection?.on('ReceiveTicketUpdate', (data: TicketUpdate) => {
       // Angular 19 Signals Update - Inmuatibilidad
       this.incomingTickets.update(tickets => [data, ...tickets]);
@@ -52,7 +60,13 @@ export class SignalrService {
   }
 
   public stopConnection = () => {
-    this.hubConnection?.stop();
-    this.connectionStatus.set('Desconectado');
+    if (this.hubConnection && this.hubConnection.state !== signalR.HubConnectionState.Disconnected) {
+      this.hubConnection.stop()
+        .then(() => {
+          this.connectionStatus.set('Desconectado');
+          console.log('[SIGNALR DEBUG] Conexión cerrada intencionalmente.');
+        })
+        .catch(err => console.error('[SIGNALR DEBUG] Error cerrando conexión: ' + err));
+    }
   }
 }

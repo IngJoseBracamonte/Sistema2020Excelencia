@@ -436,7 +436,8 @@ export class FacturacionComponent {
         pId, 
         this.tipoIngreso(), 
         this.user()?.username || '', 
-        this.convenioId()
+        this.convenioId(),
+        this.selectedPatientData()?.idPacienteLegacy
       ));
       this.isLoading.set(false);
       return true;

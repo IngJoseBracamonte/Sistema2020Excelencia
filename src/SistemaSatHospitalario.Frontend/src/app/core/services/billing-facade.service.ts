@@ -145,7 +145,7 @@ export class BillingFacadeService {
    /**
    * Sincroniza el carrito local con el backend mediante una única transacción atómica (V11.1 Guid)
    */
-  public syncCartWithBackend(pacienteId: string, tipoIngreso: string, usuarioCarga?: string, convenioId?: number | null): Observable<any> {
+  public syncCartWithBackend(pacienteId: string, tipoIngreso: string, usuarioCarga?: string, convenioId?: number | null, idPacienteLegacy?: number): Observable<any> {
     const items: any[] = [...this.carritoLocal()];
     if (items.length === 0) return of(null);
 
@@ -153,6 +153,7 @@ export class BillingFacadeService {
 
     const payload: SyncCarritoMasivoRequest = {
       pacienteId,
+      idPacienteLegacy,
       tipoIngreso,
       usuarioCarga: user,
       convenioId: convenioId || undefined,

@@ -17,7 +17,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string TipoIngreso { get; set; } = string.Empty; // Particular, Seguro, Hospitalizacion, Emergencia
         // Se mantiene int? para ConvenioId por ahora (referencia Legacy)
         public int? ConvenioId { get; set; }
-        public Guid ServicioId { get; set; }
+        public string ServicioId { get; set; } = string.Empty; // V11.9 Support
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
         public int Cantidad { get; set; }
@@ -65,9 +65,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
             }
 
-            // 4. Persistir el servicio
+            // 4. Persistir el servicio con resolución de GUID (V11.9)
+            if (!Guid.TryParse(request.ServicioId, out var serviceGuid))
+            {
+                serviceGuid = Guid.Empty;
+            }
+
             var detalle = cuenta.AgregarServicio(
-                request.ServicioId, 
+                serviceGuid, 
                 request.Descripcion, 
                 request.Precio, 
                 request.Cantidad, 

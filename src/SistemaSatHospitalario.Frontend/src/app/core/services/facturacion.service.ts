@@ -47,6 +47,7 @@ export interface BloquearHorarioRequest {
 
 export interface SyncCarritoMasivoRequest {
   pacienteId: string; // Identidad Nativa GUID (V11.1)
+  idPacienteLegacy?: number; // V11.8 Support
   tipoIngreso: string;
   convenioId?: number;
   usuarioCarga: string;
