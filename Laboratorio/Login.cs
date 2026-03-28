@@ -67,8 +67,7 @@ namespace Laboratorio
         }
         private void ActualizarSecuencia(object ob, EventArgs evt)
         {
-            if (LocalServer == "Laboratorio")
-            {
+ 
                 string Server;
                 esperar = false;
                 string combo = ServidoresCBox.Text;
@@ -76,19 +75,7 @@ namespace Laboratorio
                 Server = Task.Run(() =>
                  ConexionAlServer("Server")
                 ).Result;
-            }
-            else
-            {
-                LocalServer = "Veterinaria";
-                string Server;
-                esperar = false;
-                string combo = ServidoresCBox.Text;
-                Cursor.Current = Cursors.WaitCursor;
-                Server = Task.Run(() =>
-                 ConexionAlServer("Server")
-                ).Result;
-            }
-
+         
 
         }
         private void Form1_Load(object sender, EventArgs e)
