@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using System;
 using System.Linq;
 using System.Threading;
@@ -50,7 +51,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var citaExistente = await _context.CitasMedicas.AnyAsync(c => 
                 c.MedicoId == request.MedicoId && 
                 c.HoraPautada == targetHora && 
-                c.Estado != "Cancelado", cancellationToken);
+                c.Estado != EstadoConstants.Cancelado, cancellationToken);
 
             if (citaExistente) 
                 throw new InvalidOperationException("Ya existe una cita médica(En Espera/Atendida) en este horario exacto.");
@@ -79,7 +80,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             try 
             {
                 // 4. Crear nueva reserva
-                var nuevaReserva = new ReservaTemporal(request.MedicoId, targetHora, request.UsuarioId ?? "Anonimo", request.Comentario);
+                var nuevaReserva = new ReservaTemporal(request.MedicoId, targetHora, request.UsuarioId ?? EstadoConstants.DefaultCajero, request.Comentario);
                 _context.ReservasTemporales.Add(nuevaReserva);
 
                 await _context.SaveChangesAsync(cancellationToken);
