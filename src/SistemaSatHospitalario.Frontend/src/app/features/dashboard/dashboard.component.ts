@@ -5,6 +5,8 @@ import { SignalrService } from '../../core/services/signalr.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService, BusinessInsights } from '../../core/services/dashboard.service';
 import { CajaService, DailyClosingReport } from '../../core/services/caja.service';
+import { SettingsService } from '../../core/services/settings.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,8 +19,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public authService = inject(AuthService);
   public dashboardService = inject(DashboardService);
   public cajaService = inject(CajaService);
+  public settingsService = inject(SettingsService);
 
   private jwtToken = this.authService.getToken() || '';
+  private tasaSubscription?: Subscription;
 
   // Reactividad Directa
   public userName = computed(() => this.authService.currentUser()?.username || 'Usuario');
@@ -47,11 +51,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public closingReport = signal<DailyClosingReport | null>(null);
   public errorMessage = signal<string | null>(null);
 
+  // Currency Toggles (Bug-003 Refinement - Unified Version)
+  public displayUsdRecaudacion = signal<boolean>(false);
+  public displayUsdSaldo = signal<boolean>(false);
+  public animatingRecaudacion = signal<boolean>(false);
+  public animatingSaldo = signal<boolean>(false);
+  public tasa = signal<number>(0);
+
   ngOnInit(): void {
     if (this.jwtToken) {
       this.signalRService.startConnection(this.jwtToken);
     }
     this.refreshKPIs();
+    
+    // Sincronizar tasa en tiempo real
+    this.tasaSubscription = this.settingsService.tasa$.subscribe(val => {
+      this.tasa.set(val);
+    });
   }
 
   refreshKPIs() {
@@ -65,6 +81,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.isLoading.set(false);
       }
     });
+  }
+
+  toggleRecaudacion() {
+    if (this.animatingRecaudacion()) return;
+    this.animatingRecaudacion.set(true);
+    setTimeout(() => {
+      this.displayUsdRecaudacion.update(curr => !curr);
+    }, 300); // Mitad de la animacion de 600ms
+    setTimeout(() => {
+      this.animatingRecaudacion.set(false);
+    }, 600);
+  }
+
+  toggleSaldo() {
+    if (this.animatingSaldo()) return;
+    this.animatingSaldo.set(true);
+    setTimeout(() => {
+      this.displayUsdSaldo.update(curr => !curr);
+    }, 300); // Mitad de la animacion de 600ms
+    setTimeout(() => {
+      this.animatingSaldo.set(false);
+    }, 600);
   }
 
   generarCierreTurno() {
@@ -92,6 +130,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.signalRService) {
       this.signalRService.stopConnection();
+    }
+    if (this.tasaSubscription) {
+      this.tasaSubscription.unsubscribe();
     }
   }
 

@@ -23,11 +23,14 @@ builder.AddServiceDefaults();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+// Add CORS Policy for Angular Frontend
+var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(',') ?? new[] { "https://localhost:4200" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularPolicy", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true) // Permitir cualquier origen en Desarrollo para Aspire
+        policy.WithOrigins(allowedOrigins) 
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -43,7 +46,11 @@ builder.Services.AddScoped<SistemaSatHospitalario.Core.Application.Common.Interf
 
 // Add JWT Authentication
 var jwtSecret = builder.Configuration["JwtConfig:Secret"];
-var key = Encoding.ASCII.GetBytes(jwtSecret!);
+if (string.IsNullOrEmpty(jwtSecret))
+{
+    throw new InvalidOperationException("JWT Secret is not configured. Please check your environment variables or appsettings.");
+}
+var key = Encoding.ASCII.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -52,7 +59,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true; // Hardened for security
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -61,7 +68,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JwtConfig:Audience"]
+        ValidAudience = builder.Configuration["JwtConfig:Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
     };
 });
 builder.Services.AddAuthorization();

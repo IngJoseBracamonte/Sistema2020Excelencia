@@ -10,7 +10,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Username { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
-        public string Role { get; set; }
+        public List<string> Roles { get; set; }
     }
 
     public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, bool>
@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<bool> Handle(CreateUserCommand request, CancellationToken cancellationToken)
         {
-            return await _identityService.CreateUserAsync(request.Username, request.Email, request.Password, request.Role);
+            return await _identityService.CreateUserAsync(request.Username, request.Email, request.Password, request.Roles);
         }
     }
 }

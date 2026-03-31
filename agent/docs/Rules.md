@@ -13,6 +13,11 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 9. **Mapeo Seguro en DbContext**: Propiedades calculadas en el dominio (sin setters) DEBEN ignorarse explícitamente en el `DbContext` con `.Ignore()`.
 10. **Fiscal Nullability (MD-004)**: El campo `NroControlFiscal` debe ser nullable (`string?`) para permitir estados de presolicitud/borrador sin número de serie fiscal.
 11. **No-Tracking for Master Data**: Al consultar entidades maestras (Médicos, Cajas) solo para obtener IDs de referencia en comandos, usar `.AsNoTracking()` para evitar inserciones duplicadas por tracking de navegación.
+12. **Snapshot Pinning (Legacy Migrations)**: Para añadir modificaciones de esquema a DBs heredadas (Legacy) trackeadas en EF Core, NUNCA ejecutar migraciones que recreen o toquen tablas existentes. Se debe generar la primera migración `InitialCreate`, vaciar sus métodos `Up()` y `Down()`, y luego aplicar la migración deseada con el delta exacto (ej. `ALTER TABLE`).
+13. **Concurrency DB Locking**: Para números secuenciales atómicos en sistemas Legacy concurrentes (ej. `NumeroDia`), NO usar LINQ ni Entity Framework. Es mandatorio inyectar un query de bajo nivel con Dapper usando candado transaccional SQL: `SELECT COUNT(...) FOR UPDATE`.
+14. **Multi-Currency AR Settlement**: Las liquidaciones de cuentas por cobrar (Receivables) DEBEN soportar conversión automática. TODO monto de base en la base de datos se guarda en USD ($). El payload enviado al backend debe contener el equivalente en USD como monto principal.
+15. **Monetary Precision (Bs. 2-Decimal)**: Todos los cálculos financieros que resulten en Bolívares (Bs.) DEBEN redondearse a exactamente 2 decimales. En conversiones (ej. de Bs a USD), se debe mantener la precisión máxima en USD pero el monto origen en Bs debe ser estrictamente de 2 decimales.
+16. **Master Currency (USD Balance)**: El sistema opera bajo una arquitectura **USD-First**. El saldo de las Cuentas por Cobrar (AR) y Abonos se gestiona y persiste principalmente en USD ($). El equivalente en Bs. es una capa de visualización/proyección volátil basada en la tasa de cambio activa.
 
 ## 💻 Patrones de Código (Engineering Patterns)
 ### Backend (WebAPI / Core)

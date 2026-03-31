@@ -32,7 +32,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var horaCita = DateTime.Today.AddHours(10);
             var pacienteId = Guid.NewGuid();
 
-            var cuenta = new CuentaServicios(pacienteId, "Particular");
+            var cuenta = new CuentaServicios(pacienteId, "Admin", "Particular");
             // Usamos reflection para setear el ID o simplemente confiamos en el flujo
             // En una prueba real, podriamos necesitar un Factory o setear el ID via reflection si es privado
             
@@ -66,7 +66,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Arrange
             var cuentaId = Guid.NewGuid();
             var pacienteId = Guid.NewGuid();
-            var cuenta = new CuentaServicios(pacienteId, "Particular");
+            var cuenta = new CuentaServicios(pacienteId, "Admin", "Particular");
             var detalle = cuenta.AgregarServicio(Guid.NewGuid(), "Examen RX", 50, 1, "RX", "Admin");
 
             _repositoryMock.Setup(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()))

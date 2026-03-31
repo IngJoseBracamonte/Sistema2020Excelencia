@@ -49,8 +49,8 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
             httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await httpContext.Response.WriteAsJsonAsync(new 
             { 
-                error = "Ha ocurrido un error inesperado en el sistema.",
-                details = exception.Message
+                error = "Ha ocurrido un error inesperado en el sistema interno.",
+                ticketId = "Verifique sus notificaciones o contacte a soporte si persiste."
             }, cancellationToken);
 
             return true;

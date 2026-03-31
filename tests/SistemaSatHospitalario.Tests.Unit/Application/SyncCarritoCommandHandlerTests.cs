@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using SistemaSatHospitalario.Tests.Unit.Common;
+using SistemaSatHospitalario.Tests.Unit.Common.Builders;
+using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
@@ -19,6 +22,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
     {
         private readonly Mock<IBillingRepository> _repositoryMock;
         private readonly Mock<IApplicationDbContext> _contextMock;
+        private readonly Mock<ILegacyLabRepository> _legacyRepositoryMock;
         private readonly Mock<ILogger<SyncCarritoCommandHandler>> _loggerMock;
         private readonly SyncCarritoCommandHandler _handler;
 
@@ -26,8 +30,9 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         {
             _repositoryMock = new Mock<IBillingRepository>();
             _contextMock = new Mock<IApplicationDbContext>();
+            _legacyRepositoryMock = new Mock<ILegacyLabRepository>();
             _loggerMock = new Mock<ILogger<SyncCarritoCommandHandler>>();
-            _handler = new SyncCarritoCommandHandler(_repositoryMock.Object, _contextMock.Object, _loggerMock.Object);
+            _handler = new SyncCarritoCommandHandler(_repositoryMock.Object, _contextMock.Object, _legacyRepositoryMock.Object, _loggerMock.Object);
         }
 
         [Fact]
@@ -38,13 +43,24 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             
             // Simular DBSet vacío o que no contiene al paciente
             // Nota: En un entorno real de Moq + EF Core usaríamos un MockDbSet, 
-            // aquí simplificamos la lógica para validar el cambio de flujo.
+            // Setup Mocks usando el helper TestAsyncEnumerable para soportar querys asíncronas
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234") { Id = pacienteId };
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable();
+            var mockPacienteSet = new Mock<DbSet<PacienteAdmision>>();
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<PacienteAdmision>(pacienteSet.Provider));
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Expression).Returns(pacienteSet.Expression);
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.ElementType).Returns(pacienteSet.ElementType);
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.GetEnumerator()).Returns(pacienteSet.GetEnumerator());
+            mockPacienteSet.As<IAsyncEnumerable<PacienteAdmision>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
+                .Returns(new TestAsyncEnumerator<PacienteAdmision>(pacienteSet.GetEnumerator()));
+            
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(mockPacienteSet.Object);
 
             var command = new SyncCarritoCommand
             {
                 PacienteId = pacienteId,
                 UsuarioCarga = "TestUser",
-                Items = new List<ServicioCarritoDto> { new ServicioCarritoDto { ServicioId = Guid.NewGuid(), Precio = 10 } }
+                Items = new List<ServicioCarritoDto> { new ServicioCarritoDto { ServicioId = Guid.NewGuid().ToString(), Precio = 10, TipoServicio = "Medico" } }
             };
 
             // Act & Assert

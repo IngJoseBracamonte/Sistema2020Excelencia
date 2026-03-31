@@ -32,46 +32,65 @@
     <!-- 1. DASHBOARD ADMINISTRADOR (VISTA COMPLETA)   -->
     <!-- ============================================ -->
     <ng-container *ngIf="isAdmin()">
-        <!-- KPIs Admin -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up">
-            <div class="bg-surface-card p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-primary/5 transition-all">
+        <!-- KPIs Admin (Stabilized Grid) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up kpi-grid-container">
+            <!-- Card: Recaudación Neta Hoy (Unified Coin Spin) -->
+            <div class="kpi-card bg-surface-card p-6 md:p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-emerald-500/5 transition-all cursor-pointer relative overflow-hidden" 
+                 [class.animate-coin-spin]="animatingRecaudacion()" 
+                 (click)="toggleRecaudacion()">
                 <div class="flex items-center justify-between mb-4">
-                    <div class="h-12 w-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                    <div class="h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center transition-all bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white"
+                         [ngClass]="displayUsdRecaudacion() ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : ''">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
+                    <span *ngIf="!displayUsdRecaudacion()" class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic group-hover:text-emerald-400 transition-colors">Ver en $</span>
+                    <span *ngIf="displayUsdRecaudacion()" class="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic animate-bounce">$ USD</span>
                 </div>
-                <p class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Recaudación Neta Hoy</p>
-                <h3 class="text-3xl font-black text-main">${{ insights()?.totalVentasHoy | number:'1.2-2' }}</h3>
+                <p class="text-[10px] font-black uppercase tracking-widest mb-1 text-muted">
+                    {{ displayUsdRecaudacion() ? 'Equivalente en Dólares' : 'Recaudación Neta Hoy' }}
+                </p>
+                <h3 *ngIf="!displayUsdRecaudacion()" class="text-xl md:text-2xl font-black text-main animate-fade-in tracking-tighter">Bs. {{ (insights()?.totalVentasHoy || 0) * (tasa() || 1) | number:'1.2-2' }}</h3>
+                <h3 *ngIf="displayUsdRecaudacion()" class="text-xl md:text-2xl font-black text-emerald-400 animate-fade-in tracking-tighter">$ {{ (insights()?.totalVentasHoy || 0) | number:'1.2-2' }}</h3>
             </div>
 
-            <div class="bg-surface-card p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-blue-500/5 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="h-12 w-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
+        <div class="kpi-card bg-surface-card p-6 md:p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-blue-500/5 transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <div class="h-10 w-10 md:h-12 md:w-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                 </div>
                 <p class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Pacientes Atendidos</p>
-                <h3 class="text-3xl font-black text-main">{{ insights()?.pacientesAtendidosHoy }}</h3>
+                <h3 class="text-2xl md:text-3xl font-black text-main">{{ insights()?.pacientesAtendidosHoy }}</h3>
             </div>
 
-            <div class="bg-surface-card p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-rose-500/5 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="h-12 w-12 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition-all">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                    </div>
+        <!-- Card: Saldo AR Pendiente (Unified Coin Spin) -->
+        <div class="kpi-card bg-surface-card p-6 md:p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-rose-500/5 transition-all cursor-pointer relative overflow-hidden" 
+             [class.animate-coin-spin]="animatingSaldo()" 
+             (click)="toggleSaldo()">
+            <div class="flex items-center justify-between mb-4">
+                <div class="h-10 w-10 md:h-12 md:w-12 rounded-2xl flex items-center justify-center transition-all bg-rose-500/10 text-rose-400 group-hover:bg-rose-500 group-hover:text-white"
+                     [ngClass]="displayUsdSaldo() ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : ''">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                 </div>
-                <p class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Saldo AR Pendiente</p>
-                <h3 class="text-3xl font-black text-main">${{ insights()?.saldoPendienteAR | number:'1.2-2' }}</h3>
+                <span *ngIf="!displayUsdSaldo()" class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic group-hover:text-rose-400 transition-colors">Ver en $</span>
+                <span *ngIf="displayUsdSaldo()" class="text-[8px] font-black text-rose-400 uppercase tracking-widest italic animate-bounce">$ USD</span>
             </div>
+            <p class="text-[10px] font-black uppercase tracking-widest mb-1 text-muted">
+                {{ displayUsdSaldo() ? 'Cuentas por Cobrar ($)' : 'Saldo AR Pendiente' }}
+            </p>
+                    <p class="text-xl md:text-2xl font-black font-mono tracking-tighter animate-fade-in" [ngClass]="displayUsdSaldo() ? 'text-rose-400' : 'text-main'">
+                        {{ displayUsdSaldo() ? '$' : 'Bs.' }} {{ (displayUsdSaldo() ? (insights()?.saldoPendienteAR || 0) : (insights()?.saldoPendienteAR || 0) * (tasa() || 1)) | number:'1.2-2' }}
+                    </p>
+        </div>
 
-            <div class="bg-surface-card p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-amber-500/5 transition-all">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="h-12 w-12 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <div class="kpi-card bg-surface-card p-6 md:p-8 rounded-[2rem] shadow-sm border border-glass-border group hover:shadow-2xl hover:shadow-amber-500/5 transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <div class="h-10 w-10 md:h-12 md:w-12 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                 </div>
                 <p class="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Citas para Hoy</p>
-                <h3 class="text-3xl font-black text-main">{{ insights()?.turnosPautadosHoy }}</h3>
+                <h3 class="text-2xl md:text-3xl font-black text-main">{{ insights()?.turnosPautadosHoy }}</h3>
             </div>
         </div>
 
@@ -93,7 +112,7 @@
                                         [style.width.%]="(insights()?.totalVentasHoy || 0) > 0 ? (s.monto / (insights()?.totalVentasHoy || 1)) * 100 : 0">
                                     </div>
                                     <div class="absolute inset-0 flex items-center justify-end px-6">
-                                        <span class="text-xs font-black text-main">${{ s.monto | number:'1.2-2' }}</span>
+                                        <span class="text-xs font-black text-main">Bs. {{ (s.monto || 0) * (tasa() || 1) | number:'1.2-2' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -110,7 +129,7 @@
                                     <p class="text-xs font-bold text-slate-300">{{ seg.seguro }}</p>
                                     <p class="text-[9px] font-black text-emerald-400 tracking-widest uppercase">Coverage Volume</p>
                                 </div>
-                                <h4 class="text-xl font-black text-white">${{ seg.monto | number:'1.2-2' }}</h4>
+                                <h4 class="text-xl font-black text-white">Bs. {{ (seg.monto || 0) * (tasa() || 1) | number:'1.2-2' }}</h4>
                             </div>
                         </div>
                     </div>

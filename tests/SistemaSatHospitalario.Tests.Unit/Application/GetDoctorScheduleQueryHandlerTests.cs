@@ -33,12 +33,12 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         {
             // Arrange
             var medicoId = Guid.NewGuid();
-            var pacienteId = 123;
+            var pacienteId = Guid.NewGuid();
             var fecha = DateTime.Today;
 
             _context.CitasMedicas.AddRange(
                 new CitaMedica(medicoId, pacienteId, Guid.NewGuid(), fecha.AddHours(10)), // Tu Cita
-                new CitaMedica(medicoId, 456, Guid.NewGuid(), fecha.AddHours(11)) // Otra Cita
+                new CitaMedica(medicoId, Guid.NewGuid(), Guid.NewGuid(), fecha.AddHours(11)) // Otra Cita
             );
             await _context.SaveChangesAsync(CancellationToken.None);
 

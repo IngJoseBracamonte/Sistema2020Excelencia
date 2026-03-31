@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using Microsoft.Extensions.Configuration;
@@ -15,11 +16,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
     public class LegacyLabRepository : ILegacyLabRepository
     {
         private readonly Sistema2020LegacyDbContext _context;
+        private readonly ILegacyQueryService _queryService;
         private readonly string _connectionString;
 
-        public LegacyLabRepository(Sistema2020LegacyDbContext context, IConfiguration configuration)
+        public LegacyLabRepository(Sistema2020LegacyDbContext context, ILegacyQueryService queryService, IConfiguration configuration)
         {
             _context = context;
+            _queryService = queryService;
             _connectionString = configuration.GetConnectionString("LegacyConnection") ?? "";
         }
 
@@ -30,23 +33,62 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             CancellationToken cancellationToken)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var dbConn = _context.Database.GetDbConnection();
+            var dbTrans = transaction.GetDbTransaction();
+
             try
             {
+                // 1. Calculate NumeroDia cleanly (Extracted to QueryService for testability)
+                int countCurrentDay = await _queryService.GetCurrentDayOrderCountAsync(cancellationToken);
+                orden.NumeroDia = countCurrentDay + 1;
+
+                // 2. Fetch required mapping from perfilesanalisis (Extracted to QueryService)
+                var perfilIds = perfilesAFacturar.Select(p => p.IdPerfil).ToList();
+                var analisesList = (await _queryService.GetAnalysesForProfilesAsync(perfilIds, cancellationToken)).ToList();
+
+                // 3. Insert Header (orden)
                 await _context.Orden.AddAsync(orden, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
 
+                // 4. Update and Insert Invoice Details
                 foreach (var perfil in perfilesAFacturar)
                 {
                     perfil.IdOrden = orden.IdOrden;
                 }
                 await _context.PerfilesFacturados.AddRangeAsync(perfilesAFacturar, cancellationToken);
                 
-                foreach (var res in resultados)
+                // 5. Generate and Insert Individual Service states (Resultadospaciente via perfilesanalisis loop)
+                var resultadosDb = new List<ResultadosPacienteLegacy>();
+                foreach (var a in analisesList)
                 {
-                    res.IdOrden = orden.IdOrden;
+                    resultadosDb.Add(new ResultadosPacienteLegacy 
+                    {
+                        IdOrden = orden.IdOrden,
+                        IdPaciente = orden.IdPersona, // The newly generated Id
+                        IdConvenio = 1, // Rule Enforced by QA
+                        IDOrganizador = a.IDOrganizador,
+                        IdAnalisis = a.IdAnalisis,
+                        EstadoDeResultado = 1, // Rule Enforced by QA
+                        FechaIngreso = DateTime.Now.Date,
+                        HoraIngreso = DateTime.Now.ToString("HH:mm:ss"), // Varchar 255 compliant
+                        ValorResultado = null,
+                        Unidad = null,
+                        Comentario = null,
+                        HoraValidacion = null,
+                        FechaValidacion = null,
+                        HoraImpresion = null,
+                        IdUsuario = null,
+                        Enviado = null,
+                        Recibido = null,
+                        ValorMenor = null,
+                        ValorMayor = null,
+                        MultiplesValores = null,
+                        Lineas = null
+                    });
                 }
-                await _context.ResultadosPaciente.AddRangeAsync(resultados, cancellationToken);
+                await _context.ResultadosPaciente.AddRangeAsync(resultadosDb, cancellationToken);
 
+                // Commit both EF Core caches
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
@@ -55,7 +97,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
-                throw new InvalidOperationException("Fallo crítico en Facturación Laboratorio MySQL: " + ex.Message, ex);
+                throw new InvalidOperationException("Fallo crítico en facturación MySQL (Legacy QA): " + ex.Message, ex);
             }
         }
 

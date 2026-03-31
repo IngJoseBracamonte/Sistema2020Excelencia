@@ -57,6 +57,10 @@ namespace SistemaSatHospitalario.Infrastructure
             // Configuración de Inicializadores de DB (Multi-Provider Seeders)
             services.AddScoped<IDatabaseInitializer, IdentityDbInitializer>();
             services.AddScoped<IDatabaseInitializer, SystemDbInitializer>();
+            services.AddScoped<IDatabaseInitializer, LegacyDbInitializer>();
+            
+            // Legacy Query Infrastructure (Senior Refactor)
+            services.AddScoped<ILegacyQueryService, LegacyQueryService>();
             
             // Configuración de Repositorio Legacy con Caching (Decorator Pattern)
             services.AddScoped<LegacyLabRepository>();

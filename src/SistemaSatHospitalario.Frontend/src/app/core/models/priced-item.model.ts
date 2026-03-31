@@ -55,6 +55,14 @@ export abstract class BasePricedItem {
      const val = this.precioUsd ?? this.PrecioUsd ?? 0;
      return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
+
+  get isConsultation(): boolean {
+    if (this.categoryId === 1) return true; // ServiceCategory.Consultation
+    if (!this.tipo) return false;
+    const t = this.tipo.toUpperCase();
+    const prefixes = ['CONS', 'MEDI', 'MÉDI', 'OBST', 'GINE'];
+    return prefixes.some(p => t.includes(p));
+  }
 }
 
 export class CatalogItem extends BasePricedItem {

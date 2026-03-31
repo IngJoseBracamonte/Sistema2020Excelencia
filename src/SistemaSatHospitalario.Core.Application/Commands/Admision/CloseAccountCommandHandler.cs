@@ -55,15 +55,19 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // 1. Crear el Recibo/Factura vinculado a la caja (automática o existente)
-            var recibo = new ReciboFactura(cuenta.Id, cuenta.PacienteId, caja.Id, request.TasaCambio);
+            decimal totalCuenta = cuenta.CalcularTotal();
+            decimal totalPagado = request.Pagos.Sum(p => p.EquivalenteAbonadoBase);
+            decimal montoVueltoUSD = Math.Max(0, totalPagado - totalCuenta);
+
+            var recibo = new ReciboFactura(cuenta.Id, cuenta.PacienteId, caja.Id, request.TasaCambio, totalCuenta, montoVueltoUSD);
             foreach (var p in request.Pagos)
             {
                 recibo.AgregarDetallePago(p.MetodoPago, p.ReferenciaBancaria, p.MontoAbonadoMoneda, p.EquivalenteAbonadoBase);
             }
 
             // 2. Gestionar Saldo Pendiente (AR)
-            decimal totalCuenta = cuenta.CalcularTotal();
-            decimal totalPagado = recibo.ObtenerTotalPagadoBase();
+            // decimal totalCuenta = cuenta.CalcularTotal(); // Ya calculado arriba
+            // decimal totalPagado = recibo.ObtenerTotalPagadoBase(); // Ya calculado arriba
 
             // 4. Finalizar Cuenta (V10.9 SQL Direct Fix)
             // Usamos SQL Directo para puentear el Change Tracker de EF y evitar el error "Affected 0 rows"
@@ -84,20 +88,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.CuentasPorCobrar.Add(ar);
                 }
 
+                // Extraemos items para pasarlos después
                 var itemsLab = cuenta.Detalles.Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio)).ToList();
-                if (itemsLab.Any())
-                {
-                    await ProcessLegacyOrder(cuenta, itemsLab, cancellationToken);
-                }
 
                 // 4.3 EJECUCIÓN NUCLEAR: Actualización Directa en DB vía Repositorio
                 // Previene DbUpdateConcurrencyException (V10.9 SQL Direct)
                 await _billingRepository.ForzarCierreCuentaAsync(request.CuentaId, DateTime.UtcNow, cancellationToken);
 
-                // 4.4 Persistimos los demás objetos (Recibo, AR)
+                // 4.4 Persistimos los demás objetos locales (Recibo, AR)
                 _context.RecibosFactura.Add(recibo);
                 await _context.SaveChangesAsync(cancellationToken);
                 
+                // 4.5 EJECUCIÓN LEGACY: Justo antes del Commit local para prevenir órdenes huérfanas en MySQL si lo local revienta
+                if (itemsLab.Any())
+                {
+                    await ProcessLegacyOrder(request.UsuarioId, cuenta, itemsLab, cancellationToken);
+                }
+
                 await transaction.CommitAsync(cancellationToken);
             }
             catch (Exception ex)
@@ -109,7 +116,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             return recibo.Id;
         }
 
-        private async Task ProcessLegacyOrder(CuentaServicios cuenta, List<DetalleServicioCuenta> items, CancellationToken cancellationToken)
+        private async Task ProcessLegacyOrder(string usuarioLocal, CuentaServicios cuenta, List<DetalleServicioCuenta> items, CancellationToken cancellationToken)
         {
             // V11.0: Recuperamos el ID del legado desde la entidad maestra del paciente
             var paciente = await _context.PacientesAdmision
@@ -128,9 +135,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             { 
                 IdPersona = idPersonaLegacy,
                 Fecha = DateTime.Now,
-                HoraIngreso = DateTime.Now.TimeOfDay,
+                HoraIngreso = DateTime.Now.ToString("HH:mm:ss"), // Varchar compliancy
                 PrecioF = items.Sum(i => i.Precio * i.Cantidad),
-                IDConvenio = cuenta.ConvenioId ?? 0 
+                IDConvenio = 1, // Rule Enforced by QA
+                EstadoDeOrden = 1, // Rule Enforced by QA
+                Usuario = int.TryParse(usuarioLocal, out int pId) ? pId : 0 // V11.0 Identificador del sistema nuevo parsing
             };
 
             var validPerfiles = items

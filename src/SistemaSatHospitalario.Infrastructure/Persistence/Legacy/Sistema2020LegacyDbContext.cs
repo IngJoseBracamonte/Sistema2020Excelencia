@@ -27,7 +27,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             modelBuilder.Entity<ResultadosPacienteLegacy>(entity =>
             {
                 entity.ToTable("ResultadosPaciente");
-                entity.HasKey(e => new { e.IdOrden, e.IdPaciente, e.IdAnalisis }); 
+                entity.HasKey(e => e.IdResultadoPaciente); 
             });
 
             modelBuilder.Entity<DatosPersonalesLegacy>(entity =>
@@ -38,7 +38,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
             modelBuilder.Entity<PerfilLegacy>(entity =>
             {
-                entity.ToTable("Perfiles"); // El usuario indicó que la tabla se llama 'Perfiles' pero su entidad singular es 'Perfil'
+                entity.ToTable("Perfil");
                 entity.HasKey(e => e.IdPerfil);
             });
 

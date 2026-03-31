@@ -8,7 +8,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces
     {
         Task<List<UserDto>> GetUsersAsync();
         Task<List<string>> GetRolesAsync();
-        Task<bool> CreateUserAsync(string username, string email, string password, string role);
+        Task<bool> CreateUserAsync(string username, string email, string password, List<string> roles);
         Task<bool> UpdateUserRolesAsync(Guid userId, List<string> roles);
     }
 

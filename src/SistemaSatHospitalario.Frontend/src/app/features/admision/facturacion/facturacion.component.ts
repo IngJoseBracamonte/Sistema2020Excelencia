@@ -226,7 +226,7 @@ export class FacturacionComponent {
 
     const searchTerm = this.getSearchKey(esp);
     const service = this.billingFacade.servicesCatalog().find((s: CatalogItem) =>
-      s.categoryId === ServiceCategory.Consultation &&
+      s.isConsultation &&
       s.descripcion.toUpperCase().includes(searchTerm)
     );
 
@@ -648,7 +648,7 @@ export class FacturacionComponent {
 
   // Método para Filtrado Inverso (Servicio -> Especialidad)
   seleccionarTipoConsulta(s: CatalogItem) {
-    if (s.categoryId !== ServiceCategory.Consultation) return;
+    if (!s.isConsultation) return;
 
     const serviceKey = this.getSearchKey(s.descripcion);
     const tipoKey = this.getSearchKey(s.tipo);
@@ -685,7 +685,7 @@ export class FacturacionComponent {
     if (!s) return;
 
     // Abstracción Senior: Identificación por Categoría de Dominio (V5.2)
-    const esConsulta = s.categoryId === ServiceCategory.Consultation;
+    const esConsulta = s.isConsultation;
 
     // Validación estricta V3.0 (Micro-Ciclo 38): Consulta requiere Médico Y Turno Agendado
     if (esConsulta) {
@@ -695,10 +695,10 @@ export class FacturacionComponent {
         return;
       }
 
-      if (!this.selectedSlot()) {
+      if (!this.selectedSlot() || !this.horaCita()) {
         this.isPendingConsultation.set(true); // Activar por si acaso el usuario vuelve a darle
         this.abrirModalHorarios();
-        this.errorMessage.set(`Por favor, seleccione un horario disponible.`);
+        this.errorMessage.set(`Por favor, seleccione un horario disponible para el Dr. ${this.nombreMedicoSeleccionado()}.`);
         return;
       }
     }
@@ -749,7 +749,7 @@ export class FacturacionComponent {
       convenioId: this.convenioId() || undefined,
       servicioId: s.id,
       descripcion: finalDescripcion,
-      precio: s.precio,
+      precio: s.precioUsd || s.PrecioUsd || 0,
       cantidad: 1,
       tipoServicio: s.tipo,
       usuarioCarga: this.user()?.username || '',
@@ -789,6 +789,14 @@ export class FacturacionComponent {
   async procesarCobro() {
     if (!this.pacienteSeleccionado()) {
       this.errorMessage.set("Debe identificar y seleccionar un beneficiario antes de emitir.");
+      return;
+    }
+
+    // Validación de Último Recurso (Fase 11): Verificar que todas las consultas tengan médico
+    const inconsistente = this.serviciosCargados().find(s => s.isConsultation && (!s.medicoId && !s.MedicoId));
+    if (inconsistente) {
+      this.errorMessage.set(`La consulta '${inconsistente.descripcion}' no tiene un médico asignado. Elimínela y vuelva a cargarla seleccionando un especialista.`);
+      this.isLoading.set(false);
       return;
     }
 

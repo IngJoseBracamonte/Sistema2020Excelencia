@@ -45,13 +45,13 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
             return await _roleManager.Roles.Select(r => r.Name).ToListAsync();
         }
 
-        public async Task<bool> CreateUserAsync(string username, string email, string password, string role)
+        public async Task<bool> CreateUserAsync(string username, string email, string password, List<string> roles)
         {
             var user = new UsuarioHospital { UserName = username, Email = email };
             var result = await _userManager.CreateAsync(user, password);
             if (result.Succeeded)
             {
-                await _userManager.AddToRoleAsync(user, role);
+                await _userManager.AddToRolesAsync(user, roles);
                 return true;
             }
             return false;

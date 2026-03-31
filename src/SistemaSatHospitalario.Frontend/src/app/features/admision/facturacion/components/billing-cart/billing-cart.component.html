@@ -14,12 +14,14 @@
                 <div class="h-8 w-1.5 bg-rose-500/20 rounded-full group-hover:bg-rose-500 transition-all flex-shrink-0"></div>
                 <div class="truncate">
                     <p class="text-sm font-black text-white group-hover:text-rose-500 transition-all truncate uppercase tracking-tight">{{ (s.descripcion || s.Descripcion) | uppercase }}</p>
-                    <div class="flex flex-col mt-0.5 space-y-0.5">
-                        <span *ngIf="s.medicoNombre" class="text-[9px] text-emerald-400 font-black uppercase tracking-widest flex items-center">
-                             <lucide-icon name="user" class="w-2.5 h-2.5 mr-1"></lucide-icon>
-                             Dr. {{ s.medicoNombre }}
-                        </span>
-                        <span *ngIf="s.hora" class="text-[8px] text-rose-400/60 font-black uppercase tracking-wider italic">Turno: {{ getHoraRango(s.hora) }}</span>
+                    <div class="flex items-center mt-1">
+                        <div *ngIf="s.medicoNombre" class="text-[8px] text-emerald-400 font-bold uppercase tracking-[0.1em] flex items-center bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/10">
+                             <lucide-icon name="user" class="w-2.5 h-2.5 mr-2 opacity-70"></lucide-icon>
+                             <span>Dr. {{ s.medicoNombre }}</span>
+                             <span *ngIf="s.hora" class="ml-2 pl-2 border-l border-white/10 text-rose-400/90 italic tracking-widest">
+                                 {{ getHoraRango(s.hora) }}
+                             </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -47,16 +49,20 @@
         <div class="grid grid-cols-2 gap-4">
             <div class="bg-black/20 p-6 rounded-3xl border border-white/5 relative overflow-hidden group">
                 <div class="absolute top-0 left-0 w-1 h-full bg-rose-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                <p class="text-[9px] text-rose-500 font-black uppercase tracking-[0.2em] mb-2">Total Final</p>
-                <p class="text-2xl font-black text-white tracking-tighter font-mono">Bs. {{ totalCargadoBS() | currencyBs }}</p>
-                <p class="text-[10px] font-bold text-slate-500 mt-1 italic tracking-widest">${{ totalCargadoUSD() | number:'1.2-2' }} USD</p>
+                <p class="text-[9px] text-rose-500 font-black uppercase tracking-[0.2em] mb-1">Total Final</p>
+                <div class="flex flex-col">
+                    <p class="text-xl font-black text-white tracking-tighter font-mono truncate leading-tight">Bs. {{ totalCargadoBS() | currencyBs }}</p>
+                    <p class="text-[9px] font-bold text-slate-500 mt-1 italic tracking-widest">${{ totalCargadoUSD() | number:'1.2-2' }} USD</p>
+                </div>
             </div>
             
             <div class="bg-black/20 p-6 rounded-3xl border border-white/5 relative overflow-hidden group">
                 <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                <p class="text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em] mb-2">Abonado</p>
-                <p class="text-2xl font-black text-emerald-400 tracking-tighter font-mono">Bs. {{ totalFacturadoBS() | currencyBs }}</p>
-                <p class="text-[10px] font-bold text-slate-500 mt-1 italic tracking-widest">${{ totalFacturadoUSD() | number:'1.2-2' }} USD</p>
+                <p class="text-[9px] text-emerald-500 font-black uppercase tracking-[0.2em] mb-1">Abonado</p>
+                <div class="flex flex-col">
+                    <p class="text-xl font-black text-emerald-400 tracking-tighter font-mono truncate leading-tight">Bs. {{ totalFacturadoBS() | currencyBs }}</p>
+                    <p class="text-[9px] font-bold text-slate-500 mt-1 italic tracking-widest">${{ totalFacturadoUSD() | number:'1.2-2' }} USD</p>
+                </div>
             </div>
         </div>
     </div>

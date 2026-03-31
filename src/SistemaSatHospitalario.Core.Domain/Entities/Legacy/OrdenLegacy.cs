@@ -7,7 +7,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Legacy
         public int IdOrden { get; set; }
         public int IdPersona { get; set; } // Referencia a DatosPersonales
         public DateTime Fecha { get; set; }
-        public TimeSpan HoraIngreso { get; set; }
+        public string HoraIngreso { get; set; }
         public int Usuario { get; set; }
         public int EstadoDeOrden { get; set; }
         public int NumeroDia { get; set; }

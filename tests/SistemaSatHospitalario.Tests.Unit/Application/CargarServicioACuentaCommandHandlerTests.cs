@@ -32,17 +32,19 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var pacienteId = Guid.NewGuid();
             var servicioId = Guid.NewGuid();
 
-            var mockPaciente = new PacienteAdmision("123", "Test", "Test");
-            // Reflection hack to set the ID since it's protected set and GUID is generated in constructor but we want to control it or just use the generated one
-            // Let's assume we can just use a real object for simplicity if IApplicationDbContext allows it
+            // Setup Mocks usando el helper TestAsyncEnumerable para soportar querys asíncronas
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234") { Id = pacienteId };
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable();
+            var mockPacienteSet = new Mock<DbSet<PacienteAdmision>>();
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<PacienteAdmision>(pacienteSet.Provider));
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Expression).Returns(pacienteSet.Expression);
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.ElementType).Returns(pacienteSet.ElementType);
+            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.GetEnumerator()).Returns(pacienteSet.GetEnumerator());
+            mockPacienteSet.As<IAsyncEnumerable<PacienteAdmision>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
+                .Returns(new TestAsyncEnumerator<PacienteAdmision>(pacienteSet.GetEnumerator()));
             
-            // Setting up DBSet mock is complex, let's keep it simple for now by just returning a valid object or null
-            // We'll use a real collection if possible or just mock the FirstOrDefaultAsync
-            
-            // For now, let's just make the code compile and run with GUIDs.
-            // In a full implementation, we would mock the DbSet<PacienteAdmision> 
-            // to return our mockPaciente when queried by FirstOrDefaultAsync.
-            
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(mockPacienteSet.Object);
+
             _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((CuentaServicios)null);
 
@@ -50,7 +52,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             {
                 PacienteId = pacienteId,
                 TipoIngreso = "Particular",
-                ServicioId = servicioId,
+                ServicioId = servicioId.ToString(),
                 Descripcion = "Consulta",
                 Precio = 100,
                 Cantidad = 1,
@@ -77,7 +79,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         {
             // Arrange
             var pacienteId = Guid.NewGuid();
-            var cuentaExistente = new CuentaServicios(pacienteId, "Particular");
+            var cuentaExistente = new CuentaServicios(pacienteId, "Admin", "Particular");
             
             _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cuentaExistente);
@@ -86,7 +88,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             {
                 PacienteId = pacienteId,
                 TipoIngreso = "Particular",
-                ServicioId = Guid.NewGuid(),
+                ServicioId = Guid.NewGuid().ToString(),
                 Descripcion = "Examen",
                 Precio = 50,
                 Cantidad = 1,

@@ -17,7 +17,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public DetallePago(Guid reciboFacturaId, string metodoPago, string referenciaBancaria, decimal montoAbonadoMoneda, decimal equivalenteAbonadoBase)
         {
-            if (montoAbonadoMoneda <= 0) throw new ArgumentException("El monto debe ser mayor a 0.");
+            if (montoAbonadoMoneda == 0) throw new ArgumentException("El monto no puede ser 0.");
             
             Id = Guid.NewGuid();
             ReciboFacturaId = reciboFacturaId;

@@ -18,8 +18,16 @@ export interface PendingAR {
 
 export interface SettleARRequest {
   arId: string;
-  referenciaPago: string;
+  payments: PaymentItemDto[];
   observaciones: string;
+}
+
+export interface PaymentItemDto {
+  method: string;
+  amount: number; // Monto base en USD ($)
+  amountMoneda: number; // Monto en moneda original ($ o Bs.)
+  tasaAplicada: number; // Tasa de cambio usada al registrar
+  reference: string;
 }
 
 @Injectable({

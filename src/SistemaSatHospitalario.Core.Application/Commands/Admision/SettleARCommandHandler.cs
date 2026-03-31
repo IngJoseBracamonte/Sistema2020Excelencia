@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -20,17 +21,50 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<bool> Handle(SettleARCommand request, CancellationToken cancellationToken)
         {
-            var ar = await _context.CuentasPorCobrar.FindAsync(new object[] { request.ARId }, cancellationToken);
+            var ar = await _context.CuentasPorCobrar
+                .Include(a => a.Cuenta)
+                .FirstOrDefaultAsync(a => a.Id == request.ArId, cancellationToken);
 
             if (ar == null) throw new Exception("Cuenta por cobrar no encontrada.");
             if (ar.Estado == EstadoConstants.Cobrada) throw new Exception("Esta cuenta ya ha sido cobrada.");
 
-            // Liquidar
+            // Obtener la tasa de cambio activa
+            var tasaActual = await _context.TasaCambio
+                .Where(t => t.Activo)
+                .OrderByDescending(t => t.Fecha)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            decimal tasaValue = tasaActual?.Monto ?? throw new Exception("No existe una tasa de cambio activa configurada.");
+
+            // Buscar el recibo asociado a esta cuenta para anexar los pagos
+            var recibo = await _context.RecibosFactura
+                .Include(r => r.DetallesPago)
+                .OrderByDescending(r => r.FechaEmision)
+                .FirstOrDefaultAsync(r => r.CuentaServicioId == ar.CuentaServicioId, cancellationToken);
+            
+            // Si no existe un recibo (borrador o emitido), creamos uno administrativo para registrar estos pagos
+            if (recibo == null)
+            {
+                recibo = new ReciboFactura(ar.CuentaServicioId, ar.PacienteId, null, tasaValue, ar.MontoTotalBase);
+                _context.RecibosFactura.Add(recibo);
+            }
+
+            // Registrar cada pago en el detalle
+            foreach (var payment in request.Payments)
+            {
+                // El monto base viene normalizado desde el frontend como USD ($)
+                var amountUSD = Math.Round(payment.Amount, 2);
+
+                recibo.AgregarDetallePago(
+                    payment.Method, 
+                    payment.Reference, 
+                    payment.AmountMoneda, 
+                    amountUSD); 
+            }
+
+            // Liquidar la cuenta por cobrar
             ar.MarcarComoCobrada();
 
-            // Aquí podríamos registrar un DetallePago final asociado al recibo original o a la CXC
-            // Por ahora, simplemente actualizamos el estado.
-            
             await _context.SaveChangesAsync(cancellationToken);
 
             return true;

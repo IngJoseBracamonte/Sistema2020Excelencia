@@ -44,7 +44,10 @@ export class BillingFacadeService {
   
   public totalCargadoUSD = computed(() => {
     return this.serviciosCargados().reduce((acc: number, curr: any) => {
-      return acc + (curr.precioUsd ?? curr.PrecioUsd ?? 0);
+      // Normalización en tiempo real (Pachón Pro V11.2)
+      const precioUsd = curr.precioUsd ?? curr.PrecioUsd;
+      const normalized = precioUsd ?? (curr.esLegacy ? (curr.precio / this.tasaCambioDia()) : 0);
+      return acc + normalized;
     }, 0);
   });
 
@@ -157,16 +160,23 @@ export class BillingFacadeService {
       tipoIngreso,
       usuarioCarga: user,
       convenioId: convenioId || undefined,
-      items: items.map(s => ({
-        servicioId: s.id,
-        descripcion: s.descripcion,
-        precio: s.precio,
-        cantidad: 1,
-        tipoServicio: s.tipo,
-        medicoId: s.medicoId || undefined,
-        horaCita: (s.horaCita || s.hora) || undefined,
-        comentario: s.comentario || undefined
-      }))
+      items: items.map(s => {
+        // Motor de Normalización USD-First (V11.2)
+        // Si el item viene del legado y solo tiene precio en Bs, se divide por la tasa
+        const precioBaseUsd = s.precioUsd || s.PrecioUsd;
+        const normalizedPrice = precioBaseUsd || (s.esLegacy ? (s.precio / this.tasaCambioDia()) : s.precio);
+
+        return {
+          servicioId: s.id,
+          descripcion: s.descripcion,
+          precio: normalizedPrice,
+          cantidad: 1,
+          tipoServicio: s.tipo,
+          medicoId: s.medicoId || undefined,
+          horaCita: (s.horaCita || s.hora) || undefined,
+          comentario: s.comentario || undefined
+        };
+      })
     };
 
     return this.facturacionService.syncBulk(payload).pipe(

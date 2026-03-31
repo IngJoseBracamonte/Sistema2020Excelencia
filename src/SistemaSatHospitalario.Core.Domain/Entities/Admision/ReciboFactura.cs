@@ -16,6 +16,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid PacienteId { get; protected set; }
         public string NumeroRecibo { get; protected set; }
         public decimal TotalFacturadoUSD { get; protected set; }
+        public decimal MontoVueltoUSD { get; protected set; } // Pachón Pro V11.2 Change Support
         public decimal TasaBcvUsada => TasaCambioDia;
         public DateTime FechaEmision { get; protected set; }
         public string Estado => EstadoFiscal;
@@ -28,13 +29,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected ReciboFactura() { }
 
-        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, string estadoFiscal = EstadoConstants.Borrador)
+        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, decimal totalFacturadoUSD, decimal montoVueltoUSD = 0, string estadoFiscal = EstadoConstants.Borrador)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
             PacienteId = pacienteId;
             CajaDiariaId = cajaDiariaId;
             TasaCambioDia = tasaCambioDia;
+            TotalFacturadoUSD = totalFacturadoUSD;
+            MontoVueltoUSD = montoVueltoUSD;
             EstadoFiscal = estadoFiscal;
             FechaEmision = DateTime.UtcNow;
             NumeroRecibo = $"REC-{DateTime.Now:yyyyMMdd}-{Id.ToString().Substring(0, 8)}";
@@ -54,7 +57,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void AgregarDetallePago(string metodoPago, string referencia, decimal montoCambiario, decimal equivalenteBase)
         {
-            if (EstadoFiscal != EstadoConstants.Borrador) throw new InvalidOperationException("No se pueden agregar pagos a un recibo ya emitido o anulado.");
+            if (EstadoFiscal == EstadoConstants.Anulada) throw new InvalidOperationException("No se pueden agregar pagos a un recibo anulado.");
             _detallesPago.Add(new DetallePago(Id, metodoPago, referencia, montoCambiario, equivalenteBase));
         }
 

@@ -207,3 +207,28 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
     - Sincronizados constructores de `CitaMedica` con el nuevo esquema de identidad `Guid`.
 - **Database**: Aplicada migración `V11_8_ModelSync` para sincronizar cambios pendientes en `SatHospitalarioDbContext`.
 - **Resultado**: Solución `Sistema2020Excelencia.sln` con compilación 100% exitosa y base de datos sincronizada. 🏗️✅
+
+## 🗓️ 2026-03-30 (Integración Legacy y Estabilización Concurrente V11.9)
+### 1. Refactor: Dapper Concurrency Lock para `NumeroDia`
+- **Acción**: Intervención en `LegacyLabRepository` transformando el uso de EF Core transaccional a un query en crudo Dapper con `SELECT COUNT(...) FOR UPDATE`.
+- **Razón**: El cálculo del código de paciente diario sufría de "Race Conditions" (colisión de IDs) en momentos de alta facturación paralela.
+- **Resultado**: Conteo atómico estricto garantizado por el compilador C de MySQL.
+
+### 2. Architecture: Integridad Transaccional Blindada (Anti-Huérfanos)
+- **Acción**: Reposicionamiento de la llamada `ProcessLegacyOrder` en el bottom exacto de `CloseAccountCommandHandler`, instantes antes del `await transaction.CommitAsync()`.
+- **Propósito**: Si SQL Server falla, hacer rollback total en la API nueva SIN lanzar inserciones muertas en la base de datos MySQL anterior.
+
+### 3. Architecture: Snapshot Pinning (Añadir PK a Legacy)
+- **Acción**: Modificación de la entidad Legacy `Resultadospaciente` que era *Keyless* para inyectar `IdResultadoPaciente` como PK Auto-Incremental.
+- **Técnica Segura**: Generación de *InitialCreate* Migration -> Vaciado total de métodos `Up()` y `Down()` -> Generación de segunda migración -> Aplicación a BD.
+- **Resultado**: Prevención absoluta de un desastroso evento Drop/Create de EF Core en la base principal.
+
+### 4. Feature: Zero-Touch Deployments (Auto-Migraciones)
+- **Impacto**: El backend moderno ahora gestiona también la verificación estructural de las tablas heredadas mediante `MigrateAsync()` silente. Todo el código despliega solo sin intervención humana.
+
+### 5. Feature: Liquidación AR Multi-moneda (V12.0)
+- **Acción**: Refactorización completa del módulo `Receivables` (Cuentas por Cobrar).
+- **Frontend**: Integración con `SettingsService` para obtener la `tasaCambio` viva vía SignalR. Implementación de lógica de conversión automática para métodos USD (Zelle, USDT, etc.).
+- **Backend**: Actualización de `SettleARCommand` y `SettleARCommandHandler` para persistir el desglose de pagos en la tabla `DetallePagos` de SQL Server.
+- **Arquitectura**: Se eliminó la restricción de estado en `ReciboFactura.AgregarDetallePago` para permitir la conciliación de saldos en facturas ya emitidas.
+- **Resultado**: El sistema ahora permite liquidar deudas mezclando múltiples monedas con auditoría total del monto original y su equivalente en bolívares.

@@ -26,7 +26,7 @@ namespace SistemaSatHospitalario.Application.UnitTests.Admision
             decimal montoBs1 = 1500.00m; // 30$ * 50
             decimal equivalenteUSD1 = montoBs1 / tasaDia1;
 
-            var recibo1 = new ReciboFactura(cuenta.Id, 1, Guid.NewGuid(), tasaDia1);
+            var recibo1 = new ReciboFactura(cuenta.Id, Guid.NewGuid(), Guid.NewGuid(), tasaDia1, totalCuentaUSD);
             recibo1.AgregarDetallePago("Punto Venta Bs", "REF123", montoBs1, equivalenteUSD1);
 
             // 3. Second Payment (30$) - Rate 60
@@ -34,7 +34,7 @@ namespace SistemaSatHospitalario.Application.UnitTests.Admision
             decimal montoBs2 = 1800.00m; // 30$ * 60
             decimal equivalenteUSD2 = montoBs2 / tasaDia2;
 
-            var recibo2 = new ReciboFactura(cuenta.Id, 1, Guid.NewGuid(), tasaDia2);
+            var recibo2 = new ReciboFactura(cuenta.Id, Guid.NewGuid(), Guid.NewGuid(), tasaDia2, totalCuentaUSD);
             recibo2.AgregarDetallePago("Transferencia Bs", "REF456", montoBs2, equivalenteUSD2);
 
             // 4. Verification
@@ -55,7 +55,7 @@ namespace SistemaSatHospitalario.Application.UnitTests.Admision
             cuenta.AgregarServicio(Guid.NewGuid(), "Cirugía Menor", 100.00m, 1, "MEDICO", "test-user");
 
             decimal tasa = 50.00m;
-            var recibo = new ReciboFactura(cuenta.Id, 1, Guid.NewGuid(), tasa);
+            var recibo = new ReciboFactura(cuenta.Id, Guid.NewGuid(), Guid.NewGuid(), tasa, cuenta.CalcularTotal());
 
             // Payment 1: 50$ Divisas
             recibo.AgregarDetallePago("Efectivo Divisas", "NA", 50.00m, 50.00m);

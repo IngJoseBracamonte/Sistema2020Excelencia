@@ -117,9 +117,10 @@ import {
                     [class.rotate-180]="dropdownsOpen().settings"></lucide-icon>
             </button>
             <div *ngIf="dropdownsOpen().settings" class="pl-8 space-y-1 animate-fade-in">
-                <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">Ajustes Globales</a>
-                <a routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Usuarios</a>
-                <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios / Seguros</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">General & Finanzas</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Usuario</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'citas'}" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Citas</a>
             </div>
           </div>
         </div>

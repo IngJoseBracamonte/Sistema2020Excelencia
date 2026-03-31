@@ -62,6 +62,8 @@ graph TD
 1. **Admission Atomicity**: Cada sincronización de carrito genera un ingreso clínico y contable único.
 2. **Conditional Closure**: El cierre de cuentas está supeditado al balance cero.
 3. **Legacy Concatenation**: Identidad dual entre el sistema nativo y el sistema WinForms MySQL.
+4. **Automated Zero-Touch Deployments**: El WebAPI consolida múltiples Contextos de BD (Identity, System, Legacy). La aplicación invoca iterativamente colecciones de `IDatabaseInitializer` ejecutando `MigrateAsync()` en cascada para asentar los metadatos SQL antes de abrir los puertos HTTP.
+
 
 ## 📚 Módulos de Memoria (Deep Context)
 Para un análisis profundo sin re-análisis redundante, consulta los archivos especializados:
@@ -80,3 +82,22 @@ Para un análisis profundo sin re-análisis redundante, consulta los archivos es
 - **Data Access**: `src/SistemaSatHospitalario.Infrastructure/Persistence/`
 - **Frontend Core**: `src/SistemaSatHospitalario.Frontend/src/app/core/`
 - **Billing Module**: `src/SistemaSatHospitalario.Frontend/src/app/features/admision/facturacion/` (Arquitectura Smart/Dumb V9.0)
+
+## 🤖 AI Workflow & Orchestration (V1.0)
+El sistema utiliza un **Orquestador Maestro** para gestionar la interacción entre el agente y el código:
+
+1. **[Orquestador de Skills](file:///c:/Src/src/Sistema2020Excelencia/agent/skills/orquestador-de-skills/SKILL.md)**: Decide la estrategia, selecciona las herramientas y recomienda el modelo (Flash, Pro, Sonnet, Opus).
+2. **Context First**: Siempre se invoca la `memoria-de-arquitectura` antes de cambios estructurales para orquestar los archivos de contexto necesarios.
+3. **Model Tiering**:
+   - **Flash**: Velocidad y comandos.
+   - **Pro**: Análisis masivo y contexto profundo.
+   - **Sonnet/Opus**: Codificación de alta precisión y creatividad.
+4. **Skill Evolution**: El sistema identifica patrones repetitivos y sugiere nuevos skills mediante el `creador-de-skills`.
+
+## 🔄 Phase Orchestration (V1.0)
+El sistema gestiona el ciclo de vida del desarrollo mediante el **[Orquestador de Fases](file:///c:/Src/src/Sistema2020Excelencia/agent/skills/orquestador-de-fases/SKILL.md)**:
+
+- **Estructura Estándar**: Sigue patrones industriales (`Core.Domain`, `Core.Application`, `Infrastructure`).
+- **Manejo de Bugs**: Cada error detectado se registra en el **[Log de Bugs (Bugs.md)](file:///c:/Src/src/Sistema2020Excelencia/agent/docs/Bugs.md)**.
+- **Interacción**: El agente pregunta al usuario si desea corregir un error inmediatamente o guardarlo para después.
+- **Transición**: Las fases avanzan progresivamente desde la definición hasta la producción.

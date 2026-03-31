@@ -32,6 +32,18 @@ description: Mantiene un registro actualizado de la arquitectura, rutas clave, d
    - **Pro High**: Analiza `Architecture.md` y `DataFlow.md` para cambios estructurales.
    - **Pro Low**: Sigue `Checks.md` y `StepJournal.md` para tareas iterativas.
 
+## Context Orchestration
+Al crear algo nuevo (clase, servicio, componente), este skill debe orquestar los archivos necesarios:
+- **Nueva Clase/Entidad**: Requiere `Architecture.md`, `Rules.md` y una entidad de referencia similar en `src/Domain/`.
+- **Nuevo Handler (Command/Query)**: Requiere `DataFlow.md`, `Parameters.md` y un handler existente en `src/Application/`.
+- **Cambio en DB/EF Core**: Requiere `Architecture.md` (Mapping rules) y el `DbContext` actual.
+- **Componente UI-Angular**: Requiere `Rules.md` (Estilo) y un componente similar en `src/Web/Clients/`.
+
+**Workflow de Contexto**:
+1) Identifica el tipo de creación.
+2) Lista los archivos de `agent/docs/` y `src/` que DEBEN leerse antes de escribir código.
+3) Recomienda el set de archivos al Orquestador para la ejecución final.
+
 ## Instrucciones
 - **Rich Context**: No te limites a resúmenes. Proporciona detalles técnicos profundos, el "por qué" de las decisiones y el impacto futuro.
 - **Exhaustive Mapping**: Mapea cada ruta crítica, cada parámetro y cada flujo de datos sin omitir detalles por brevedad.

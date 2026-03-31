@@ -55,7 +55,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error inesperado en CargarServicio");
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = "Ha ocurrido un error inesperado al procesar el servicio." });
             }
         }
         
@@ -87,7 +87,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Fallo crítico en SincronizarCarrito");
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = "Error crítico durante la sincronización masiva." });
             }
         }
 

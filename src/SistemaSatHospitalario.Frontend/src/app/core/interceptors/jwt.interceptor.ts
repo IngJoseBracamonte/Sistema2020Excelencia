@@ -1,23 +1,21 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const token = authService.getToken();
+    const isApiUrl = req.url.startsWith(environment.apiUrl);
 
-    if (token) {
-        // [DEBUG 401 FIX] Verificando presencia de token en interceptor
-        console.log(`[JWT DEBUG] Adjuntando token a la solicitud: ${req.url}`);
+    if (token && isApiUrl) {
         req = req.clone({
             setHeaders: {
                 Authorization: `Bearer ${token}`
             }
         });
-    } else {
-        console.warn(`[JWT DEBUG] No se encontró token para la solicitud: ${req.url}`);
     }
 
     return next(req).pipe(

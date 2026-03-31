@@ -136,8 +136,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 foreach (var item in request.Items)
                 {
-                    if (EstadoConstants.EsConsulta(item.TipoServicio) && item.MedicoId.HasValue && item.HoraCita.HasValue)
+                    if (EstadoConstants.EsConsulta(item.TipoServicio))
                     {
+                        if (!item.MedicoId.HasValue || !item.HoraCita.HasValue)
+                        {
+                            _logger.LogWarning("[SYNC] Fallo de Validación: El servicio '{Descripcion}' ({ServicioId}) es de consulta pero no tiene Médico u Horario asignado.", item.Descripcion, item.ServicioId);
+                            throw new InvalidOperationException($"El servicio '{item.Descripcion}' requiere la asignación de un médico y un horario de cita para ser facturado.");
+                        }
+
                         _logger.LogInformation("[SYNC] Registrando cita médica - Medico: {MedicoId}, Hora: {Hora}", item.MedicoId, item.HoraCita);
                         await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
                     }

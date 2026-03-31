@@ -54,8 +54,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (cuenta == null) throw new InvalidOperationException("La cuenta de servicio referenciada no existe.");
             if (cuenta.Estado != EstadoConstants.Abierta) throw new InvalidOperationException("La cuenta ya ha sido procesada.");
 
-            // 3. Crear Recibo
-            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, EstadoConstants.Borrador);
+            // 3. Crear Recibo (V11.2 Change Support / Vuelto)
+            decimal totalCuenta = cuenta.CalcularTotal();
+            decimal totalPagado = request.PagosMultidivisa.Sum(p => p.EquivalenteAbonadoBase);
+            decimal montoVueltoUSD = Math.Max(0, totalPagado - totalCuenta);
+
+            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, totalCuenta, montoVueltoUSD, EstadoConstants.Borrador);
 
             foreach (var pago in request.PagosMultidivisa)
             {
@@ -63,8 +67,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // 4. Validar montos y cierre condicional (V11.5 Senior Pattern)
-            decimal totalPagado = recibo.ObtenerTotalPagadoBase();
-            decimal totalCuenta = cuenta.CalcularTotal();
+            // decimal totalPagado = recibo.ObtenerTotalPagadoBase(); // Ya disponible arriba
+            // decimal totalCuenta = cuenta.CalcularTotal(); // Ya calculado arriba
 
             if (totalPagado >= totalCuenta)
             {
