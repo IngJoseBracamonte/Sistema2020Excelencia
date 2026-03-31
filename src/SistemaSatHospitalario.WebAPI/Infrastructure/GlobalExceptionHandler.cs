@@ -23,14 +23,17 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
         {
             _logger.LogError(exception, "Unhandled exception captured by GlobalExceptionHandler at {RequestPath}", httpContext.Request.Path);
 
+            var scrubbedMessage = ScrubPii(exception.Message);
+            var scrubbedStack = ScrubPii(exception.StackTrace ?? string.Empty);
+
             var mediator = httpContext.RequestServices.GetRequiredService<IMediator>();
             
             var command = new CreateErrorTicketCommand
             {
                 RequestPath = httpContext.Request.Path,
                 MetodoHTTP = httpContext.Request.Method,
-                MensajeExcepcion = exception.Message,
-                StackTrace = exception.StackTrace ?? string.Empty,
+                MensajeExcepcion = scrubbedMessage,
+                StackTrace = scrubbedStack,
                 UsuarioAsociado = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Anonymous"
             };
 
@@ -54,6 +57,19 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
             }, cancellationToken);
 
             return true;
+        }
+
+        private string ScrubPii(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            
+            // Mask numeric strings of 7+ digits (potential IDs or Phones)
+            var scrubbed = System.Text.RegularExpressions.Regex.Replace(input, @"\d{7,}", "[MASKED_ID]");
+            
+            // Mask potential PII in common DB error patterns like "entry '...' for key"
+            scrubbed = System.Text.RegularExpressions.Regex.Replace(scrubbed, @"entry '([^']+)' for key", "entry '[MASKED_DATA]' for key");
+            
+            return scrubbed;
         }
     }
 }

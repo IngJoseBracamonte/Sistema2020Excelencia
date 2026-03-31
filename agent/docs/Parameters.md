@@ -30,8 +30,15 @@ El sistema utiliza una estrategia Multi-DB sobre MySQL 8.0, orquestada por Aspir
 ## 🔐 Parámetros de Seguridad
 - **JWT Issuer**: `https://localhost:17222/api/auth`
 - **JWT Audience**: `SistemaSatHospitalarioClient`
+- **Secret Injection (Parameter System)**: Los secretos (JWT, SMTP, DB) se inyectan mediante el sistema de parámetros de Aspire (`AddParameter`).
+- **Dev Secrets**: Se recomienda `dotnet user-secrets` en el proyecto AppHost para desarrollo local.
+- **Prod Secrets**: Deben proveerse vía `ASPNETCORE_` environment variables o un Secret Store externo. El orquestador no contiene valores por defecto.
+- **AllowedOrigins**: Lista de orígenes permitidos (CORS) configurados en `Program.cs`. Default: `https://localhost:4200`.
 - **Expiration**: 8 horas por defecto.
 - **Email**: Puerto 587 (TLS/SSL) para `SmtpClient`.
+- **Information Disclosure**: El mensaje de error es el principal vector de reconocimiento para un atacante. El enmascaramiento en el `GlobalExceptionHandler` es la primera línea de defensa.
+- **CORS Broadness**: `AllowAnyOrigin` es incompatible con `AllowCredentials` en navegadores modernos y es un riesgo de seguridad mayor; siempre usar listas blancas de dominios.
+
 
 ## 🎨 Tokens de Diseño (HSL Full List)
 - **Principal (Rose)**: `--primary: 343 85% 55%`

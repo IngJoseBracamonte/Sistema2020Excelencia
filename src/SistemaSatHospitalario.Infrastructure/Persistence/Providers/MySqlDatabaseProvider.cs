@@ -17,6 +17,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
             // Priorizamos el nombre orquestado por Aspire "mysql-identity"
             var conStr = configuration.GetConnectionString("mysql-identity") 
                          ?? configuration.GetConnectionString("IdentityConnection_MySql")
+                         ?? configuration["ConnectionStrings:mysql-identity"] // Direct mapping fallback
                          ?? throw new InvalidOperationException("mysql-identity connection string not found.");
             
             services.AddDbContext<SatHospitalarioIdentityDbContext>(options =>
@@ -32,6 +33,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
             // Priorizamos el nombre orquestado por Aspire "mysql-system"
             var conStr = configuration.GetConnectionString("mysql-system") 
                          ?? configuration.GetConnectionString("SystemConnection_MySql")
+                         ?? configuration["ConnectionStrings:mysql-system"]
                          ?? throw new InvalidOperationException("mysql-system connection string not found.");
             
             services.AddDbContext<SatHospitalarioDbContext>(options =>

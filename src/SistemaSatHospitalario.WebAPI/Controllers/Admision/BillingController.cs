@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SistemaSatHospitalario.WebAPI.Infrastructure.Security;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -29,6 +30,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPost("CargarServicio")]
+        [Idempotent]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CargarServicio([FromBody] CargarServicioACuentaCommand command)
@@ -60,6 +62,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
         
         [HttpPost("SincronizarCarrito")]
+        [Idempotent]
         [ActionName("SincronizarCarrito")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

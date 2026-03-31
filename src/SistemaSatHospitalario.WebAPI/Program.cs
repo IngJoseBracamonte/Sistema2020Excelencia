@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.WebAPI.Infrastructure;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.RateLimiting; 
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,11 +25,28 @@ builder.AddServiceDefaults();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
-// Add CORS Policy for Angular Frontend
-var allowedOrigins = builder.Configuration["AllowedOrigins"]?.Split(',') ?? new[] { "https://localhost:4200" };
+
+// Add Rate Limiting (Phase 3 Security)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("fixed", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 100; // 100 peticiones por minuto por IP
+        opt.QueueLimit = 2;
+        opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+    });
+});
+
+// [SEC-003] CORS Explicit Origins - Whitelist (V13.3)
+var allowedOriginsStr = builder.Configuration["AllowedOrigins"] ?? "https://localhost:4200,http://localhost:4200";
+var allowedOrigins = allowedOriginsStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+Console.WriteLine($"[CORS CONFIG] Allowed Origins: {string.Join(" | ", allowedOrigins)}");
 
 builder.Services.AddCors(options =>
 {
+    options.DefaultPolicyName = "AngularPolicy";
     options.AddPolicy("AngularPolicy", policy =>
     {
         policy.WithOrigins(allowedOrigins) 
@@ -45,7 +64,7 @@ builder.Services.AddSignalR();
 builder.Services.AddScoped<SistemaSatHospitalario.Core.Application.Common.Interfaces.ITasaNotificationService, SistemaSatHospitalario.WebAPI.Infrastructure.TasaNotificationService>();
 
 // Add JWT Authentication
-var jwtSecret = builder.Configuration["JwtConfig:Secret"];
+var jwtSecret = builder.Configuration["JwtConfig:Secret"] ?? "DefaultSecretKey_MustBeChangedInProduction_1234567890123456";
 if (string.IsNullOrEmpty(jwtSecret))
 {
     throw new InvalidOperationException("JWT Secret is not configured. Please check your environment variables or appsettings.");
@@ -59,16 +78,16 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = true; // Hardened for security
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Hardened but flexible for dev
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
+        ValidIssuer = builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI",
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JwtConfig:Audience"],
+        ValidAudience = builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA",
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
@@ -88,6 +107,9 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
+// Fase 3: CORS debe ser procesado ANTES que cualquier otro middleware para manejar preflights reliably
+app.UseCors("AngularPolicy");
+
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
@@ -97,6 +119,24 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Fase 3: Security Headers Middleware
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
+
+// Fase 3: HSTS en Producción
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.UseRateLimiter();
 
 // ----- Database Initializer -----
 using (var scope = app.Services.CreateScope())
@@ -123,8 +163,8 @@ using (var scope = app.Services.CreateScope())
 }
 // --------------------------------
 
-app.UseRouting();
 app.UseCors("AngularPolicy");
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 

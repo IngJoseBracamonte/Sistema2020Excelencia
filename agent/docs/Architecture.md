@@ -5,7 +5,7 @@ Este es el **Índice de Inteligencia de Alto Nivel** del Sistema Sat Hospitalari
 ## 🏗️ Visión General del Sistema
 El sistema es una plataforma de gestión hospitalaria moderna diseñada para orquestar la admisión, facturación y seguimiento de pacientes en un entorno distribuido y altamente observable.
 
-### 🧩 Arquitectura de Alto Nivel (Mermaid) - V11.7
+### 🧩 Arquitectura de Alto Nivel (Mermaid) - V11.8
 ```mermaid
 graph TD
     subgraph "Frontend Layer (Angular 19)"
@@ -62,7 +62,10 @@ graph TD
 1. **Admission Atomicity**: Cada sincronización de carrito genera un ingreso clínico y contable único.
 2. **Conditional Closure**: El cierre de cuentas está supeditado al balance cero.
 3. **Legacy Concatenation**: Identidad dual entre el sistema nativo y el sistema WinForms MySQL.
-4. **Automated Zero-Touch Deployments**: El WebAPI consolida múltiples Contextos de BD (Identity, System, Legacy). La aplicación invoca iterativamente colecciones de `IDatabaseInitializer` ejecutando `MigrateAsync()` en cascada para asentar los metadatos SQL antes de abrir los puertos HTTP.
+4. **Automated Zero-Touch Deployments**: El WebAPI consolida múltiples Contextos de BD (Identity, System, Legacy). La aplicación invoca iterativamente colecciones de:
+- `DatabaseProvider`: `MySql`
+- `AllowedOrigins`: Lista de orígenes permitidos separada por comas (Ej: `https://localhost:4200,https://app.sathospital.com`).
+`IDatabaseInitializer` ejecutando `MigrateAsync()` en cascada para asentar los metadatos SQL antes de abrir los puertos HTTP.
 
 
 ## 📚 Módulos de Memoria (Deep Context)

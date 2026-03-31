@@ -34,7 +34,7 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Razón**: El usuario no veía las operaciones SQL en Aspire.
 - **Resultado**: Trazas detalladas habilitadas.
 
-### 3. Evolución a Arquitectura de Memoria v2.1 (Deep Context)
+### 3. Evolución 🧩 Arquitectura de Alto Nivel (Mermaid) - V13.0 (Security Hardened)
 - **Acción**: Se desglosó la documentación en 7 archivos especializados y se enriqueció cada uno con contexto profundo.
 - **Propósito**: Satisfacer la necesidad de una IA con memoria técnica exhaustiva y evitar re-lecturas de código.
 - **Impacto**: Se incluyeron diagramas Mermaid en `Architecture.md` y patrones de ingeniería en `Rules.md`.
@@ -141,7 +141,7 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 ### 13. Audit: Sincronización de Campos de Cierre de Cuenta
 - **Archivo**: `facturacion.component.ts` -> `procesarCobro()`
 - **Cambio**: Añadido `usuarioId` en el payload de `closeAccount`.
-- **Razón**: El `CloseAccountCommandHandler` requiere el ID del usuario para la gestión de auditoría y cierre de la caja diaria (`CajaDiaria`).
+- **Razón**: The `CloseAccountCommandHandler` requiere el ID del usuario para la gestión de auditoría y cierre de la caja diaria (`CajaDiaria`).
 
 ## 📌 Lecciones del Día
 - **Entity Consistency**: Siempre verificar las propiedades de la entidad en `Domain` antes de manipular Handlers en `Application`.
@@ -232,3 +232,27 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Backend**: Actualización de `SettleARCommand` y `SettleARCommandHandler` para persistir el desglose de pagos en la tabla `DetallePagos` de SQL Server.
 - **Arquitectura**: Se eliminó la restricción de estado en `ReciboFactura.AgregarDetallePago` para permitir la conciliación de saldos en facturas ya emitidas.
 - **Resultado**: El sistema ahora permite liquidar deudas mezclando múltiples monedas con auditoría total del monto original y su equivalente en bolívares.
+
+## 🗓️ 2026-03-31 (Auditoría de Seguridad y Sanitización V12.1)
+### 1. Security: Hardening del Interceptor JWT (SEC-001)
+- **Acción**: Se refactorizó `jwt.interceptor.ts` para validar el destino de la petición.
+- **Razón**: El interceptor adjuntaba el token Bearer a cualquier URL saliente (ej. assets externos o telemetría), arriesgando el secuestro de sesiones.
+- **Resultado**: El token ahora solo se inyecta en peticiones dirigidas a `environment.apiUrl`.
+
+### 2. Security: Enmascaramiento de Errores Críticos (SEC-002)
+- **Acción**: Saneamiento de `GlobalExceptionHandler.cs` y `BillingController.cs`.
+- **Razón**: Se devolvía `exception.Message` directamente al cliente, lo que exponía detalles internos de la base de datos y la arquitectura ante fallos.
+- **Resultado**: Respuestas estandarizadas con mensajes genéricos y ticket de soporte.
+
+### 3. Security: Endurecimiento de Configuración Global (SEC-003/004)
+- **Acción**: Actualización de `Program.cs`.
+- **Cambios**:
+  - `RequireHttpsMetadata = true` para JWT.
+  - CORS restringido mediante `WithOrigins` usando la configuración `AllowedOrigins`.
+- **Resultado**: Configuración de red lista para entornos de producción seguros.
+
+
+## 📌 Lecciones del Día
+- **Default Insecurity**: Las configuraciones por defecto de plantillas (.NET/Angular) suelen priorizar la agilidad del desarrollador sobre la seguridad. Es mandatorio realizar un paso de hardening antes de avanzar a producción.
+- **Information Disclosure**: El mensaje de error es el principal vector de reconocimiento para un atacante. El enmascaramiento en el `GlobalExceptionHandler` es la primera línea de defensa.
+- **CORS Broadness**: `AllowAnyOrigin` es incompatible con `AllowCredentials` en navegadores modernos y es un riesgo de seguridad mayor; siempre usar listas blancas de dominios.

@@ -73,7 +73,7 @@ public static class Extensions
                     //.AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddEntityFrameworkCoreInstrumentation(options => {
-                        options.SetDbStatementForText = true;
+                        options.SetDbStatementForText = builder.Environment.IsDevelopment();
                     })
                     .AddSource(DiagnosticsConfig.ServiceName);
             });

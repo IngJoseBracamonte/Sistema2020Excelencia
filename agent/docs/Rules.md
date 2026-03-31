@@ -2,7 +2,7 @@
 
 Este documento define las directrices inquebrantables de desarrollo para garantizar la consistencia, calidad y mantenibilidad del sistema.
 
-## 🏛️ Leyes del Proyecto (Unbreakable Laws) - V11.7
+## 🏛️ Leyes del Proyecto (Unbreakable Laws) - V11.10
 1. **Legacy Build Integrity**: El sistema original de WinForms/C# NO SE MODIFICA en su lógica de negocio. Sin embargo, los archivos de proyecto (`.csproj`) deben mantenerse sincronizados con rutas relativas y frameworks soportados (v4.8) para garantizar el build de la solución.
 2. **EF Core 9 Control**: Mantener `Microsoft.EntityFrameworkCore` en la versión `9.0.2`. El uso de v10 está prohibido por incompatibilidades con el proveedor Pomelo MySQL.
 4. **Identidad por GUID**: Todos los nuevos registros de pacientes y entidades transaccionales DEBEN usar `Guid` como clave primaria. El uso de `int` para PKs queda prohibido para nuevas entidades.
@@ -18,6 +18,15 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 14. **Multi-Currency AR Settlement**: Las liquidaciones de cuentas por cobrar (Receivables) DEBEN soportar conversión automática. TODO monto de base en la base de datos se guarda en USD ($). El payload enviado al backend debe contener el equivalente en USD como monto principal.
 15. **Monetary Precision (Bs. 2-Decimal)**: Todos los cálculos financieros que resulten en Bolívares (Bs.) DEBEN redondearse a exactamente 2 decimales. En conversiones (ej. de Bs a USD), se debe mantener la precisión máxima en USD pero el monto origen en Bs debe ser estrictamente de 2 decimales.
 16. **Master Currency (USD Balance)**: El sistema opera bajo una arquitectura **USD-First**. El saldo de las Cuentas por Cobrar (AR) y Abonos se gestiona y persiste principalmente en USD ($). El equivalente en Bs. es una capa de visualización/proyección volátil basada en la tasa de cambio activa.
+17. **JWT Interceptor Restriction (SEC-001)**: El `AuthInterceptor` en Angular DEBE validar que la URL de destino comience con `environment.apiUrl` antes de adjuntar el token. Prohibido el envío automático de tokens a dominios externos.
+18. **Generic Error Masking (SEC-002)**: Las respuestas de error (Catch blocks) en Controladores y el `GlobalExceptionHandler` NUNCA deben devolver `ex.Message` o `StackTrace` al cliente. Se deben usar mensajes genéricos y IDs de ticket para depuración interna.
+19. **CORS Explicit Origins (SEC-003)**: Prohibido el uso de `SetIsOriginAllowed(origin => true)` en producción. Se deben configurar orígenes explícitos mediante variables de entorno o `appsettings`.
+20. **JWT Transport Security (SEC-004)**: La configuración de `JwtBearer` debe tener siempre `RequireHttpsMetadata = true`.
+21. **HSTS Enforcement (SEC-005)**: Todas las APIs en producción DEBEN activar el middleware `UseHsts()` para forzar exclusivamente el transporte mediante TLS.
+22. **Rate Limiting (SEC-006)**: Los endpoints de escritura o autenticación DEBEN estar protegidos por políticas de `RateLimiting`. Umbral estándar: 100 req/min por IP.
+23. **Financial Idempotency (SEC-007)**: Los comandos que modifiquen cuentas o generen cobros DEBEN aplicar el atributo `[Idempotent]`, exigiendo la cabecera `X-Idempotency-Key` del cliente para evitar cargos duplicados.
+24. **PII Scrubbing (SEC-008)**: Prohibido persistir información de identificación personal (Cédula, Nombres) en mensajes de excepción o logs. Se DEBE utilizar el método `ScrubPii` antes de generar un ticket de error.
+25. **Database Encryption (SEC-009)**: Todas las conexiones a bases de datos en producción DEBEN usar TLS/SSL (`SslMode=VerifyFull` o `Required`).
 
 ## 💻 Patrones de Código (Engineering Patterns)
 ### Backend (WebAPI / Core)
