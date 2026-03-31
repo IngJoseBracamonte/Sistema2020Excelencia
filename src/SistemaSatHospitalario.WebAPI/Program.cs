@@ -107,8 +107,6 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// Fase 3: CORS debe ser procesado ANTES que cualquier otro middleware para manejar preflights reliably
-app.UseCors("AngularPolicy");
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
@@ -163,8 +161,8 @@ using (var scope = app.Services.CreateScope())
 }
 // --------------------------------
 
-app.UseCors("AngularPolicy");
 app.UseRouting();
+app.UseCors("AngularPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
