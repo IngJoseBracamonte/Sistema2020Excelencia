@@ -29,7 +29,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     Id = m.Id,
                     Nombre = m.Nombre,
-                    Especialidad = m.Especialidad,
+                    Especialidad = m.Especialidad.Nombre,
                     Activo = m.Activo
                 })
                 .ToListAsync(cancellationToken);

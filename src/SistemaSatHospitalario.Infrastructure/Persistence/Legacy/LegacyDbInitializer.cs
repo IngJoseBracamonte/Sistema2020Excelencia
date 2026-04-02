@@ -23,18 +23,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         {
             try
             {
-                _logger.LogInformation("Verificando y aplicando migraciones pendientes a Legacy Database...");
+                // El contexto Legacy NO usa migraciones de EF Core (es una DB pre-existente)
+                // Solo verificamos si podemos conectarnos si el provider está configurado
+                if (_context.Database.GetDbConnection().ConnectionString != null)
+                {
+                    _logger.LogInformation("Verificando conectividad con Legacy Database...");
+                    await _context.Database.CanConnectAsync();
+                }
                 
-                // Aplica automáticamente cualquier migración de EF Core pendiente en Sistema2020LegacyDbContext
-                await _context.Database.MigrateAsync();
-                
-                _logger.LogInformation("Legacy Database Inicializada Correctamente.");
+                _logger.LogInformation("Legacy Database Inicializada (Check de Conexión).");
             }
             catch (Exception ex)
             {
-                // Un error aquí significa que no hay conexión, o el schema está bloqueado
-                _logger.LogError(ex, "Ocurrió un error inicializando Legacy Database (Migraciones).");
-                throw;
+                // Un error aquí suele ser por falta de ConnectionString en el entorno
+                _logger.LogWarning($"Legacy Database no disponible o no configurada: {ex.Message}");
             }
         }
     }

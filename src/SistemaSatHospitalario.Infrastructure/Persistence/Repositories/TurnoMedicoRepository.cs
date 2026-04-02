@@ -42,7 +42,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         public async Task<List<Medico>> ListBySpecialtyAsync(string specialty, CancellationToken cancellationToken)
         {
             return await _context.Medicos
-                .Where(m => m.Especialidad == specialty && m.Activo)
+                .Where(m => m.Especialidad.Nombre == specialty && m.Activo)
                 .ToListAsync(cancellationToken);
         }
 

@@ -8,9 +8,6 @@ using SistemaSatHospitalario.Infrastructure.Identity.Models;
 using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
-using Microsoft.AspNetCore.Identity;
-using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
-using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.WebAPI.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.RateLimiting; 
@@ -116,7 +113,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Fase 3: Security Headers Middleware
 app.Use(async (context, next) =>
@@ -136,14 +136,56 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 
-// ----- Database Initializer -----
+// ----- Database Initializer (Robust Check V14.0) -----
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
+    var context = services.GetRequiredService<SatHospitalarioDbContext>(); // Canary context
+    
     try
     {
-        logger.LogInformation("Iniciando secuencia de inicialización de Base de Datos...");
+        logger.LogInformation("Iniciando secuencia de robustecimiento: verificando conexión a Base de Datos...");
+        
+        bool canConnect = false;
+        int retries = 5;
+        int delaySeconds = 3;
+
+        for (int i = 1; i <= retries; i++)
+        {
+            try
+            {
+                // CanConnect no siempre da el error real, OpenConnection es más explícito
+                await context.Database.OpenConnectionAsync();
+                await context.Database.CloseConnectionAsync();
+                canConnect = true;
+                logger.LogInformation("Conexión a Base de Datos establecida correctamente.");
+                break;
+            }
+            catch (Exception ex)
+            {
+                // Si el error es "Unknown database" (1049 en MySql), el servidor está vivo
+                // y podemos proceder para que MigrateAsync cree la base de datos.
+                if (ex.Message.Contains("Unknown database", StringComparison.OrdinalIgnoreCase) || 
+                    ex.InnerException?.Message.Contains("Unknown database", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    canConnect = true;
+                    logger.LogInformation("Servidor de Base de Datos respondio: 'Base de Datos inexistente'. Procediendo a la creacion de esquemas...");
+                    break;
+                }
+
+                logger.LogWarning("Intento {Attempt}/{Total}: No se pudo conectar. Motivo: {ErrorMessage}. Reintentando en {Delay}s...", i, retries, ex.Message, delaySeconds);
+                await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+            }
+        }
+
+        if (!canConnect)
+        {
+            logger.LogCritical("ERROR CRÍTICO: No se pudo establecer conexión con la Base de Datos tras {Total} intentos. El sistema no puede iniciar.", retries);
+            throw new Exception("Database is unavailable after multiple retries.");
+        }
+
+        logger.LogInformation("Iniciando secuencia de inicialización de esquemas...");
         var initializers = services.GetServices<IDatabaseInitializer>();
         
         foreach (var initializer in initializers)

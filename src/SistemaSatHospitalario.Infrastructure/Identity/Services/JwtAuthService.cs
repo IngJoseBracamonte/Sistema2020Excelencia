@@ -27,15 +27,17 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
 
         public async Task<JwtAuthResult> AuthenticateAsync(string username, string password, CancellationToken cancellationToken)
         {
-            var user = await _userManager.FindByNameAsync(username);
-            if (user == null || !user.EsActivo) return null;
+            try 
+            {
+                var user = await _userManager.FindByNameAsync(username);
+                if (user == null || !user.EsActivo) return null;
 
-            var result = await _userManager.CheckPasswordAsync(user, password);
-            if (!result) return null;
+                var result = await _userManager.CheckPasswordAsync(user, password);
+                if (!result) return null;
 
-            var roles = await _userManager.GetRolesAsync(user);
-            
-            var tokenHandler = new JwtSecurityTokenHandler();
+                var roles = await _userManager.GetRolesAsync(user);
+                
+                var tokenHandler = new JwtSecurityTokenHandler();
             var keyStr = _configuration["JwtConfig:Secret"];
             if (string.IsNullOrEmpty(keyStr) || keyStr.Length < 32)
                 throw new InvalidOperationException("Revise JwtConfig:Secret en appsettings. Debe tener al menos 32 caracteres.");
@@ -73,6 +75,12 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 Username = user.UserName,
                 Role = userRole
             };
+            }
+            catch (Exception ex)
+            {
+                // Registramos el error real en los logs para diagnóstico senior
+                throw new InvalidOperationException($"Error durante la autenticación: {ex.Message}. Verifique la conexión a Base de Datos (MySql) y la secret JWT.", ex);
+            }
         }
     }
 }

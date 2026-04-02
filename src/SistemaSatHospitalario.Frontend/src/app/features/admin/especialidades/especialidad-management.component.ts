@@ -9,7 +9,7 @@ import {
     Trash2,
     X,
     Save,
-    Bookmark
+    Folder
 } from 'lucide-angular';
 
 @Component({
@@ -38,7 +38,7 @@ export class EspecialidadManagementComponent implements OnInit {
     Delete: Trash2,
     Close: X,
     Save: Save,
-    Category: Bookmark
+    Category: Folder
   };
 
   ngOnInit() {

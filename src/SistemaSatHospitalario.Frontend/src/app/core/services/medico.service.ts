@@ -6,7 +6,8 @@ import { environment } from '../../../environments/environment';
 export interface Medico {
   id?: string;
   nombre: string;
-  especialidad: string;
+  especialidadId?: string;
+  especialidad?: string;
   activo: boolean;
 }
 

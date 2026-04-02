@@ -164,6 +164,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("Medicos");
                 entity.HasKey(m => m.Id);
+
+                entity.HasOne(m => m.Especialidad)
+                      .WithMany()
+                      .HasForeignKey(m => m.EspecialidadId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<ServicioClinico>(entity =>

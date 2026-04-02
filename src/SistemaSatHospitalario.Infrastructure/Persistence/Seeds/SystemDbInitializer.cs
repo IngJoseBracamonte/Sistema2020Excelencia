@@ -36,6 +36,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 
                 await SeedServiciosClinicosAsync();
+                await SeedEspecialidadesAsync();
                 await SeedMedicosAsync();
                 await SeedPacientesAsync();
                 await SeedCajaDiariaAsync();
@@ -62,15 +63,36 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
         }
 
+        private async Task SeedEspecialidadesAsync()
+        {
+            if (!await _context.Especialidades.AnyAsync())
+            {
+                _context.Especialidades.AddRange(
+                    new Especialidad("Diagnóstico Diferencial"),
+                    new Especialidad("Oncología"),
+                    new Especialidad("Cardiología"),
+                    new Especialidad("Pediatría"),
+                    new Especialidad("Traumatología")
+                );
+                await _context.SaveChangesAsync();
+            }
+        }
+
         private async Task SeedMedicosAsync()
         {
             if (!await _context.Medicos.AnyAsync())
             {
-                _context.Medicos.AddRange(
-                    new Medico("Gregory House", "Diagnóstico Diferencial"),
-                    new Medico("James Wilson", "Oncología")
-                );
-                await _context.SaveChangesAsync();
+                var diagDif = await _context.Especialidades.FirstOrDefaultAsync(e => e.Nombre == "Diagnóstico Diferencial");
+                var onco = await _context.Especialidades.FirstOrDefaultAsync(e => e.Nombre == "Oncología");
+
+                if (diagDif != null && onco != null)
+                {
+                    _context.Medicos.AddRange(
+                        new Medico("Gregory House", diagDif.Id),
+                        new Medico("James Wilson", onco.Id)
+                    );
+                    await _context.SaveChangesAsync();
+                }
             }
         }
 

@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
+import { BillingFacadeService } from '../../../core/services/billing-facade.service';
 import { ActivatedRoute } from '@angular/router';
 import { 
     LucideAngularModule, 
@@ -25,7 +26,10 @@ import {
 })
 export class CatalogManagementComponent implements OnInit {
   private catalogService = inject(CatalogService);
+  private billingFacade = inject(BillingFacadeService);
   private route = inject(ActivatedRoute);
+
+  public tasaCambioDia = this.billingFacade.tasaCambioDia;
 
   public catalog = signal<CatalogItem[]>([]);
   public filteredCatalog = signal<CatalogItem[]>([]);

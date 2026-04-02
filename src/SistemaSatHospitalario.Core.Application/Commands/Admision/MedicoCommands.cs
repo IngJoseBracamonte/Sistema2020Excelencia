@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class CreateMedicoCommand : IRequest<Guid>
     {
         public string Nombre { get; set; }
-        public string Especialidad { get; set; }
+        public Guid EspecialidadId { get; set; }
     }
 
     public class CreateMedicoCommandHandler : IRequestHandler<CreateMedicoCommand, Guid>
@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<Guid> Handle(CreateMedicoCommand request, CancellationToken cancellationToken)
         {
-            var entity = new Medico(request.Nombre, request.Especialidad);
+            var entity = new Medico(request.Nombre, request.EspecialidadId);
             _context.Medicos.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);
             return entity.Id;
@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public Guid Id { get; set; }
         public string Nombre { get; set; }
-        public string Especialidad { get; set; }
+        public Guid EspecialidadId { get; set; }
         public bool Activo { get; set; }
     }
 
@@ -55,7 +55,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var entity = await _context.Medicos.FindAsync(new object[] { request.Id }, cancellationToken);
             if (entity == null) return false;
 
-            entity.Update(request.Nombre, request.Especialidad);
+            entity.Update(request.Nombre, request.EspecialidadId);
             entity.SetEstado(request.Activo);
 
             await _context.SaveChangesAsync(cancellationToken);

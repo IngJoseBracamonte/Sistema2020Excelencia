@@ -23,12 +23,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         {
             var search = request.Especialidad.ToUpper().Trim();
             return await _context.Medicos
-                .Where(m => m.Especialidad.ToUpper().Contains(search) && m.Activo)
+                .Where(m => m.Especialidad.Nombre.ToUpper().Contains(search) && m.Activo)
                 .Select(m => new DoctorDto
                 {
                     Id = m.Id,
                     Nombre = m.Nombre,
-                    Especialidad = m.Especialidad
+                    Especialidad = m.Especialidad.Nombre
                 })
                 .ToListAsync(cancellationToken);
         }

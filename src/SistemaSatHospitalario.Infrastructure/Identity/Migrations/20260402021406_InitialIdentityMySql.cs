@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
 {
     /// <inheritdoc />
-    public partial class RebuildIdentityPachonPro : Migration
+    public partial class InitialIdentityMySql : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

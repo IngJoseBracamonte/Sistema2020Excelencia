@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SatHospitalarioDbContext))]
-    partial class SatHospitalarioDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260402025330_ModelSyncMySql_20260402")]
+    partial class ModelSyncMySql_20260402
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -352,16 +355,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid>("EspecialidadId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Especialidad")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EspecialidadId");
 
                     b.ToTable("Medicos", (string)null);
                 });
@@ -858,17 +860,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CuentaServicioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.Medico", b =>
-                {
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.Especialidad", "Especialidad")
-                        .WithMany()
-                        .HasForeignKey("EspecialidadId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Especialidad");
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.PrecioServicioConvenio", b =>

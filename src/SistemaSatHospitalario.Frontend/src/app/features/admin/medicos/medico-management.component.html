@@ -88,10 +88,10 @@
                         <div class="space-y-2">
                             <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Especialidad Materia</label>
                             <div class="relative">
-                                <select [(ngModel)]="currentMedico().especialidad" 
+                                <select [(ngModel)]="currentMedico().especialidadId" 
                                     class="w-full bg-black/20 border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all uppercase appearance-none cursor-pointer">
                                     <option value="" disabled selected>SELECCIONE ESPECIALIDAD...</option>
-                                    <option *ngFor="let esp of especialidadesCatalogo()" [value]="esp.nombre">{{ esp.nombre | uppercase }}</option>
+                                    <option *ngFor="let esp of especialidadesCatalogo()" [value]="esp.id">{{ esp.nombre | uppercase }}</option>
                                 </select>
                             </div>
                         </div>

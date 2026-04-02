@@ -4,7 +4,14 @@ using Microsoft.Extensions.Configuration;
 var builder = DistributedApplication.CreateBuilder(args);
 
 // --- Configuración Global de Infraestructura ---
+// Configuración de base de datos orquestada
 var dbProviderName = builder.Configuration["DatabaseProvider"] ?? "MySql";
+
+// Proteger contra variables de entorno del sistema que puedan forzar SqlServer si queremos MySql por defecto
+if (string.IsNullOrEmpty(builder.Configuration["DatabaseProvider"]))
+{
+    dbProviderName = "MySql";
+}
 
 // --- Gestión de Parámetros y Secretos (Separación Dev/Prod) ---
 // Aspire leerá estos valores de:
@@ -12,7 +19,11 @@ var dbProviderName = builder.Configuration["DatabaseProvider"] ?? "MySql";
 // 2. Variables de Entorno (Recomendado para Prod/Docker)
 // 3. Azure Key Vault (Opcional en Prod)
 
-// Parámetros de Base de Datos (Deben incluir SslMode=Required o VerifyFull en Producción)
+// --- Configuración de Modo de Ejecución (Docker vs Local) ---
+// Para forzar Docker: dotnet run --UseDocker=true (o en appsettings.json/user-secrets)
+var useDocker = builder.Configuration.GetValue<bool>("UseDocker", false);
+
+// Parámetros de Base de Datos
 var systemConStr = builder.AddParameter("mysql-system-query", secret: true);
 var identityConStr = builder.AddParameter("mysql-identity-query", secret: true);
 var legacyConStr = builder.AddParameter("mysql-legacy-query", secret: true);
@@ -22,31 +33,73 @@ var jwtSecret = builder.AddParameter("jwt-secret", secret: true);
 var smtpUser = builder.AddParameter("smtp-user", secret: true);
 var smtpPass = builder.AddParameter("smtp-pass", secret: true);
 
-// --- Orquestación de la API (.NET en Docker) ---
-var api = builder.AddDockerfile("api", "..", "SistemaSatHospitalario.WebAPI/Dockerfile")
-    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "endpoint-api")
-    .WithEnvironment("DatabaseProvider", dbProviderName)
-    // --- Traducción Dinámica de Cadenas de Conexión para Docker ---
-    .WithEnvironment("ConnectionStrings__mysql-system", 
-        (builder.Configuration["Parameters:mysql-system-query"] ?? "").Replace("localhost", "host.docker.internal").Replace("127.0.0.1", "host.docker.internal"))
-    .WithEnvironment("ConnectionStrings__mysql-identity", 
-        (builder.Configuration["Parameters:mysql-identity-query"] ?? "").Replace("localhost", "host.docker.internal").Replace("127.0.0.1", "host.docker.internal"))
-    .WithEnvironment("ConnectionStrings__LegacyConnection", 
-        (builder.Configuration["Parameters:mysql-legacy-query"] ?? "").Replace("localhost", "host.docker.internal").Replace("127.0.0.1", "host.docker.internal"))
-    // --------------------------------------------------------------
-    .WithEnvironment("JwtConfig__Secret", jwtSecret)
-    .WithEnvironment("EmailSettings__SmtpUser", smtpUser)
-    .WithEnvironment("EmailSettings__SmtpPass", smtpPass)
-    .WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
-    .WithEnvironment("JwtConfig__Audience", builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA")
-    .WithEnvironment("AllowedOrigins", "http://localhost:4200,http://localhost:80,http://localhost");
+// Funciones de utilidad para cadenas de conexión
+string ProcessConnStr(string? connStr) 
+{
+    if (string.IsNullOrEmpty(connStr)) return "";
+    
+    // Forzamos 127.0.0.1 en lugar de localhost para evitar problemas IPv6 en Windows
+    var processed = connStr.Replace("localhost", useDocker ? "host.docker.internal" : "127.0.0.1")
+                          .Replace("127.0.0.1", useDocker ? "host.docker.internal" : "127.0.0.1");
 
-// --- Orquestación del Frontend (Angular en Docker) ---
-var frontend = builder.AddDockerfile("frontend", "../SistemaSatHospitalario.Frontend")
-    .WithReference(api.GetEndpoint("endpoint-api"))
-    .WithHttpEndpoint(port: 4200, targetPort: 80, name: "http")
-    .WithExternalHttpEndpoints()
-    // En Producción, el Endpoint debe ser el puerto expuesto del contenedor/servicio
-    .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:18889");
+    // Aseguramos parámetros críticos para MySql 8.0+ y compatibilidad legacy
+    if (!processed.Contains("AllowPublicKeyRetrieval", StringComparison.OrdinalIgnoreCase))
+        processed += ";AllowPublicKeyRetrieval=True";
+    if (!processed.Contains("SslMode", StringComparison.OrdinalIgnoreCase))
+        processed += ";SslMode=None";
+    if (!processed.Contains("Allow User Variables", StringComparison.OrdinalIgnoreCase))
+        processed += ";Allow User Variables=True";
+        
+    return processed;
+}
+
+// Priorizamos los secretos directos (pueden ser reales) sobre los de Parameters (pueden ser placeholders)
+string GetConnectionString(string key) => builder.Configuration[key] 
+                                         ?? builder.Configuration[$"Parameters:{key}"] 
+                                         ?? "";
+
+// Función local para aplicar la configuración común a la API
+void ConfigureApi(IResourceBuilder<IResourceWithEnvironment> resource, IResourceBuilder<IResourceWithEndpoints> frontendResource)
+{
+    resource.WithEnvironment("DatabaseProvider", dbProviderName)
+        .WithEnvironment("ConnectionStrings__mysql-system", ProcessConnStr(GetConnectionString("mysql-system-query")))
+        .WithEnvironment("ConnectionStrings__mysql-identity", ProcessConnStr(GetConnectionString("mysql-identity-query")))
+        .WithEnvironment("ConnectionStrings__LegacyConnection", ProcessConnStr(GetConnectionString("mysql-legacy-query")))
+        .WithEnvironment("JwtConfig__Secret", GetConnectionString("jwt-secret"))
+        .WithEnvironment("EmailSettings__SmtpUser", GetConnectionString("smtp-user"))
+        .WithEnvironment("EmailSettings__SmtpPass", GetConnectionString("smtp-pass"))
+        .WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
+        .WithEnvironment("JwtConfig__Audience", builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA")
+        // Whitelist both localhost and explicit IPs to avoid CORS issues with fixed IP binding
+        .WithEnvironment("AllowedOrigins", $"{frontendResource.GetEndpoint("http")},http://localhost:4200,http://127.0.0.1:4200,http://0.0.0.0:4200,http://localhost:80,http://localhost");
+}
+
+if (useDocker)
+{
+    var apiDocker = builder.AddDockerfile("api", "..", "SistemaSatHospitalario.WebAPI/Dockerfile")
+        .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "endpoint-api");
+    
+    var frontendDocker = builder.AddDockerfile("frontend", "../SistemaSatHospitalario.Frontend")
+        .WithHttpEndpoint(port: 4200, targetPort: 80, name: "http")
+        .WithReference(apiDocker.GetEndpoint("endpoint-api"))
+        .WithExternalHttpEndpoints()
+        .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:18889");
+
+    ConfigureApi(apiDocker, frontendDocker);
+}
+else
+{
+    var apiProject = builder.AddProject<Projects.SistemaSatHospitalario_WebAPI>("api")
+        .WithHttpEndpoint(port: 8080, name: "endpoint-api")
+        .WithExternalHttpEndpoints();
+
+    var frontendNpm = builder.AddNpmApp("frontend", "../SistemaSatHospitalario.Frontend", "start")
+        .WithHttpEndpoint(port: 4200, env: "PORT", name: "http")
+        .WithExternalHttpEndpoints()
+        .WithReference(apiProject.GetEndpoint("endpoint-api"))
+        .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:18889");
+
+    ConfigureApi(apiProject, frontendNpm);
+}
 
 builder.Build().Run();

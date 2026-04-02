@@ -63,7 +63,8 @@
               "buildTarget": "SistemaSatHospitalario.Frontend:build:production"
             },
             "development": {
-              "buildTarget": "SistemaSatHospitalario.Frontend:build:development"
+              "buildTarget": "SistemaSatHospitalario.Frontend:build:development",
+              "proxyConfig": "proxy.conf.js"
             }
           },
           "defaultConfiguration": "development"

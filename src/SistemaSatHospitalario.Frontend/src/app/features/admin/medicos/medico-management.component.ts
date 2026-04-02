@@ -32,7 +32,7 @@ export class MedicoManagementComponent implements OnInit {
   public isEditing = signal<boolean>(false);
   public currentMedico = signal<Partial<Medico>>({
     nombre: '',
-    especialidad: '',
+    especialidadId: '',
     activo: true
   });
 
@@ -67,7 +67,7 @@ export class MedicoManagementComponent implements OnInit {
     this.isEditing.set(false);
     this.currentMedico.set({
       nombre: '',
-      especialidad: '',
+      especialidadId: '',
       activo: true
     });
     this.showModal.set(true);
