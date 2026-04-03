@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -90,8 +90,12 @@ export class FacturacionService {
     return this.http.post<any>(`${this.billingUrl}/CloseAccount`, request);
   }
 
-  cargarServicio(payload: CargarServicioACuentaRequest): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/CargarServicio`, payload);
+  cargarServicio(payload: CargarServicioACuentaRequest, idempotencyKey?: string): Observable<any> {
+    let headers = new HttpHeaders();
+    if (idempotencyKey) {
+      headers = headers.set('X-Idempotency-Key', idempotencyKey);
+    }
+    return this.http.post<any>(`${this.billingUrl}/CargarServicio`, payload, { headers });
   }
 
   registrarPago(payload: RegistrarReciboFacturaRequest): Observable<any> {
@@ -117,8 +121,12 @@ export class FacturacionService {
     return this.http.post<any>(`${this.billingUrl}/BloquearHorario`, payload);
   }
 
-  syncBulk(payload: SyncCarritoMasivoRequest): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/SincronizarCarrito`, payload);
+  syncBulk(payload: SyncCarritoMasivoRequest, idempotencyKey?: string): Observable<any> {
+    let headers = new HttpHeaders();
+    if (idempotencyKey) {
+      headers = headers.set('X-Idempotency-Key', idempotencyKey);
+    }
+    return this.http.post<any>(`${this.billingUrl}/SincronizarCarrito`, payload, { headers });
   }
 
   // Panel de Gestión Administrativa (Fase 10)

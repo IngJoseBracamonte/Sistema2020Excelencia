@@ -44,7 +44,8 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Simular DBSet vacío o que no contiene al paciente
             // Nota: En un entorno real de Moq + EF Core usaríamos un MockDbSet, 
             // Setup Mocks usando el helper TestAsyncEnumerable para soportar querys asíncronas
-            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234") { Id = pacienteId };
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
             var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable();
             var mockPacienteSet = new Mock<DbSet<PacienteAdmision>>();
             mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<PacienteAdmision>(pacienteSet.Provider));

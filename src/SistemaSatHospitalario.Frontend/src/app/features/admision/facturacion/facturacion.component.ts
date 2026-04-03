@@ -758,7 +758,8 @@ export class FacturacionComponent {
       comentario: this.comentarioCita() || undefined
     };
 
-    this.facturacionService.cargarServicio(payload).subscribe({
+    const idempotencyKey = crypto.randomUUID();
+    this.facturacionService.cargarServicio(payload, idempotencyKey).subscribe({
       next: (res: any) => {
         this.cuentaId.set(res.cuentaId);
         this.serviciosEnBackend.update((prev: any[]) => [...prev, {

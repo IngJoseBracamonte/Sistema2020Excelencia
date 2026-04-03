@@ -22,11 +22,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<PendingARDto>> Handle(GetPendingARQuery request, CancellationToken cancellationToken)
         {
-            var query = from ar in _context.CuentasPorCobrar
-                        join pac in _context.PacientesAdmision on ar.PacienteId equals pac.Id
-                        join cta in _context.CuentasServicios on ar.CuentaServicioId equals cta.Id
+            var query = from ar in _context.CuentasPorCobrar.AsNoTracking()
+                        join pac in _context.PacientesAdmision.AsNoTracking() on ar.PacienteId equals pac.Id
+                        join cta in _context.CuentasServicios.AsNoTracking() on ar.CuentaServicioId equals cta.Id
                         // Ajuste de tipos Guid? a int? para el join de Convenios
-                        join conv in _context.SegurosConvenios on cta.ConvenioId equals (int?)conv.Id into convJoin
+                        join conv in _context.SegurosConvenios.AsNoTracking() on cta.ConvenioId equals (int?)conv.Id into convJoin
                         from conv in convJoin.DefaultIfEmpty()
                         select new PendingARDto
                         {

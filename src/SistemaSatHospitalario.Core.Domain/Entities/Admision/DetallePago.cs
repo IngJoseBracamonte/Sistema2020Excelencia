@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string ReferenciaBancaria { get; protected set; }
         public decimal MontoAbonadoMoneda { get; protected set; }
         public decimal EquivalenteAbonadoBase { get; protected set; }
+        public DateTime FechaPago { get; protected set; }
 
         public ReciboFactura ReciboFactura { get; protected set; }
 
@@ -25,6 +26,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             ReferenciaBancaria = referenciaBancaria;
             MontoAbonadoMoneda = montoAbonadoMoneda;
             EquivalenteAbonadoBase = equivalenteAbonadoBase;
+            FechaPago = DateTime.UtcNow;
         }
     }
 }

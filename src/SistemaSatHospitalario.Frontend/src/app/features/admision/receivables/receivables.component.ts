@@ -115,6 +115,9 @@ export class ReceivablesComponent implements OnInit {
 
   ngOnInit() {
     this.refresh();
+    // Forzar actualización de tasa al entrar al módulo (Senior Pattern)
+    this.settingsService.refreshTasa();
+    
     this.tasaSubscription = this.settingsService.tasa$.subscribe(tasa => {
       this.tasaCambio.set(tasa);
     });
@@ -210,23 +213,36 @@ export class ReceivablesComponent implements OnInit {
   liquidar() {
     if (!this.selectedAR() || this.payments().length === 0) return;
 
+    if (this.tasaCambio() <= 0) {
+      this.errorMessage.set("No se puede procesar el cobro: No existe una tasa de cambio cargada. Por favor, espere a que se sincronice o contacte al administrador.");
+      return;
+    }
+
     this.isSettling.set(true);
-    const request: SettleARRequest = {
+    const command: SettleARRequest = {
       arId: this.selectedAR()!.id,
       payments: this.payments(),
       observaciones: this.observaciones()
     };
 
-    this.arService.settle(request).subscribe({
+    const paciente = this.selectedAR()?.pacienteNombre;
+    const total = this.totalPaidUSD();
+
+    this.arService.settle(command).subscribe({
       next: () => {
         this.isSettling.set(false);
         this.selectedAR.set(null);
-        this.actionMessage.set("Cobro registrado exitosamente.");
+        this.payments.set([]);
         this.refresh();
+        
+        // Mensaje de éxito "que anuncie bien" (Senior UX)
+        this.actionMessage.set(`¡LIQUIDACIÓN COMPLETADA! Se procesó el cobro de $${total.toFixed(2)} para ${paciente} exitosamente.`);
+        setTimeout(() => this.actionMessage.set(null), 8000); 
       },
       error: (err: any) => {
         this.isSettling.set(false);
         const serverError = err.error?.Error || err.error?.error || "Error al procesar el cobro.";
+        alert(`Fallo en la liquidación:\n${serverError}`);
         this.errorMessage.set(serverError);
       }
     });

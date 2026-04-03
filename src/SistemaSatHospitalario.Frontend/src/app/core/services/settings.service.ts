@@ -16,26 +16,41 @@ export class SettingsService {
   public tasa$ = this._tasaSubject.asObservable();
 
   constructor() {
+    this.refreshTasa();
     this.initSignalR();
-    // Carga inicial
-    this.getTasa().pipe(first()).subscribe(res => this._tasaSubject.next(res.monto));
+  }
+
+  refreshTasa() {
+    this.getTasa().pipe(first()).subscribe({
+      next: (res) => {
+        if (res && res.monto > 0) {
+          this._tasaSubject.next(res.monto);
+          console.log(`[SettingsService] Tasa cargada: ${res.monto}`);
+        }
+      },
+      error: (err) => console.error('[SettingsService] No se pudo cargar la tasa inicial. Es posible que falte autenticación.', err)
+    });
   }
 
   private initSignalR() {
+    // Senior Pattern: Flexible URL for SignalR on Proxy Environments
+    // No usamos connectionUrl directamente en .withUrl para permitir que SignalR maneje la base
+    
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(this.hubUrl, {
-        skipNegotiation: true,
-        transport: signalR.HttpTransportType.WebSockets
+      .withUrl(this.hubUrl, { 
+        skipNegotiation: false, 
+        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
       })
       .withAutomaticReconnect()
       .build();
 
     this.hubConnection.start()
-      .then(() => console.log('SignalR: Conectado al Hub de Tasas'))
-      .catch(err => console.error('Error al iniciar SignalR Tasa:', err));
+      .then(() => console.log('[SettingsService] SignalR: Conectado al Hub de Tasas'))
+      .catch(err => console.error('[SettingsService] Error al iniciar SignalR Tasa:', err));
 
     this.hubConnection.on('TasaActualizada', (nuevaTasa: number) => {
       this._tasaSubject.next(nuevaTasa);
+      console.log(`[SettingsService] Tasa actualizada vía SignalR: ${nuevaTasa}`);
     });
   }
 

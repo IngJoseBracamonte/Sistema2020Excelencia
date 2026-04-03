@@ -10,6 +10,7 @@ using SistemaSatHospitalario.Core.Application.Commands;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
+using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using Moq;
 
 namespace SistemaSatHospitalario.Tests.Unit.Application

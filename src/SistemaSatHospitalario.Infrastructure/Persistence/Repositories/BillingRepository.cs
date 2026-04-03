@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
@@ -23,7 +24,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         {
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
-                .FirstOrDefaultAsync(c => c.PacienteId == pacienteId && c.Estado == "Abierta", cancellationToken);
+                .FirstOrDefaultAsync(c => c.PacienteId == pacienteId && c.Estado == EstadoConstants.Abierta, cancellationToken);
         }
 
         public async Task<CuentaServicios?> ObtenerCuentaPorIdAsync(Guid cuentaId, CancellationToken cancellationToken)
@@ -55,7 +56,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task ForzarCierreCuentaAsync(Guid cuentaId, DateTime fechaCierre, CancellationToken cancellationToken)
         {
-            string sql = "UPDATE CuentasServicios SET Estado = 'Facturada', FechaCierre = @p0 WHERE Id = @p1";
+            string sql = $"UPDATE CuentasServicios SET Estado = '{EstadoConstants.Facturada}', FechaCierre = @p0 WHERE Id = @p1";
             await _context.Database.ExecuteSqlRawAsync(sql, new object[] { fechaCierre, cuentaId }, cancellationToken);
         }
 
@@ -66,7 +67,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task<bool> ExisteCitaSimultaneaAsync(Guid medicoId, DateTime hora, CancellationToken cancellationToken)
         {
-            return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.Estado != "Cancelado", cancellationToken);
+            return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.Estado != EstadoConstants.Cancelado, cancellationToken);
         }
 
         public async Task CancelarCitaMedicaAsync(Guid cuentaId, Guid medicoId, DateTime hora, CancellationToken cancellationToken)

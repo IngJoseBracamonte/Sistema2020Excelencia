@@ -21,53 +21,90 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<bool> Handle(SettleARCommand request, CancellationToken cancellationToken)
         {
+            // 0. SENIOR CLEANSE: Eliminamos cualquier rastro de tracking previo para evitar side-effects de concurrencia
+            _context.ChangeTracker.Clear();
+
+            // 1. CARGA AISLADA: Todo con AsNoTracking para que EF no intente "vigilar" ni "actualizar" estos objetos accidentalmente
             var ar = await _context.CuentasPorCobrar
+                .AsNoTracking()
                 .Include(a => a.Cuenta)
                 .FirstOrDefaultAsync(a => a.Id == request.ArId, cancellationToken);
 
-            if (ar == null) throw new Exception("Cuenta por cobrar no encontrada.");
-            if (ar.Estado == EstadoConstants.Cobrada) throw new Exception("Esta cuenta ya ha sido cobrada.");
+            if (ar == null) 
+                throw new Exception($"Cuenta por cobrar con ID {request.ArId} no fue encontrada.");
+            
+            if (ar.Estado == EstadoConstants.Cobrada) 
+                return true;
 
-            // Obtener la tasa de cambio activa
             var tasaActual = await _context.TasaCambio
+                .AsNoTracking()
                 .Where(t => t.Activo)
                 .OrderByDescending(t => t.Fecha)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            decimal tasaValue = tasaActual?.Monto ?? throw new Exception("No existe una tasa de cambio activa configurada.");
+            if (tasaActual == null || tasaActual.Monto <= 0)
+                throw new Exception("No existe una tasa de cambio activa configurada.");
 
-            // Buscar el recibo asociado a esta cuenta para anexar los pagos
-            var recibo = await _context.RecibosFactura
-                .Include(r => r.DetallesPago)
-                .OrderByDescending(r => r.FechaEmision)
-                .FirstOrDefaultAsync(r => r.CuentaServicioId == ar.CuentaServicioId, cancellationToken);
-            
-            // Si no existe un recibo (borrador o emitido), creamos uno administrativo para registrar estos pagos
-            if (recibo == null)
+            using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+            try
             {
-                recibo = new ReciboFactura(ar.CuentaServicioId, ar.PacienteId, null, tasaValue, ar.MontoTotalBase);
-                _context.RecibosFactura.Add(recibo);
-            }
+                var recibo = await _context.RecibosFactura
+                    .FirstOrDefaultAsync(r => r.CuentaServicioId == ar.CuentaServicioId && r.EstadoFiscal == EstadoConstants.Borrador, cancellationToken);
 
-            // Registrar cada pago en el detalle
-            foreach (var payment in request.Payments)
+                Guid reciboId;
+                if (recibo == null)
+                {
+                    var nuevoRecibo = new ReciboFactura(ar.CuentaServicioId, ar.PacienteId, null, tasaActual.Monto, ar.MontoTotalBase);
+                    _context.RecibosFactura.Add(nuevoRecibo);
+                    reciboId = nuevoRecibo.Id;
+                }
+                else
+                {
+                    reciboId = recibo.Id;
+                }
+
+                decimal totalAbonadoUSD = 0;
+                foreach (var payment in request.Payments)
+                {
+                    var amountUSD = Math.Round(payment.Amount, 2);
+                    totalAbonadoUSD += amountUSD;
+
+                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD);
+                    _context.DetallesPago.Add(detalle);
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // Cálculo de nuevo saldo (Atómico e Independiente del Tracker)
+                decimal nuevoMontoPagado = ar.MontoPagadoBase + totalAbonadoUSD;
+                string nuevoEstado = nuevoMontoPagado >= ar.MontoTotalBase ? EstadoConstants.Cobrada : EstadoConstants.Parcial;
+
+                var rowsAffected = await _context.CuentasPorCobrar
+                    .Where(a => a.Id == request.ArId && a.Estado != EstadoConstants.Cobrada)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(a => a.Estado, nuevoEstado)
+                        .SetProperty(a => a.MontoPagadoBase, nuevoMontoPagado), 
+                    cancellationToken);
+
+                // Si rowsAffected es 0, puede ser porque ya estaba Cobrada (reintento). No fallamos si ya está en el estado deseado.
+                if (rowsAffected == 0)
+                {
+                    var checkAr = await _context.CuentasPorCobrar.AsNoTracking().FirstOrDefaultAsync(a => a.Id == request.ArId, cancellationToken);
+                    if (checkAr?.Estado != EstadoConstants.Cobrada && checkAr?.Estado != EstadoConstants.Parcial)
+                    {
+                        throw new DbUpdateConcurrencyException("No se pudo actualizar el saldo de la cuenta. Verifique si el estado cambió simultáneamente.");
+                    }
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                return true;
+            }
+            catch (Exception ex)
             {
-                // El monto base viene normalizado desde el frontend como USD ($)
-                var amountUSD = Math.Round(payment.Amount, 2);
-
-                recibo.AgregarDetallePago(
-                    payment.Method, 
-                    payment.Reference, 
-                    payment.AmountMoneda, 
-                    amountUSD); 
+                await transaction.RollbackAsync(cancellationToken);
+                throw new Exception($"Fallo crítico en el motor de liquidación: {ex.Message}", ex);
             }
-
-            // Liquidar la cuenta por cobrar
-            ar.MarcarComoCobrada();
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return true;
         }
+
     }
 }

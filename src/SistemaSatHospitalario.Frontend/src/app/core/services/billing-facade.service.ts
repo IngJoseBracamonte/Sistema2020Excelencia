@@ -178,8 +178,11 @@ export class BillingFacadeService {
         };
       })
     };
+    
+    // Generación de Clave de Idempotencia (V12.0 Robustness)
+    const idempotencyKey = crypto.randomUUID();
 
-    return this.facturacionService.syncBulk(payload).pipe(
+    return this.facturacionService.syncBulk(payload, idempotencyKey).pipe(
       tap((res: any) => {
         this.cuentaId.set(res.cuentaId);
         

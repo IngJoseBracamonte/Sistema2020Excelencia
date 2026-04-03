@@ -41,6 +41,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedPacientesAsync();
                 await SeedCajaDiariaAsync();
                 await SeedConfiguracionAsync();
+                await SeedTasaCambioAsync();
+                
+                // Senior Maintenance Pattern: Asegurar integridad de fechas de recaudación
+                await FixOrphanPaymentDatesAsync();
 
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
@@ -155,6 +159,37 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     new ConfiguracionGeneral("SAT HOSPITALARIO - EXCELENCIA", "J-12345678-9", 16.00m)
                 );
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        private async Task SeedTasaCambioAsync()
+        {
+            if (!await _context.TasaCambio.AnyAsync())
+            {
+                _logger.LogInformation("Sembrando tasa de cambio inicial (Baseline 36.50)...");
+                _context.TasaCambio.Add(new TasaCambio(36.50m));
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        private async Task FixOrphanPaymentDatesAsync()
+        {
+            try 
+            {
+                // Corregimos cualquier pago con fecha default (0001-01-01) igualando a la del recibo padre.
+                // Esto asegura que el Dashboard sea preciso con datos anteriores al cambio de esquema.
+                int affected = await _context.Database.ExecuteSqlRawAsync(
+                    "UPDATE DetallesPago d JOIN RecibosFacturas r ON d.ReciboFacturaId = r.Id SET d.FechaPago = r.FechaEmision WHERE d.FechaPago = '0001-01-01 00:00:00'"
+                );
+
+                if (affected > 0)
+                {
+                    _logger.LogInformation($"Auto-Mantenimiento: Se corrigieron {affected} fechas de recaudación históricas.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "El auto-mantenimiento de fechas de pago falló. El Dashboard podría mostrar datos incompletos transitoriamente.");
             }
         }
     }

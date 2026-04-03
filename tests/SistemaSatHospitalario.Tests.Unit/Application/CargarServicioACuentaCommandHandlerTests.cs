@@ -7,6 +7,8 @@ using Xunit;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Tests.Unit.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace SistemaSatHospitalario.Tests.Unit.Application
 {
@@ -33,7 +35,8 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var servicioId = Guid.NewGuid();
 
             // Setup Mocks usando el helper TestAsyncEnumerable para soportar querys asíncronas
-            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234") { Id = pacienteId };
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
             var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable();
             var mockPacienteSet = new Mock<DbSet<PacienteAdmision>>();
             mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<PacienteAdmision>(pacienteSet.Provider));
