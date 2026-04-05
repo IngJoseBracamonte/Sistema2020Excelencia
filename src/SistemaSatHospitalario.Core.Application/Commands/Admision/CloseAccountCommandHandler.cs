@@ -13,6 +13,7 @@ using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using System.Text.RegularExpressions;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -102,7 +103,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // 4.5 EJECUCIÓN LEGACY: Justo antes del Commit local para prevenir órdenes huérfanas en MySQL si lo local revienta
                 if (itemsLab.Any())
                 {
-                    await ProcessLegacyOrder(request.UsuarioId, cuenta, itemsLab, cancellationToken);
+                    await ProcessLegacyOrder(cuenta, cancellationToken);
                 }
 
                 await transaction.CommitAsync(cancellationToken);
@@ -116,47 +117,49 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             return recibo.Id;
         }
 
-        private async Task ProcessLegacyOrder(string usuarioLocal, CuentaServicios cuenta, List<DetalleServicioCuenta> items, CancellationToken cancellationToken)
+        private async Task ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct)
         {
-            // V11.0: Recuperamos el ID del legado desde la entidad maestra del paciente
+            // Senior Logic: Sincronización basado en IDs persistentes (V12.1 ID-First)
             var paciente = await _context.PacientesAdmision
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, cancellationToken);
-            
-            int idPersonaLegacy = paciente?.IdPacienteLegacy ?? 0;
-            if (idPersonaLegacy == 0) return; // No hay vínculo legacy
+                .FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, ct);
 
-            var idsServicios = items.Select(i => i.ServicioId).Distinct().ToList();
-            var serviciosInfo = await _context.ServiciosClinicos
-                .Where(s => idsServicios.Contains(s.Id))
-                .ToDictionaryAsync(s => s.Id, s => s.Codigo, cancellationToken);
+            if (paciente == null || !paciente.IdPacienteLegacy.HasValue || paciente.IdPacienteLegacy.Value == 0) return;
 
-            var orden = new OrdenLegacy 
-            { 
-                IdPersona = idPersonaLegacy,
-                Fecha = DateTime.Now,
-                HoraIngreso = DateTime.Now.ToString("HH:mm:ss"), // Varchar compliancy
-                PrecioF = items.Sum(i => i.Precio * i.Cantidad),
-                IDConvenio = 1, // Rule Enforced by QA
-                EstadoDeOrden = 1, // Rule Enforced by QA
-                Usuario = int.TryParse(usuarioLocal, out int pId) ? pId : 0 // V11.0 Identificador del sistema nuevo parsing
-            };
+            int legacyId = paciente.IdPacienteLegacy.Value;
 
-            var validPerfiles = items
-                .Select(i => new 
-                { 
-                    Precio = i.Precio,
-                    PerfilId = serviciosInfo.ContainsKey(i.ServicioId) && 
-                              int.TryParse(serviciosInfo[i.ServicioId], out int idLag) ? idLag : 0 
-                })
-                .Where(p => p.PerfilId > 0)
-                .Select(p => new PerfilesFacturadosLegacy { IdPerfil = p.PerfilId, PrecioTotal = p.Precio })
+            var labItems = cuenta.Detalles
+                .Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio) && !string.IsNullOrEmpty(d.LegacyMappingId))
                 .ToList();
 
-            if (validPerfiles.Any())
+            if (!labItems.Any()) return;
+
+            var perfilesFacturados = new List<PerfilesFacturadosLegacy>();
+            foreach (var item in labItems)
             {
-                await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, validPerfiles, new List<ResultadosPacienteLegacy>(), cancellationToken);
+                if (int.TryParse(item.LegacyMappingId, out int idPerfil))
+                {
+                    perfilesFacturados.Add(new PerfilesFacturadosLegacy 
+                    { 
+                        IdOrden = 0, // Se asigna en el repositorio
+                        IdPersona = legacyId,
+                        IdPerfil = idPerfil, 
+                        PrecioPerfil = item.Precio * item.Cantidad 
+                    });
+                }
             }
+
+            if (!perfilesFacturados.Any()) return;
+
+            var orden = new OrdenLegacy
+            {
+                IdPersona = legacyId,
+                IDConvenio = cuenta.ConvenioId ?? 1,
+                Fecha = DateTime.Now,
+                HoraIngreso = DateTime.Now.ToString("HH:mm:ss")
+            };
+
+            await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, perfilesFacturados, new List<ResultadosPacienteLegacy>(), ct);
         }
     }
 }

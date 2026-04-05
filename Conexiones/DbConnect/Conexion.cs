@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Configuration;
 using System.Drawing;
@@ -1729,7 +1729,8 @@ namespace Conexiones.DbConnect
             try
             {
                 conn.Open();
-                command = new MySqlCommand(string.Format("FLUSH HOSTS"), conn);
+                // FIX: FLUSH HOSTS is deprecated in MySQL 8.0+. Using modern equivalent.
+                command = new MySqlCommand("TRUNCATE TABLE performance_schema.host_cache", conn);
                 adapter.InsertCommand = command;
                 adapter.InsertCommand.ExecuteNonQuery();
                 int MS = 1;

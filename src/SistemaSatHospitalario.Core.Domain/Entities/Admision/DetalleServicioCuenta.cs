@@ -13,10 +13,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo
         public string UsuarioCarga { get; private set; }
         public DateTime FechaCarga { get; private set; }
+        public string? LegacyMappingId { get; private set; }
 
         protected DetalleServicioCuenta() { }
 
-        internal DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga)
+        internal DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;

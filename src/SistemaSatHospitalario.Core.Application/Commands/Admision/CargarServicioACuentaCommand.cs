@@ -71,13 +71,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 serviceGuid = Guid.Empty;
             }
 
+            // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.1)
+            string? legacyId = null;
+            if (serviceGuid != Guid.Empty)
+            {
+                var catalogo = await _context.ServiciosClinicos.FindAsync(new object[] { serviceGuid }, cancellationToken);
+                legacyId = catalogo?.LegacyMappingId;
+            }
+
             var detalle = cuenta.AgregarServicio(
                 serviceGuid, 
                 request.Descripcion, 
                 request.Precio, 
                 request.Cantidad, 
                 request.TipoServicio, 
-                request.UsuarioCarga);
+                request.UsuarioCarga,
+                legacyId);
             
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);

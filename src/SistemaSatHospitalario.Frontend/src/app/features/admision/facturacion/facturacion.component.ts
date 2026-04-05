@@ -291,10 +291,10 @@ export class FacturacionComponent {
 
     if (!timePart.includes(':')) return timePart;
 
-    const [h, m] = timePart.split(':');
-    const startNum = parseInt(h);
-    const endNum = (startNum + 1) % 24;
-    const endStr = endNum.toString().padStart(2, '0') + ':' + m;
+    const [h, m] = timePart.split(':').map(Number);
+    const endH = m >= 30 ? (h + 1) % 24 : h;
+    const endM = m >= 30 ? '00' : '30';
+    const endStr = String(endH).padStart(2, '0') + ':' + endM;
 
     return `${timePart} - ${endStr}`;
   }
@@ -828,7 +828,9 @@ export class FacturacionComponent {
       pagos: this.pagos()
     }).subscribe({
       next: (res: any) => {
-        this.actionMessage.set(`¡Facturación Exitosa! Recibo: ${res.reciboId}`);
+        const p = this.selectedPatientData();
+        const pacienteNombre = p ? `${p.nombre} ${p.apellidos || ''}` : '';
+        this.actionMessage.set(`¡Facturación Exitosa! Paciente: ${pacienteNombre}. Recibo: ${res.numeroRecibo || res.reciboId}`);
 
         // Confirmación de Impresión No Intrínseca (Requerimiento Pro)
         const deseaImprimir = confirm("¿Desea imprimir el comprobante de pago ahora?");
@@ -883,7 +885,9 @@ export class FacturacionComponent {
       pagos: this.pagos()
     }).subscribe({
       next: (res: any) => {
-        this.actionMessage.set(`Cuenta cerrada sin comprobante. Recibo: ${res.reciboId}`);
+        const p = this.selectedPatientData();
+        const pacienteNombre = p ? `${p.nombre} ${p.apellidos || ''}` : '';
+        this.actionMessage.set(`Ha agregado satisfactoriamente a: ${pacienteNombre}`);
         this.resetForm();
         this.isLoading.set(false);
       },

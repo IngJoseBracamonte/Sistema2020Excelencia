@@ -20,38 +20,43 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
             modelBuilder.Entity<OrdenLegacy>(entity =>
             {
-                entity.ToTable("Orden");
+                entity.ToTable("ordenes");
                 entity.HasKey(e => e.IdOrden);
             });
 
             modelBuilder.Entity<ResultadosPacienteLegacy>(entity =>
             {
-                entity.ToTable("ResultadosPaciente");
-                entity.HasKey(e => e.IdResultadoPaciente); 
+                entity.ToTable("resultadospaciente");
+                entity.HasKey(e => e.IdResultadoPaciente);
+                entity.Property(e => e.IdResultadoPaciente).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<DatosPersonalesLegacy>(entity =>
             {
                 entity.ToTable("datospersonales");
                 entity.HasKey(e => e.IdPersona);
+                entity.Property(e => e.IdPersona).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<PerfilLegacy>(entity =>
             {
-                entity.ToTable("Perfil");
+                entity.ToTable("perfil");
                 entity.HasKey(e => e.IdPerfil);
+                entity.Property(e => e.IdPerfil).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<PerfilesAnalisisLegacy>(entity =>
             {
-                entity.ToTable("PerfilesAnalisis");
-                entity.HasKey(e => e.IdDetalle); 
+                entity.ToTable("perfilesanalisis");
+                entity.HasKey(e => e.IdDetalle);
+                entity.Property(e => e.IdDetalle).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<PerfilesFacturadosLegacy>(entity =>
             {
-                entity.ToTable("PerfilesFacturados");
+                entity.ToTable("perfilesfacturados");
                 entity.HasKey(e => e.IdFacturado);
+                entity.Property(e => e.IdFacturado).ValueGeneratedOnAdd();
             });
         }
     }

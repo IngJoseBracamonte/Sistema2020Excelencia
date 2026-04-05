@@ -23,7 +23,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Legacy
     {
         public int IdFacturado { get; set; }
         public int IdOrden { get; set; }
+        public int IdPersona { get; set; } // Nuevo: Requerido por la tabla legacy
         public int IdPerfil { get; set; }
-        public decimal PrecioTotal { get; set; }
+        public decimal PrecioPerfil { get; set; } // Renombrado: PrecioTotal -> PrecioPerfil
+        public string Facturado { get; set; } = "S"; 
     }
 }

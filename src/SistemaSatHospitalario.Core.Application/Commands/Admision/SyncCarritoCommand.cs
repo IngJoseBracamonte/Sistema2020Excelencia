@@ -148,11 +148,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
                     }
 
-                    // Resolución de Guid para Detalle (V11.9)
                     // 4. Persistir el servicio con resolución de GUID (V11.9)
                     if (!Guid.TryParse(item.ServicioId, out var serviceGuid))
                     {
                         serviceGuid = Guid.Empty;
+                    }
+
+                    // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.1)
+                    string? legacyId = null;
+                    if (serviceGuid != Guid.Empty)
+                    {
+                        var catalogo = await _context.ServiciosClinicos.FindAsync(new object[] { serviceGuid }, ct);
+                        legacyId = catalogo?.LegacyMappingId;
                     }
 
                     var detalle = cuenta.AgregarServicio(
@@ -161,7 +168,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         item.Precio, 
                         item.Cantidad, 
                         item.TipoServicio, 
-                        request.UsuarioCarga);
+                        request.UsuarioCarga,
+                        legacyId);
                     
                     detallesRes.Add(new DetalleSyncDto(serviceGuid, detalle.Id));
                 }

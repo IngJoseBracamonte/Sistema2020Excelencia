@@ -44,7 +44,7 @@ export class BillingCartComponent {
   public getHoraRango(hora: string): string {
     if (!hora) return '';
     const [h, m] = hora.split(':').map(Number);
-    const endH = m >= 30 ? h + 1 : h;
+    const endH = m >= 30 ? (h + 1) % 24 : h;
     const endM = m >= 30 ? '00' : '30';
     return `${hora} - ${String(endH).padStart(2, '0')}:${endM}`;
   }

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using SistemaSatHospitalario.Core.Domain.DTOs.Legacy;
+
 namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
 {
     public interface ILegacyQueryService
@@ -9,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
         /// <summary>
         /// Obtiene la lista de análisis asociados a uno o más perfiles desde perfilesanalisis (Legacy).
         /// </summary>
-        Task<IEnumerable<dynamic>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken cancellationToken);
+        Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken cancellationToken);
         
         /// <summary>
         /// Obtiene el conteo de órdenes del día para calcular NumeroDia (Legacy).

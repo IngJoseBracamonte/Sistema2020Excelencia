@@ -103,4 +103,78 @@ export class PrintService {
       </div>
     `;
   }
+
+  generateHistoryHtml(patient: any, history: any[]): string {
+    const totalGeneral = history.reduce((acc, h) => acc + h.total, 0);
+    
+    // Aplanamos todos los servicios de todas las cuentas en una sola lista
+    const allServices = history.flatMap(h => h.servicios.map((s: any) => ({
+      ...s,
+      fecha: new Date(h.fechaCreacion).toLocaleDateString(),
+      tipoIngreso: h.tipoIngreso
+    })));
+
+    return `
+      <div class="header">
+        <div class="logo">SAT HOSPITALARIO</div>
+        <div class="receipt-info">
+          <p>Estado de Cuenta Consolidado</p>
+          <h1>FACTURA RESUMEN</h1>
+          <p>${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+      
+      <div class="patient-box">
+        <div class="field"><label>Paciente</label><span>${patient.nombre} ${patient.apellidos || ''}</span></div>
+        <div class="field"><label>Cédula</label><span>${patient.cedula}</span></div>
+        <div class="field"><label>Fecha Reporte</label><span>${new Date().toLocaleDateString()}</span></div>
+        <div class="field"><label>ID Cliente</label><span>${patient.id.substring(0,8).toUpperCase()}</span></div>
+      </div>
+
+      <table style="margin-top: 20px;">
+        <thead>
+          <tr>
+            <th style="width: 80px;">Fecha</th>
+            <th>Descripción del Servicio</th>
+            <th style="width: 100px;">Categoría</th>
+            <th class="text-right" style="width: 40px;">Cant</th>
+            <th class="text-right" style="width: 100px;">Precio ($)</th>
+            <th class="text-right" style="width: 100px;">Subtotal ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allServices.map(s => `
+            <tr>
+              <td style="font-size: 10px; color: #64748b;">${s.fecha}</td>
+              <td style="font-weight: 700;">${s.descripcion}</td>
+              <td style="font-size: 9px; text-transform: uppercase; color: #94a3b8;">${s.tipoIngreso}</td>
+              <td class="text-right">${s.cantidad}</td>
+              <td class="text-right">$${s.precio.toFixed(2)}</td>
+              <td class="text-right">$${(s.precio * s.cantidad).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="totals" style="margin-top: 40px; border-top: 2px solid #e2e8f0; padding-top: 20px;">
+        <div class="totals-row" style="font-size: 14px; color: #64748b; font-weight: 700;">
+          <span>Subtotal Servicios</span>
+          <span>$${totalGeneral.toFixed(2)}</span>
+        </div>
+        <div class="totals-row" style="font-size: 14px; color: #64748b; font-weight: 700; margin-top: 5px;">
+          <span>Impuestos / Otros</span>
+          <span>$0.00</span>
+        </div>
+        <div class="totals-row grand-total" style="background: #1e293b; color: white; padding: 15px 20px; border-radius: 8px; margin-top: 20px;">
+          <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Total a Pagar USD</span>
+          <span style="font-size: 24px;">$${totalGeneral.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div class="footer" style="margin-top: 60px;">
+        Este documento es un resumen administrativo y no sustituye a la factura legal definitiva. <br>
+        <strong>SAT HOSPITALARIO - Excelencia en Gestión Médica</strong>
+      </div>
+    `;
+  }
 }

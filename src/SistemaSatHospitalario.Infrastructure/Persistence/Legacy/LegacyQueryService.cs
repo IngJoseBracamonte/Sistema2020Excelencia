@@ -7,6 +7,8 @@ using MySqlConnector;
 using Dapper;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 
+using SistemaSatHospitalario.Core.Domain.DTOs.Legacy;
+
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
     public class LegacyQueryService : ILegacyQueryService
@@ -18,13 +20,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             _connectionString = configuration.GetConnectionString("LegacyConnection") ?? "";
         }
 
-        public async Task<IEnumerable<dynamic>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken ct)
+        public async Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken ct)
         {
-            if (profileIds == null || profileIds.Count == 0) return Array.Empty<dynamic>();
+            if (profileIds == null || profileIds.Count == 0) return Array.Empty<AnalysisMappingDto>();
 
             using var connection = new MySqlConnection(_connectionString);
             const string sqlAnalisis = "SELECT IDOrganizador, IdAnalisis FROM perfilesanalisis WHERE IdPerfil IN @Ids";
-            return await connection.QueryAsync(sqlAnalisis, new { Ids = profileIds });
+            return await connection.QueryAsync<AnalysisMappingDto>(sqlAnalisis, new { Ids = profileIds });
         }
 
         public async Task<int> GetCurrentDayOrderCountAsync(CancellationToken ct)
