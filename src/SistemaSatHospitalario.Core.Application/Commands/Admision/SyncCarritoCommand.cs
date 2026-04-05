@@ -148,15 +148,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
                     }
 
-                    // 4. Persistir el servicio con resolución de GUID (V11.9)
-                    if (!Guid.TryParse(item.ServicioId, out var serviceGuid))
-                    {
-                        serviceGuid = Guid.Empty;
-                    }
-
-                    // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.1)
+                    // Senior Enrichment V12.2: Capturar LegacyMappingId del catálogo
                     string? legacyId = null;
-                    if (serviceGuid != Guid.Empty)
+                    bool esLab = EstadoConstants.EsLaboratorio(item.TipoServicio);
+                    Guid serviceGuid = Guid.Empty;
+
+                    if (esLab)
+                    {
+                        // Para Laboratorio, el ServicioId ES el ID de Perfil Legacy (ej: "158")
+                        legacyId = item.ServicioId;
+                        _logger.LogInformation("[SYNC] Lab Item: '{Desc}' → LegacyMappingId='{Id}'", item.Descripcion, legacyId);
+                    }
+                    else if (Guid.TryParse(item.ServicioId, out serviceGuid))
                     {
                         var catalogo = await _context.ServiciosClinicos.FindAsync(new object[] { serviceGuid }, ct);
                         legacyId = catalogo?.LegacyMappingId;

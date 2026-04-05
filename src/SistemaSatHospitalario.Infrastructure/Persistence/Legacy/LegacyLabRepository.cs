@@ -11,6 +11,7 @@ using MySqlConnector;
 using Dapper;
 using System.Linq;
 using SistemaSatHospitalario.Core.Domain.DTOs.Legacy;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
@@ -18,12 +19,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
     {
         private readonly Sistema2020LegacyDbContext _context;
         private readonly ILegacyQueryService _queryService;
+        private readonly ILegacyErrorReportingService _logger;
         private readonly string _connectionString;
 
-        public LegacyLabRepository(Sistema2020LegacyDbContext context, ILegacyQueryService queryService, IConfiguration configuration)
+        public LegacyLabRepository(
+            Sistema2020LegacyDbContext context, 
+            ILegacyQueryService queryService, 
+            IConfiguration configuration,
+            ILegacyErrorReportingService logger)
         {
             _context = context;
             _queryService = queryService;
+            _logger = logger;
             _connectionString = configuration.GetConnectionString("LegacyConnection") ?? "";
         }
 
@@ -34,70 +41,79 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             CancellationToken cancellationToken)
         {
             // 1. Datos de la Orden (Header Trace)
-            Console.WriteLine($"[LEGACY-REPO] Generando Orden para Paciente: {orden.IdPersona}, Fecha: {orden.Fecha}, Total: {orden.PrecioF}");
+            _logger.LogTrace($"[LEGACY-REPO] Generando Orden para Paciente Legacy ID: {orden.IdPersona}, Convenio: {orden.IDConvenio}");
             
-            // Determinar Número de Día (Lógica Legacy)
-            int count = await _queryService.GetCurrentDayOrderCountAsync(cancellationToken);
-            orden.NumeroDia = count + 1;
-            Console.WriteLine($"[LEGACY-REPO] Número de Orden asignado para el día: {orden.NumeroDia}");
-
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            try 
             {
-                // 1. Cabecera de Orden (EF CORE)
-                // Normalizamos la fecha a 'Solo Fecha' para compatibilidad con CURDATE() en MySQL Legacy
-                orden.Fecha = DateTime.Today; 
-                await _context.Orden.AddAsync(orden, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-                Console.WriteLine($"[LEGACY-REPO] 'orden' insertada (ID: {orden.IdOrden}, Fecha: {orden.Fecha:yyyy-MM-dd})");
+                // Determinar Número de Día (Lógica Legacy)
+                int count = await _queryService.GetCurrentDayOrderCountAsync(cancellationToken);
+                orden.NumeroDia = count + 1;
+                _logger.LogTrace($"[LEGACY-REPO] Número de Orden asignado para el día: {orden.NumeroDia}");
 
-                // a. Perfiles Facturados (EF CORE)
-                if (perfilesAFacturar.Any())
+                using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
                 {
-                    foreach (var p in perfilesAFacturar)
+                    // 1. Cabecera de Orden (EF CORE)
+                    orden.Fecha = DateTime.Today; 
+                    await _context.Orden.AddAsync(orden, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    _logger.LogTrace($"[LEGACY-REPO] 'orden' insertada (ID: {orden.IdOrden})");
+
+                    // a. Perfiles Facturados (EF CORE)
+                    if (perfilesAFacturar.Any())
                     {
-                        p.IdOrden = orden.IdOrden;
-                        p.IdPersona = orden.IdPersona;
-                        p.Facturado = "S";
+                        foreach (var p in perfilesAFacturar)
+                        {
+                            p.IdOrden = orden.IdOrden;
+                            p.IdPersona = orden.IdPersona;
+                            p.Facturado = "S";
+                        }
+                        await _context.PerfilesFacturados.AddRangeAsync(perfilesAFacturar, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
+                        _logger.LogTrace($"[LEGACY-REPO] {perfilesAFacturar.Count} perfiles insertados via EF Core.");
                     }
-                    await _context.PerfilesFacturados.AddRangeAsync(perfilesAFacturar, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
-                    Console.WriteLine($"[LEGACY-REPO] {perfilesAFacturar.Count} perfiles insertados via EF Core.");
-                }
 
-                // b. Busqueda de Análisis vinculados (ID REAL 1403 ya viene de la Aplicación)
-                var perfilIds = perfilesAFacturar.Select(p => p.IdPerfil).Distinct().ToList();
-                var analysesList = (await _queryService.GetAnalysesForProfilesAsync(perfilIds, cancellationToken)).ToList();
-                Console.WriteLine($"[LEGACY-REPO] Se encontraron {analysesList.Count} análisis en 'perfilesanalisis'.");
+                    // b. Busqueda de Análisis vinculados
+                    var perfilIds = perfilesAFacturar.Select(p => p.IdPerfil).Distinct().ToList();
+                    var analysesList = (await _queryService.GetAnalysesForProfilesAsync(perfilIds, cancellationToken)).ToList();
+                    _logger.LogTrace($"[LEGACY-REPO] Se encontraron {analysesList.Count} análisis técnicos vinculados.");
 
-                // c. Inserción de Resultados del Paciente (Stubs via EF CORE)
-                if (analysesList.Any())
-                {
-                    var resultadosParaInsertar = analysesList.Select(a => new ResultadosPacienteLegacy
+                    // c. Inserción de Resultados del Paciente (Stubs via EF CORE)
+                    if (analysesList.Any())
                     {
-                        IdPaciente = orden.IdPersona,
-                        IdOrden = orden.IdOrden,
-                        IdAnalisis = a.IdAnalisis,
-                        IDOrganizador = a.IDOrganizador,
-                        IdConvenio = orden.IDConvenio,
-                        EstadoDeResultado = 1, // Pendiente
-                        FechaIngreso = orden.Fecha,
-                        HoraIngreso = orden.HoraIngreso
-                    }).ToList();
+                        var resultadosParaInsertar = analysesList.Select(a => new ResultadosPacienteLegacy
+                        {
+                            IdPaciente = orden.IdPersona,
+                            IdOrden = orden.IdOrden,
+                            IdAnalisis = a.IdAnalisis,
+                            IDOrganizador = a.IDOrganizador,
+                            IdConvenio = orden.IDConvenio,
+                            EstadoDeResultado = 1, // Pendiente
+                            FechaIngreso = orden.Fecha,
+                            HoraIngreso = orden.HoraIngreso
+                        }).ToList();
 
-                    await _context.ResultadosPaciente.AddRangeAsync(resultadosParaInsertar, cancellationToken);
-                    await _context.SaveChangesAsync(cancellationToken);
-                    Console.WriteLine($"[LEGACY-REPO] {resultadosParaInsertar.Count} resultados generados exitosamente via EF Core.");
+                        await _context.ResultadosPaciente.AddRangeAsync(resultadosParaInsertar, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
+                        _logger.LogTrace($"[LEGACY-REPO] {resultadosParaInsertar.Count} resultados generados exitosamente.");
+                    }
+
+                    await _context.Database.CommitTransactionAsync(cancellationToken);
+                    _logger.LogTrace($"[LEGACY-REPO] [SUCCESS] COMMIT - Sincronización Exitosa para Orden {orden.IdOrden}");
+                    return orden.IdOrden;
                 }
-
-                await _context.Database.CommitTransactionAsync(cancellationToken);
-                Console.WriteLine($"[LEGACY-REPO] [TRANSACTION] COMMIT - Sincronización Exitosa para Orden {orden.IdOrden}");
-                return orden.IdOrden;
+                catch (Exception ex)
+                {
+                    await _context.Database.RollbackTransactionAsync(cancellationToken);
+                    var innerMsg = ex.InnerException?.Message ?? "Sin InnerException";
+                    var innerInnerMsg = ex.InnerException?.InnerException?.Message ?? "";
+                    _logger.LogError($"[LEGACY-REPO] [TRANSACTION] ROLLBACK | Outer: {ex.Message} | Inner: {innerMsg} | InnerInner: {innerInnerMsg}", ex);
+                    throw;
+                }
             }
             catch (Exception ex)
             {
-                await _context.Database.RollbackTransactionAsync(cancellationToken);
-                Console.WriteLine($"[LEGACY-REPO] [TRANSACTION] ROLLBACK - Error Crítico: {ex.Message}");
+                _logger.LogError($"[LEGACY-REPO] Error persistente al generar orden", ex);
                 throw;
             }
         }
@@ -163,8 +179,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             try
             {
                 using var connection = new MySqlConnection(_connectionString);
-                // El esquema real según Conexion.cs es: Tabla 'Perfil', Columnas 'NombrePerfil', 'Precio', 'Activo'
-                const string sql = "SELECT IdPerfil, NombrePerfil AS Descripcion, PrecioDOlar, Activo AS Estado FROM perfil";
+                // El esquema real según Conexion.cs es: Tabla 'Perfil', Columnas 'NombrePerfil', 'Precio', 'PrecioDolar', 'Activo'
+                const string sql = "SELECT IdPerfil, NombrePerfil AS Descripcion, Precio, PrecioDolar, Activo AS Estado FROM perfil";
                 var result = await connection.QueryAsync<PerfilLegacy>(sql);
                 return result.ToList();
             }

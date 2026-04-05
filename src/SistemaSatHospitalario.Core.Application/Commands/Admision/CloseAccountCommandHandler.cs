@@ -23,21 +23,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly ICajaAdministrativaRepository _cajaRepository;
         private readonly IBillingRepository _billingRepository;
+        private readonly ILegacyErrorReportingService _logger;
 
         public CloseAccountCommandHandler(
             IApplicationDbContext context, 
             ILegacyLabRepository legacyRepository,
             ICajaAdministrativaRepository cajaRepository,
-            IBillingRepository billingRepository)
+            IBillingRepository billingRepository,
+            ILegacyErrorReportingService logger)
         {
             _context = context;
             _legacyRepository = legacyRepository;
             _cajaRepository = cajaRepository;
             _billingRepository = billingRepository;
+            _logger = logger;
         }
 
         public async Task<Guid> Handle(CloseAccountCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogTrace($"[CLOSE-ACCOUNT] Iniciando proceso para Cuenta: {request.CuentaId}");
+
             var cuenta = await _context.CuentasServicios
                 .Include(c => c.Detalles)
                 .FirstOrDefaultAsync(c => c.Id == request.CuentaId, cancellationToken);
@@ -103,14 +108,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // 4.5 EJECUCIÓN LEGACY: Justo antes del Commit local para prevenir órdenes huérfanas en MySQL si lo local revienta
                 if (itemsLab.Any())
                 {
+                    _logger.LogTrace($"[CLOSE-ACCOUNT] Procesando {itemsLab.Count} ítems de Laboratorio para Legado.");
                     await ProcessLegacyOrder(cuenta, cancellationToken);
                 }
 
                 await transaction.CommitAsync(cancellationToken);
+                _logger.LogTrace($"[CLOSE-ACCOUNT] Cuenta cerrada exitosamente: {cuenta.Id}");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError($"[CLOSE-ACCOUNT] Error Crítico en Cuenta {request.CuentaId}", ex);
                 throw new Exception($"Error crítico en el cierre de cuenta (V10.9): {ex.Message}", ex);
             }
 
@@ -119,38 +127,121 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         private async Task ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct)
         {
+            _logger.LogTrace($"[LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: {cuenta.Id} ===");
+            
             // Senior Logic: Sincronización basado en IDs persistentes (V12.1 ID-First)
             var paciente = await _context.PacientesAdmision
-                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, ct);
 
-            if (paciente == null || !paciente.IdPacienteLegacy.HasValue || paciente.IdPacienteLegacy.Value == 0) return;
+            if (paciente == null) 
+            {
+                _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No se encontró el paciente nativo {cuenta.PacienteId}");
+                return;
+            }
+            
+            _logger.LogTrace($"[LEGACY-SYNC] Paciente encontrado: {paciente.CedulaPasaporte} | NombreCorto: {paciente.NombreCorto} | IdLegacy: {paciente.IdPacienteLegacy}");
 
-            int legacyId = paciente.IdPacienteLegacy.Value;
+            // V12.3 JIT Sync Logic (Rule 7)
+            if (!paciente.IdPacienteLegacy.HasValue || paciente.IdPacienteLegacy.Value == 0)
+            {
+                _logger.LogTrace($"[LEGACY-SYNC] JIT: El paciente {paciente.CedulaPasaporte} {paciente.NombreCorto} no tiene ID Legacy. Intentando Onboarding...");
+                
+                var existinLegacy = await _legacyRepository.GetPatientByCedulaAsync(paciente.CedulaPasaporte, ct);
+                if (existinLegacy != null)
+                {
+                    paciente.VincularLegacy(existinLegacy.IdPersona);
+                    _logger.LogTrace($"[LEGACY-SYNC] JIT: Paciente encontrado en Legacy (ID: {existinLegacy.IdPersona}). Vinculando...");
+                }
+                else
+                {
+                    _logger.LogTrace($"[LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...");
+                    var legacyPatient = new DatosPersonalesLegacy
+                    {
+                        Cedula = paciente.CedulaPasaporte,
+                        Nombre = paciente.NombreCorto,
+                        Apellidos = "",
+                        Sexo = "M",
+                        Fecha = DateTime.Now.AddYears(-20).ToString("yyyy-MM-dd"),
+                        Celular = paciente.TelefonoContact ?? "",
+                        Telefono = "",
+                        Correo = "",
+                        TipoCorreo = "@gmail.com",
+                        CodigoCelular = "0414",
+                        CodigoTelefono = "0212",
+                        Visible = 1
+                    };
+                    int newId = await _legacyRepository.CreatePatientLegacyAsync(legacyPatient, ct);
+                    if (newId > 0)
+                    {
+                        paciente.VincularLegacy(newId);
+                        _logger.LogTrace($"[LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: {newId})");
+                    }
+                    else
+                    {
+                        _logger.LogTrace($"[LEGACY-SYNC] ERROR: Falló la creación del paciente en Legacy.");
+                        return;
+                    }
+                }
+                
+                await _context.SaveChangesAsync(ct);
+            }
+
+            int legacyId = paciente.IdPacienteLegacy!.Value;
+            _logger.LogTrace($"[LEGACY-SYNC] LegacyId resuelto: {legacyId}");
 
             var labItems = cuenta.Detalles
-                .Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio) && !string.IsNullOrEmpty(d.LegacyMappingId))
+                .Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio))
                 .ToList();
 
-            if (!labItems.Any()) return;
+            _logger.LogTrace($"[LEGACY-SYNC] Total detalles en cuenta: {cuenta.Detalles.Count}");
+            foreach (var d in cuenta.Detalles)
+            {
+                _logger.LogTrace($"[LEGACY-SYNC]   -> Detalle: '{d.Descripcion}' | TipoServicio: '{d.TipoServicio}' | EsLab: {EstadoConstants.EsLaboratorio(d.TipoServicio)} | LegacyMappingId: '{d.LegacyMappingId}'");
+            }
+
+            if (!labItems.Any())
+            {
+                _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No hay ítems de laboratorio después del filtro EsLaboratorio");
+                return;
+            }
 
             var perfilesFacturados = new List<PerfilesFacturadosLegacy>();
             foreach (var item in labItems)
             {
-                if (int.TryParse(item.LegacyMappingId, out int idPerfil))
+                string? mappingId = item.LegacyMappingId;
+                _logger.LogTrace($"[LEGACY-SYNC] Item Lab: '{item.Descripcion}' | MappingId raw: '{mappingId}'");
+
+                if (string.IsNullOrEmpty(mappingId) && item.Descripcion.Contains(EstadoConstants.PrefixLab))
+                {
+                    mappingId = item.Descripcion.Replace(EstadoConstants.PrefixLab, "").Trim();
+                    _logger.LogTrace($"[LEGACY-SYNC] Self-Healing: extraído mappingId='{mappingId}' desde descripción");
+                }
+
+                if (!string.IsNullOrEmpty(mappingId) && int.TryParse(mappingId, out int idPerfil))
                 {
                     perfilesFacturados.Add(new PerfilesFacturadosLegacy 
                     { 
-                        IdOrden = 0, // Se asigna en el repositorio
+                        IdOrden = 0,
                         IdPersona = legacyId,
                         IdPerfil = idPerfil, 
                         PrecioPerfil = item.Precio * item.Cantidad 
                     });
+                    _logger.LogTrace($"[LEGACY-SYNC] Perfil agregado: IdPerfil={idPerfil}, Precio={item.Precio * item.Cantidad}");
+                }
+                else
+                {
+                    _logger.LogTrace($"[LEGACY-SYNC] DESCARTADO: mappingId='{mappingId}' no es un int válido");
                 }
             }
 
-            if (!perfilesFacturados.Any()) return;
+            if (!perfilesFacturados.Any())
+            {
+                _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No se generaron perfiles facturados válidos. La orden NO se creará.");
+                return;
+            }
 
+            _logger.LogTrace($"[LEGACY-SYNC] Generando orden con {perfilesFacturados.Count} perfiles para paciente legacy {legacyId}...");
+            
             var orden = new OrdenLegacy
             {
                 IdPersona = legacyId,
@@ -160,6 +251,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             };
 
             await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, perfilesFacturados, new List<ResultadosPacienteLegacy>(), ct);
+            _logger.LogTrace($"[LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===");
         }
     }
 }

@@ -50,10 +50,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     PerfilId = p.IdPerfil,
                     NombrePerfil = p.Descripcion,
-                    // De momento asumimos que 'PrecioDOlar' en legacy es el base USD
-                    // Si el usuario indicó 'Precio' decimal, ajustaremos en el repositorio si falta.
-                    PrecioBaseUSD = p.PrecioDOlar, 
-                    PrecioBaseHNL = 0, // El usuario no especificó el campo HNL en legacy aún, por defecto 0 o calculado
+                    // El sistema es USD-First, usamos PrecioDolar como base
+                    PrecioBaseUSD = p.PrecioDolar, 
+                    PrecioBaseHNL = p.Precio, // Fallback informativo
                     
                     PrecioHNL = personalizado?.PrecioHNL,
                     PrecioUSD = personalizado?.PrecioUSD

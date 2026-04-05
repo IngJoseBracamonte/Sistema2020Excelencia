@@ -80,6 +80,9 @@ namespace SistemaSatHospitalario.Infrastructure
             // Email Integration
             services.AddScoped<IEmailService, EmailService>();
 
+            // Legacy Diagnostics (V12.3)
+            services.AddSingleton<ILegacyErrorReportingService, SistemaSatHospitalario.Infrastructure.Services.LegacyErrorReportingService>();
+
             return services;
         }
     }

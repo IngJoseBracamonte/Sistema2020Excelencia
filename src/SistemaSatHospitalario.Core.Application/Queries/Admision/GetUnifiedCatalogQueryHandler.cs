@@ -37,8 +37,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             if (tasa <= 0) tasa = 1; // Fallback de seguridad
 
             // 1. Obtener servicios nativos (RX, Consultas, etc.)
+            // V11.16 Senior Fix: Filtramos por Categoría, no por Descripción (Evita colisiones con stubs de $0.00)
             var serviciosNativos = await _context.ServiciosClinicos
-                .Where(s => s.Activo && s.Descripcion != EstadoConstants.Laboratorio)
+                .Where(s => s.Activo && s.Category != ServiceCategory.Laboratory)
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener precios por convenio si aplica
@@ -79,13 +80,33 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .ToDictionaryAsync(x => x.PerfilId, x => (x.PrecioHNL, x.PrecioUSD), cancellationToken);
             }
 
+            Console.WriteLine($"[CATALOG-DIAGNOSTIC] Native: {serviciosNativos.Count}, Legacy: {perfilesLegacy.Count}, Tasa: {tasa}, Convenio: {request.ConvenioId}");
+
             foreach (var p in perfilesLegacy)
             {
-                decimal finalUsd = (decimal)p.PrecioDOlar;
+                // Estrategia USD-First (V11.16 Fallback):
+                decimal finalUsd = p.PrecioDolar;
+                decimal baseHnl = p.Precio;
+                
+                if (finalUsd <= 0 && baseHnl > 0)
+                {
+                    finalUsd = Math.Round(baseHnl / tasa, 2);
+                    Console.WriteLine($"[LEGACY-CATALOG] Fallback HNL->USD: Perfil {p.IdPerfil} ({p.Descripcion}) -> ${finalUsd}");
+                }
+                else if (finalUsd <= 0 && baseHnl <= 0)
+                {
+                    // Fallback de Emergencia: Si la DB no tiene precio, asignamos un nominal para permitir flujo
+                    // pero alertamos para corrección de datos en Legacy.
+                    finalUsd = 1.00m; 
+                    Console.WriteLine($"[LEGACY-CATALOG] [CRITICAL] Perfil {p.IdPerfil} ({p.Descripcion}) sin precios en DB. Asignado nominal $1.00");
+                }
+
                 decimal? overrideHnl = null;
 
+                // Verificación de Excepciones del Convenio
                 if (excepcionesPerfiles.TryGetValue(p.IdPerfil, out var exc))
                 {
+                    // Si el convenio tiene un valor explícito lo usamos (incluyendo 0 si es intencional del seguro)
                     if (exc.usd > 0) finalUsd = exc.usd;
                     if (exc.hnl > 0) overrideHnl = exc.hnl;
                 }

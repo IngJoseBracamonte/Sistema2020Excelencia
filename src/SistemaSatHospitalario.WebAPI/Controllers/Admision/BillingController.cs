@@ -169,6 +169,27 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
         }
 
+        [HttpGet("DailyBilledPatients")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetDailyBilledPatients([FromQuery] DateTime? fecha)
+        {
+            try
+            {
+                // Normalización de Fecha (V11.10): Si no se provee, usamos el día actual del servidor.
+                // Usamos .Date para asegurar que el query reciba el inicio del día.
+                var targetDate = fecha?.Date ?? DateTime.Today; 
+                var query = new GetDailyBilledPatientsQuery { Fecha = targetDate };
+                var results = await _mediator.Send(query);
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener pacientes facturados del día");
+                return BadRequest(new { Error = "Error al procesar el reporte diario de facturación." });
+            }
+        }
+
         [HttpPost("ReservarTurno")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -28,6 +29,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             NombreCorto = nombreCorto ?? throw new ArgumentNullException(nameof(nombreCorto));
             TelefonoContact = telefonoContact;
             IdPacienteLegacy = idLegacy;
+        }
+
+        public void VincularLegacy(int legacyId)
+        {
+            IdPacienteLegacy = legacyId;
         }
 
         public void ActualizarDatos(string nombreCorto, string telefonoContact)

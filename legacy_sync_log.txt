@@ -1,0 +1,70 @@
+[2026-04-05 00:25:45] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 3c082825-7fef-4c26-af18-1caacf9584e4
+[2026-04-05 00:25:45] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 3c082825-7fef-4c26-af18-1caacf9584e4 ===
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] Paciente encontrado: 7318923 | NombreCorto: BRUNEQUILDE GIL | IdLegacy: 1091
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 1091
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC]   -> Detalle: 'PERFIL 20 COMPLETO' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '1403'
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] Item Lab: 'PERFIL 20 COMPLETO' | MappingId raw: '1403'
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1403, Precio=45.00
+[2026-04-05 00:25:45] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 1091...
+[2026-04-05 00:25:45] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 1091, Convenio: 1
+[2026-04-05 00:25:45] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-04-05 00:25:45] [TRACE] [LEGACY-REPO] 'orden' insertada (ID: 27984)
+[2026-04-05 00:25:45] [ERROR] [LEGACY-REPO] [TRANSACTION] ROLLBACK - Error Crítico en transacción | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 72
+[2026-04-05 00:25:45] [ERROR] [LEGACY-REPO] Error persistente al generar orden | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 72
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 109
+[2026-04-05 00:25:45] [ERROR] [CLOSE-ACCOUNT] Error Crítico en Cuenta 3c082825-7fef-4c26-af18-1caacf9584e4 | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 72
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 109
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.CachedLegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\CachedLegacyLabRepository.cs:line 34
+   at SistemaSatHospitalario.Core.Application.Commands.Admision.CloseAccountCommandHandler.ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Core.Application\Commands\Admision\CloseAccountCommandHandler.cs:line 253
+   at SistemaSatHospitalario.Core.Application.Commands.Admision.CloseAccountCommandHandler.Handle(CloseAccountCommand request, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Core.Application\Commands\Admision\CloseAccountCommandHandler.cs:line 112
+[2026-04-05 00:30:10] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 3c082825-7fef-4c26-af18-1caacf9584e4
+[2026-04-05 00:30:10] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 3c082825-7fef-4c26-af18-1caacf9584e4 ===
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] Paciente encontrado: 7318923 | NombreCorto: BRUNEQUILDE GIL | IdLegacy: 1091
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 1091
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC]   -> Detalle: 'PERFIL 20 COMPLETO' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '1403'
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] Item Lab: 'PERFIL 20 COMPLETO' | MappingId raw: '1403'
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1403, Precio=45.00
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 1091...
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 1091, Convenio: 1
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] 'orden' insertada (ID: 27985)
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] 1 perfiles insertados via EF Core.
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] Se encontraron 30 análisis técnicos vinculados.
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] 30 resultados generados exitosamente.
+[2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] [SUCCESS] COMMIT - Sincronización Exitosa para Orden 27985
+[2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===
+[2026-04-05 00:30:10] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 3c082825-7fef-4c26-af18-1caacf9584e4

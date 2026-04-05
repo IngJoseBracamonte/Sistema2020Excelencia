@@ -27,6 +27,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Cantidad = cantidad;
             TipoServicio = tipoServicio ?? throw new ArgumentNullException(nameof(tipoServicio));
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
+            LegacyMappingId = legacyMappingId; // V12.1 Fix: Assigning mapping ID for legacy sync
             FechaCarga = DateTime.UtcNow;
         }
     }

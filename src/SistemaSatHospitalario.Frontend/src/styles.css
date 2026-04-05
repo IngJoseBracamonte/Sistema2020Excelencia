@@ -34,7 +34,6 @@
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .icon-circle-primary {
@@ -46,14 +45,12 @@
 .btn-primary-v2 {
   background-color: #e11d48;
   color: white;
-  box-shadow: 0 10px 20px -5px rgba(225, 29, 72, 0.3);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary-v2:hover {
   background-color: #be123c;
   transform: translateY(-2px);
-  box-shadow: 0 20px 30px -10px rgba(225, 29, 72, 0.5);
 }
 
 @tailwind base;
@@ -90,20 +87,17 @@ select option {
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .premium-card {
   background: var(--surface-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .premium-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* Animaciones personalizadas */
@@ -129,7 +123,6 @@ select option {
 .text-muted { color: var(--text-muted); }
 .text-primary-glow { 
   color: var(--primary); 
-  text-shadow: 0 0 15px var(--primary-glow); 
 }
 .border-premium { border-color: var(--glass-border); }
 

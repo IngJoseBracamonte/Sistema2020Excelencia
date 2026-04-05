@@ -32,7 +32,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         public async Task<int> GetCurrentDayOrderCountAsync(CancellationToken ct)
         {
             using var connection = new MySqlConnection(_connectionString);
-            const string sqlNumeroDia = "SELECT COUNT(IdOrden) FROM orden WHERE DATE(Fecha) = CURRENT_DATE";
+            const string sqlNumeroDia = "SELECT COUNT(IdOrden) FROM ordenes WHERE DATE(Fecha) = CURRENT_DATE";
             return await connection.ExecuteScalarAsync<int>(sqlNumeroDia);
         }
     }

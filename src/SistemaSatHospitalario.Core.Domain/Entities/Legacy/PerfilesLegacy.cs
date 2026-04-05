@@ -7,7 +7,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Legacy
         public int IdPerfil { get; set; }
         public string Descripcion { get; set; }
         public decimal Precio { get; set; } // Precio base HNL
-        public decimal PrecioDOlar { get; set; }
+        public decimal PrecioDolar { get; set; }
         public int Estado { get; set; } // Activo o inactivo
     }
 

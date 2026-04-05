@@ -63,6 +63,15 @@ export interface SyncCarritoMasivoRequest {
   }>;
 }
 
+export interface DailyBilledPatient {
+  pacienteId: string;
+  cedula: string;
+  nombre: string;
+  apellidos: string;
+  totalFacturado: number;
+  cuentasCerradas: number;
+}
+
 export interface ReceiptPrintData {
   id: string;
   numeroRecibo: string;
@@ -130,6 +139,12 @@ export class FacturacionService {
   }
 
   // Panel de Gestión Administrativa (Fase 10)
+  getDailyBilledPatients(fecha?: string): Observable<DailyBilledPatient[]> {
+    let url = `${this.billingUrl}/DailyBilledPatients`;
+    if (fecha) url += `?fecha=${fecha}`;
+    return this.http.get<DailyBilledPatient[]>(url);
+  }
+
   getAppointments(fecha?: string, medicoId?: string): Observable<any[]> {
     let url = `${this.billingUrl}/Appointments`;
     const params = [];

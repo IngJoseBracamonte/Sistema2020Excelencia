@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PatientService, PatientHistory, PatientRecord } from '../../../core/services/patient.service';
-import { FacturacionService } from '../../../core/services/facturacion.service';
+import { FacturacionService, DailyBilledPatient } from '../../../core/services/facturacion.service';
 import { PrintService } from '../../../core/services/print.service';
 
 @Component({
@@ -11,7 +11,7 @@ import { PrintService } from '../../../core/services/print.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './patient-history.component.html'
 })
-export class PatientHistoryComponent {
+export class PatientHistoryComponent implements OnInit {
   private patientService = inject(PatientService);
   private facturacionService = inject(FacturacionService);
   private printService = inject(PrintService);
@@ -22,10 +22,35 @@ export class PatientHistoryComponent {
   public history = signal<PatientHistory[]>([]);
   public isLoading = signal<boolean>(false);
   public isSearching = signal<boolean>(false);
+  public dailyPatients = signal<DailyBilledPatient[]>([]);
 
   // Filtros de fecha (V3.2 Date-Precision Filter)
-  public startDate = signal<string>('');
-  public endDate = signal<string>('');
+  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+
+  ngOnInit() {
+    this.loadDailyPatients();
+  }
+
+  loadDailyPatients() {
+    this.isLoading.set(true);
+    const selected = this.startDate();
+    
+    // Si no hay fecha (teóricamente imposible por init), no buscamos.
+    if (!selected) return;
+
+    this.facturacionService.getDailyBilledPatients(selected).subscribe({
+      next: (res) => {
+        this.dailyPatients.set(res);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.warn('[Expedientes] Fallo al cargar diario de facturación:', err.status);
+        this.dailyPatients.set([]);
+        this.isLoading.set(false);
+      }
+    });
+  }
 
   public filteredHistory = computed(() => {
     const rawHistory = this.history();
@@ -43,20 +68,32 @@ export class PatientHistoryComponent {
   });
 
   buscar() {
-    if (this.searchTerm().length < 3) return;
-    this.isSearching.set(true);
-    this.patientService.searchPatients(this.searchTerm()).subscribe({
-      next: (res) => {
-        this.patients.set(res);
-        this.isSearching.set(false);
-      },
-      error: () => this.isSearching.set(false)
-    });
+    const term = this.searchTerm();
+    
+    // Si hay un término de búsqueda válido, buscamos por paciente
+    if (term.length >= 3) {
+      this.isSearching.set(true);
+      this.patientService.searchPatients(term).subscribe({
+        next: (res) => {
+          this.patients.set(res);
+          this.isSearching.set(false);
+        },
+        error: () => this.isSearching.set(false)
+      });
+      return;
+    }
+
+    // Si el término está vacío pero tenemos fechas, refrescamos los pacientes del día
+    if (this.startDate()) {
+      this.patients.set([]); // Limpiamos búsqueda de pacientes para mostrar grid del día
+      this.loadDailyPatients();
+    }
   }
 
   verHistorial(patient: PatientRecord) {
     if (!patient.id) return;
     this.selectedPatient.set(patient);
+    this.history.set([]); // Limpiar previo
     this.isLoading.set(true);
     this.patientService.getHistory(patient.id).subscribe({
       next: (res) => {
@@ -65,6 +102,16 @@ export class PatientHistoryComponent {
       },
       error: () => this.isLoading.set(false)
     });
+  }
+
+  verHistorialDaily(p: DailyBilledPatient) {
+    const patient: PatientRecord = {
+      id: p.pacienteId,
+      cedula: p.cedula,
+      nombre: p.nombre,
+      apellidos: p.apellidos
+    };
+    this.verHistorial(patient);
   }
 
   reimprimirRecibo(reciboId: string) {
@@ -86,9 +133,10 @@ export class PatientHistoryComponent {
   }
 
   volverALaBusqueda() {
+    const today = new Date().toISOString().split('T')[0];
     this.selectedPatient.set(null);
     this.history.set([]);
-    this.startDate.set('');
-    this.endDate.set('');
+    this.startDate.set(today);
+    this.endDate.set(today);
   }
 }
