@@ -1,37 +1,64 @@
-<div class="space-y-8 animate-fade-in p-6 md:p-8 relative z-10">
-    <!-- Header Premium (V2.0 Midnight Blue Legítimo) -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
-        <!-- Pattern decorativo -->
-        <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
-        <div class="flex items-center space-x-6">
-            <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
-                <lucide-icon [name]="icons.DollarSign" class="w-8 h-8"></lucide-icon>
+<div class="p-8 max-w-[1700px] space-y-6 animate-fade-in relative z-10">
+    <!-- Header Estilo "Clear" Moderno -->
+    <div class="px-0 pb-2 animate-fade-in relative">
+        <div class="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all">
+            <div class="flex items-center gap-6">
+                <!-- Icono Estilo Estación Claro -->
+                <div class="h-14 w-14 bg-rose-500/5 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-500">
+                    <lucide-icon [name]="icons.DollarSign" class="w-7 h-7"></lucide-icon>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Cuentas por Cobrar</h1>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Gestión de Cobros y Liquidaciones</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Cuentas por Cobrar</h1>
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">Gestión de Cobros y Liquidaciones AR</p>
+            <div class="flex items-center gap-4">
+                <span class="text-slate-600 text-[10px] font-black uppercase tracking-widest opacity-40">AR MS-SYSTEM V3.2</span>
             </div>
         </div>
+    </div>
 
-        <!-- Acciones Rápidas del Header -->
-        <div class="flex items-center gap-3 mt-6 md:mt-0">
-            <div class="relative group">
-                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()" placeholder="Buscar paciente/ID..."
-                    class="pl-12 pr-6 py-4 bg-surface border border-white/5 rounded-2xl w-64 focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-black text-xs uppercase tracking-widest text-white shadow-inner">
-                <lucide-icon [name]="icons.Search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors"></lucide-icon>
+    <!-- Barra de Filtros Consolidada (Igual que Patient History) -->
+    <div class="px-0 animate-fade-in-up">
+        <div class="flex flex-col md:flex-row items-stretch bg-white/[0.02] border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
+            <!-- Buscador Minimalista -->
+            <div class="relative flex-[1.5] min-w-[250px]">
+                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()" placeholder="Buscar por Nombre o Cédula..."
+                    class="w-full pl-12 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600 uppercase">
+                <lucide-icon [name]="icons.Search" class="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-rose-500 transition-colors"></lucide-icon>
             </div>
-            
-            <div class="relative">
-                <select (change)="onFilterChange($any($event.target).value)" 
-                    class="pl-6 pr-10 py-4 bg-surface border border-white/5 rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-4 focus:ring-primary/20 text-white transition-all outline-none appearance-none cursor-pointer">
+
+            <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+            <!-- Selectores de Fecha -->
+            <div class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl md:bg-transparent md:rounded-none flex-1 justify-around">
+                <div class="flex flex-col">
+                    <span class="text-[7px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Desde</span>
+                    <input type="date" [ngModel]="startDate()" (ngModelChange)="startDate.set($event); refresh()" class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                </div>
+                <div class="h-6 w-px bg-white/10 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[7px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Hasta</span>
+                    <input type="date" [ngModel]="endDate()" (ngModelChange)="endDate.set($event); refresh()" class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                </div>
+            </div>
+
+            <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+            <!-- Selector de Estado -->
+            <div class="relative flex-1">
+                <select [value]="filterEstado()" (change)="onFilterChange($any($event.target).value)" 
+                    class="w-full h-full pl-6 pr-10 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
                     <option value="Pendiente">PENDIENTES</option>
                     <option value="Cobrada">LIQUIDADAS</option>
+                    <option value="">TODAS</option>
                 </select>
-                <lucide-icon [name]="icons.ChevronRight" class="w-3.5 h-3.5 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                <lucide-icon [name]="icons.ChevronRight" class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
             </div>
 
-            <button (click)="refresh()" class="p-4 bg-surface border border-white/5 rounded-2xl hover:bg-slate-800 transition-all shadow-sm active:scale-95 text-slate-400">
-                <lucide-icon [name]="icons.RefreshCcw" class="w-5 h-5"></lucide-icon>
+            <button (click)="refresh()" class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20">
+                <span *ngIf="!isLoading()">Filtrar ahora</span>
+                <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin mx-auto"></lucide-icon>
             </button>
         </div>
     </div>
@@ -47,77 +74,74 @@
         <button (click)="actionMessage.set(null)" class="text-[10px] uppercase tracking-widest font-black opacity-60 hover:opacity-100 italic transition-opacity">Entendido</button>
     </div>
 
-    <!-- Listado con Estética Refinada -->
-    <div class="space-y-4">
-        <!-- Loading con estilo -->
-        <div *ngIf="isLoading()" class="flex flex-col items-center justify-center py-24 opacity-30">
-            <lucide-icon [name]="icons.RefreshCcw" class="w-12 h-12 animate-spin text-primary mb-6"></lucide-icon>
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Sincronizando cuentas maestras...</p>
-        </div>
+    <!-- Listado: Vista de Tabla Premium -->
+    <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-white/5">
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Seguro / Convenio</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Monto ($)</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Saldo ($)</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    <!-- Loading State -->
+                    <tr *ngIf="isLoading()" class="bg-transparent">
+                        <td colspan="6" class="px-6 py-16 text-center opacity-40">
+                            <lucide-icon [name]="icons.RefreshCcw" class="w-8 h-8 animate-spin text-rose-500 mx-auto mb-4"></lucide-icon>
+                            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Sincronizando cuentas...</p>
+                        </td>
+                    </tr>
 
-        <!-- Empty State -->
-        <div *ngIf="!isLoading() && receivables().length === 0" class="bg-surface-card border-2 border-dashed border-white/5 rounded-[3rem] p-24 text-center shadow-inner mt-4 overflow-hidden relative group">
-            <div class="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <lucide-icon [name]="icons.Info" class="w-16 h-16 text-slate-700 mx-auto mb-6 opacity-20"></lucide-icon>
-            <p class="text-slate-500 font-black uppercase tracking-widest text-xs">No hay registros bajo el filtro: <span class="text-rose-500">{{ filterEstado() | uppercase }}</span></p>
-        </div>
+                    <!-- Empty State -->
+                    <tr *ngIf="!isLoading() && receivables().length === 0" class="bg-transparent">
+                        <td colspan="6" class="px-6 py-16 text-center opacity-40">
+                            <lucide-icon [name]="icons.Info" class="w-8 h-8 text-slate-500 mx-auto mb-4"></lucide-icon>
+                            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">No hay registros bajo este filtro</p>
+                        </td>
+                    </tr>
 
-        <!-- Cards de AR Estilo Premium (V2.0 Core) -->
-        <div *ngFor="let ar of receivables()" 
-            class="group bg-surface-card hover:bg-white/5 border border-white/5 rounded-[2.5rem] p-6 shadow-2xl transition-all duration-500 transform hover:scale-[1.01] flex items-center justify-between animate-scale-in">
-            
-            <div class="flex items-center gap-8">
-                <!-- Icono de Estado Dinámico -->
-                <div class="h-16 w-16 rounded-[1.5rem] flex flex-col items-center justify-center transition-all bg-black/20 relative overflow-hidden group-hover:bg-black/30 shadow-inner"
-                    [ngClass]="ar.estado === 'Pendiente' ? 'text-amber-500 border border-amber-500/20' : 'text-emerald-500 border border-emerald-500/20'">
-                    <div class="absolute inset-0 opacity-5" [ngClass]="ar.estado === 'Pendiente' ? 'bg-amber-500' : 'bg-emerald-500'"></div>
-                    <span class="text-[9px] font-black uppercase leading-none mb-1 tracking-widest">AR</span>
-                    <span class="text-xs font-black tracking-tight font-mono">{{ ar.fechaEmision | date:'MMM' | uppercase }}</span>
-                </div>
-
-                <div>
-                    <h4 class="text-base font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors">{{ ar.pacienteNombre }}</h4>
-                    <div class="flex items-center gap-3 mt-1.5">
-                        <span class="text-[9px] font-black text-slate-400 bg-black/30 px-2 py-0.5 rounded-md border border-white/5 uppercase tracking-widest">{{ ar.pacienteCedula }}</span>
-                        <div class="h-1 w-1 bg-slate-700 rounded-full"></div>
-                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest italic font-mono">{{ ar.seguroNombre }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Detalles Financieros y Acciones Refinadas -->
-            <div class="flex items-center gap-12 lg:gap-20">
-                <div class="text-right hidden sm:block">
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5 opacity-60">Monto Facturado ($)</p>
-                    <div class="flex flex-col items-end">
-                        <p class="text-base font-bold text-white font-mono opacity-80">$ {{ ar.montoTotal | number:'1.2-2' }}</p>
-                        <p class="text-[8px] font-bold text-slate-600 font-mono tracking-tighter" *ngIf="tasaCambio() > 0">(Bs. {{ ar.montoTotal * tasaCambio() | number:'1.2-2' }})</p>
-                    </div>
-                </div>
-                
-                <div class="text-right">
-                    <div class="flex items-center justify-end gap-2 mb-1.5">
-                        <div *ngIf="ar.estado === 'Pendiente'" class="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.6)]"></div>
-                        <p class="text-[9px] font-black uppercase tracking-widest" [ngClass]="ar.estado === 'Pendiente' ? 'text-rose-400' : 'text-slate-500'">Saldo Pendiente ($)</p>
-                    </div>
-                    <div class="flex flex-col items-end max-w-[150px]">
-                        <p class="text-xl font-black font-mono tracking-tighter truncate w-full text-right" [ngClass]="ar.estado === 'Pendiente' ? 'text-rose-500' : 'text-slate-500'">$ {{ ar.saldoPendiente | number:'1.2-2' }}</p>
-                        <p class="text-[10px] font-bold text-rose-500/50 font-mono italic tracking-tighter truncate w-full text-right" *ngIf="ar.estado === 'Pendiente' && tasaCambio() > 0">(Bs. {{ ar.saldoPendiente * tasaCambio() | number:'1.2-2' }})</p>
-                    </div>
-                </div>
-
-                <div class="pl-10 border-l border-white/5">
-                    <button *ngIf="ar.estado === 'Pendiente'" (click)="abrirCobro(ar)"
-                        class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-95 flex items-center group/btn">
-                        LIQUIDAR CUENTA
-                        <lucide-icon [name]="icons.ChevronRight" class="w-3.5 h-3.5 ml-3 group-hover/btn:translate-x-1 transition-transform"></lucide-icon>
-                    </button>
-                    <div *ngIf="ar.estado === 'Cobrada'" class="flex items-center text-emerald-400 font-black text-[10px] uppercase tracking-widest px-6 py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl shadow-inner animate-fade-in">
-                        <lucide-icon [name]="icons.Check" class="w-4 h-4 mr-3"></lucide-icon>
-                        OPERACIÓN LIQUIDADA
-                    </div>
-                </div>
-            </div>
+                    <!-- Filas de Datos -->
+                    <tr *ngFor="let ar of receivables()" class="hover:bg-white/[0.04] transition-all group/row">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-black text-white leading-none">{{ ar.fechaEmision | date:'dd' }}</span>
+                                <span class="text-[8px] font-black uppercase text-rose-500 tracking-widest">{{ ar.fechaEmision | date:'MMM' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <h4 class="text-[11px] font-black text-white uppercase tracking-tight leading-tight group-hover/row:text-rose-500 transition-colors">{{ ar.pacienteNombre }}</h4>
+                                <p class="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-1">{{ ar.pacienteCedula }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-tight">{{ ar.seguroNombre }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-bold text-white/70 font-mono tracking-tighter opacity-80">$ {{ ar.montoTotal | number:'1.2-2' }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-sm font-black font-mono tracking-tighter" [ngClass]="ar.estado === 'Pendiente' ? 'text-rose-500' : 'text-slate-600'">$ {{ ar.saldoPendiente | number:'1.2-2' }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button *ngIf="ar.estado === 'Pendiente'" (click)="abrirCobro(ar)"
+                                class="inline-flex items-center gap-2 px-6 py-2 bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-rose-500/5">
+                                Liquidar
+                                <lucide-icon [name]="icons.ChevronRight" class="w-3 h-3 group-hover/btn:translate-x-1 transition-transform"></lucide-icon>
+                            </button>
+                            <span *ngIf="ar.estado === 'Cobrada'" class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                <lucide-icon [name]="icons.Check" class="w-3 h-3 text-emerald-500"></lucide-icon>
+                                Liquidada
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

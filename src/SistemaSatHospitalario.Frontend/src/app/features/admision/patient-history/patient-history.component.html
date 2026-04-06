@@ -1,21 +1,32 @@
 <div class="p-8 max-w-[1700px] space-y-2 animate-fade-in relative z-10">
     <!-- Encabezado Estilo "Estación" Premium -->
     <div class="px-0 pb-2 animate-fade-in relative">
-        <div class="midnight-panel p-6 flex items-center justify-between rounded-[2.5rem] border border-white/5 backdrop-blur-3xl relative overflow-hidden group">
+        <div
+            class="bg-white/5 border border-white/10 backdrop-blur-2xl p-6 flex items-center justify-between rounded-[2.5rem] relative overflow-hidden group">
             <div class="flex items-center gap-8 relative z-10">
                 <!-- Icono Estilo Estación con Brillo -->
-                <div class="h-16 w-16 bg-slate-950 border border-primary/20 rounded-[1.25rem] flex items-center justify-center group-hover:border-primary/40 transition-all duration-500">
-                    <svg class="w-8 h-8 text-primary animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <div
+                    class="h-16 w-16 bg-slate-950 border border-primary/20 rounded-[1.25rem] flex items-center justify-center group-hover:border-primary/40 transition-all duration-500">
+                    <svg class="w-8 h-8 text-primary animate-pulse-slow" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
                 </div>
-                
+
                 <div>
-                    <h1 class="text-3xl font-black text-white tracking-[0.1em] uppercase leading-none">Expediente de Facturación</h1>
+                    <h1 class="text-3xl font-black text-white tracking-[0.1em] uppercase leading-none">Expediente de
+                        Facturación</h1>
                     <div class="flex items-center gap-4 mt-3">
-                        <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+                        <span
+                            class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
                             <span class="h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></span>
-                            <span class="text-[9px] font-black text-primary uppercase tracking-widest">Monitor Live</span>
+                            <span class="text-[9px] font-black text-primary uppercase tracking-widest">Monitor
+                                Live</span>
                         </span>
-                        <span class="text-slate-500 text-[9px] font-black uppercase tracking-widest opacity-60">Reportes de Facturación Activos</span>
+                        <span class="text-slate-500 text-[9px] font-black uppercase tracking-widest opacity-60">Reportes
+                            de Facturación Activos</span>
                     </div>
                 </div>
             </div>
@@ -26,7 +37,7 @@
                 Cerrar Expediente
             </button>
             <div *ngIf="!selectedPatient()" class="relative z-10 flex items-center gap-4">
-                 <span class="text-slate-600 text-[10px] font-black uppercase tracking-widest">V3.2 PRO</span>
+                <span class="text-slate-600 text-[10px] font-black uppercase tracking-widest">V3.2 PRO</span>
             </div>
         </div>
     </div>
@@ -37,31 +48,48 @@
         <div class="flex flex-col xl:flex-row items-center gap-6">
             <!-- El buscador ahora vive aquí -->
             <div class="flex-1 w-full">
-                <div class="flex flex-col md:flex-row items-stretch bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
+                <div
+                    class="flex flex-col md:flex-row items-stretch bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
                     <div class="relative flex-[1.5] min-w-[250px]">
-                        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="buscar()" placeholder="Buscar por Cédula o nombre..."
+                        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="buscar()"
+                            placeholder="Buscar por Cédula o nombre..."
                             class="w-full pl-12 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600">
-                        <svg class="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg class="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
                     </div>
 
                     <div class="hidden md:block w-px bg-white/5 my-2"></div>
 
-                    <div class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl md:bg-transparent md:rounded-none flex-1 justify-around">
+                    <div
+                        class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl md:bg-transparent md:rounded-none flex-1 justify-around">
                         <div class="flex flex-col">
-                            <span class="text-[7px] font-black text-primary uppercase tracking-widest mb-0.5">Desde</span>
-                            <input type="date" [(ngModel)]="startDate" class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                            <span
+                                class="text-[7px] font-black text-primary uppercase tracking-widest mb-0.5">Desde</span>
+                            <input type="date" [(ngModel)]="startDate"
+                                class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
                         </div>
                         <div class="flex flex-col border-l border-white/10 pl-4">
-                            <span class="text-[7px] font-black text-primary uppercase tracking-widest mb-0.5">Hasta</span>
-                            <input type="date" [(ngModel)]="endDate" class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                            <span
+                                class="text-[7px] font-black text-primary uppercase tracking-widest mb-0.5">Hasta</span>
+                            <input type="date" [(ngModel)]="endDate"
+                                class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
                         </div>
                     </div>
 
-                    <button (click)="buscar()" [disabled]="isSearching() || (searchTerm().length < 3 && !startDate() && !endDate())"
+                    <button (click)="buscar()"
+                        [disabled]="isSearching() || (searchTerm().length < 3 && !startDate() && !endDate())"
                         class="btn-primary-v2 px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap">
                         <span *ngIf="!isSearching()">BUSCAR AHORA</span>
                         <span *ngIf="isSearching()" class="flex items-center gap-2">
-                            <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
+                            <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path>
+                            </svg>
                             BUSCANDO...
                         </span>
                     </button>
@@ -70,22 +98,34 @@
         </div>
 
         <!-- Resultados de Búsqueda Manual -->
-        <div *ngIf="patients().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up">
+        <div *ngIf="patients().length > 0"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up">
             <div *ngFor="let p of patients()" (click)="verHistorial(p)"
                 class="bg-surface-card p-8 rounded-[2.5rem] border border-white/5 hover:bg-white/5 transition-all cursor-pointer group animate-scale-in relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full blur-2xl"></div>
                 <div class="flex items-center gap-6 mb-6">
-                    <div class="h-14 w-14 bg-surface rounded-2xl flex items-center justify-center text-slate-500 group-hover:text-primary border border-white/5 group-hover:border-primary/20 transition-all">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <div
+                        class="h-14 w-14 bg-surface rounded-2xl flex items-center justify-center text-slate-500 group-hover:text-primary border border-white/5 group-hover:border-primary/20 transition-all">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
                     </div>
                     <div>
-                        <h4 class="text-sm font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors leading-tight">{{ p.nombre }}<br>{{ p.apellidos }}</h4>
-                        <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">{{ p.cedula }}</p>
+                        <h4
+                            class="text-sm font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors leading-tight">
+                            {{ p.nombre }}<br>{{ p.apellidos }}</h4>
+                        <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">{{ p.cedula }}
+                        </p>
                     </div>
                 </div>
                 <div class="flex items-center justify-between pt-6 border-t border-white/5">
-                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-primary/60 transition-colors">Historial Completo</span>
-                    <svg class="w-4 h-4 text-slate-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                    <span
+                        class="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-primary/60 transition-colors">Historial
+                        Completo</span>
+                    <svg class="w-4 h-4 text-slate-600 group-hover:translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 5l7 7-7 7"></path>
+                    </svg>
                 </div>
             </div>
         </div>
@@ -93,38 +133,61 @@
         <!-- Dashboard: Pacientes Facturados Hoy (Si no hay búsqueda activa) -->
         <div *ngIf="patients().length === 0 && !isSearching()">
             <!-- Loading State for Daily Grid -->
-            <div *ngIf="isLoading() && dailyPatients().length === 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div *ngIf="isLoading() && dailyPatients().length === 0"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div *ngFor="let i of [1,2,3,4]" class="h-48 bg-white/5 rounded-3xl animate-pulse"></div>
             </div>
 
             <!-- Grid de Tarjetas Premium -->
-            <div *ngIf="dailyPatients().length > 0; else noRecentBilled" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <div *ngFor="let p of dailyPatients()" class="midnight-panel group hover:border-primary/40 hover:scale-[1.02] transition-all cursor-pointer rounded-[2.5rem] overflow-hidden" (click)="verHistorialDaily(p)">
+            <div *ngIf="dailyPatients().length > 0; else noRecentBilled"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div *ngFor="let p of dailyPatients()"
+                    class="midnight-panel group hover:border-primary/40 hover:scale-[1.02] transition-all cursor-pointer rounded-[2.5rem] overflow-hidden"
+                    (click)="verHistorialDaily(p)">
                     <div class="p-8 relative">
                         <!-- Brillo dinámico al hover -->
-                        <div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        
+                        <div
+                            class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        </div>
+
                         <div class="relative z-10">
                             <div class="flex justify-between items-start mb-6">
-                                <div class="h-12 w-12 rounded-2xl bg-surface border border-white/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <div
+                                    class="h-12 w-12 rounded-2xl bg-surface border border-white/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                        </path>
+                                    </svg>
                                 </div>
                                 <div class="text-right">
-                                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Neto USD</span>
-                                    <span class="text-xl font-black text-white font-mono tracking-tighter decoration-primary decoration-2">{{ p.totalFacturado | number:'1.2-2' }}</span>
+                                    <span
+                                        class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Neto
+                                        USD</span>
+                                    <span
+                                        class="text-xl font-black text-white font-mono tracking-tighter decoration-primary decoration-2">{{
+                                        p.totalFacturado | number:'1.2-2' }}</span>
                                 </div>
                             </div>
-                            
+
                             <div class="space-y-1">
-                                <h3 class="text-sm font-black text-white uppercase leading-none group-hover:text-primary transition-colors">{{ p.nombre }}</h3>
-                                <p *ngIf="p.apellidos" class="text-[10px] font-black text-slate-500 uppercase">{{ p.apellidos }}</p>
+                                <h3
+                                    class="text-sm font-black text-white uppercase leading-none group-hover:text-primary transition-colors">
+                                    {{ p.nombre }}</h3>
+                                <p *ngIf="p.apellidos" class="text-[10px] font-black text-slate-500 uppercase">{{
+                                    p.apellidos }}</p>
                             </div>
-                            
+
                             <div class="flex items-center justify-between pt-6 mt-4 border-t border-white/5">
-                                <span class="text-[9px] font-black text-slate-600 tracking-widest font-mono">{{ p.cedula }}</span>
+                                <span class="text-[9px] font-black text-slate-600 tracking-widest font-mono">{{ p.cedula
+                                    }}</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="px-2 py-1 bg-white/5 rounded text-[8px] font-black text-slate-400 uppercase tracking-widest">{{ p.cuentasCerradas }} cuentas</span>
-                                    <svg class="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                                    <span
+                                        class="px-2 py-1 bg-white/5 rounded text-[8px] font-black text-slate-400 uppercase tracking-widest">{{
+                                        p.cuentasCerradas }} cuentas</span>
+                                    <svg class="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M9 5l7 7-7 7"></path>
+                                    </svg>
                                 </div>
                             </div>
                         </div>
@@ -133,12 +196,18 @@
             </div>
 
             <ng-template #noRecentBilled>
-                <div class="bg-surface-card/40 border border-white/5 rounded-[2.5rem] p-16 text-center backdrop-blur-xl">
+                <div
+                    class="bg-surface-card/40 border border-white/5 rounded-[2.5rem] p-16 text-center backdrop-blur-xl">
                     <div class="h-20 w-20 bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-10 h-10 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="w-10 h-10 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
-                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Sin actividad de cierre hoy</h3>
-                    <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">Aún no se han facturado pacientes en el transcurso del día.</p>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Sin actividad de cierre hoy
+                    </h3>
+                    <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">Aún no se han
+                        facturado pacientes en el transcurso del día.</p>
                 </div>
             </ng-template>
         </div>
@@ -146,72 +215,112 @@
 
     <!-- DETALLE DE HISTORIAL (Si hay paciente seleccionado) -->
     <div *ngIf="selectedPatient() && history()" class="space-y-8 animate-fade-in-up">
-        <div class="px-8 pb-4">
-            <button (click)="volverALaBusqueda()"
-                class="bg-slate-900/50 hover:bg-black border border-white/5 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
-                VOLVER AL DASHBOARD
-            </button>
-        </div>
 
-        <!-- Banner del Paciente Seleccionado -->
-        <div class="bg-slate-950/40 backdrop-blur-3xl rounded-[2.5rem] p-12 text-white flex flex-col md:flex-row md:items-center justify-between overflow-hidden relative border border-white/5">
-            <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-            <div class="relative flex items-center gap-10">
-                <div class="h-24 w-24 bg-primary/10 border border-primary/20 rounded-[2rem] flex items-center justify-center ring-8 ring-primary/5">
-                    <span class="text-5xl font-black text-primary">{{ selectedPatient()?.nombre?.substring(0,1) }}</span>
+        <!-- Banner del Paciente Seleccionado: Compacto y Claro -->
+        <div
+            class="bg-white/5 backdrop-blur-2xl rounded-2xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between overflow-hidden relative border border-white/10 shadow-2xl">
+            <div
+                class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2">
+            </div>
+            <div class="relative flex items-center gap-5">
+                <div
+                    class="h-14 w-14 bg-primary/10 border border-primary/30 rounded-xl flex items-center justify-center ring-4 ring-primary/5 shadow-inner">
+                    <span class="text-2xl font-black text-primary">{{ selectedPatient()?.nombre?.substring(0,1)
+                        }}</span>
                 </div>
                 <div>
-                    <h3 class="text-4xl font-black uppercase tracking-tighter leading-none">{{ selectedPatient()?.nombre }} {{ selectedPatient()?.apellidos }}</h3>
-                    <div class="flex flex-wrap items-center gap-6 mt-4">
-                        <span class="text-xs font-mono text-primary font-black uppercase tracking-widest italic bg-primary/10 px-3 py-1 rounded-lg">{{ selectedPatient()?.cedula }}</span>
+                    <h3 class="text-xl font-black uppercase tracking-tight leading-none text-white/90">{{
+                        selectedPatient()?.nombre }} {{ selectedPatient()?.apellidos }}</h3>
+                    <div class="flex flex-wrap items-center gap-3 mt-1.5">
+                        <span
+                            class="text-[9px] font-mono text-primary font-black uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded border border-primary/20">{{
+                            selectedPatient()?.cedula }}</span>
                     </div>
                 </div>
             </div>
-            <div class="mt-8 md:mt-0 text-center md:text-right relative">
-                <p class="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-2">Cuentas Registradas</p>
-                <div class="text-6xl font-black text-white tracking-tighter">{{ history().length }}</div>
+            <div class="mt-4 md:mt-0 flex items-center gap-8 relative">
+                <div class="text-right">
+                    <p class="text-[7px] font-black text-slate-500 uppercase tracking-[0.4em] mb-0.5">Cuentas
+                        Registradas</p>
+                    <div class="text-3xl font-black text-white/90 tracking-tighter">{{ history().length }}</div>
+                </div>
                 <button (click)="imprimirTodo()" [disabled]="isLoading() || history().length === 0"
-                    class="mt-6 bg-primary hover:bg-primary-glow text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3 w-full md:w-auto ml-auto">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    class="bg-primary hover:bg-primary-glow text-white px-5 py-2.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                        </path>
+                    </svg>
                     <span>Imprimir Todo</span>
                 </button>
             </div>
         </div>
 
-        <!-- Timeline de Cuentas -->
-        <div class="space-y-6">
-            <div *ngIf="isLoading()" class="flex flex-col items-center justify-center py-20 opacity-40">
-                <svg class="animate-spin h-10 w-10 text-hospital-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
-                <p class="mt-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Recuperando registros históricos...</p>
-            </div>
-
-            <div *ngFor="let h of filteredHistory()" class="bg-surface-card rounded-[2.5rem] border border-white/5 overflow-hidden hover:bg-white/5 transition-all group animate-fade-in relative">
-                <div class="p-10 flex flex-col md:flex-row md:items-center justify-between bg-white/5 group-hover:bg-transparent transition-colors">
-                    <div class="flex items-center gap-8">
-                        <div class="h-16 w-16 rounded-[1.5rem] bg-surface border border-white/5 flex flex-col items-center justify-center group-hover:border-primary/20 transition-all">
-                            <span class="text-sm font-black text-white leading-none">{{ h.fechaCreacion | date:'dd' }}</span>
-                            <span class="text-[9px] font-black uppercase text-primary mt-1">{{ h.fechaCreacion | date:'MMM' }}</span>
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-black text-white uppercase tracking-tight">Ingreso: {{ h.tipoIngreso }}</h4>
-                            <div class="flex items-center gap-4 mt-2">
-                                <span class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">{{ h.estado }}</span>
-                                <span class="text-[10px] font-mono text-slate-600 tracking-wider">REF: {{ h.cuentaId.substring(0,8).toUpperCase() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-6 md:mt-0 flex items-center gap-10">
-                        <button (click)="reimprimirRecibo(h.cuentaId)" *ngIf="h.estado === 'Facturada'"
-                            class="bg-surface hover:bg-white/10 border border-white/5 p-4 rounded-2xl transition-all group/print flex items-center gap-3">
-                            <svg class="w-5 h-5 text-slate-500 group-hover/print:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                            <span class="text-[9px] font-black text-slate-500 group-hover/print:text-white uppercase tracking-widest">Imprimir</span>
-                        </button>
-                        <div class="text-right">
-                            <p class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Monto Total</p>
-                            <p class="text-3xl font-black text-white tracking-tighter">${{ h.total | number:'1.2-2' }}</p>
-                        </div>
-                    </div>
-                </div>
+        <!-- Historial de Cuentas: Vista de Tabla Premium -->
+        <div
+            class="bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative animate-fade-in-up">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white/5 border-b border-white/5">
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha
+                            </th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Tipo
+                                Ingreso</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estado
+                            </th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                                Referencia</th>
+                            <th
+                                class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">
+                                Monto Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <tr *ngIf="isLoading()" class="bg-transparent border-none">
+                            <td colspan="5" class="px-6 py-12 text-center opacity-40">
+                                <svg class="animate-spin h-8 w-8 text-hospital-500 mx-auto" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path>
+                                </svg>
+                                <p class="mt-3 text-[9px] font-black uppercase tracking-widest text-slate-500">Cargando
+                                    expediente...</p>
+                            </td>
+                        </tr>
+                        <tr *ngFor="let h of filteredHistory()" class="hover:bg-white/5 transition-all group/row">
+                            <td class="px-6 py-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs font-black text-white leading-none">{{ h.fechaCreacion |
+                                        date:'dd' }}</span>
+                                    <span class="text-[8px] font-black uppercase text-primary tracking-widest">{{
+                                        h.fechaCreacion | date:'MMM' }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-3">
+                                <span class="text-[10px] font-black text-white/90 uppercase tracking-tight">{{
+                                    h.tipoIngreso }}</span>
+                            </td>
+                            <td class="px-6 py-3">
+                                <div class="flex items-center">
+                                    <span
+                                        class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-sm">{{
+                                        h.estado }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-3">
+                                <span
+                                    class="text-[9px] font-mono text-slate-600 tracking-wider group-hover/row:text-primary/60 transition-colors">REF:
+                                    {{ h.cuentaId.substring(0,8).toUpperCase() }}</span>
+                            </td>
+                            <td class="px-6 py-3 text-right">
+                                <span class="text-xs font-black text-white font-mono tracking-tighter">${{ h.total |
+                                    number:'1.2-2' }}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

@@ -23,9 +23,24 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("Pending")]
-        public async Task<ActionResult<List<PendingARDto>>> GetPendingAR([FromQuery] string? searchTerm, [FromQuery] string? estado)
+        public async Task<ActionResult<List<PendingARDto>>> GetPendingAR(
+            [FromQuery] string? searchTerm, 
+            [FromQuery] string? estado,
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate)
         {
-            var query = new GetPendingARQuery { SearchTerm = searchTerm, Estado = estado ?? "Pendiente" };
+            // Senior Fix: Si el parámetro es nulo, blanco o "Todas", no filtramos por estado en el handler.
+            string? filterEstado = string.IsNullOrWhiteSpace(estado) || estado.Equals("Todas", StringComparison.OrdinalIgnoreCase)
+                                   ? null 
+                                   : estado;
+            
+            var query = new GetPendingARQuery 
+            { 
+                SearchTerm = searchTerm, 
+                Estado = filterEstado,
+                StartDate = startDate,
+                EndDate = endDate
+            };
             var results = await _mediator.Send(query);
             return Ok(results);
         }

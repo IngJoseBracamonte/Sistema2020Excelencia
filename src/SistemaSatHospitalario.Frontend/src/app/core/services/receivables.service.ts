@@ -37,10 +37,16 @@ export class ReceivablesService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/Receivables`;
 
-  getPending(searchTerm?: string, estado?: string): Observable<PendingAR[]> {
+  getPending(searchTerm?: string, estado?: string, startDate?: string, endDate?: string): Observable<PendingAR[]> {
     let params = new HttpParams();
     if (searchTerm) params = params.set('searchTerm', searchTerm);
-    if (estado) params = params.set('estado', estado);
+    
+    if (estado && estado.trim() !== '' && estado.toLowerCase() !== 'todas') {
+      params = params.set('estado', estado);
+    }
+    
+    if (startDate) params = params.set('startDate', startDate);
+    if (endDate) params = params.set('endDate', endDate);
     
     return this.http.get<PendingAR[]>(`${this.baseUrl}/Pending`, { params });
   }

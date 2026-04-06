@@ -52,6 +52,18 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 query = query.Where(ar => ar.PacienteNombre.Contains(request.SearchTerm) || ar.PacienteCedula.Contains(request.SearchTerm));
             }
 
+            if (request.StartDate.HasValue)
+            {
+                var start = request.StartDate.Value.Date;
+                query = query.Where(ar => ar.FechaEmision >= start);
+            }
+
+            if (request.EndDate.HasValue)
+            {
+                var end = request.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(ar => ar.FechaEmision <= end);
+            }
+
             return await query.OrderByDescending(ar => ar.FechaEmision).ToListAsync(cancellationToken);
         }
     }

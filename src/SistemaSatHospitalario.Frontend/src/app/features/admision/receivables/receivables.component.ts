@@ -49,6 +49,8 @@ export class ReceivablesComponent implements OnInit {
   public receivables = signal<PendingAR[]>([]);
   public searchTerm = signal<string>('');
   public filterEstado = signal<string>('Pendiente');
+  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
   public isLoading = signal<boolean>(false);
   public isSettling = signal<boolean>(false);
 
@@ -129,7 +131,7 @@ export class ReceivablesComponent implements OnInit {
 
   refresh() {
     this.isLoading.set(true);
-    this.arService.getPending(this.searchTerm(), this.filterEstado()).subscribe({
+    this.arService.getPending(this.searchTerm(), this.filterEstado(), this.startDate(), this.endDate()).subscribe({
       next: (res: PendingAR[]) => {
         this.receivables.set(res);
         this.isLoading.set(false);
