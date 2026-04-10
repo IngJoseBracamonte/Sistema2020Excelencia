@@ -196,13 +196,15 @@
 
         <!-- Lado Derecho: Resumen Financiero (SOLID SRP Component V7.0) -->
         <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-4">
-            <app-billing-cart
+            <app-billing-cart #billingCart
                 [isAdmin]="isAdmin()"
                 [pacienteSeleccionado]="pacienteSeleccionado()"
                 [currentStep]="currentStep()"
                 [isLoading]="isLoading()"
                 (verCitas)="verCitasActivas()"
                 (quitar)="quitarServicio($event)"
+                (editarPrecio)="handleEditarPrecio($event)"
+                (precioCambiado)="onPrecioCambiado($event)"
                 (procesar)="procesarCobro()"
                 (omitir)="omitirComprobante()">
             </app-billing-cart>
@@ -530,4 +532,10 @@
             </div>
         </div>
     </div>
+
+<!-- Supervisor Authorization Dialog (Fase 1 Matrix) -->
+<app-supervisor-auth-dialog 
+    #supervisorDialog 
+    (onConfirm)="onSupervisorAuthorized($event)">
+</app-supervisor-auth-dialog>
 </div>

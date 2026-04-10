@@ -12,6 +12,11 @@ using SistemaSatHospitalario.WebAPI.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.RateLimiting; 
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+
+// [SEC-004] Standardize Claim Mapping - Prevents ASP.NET Core from rewriting claim names (V14.1 Senior Patch)
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +44,6 @@ builder.Services.AddRateLimiter(options =>
 // [SEC-003] CORS Explicit Origins - Whitelist (V13.3)
 var allowedOriginsStr = builder.Configuration["AllowedOrigins"] ?? "https://localhost:4200,http://localhost:4200";
 var allowedOrigins = allowedOriginsStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-Console.WriteLine($"[CORS CONFIG] Allowed Origins: {string.Join(" | ", allowedOrigins)}");
 
 builder.Services.AddCors(options =>
 {
@@ -86,21 +90,26 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA",
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        
+        // [SEC-004] Explicit Claim Mapping for Names and Roles (GEN-001 Compliance)
+        NameClaimType = ClaimTypes.Name,
+        RoleClaimType = ClaimTypes.Role
     };
 });
 builder.Services.AddAuthorization();
 
-// [DIAGNOSTIC] Validar Parámetros JWT para evitar 401 por Mismatch (V11.8)
-Console.WriteLine($"[JWT AUTH CONFIG] Issuer: {builder.Configuration["JwtConfig:Issuer"]}");
-Console.WriteLine($"[JWT AUTH CONFIG] Audience: {builder.Configuration["JwtConfig:Audience"]}");
-Console.WriteLine($"[JWT AUTH CONFIG] Secret Configured: {!string.IsNullOrEmpty(jwtSecret)}");
-
-// Add Exception Handler
+// Global exception handler configuration
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+// [DIAGNOSTIC] Startup Security Matrix Report (V1.1 Standardized Logging)
+app.Logger.LogInformation("[CORS CONFIG] Allowed Origins: {Origins}", string.Join(" | ", allowedOrigins));
+app.Logger.LogInformation("[JWT AUTH CONFIG] Issuer: {Issuer}", builder.Configuration["JwtConfig:Issuer"]);
+app.Logger.LogInformation("[JWT AUTH CONFIG] Audience: {Audience}", builder.Configuration["JwtConfig:Audience"]);
+app.Logger.LogInformation("[JWT AUTH CONFIG] Secret Configured: {SecretStatus}", !string.IsNullOrEmpty(jwtSecret));
 
 app.MapDefaultEndpoints();
 

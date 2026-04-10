@@ -1,0 +1,141 @@
+<div class="space-y-6 animate-fade-in p-4 md:p-8 bg-[#0a0f1d] min-h-screen text-slate-300">
+    <!-- Header Premium -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-[#111827]/80 backdrop-blur-3xl p-6 rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full -z-10 blur-3xl"></div>
+        
+        <div class="flex items-center space-x-6">
+            <button routerLink="/admin/medicos" class="h-10 w-10 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl flex items-center justify-center transition-all active:scale-95 border border-white/5">
+                <lucide-icon [name]="icons.Back" class="w-5 h-5"></lucide-icon>
+            </button>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-2xl font-black text-white tracking-tighter uppercase">Reporte de Honorarios</h1>
+                    <span class="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Admin Exclusive</span>
+                </div>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 italic flex items-center">
+                    <lucide-icon [name]="icons.Shield" class="w-3 h-3 mr-2"></lucide-icon>
+                    Auditoría Financiera de Especialistas
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4 mt-6 md:mt-0">
+             <div class="text-right hidden md:block">
+                <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Última Sincronización</p>
+                <p class="text-xs font-bold text-white font-mono">{{ lastUpdate() | date:'HH:mm:ss' }}</p>
+             </div>
+             <button (click)="loadReport()" [disabled]="isLoading()"
+                class="h-12 w-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50">
+                <lucide-icon [name]="icons.Refresh" [class.animate-spin]="isLoading()" class="w-6 h-6"></lucide-icon>
+             </button>
+        </div>
+    </div>
+
+    <!-- Stats Grid (V2.0 Core Visuals) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-[#111827]/60 backdrop-blur-xl p-6 rounded-[1.5rem] border border-white/5 relative group overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -z-10 blur-2xl"></div>
+            <div class="flex items-center space-x-4">
+                <div class="h-12 w-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
+                    <lucide-icon [name]="icons.Users" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Especialistas</h4>
+                    <p class="text-3xl font-black text-white tracking-tighter">{{ getTotals().medicosCount }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-[#111827]/60 backdrop-blur-xl p-6 rounded-[1.5rem] border border-white/5 relative group overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full -z-10 blur-2xl"></div>
+            <div class="flex items-center space-x-4">
+                <div class="h-12 w-12 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center border border-rose-500/20 group-hover:scale-110 transition-transform">
+                    <lucide-icon [name]="icons.Trend" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Consultas (Mes)</h4>
+                    <p class="text-3xl font-black text-white tracking-tighter">{{ getTotals().totalConsultas }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-[#111827]/60 backdrop-blur-xl p-6 rounded-[1.5rem] border border-white/5 relative group overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -z-10 blur-2xl"></div>
+            <div class="flex items-center space-x-4">
+                <div class="h-12 w-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                    <lucide-icon [name]="icons.Dollar" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Promedio Honorario</h4>
+                    <p class="text-3xl font-black text-white tracking-tighter">${{ getTotals().promedioHonorario | number:'1.2-2' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Section (High Density Standard) -->
+    <div class="bg-[#111827]/40 backdrop-blur-3xl rounded-[2rem] border border-white/5 shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-white/5 flex items-center justify-between bg-black/20">
+            <h3 class="text-xs font-black text-white uppercase tracking-widest flex items-center">
+                <lucide-icon [name]="icons.Report" class="w-4 h-4 mr-3 text-emerald-500"></lucide-icon>
+                Detalle de Facturación por Especialista
+            </h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-black/40 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-white/5">
+                        <th class="px-8 py-5">Nombre del Médico</th>
+                        <th class="px-6 py-5">Especialidad</th>
+                        <th class="px-6 py-5">Estado</th>
+                        <th class="px-6 py-5 text-right">Consultas Mes</th>
+                        <th class="px-8 py-5 text-right">Honorario Base (USD)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    <tr *ngFor="let m of reportData()" class="group hover:bg-emerald-500/[0.02] transition-colors">
+                        <td class="px-8 py-4">
+                            <p class="text-sm font-black text-white group-hover:text-emerald-400 transition-colors">{{ m.nombre }}</p>
+                            <p class="text-[9px] font-mono text-slate-500 uppercase mt-0.5 tracking-tighter">{{ m.medicoId }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded-md">{{ m.especialidad }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-2">
+                                <span [class]="m.activo ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-slate-700'" class="h-2 w-2 rounded-full shadow-lg"></span>
+                                <span class="text-[9px] font-black uppercase tracking-widest" [class.text-emerald-500]="m.activo">{{ m.activo ? 'Vigente' : 'Inactivo' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                             <span class="text-base font-black text-white font-mono">{{ m.totalConsultasMes }}</span>
+                        </td>
+                        <td class="px-8 py-4 text-right">
+                            <div class="flex flex-col items-end">
+                                <span class="text-lg font-black text-emerald-500 font-mono tracking-tighter">${{ m.honorarioBase | number:'1.2-2' }}</span>
+                                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Tasa Base Registro</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr *ngIf="reportData().length === 0 && !isLoading()">
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <div class="flex flex-col items-center opacity-30">
+                                <lucide-icon [name]="icons.Report" class="w-16 h-16 mb-4"></lucide-icon>
+                                <p class="text-sm font-black uppercase tracking-[0.3em]">No se encontraron registros de honorarios</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="p-6 bg-black/20 border-t border-white/5">
+            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                * El reporte muestra los honorarios base definidos en el perfil del médico. <br>
+                Las consultas del mes incluyen todas las citas pautadas desde el primer día del mes corriente hasta la fecha actual.
+            </p>
+        </div>
+    </div>
+</div>

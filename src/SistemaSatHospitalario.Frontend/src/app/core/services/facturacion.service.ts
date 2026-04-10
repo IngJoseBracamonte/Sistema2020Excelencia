@@ -25,9 +25,11 @@ export interface CargarServicioACuentaRequest {
   servicioId: string; // Guid (Nativo) o stringified int (Legacy)
   descripcion: string;
   precio: number;
+  honorario: number;
   cantidad: number;
   tipoServicio: string;
   usuarioCarga: string;
+  supervisorKey?: string; // V1.0 Security Matrix
   medicoId?: string;
   horaCita?: string;
   comentario?: string;
@@ -51,10 +53,12 @@ export interface SyncCarritoMasivoRequest {
   tipoIngreso: string;
   convenioId?: number;
   usuarioCarga: string;
+  supervisorKey?: string; // V1.0 Security Matrix
   items: Array<{
     servicioId: string;
     descripcion: string;
     precio: number;
+    honorario: number;
     cantidad: number;
     tipoServicio: string;
     medicoId?: string;

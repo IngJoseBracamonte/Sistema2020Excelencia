@@ -8,6 +8,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Codigo { get; set; }
         public string Descripcion { get; set; }
         public decimal PrecioBase { get; set; }
+        public decimal HonorarioBase { get; set; }
         public string TipoServicio { get; set; } // Legacy compatibility
         public string? LegacyMappingId { get; set; }
         public ServiceCategory Category { get; set; } 

@@ -3,6 +3,19 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export interface ConceptoFacturadoDto {
+  descripcion: string;
+  montoBase: number;
+}
+
+export interface PaymentHistoryDto {
+  fecha: string;
+  metodo: string;
+  referencia: string;
+  montoBase: number;
+  montoCambiario: number;
+}
+
 export interface PendingAR {
   id: string;
   cuentaId: string;
@@ -14,6 +27,9 @@ export interface PendingAR {
   saldoPendiente: number;
   fechaEmision: string;
   estado: string;
+  isAudited: boolean;
+  conceptos: ConceptoFacturadoDto[];
+  pagos: PaymentHistoryDto[];
 }
 
 export interface SettleARRequest {
@@ -53,5 +69,9 @@ export class ReceivablesService {
 
   settle(request: SettleARRequest): Observable<any> {
     return this.http.post(`${this.baseUrl}/Settle`, request);
+  }
+
+  audit(arId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/Audit`, { arId });
   }
 }

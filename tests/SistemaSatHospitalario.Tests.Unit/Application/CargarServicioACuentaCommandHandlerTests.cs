@@ -9,6 +9,8 @@ using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Tests.Unit.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SistemaSatHospitalario.Tests.Unit.Application
 {
@@ -24,7 +26,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _repositoryMock = new Mock<IBillingRepository>();
             _externaServiceMock = new Mock<IOrdenExternaService>();
             _contextMock = new Mock<SistemaSatHospitalario.Core.Application.Common.Interfaces.IApplicationDbContext>();
-            _handler = new CargarServicioACuentaCommandHandler(_repositoryMock.Object, _externaServiceMock.Object, _contextMock.Object);
+            _handler = new CargarServicioACuentaCommandHandler(_repositoryMock.Object, _externaServiceMock.Object, _contextMock.Object, NullLogger<CargarServicioACuentaCommandHandler>.Instance);
         }
 
         [Fact]
@@ -58,6 +60,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 ServicioId = servicioId.ToString(),
                 Descripcion = "Consulta",
                 Precio = 100,
+                Honorario = 20,
                 Cantidad = 1,
                 TipoServicio = "Medico",
                 UsuarioCarga = "Admin",
@@ -94,6 +97,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 ServicioId = Guid.NewGuid().ToString(),
                 Descripcion = "Examen",
                 Precio = 50,
+                Honorario = 0,
                 Cantidad = 1,
                 TipoServicio = "Laboratorio",
                 UsuarioCarga = "Admin"

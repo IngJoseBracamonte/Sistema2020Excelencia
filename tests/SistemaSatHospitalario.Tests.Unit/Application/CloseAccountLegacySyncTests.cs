@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +40,8 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 _contextMock.Object,
                 _legacyRepoMock.Object,
                 _cajaRepoMock.Object,
-                _billingRepoMock.Object
+                _billingRepoMock.Object,
+                new Mock<ILegacyErrorReportingService>().Object
             );
         }
 
@@ -50,7 +53,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
             
             var servicioId = Guid.NewGuid();
-            cuenta.AgregarServicio(servicioId, "Perfil Lipidico", 50, 1, EstadoConstants.Laboratorio, "Admin");
+            cuenta.AgregarServicio(servicioId, "Perfil Lipidico", 50, 0, 1, EstadoConstants.Laboratorio, "Admin");
 
             var servicios = new List<ServicioClinico> 
             { 
@@ -87,7 +90,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
             
             var servicioId = Guid.NewGuid();
-            cuenta.AgregarServicio(servicioId, "Perfil ABC", 50, 1, EstadoConstants.Laboratorio, "Admin");
+            cuenta.AgregarServicio(servicioId, "Perfil ABC", 50, 0, 1, EstadoConstants.Laboratorio, "Admin");
 
             var servicios = new List<ServicioClinico> 
             { 

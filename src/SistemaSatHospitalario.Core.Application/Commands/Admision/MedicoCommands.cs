@@ -12,6 +12,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public string Nombre { get; set; }
         public Guid EspecialidadId { get; set; }
+        public decimal HonorarioBase { get; set; }
     }
 
     public class CreateMedicoCommandHandler : IRequestHandler<CreateMedicoCommand, Guid>
@@ -25,7 +26,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<Guid> Handle(CreateMedicoCommand request, CancellationToken cancellationToken)
         {
-            var entity = new Medico(request.Nombre, request.EspecialidadId);
+            if (request.EspecialidadId == Guid.Empty) throw new Exception("La especialidad es obligatoria");
+            var entity = new Medico(request.Nombre, request.EspecialidadId, request.HonorarioBase);
             _context.Medicos.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);
             return entity.Id;
@@ -38,6 +40,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Guid Id { get; set; }
         public string Nombre { get; set; }
         public Guid EspecialidadId { get; set; }
+        public decimal HonorarioBase { get; set; }
         public bool Activo { get; set; }
     }
 
@@ -54,8 +57,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             var entity = await _context.Medicos.FindAsync(new object[] { request.Id }, cancellationToken);
             if (entity == null) return false;
-
-            entity.Update(request.Nombre, request.EspecialidadId);
+            
+            if (request.EspecialidadId == Guid.Empty) throw new Exception("La especialidad es obligatoria para médicos activos");
+            entity.Update(request.Nombre, request.EspecialidadId, request.HonorarioBase);
             entity.SetEstado(request.Activo);
 
             await _context.SaveChangesAsync(cancellationToken);

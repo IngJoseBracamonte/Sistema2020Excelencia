@@ -9,6 +9,7 @@ using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using Microsoft.Extensions.Logging;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -16,11 +17,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
+        private readonly ILogger<SearchPatientQueryHandler> _logger;
 
-        public SearchPatientQueryHandler(IApplicationDbContext context, ILegacyLabRepository legacyRepository)
+        public SearchPatientQueryHandler(IApplicationDbContext context, ILegacyLabRepository legacyRepository, ILogger<SearchPatientQueryHandler> logger)
         {
             _context = context;
             _legacyRepository = legacyRepository;
+            _logger = logger;
         }
 
         public async Task<List<PatientDto>> Handle(SearchPatientQuery request, CancellationToken cancellationToken)
@@ -41,6 +44,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var nativeMappings = await _context.PacientesAdmision
                     .AsNoTracking()
                     .Where(p => p.IdPacienteLegacy.HasValue && legacyIds.Contains(p.IdPacienteLegacy.Value))
+                    .Select(p => new { p.IdPacienteLegacy, p.Id })
                     .ToDictionaryAsync(p => p.IdPacienteLegacy!.Value, p => p.Id, cancellationToken);
 
                 bool changes = false;
@@ -86,7 +90,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
             catch (global::System.Exception ex)
             {
-                global::System.Console.WriteLine($"[LEGACY EXCLUSIVE SEARCH ERROR] {ex.Message}");
+                _logger.LogError(ex, "[LEGACY EXCLUSIVE SEARCH ERROR] {Message}", ex.Message);
             }
 
             return results;

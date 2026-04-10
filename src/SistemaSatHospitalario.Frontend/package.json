@@ -27,14 +27,16 @@
     "@opentelemetry/sdk-trace-web": "^2.6.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "@tailwindcss/postcss": "^4.2.1",
+    "apexcharts": "^5.10.5",
     "lucide-angular": "^0.577.0",
+    "ng-apexcharts": "^1.13.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.2.22",
-    "@angular/cli": "^21.2.3",
+    "@angular/cli": "^19.2.0",
     "@angular/compiler-cli": "^19.2.0",
     "@types/jasmine": "~5.1.0",
     "autoprefixer": "^10.4.27",

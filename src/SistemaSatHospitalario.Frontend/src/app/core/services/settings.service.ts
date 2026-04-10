@@ -1,13 +1,15 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, first } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ConfiguracionGeneral, UserDto } from '../models/settings.model';
+import { AuthService } from './auth.service';
 import * as signalR from '@microsoft/signalr';
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/global-settings`;
   private hubUrl = `${environment.apiUrl.replace('/api', '')}/hub/tasa`;
   
@@ -18,6 +20,14 @@ export class SettingsService {
   constructor() {
     this.refreshTasa();
     this.initSignalR();
+
+    // Re-cargar tasa cuando cambia el usuario (por si acaso el anonimo falló o necesitamos sesión)
+    effect(() => {
+      const user = this.authService.currentUser();
+      if (user) {
+        this.refreshTasa();
+      }
+    });
   }
 
   refreshTasa() {

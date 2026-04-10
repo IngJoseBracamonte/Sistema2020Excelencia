@@ -51,8 +51,10 @@ namespace SistemaSatHospitalario.Infrastructure
             .AddDefaultTokenProviders();
 
             services.AddMemoryCache();
+            services.AddHttpContextAccessor(); // Requerido para CurrentUserService
             services.AddScoped<IAuthService, JwtAuthService>();
             services.AddScoped<IIdentityService, IdentityService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>(); // [Fase 2] Identity Decoupling
 
             // Configuración de Inicializadores de DB (Multi-Provider Seeders)
             services.AddScoped<IDatabaseInitializer, IdentityDbInitializer>();

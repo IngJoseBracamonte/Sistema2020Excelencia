@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Guid Id { get; set; }
         public string Descripcion { get; set; }
         public string Codigo { get; set; }
-        public decimal PrecioBase { get; set; }
+        public decimal PrecioUsd { get; set; }
         public string Tipo { get; set; }
         public bool Activo { get; set; }
     }
@@ -31,7 +31,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (item == null) return false;
 
             item.Descripcion = request.Descripcion;
-            item.PrecioBase = request.PrecioBase;
+            item.PrecioBase = request.PrecioUsd;
             item.TipoServicio = request.Tipo;
             item.Codigo = request.Codigo;
             item.Activo = request.Activo;

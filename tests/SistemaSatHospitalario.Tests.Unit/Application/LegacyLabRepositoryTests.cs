@@ -13,6 +13,7 @@ using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using Microsoft.Extensions.Configuration;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Tests.Unit.Common;
 
 namespace SistemaSatHospitalario.Tests.Unit.Application
@@ -46,7 +47,8 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _context = new Sistema2020LegacyDbContext(options);
             _context.Database.EnsureCreated(); // Essential for SQLite In-Memory
 
-            _repository = new LegacyLabRepository(_context, _queryServiceMock.Object, _configMock.Object);
+            var loggerMock = new Mock<ILegacyErrorReportingService>();
+            _repository = new LegacyLabRepository(_context, _queryServiceMock.Object, _configMock.Object, loggerMock.Object);
 
             // Default mocks for non-targeted calls
             _queryServiceMock.Setup(q => q.GetCurrentDayOrderCountAsync(It.IsAny<CancellationToken>()))

@@ -9,6 +9,23 @@ export interface Medico {
   especialidadId?: string;
   especialidad?: string;
   activo: boolean;
+  honorarioBase?: number; // V1.0 Security Matrix
+}
+
+export interface DoctorHonorariaDto {
+  medicoId: string;
+  nombre: string;
+  especialidad: string;
+  honorarioBase: number;
+  totalConsultasMes: number;
+  activo: boolean;
+}
+
+export interface DoctorHonorariumSummaryDto {
+  medicoId: string;
+  medicoNombre: string;
+  cantidadServicios: number;
+  totalHonorarios: number;
 }
 
 @Injectable({
@@ -32,5 +49,13 @@ export class MedicoService {
 
   delete(id: string): Observable<boolean> {
     return this.http.delete<boolean>(`${this.apiUrl}/${id}`);
+  }
+
+  getHonorariaReport(): Observable<DoctorHonorariaDto[]> {
+    return this.http.get<DoctorHonorariaDto[]>(`${this.apiUrl}/reporte/honorarios`);
+  }
+
+  getHonorariumSummary(startDate: string, endDate: string): Observable<DoctorHonorariumSummaryDto[]> {
+    return this.http.get<DoctorHonorariumSummaryDto[]>(`${this.apiUrl}/reporte/calculo-honorarios?startDate=${startDate}&endDate=${endDate}`);
   }
 }

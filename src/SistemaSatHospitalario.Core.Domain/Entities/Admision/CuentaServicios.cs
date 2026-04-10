@@ -34,12 +34,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             ConvenioId = convenioId;
         }
 
-        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
+        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
         {
             if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
 
-            var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, cantidad, tipoServicio, usuarioCarga, legacyMappingId);
+            var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, honorario, cantidad, tipoServicio, usuarioCarga, legacyMappingId);
             _detalles.Add(detalle);
             return detalle;
         }

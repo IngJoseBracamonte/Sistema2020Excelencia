@@ -33,6 +33,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<Especialidad> Especialidades { get; set; }
         public DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; set; }
         public DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; set; }
+        public DbSet<LogAuditoriaPrecio> AuditLogsPrecios { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -84,6 +85,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany(r => r.DetallesPago)
                       .HasForeignKey(d => d.ReciboFacturaId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                // Índice para reporte de ingresos (Fase 7)
+                entity.HasIndex(d => d.FechaPago);
             });
 
             builder.Entity<SeguroConvenio>(entity =>
@@ -145,6 +149,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithOne()
                       .HasForeignKey(d => d.CuentaServicioId)
                       .OnDelete(DeleteBehavior.Cascade);
+                
+                // Índice para búsqueda por fecha (Fase 7)
+                entity.HasIndex(c => c.FechaCarga);
             });
 
             builder.Entity<DetalleServicioCuenta>(entity =>
@@ -158,6 +165,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("CitasMedicas");
                 entity.HasKey(c => c.Id);
+
+                // Índice para búsqueda por fecha (Fase 7)
+                entity.HasIndex(c => c.HoraPautada);
             });
 
             builder.Entity<Medico>(entity =>
@@ -169,6 +179,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(m => m.EspecialidadId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(m => m.HonorarioBase).HasPrecision(18, 2);
             });
 
             builder.Entity<ServicioClinico>(entity =>
@@ -263,6 +275,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("ConfiguracionGeneral");
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.Iva).HasPrecision(5, 2);
+            });
+
+            builder.Entity<LogAuditoriaPrecio>(entity =>
+            {
+                entity.ToTable("AuditLogsPrecios");
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.PrecioOriginal).HasPrecision(18, 2);
+                entity.Property(a => a.PrecioModificado).HasPrecision(18, 2);
+                entity.Property(a => a.UsuarioOperador).IsRequired().HasMaxLength(100);
+                entity.Property(a => a.AutorizadoPor).IsRequired().HasMaxLength(100);
+                entity.Property(a => a.DescripcionServicio).IsRequired().HasMaxLength(500);
             });
         }
     }

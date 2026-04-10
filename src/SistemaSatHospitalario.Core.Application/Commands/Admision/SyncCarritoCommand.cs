@@ -27,6 +27,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string UsuarioCarga { get; set; } = string.Empty;
         public string TipoIngreso { get; set; } = "Particular";
         public int? ConvenioId { get; set; }
+        public string? SupervisorKey { get; set; } // V1.0 Security Matrix
+        public bool IsPrivilegedUser { get; set; } // V1.0 Security Matrix
         public List<ServicioCarritoDto> Items { get; set; } = new();
     }
 
@@ -35,6 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string ServicioId { get; set; } = string.Empty; // V11.9: Soporte String para IDs Legacy (Lab)
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
+        public decimal Honorario { get; set; }
         public int Cantidad { get; set; } = 1;
         public string TipoServicio { get; set; } = string.Empty;
         
@@ -130,6 +133,34 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 var cuenta = new CuentaServicios(paciente.Id, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
                 await _repository.AgregarCuentaAsync(cuenta, ct);
 
+                // 2b. Validación de Seguridad de Precios en Lote (Fase 1 - Matrix)
+                if (!request.IsPrivilegedUser)
+                {
+                    bool hasPriceModification = false;
+                    foreach (var item in request.Items)
+                    {
+                        if (Guid.TryParse(item.ServicioId, out var svcId))
+                        {
+                            var baseService = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == svcId, ct);
+                            if (baseService != null && baseService.PrecioBase != item.Precio)
+                            {
+                                hasPriceModification = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (hasPriceModification)
+                    {
+                        var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(ct);
+                        if (config == null || config.ClaveSupervisor != request.SupervisorKey)
+                        {
+                            throw new InvalidOperationException("La sincronización contiene ediciones de precios y requiere una Clave de Supervisor válida.");
+                        }
+                        _logger.LogInformation("[SEC] Sincronización con precios modificados autorizada por Clave de Supervisor para {Usuario}", request.UsuarioCarga);
+                    }
+                }
+
                 _logger.LogDebug("[SYNC] Cuenta de Ingreso establecida: {CuentaId}. Procesando {Count} items.", cuenta.Id, request.Items.Count);
 
                 var detallesRes = new List<DetalleSyncDto>();
@@ -169,11 +200,34 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         serviceGuid, 
                         item.Descripcion, 
                         item.Precio, 
+                        item.Honorario,
                         item.Cantidad, 
                         item.TipoServicio, 
                         request.UsuarioCarga,
                         legacyId);
                     
+                    // AUDIT LOG (Phase 9): Detect modification in price OR honorary and log it
+                    if (serviceGuid != Guid.Empty)
+                    {
+                        var catalogo = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == serviceGuid, ct);
+                        if (catalogo != null && (catalogo.PrecioBase != item.Precio || catalogo.HonorarioBase != item.Honorario))
+                        {
+                            var auditLog = new LogAuditoriaPrecio(
+                                detalle.Id,
+                                item.Descripcion,
+                                catalogo.PrecioBase,
+                                item.Precio,
+                                catalogo.HonorarioBase,
+                                item.Honorario,
+                                request.UsuarioCarga,
+                                string.IsNullOrEmpty(request.SupervisorKey) ? "Admin Privilegiado" : "Supervisor Key Autorizado"
+                            );
+                            await _context.AuditLogsPrecios.AddAsync(auditLog, ct);
+                            _logger.LogInformation("[AUDIT] Cambio de precio/honorario detectado y registrado para '{Servicio}': P({OldP}->{NewP}), H({OldH}->{NewH})", 
+                                item.Descripcion, catalogo.PrecioBase, item.Precio, catalogo.HonorarioBase, item.Honorario);
+                        }
+                    }
+
                     detallesRes.Add(new DetalleSyncDto(serviceGuid, detalle.Id));
                 }
 

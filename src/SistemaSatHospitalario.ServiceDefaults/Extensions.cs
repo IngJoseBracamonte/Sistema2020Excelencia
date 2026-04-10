@@ -90,11 +90,19 @@ public static class Extensions
         if (useOtlpExporter)
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
-            Console.WriteLine($"[OTEL DEBUG] OTLP Exporter enabled for endpoint: {builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]}");
+        }
+
+        // Senior Note: Logging early startup diagnostics using the builder's service provider
+        // workaround to avoid Console.WriteLine as per requirement.
+        var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILoggerFactory>().CreateLogger("ServiceDefaults");
+        
+        if (useOtlpExporter)
+        {
+            logger.LogInformation("[OTEL DEBUG] OTLP Exporter enabled for endpoint: {Endpoint}", builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
         }
         else
         {
-            Console.WriteLine("[OTEL DEBUG] OTLP Exporter NOT enabled (missing OTEL_EXPORTER_OTLP_ENDPOINT config)");
+            logger.LogWarning("[OTEL DEBUG] OTLP Exporter NOT enabled (missing OTEL_EXPORTER_OTLP_ENDPOINT config)");
         }
 
         // Uncomment the following lines to enable the Azure Monitor exporter (requires the Azure.Monitor.OpenTelemetry.AspNetCore package)

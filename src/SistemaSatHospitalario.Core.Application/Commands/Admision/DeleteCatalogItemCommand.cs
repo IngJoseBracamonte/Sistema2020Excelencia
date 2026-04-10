@@ -25,7 +25,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var item = await _context.ServiciosClinicos.FindAsync(new object[] { request.Id }, cancellationToken);
             if (item == null) return false;
 
-            _context.ServiciosClinicos.Remove(item);
+            // Soft-Delete para preservar integridad referencial de facturación
+            item.Activo = false;
+            
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }

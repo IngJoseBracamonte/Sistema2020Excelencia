@@ -32,6 +32,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(await _mediator.Send(command));
         }
 
+        [AllowAnonymous]
         [HttpGet("tasa")]
         public async Task<IActionResult> GetTasa()
         {

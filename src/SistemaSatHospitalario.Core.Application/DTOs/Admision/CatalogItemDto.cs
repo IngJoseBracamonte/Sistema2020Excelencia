@@ -13,6 +13,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string Tipo { get; set; } // Legacy compatibility
         public int CategoryId { get; set; } // Consultation=1, Lab=2, etc. (V5.2)
         public bool EsLegacy { get; set; }
+        public bool Activo { get; set; }
 
         public void CalculatePrices(decimal tasa)
         {

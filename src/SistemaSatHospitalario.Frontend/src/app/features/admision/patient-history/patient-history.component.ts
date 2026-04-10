@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { PatientService, PatientHistory, PatientRecord } from '../../../core/services/patient.service';
 import { FacturacionService, DailyBilledPatient } from '../../../core/services/facturacion.service';
 import { PrintService } from '../../../core/services/print.service';
@@ -15,6 +16,7 @@ export class PatientHistoryComponent implements OnInit {
   private patientService = inject(PatientService);
   private facturacionService = inject(FacturacionService);
   private printService = inject(PrintService);
+  private route = inject(ActivatedRoute);
 
   public searchTerm = signal<string>('');
   public patients = signal<PatientRecord[]>([]);
@@ -29,7 +31,15 @@ export class PatientHistoryComponent implements OnInit {
   public endDate = signal<string>(new Date().toISOString().split('T')[0]);
 
   ngOnInit() {
-    this.loadDailyPatients();
+    this.route.queryParams.subscribe(params => {
+        const searchParam = params['search'];
+        if (searchParam) {
+            this.searchTerm.set(searchParam);
+            this.buscar();
+        } else {
+            this.loadDailyPatients();
+        }
+    });
   }
 
   loadDailyPatients() {

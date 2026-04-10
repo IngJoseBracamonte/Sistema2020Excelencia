@@ -14,20 +14,24 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
     public class GetBusinessInsightsQuery : IRequest<BusinessInsightsDto>
     {
-        public string? UserRole { get; set; }
+        // El rol ya no se pasa por parámetro (Senior Refactor)
     }
 
     public class GetBusinessInsightsQueryHandler : IRequestHandler<GetBusinessInsightsQuery, BusinessInsightsDto>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public GetBusinessInsightsQueryHandler(IApplicationDbContext context)
+        public GetBusinessInsightsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
 
         public async Task<BusinessInsightsDto> Handle(GetBusinessInsightsQuery request, CancellationToken cancellationToken)
         {
+            var userRole = _currentUserService.Role;
+            
             // [SENIOR NOTE] Usamos la zona horaria del hospital (UTC-4) para calcular "Hoy"
             // Esto asegura que los cierres de caja y recaudación coincidan con el día operativo real.
             var hospitalNow = DateTime.UtcNow.AddHours(-4);
@@ -40,7 +44,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var response = new BusinessInsightsDto();
 
             // 1. Métricas de Caja/Admisión (Admin o Cajeros)
-            if (AuthorizationConstants.IsCajero(request.UserRole))
+            if (AuthorizationConstants.IsCajero(userRole))
             {
                 // Ventas Netas hoy (Facturado hoy) - Senior Correction: Usamos FechaPago real de los detalles
                 response.TotalVentasHoy = await _context.DetallesPago
@@ -63,7 +67,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             // 2. Métricas de RX (Admin o RX)
-            if (AuthorizationConstants.IsLaboratorio(request.UserRole))
+            if (AuthorizationConstants.IsLaboratorio(userRole))
             {
                 var ordenesRx = await _context.OrdenesRX
                     .AsNoTracking()
@@ -76,7 +80,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             // 3. Detalles Financieros (Exclusivo Administrador)
-            if (AuthorizationConstants.IsAdmin(request.UserRole))
+            if (AuthorizationConstants.IsAdmin(userRole))
             {
                 // Saldo Pendiente AR Total (Visible ahora gracias a corrección de "Admin" string)
                 response.SaldoPendienteAR = await _context.CuentasPorCobrar
@@ -113,6 +117,48 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                                    .OrderByDescending(x => x.Monto)
                                                    .Take(5)
                                                    .ToListAsync(cancellationToken);
+
+                // --- ANALYTICS ENRICHMENT (Fase 6) ---
+
+                // 1. Tendencia de Ingresos (Últimos 7 días)
+                var lastWeek = todayUtc.AddDays(-7);
+                var rawTrend = await _context.DetallesPago
+                    .AsNoTracking()
+                    .Where(d => d.FechaPago >= lastWeek && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscal != EstadoConstants.Anulada)
+                    .GroupBy(d => d.FechaPago.Date)
+                    .Select(g => new { Fecha = g.Key, Monto = g.Sum(x => x.EquivalenteAbonadoBase) })
+                    .ToListAsync(cancellationToken);
+
+                response.TendenciaIngresos = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-6 + offset))
+                    .Select(date => new RevenueTrendDto
+                    {
+                        Fecha = date.ToString("dd/MM"),
+                        Monto = rawTrend.FirstOrDefault(t => t.Fecha == date.AddHours(4).Date)?.Monto ?? 0
+                    })
+                    .ToList();
+
+                // 2. Distribución de Pacientes (Particular vs Seguros)
+                var totalPatients = await _context.CuentasServicios
+                    .AsNoTracking()
+                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
+                    .CountAsync(cancellationToken);
+
+                if (totalPatients > 0)
+                {
+                    var particularCount = await _context.CuentasServicios
+                        .AsNoTracking()
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada && c.ConvenioId == null)
+                        .CountAsync(cancellationToken);
+
+                    var insuranceCount = totalPatients - particularCount;
+
+                    response.DistribucionPacientes = new List<PatientDistributionDto>
+                    {
+                        new PatientDistributionDto { Etiqueta = "Particular", Valor = particularCount },
+                        new PatientDistributionDto { Etiqueta = "Convenios/Seguros", Valor = insuranceCount }
+                    };
+                }
             }
 
             return response;

@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { 
   LucideAngularModule, 
   DollarSign, 
@@ -22,7 +23,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-receivables',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink],
   templateUrl: './receivables.component.html',
   styleUrl: './receivables.component.css'
 })
@@ -56,6 +57,20 @@ export class ReceivablesComponent implements OnInit {
 
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
+
+  // Accordion Logic (Angular-Pro Patterns)
+  public expandedRows = signal<Set<string>>(new Set<string>());
+
+  toggleRow(id: string) {
+    const next = new Set(this.expandedRows());
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    this.expandedRows.set(next);
+  }
+
+  isExpanded(id: string): boolean {
+    return this.expandedRows().has(id);
+  }
 
   // Modal Settlement Premium (Refactored to Signals for Reactivity)
   public selectedAR = signal<PendingAR | null>(null);

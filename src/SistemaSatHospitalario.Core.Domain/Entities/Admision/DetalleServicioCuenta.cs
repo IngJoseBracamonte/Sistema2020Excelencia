@@ -9,6 +9,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid ServicioId { get; private set; }
         public string Descripcion { get; private set; }
         public decimal Precio { get; private set; }
+        public decimal Honorario { get; private set; }
         public int Cantidad { get; private set; }
         public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo
         public string UsuarioCarga { get; private set; }
@@ -17,13 +18,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected DetalleServicioCuenta() { }
 
-        internal DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
+        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
             ServicioId = servicioId;
             Descripcion = descripcion ?? throw new ArgumentNullException(nameof(descripcion));
             Precio = precio;
+            Honorario = honorario;
             Cantidad = cantidad;
             TipoServicio = tipoServicio ?? throw new ArgumentNullException(nameof(tipoServicio));
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));

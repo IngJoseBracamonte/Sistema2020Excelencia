@@ -52,9 +52,18 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             
-            // Si el user tiene rol inyectarlo en array (ej simplificado toma el 1ero)
-            var userRole = roles.Count > 0 ? roles[0] : "AsignarRol";
-            claims.Add(new Claim(ClaimTypes.Role, userRole));
+            // [SEC-004] Standardize Identity Claims (V14.1 Senior Patch)
+            // Incluimos tanto el formato URI (SOAP-legacy) como el corto (JWT standard)
+            // para asegurar que el middleware reconozca los roles independientemente de la configuración.
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim("role", role));
+            }
+
+            // También normalizamos el UniqueName para que coincida con NameClaimType
+            claims.Add(new Claim(ClaimTypes.Name, user.UserName ?? "unknown"));
+            claims.Add(new Claim("unique_name", user.UserName ?? "unknown"));
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -73,7 +82,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 Expiration = expiration,
                 UserId = user.Id,
                 Username = user.UserName,
-                Role = userRole
+                Role = roles.Count > 0 ? roles[0] : "AsignarRol"
             };
             }
             catch (Exception ex)

@@ -14,6 +14,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal SaldoPendienteBase => MontoTotalBase - MontoPagadoBase;
         public DateTime FechaCreacion { get; private set; }
         public string Estado { get; private set; } // Pendiente, Parcial, Pagada
+        public bool IsAudited { get; private set; }
 
         public CuentaServicios Cuenta { get; private set; }
 
@@ -28,12 +29,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoPagadoBase = pagado;
             FechaCreacion = DateTime.UtcNow;
             Estado = EstadoConstants.Pendiente;
+            IsAudited = false;
         }
 
         public void MarcarComoCobrada()
         {
             Estado = EstadoConstants.Cobrada;
             MontoPagadoBase = MontoTotalBase;
+        }
+
+        public void MarcarComoAuditada()
+        {
+            IsAudited = true;
         }
     }
 }

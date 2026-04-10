@@ -61,5 +61,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             return Ok(await _mediator.Send(command));
         }
+
+        [Authorize(Roles = "Admin,Administrador")]
+        [HttpGet("audit/precios")]
+        public async Task<IActionResult> GetPriceAuditLogs([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+        {
+            return Ok(await _mediator.Send(new GetPriceAuditLogsQuery { FechaDesde = desde, FechaHasta = hasta }));
+        }
     }
 }

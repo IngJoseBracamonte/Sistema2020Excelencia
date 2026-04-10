@@ -37,7 +37,6 @@
                 Cerrar Expediente
             </button>
             <div *ngIf="!selectedPatient()" class="relative z-10 flex items-center gap-4">
-                <span class="text-slate-600 text-[10px] font-black uppercase tracking-widest">V3.2 PRO</span>
             </div>
         </div>
     </div>
@@ -270,7 +269,7 @@
                             <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estado
                             </th>
                             <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                                Referencia</th>
+                                Conceptos Facturados</th>
                             <th
                                 class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">
                                 Monto Total</th>
@@ -310,9 +309,13 @@
                                 </div>
                             </td>
                             <td class="px-6 py-3">
-                                <span
-                                    class="text-[9px] font-mono text-slate-600 tracking-wider group-hover/row:text-primary/60 transition-colors">REF:
-                                    {{ h.cuentaId.substring(0,8).toUpperCase() }}</span>
+                                <div class="flex flex-col gap-1">
+                                    <div *ngFor="let s of h.servicios" class="flex items-center gap-2">
+                                        <span class="w-1 h-1 rounded-full bg-primary/40"></span>
+                                        <span class="text-[9px] font-black text-white/80 uppercase tracking-tight">{{ s.descripcion }}</span>
+                                    </div>
+                                    <span class="text-[8px] font-mono text-slate-600 tracking-wider mt-1 opacity-40">REF: {{ h.cuentaId.substring(0,8).toUpperCase() }}</span>
+                                </div>
                             </td>
                             <td class="px-6 py-3 text-right">
                                 <span class="text-xs font-black text-white font-mono tracking-tighter">${{ h.total |

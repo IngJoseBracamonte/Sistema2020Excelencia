@@ -10,13 +10,15 @@ import {
     Trash2,
     X,
     Save,
-    Stethoscope
+    Stethoscope,
+    FileText
 } from 'lucide-angular';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-medico-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, RouterModule],
   templateUrl: './medico-management.component.html'
 })
 export class MedicoManagementComponent implements OnInit {
@@ -33,7 +35,8 @@ export class MedicoManagementComponent implements OnInit {
   public currentMedico = signal<Partial<Medico>>({
     nombre: '',
     especialidadId: '',
-    activo: true
+    activo: true,
+    honorarioBase: 0
   });
 
   readonly icons = {
@@ -42,7 +45,8 @@ export class MedicoManagementComponent implements OnInit {
     Delete: Trash2,
     Close: X,
     Save: Save,
-    Doctor: Stethoscope
+    Doctor: Stethoscope,
+    Report: FileText
   };
 
   ngOnInit() {
@@ -68,14 +72,20 @@ export class MedicoManagementComponent implements OnInit {
     this.currentMedico.set({
       nombre: '',
       especialidadId: '',
-      activo: true
+      activo: true,
+      honorarioBase: 0
     });
     this.showModal.set(true);
   }
 
   openEdit(medico: Medico) {
     this.isEditing.set(true);
-    this.currentMedico.set({ ...medico });
+    // Normalizar datos para asegurar vinculación correcta en el modal
+    this.currentMedico.set({ 
+      ...medico,
+      especialidadId: medico.especialidadId?.toLowerCase(),
+      honorarioBase: medico.honorarioBase ?? 0
+    });
     this.showModal.set(true);
   }
 

@@ -36,7 +36,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Usamos reflection para setear el ID o simplemente confiamos en el flujo
             // En una prueba real, podriamos necesitar un Factory o setear el ID via reflection si es privado
             
-            var detalle = cuenta.AgregarServicio(Guid.NewGuid(), "Consulta Medica", 100, 1, "Medico", "Admin");
+            var detalle = cuenta.AgregarServicio(Guid.NewGuid(), "Consulta Medica", 100, 0, 1, "Medico", "Admin");
             
             // Mocking repository to return our account
             _repositoryMock.Setup(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()))
@@ -67,7 +67,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var cuentaId = Guid.NewGuid();
             var pacienteId = Guid.NewGuid();
             var cuenta = new CuentaServicios(pacienteId, "Admin", "Particular");
-            var detalle = cuenta.AgregarServicio(Guid.NewGuid(), "Examen RX", 50, 1, "RX", "Admin");
+            var detalle = cuenta.AgregarServicio(Guid.NewGuid(), "Examen RX", 50, 0, 1, "RX", "Admin");
 
             _repositoryMock.Setup(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cuenta);

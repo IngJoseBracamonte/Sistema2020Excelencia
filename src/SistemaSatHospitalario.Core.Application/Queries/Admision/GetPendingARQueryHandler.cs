@@ -39,7 +39,28 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             MontoTotal = ar.MontoTotalBase,
                             SaldoPendiente = ar.MontoTotalBase - ar.MontoPagadoBase,
                             FechaEmision = ar.FechaCreacion,
-                            Estado = ar.Estado
+                            Estado = ar.Estado,
+                            IsAudited = ar.IsAudited,
+                            Conceptos = _context.DetallesServicioCuenta
+                                .Where(d => d.CuentaServicioId == ar.CuentaServicioId)
+                                .Select(d => new ConceptoFacturadoDto
+                                {
+                                    Descripcion = d.Descripcion,
+                                    MontoBase = d.Precio * d.Cantidad
+                                }).ToList(),
+                            Pagos = _context.DetallesPago
+                                .Where(dp => _context.RecibosFactura
+                                    .Where(rf => rf.CuentaServicioId == ar.CuentaServicioId)
+                                    .Select(rf => rf.Id)
+                                    .Contains(dp.ReciboFacturaId))
+                                .Select(dp => new PaymentHistoryDto
+                                {
+                                    Fecha = _context.RecibosFactura.First(r => r.Id == dp.ReciboFacturaId).FechaEmision,
+                                    Metodo = dp.MetodoPago,
+                                    Referencia = dp.ReferenciaBancaria,
+                                    MontoBase = dp.EquivalenteAbonadoBase,
+                                    MontoCambiario = dp.MontoAbonadoMoneda
+                                }).ToList()
                         };
 
             if (!string.IsNullOrEmpty(request.Estado))

@@ -30,6 +30,7 @@ export class BillingFacadeService {
   public cuentaId = signal<string | null>(null);
   public pagos = signal<DetallePagoDto[]>([]);
   public tasaCambioDia = signal<number>(0);
+  public currentSupervisorKey = signal<string | null>(null); // V1.0 Security Matrix
 
   // --- Búsqueda y Catálogo ---
   public searchTermServicio = signal<string>('');
@@ -40,7 +41,10 @@ export class BillingFacadeService {
   public especialidades = signal<string[]>([]);
 
   // --- Selectores (Computed Signals) ---
-  public serviciosCargados = computed(() => [...this.serviciosEnBackend(), ...this.carritoLocal()]);
+  public serviciosCargados = computed(() => [
+    ...this.serviciosEnBackend().map((s, i) => ({ ...s, _index: i, _isBackend: true })),
+    ...this.carritoLocal().map((s, i) => ({ ...s, _index: i, _isBackend: false }))
+  ]);
   
   public totalCargadoUSD = computed(() => {
     return this.serviciosCargados().reduce((acc: number, curr: any) => {
@@ -143,6 +147,7 @@ export class BillingFacadeService {
     this.serviciosEnBackend.set([]);
     this.pagos.set([]);
     this.cuentaId.set(null);
+    this.currentSupervisorKey.set(null);
   }
 
    /**
@@ -160,6 +165,7 @@ export class BillingFacadeService {
       tipoIngreso,
       usuarioCarga: user,
       convenioId: convenioId || undefined,
+      supervisorKey: this.currentSupervisorKey() || undefined,
       items: items.map(s => {
         // Motor de Normalización USD-First (V11.2)
         // Si el item viene del legado y solo tiene precio en Bs, se divide por la tasa
@@ -170,6 +176,7 @@ export class BillingFacadeService {
           servicioId: s.id,
           descripcion: s.descripcion,
           precio: normalizedPrice,
+          honorario: s.honorarioUsd || s.HonorarioUsd || 0,
           cantidad: 1,
           tipoServicio: s.tipo,
           medicoId: s.medicoId || undefined,

@@ -37,6 +37,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                // Enriquecimiento de Seguridad (V1.0 Matrix)
+                command.UsuarioCarga = User.FindFirstValue(ClaimTypes.Name) ?? "Sistama";
+                command.IsPrivilegedUser = User.IsInRole("Admin") || User.IsInRole("Administrador") || User.IsInRole("Supervisor");
+
                 var result = await _mediator.Send(command);
                 return Ok(new { 
                     Message = "Servicio cargado exitosamente.", 
@@ -70,6 +74,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                // Enriquecimiento de Seguridad (V1.0 Matrix)
+                command.UsuarioCarga = User.FindFirstValue(ClaimTypes.Name) ?? "Sistema";
+                command.IsPrivilegedUser = User.IsInRole("Admin") || User.IsInRole("Administrador") || User.IsInRole("Supervisor");
+
                 var result = await _mediator.Send(command);
                 return Ok(new { 
                     Message = "Carrito sincronizado exitosamente.", 

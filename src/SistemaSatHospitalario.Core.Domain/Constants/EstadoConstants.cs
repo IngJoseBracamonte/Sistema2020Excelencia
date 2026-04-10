@@ -49,6 +49,7 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const string Laboratorio = "LABORATORIO";
         public const string PrefixLab = "LAB-";
         public const string RX = "RX";
+        public const string Medico = "MEDICO";
 
         public static bool EsLaboratorio(string tipo)
         {

@@ -16,6 +16,10 @@ export interface BusinessInsights {
   totalOrdenesRxHoy: number;
   ordenesRxProcesadasHoy: number;
   ventasRxHoy: number;
+
+  // Analytics Phase 6
+  tendenciaIngresos: Array<{ fecha: string; monto: number }>;
+  distribucionPacientes: Array<{ etiqueta: string; valor: number }>;
 }
 
 @Injectable({

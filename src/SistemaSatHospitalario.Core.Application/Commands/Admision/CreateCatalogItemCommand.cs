@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public string Descripcion { get; set; }
         public string Codigo { get; set; }
-        public decimal PrecioBase { get; set; }
+        public decimal PrecioUsd { get; set; }
         public string Tipo { get; set; } // LABORATORIO, RX, CONSULTA, etc.
         public bool Activo { get; set; } = true;
     }
@@ -27,7 +27,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<Guid> Handle(CreateCatalogItemCommand request, CancellationToken cancellationToken)
         {
-            var item = new ServicioClinico(request.Codigo, request.Descripcion, request.PrecioBase, request.Tipo)
+            var item = new ServicioClinico(request.Codigo, request.Descripcion, request.PrecioUsd, request.Tipo)
             {
                 Activo = request.Activo
             };

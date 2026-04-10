@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
+using Microsoft.Extensions.Logging;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -16,10 +17,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class CatalogController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ILogger<CatalogController> _logger;
 
-        public CatalogController(IMediator mediator)
+        public CatalogController(IMediator mediator, ILogger<CatalogController> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpGet("unified")]
@@ -47,7 +50,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpDelete("{id}")]
         public async Task<ActionResult<bool>> Delete(Guid id)
         {
+            _logger.LogWarning("[CATALOG-API] ATTEMPTING TO DELETE ITEM ID: {Id}", id);
+            
             var result = await _mediator.Send(new DeleteCatalogItemCommand { Id = id });
+            
+            _logger.LogWarning("[CATALOG-API] DELETE RESULT FOR {Id}: {Result}", id, result);
+            
+            if (!result) return NotFound(new { message = "El servicio no existe o el ID es inválido" });
+            
             return Ok(result);
         }
     }

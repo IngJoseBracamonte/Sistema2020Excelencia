@@ -24,7 +24,7 @@ export class CatalogService {
     return this.http.post<string>(this.apiUrl, {
       descripcion: item.descripcion,
       codigo: item.codigo,
-      precioBase: item.precio,
+      precioUsd: item.precioUsd,
       tipo: item.tipo,
       activo: item.activo ?? true
     });
@@ -35,7 +35,7 @@ export class CatalogService {
       id: item.id,
       descripcion: item.descripcion,
       codigo: item.codigo,
-      precioBase: item.precio,
+      precioUsd: item.precioUsd,
       tipo: item.tipo,
       activo: item.activo ?? true
     });

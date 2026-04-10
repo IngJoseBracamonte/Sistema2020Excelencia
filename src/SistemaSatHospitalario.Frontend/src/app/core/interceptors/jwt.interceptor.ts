@@ -8,7 +8,7 @@ import { throwError } from 'rxjs';
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const token = authService.getToken();
-    const isApiUrl = req.url.startsWith(environment.apiUrl);
+    const isApiUrl = req.url.startsWith(environment.apiUrl) || req.url.includes('/api/') || req.url.includes('api/');
 
     if (token && isApiUrl) {
         req = req.clone({

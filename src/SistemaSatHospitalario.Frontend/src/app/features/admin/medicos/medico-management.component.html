@@ -1,21 +1,32 @@
 <div class="space-y-8 animate-fade-in p-6 md:p-8 relative z-10">
     <!-- Header Section (V2.0 Midnight Blue Legítimo - Sincronizado con Catálogo) -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
+    <div
+        class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-8 rounded-[3rem] border border-white/5 relative overflow-hidden shadow-2xl">
         <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
         <div class="flex items-center space-x-6">
-            <div class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
+            <div
+                class="h-16 w-16 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
                 <lucide-icon [name]="icons.Doctor" class="w-8 h-8"></lucide-icon>
             </div>
             <div>
                 <h1 class="text-3xl font-black text-white tracking-tighter uppercase">Nómina Médica</h1>
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">Gestión Integral de Especialistas</p>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1 italic">Gestión Integral
+                    de Especialistas</p>
             </div>
         </div>
-        <button (click)="openCreate()" 
-            class="mt-4 md:mt-0 bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20 flex items-center group active:scale-95">
-            <lucide-icon [name]="icons.Plus" class="w-4 h-4 mr-3 group-hover:rotate-90 transition-transform"></lucide-icon>
-            REGISTRAR MÉDICO
-        </button>
+        <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 mt-4 md:mt-0">
+            <button routerLink="/admin/reportes/honorarios"
+                class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/5 flex items-center active:scale-95 cursor-pointer">
+                <lucide-icon [name]="icons.Report" class="w-4 h-4 mr-3"></lucide-icon>
+                VER REPORTE DE HONORARIOS
+            </button>
+            <button (click)="openCreate()"
+                class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/20 flex items-center group active:scale-95">
+                <lucide-icon [name]="icons.Plus"
+                    class="w-4 h-4 mr-3 group-hover:rotate-90 transition-transform"></lucide-icon>
+                REGISTRAR MÉDICO
+            </button>
+        </div>
     </div>
 
     <!-- Loading State -->
@@ -25,89 +36,124 @@
 
     <!-- Grid de Médicos (V2.0 Card Design) -->
     <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div *ngFor="let m of medicos()" 
-             class="group bg-surface-card rounded-[2.5rem] border border-white/5 hover:border-rose-500/40 hover:bg-white/5 transition-all duration-500 overflow-hidden shadow-2xl relative">
-             <div class="p-8">
+        <div *ngFor="let m of medicos()"
+            class="group bg-surface-card rounded-[2.5rem] border border-white/5 hover:border-rose-500/40 hover:bg-white/5 transition-all duration-500 overflow-hidden shadow-2xl relative">
+            <div class="p-8">
                 <div class="flex justify-between items-start mb-8">
-                    <div class="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center border border-rose-500/20 group-hover:bg-rose-500 group-hover:text-white transition-all shadow-lg shadow-rose-500/5">
-                        <lucide-icon [name]="icons.Doctor" class="w-8 h-8 text-rose-500 group-hover:text-white"></lucide-icon>
+                    <div
+                        class="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center border border-rose-500/20 group-hover:bg-rose-500 group-hover:text-white transition-all shadow-lg shadow-rose-500/5">
+                        <lucide-icon [name]="icons.Doctor"
+                            class="w-8 h-8 text-rose-500 group-hover:text-white"></lucide-icon>
                     </div>
-                    <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                        <button (click)="openEdit(m)" class="p-2.5 bg-black/40 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-rose-500/20 transition-all">
-                             <lucide-icon [name]="icons.Edit" class="w-[18px] h-[18px]"></lucide-icon>
+                    <div
+                        class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                        <button (click)="openEdit(m)"
+                            class="p-2.5 bg-black/40 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-rose-500/20 transition-all">
+                            <lucide-icon [name]="icons.Edit" class="w-[18px] h-[18px]"></lucide-icon>
                         </button>
-                        <button (click)="m.id && delete(m.id)" class="p-2.5 bg-black/40 border border-white/5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/20 transition-all">
-                             <lucide-icon [name]="icons.Delete" class="w-[18px] h-[18px]"></lucide-icon>
+                        <button (click)="m.id && delete(m.id)"
+                            class="p-2.5 bg-black/40 border border-white/5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/20 transition-all">
+                            <lucide-icon [name]="icons.Delete" class="w-[18px] h-[18px]"></lucide-icon>
                         </button>
                     </div>
                 </div>
 
                 <div class="space-y-1">
-                    <h3 class="text-xl font-black text-white uppercase tracking-tight group-hover:text-rose-500 transition-colors">{{ m.nombre }}</h3>
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">{{ m.especialidad }}</p>
+                    <h3
+                        class="text-xl font-black text-white uppercase tracking-tight group-hover:text-rose-500 transition-colors">
+                        {{ m.nombre }}</h3>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">{{ m.especialidad
+                        }}</p>
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                    <span [class]="m.activo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'" 
-                          class="text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border">
+                    <span
+                        [class]="m.activo ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'"
+                        class="text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border">
                         {{ m.activo ? '● ACTIVO' : '○ INACTIVO' }}
                     </span>
-                    <span class="text-[9px] font-mono text-slate-600 tracking-tighter uppercase">UID: {{ m.id?.substring(0,8) }}</span>
+                    <span class="text-[9px] font-mono text-slate-600 tracking-tighter uppercase">UID: {{
+                        m.id?.substring(0,8) }}</span>
                 </div>
-             </div>
+            </div>
         </div>
     </div>
 
     <!-- Modal Form (Estructura de Centrado Profesional) -->
     <div *ngIf="showModal()" class="fixed inset-0 z-[150] overflow-y-auto py-8">
         <!-- Backdrop -->
-        <div class="fixed inset-0 bg-slate-900/95 backdrop-blur-md animate-fade-in" (click)="showModal.set(false)"></div>
-        
+        <div class="fixed inset-0 bg-slate-900/95 backdrop-blur-md animate-fade-in" (click)="showModal.set(false)">
+        </div>
+
         <!-- Modal Container (Flex para Centrado Dinámico) -->
         <div class="flex min-h-full items-center justify-center p-4 pointer-events-none">
-            <div class="relative bg-surface-card border border-white/5 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in pointer-events-auto my-auto">
+            <div
+                class="relative bg-surface-card border border-white/5 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in pointer-events-auto my-auto">
                 <div class="bg-rose-500 p-8 text-white flex justify-between items-center relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[100px] -mr-8 -mt-8"></div>
                     <div class="relative z-10">
-                        <h3 class="text-xl font-black uppercase tracking-tighter">{{ isEditing() ? 'Editar Especialista' : 'Nuevo Registro' }}</h3>
-                        <p class="text-[8px] font-black uppercase tracking-widest opacity-60">Nómina Médica V2.0 Legítimo</p>
+                        <h3 class="text-xl font-black uppercase tracking-tighter">{{ isEditing() ? 'Editar Especialista'
+                            : 'Nuevo Registro' }}</h3>
+
                     </div>
-                    <button (click)="showModal.set(false)" class="relative z-10 text-white/50 hover:text-white transition-colors">
+                    <button (click)="showModal.set(false)"
+                        class="relative z-10 text-white/50 hover:text-white transition-colors">
                         <lucide-icon [name]="icons.Close" class="w-6 h-6"></lucide-icon>
                     </button>
                 </div>
-                
+
                 <div class="p-8 space-y-8 bg-surface-card">
                     <div class="space-y-6">
                         <div class="space-y-2">
-                            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Nombre Completo</label>
-                            <input [(ngModel)]="currentMedico().nombre" type="text" 
+                            <label
+                                class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Nombre
+                                Completo</label>
+                            <input [(ngModel)]="currentMedico().nombre" type="text"
                                 class="w-full bg-black/20 border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all placeholder:text-slate-700 uppercase"
                                 placeholder="Dr. Ej. Juan Pérez">
                         </div>
                         <div class="space-y-2">
-                            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Especialidad Materia</label>
+                            <label
+                                class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Especialidad
+                                Materia</label>
                             <div class="relative">
-                                <select [(ngModel)]="currentMedico().especialidadId" 
+                                <select [(ngModel)]="currentMedico().especialidadId"
                                     class="w-full bg-black/20 border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all uppercase appearance-none cursor-pointer">
                                     <option value="" disabled selected>SELECCIONE ESPECIALIDAD...</option>
-                                    <option *ngFor="let esp of especialidadesCatalogo()" [value]="esp.id">{{ esp.nombre | uppercase }}</option>
+                                    <option *ngFor="let esp of especialidadesCatalogo()" [value]="esp.id.toLowerCase()">{{ esp.nombre
+                                        | uppercase }}</option>
                                 </select>
                             </div>
                         </div>
+                        <div class="space-y-2">
+                            <label
+                                class="block text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Honorario
+                                Base (USD)</label>
+                            <div class="relative">
+                                <span
+                                    class="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-xs">$</span>
+                                <input [(ngModel)]="currentMedico().honorarioBase" type="number" step="0.01"
+                                    class="w-full bg-black/20 border border-white/5 rounded-2xl pl-10 pr-5 py-4 text-xs font-black text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-700 uppercase"
+                                    placeholder="0.00">
+                            </div>
+                        </div>
                         <div class="flex items-center space-x-4 bg-white/2 p-5 rounded-2xl border border-white/5">
-                            <input [(ngModel)]="currentMedico().activo" type="checkbox" id="chkActPremium" 
+                            <input [(ngModel)]="currentMedico().activo" type="checkbox" id="chkActPremium"
                                 class="w-5 h-5 rounded border-white/10 bg-black/20 text-rose-500 focus:ring-rose-500/20 transition-all cursor-pointer">
-                            <label for="chkActPremium" class="text-[10px] font-black text-slate-300 uppercase tracking-widest cursor-pointer">Especialista Activo</label>
+                            <label for="chkActPremium"
+                                class="text-[10px] font-black text-slate-300 uppercase tracking-widest cursor-pointer">Especialista
+                                Activo</label>
                         </div>
                     </div>
 
                     <div class="pt-4 flex flex-col space-y-3">
-                        <button (click)="save()" 
-                            class="w-full py-5 bg-rose-500 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-500/20 hover:bg-rose-600 transition-all active:scale-95">
+                        <button (click)="save()"
+                            [disabled]="!currentMedico().especialidadId || currentMedico().especialidadId === '00000000-0000-0000-0000-000000000000' || currentMedico().especialidadId === ''"
+                            class="w-full py-5 bg-rose-500 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-500/20 hover:bg-rose-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                             {{ isEditing() ? 'GUARDAR CAMBIOS' : 'CONFIRMAR REGISTRO' }}
                         </button>
-                        <button (click)="showModal.set(false)" class="py-2 text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
+                        <button (click)="showModal.set(false)"
+                            class="py-2 text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
                             CANCELAR
                         </button>
                     </div>

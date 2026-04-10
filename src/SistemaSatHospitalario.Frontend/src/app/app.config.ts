@@ -14,7 +14,8 @@ import {
   LucideAngularModule, 
   CreditCard, RefreshCcw, Check, Plus, User, Calendar, Search, Package, 
   Clock, SearchX, Info, ChevronRight, Trash2, X, Lock, UserPlus, Phone, 
-  Mail, Layout, ShieldAlert, CalendarCheck, Edit3 
+  Mail, Layout, ShieldAlert, CalendarCheck, Edit3,
+  Stethoscope, Activity, DollarSign
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
@@ -34,7 +35,8 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(LucideAngularModule.pick({ 
       CreditCard, RefreshCcw, Check, Plus, User, Calendar, Search, Package, 
       Clock, SearchX, Info, ChevronRight, Trash2, X, Lock, UserPlus, Phone, 
-      Mail, Layout, ShieldAlert, CalendarCheck, Edit3 
+      Mail, Layout, ShieldAlert, CalendarCheck, Edit3,
+      Stethoscope, Activity, DollarSign
     }))
   ]
 };

@@ -41,7 +41,12 @@ export class AuthService {
 
   public isInsuranceAssistant = (): boolean => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role === 'seguros' || role === 'seguro' || role === 'asistente seguro' || this.isAdministrador();
+    return role === 'seguros' || role === 'seguro' || role === 'asistente seguro' || role === 'asistente de seguros' || this.isAdministrador();
+  };
+
+  public isSupervisor = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role === 'supervisor' || this.isAdministrador();
   };
 
   public isCajero = (): boolean => this.isParticularAssistant() || this.isInsuranceAssistant();

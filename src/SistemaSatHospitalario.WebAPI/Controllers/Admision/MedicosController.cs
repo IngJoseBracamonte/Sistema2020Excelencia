@@ -7,10 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
+using SistemaSatHospitalario.Core.Application.Queries.Admin;
+using SistemaSatHospitalario.Core.Application.Queries;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Administrador,Cajero,Supervisor,Asistente de Seguros,Médico")]
     [ApiController]
     [Route("api/[controller]")]
     public class MedicosController : ControllerBase
@@ -29,6 +31,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Administrador")]
         public async Task<ActionResult<Guid>> Create([FromBody] CreateMedicoCommand command)
         {
             var result = await _mediator.Send(command);
@@ -36,6 +39,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin,Administrador")]
         public async Task<ActionResult<bool>> Update([FromBody] UpdateMedicoCommand command)
         {
             var result = await _mediator.Send(command);
@@ -43,10 +47,26 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Administrador")]
         public async Task<ActionResult<bool>> Delete(Guid id)
         {
             var result = await _mediator.Send(new DeleteMedicoCommand { Id = id });
             return Ok(result);
+        }
+
+        [HttpGet("reporte/honorarios")]
+        [Authorize(Roles = "Admin,Administrador")]
+        public async Task<ActionResult<List<DoctorHonorariaDto>>> GetHonorariaReport()
+        {
+            return Ok(await _mediator.Send(new GetDoctorHonorariaReportQuery()));
+        }
+
+        [HttpGet("reporte/calculo-honorarios")]
+        [Authorize(Roles = "Admin,Administrador")]
+        public async Task<ActionResult<List<DoctorHonorariumSummaryDto>>> GetHonorariumSummary([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var query = new GetDoctorHonorariumSummaryQuery { StartDate = startDate, EndDate = endDate };
+            return Ok(await _mediator.Send(query));
         }
     }
 }

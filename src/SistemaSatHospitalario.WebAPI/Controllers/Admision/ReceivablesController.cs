@@ -58,5 +58,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpPost("Audit")]
+        public async Task<IActionResult> AuditAR([FromBody] AuditARCommand command)
+        {
+            try
+            {
+                var success = await _mediator.Send(command);
+                return Ok(new { Message = "Auditoría procesada exitosamente.", Success = success });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }

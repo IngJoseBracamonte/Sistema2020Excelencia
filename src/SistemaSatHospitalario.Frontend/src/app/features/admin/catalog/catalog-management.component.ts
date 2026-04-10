@@ -42,7 +42,7 @@ export class CatalogManagementComponent implements OnInit {
   public currentItem = signal<Partial<CatalogItem>>({
     codigo: '',
     descripcion: '',
-    precio: 0,
+    precioUsd: 0,
     tipo: 'CONSULTA',
     activo: true
   });
@@ -95,7 +95,7 @@ export class CatalogManagementComponent implements OnInit {
     this.currentItem.set({
       codigo: '',
       descripcion: '',
-      precio: 0,
+      precioUsd: 0,
       tipo: 'CONSULTA',
       activo: true
     });
@@ -123,10 +123,30 @@ export class CatalogManagementComponent implements OnInit {
     }
   }
 
-  delete(id: string) {
-    if (confirm('¿Estás seguro de eliminar este servicio?')) {
-      this.catalogService.deleteItem(id).subscribe(() => this.refreshCatalog());
-    }
+  itemToDelete = signal<any>(null);
+
+  confirmDelete(item: any) {
+    this.itemToDelete.set(item);
+  }
+
+  executeDelete() {
+    const item = this.itemToDelete();
+    if (!item || !item.id) return;
+    
+    this.catalogService.deleteItem(item.id).subscribe({
+      next: (success) => {
+        this.itemToDelete.set(null);
+        this.refreshCatalog();
+      },
+      error: (err) => {
+        console.error('Error HTTP:', err);
+        this.itemToDelete.set(null);
+      }
+    });
+  }
+
+  cancelDelete() {
+    this.itemToDelete.set(null);
   }
 
   getTipoColorPremium(tipo: string): string {

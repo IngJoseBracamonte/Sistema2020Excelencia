@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, Output, inject, computed } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
+import { FormsModule } from '@angular/forms';
 import { BillingFacadeService } from '../../../../../core/services/billing-facade.service';
 import { CurrencyBsPipe } from '../../../../../shared/pipes/currency-bs.pipe';
 
@@ -12,7 +13,7 @@ import { CurrencyBsPipe } from '../../../../../shared/pipes/currency-bs.pipe';
 @Component({
   selector: 'app-billing-cart',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CurrencyBsPipe],
+  imports: [CommonModule, LucideAngularModule, CurrencyBsPipe, FormsModule],
   templateUrl: './billing-cart.component.html'
 })
 export class BillingCartComponent {
@@ -28,7 +29,9 @@ export class BillingCartComponent {
   @Output() verCitas = new EventEmitter<void>();
   @Output() procesar = new EventEmitter<void>();
   @Output() omitir = new EventEmitter<void>();
-  @Output() quitar = new EventEmitter<number>();
+  @Output() quitar = new EventEmitter<{ index: number, isBackend: boolean }>();
+  @Output() editarPrecio = new EventEmitter<{ index: number, isBackend: boolean }>();
+  @Output() precioCambiado = new EventEmitter<{ index: number, isBackend: boolean, newPrice: number, newHonorary: number }>();
 
   // Selectores del Facade
   public serviciosCargados = this.billingFacade.serviciosCargados;
@@ -37,6 +40,12 @@ export class BillingCartComponent {
   public totalFacturadoUSD = this.billingFacade.totalFacturadoUSD;
   public tasaCambio = this.billingFacade.tasaCambioDia;
   public cuentaId = this.billingFacade.cuentaId;
+
+  // --- Estado de Edición Inline ---
+  public editingIndex = signal<number | null>(null);
+  public isEditingBackend = signal<boolean>(false);
+  public tempPrice = signal<number>(0);
+  public tempHonorary = signal<number>(0);
 
   // Cálculos Derivados para UI
   public totalFacturadoBS = computed(() => this.totalFacturadoUSD() * this.tasaCambio());
@@ -59,5 +68,32 @@ export class BillingCartComponent {
 
   public getDisplayPriceUsd(s: any): string {
     return (s.precioUsd || s.PrecioUsd || 0).toFixed(2);
+  }
+
+  // --- Handlers de Edición Inline (Premium UX V1.0) ---
+  public startEdit(index: number, isBackend: boolean, currentPrice: number, currentHonorary: number = 0) {
+    this.editingIndex.set(index);
+    this.isEditingBackend.set(isBackend);
+    this.tempPrice.set(currentPrice);
+    this.tempHonorary.set(currentHonorary);
+  }
+
+  public confirmEdit() {
+    const index = this.editingIndex();
+    if (index !== null) {
+      this.precioCambiado.emit({
+        index,
+        isBackend: this.isEditingBackend(),
+        newPrice: this.tempPrice(),
+        newHonorary: this.tempHonorary()
+      });
+    }
+    this.cancelEdit();
+  }
+
+  public cancelEdit() {
+    this.editingIndex.set(null);
+    this.tempPrice.set(0);
+    this.tempHonorary.set(0);
   }
 }

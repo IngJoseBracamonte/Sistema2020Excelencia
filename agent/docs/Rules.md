@@ -27,6 +27,7 @@ Este documento define las directrices inquebrantables de desarrollo para garanti
 23. **Financial Idempotency (SEC-007)**: Los comandos que modifiquen cuentas o generen cobros DEBEN aplicar el atributo `[Idempotent]`, exigiendo la cabecera `X-Idempotency-Key` del cliente para evitar cargos duplicados.
 24. **PII Scrubbing (SEC-008)**: Prohibido persistir información de identificación personal (Cédula, Nombres) en mensajes de excepción o logs. Se DEBE utilizar el método `ScrubPii` antes de generar un ticket de error.
 25. **Database Encryption (SEC-009)**: Todas las conexiones a bases de datos en producción DEBEN usar TLS/SSL (`SslMode=VerifyFull` o `Required`).
+26. **Minimize Hardcoding (GEN-001)**: Se debe disminuir el menor hardcodeo posible de valores de configuración, tasas, URLs o reglas de negocio. Todo valor variable debe provenir de la base de datos o de archivos de configuración seguros (`appsettings.json`, variables de entorno) para permitir cambios sin re-compilación.
 
 ## 💻 Patrones de Código (Engineering Patterns)
 ### Backend (WebAPI / Core)

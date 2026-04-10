@@ -24,7 +24,6 @@ import { SeguroConvenio } from '../../../core/models/convenio.model';
           </div>
           <div>
             <h1 class="text-4xl font-black text-white tracking-tighter uppercase leading-none">Ajustes Maestros</h1>
-            <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3 italic opacity-60">Hospital Pachón Pro Ecosystem • v2.5</p>
           </div>
         </div>
       </div>

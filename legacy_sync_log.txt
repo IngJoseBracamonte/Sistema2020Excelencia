@@ -68,3 +68,30 @@
 [2026-04-05 00:30:10] [TRACE] [LEGACY-REPO] [SUCCESS] COMMIT - Sincronización Exitosa para Orden 27985
 [2026-04-05 00:30:10] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===
 [2026-04-05 00:30:10] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 3c082825-7fef-4c26-af18-1caacf9584e4
+[2026-04-07 12:49:35] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: c2c0b2eb-f771-47da-970d-1c2f9ef4c3ee
+[2026-04-07 12:49:35] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: c2c0b2eb-f771-47da-970d-1c2f9ef4c3ee
+[2026-04-07 14:00:56] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 76ed6e87-a80b-4f97-8191-a2c1474e95da
+[2026-04-07 14:00:56] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 76ed6e87-a80b-4f97-8191-a2c1474e95da
+[2026-04-07 15:46:51] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 5b1b0057-042c-4bbc-b989-e651193f8a70
+[2026-04-07 15:46:51] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 5b1b0057-042c-4bbc-b989-e651193f8a70
+[2026-04-10 00:59:14] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 11d5a158-1a4c-43a7-96fa-0a6ebec96a58
+[2026-04-10 00:59:14] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 11d5a158-1a4c-43a7-96fa-0a6ebec96a58 ===
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] Paciente encontrado: 20238072 | NombreCorto: ALEJANDRA DENIS | IdLegacy: 489
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 489
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 3
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC]   -> Detalle: 'HEMATOLOGIA COMPLETA' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '1'
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Radiografía Tórax' | TipoServicio: 'RX' | EsLab: False | LegacyMappingId: ''
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC]   -> Detalle: 'CONSULTA GINECOLOGICA' | TipoServicio: 'CONSULTA' | EsLab: False | LegacyMappingId: ''
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] Item Lab: 'HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=10.00
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 489...
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 489, Convenio: 1
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] 'orden' insertada (ID: 27986)
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] 1 perfiles insertados via EF Core.
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] Se encontraron 1 análisis técnicos vinculados.
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] 1 resultados generados exitosamente.
+[2026-04-10 00:59:14] [TRACE] [LEGACY-REPO] [SUCCESS] COMMIT - Sincronización Exitosa para Orden 27986
+[2026-04-10 00:59:14] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===
+[2026-04-10 00:59:14] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 11d5a158-1a4c-43a7-96fa-0a6ebec96a58

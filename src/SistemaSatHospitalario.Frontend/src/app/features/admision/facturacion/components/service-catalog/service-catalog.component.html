@@ -120,10 +120,8 @@
                         </div>
                         <div class="flex items-center space-x-4 text-right">
                             <div class="hidden sm:block">
-                                <p class="text-base font-black text-primary font-mono tracking-tighter">Bs. {{
-                                    calculatePriceBs(s) | currencyBs }}</p>
-                                <p class="text-[9px] font-bold text-slate-400 font-mono tracking-tighter mt-0.5">${{
-                                    s.displayPriceUsd }} USD</p>
+                                <p class="text-base font-black text-emerald-400 font-mono tracking-tighter">$ {{ s.displayPriceUsd }}</p>
+                                <p class="text-[9px] font-bold text-slate-400 font-mono tracking-tighter mt-0.5">Bs. {{ calculatePriceBs(s) | currencyBs }}</p>
                             </div>
                             <button (click)="cargar.emit(s.id)"
                                 class="h-10 w-10 bg-surface-light group-hover:bg-primary text-white rounded-xl shadow-lg transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center ring-4 ring-transparent hover:ring-primary/20">

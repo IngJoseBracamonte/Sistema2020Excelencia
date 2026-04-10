@@ -10,6 +10,7 @@ using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Enums;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using Microsoft.Extensions.Logging;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -17,11 +18,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
+        private readonly ILogger<GetUnifiedCatalogQueryHandler> _logger;
 
-        public GetUnifiedCatalogQueryHandler(IApplicationDbContext context, ILegacyLabRepository legacyRepository)
+        public GetUnifiedCatalogQueryHandler(IApplicationDbContext context, ILegacyLabRepository legacyRepository, ILogger<GetUnifiedCatalogQueryHandler> logger)
         {
             _context = context;
             _legacyRepository = legacyRepository;
+            _logger = logger;
         }
 
         public async Task<List<CatalogItemDto>> Handle(GetUnifiedCatalogQuery request, CancellationToken cancellationToken)
@@ -59,9 +62,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Id = s.Id.ToString(),
                     Codigo = s.Codigo,
                     Descripcion = s.Descripcion,
-                    Tipo = s.TipoServicio,
+                    Tipo = string.IsNullOrWhiteSpace(s.TipoServicio) ? "SERVICIO" : s.TipoServicio.ToUpper(),
                     CategoryId = (int)s.Category,
                     EsLegacy = false,
+                    Activo = s.Activo,
                     PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase
                 };
                 item.CalculatePrices(tasa);
@@ -80,7 +84,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .ToDictionaryAsync(x => x.PerfilId, x => (x.PrecioHNL, x.PrecioUSD), cancellationToken);
             }
 
-            Console.WriteLine($"[CATALOG-DIAGNOSTIC] Native: {serviciosNativos.Count}, Legacy: {perfilesLegacy.Count}, Tasa: {tasa}, Convenio: {request.ConvenioId}");
+            _logger.LogInformation("[CATALOG-DIAGNOSTIC] Native: {NativeCount}, Legacy: {LegacyCount}, Tasa: {Tasa}, Convenio: {ConvenioId}", 
+                serviciosNativos.Count, perfilesLegacy.Count, tasa, request.ConvenioId);
 
             foreach (var p in perfilesLegacy)
             {
@@ -91,14 +96,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 if (finalUsd <= 0 && baseHnl > 0)
                 {
                     finalUsd = Math.Round(baseHnl / tasa, 2);
-                    Console.WriteLine($"[LEGACY-CATALOG] Fallback HNL->USD: Perfil {p.IdPerfil} ({p.Descripcion}) -> ${finalUsd}");
+                    _logger.LogInformation("[LEGACY-CATALOG] Fallback HNL->USD: Perfil {IdPerfil} ({Descripcion}) -> ${FinalUsd}", 
+                        p.IdPerfil, p.Descripcion, finalUsd);
                 }
                 else if (finalUsd <= 0 && baseHnl <= 0)
                 {
                     // Fallback de Emergencia: Si la DB no tiene precio, asignamos un nominal para permitir flujo
                     // pero alertamos para corrección de datos en Legacy.
                     finalUsd = 1.00m; 
-                    Console.WriteLine($"[LEGACY-CATALOG] [CRITICAL] Perfil {p.IdPerfil} ({p.Descripcion}) sin precios en DB. Asignado nominal $1.00");
+                    _logger.LogWarning("[LEGACY-CATALOG] [CRITICAL] Perfil {IdPerfil} ({Descripcion}) sin precios en DB. Asignado nominal $1.00", 
+                        p.IdPerfil, p.Descripcion);
                 }
 
                 decimal? overrideHnl = null;
@@ -119,6 +126,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Tipo = EstadoConstants.Laboratorio,
                     CategoryId = (int)ServiceCategory.Laboratory,
                     EsLegacy = true,
+                    Activo = true,
                     PrecioUsd = finalUsd
                 };
 

@@ -17,7 +17,9 @@ import {
     Stethoscope,
     Activity,
     Bookmark,
-    ChevronDown
+    ChevronDown,
+    ShieldCheck,
+    BarChart3
 } from 'lucide-angular';
 
 @Component({
@@ -48,20 +50,7 @@ import {
           Facturación
         </a>
 
-        <a *ngIf="isAdmin()" routerLink="/cxc" routerLinkActive="active-link" class="nav-item">
-          <lucide-icon [name]="icons.AR" class="w-5 h-5 mr-3"></lucide-icon>
-          Cuentas por Cobrar
-        </a>
 
-        <a *ngIf="canSeeOrders()" routerLink="/rx-orders" routerLinkActive="active-link" class="nav-item">
-          <lucide-icon [name]="icons.Orders" class="w-5 h-5 mr-3"></lucide-icon>
-          Ordenes Medicas
-        </a>
-
-        <a routerLink="/expedientes" routerLinkActive="active-link" class="nav-item">
-          <lucide-icon [name]="icons.History" class="w-5 h-5 mr-3"></lucide-icon>
-          Expedientes
-        </a>
 
         <!-- Admin & Specialized Sections -->
         <div *ngIf="isAdmin() || isRxAssistant()">
@@ -82,7 +71,26 @@ import {
             <div *ngIf="dropdownsOpen().caja" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/cajas" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Cajas</a>
                 <a routerLink="/catalog" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active-sublink" class="nav-subitem">Catálogo General</a>
-                <a routerLink="/catalog" [queryParams]="{type: 'RX'}" routerLinkActive="active-sublink" class="nav-subitem">Servicios de RX</a>
+            </div>
+          </div>
+
+          <!-- Dropdown: Reportes Operativos (Fase 5 Master Move) -->
+          <div *ngIf="isAdmin()" class="space-y-1">
+            <button (click)="toggleDropdown('reportes')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().reportes }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Reportes" class="w-5 h-5 mr-3 text-amber-500"></lucide-icon>
+                    Reportes Operativos
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().reportes"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().reportes" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/cxc" routerLinkActive="active-sublink" class="nav-subitem">Cuentas por Cobrar</a>
+                <a routerLink="/admin/audit/cuentas" routerLinkActive="active-sublink" class="nav-subitem">Cuentas por Auditar</a>
+                <a routerLink="/rx-orders" routerLinkActive="active-sublink" class="nav-subitem">Ordenes Medicas</a>
+                <a routerLink="/expedientes" routerLinkActive="active-sublink" class="nav-subitem">Expedientes</a>
             </div>
           </div>
 
@@ -101,6 +109,7 @@ import {
             <div *ngIf="dropdownsOpen().medica" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Médicos Nominal</a>
                 <a routerLink="/especialidades" routerLinkActive="active-sublink" class="nav-subitem">Especialidades</a>
+                <a routerLink="/admin/reportes/calculo-honorarios" routerLinkActive="active-sublink" class="nav-subitem">Cálculo de Honorarios</a>
             </div>
           </div>
 
@@ -206,6 +215,7 @@ export class SidebarComponent implements OnInit {
 
     public dropdownsOpen = signal({
         caja: false,
+        reportes: false,
         medica: false,
         settings: false
     });
@@ -214,6 +224,9 @@ export class SidebarComponent implements OnInit {
         const url = this.router.url;
         if (url.includes('/cajas') || url.includes('/catalog')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), caja: true });
+        }
+        if (url.includes('/admin/audit') || url.includes('/cxc') || url.includes('/rx-orders') || url.includes('/expedientes')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), reportes: true });
         }
         if (url.includes('/medicos') || url.includes('/especialidades')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), medica: true });
@@ -237,10 +250,12 @@ export class SidebarComponent implements OnInit {
         Doctor: Stethoscope,
         RX: Activity,
         Category: Bookmark,
-        ChevronDown: ChevronDown
+        ChevronDown: ChevronDown,
+        Audit: ShieldCheck,
+        Reportes: BarChart3
     };
 
-    toggleDropdown(key: 'caja' | 'medica' | 'settings') {
+    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes') {
         this.dropdownsOpen.update(prev => ({
             ...prev,
             [key]: !prev[key as keyof typeof prev]

@@ -23,6 +23,8 @@ import { CajaService, DailyClosingReport } from '../../../core/services/caja.ser
 import { PrintService } from '../../../core/services/print.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
 import { SettingsService } from '../../../core/services/settings.service';
+import { SupervisorAuthDialogComponent } from '../../../shared/components/supervisor-auth-dialog/supervisor-auth-dialog.component';
+import { ViewChild } from '@angular/core';
 import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   LucideAngularModule,
@@ -61,7 +63,8 @@ import {
     PatientSelectorComponent, 
     ServiceCatalogComponent, 
     BillingCartComponent, 
-    PaymentModuleComponent
+    PaymentModuleComponent,
+    SupervisorAuthDialogComponent
   ],
   templateUrl: './facturacion.component.html',
   styleUrl: './facturacion.component.css'
@@ -102,6 +105,9 @@ export class FacturacionComponent {
   private conveniosService = inject(ConveniosService);
   private settingsService = inject(SettingsService);
   public billingFacade = inject(BillingFacadeService);
+  
+  @ViewChild('supervisorDialog') supervisorDialog!: SupervisorAuthDialogComponent;
+  @ViewChild('billingCart') billingCart!: BillingCartComponent;
 
   // --- Estados de Facturación y Usuario (Senior Design Patterns) ---
   public user = this.authService.currentUser;
@@ -357,6 +363,59 @@ export class FacturacionComponent {
   public tiposCorreo = ['@gmail.com', '@hotmail.com', '@outlook.com', '@yahoo.com'];
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
   public codigosTelefono = ['0273', '0251', '0212', '0281', '0241'];
+
+  // --- Gestión de Seguridad de Precios (Fase 1) ---
+  private pendingEditInfo: { index: number, isBackend: boolean } | null = null;
+
+  handleEditarPrecio(event: { index: number, isBackend: boolean }) {
+    this.pendingEditInfo = event;
+    const isPrivileged = this.authService.isSupervisor() || this.authService.isAdministrador();
+
+    if (isPrivileged) {
+      this.solicitarNuevoPrecio();
+    } else {
+      this.supervisorDialog.open();
+    }
+  }
+
+  onSupervisorAuthorized(key: string) {
+    this.billingFacade.currentSupervisorKey.set(key);
+    this.solicitarNuevoPrecio();
+  }
+
+  private solicitarNuevoPrecio() {
+    if (!this.pendingEditInfo) return;
+    const { index, isBackend } = this.pendingEditInfo;
+    
+    // UI REFINEMENT (Phase 9): Passing both price and honorary to the inline editor
+    const item = isBackend ? this.serviciosEnBackend()[index] : this.carritoLocal()[index];
+    const currentPrice = item.precioUsd || item.PrecioUsd || item.precio || 0;
+    const currentHonorary = item.honorarioUsd || item.HonorarioUsd || 0;
+
+    // Delegar al componente cart que inicie el modo edición
+    this.billingCart.startEdit(index, isBackend, currentPrice, currentHonorary);
+    this.pendingEditInfo = null;
+  }
+
+  onPrecioCambiado(event: { index: number, isBackend: boolean, newPrice: number, newHonorary: number }) {
+    const { index, isBackend, newPrice, newHonorary } = event;
+
+    if (isNaN(newPrice) || newPrice < 0) {
+      this.errorMessage.set("Ingrese un precio válido (mayor o igual a cero).");
+      return;
+    }
+
+    if (isBackend) {
+      this.errorMessage.set("Solo se permite editar precios de servicios nuevos antes de sincronizar.");
+    } else {
+      this.billingFacade.carritoLocal.update(cart => {
+        const newCart = [...cart];
+        newCart[index] = { ...newCart[index], precioUsd: newPrice, precio: newPrice, honorarioUsd: newHonorary };
+        return newCart;
+      });
+      this.actionMessage.set("Precio y Honorario modificados exitosamente.");
+    }
+  }
 
 
 
@@ -750,6 +809,7 @@ export class FacturacionComponent {
       servicioId: s.id,
       descripcion: finalDescripcion,
       precio: s.precioUsd || s.PrecioUsd || 0,
+      honorario: s.honorarioUsd || s.HonorarioUsd || 0,
       cantidad: 1,
       tipoServicio: s.tipo,
       usuarioCarga: this.user()?.username || '',
@@ -908,9 +968,8 @@ export class FacturacionComponent {
     });
   }
 
-  quitarServicio(index: number) {
-    const backendCount = this.serviciosEnBackend().length;
-    const isBackend = index < backendCount;
+  quitarServicio(event: { index: number, isBackend: boolean }) {
+    const { index, isBackend } = event;
 
     this.isLoading.set(true);
     this.billingFacade.removeService(index, isBackend).subscribe({

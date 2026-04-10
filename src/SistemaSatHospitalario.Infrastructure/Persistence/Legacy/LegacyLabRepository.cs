@@ -131,7 +131,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             catch (global::System.Exception ex)
             {
                 // Logueamos pero no rompemos el flujo principal (visto como 500)
-                global::System.Console.WriteLine($"[LEGACY ERROR] GetPatientByCedulaAsync: {ex.Message}");
+                _logger.LogError($"[LEGACY ERROR] GetPatientByCedulaAsync: {ex.Message}", ex);
                 return null;
             }
         }
@@ -148,7 +148,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (global::System.Exception ex)
             {
-                global::System.Console.WriteLine($"[LEGACY ERROR] GetPatientByIdAsync: {ex.Message}");
+                _logger.LogError($"[LEGACY ERROR] GetPatientByIdAsync: {ex.Message}", ex);
                 return null;
             }
         }
@@ -168,7 +168,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (global::System.Exception ex)
             {
-                global::System.Console.WriteLine($"[LEGACY ERROR] SearchPatientsLimitedAsync: {ex.Message}");
+                _logger.LogError($"[LEGACY ERROR] SearchPatientsLimitedAsync: {ex.Message}", ex);
                 return new List<DatosPersonalesLegacy>();
             }
         }
@@ -186,7 +186,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (global::System.Exception ex)
             {
-                global::System.Console.WriteLine($"[LEGACY ERROR] GetAvailableProfilesAsync: {ex.Message}");
+                _logger.LogError($"[LEGACY ERROR] GetAvailableProfilesAsync: {ex.Message}", ex);
                 return new List<PerfilLegacy>();
             }
         }
@@ -208,7 +208,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (global::System.Exception ex)
             {
-                global::System.Console.WriteLine($"[LEGACY ERROR] CreatePatientLegacyAsync: {ex.Message}");
+                _logger.LogError($"[LEGACY ERROR] CreatePatientLegacyAsync: {ex.Message}", ex);
                 return 0;
             }
         }
@@ -225,7 +225,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (global::System.Exception ex)
             {
-                global::System.Console.WriteLine($"[LEGACY ERROR] GetLegacyAgreementsIdsAsync: {ex.Message}");
+                _logger.LogError($"[LEGACY ERROR] GetLegacyAgreementsIdsAsync: {ex.Message}", ex);
                 return new List<int>();
             }
         }

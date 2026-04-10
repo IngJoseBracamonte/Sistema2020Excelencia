@@ -7,6 +7,7 @@ using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -20,9 +21,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string ServicioId { get; set; } = string.Empty; // V11.9 Support
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
+        public decimal Honorario { get; set; }
         public int Cantidad { get; set; }
         public string TipoServicio { get; set; } = string.Empty; // Medico, RX, Laboratorio, Insumo
         public string UsuarioCarga { get; set; } = string.Empty;
+        public string? SupervisorKey { get; set; } // V1.0 Security Matrix
+        public bool IsPrivilegedUser { get; set; } // V1.0 Security Matrix
 
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
@@ -36,12 +40,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IBillingRepository _repository;
         private readonly IOrdenExternaService _externaService;
         private readonly IApplicationDbContext _context;
+        private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
 
-        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService, IApplicationDbContext context)
+        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService, IApplicationDbContext context, ILogger<CargarServicioACuentaCommandHandler> logger)
         {
             _repository = repository;
             _externaService = externaService;
             _context = context;
+            _logger = logger;
         }
 
         public async Task<CargarServicioResult> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
@@ -55,7 +61,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException($"No se encontró un paciente con el ID: {request.PacienteId}. Asegúrese de registrarlo primero.");
             }
 
-            // 2. Asegurar cuenta activa usando el GUID local
+            // 2. Validación de Seguridad de Precios (Fase 1 - Matrix)
+            if (!request.IsPrivilegedUser && Guid.TryParse(request.ServicioId, out var svcId))
+            {
+                var baseService = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == svcId, cancellationToken);
+                if (baseService != null && baseService.PrecioBase != request.Precio)
+                {
+                    // El precio ha sido modificado, requiere Clave de Supervisor
+                    var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+                    if (config == null || config.ClaveSupervisor != request.SupervisorKey)
+                    {
+                        throw new InvalidOperationException("La modificación de precios requiere una Clave de Supervisor válida.");
+                    }
+                    _logger.LogInformation("[SEC] Precio modificado por {Usuario} con Clave de Supervisor válida. Original: {Orig}, Nuevo: {New}", 
+                        request.UsuarioCarga, baseService.PrecioBase, request.Precio);
+                }
+            }
+
+            // 3. Asegurar cuenta activa usando el GUID local
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
 
             // 3. Procesar lógica específica de Consultas/Citas
@@ -86,10 +109,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 esLab ? Guid.Empty : (Guid.TryParse(request.ServicioId, out var g) ? g : Guid.Empty), 
                 request.Descripcion, 
                 request.Precio, 
+                request.Honorario,
                 request.Cantidad, 
                 request.TipoServicio, 
                 request.UsuarioCarga,
                 legacyId);
+            
+            // 5. AUDIT LOG (Phase 9): Detect modification and log it
+            if (!esLab && Guid.TryParse(request.ServicioId, out var serviceGuidAudit))
+            {
+                var catalogo = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == serviceGuidAudit, cancellationToken);
+                if (catalogo != null && (catalogo.PrecioBase != request.Precio || catalogo.HonorarioBase != request.Honorario))
+                {
+                    var auditLog = new LogAuditoriaPrecio(
+                        detalle.Id,
+                        request.Descripcion,
+                        catalogo.PrecioBase,
+                        request.Precio,
+                        catalogo.HonorarioBase,
+                        request.Honorario,
+                        request.UsuarioCarga,
+                        string.IsNullOrEmpty(request.SupervisorKey) ? "Admin Privilegiado" : "Supervisor Key Autorizado"
+                    );
+                    await _context.AuditLogsPrecios.AddAsync(auditLog, cancellationToken);
+                    _logger.LogInformation("[AUDIT] Cambio de precio/honorario detectado y registrado: P({OldP}->{NewP}), H({OldH}->{NewH})", 
+                        catalogo.PrecioBase, request.Precio, catalogo.HonorarioBase, request.Honorario);
+                }
+            }
             
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);

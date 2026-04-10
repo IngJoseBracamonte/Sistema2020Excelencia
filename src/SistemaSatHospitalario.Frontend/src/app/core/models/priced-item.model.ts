@@ -7,6 +7,8 @@ export abstract class BasePricedItem {
   precioUsd?: number;
   PrecioBs?: number; // PascalCase del backend (mapeo seguro)
   PrecioUsd?: number; // PascalCase del backend (mapeo seguro)
+  honorarioUsd?: number;
+  HonorarioUsd?: number;
   tipo: string;
   categoryId: number; // V5.2 structural classification
   esLegacy: boolean;
@@ -19,6 +21,7 @@ export abstract class BasePricedItem {
     this.precio = data.precio || data.Precio || 0;
     this.precioBs = data.precioBs ?? data.PrecioBs;
     this.precioUsd = data.precioUsd ?? data.PrecioUsd;
+    this.honorarioUsd = data.honorarioUsd ?? data.HonorarioUsd;
     this.tipo = data.tipo || data.Tipo;
     this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;

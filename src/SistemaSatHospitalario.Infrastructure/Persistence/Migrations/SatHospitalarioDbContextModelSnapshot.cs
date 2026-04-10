@@ -118,6 +118,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CuentaServicioId");
 
+                    b.HasIndex("HoraPautada");
+
                     b.HasIndex("MedicoId");
 
                     b.ToTable("CitasMedicas", (string)null);
@@ -128,6 +130,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("ClaveSupervisor")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<decimal>("Iva")
                         .HasPrecision(5, 2)
@@ -249,6 +255,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FechaCarga");
+
                     b.ToTable("CuentasServicios", (string)null);
                 });
 
@@ -282,6 +290,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FechaPago");
+
                     b.HasIndex("ReciboFacturaId");
 
                     b.ToTable("DetallesPago", (string)null);
@@ -305,6 +315,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("FechaCarga")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("Honorario")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("LegacyMappingId")
                         .HasColumnType("longtext");
@@ -349,6 +362,52 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.ToTable("Especialidades", (string)null);
                 });
 
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.LogAuditoriaPrecio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("AutorizadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("DescripcionServicio")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid>("DetalleServicioId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("FechaModificacion")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("HonorarioAnterior")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal>("NuevoHonorario")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal>("PrecioModificado")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrecioOriginal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UsuarioOperador")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogsPrecios", (string)null);
+                });
+
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.Medico", b =>
                 {
                     b.Property<Guid>("Id")
@@ -360,6 +419,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("EspecialidadId")
                         .HasColumnType("char(36)");
+
+                    b.Property<decimal>("HonorarioBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -567,6 +630,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<decimal>("HonorarioBase")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("LegacyMappingId")
                         .HasColumnType("longtext");

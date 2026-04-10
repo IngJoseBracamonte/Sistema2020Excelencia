@@ -46,14 +46,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var nextDay = targetDate?.AddDays(1);
 
             // 1. Obtener Citas (Excluyendo canceladas)
-            var citasQuery = _context.CitasMedicas.AsQueryable();
+            var citasQuery = _context.CitasMedicas.AsNoTracking();
             if (targetDate.HasValue) citasQuery = citasQuery.Where(c => c.HoraPautada >= targetDate.Value && c.HoraPautada < nextDay!.Value);
             if (request.MedicoId.HasValue) citasQuery = citasQuery.Where(c => c.MedicoId == request.MedicoId.Value);
 
             var citas = await (from c in citasQuery
-                               join m in _context.Medicos on c.MedicoId equals m.Id into mGroup
+                               join m in _context.Medicos.AsNoTracking() on c.MedicoId equals m.Id into mGroup
                                from m in mGroup.DefaultIfEmpty()
-                               join p in _context.PacientesAdmision on c.PacienteId equals p.Id into pGroup
+                               join p in _context.PacientesAdmision.AsNoTracking() on c.PacienteId equals p.Id into pGroup
                                from p in pGroup.DefaultIfEmpty()
                                select new ActiveAppointmentDto
                                {
@@ -72,12 +72,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                .ToListAsync(cancellationToken);
 
             // 2. Obtener Reservas Temporales (Vigentes)
-            var reservasQuery = _context.ReservasTemporales.Where(r => r.ExpiracionUtc > DateTime.UtcNow);
+            var reservasQuery = _context.ReservasTemporales.AsNoTracking().Where(r => r.ExpiracionUtc > DateTime.UtcNow);
             if (targetDate.HasValue) reservasQuery = reservasQuery.Where(r => r.HoraPautada >= targetDate.Value && r.HoraPautada < nextDay!.Value);
             if (request.MedicoId.HasValue) reservasQuery = reservasQuery.Where(r => r.MedicoId == request.MedicoId.Value);
 
             var reservas = await (from r in reservasQuery
-                                  join m in _context.Medicos on r.MedicoId equals m.Id into mGroup
+                                  join m in _context.Medicos.AsNoTracking() on r.MedicoId equals m.Id into mGroup
                                   from m in mGroup.DefaultIfEmpty()
                                   select new ActiveAppointmentDto
                                   {
