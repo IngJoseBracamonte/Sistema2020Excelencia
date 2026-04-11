@@ -50,7 +50,9 @@ builder.Services.AddCors(options =>
     options.DefaultPolicyName = "AngularPolicy";
     options.AddPolicy("AngularPolicy", policy =>
     {
-        policy.WithOrigins(allowedOrigins) 
+        // [MOD-CORS] Modificado para permitir cualquier origen (Netlify, local, etc) 
+        // Compatible con AllowCredentials()
+        policy.SetIsOriginAllowed(origin => true) 
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
