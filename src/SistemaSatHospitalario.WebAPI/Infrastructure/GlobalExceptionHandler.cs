@@ -48,12 +48,14 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
                 _logger.LogCritical(ex, "Failed to persist Error Ticket to database.");
             }
 
-            // Devolvemos el error estandarizado al cliente
+            // Devolvemos el error estandarizado al cliente con detalles para debug en producción
             httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await httpContext.Response.WriteAsJsonAsync(new 
             { 
                 error = "Ha ocurrido un error inesperado en el sistema interno.",
-                ticketId = "Verifique sus notificaciones o contacte a soporte si persiste."
+                ticketId = "Verifique sus notificaciones o contacte a soporte si persiste.",
+                devError = scrubbedMessage,
+                devStack = scrubbedStack
             }, cancellationToken);
 
             return true;
