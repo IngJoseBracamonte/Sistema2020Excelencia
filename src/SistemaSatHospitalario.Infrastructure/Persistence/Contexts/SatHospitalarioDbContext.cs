@@ -236,7 +236,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             builder.Entity<TasaCambio>(entity =>
             {
-                entity.ToTable("tasacambio"); // Forzar minúsculas para compatibilidad MySQL/Linux
+                entity.ToTable("TasaCambio");
                 entity.HasKey(t => t.Id);
                 entity.Property(t => t.Monto).HasPrecision(18, 4);
                 entity.Property(t => t.Activo).IsRequired(); // Mapeo implícito a TINYINT(1)/BIT
