@@ -212,7 +212,8 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "ERROR CRÍTICO durante la inicialización de bases de datos.");
+        logger.LogCritical(ex, "ERROR CRÍTICO durante la inicialización de bases de datos.");
+        throw; // Aborta el inicio para que el orquestador (Render) marque el deploy como fallido
     }
 }
 // --------------------------------

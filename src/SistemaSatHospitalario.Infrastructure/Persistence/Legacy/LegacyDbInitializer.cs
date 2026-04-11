@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
@@ -10,33 +11,46 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
     {
         private readonly Sistema2020LegacyDbContext _context;
         private readonly ILogger<LegacyDbInitializer> _logger;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
         public LegacyDbInitializer(
             Sistema2020LegacyDbContext context, 
-            ILogger<LegacyDbInitializer> logger)
+            ILogger<LegacyDbInitializer> logger,
+            Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task InitializeAsync()
         {
+            var connStr = _configuration.GetConnectionString("LegacyConnection");
+
+            if (string.IsNullOrWhiteSpace(connStr))
+            {
+                _logger.LogCritical("ERROR CRÍTICO: La cadena de conexión 'LegacyConnection' está vacía o no existe. El sistema Legacy no puede ser accesado.");
+                throw new InvalidOperationException("LegacyConnection string is missing or empty. Please configure it in your environment variables as ConnectionStrings__LegacyConnection.");
+            }
+
             try
             {
-                // El contexto Legacy NO usa migraciones de EF Core (es una DB pre-existente)
-                // Solo verificamos si podemos conectarnos si el provider está configurado
-                if (_context.Database.GetDbConnection().ConnectionString != null)
-                {
-                    _logger.LogInformation("Verificando conectividad con Legacy Database...");
-                    await _context.Database.CanConnectAsync();
-                }
-                
-                _logger.LogInformation("Legacy Database Inicializada (Check de Conexión).");
+                _logger.LogInformation("Verificando conectividad fuerte con Legacy Database...");
+
+                // Verificación fuerte directa contra MySQL
+                using var connection = new MySqlConnector.MySqlConnection(connStr);
+                await connection.OpenAsync();
+
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT 1";
+                await cmd.ExecuteScalarAsync();
+
+                _logger.LogInformation("Legacy Database Inicializada (Check de Conexión Fuerte OK).");
             }
             catch (Exception ex)
             {
-                // Un error aquí suele ser por falta de ConnectionString en el entorno
-                _logger.LogWarning($"Legacy Database no disponible o no configurada: {ex.Message}");
+                _logger.LogCritical(ex, "ERROR CRÍTICO: No se pudo conectar a la base de datos Legacy.");
+                throw new Exception($"Fallo crítico al inicializar la conexión Legacy: {ex.Message}", ex);
             }
         }
     }
