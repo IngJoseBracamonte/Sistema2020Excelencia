@@ -196,6 +196,9 @@ using (var scope = app.Services.CreateScope())
             throw new Exception("Database is unavailable after multiple retries.");
         }
 
+        // [CLOUD-FIX] Reparar esquema antes de ejecutar initializers
+        await RepairCloudSchemaAsync(context, logger);
+
         logger.LogInformation("Iniciando secuencia de inicialización de esquemas...");
         var initializers = services.GetServices<IDatabaseInitializer>();
         
@@ -224,3 +227,96 @@ app.MapHub<SistemaSatHospitalario.WebAPI.Hubs.DashboardHub>("/hub/dashboard");
 app.MapHub<SistemaSatHospitalario.WebAPI.Hubs.TasaHub>("/hub/tasa");
 
 app.Run();
+
+// ===== CLOUD SCHEMA REPAIR (MySQL Idempotent) =====
+static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogger logger)
+{
+    logger.LogInformation("[SCHEMA-REPAIR] Iniciando reparación idempotente de esquema MySQL para Cloud...");
+    
+    var repairs = new List<string>
+    {
+        // 1. Medicos.EspecialidadId
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='EspecialidadId');
+          SET @s = IF(@col=0,'ALTER TABLE `Medicos` ADD COLUMN `EspecialidadId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT ''00000000-0000-0000-0000-000000000000''','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 2. Medicos.HonorarioBase
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='HonorarioBase');
+          SET @s = IF(@col=0,'ALTER TABLE `Medicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 3. ServiciosClinicos.Category
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='Category');
+          SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `Category` int NOT NULL DEFAULT 0','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 4. ServiciosClinicos.HonorarioBase
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='HonorarioBase');
+          SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `HonorarioBase` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 5. ServiciosClinicos.LegacyMappingId
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='LegacyMappingId');
+          SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `LegacyMappingId` longtext NULL','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 6. DetallesPago.FechaPago
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND COLUMN_NAME='FechaPago');
+          SET @s = IF(@col=0,'ALTER TABLE `DetallesPago` ADD COLUMN `FechaPago` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00''','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 7. DetallesServicioCuenta.Honorario
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='Honorario');
+          SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `Honorario` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 8. DetallesServicioCuenta.LegacyMappingId
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='LegacyMappingId');
+          SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `LegacyMappingId` longtext NULL','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 9. RecibosFacturas.MontoVueltoUSD
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='RecibosFacturas' AND COLUMN_NAME='MontoVueltoUSD');
+          SET @s = IF(@col=0,'ALTER TABLE `RecibosFacturas` ADD COLUMN `MontoVueltoUSD` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 10. CuentasPorCobrar.FechaCreacion (rename from FechaEmision or add)
+        @"SET @cn = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaCreacion');
+          SET @co = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaEmision');
+          SET @s = IF(@cn>0,'SELECT 1',IF(@co>0,'ALTER TABLE `CuentasPorCobrar` CHANGE COLUMN `FechaEmision` `FechaCreacion` datetime(6) NOT NULL','ALTER TABLE `CuentasPorCobrar` ADD COLUMN `FechaCreacion` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00'''));
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 11. ConfiguracionGeneral.ClaveSupervisor
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ConfiguracionGeneral' AND COLUMN_NAME='ClaveSupervisor');
+          SET @s = IF(@col=0,'ALTER TABLE `ConfiguracionGeneral` ADD COLUMN `ClaveSupervisor` longtext NOT NULL','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 12. Tabla AuditLogsPrecios
+        @"CREATE TABLE IF NOT EXISTS `AuditLogsPrecios` (
+            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+            `DetalleServicioId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+            `DescripcionServicio` varchar(500) NOT NULL,
+            `PrecioOriginal` decimal(18,2) NOT NULL,
+            `PrecioModificado` decimal(18,2) NOT NULL,
+            `UsuarioOperador` varchar(100) NOT NULL,
+            `AutorizadoPor` varchar(100) NOT NULL,
+            `FechaModificacion` datetime(6) NOT NULL,
+            `HonorarioAnterior` decimal(65,30) NOT NULL DEFAULT 0,
+            `NuevoHonorario` decimal(65,30) NOT NULL DEFAULT 0,
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;",
+        // 13. Índice Medicos.EspecialidadId
+        @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND INDEX_NAME='IX_Medicos_EspecialidadId');
+          SET @s = IF(@idx=0,'CREATE INDEX `IX_Medicos_EspecialidadId` ON `Medicos` (`EspecialidadId`)','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 14. Índice DetallesPago.FechaPago
+        @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND INDEX_NAME='IX_DetallesPago_FechaPago');
+          SET @s = IF(@idx=0,'CREATE INDEX `IX_DetallesPago_FechaPago` ON `DetallesPago` (`FechaPago`)','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;"
+    };
+
+    int repaired = 0;
+    foreach (var sql in repairs)
+    {
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync(sql);
+            repaired++;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "[SCHEMA-REPAIR] Error en repair (puede ser esperado): {Sql}", sql.Substring(0, Math.Min(80, sql.Length)));
+        }
+    }
+
+    logger.LogInformation("[SCHEMA-REPAIR] Completado. {Repaired}/{Total} ejecutadas.", repaired, repairs.Count);
+}
