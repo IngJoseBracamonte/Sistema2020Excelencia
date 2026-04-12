@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -14,7 +15,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public Guid PacienteId { get; set; }
         public string Cedula { get; set; }
         public string Nombre { get; set; }
-        public string Apellidos { get; set; } // En el sistema nuevo es NombreCorto, dejaremos esto para compatibilidad DTO
+        public string Apellidos { get; set; }
         public decimal TotalFacturado { get; set; }
         public int CuentasCerradas { get; set; }
     }
@@ -35,47 +36,52 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<DailyBilledPatientDto>> Handle(GetDailyBilledPatientsQuery request, CancellationToken cancellationToken)
         {
-            // Normalización Profesional de Fecha: Tratamos la fecha como el día completo "Local del Usuario"
-            var startOfDay = request.Fecha.Date;
-            var nextDay = startOfDay.AddDays(1);
+            // Normalización Ultra-Agresiva para depuración (V12.1)
+            // Tomamos lo que sea que esté facturado en el rango amplio (±12h para TZ resilience)
+            var targetDay = request.Fecha.Date;
+            var startRange = targetDay.AddHours(-12);
+            var endRange = targetDay.AddHours(36);
 
-            // Búsqueda de cuentas cerradas con PROYECCIÓN SQL DIRECTA (.Select PRO)
-            // Esto evita problemas de Include() y Grupos en Memoria (V11.11 Senior Design)
-            var result = await _context.CuentasServicios
-                .Where(c => c.Estado == "Facturada" && 
-                             c.FechaCierre >= startOfDay && 
-                             c.FechaCierre < nextDay)
+            // Cargamos cuentas primero (Sin el JOIN para evitar exclusiones si hay huérfanos)
+            var billedAccounts = await _context.CuentasServicios
+                .AsNoTracking()
+                .Where(c => c.Estado == EstadoConstants.Facturada && 
+                            c.FechaCierre != null &&
+                            c.FechaCierre >= startRange && 
+                            c.FechaCierre <= endRange)
                 .Select(c => new 
                 {
-                    PacienteId = c.PacienteId,
-                    Cedula = _context.PacientesAdmision.Where(p => p.Id == c.PacienteId).Select(p => p.CedulaPasaporte).FirstOrDefault(),
-                    NombreCorto = _context.PacientesAdmision.Where(p => p.Id == c.PacienteId).Select(p => p.NombreCorto).FirstOrDefault(),
-                    TotalCuenta = c.Detalles.Sum(d => d.Precio * d.Cantidad)
+                    c.Id,
+                    c.PacienteId,
+                    c.FechaCierre,
+                    Monto = c.Detalles.Sum(d => d.Precio * d.Cantidad)
                 })
                 .ToListAsync(cancellationToken);
 
-            // Post-procesamiento en memoria para formato de nombres (Diferente a la DB)
-            return result
-                .GroupBy(r => r.PacienteId)
+            if (!billedAccounts.Any()) return new List<DailyBilledPatientDto>();
+
+            // Resolvemos pacientes en memoria (Evita problemas de JOIN/Collations)
+            var patientIds = billedAccounts.Select(a => a.PacienteId).Distinct().ToList();
+            var patients = await _context.PacientesAdmision
+                .AsNoTracking()
+                .Where(p => patientIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p, cancellationToken);
+
+            return billedAccounts
+                .GroupBy(a => a.PacienteId)
                 .Select(g => 
                 {
-                    var first = g.First();
-                    var fullName = first.NombreCorto ?? "Paciente Desconocido";
-                    
-                    // Lógica Profesional de Desglose de Nombre:
+                    var p = patients.ContainsKey(g.Key) ? patients[g.Key] : null;
+                    var fullName = p?.NombreCorto ?? "Paciente Huérfano";
                     var nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    var nombre = nameParts.Length > 0 ? nameParts[0] : fullName;
-                    var apellidos = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "";
-
-                    var totalFacturado = g.Sum(x => x.TotalCuenta);
 
                     return new DailyBilledPatientDto
                     {
                         PacienteId = g.Key,
-                        Cedula = first.Cedula ?? "S/N",
-                        Nombre = nombre,
-                        Apellidos = apellidos,
-                        TotalFacturado = Math.Round(totalFacturado, 2), // Regla 15: Precisión financiera
+                        Cedula = p?.CedulaPasaporte ?? "S/N",
+                        Nombre = nameParts.Length > 0 ? nameParts[0] : fullName,
+                        Apellidos = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "",
+                        TotalFacturado = Math.Round(g.Sum(x => x.Monto), 2),
                         CuentasCerradas = g.Count()
                     };
                 })

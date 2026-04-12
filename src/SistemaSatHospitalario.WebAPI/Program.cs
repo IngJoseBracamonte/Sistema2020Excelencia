@@ -277,6 +277,10 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
           SET @co = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaEmision');
           SET @s = IF(@cn>0,'SELECT 1',IF(@co>0,'ALTER TABLE `CuentasPorCobrar` CHANGE COLUMN `FechaEmision` `FechaCreacion` datetime(6) NOT NULL','ALTER TABLE `CuentasPorCobrar` ADD COLUMN `FechaCreacion` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00'''));
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 10b. CuentasPorCobrar.IsAudited
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='IsAudited');
+          SET @s = IF(@col=0,'ALTER TABLE `CuentasPorCobrar` ADD COLUMN `IsAudited` tinyint(1) NOT NULL DEFAULT 0','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
         // 11. ConfiguracionGeneral.ClaveSupervisor
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ConfiguracionGeneral' AND COLUMN_NAME='ClaveSupervisor');
           SET @s = IF(@col=0,'ALTER TABLE `ConfiguracionGeneral` ADD COLUMN `ClaveSupervisor` longtext NOT NULL','SELECT 1');

@@ -55,6 +55,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                 {
                     options.UseMySql(conStr, ServerVersion.AutoDetect(conStr));
                 }
+                else
+                {
+                    // Senior Note: Se deja sin configurar el provider para que explote
+                    // con un mensaje claro de EF Core si se intenta usar sin conexión.
+                    // Esto es preferible a un NullReferenceException posterior.
+                }
             });
         }
     }

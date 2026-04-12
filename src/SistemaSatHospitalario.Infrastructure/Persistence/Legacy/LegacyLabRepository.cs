@@ -40,6 +40,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             List<ResultadosPacienteLegacy> resultados, 
             CancellationToken cancellationToken)
         {
+            // 0. Guard Clause: Verificamos configuración antes de transaccionar
+            if (string.IsNullOrEmpty(_connectionString))
+            {
+                _logger.LogError("[LEGACY-REPO] ABORTADO: No hay cadena de conexión configurada (LegacyConnection).");
+                throw new InvalidOperationException("El sistema legacy no está configurado (Falta LegacyConnection).");
+            }
+
             // 1. Datos de la Orden (Header Trace)
             _logger.LogTrace($"[LEGACY-REPO] Generando Orden para Paciente Legacy ID: {orden.IdPersona}, Convenio: {orden.IDConvenio}");
             

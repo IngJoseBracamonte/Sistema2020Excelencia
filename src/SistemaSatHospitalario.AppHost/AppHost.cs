@@ -61,10 +61,15 @@ string GetConnectionString(string key) => builder.Configuration[key]
 // Función local para aplicar la configuración común a la API
 void ConfigureApi(IResourceBuilder<IResourceWithEnvironment> resource, IResourceBuilder<IResourceWithEndpoints> frontendResource)
 {
+    var legacyConn = GetConnectionString("mysql-legacy-query");
+    if (!string.IsNullOrEmpty(legacyConn))
+    {
+        resource.WithEnvironment("ConnectionStrings__LegacyConnection", ProcessConnStr(legacyConn));
+    }
+    
     resource.WithEnvironment("DatabaseProvider", dbProviderName)
         .WithEnvironment("ConnectionStrings__mysql-system", ProcessConnStr(GetConnectionString("mysql-system-query")))
         .WithEnvironment("ConnectionStrings__mysql-identity", ProcessConnStr(GetConnectionString("mysql-identity-query")))
-        .WithEnvironment("ConnectionStrings__LegacyConnection", ProcessConnStr(GetConnectionString("mysql-legacy-query")))
         .WithEnvironment("JwtConfig__Secret", GetConnectionString("jwt-secret"))
         .WithEnvironment("EmailSettings__SmtpUser", GetConnectionString("smtp-user"))
         .WithEnvironment("EmailSettings__SmtpPass", GetConnectionString("smtp-pass"))

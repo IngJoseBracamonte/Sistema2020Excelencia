@@ -50,12 +50,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                 }).ToList(),
                             Pagos = _context.DetallesPago
                                 .Where(dp => _context.RecibosFactura
-                                    .Where(rf => rf.CuentaServicioId == ar.CuentaServicioId)
-                                    .Select(rf => rf.Id)
-                                    .Contains(dp.ReciboFacturaId))
+                                    .Any(rf => rf.Id == dp.ReciboFacturaId && rf.CuentaServicioId == ar.CuentaServicioId))
                                 .Select(dp => new PaymentHistoryDto
                                 {
-                                    Fecha = _context.RecibosFactura.First(r => r.Id == dp.ReciboFacturaId).FechaEmision,
+                                    // Senior Fix: Usamos una subconsulta de FechaEmision en lugar de .First()
+                                    Fecha = _context.RecibosFactura
+                                        .Where(r => r.Id == dp.ReciboFacturaId)
+                                        .Select(r => r.FechaEmision)
+                                        .FirstOrDefault(),
                                     Metodo = dp.MetodoPago,
                                     Referencia = dp.ReferenciaBancaria,
                                     MontoBase = dp.EquivalenteAbonadoBase,
@@ -73,16 +75,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 query = query.Where(ar => ar.PacienteNombre.Contains(request.SearchTerm) || ar.PacienteCedula.Contains(request.SearchTerm));
             }
 
-            if (request.StartDate.HasValue)
+            if (request.StartDate.HasValue || request.EndDate.HasValue)
             {
-                var start = request.StartDate.Value.Date;
-                query = query.Where(ar => ar.FechaEmision >= start);
-            }
-
-            if (request.EndDate.HasValue)
-            {
-                var end = request.EndDate.Value.Date.AddDays(1).AddTicks(-1);
-                query = query.Where(ar => ar.FechaEmision <= end);
+                // TZ Resilience V12.0: Expandimos el rango para capturar desfases UTC/Local
+                var start = request.StartDate?.Date.AddHours(-12) ?? DateTime.MinValue;
+                var end = (request.EndDate?.Date.AddDays(1) ?? DateTime.MaxValue.AddDays(-1)).AddHours(12);
+                
+                query = query.Where(ar => ar.FechaEmision >= start && ar.FechaEmision <= end);
             }
 
             return await query.OrderByDescending(ar => ar.FechaEmision).ToListAsync(cancellationToken);
