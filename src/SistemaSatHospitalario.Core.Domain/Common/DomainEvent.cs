@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaSatHospitalario.Core.Domain.Common
 {
@@ -6,6 +7,7 @@ namespace SistemaSatHospitalario.Core.Domain.Common
     /// [PHASE-5] Base class for Domain Events.
     /// Enables decoupling of secondary processes from the core business logic.
     /// </summary>
+    [NotMapped]
     public abstract class DomainEvent
     {
         public DateTime DateOccurred { get; protected set; } = DateTime.UtcNow;

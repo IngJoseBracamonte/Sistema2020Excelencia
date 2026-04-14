@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaSatHospitalario.Core.Domain.Common
 {
@@ -9,6 +10,8 @@ namespace SistemaSatHospitalario.Core.Domain.Common
     public abstract class BaseEntity
     {
         private readonly List<DomainEvent> _domainEvents = new();
+
+        [NotMapped]
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         public void AddDomainEvent(DomainEvent domainEvent)
