@@ -240,13 +240,14 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
         // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
         "SET SESSION sql_require_primary_key = 0;",
 
-        // 0.b Tablas Requeridas por nuevas funcionalidades (Pre-migración)
-        @"CREATE TABLE IF NOT EXISTS `Especialidades` (
-            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-            `Nombre` longtext NOT NULL,
-            `Activo` tinyint(1) NOT NULL,
-            PRIMARY KEY (`Id`)
-        ) CHARACTER SET utf8mb4;",
+        // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
+        "SET SESSION sql_require_primary_key = 0;",
+
+        // 0.b Tablas Requeridas (Migración awareness - Evitar colisión en DB nuevas)
+        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddEspecialidadEntity%');
+          SET @table = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Especialidades');
+          SET @s = IF(@applied > 0 AND @table = 0, 'CREATE TABLE `Especialidades` (`Id` char(36) NOT NULL, `Nombre` longtext NOT NULL, `Activo` tinyint(1) NOT NULL, PRIMARY KEY (`Id`))', 'SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
 
         @"CREATE TABLE IF NOT EXISTS `SegurosConvenios` (
             `Id` int NOT NULL AUTO_INCREMENT,
@@ -268,33 +269,43 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
                 'SELECT 1')
           );
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 2. Medicos.HonorarioBase
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='HonorarioBase');
-          SET @s = IF(@col=0,'ALTER TABLE `Medicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0','SELECT 1');
+        // 2. Medicos.HonorarioBase (Migration: AddMedicoHonorarioBase)
+        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddMedicoHonorarioBase%');
+          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='HonorarioBase');
+          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `Medicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0.00', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 3. ServiciosClinicos.Category
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='Category');
-          SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `Category` int NOT NULL DEFAULT 0','SELECT 1');
+        // 3. ServiciosClinicos.Category (Sólo si la migración ya figura como aplicada pero la columna falta)
+        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddServiceCategoryToServicioClinico%');
+          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='Category');
+          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `Category` int NOT NULL DEFAULT 0', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 4. ServiciosClinicos.HonorarioBase
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='HonorarioBase');
-          SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `HonorarioBase` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
+        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddHonorariumBaseToCatalog%');
+          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='HonorarioBase');
+          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0.00', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
         // 5. ServiciosClinicos.LegacyMappingId
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='LegacyMappingId');
           SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `LegacyMappingId` longtext NULL','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 6. DetallesPago.FechaPago
+        // 5. DetallesPago.FechaPago
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND COLUMN_NAME='FechaPago');
           SET @s = IF(@col=0,'ALTER TABLE `DetallesPago` ADD COLUMN `FechaPago` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00''','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 5. ServiciosClinicos.LegacyMappingId (Migration: AddLegacyMappingId)
+        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%');
+          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='LegacyMappingId');
+          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `LegacyMappingId` longtext NULL', 'SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
+        // 6. DetallesServicioCuenta.LegacyMappingId (Migration: AddLegacyMappingId)
+        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%');
+          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='LegacyMappingId');
+          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `LegacyMappingId` longtext NULL', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
         // 7. DetallesServicioCuenta.Honorario
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='Honorario');
           SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `Honorario` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 8. DetallesServicioCuenta.LegacyMappingId
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='LegacyMappingId');
-          SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `LegacyMappingId` longtext NULL','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
         // 9. RecibosFacturas.MontoVueltoUSD
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='RecibosFacturas' AND COLUMN_NAME='MontoVueltoUSD');
