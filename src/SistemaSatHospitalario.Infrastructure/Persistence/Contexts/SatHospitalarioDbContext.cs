@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Common;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 {
@@ -44,6 +45,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             // MySQL no soporta esquemas, se ignora para compatibilidad multi-proveedor
             // builder.HasDefaultSchema("Admision");
+
+            // [PHASE-5] Ignore Domain Events during persistence (V14.1 Senior Patch)
+            // Ensures purely in-memory event handling and prevents "Missing PK" EF errors.
+            builder.Ignore<DomainEvent>();
+
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    builder.Entity(entityType.ClrType).Ignore(nameof(BaseEntity.DomainEvents));
+                }
+            }
 
             builder.Entity<CajaDiaria>(entity =>
             {
