@@ -36,5 +36,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Cancelar() => Estado = EstadoConstants.Cancelado;
         public void ActualizarHoraPautada(DateTime nuevaHora) => HoraPautada = nuevaHora;
+        
+        public void MarcarComoAtendida()
+        {
+            Estado = EstadoConstants.Atendida;
+        }
     }
 }

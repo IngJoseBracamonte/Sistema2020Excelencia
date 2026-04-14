@@ -16,6 +16,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCarga { get; private set; }
         public string? LegacyMappingId { get; private set; }
 
+        // [PHASE-6] Technical Validation Fields (Senior Traceability)
+        public bool Realizado { get; private set; }
+        public DateTime? FechaRealizacion { get; private set; }
+        public string? UsuarioTecnico { get; private set; }
+
         protected DetalleServicioCuenta() { }
 
         public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
@@ -31,6 +36,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
             LegacyMappingId = legacyMappingId; // V12.1 Fix: Assigning mapping ID for legacy sync
             FechaCarga = DateTime.UtcNow;
+            Realizado = false;
+        }
+
+        public void MarcarRealizado(string usuario)
+        {
+            if (Realizado) return;
+            
+            Realizado = true;
+            FechaRealizacion = DateTime.UtcNow;
+            UsuarioTecnico = usuario;
         }
     }
 }

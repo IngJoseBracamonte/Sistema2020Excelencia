@@ -74,7 +74,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                 _logger.LogInformation("Poblando Identity Roles y Usuarios Defaults...");
 
                 // Seed Roles
-                var roles = new[] { "Admin", "Cajero", "Supervisor", "Asistente de Seguros", "Médico", "Asistente Particular", "Asistente RX" };
+                var roles = new[] { "Admin", "Cajero", "Supervisor", "Asistente de Seguros", "Médico", "Asistente Particular", "Asistente RX", "Asistente de Tomografía" };
 
                 foreach (var role in roles)
                 {

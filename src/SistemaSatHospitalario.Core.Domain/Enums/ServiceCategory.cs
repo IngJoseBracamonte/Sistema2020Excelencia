@@ -7,6 +7,7 @@ namespace SistemaSatHospitalario.Core.Domain.Enums
         Laboratory = 2,
         Radiology = 3,
         Insumo = 4,
-        Emergency = 5
+        Emergency = 5,
+        Tomography = 6
     }
 }
