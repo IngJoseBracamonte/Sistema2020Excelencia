@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
-    public class CargarServicioACuentaCommand : IRequest<CargarServicioResult>
+    public class CargarServicioACuentaCommand : IRequest<CargarServicioResult>, IAuditablePriceRequest
     {
         // Se estandarizó de int a Guid para identidad nativa (V11.1)
         public Guid PacienteId { get; set; }
@@ -114,29 +114,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.TipoServicio, 
                 request.UsuarioCarga,
                 legacyId);
-            
-            // 5. AUDIT LOG (Phase 9): Detect modification and log it
-            if (!esLab && Guid.TryParse(request.ServicioId, out var serviceGuidAudit))
-            {
-                var catalogo = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == serviceGuidAudit, cancellationToken);
-                if (catalogo != null && (catalogo.PrecioBase != request.Precio || catalogo.HonorarioBase != request.Honorario))
-                {
-                    var auditLog = new LogAuditoriaPrecio(
-                        detalle.Id,
-                        request.Descripcion,
-                        catalogo.PrecioBase,
-                        request.Precio,
-                        catalogo.HonorarioBase,
-                        request.Honorario,
-                        request.UsuarioCarga,
-                        string.IsNullOrEmpty(request.SupervisorKey) ? "Admin Privilegiado" : "Supervisor Key Autorizado"
-                    );
-                    await _context.AuditLogsPrecios.AddAsync(auditLog, cancellationToken);
-                    _logger.LogInformation("[AUDIT] Cambio de precio/honorario detectado y registrado: P({OldP}->{NewP}), H({OldH}->{NewH})", 
-                        catalogo.PrecioBase, request.Precio, catalogo.HonorarioBase, request.Honorario);
-                }
-            }
-            
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 

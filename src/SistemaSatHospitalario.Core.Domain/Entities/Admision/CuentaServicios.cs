@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Common;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision.Events;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
-    public class CuentaServicios
+    public class CuentaServicios : BaseEntity
     {
         public Guid Id { get; private set; }
         // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
@@ -77,6 +77,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             
             Estado = EstadoConstants.Facturada;
             FechaCierre = DateTime.UtcNow;
+
+            // [PHASE-5] Raise Domain Event for downstream processing
+            AddDomainEvent(new CuentaFacturadaEvent(Id, FechaCierre.Value));
         }
 
         public void Anular()

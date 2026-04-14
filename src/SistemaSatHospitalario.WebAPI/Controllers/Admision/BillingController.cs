@@ -37,9 +37,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                // Enriquecimiento de Seguridad (V1.0 Matrix)
-                command.UsuarioCarga = User.FindFirstValue(ClaimTypes.Name) ?? "Sistama";
-                command.IsPrivilegedUser = User.IsInRole("Admin") || User.IsInRole("Administrador") || User.IsInRole("Supervisor");
+                // Enriquecimiento de Seguridad (V2.0 Core Extensions)
+                command.UsuarioCarga = User.GetUserName();
+                command.IsPrivilegedUser = User.IsPrivileged();
 
                 var result = await _mediator.Send(command);
                 return Ok(new { 
@@ -74,9 +74,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                // Enriquecimiento de Seguridad (V1.0 Matrix)
-                command.UsuarioCarga = User.FindFirstValue(ClaimTypes.Name) ?? "Sistema";
-                command.IsPrivilegedUser = User.IsInRole("Admin") || User.IsInRole("Administrador") || User.IsInRole("Supervisor");
+                // Enriquecimiento de Seguridad (V2.0 Core Extensions)
+                command.UsuarioCarga = User.GetUserName();
+                command.IsPrivilegedUser = User.IsPrivileged();
 
                 var result = await _mediator.Send(command);
                 return Ok(new { 
@@ -109,9 +109,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                // Auto-poblar identidad del cajero desde el token JWT (Micro-Ciclo 28)
-                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                command.UsuarioCajero = User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? "Cajero Desconocido";
+                // Auto-poblar identidad del cajero (V2.0 Core Extensions)
+                command.UsuarioId = User.GetUserId();
+                command.UsuarioCajero = User.GetCajeroName();
 
                 var reciboId = await _mediator.Send(command);
                 return Ok(new { Message = "Cuenta cerrada y facturada exitosamente.", ReciboId = reciboId });
@@ -205,7 +205,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "Anonimo";
+                command.UsuarioId = User.GetUserId();
                 await _mediator.Send(command);
                 return Ok(new { Message = "Turno reservado temporalmente." });
             }

@@ -37,6 +37,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         public async Task<List<CuentaServicios>> ObtenerCuentasPorPacienteAsync(Guid pacienteId, CancellationToken cancellationToken)
         {
             return await _context.CuentasServicios
+                .AsNoTracking()
                 .Include(c => c.Detalles)
                 .Where(c => c.PacienteId == pacienteId)
                 .OrderByDescending(c => c.FechaCarga)
@@ -56,8 +57,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task ForzarCierreCuentaAsync(Guid cuentaId, DateTime fechaCierre, CancellationToken cancellationToken)
         {
-            string sql = $"UPDATE CuentasServicios SET Estado = '{EstadoConstants.Facturada}', FechaCierre = @p0 WHERE Id = @p1";
-            await _context.Database.ExecuteSqlRawAsync(sql, new object[] { fechaCierre, cuentaId }, cancellationToken);
+            // Senior Standard: Use named parameters in raw SQL for clarity and safety (Phase 4)
+            string sql = "UPDATE CuentasServicios SET Estado = @estado, FechaCierre = @fecha WHERE Id = @id";
+            await _context.Database.ExecuteSqlRawAsync(sql, new object[] { 
+                new MySqlConnector.MySqlParameter("@estado", EstadoConstants.Facturada),
+                new MySqlConnector.MySqlParameter("@fecha", fechaCierre),
+                new MySqlConnector.MySqlParameter("@id", cuentaId)
+            }, cancellationToken);
         }
 
         public async Task AgregarCitaMedicaAsync(CitaMedica cita, CancellationToken cancellationToken)
