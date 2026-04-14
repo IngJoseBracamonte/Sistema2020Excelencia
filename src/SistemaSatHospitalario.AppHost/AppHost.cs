@@ -82,7 +82,7 @@ void ConfigureApi(IResourceBuilder<IResourceWithEnvironment> resource, IResource
         .WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
         .WithEnvironment("JwtConfig__Audience", builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA")
         // Whitelist both localhost and explicit IPs to avoid CORS issues with fixed IP binding
-        .WithEnvironment("AllowedOrigins", $"{frontendResource.GetEndpoint("http")},http://localhost:4200,http://127.0.0.1:4200,http://0.0.0.0:4200,http://localhost:80,http://localhost");
+        .WithEnvironment("AllowedOrigins", $"{frontendResource.GetEndpoint("http")},https://sathospital.netlify.app,http://localhost:4200,http://127.0.0.1:4200,http://0.0.0.0:4200,http://localhost:80,http://localhost");
 }
 
 if (useDocker)

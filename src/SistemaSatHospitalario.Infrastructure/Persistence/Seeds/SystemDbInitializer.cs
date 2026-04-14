@@ -32,10 +32,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             {
                 _logger.LogInformation("Aplicando migraciones a System Database...");
                 
-                // Senior Fix: Desactivar restricción de PK obligatoria para permitir que EF Core
-                // reorganice tablas (especialmente TasaCambio) en entornos gestionados como Aiven.
-                await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
+                // Senior Robust Fix: Abrir conexión manualmente para asegurar que el SET SESSION 
+                // persista durante toda la operación de MigrateAsync.
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
                 
+                await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
                 await _context.Database.MigrateAsync();
 
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
