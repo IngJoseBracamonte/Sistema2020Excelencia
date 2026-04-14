@@ -1,5 +1,8 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using MediatR;
+using FluentValidation;
+using SistemaSatHospitalario.Core.Application.Common.Behaviors;
 
 namespace SistemaSatHospitalario.Core.Application
 {

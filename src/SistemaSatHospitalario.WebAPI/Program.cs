@@ -126,8 +126,7 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = ClaimTypes.Role,
         
         // [PHASE-2] Sliding Expiration Support
-        RequireExpirationTime = true,
-        ValidateLifetime = true
+        RequireExpirationTime = true
     };
 });
 builder.Services.AddAuthorization();
