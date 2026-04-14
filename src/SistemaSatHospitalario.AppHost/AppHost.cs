@@ -39,12 +39,18 @@ string ProcessConnStr(string? connStr)
     if (string.IsNullOrEmpty(connStr)) return "";
     
     // Forzamos 127.0.0.1 en lugar de localhost para evitar problemas IPv6 en Windows
-    var processed = connStr.Replace("localhost", useDocker ? "host.docker.internal" : "127.0.0.1")
-                          .Replace("127.0.0.1", useDocker ? "host.docker.internal" : "127.0.0.1");
+    // [V14.1 Fix] Solo aplicamos reemplazo si detectamos localhost/127.0.0.1
+    // para no dañar endpoints de Aiven/Render en producción.
+    var processed = connStr;
+    if (connStr.Contains("localhost") || connStr.Contains("127.0.0.1"))
+    {
+        processed = processed.Replace("localhost", useDocker ? "host.docker.internal" : "127.0.0.1")
+                             .Replace("127.0.0.1", useDocker ? "host.docker.internal" : "127.0.0.1");
+    }
 
     // Aseguramos parámetros críticos para MySql 8.0+ y compatibilidad legacy
     if (!processed.Contains("AllowPublicKeyRetrieval", StringComparison.OrdinalIgnoreCase))
-        processed += ";AllowPublicKeyRetrieval=True";
+        processed += (processed.Contains("?") || processed.Contains(";") ? ";" : "") + "AllowPublicKeyRetrieval=True";
     if (!processed.Contains("SslMode", StringComparison.OrdinalIgnoreCase))
         processed += ";SslMode=None";
     if (!processed.Contains("Allow User Variables", StringComparison.OrdinalIgnoreCase))

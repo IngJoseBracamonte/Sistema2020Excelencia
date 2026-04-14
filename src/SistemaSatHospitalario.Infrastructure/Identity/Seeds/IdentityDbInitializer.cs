@@ -34,6 +34,10 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
             try
             {
                 _logger.LogInformation("Aplicando migraciones a Identity Database...");
+                
+                // Senior Fix: Desactivar restricción de PK obligatoria para migraciones en Aiven.
+                await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
+                
                 await _context.Database.MigrateAsync();
 
                 _logger.LogInformation("Poblando Identity Roles y Usuarios Defaults...");

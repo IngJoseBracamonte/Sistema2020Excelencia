@@ -212,8 +212,9 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        logger.LogCritical(ex, "ERROR CRÍTICO durante la inicialización de bases de datos.");
-        throw; // Aborta el inicio para que el orquestador (Render) marque el deploy como fallido
+        logger.LogCritical(ex, "ERROR CRÍTICO durante la inicialización de bases de datos. La aplicación iniciará en modo degradado para permitir diagnósticos (CORS enabled).");
+        // No relanzamos la excepción para permitir que el middleware de CORS y ExceptionHandler se activen
+        // y el frontend pueda ver el error real en lugar de un bloqueo de red.
     }
 }
 // --------------------------------
@@ -236,9 +237,36 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
     
     var repairs = new List<string>
     {
-        // 1. Medicos.EspecialidadId
+        // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
+        "SET SESSION sql_require_primary_key = 0;",
+
+        // 0.b Tablas Requeridas por nuevas funcionalidades (Pre-migración)
+        @"CREATE TABLE IF NOT EXISTS `Especialidades` (
+            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+            `Nombre` longtext NOT NULL,
+            `Activo` tinyint(1) NOT NULL,
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;",
+
+        @"CREATE TABLE IF NOT EXISTS `SegurosConvenios` (
+            `Id` int NOT NULL AUTO_INCREMENT,
+            `Nombre` varchar(200) NOT NULL,
+            `Rtn` varchar(50) NULL,
+            `Direccion` varchar(500) NULL,
+            `Telefono` varchar(50) NULL,
+            `Email` varchar(150) NULL,
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;",
+
+        // 1. Medicos.EspecialidadId (Asegurar tipo CHAR(36) para evitar error de BLOB en INDEX)
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='EspecialidadId');
-          SET @s = IF(@col=0,'ALTER TABLE `Medicos` ADD COLUMN `EspecialidadId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT ''00000000-0000-0000-0000-000000000000''','SELECT 1');
+          SET @type = (SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='EspecialidadId');
+          SET @s = IF(@col=0,
+            'ALTER TABLE `Medicos` ADD COLUMN `EspecialidadId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT ""00000000-0000-0000-0000-000000000000""',
+            IF(@type='longtext' OR @type='text',
+                'ALTER TABLE `Medicos` MODIFY COLUMN `EspecialidadId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL',
+                'SELECT 1')
+          );
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
         // 2. Medicos.HonorarioBase
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='HonorarioBase');
@@ -306,6 +334,10 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
         // 14. Índice DetallesPago.FechaPago
         @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND INDEX_NAME='IX_DetallesPago_FechaPago');
           SET @s = IF(@idx=0,'CREATE INDEX `IX_DetallesPago_FechaPago` ON `DetallesPago` (`FechaPago`)','SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 15. Discriminador TPH para OrdenesDeServicio (Requerido para OrdenRX)
+        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='OrdenesDeServicio' AND COLUMN_NAME='Discriminator');
+          SET @s = IF(@col=0,'ALTER TABLE `OrdenesDeServicio` ADD COLUMN `Discriminator` longtext NOT NULL','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;"
     };
 
