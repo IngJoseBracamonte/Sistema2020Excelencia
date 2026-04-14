@@ -240,12 +240,43 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
         // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
         "SET SESSION sql_require_primary_key = 0;",
 
-        // 0.b Tablas Requeridas (Migración awareness - Evitar colisión en DB nuevas)
-        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
-                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddEspecialidadEntity%'), 0);
-          SET @table = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Especialidades');
-          SET @s = IF(@applied > 0 AND @table = 0, 'CREATE TABLE `Especialidades` (`Id` char(36) NOT NULL, `Nombre` longtext NOT NULL, `Activo` tinyint(1) NOT NULL, PRIMARY KEY (`Id`))', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+        // 0.b Creación Agresiva de Tablas Críticas para Dashboard (Bypass Migraciones fallidas)
+        @"CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (
+            `MigrationId` varchar(150) NOT NULL,
+            `ProductVersion` varchar(32) NOT NULL,
+            PRIMARY KEY (`MigrationId`)
+        ) CHARACTER SET utf8mb4;",
+
+        @"CREATE TABLE IF NOT EXISTS `TasaCambio` (
+            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+            `Fecha` datetime(6) NOT NULL,
+            `Monto` decimal(18,2) NOT NULL,
+            `Activo` tinyint(1) NOT NULL,
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;",
+
+        @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260323032100_AddTasaCambio', '9.0.0');",
+
+        @"CREATE TABLE IF NOT EXISTS `ConfiguracionGeneral` (
+            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+            `NombreEmpresa` longtext NOT NULL,
+            `Rif` longtext NOT NULL,
+            `Iva` decimal(18,2) NOT NULL,
+            `ClaveSupervisor` longtext NOT NULL,
+            `UltimaActualizacion` datetime(6) NOT NULL,
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;",
+
+        @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260325014012_AddSystemSettingsAndErrorTickets', '9.0.0');",
+
+        @"CREATE TABLE IF NOT EXISTS `Especialidades` (
+            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+            `Nombre` longtext NOT NULL,
+            `Activo` tinyint(1) NOT NULL,
+            PRIMARY KEY (`Id`)
+        ) CHARACTER SET utf8mb4;",
+
+        @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260323131051_AddEspecialidadEntity', '9.0.0');",
 
         @"CREATE TABLE IF NOT EXISTS `SegurosConvenios` (
             `Id` int NOT NULL AUTO_INCREMENT,
