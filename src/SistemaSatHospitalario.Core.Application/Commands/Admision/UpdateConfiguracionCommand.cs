@@ -13,6 +13,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Rif { get; set; }
         public decimal Iva { get; set; }
         public string ClaveSupervisor { get; set; }
+        public bool FacturarLaboratorio { get; set; }
+        public bool MostrarDetalleFacturacion { get; set; }
     }
 
     public class UpdateConfiguracionCommandHandler : IRequestHandler<UpdateConfiguracionCommand, bool>
@@ -30,7 +32,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (config == null) return false;
 
-            config.Actualizar(request.NombreEmpresa, request.Rif, request.Iva, request.ClaveSupervisor);
+            config.Actualizar(
+                request.NombreEmpresa, 
+                request.Rif, 
+                request.Iva, 
+                request.ClaveSupervisor, 
+                request.FacturarLaboratorio, 
+                request.MostrarDetalleFacturacion
+            );
             
             return await _context.SaveChangesAsync(cancellationToken) > 0;
         }

@@ -17,6 +17,7 @@ export interface AuthResponse {
   username: string;
   role: string;
   id: string;
+  permissions: string[];
 }
 
 @Injectable({
@@ -26,10 +27,16 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private storage = inject(StorageService);
-  private apiUrl = `${environment.apiUrl}/Auth/Login`;
+  private apiUrl = `${environment.apiUrl}/api/Auth/login`;
 
   // Estado reactivo (Signal)
   public currentUser = signal<AuthResponse | null>(this.getUserFromSession());
+
+  // Helper de Permisos
+  public isAuthorized(permission: string): boolean {
+    if (this.isAdministrador()) return true;
+    return this.currentUser()?.permissions?.includes(permission) || false;
+  }
 
   // Helpers de Roles Normalizados (Senior Standardized)
   private hasRole(role: UserRole | string): boolean {
@@ -71,7 +78,8 @@ export class AuthService {
         token: data.token, 
         username: data.username, 
         role: data.role, 
-        id: data.id 
+        id: data.id,
+        permissions: data.permissions
       };
     }
     return null;
@@ -81,15 +89,17 @@ export class AuthService {
     return this.http.post<any>(this.apiUrl, credentials).pipe(
       tap(response => {
         const id = response.userId || response.id;
+        const permissions = response.permissions || [];
         
         // Almacenar usando el nuevo StorageService
-        this.storage.saveAuthData(response.token, response.username, response.role, id);
+        this.storage.saveAuthData(response.token, response.username, response.role, id, permissions);
 
         const authResp: AuthResponse = {
           token: response.token,
           username: response.username,
           role: response.role,
-          id: id
+          id: id,
+          permissions: permissions
         };
 
         // Actualizar UI reactiva

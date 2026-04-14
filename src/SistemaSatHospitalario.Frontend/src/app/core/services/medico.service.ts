@@ -33,7 +33,7 @@ export interface DoctorHonorariumSummaryDto {
 })
 export class MedicoService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/Medicos`;
+  private apiUrl = `${environment.apiUrl}/api/Medicos`;
 
   getAll(): Observable<Medico[]> {
     return this.http.get<Medico[]>(this.apiUrl);

@@ -10,7 +10,7 @@ export { CatalogItem };
 })
 export class CatalogService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/Catalog`;
+  private apiUrl = `${environment.apiUrl}/api/Catalog`;
 
   // convenioId ahora es numérico para coincidir con Legacy
   getUnifiedCatalog(convenioId?: number | null): Observable<CatalogItem[]> {

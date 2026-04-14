@@ -10,7 +10,7 @@ import * as signalR from '@microsoft/signalr';
 export class SettingsService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private apiUrl = `${environment.apiUrl}/global-settings`;
+  private apiUrl = `${environment.apiUrl}/api/global-settings`;
   private hubUrl = `${environment.apiUrl.replace('/api', '')}/hub/tasa`;
   
   private hubConnection!: signalR.HubConnection;
@@ -95,4 +95,38 @@ export class SettingsService {
   updateUserRoles(userId: string, roles: string[]): Observable<any> { 
     return this.http.post(`${this.apiUrl}/users/roles`, { userId, roles }); 
   }
+
+  // --- NEW MASTER SETTINGS PRO (RBAC & MEDICOS) ---
+  private proApiUrl = `${environment.apiUrl}/api/Settings`;
+
+  getSecurityMatrix(): Observable<SecurityConfig> {
+    return this.http.get<SecurityConfig>(`${this.proApiUrl}/security`);
+  }
+
+  createRole(roleName: string): Observable<any> {
+    return this.http.post(`${this.proApiUrl}/roles`, JSON.stringify(roleName), { 
+      headers: { 'Content-Type': 'application/json' } 
+    });
+  }
+
+  deleteRole(roleName: string): Observable<any> {
+    return this.http.delete(`${this.proApiUrl}/roles/${roleName}`);
+  }
+
+  updateRolePermissions(roleName: string, permissions: string[]): Observable<any> {
+    return this.http.post(`${this.proApiUrl}/permissions`, { roleName, permissions });
+  }
+
+  getMedicosHorarios(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.proApiUrl}/medicos/horarios`);
+  }
+
+  syncMedicoSchedules(medicoId: string, horarios: any[]): Observable<any> {
+    return this.http.post(`${this.proApiUrl}/medicos/horarios/sync`, { medicoId, horarios });
+  }
+}
+
+export interface SecurityConfig {
+  roles: any[];
+  availablePermissions: string[];
 }

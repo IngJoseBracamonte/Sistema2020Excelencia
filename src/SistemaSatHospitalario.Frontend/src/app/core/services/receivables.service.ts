@@ -51,7 +51,7 @@ export interface PaymentItemDto {
 })
 export class ReceivablesService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/Receivables`;
+  private baseUrl = `${environment.apiUrl}/api/Receivables`;
 
   getPending(searchTerm?: string, estado?: string, startDate?: string, endDate?: string): Observable<PendingAR[]> {
     let params = new HttpParams();

@@ -84,13 +84,28 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                     ValidAudience = configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA",
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero,
-                    NameClaimType = ClaimTypes.Name,
-                    RoleClaimType = ClaimTypes.Role,
+                    NameClaimType = "unique_name",
+                    RoleClaimType = "role",
                     RequireExpirationTime = true
                 };
             });
 
             services.AddAuthorization();
+            return services;
+        }
+
+        public static IServiceCollection AddCustomForwardedHeaders(this IServiceCollection services)
+        {
+            services.Configure<Microsoft.AspNetCore.HttpOverrides.ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                                         Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+                
+                // Limpiar redes conocidas para confiar en los encabezados del proxy de la nube (Render/Azure)
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             return services;
         }
 

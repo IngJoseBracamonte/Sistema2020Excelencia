@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
 using SistemaSatHospitalario.WebAPI.Hubs;
@@ -36,6 +37,26 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                 {
                     logger.LogInformation("Iniciando secuencia de robustecimiento: verificando conexión a Base de Datos...");
                     
+                    // [NEW] Garantizar existencia de bases de datos antes de continuar
+                    var connStrings = new[] { "mysql-system", "mysql-identity" };
+                    foreach (var connKey in connStrings)
+                    {
+                        var fullConStr = configuration.GetConnectionString(connKey);
+                        if (!string.IsNullOrEmpty(fullConStr))
+                        {
+                            var builder = new MySqlConnectionStringBuilder(fullConStr);
+                            var dbName = builder.Database;
+                            builder.Database = ""; // Conectar al servidor sin DB específica
+
+                            using var conn = new MySqlConnection(builder.ConnectionString);
+                            await conn.OpenAsync();
+                            using var cmd = conn.CreateCommand();
+                            cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{dbName}`;";
+                            await cmd.ExecuteNonQueryAsync();
+                            logger.LogInformation("Garantizada existencia de base de datos: {Database}", dbName);
+                        }
+                    }
+
                     bool canConnect = false;
                     int retries = 5;
                     int delaySeconds = 3;

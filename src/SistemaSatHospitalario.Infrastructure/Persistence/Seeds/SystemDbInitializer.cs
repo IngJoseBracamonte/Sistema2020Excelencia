@@ -203,7 +203,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             if (!await _context.ConfiguracionGeneral.AnyAsync())
             {
                 _context.ConfiguracionGeneral.Add(
-                    new ConfiguracionGeneral("SAT HOSPITALARIO - EXCELENCIA", "J-12345678-9", 16.00m)
+                    new ConfiguracionGeneral("SAT HOSPITALARIO - EXCELENCIA", "J-12345678-9", 16.00m, "1234", false, false)
                 );
                 await _context.SaveChangesAsync();
             }

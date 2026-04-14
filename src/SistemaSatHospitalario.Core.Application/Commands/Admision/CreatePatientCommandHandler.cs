@@ -41,8 +41,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 unifiedId = existingLegacy.IdPersona;
                 var fullName = $"{existingLegacy.Nombre} {existingLegacy.Apellidos}".Trim();
                 var mainPhone = !string.IsNullOrEmpty(existingLegacy.Celular) ? existingLegacy.Celular : existingLegacy.Telefono;
+                
+                DateTime? dob = null;
+                if (DateTime.TryParse(existingLegacy.Fecha, out var parsedDob)) dob = parsedDob;
 
-                nativePatient = new PacienteAdmision(existingLegacy.Cedula, fullName, mainPhone ?? "", unifiedId);
+                nativePatient = new PacienteAdmision(existingLegacy.Cedula, fullName, mainPhone ?? "", unifiedId, dob);
                 await _context.PacientesAdmision.AddAsync(nativePatient, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
             }
@@ -71,7 +74,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 var fullName = $"{request.Nombre} {request.Apellidos}".Trim();
                 var mainPhone = !string.IsNullOrEmpty(request.Celular) ? request.Celular : request.Telefono;
 
-                nativePatient = new PacienteAdmision(request.Cedula, fullName, mainPhone ?? "", unifiedId);
+                DateTime? dob = null;
+                if (DateTime.TryParse(request.FechaNacimiento, out var parsedDob)) dob = parsedDob;
+
+                nativePatient = new PacienteAdmision(request.Cedula, fullName, mainPhone ?? "", unifiedId, dob);
                 await _context.PacientesAdmision.AddAsync(nativePatient, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
             }

@@ -15,6 +15,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string CedulaPasaporte { get; protected set; }
         public string NombreCorto { get; protected set; }
         public string TelefonoContact { get; protected set; }
+        public DateTime? FechaNacimiento { get; protected set; }
 
         // Historial de ordenes
         private readonly List<OrdenDeServicio> _ordenes = new();
@@ -22,13 +23,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected PacienteAdmision() { }
 
-        public PacienteAdmision(string cedulaPasaporte, string nombreCorto, string telefonoContact, int? idLegacy = null)
+        public PacienteAdmision(string cedulaPasaporte, string nombreCorto, string telefonoContact, int? idLegacy = null, DateTime? fechaNacimiento = null)
         {
             Id = Guid.NewGuid();
             CedulaPasaporte = cedulaPasaporte ?? throw new ArgumentNullException(nameof(cedulaPasaporte));
             NombreCorto = nombreCorto ?? throw new ArgumentNullException(nameof(nombreCorto));
             TelefonoContact = telefonoContact;
             IdPacienteLegacy = idLegacy;
+            FechaNacimiento = fechaNacimiento;
         }
 
         public void VincularLegacy(int legacyId)
@@ -36,10 +38,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             IdPacienteLegacy = legacyId;
         }
 
-        public void ActualizarDatos(string nombreCorto, string telefonoContact)
+        public void ActualizarDatos(string nombreCorto, string telefonoContact, DateTime? fechaNacimiento = null)
         {
             NombreCorto = nombreCorto;
             TelefonoContact = telefonoContact;
+            FechaNacimiento = fechaNacimiento;
         }
     }
 }

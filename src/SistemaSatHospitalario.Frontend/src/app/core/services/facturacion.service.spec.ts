@@ -37,7 +37,7 @@ describe('FacturacionService', () => {
             expect(response.success).toBeTrue();
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/Billing/CargarServicio`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/CargarServicio`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(payload);
         req.flush({ success: true });
@@ -54,7 +54,7 @@ describe('FacturacionService', () => {
 
         service.registrarPago(payload).subscribe();
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/ReciboFactura/RegistrarPagoMultidivisa`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/ReciboFactura/RegistrarPagoMultidivisa`);
         expect(req.request.method).toBe('POST');
         req.flush({ id: 'recibo-123' });
     });
@@ -64,7 +64,7 @@ describe('FacturacionService', () => {
             expect(data.numeroRecibo).toBe('REC-001');
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/ReciboFactura/recibo-id/Print`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/ReciboFactura/recibo-id/Print`);
         expect(req.request.method).toBe('GET');
         req.flush({ numeroRecibo: 'REC-001' });
     });

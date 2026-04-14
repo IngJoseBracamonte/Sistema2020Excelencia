@@ -31,6 +31,7 @@ try
 
     // Abstractions
     builder.Services.AddCustomRateLimiting();
+    builder.Services.AddCustomForwardedHeaders();
     builder.Services.AddCustomCors(builder.Configuration, "AngularPolicy");
     builder.Services.AddCustomIdentityAndJwt(builder.Configuration, builder.Environment.IsDevelopment());
     builder.Services.AddCustomHealthChecks();
@@ -54,6 +55,7 @@ try
 
     // Middleware Pipeline
     app.MapDefaultEndpoints();
+    app.UseForwardedHeaders();
     app.UseExceptionHandler();
 
     if (app.Environment.IsDevelopment())

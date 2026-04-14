@@ -22,7 +22,7 @@ export interface PriceAuditLog {
 })
 export class AuditService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/settings/audit/precios`;
+  private apiUrl = `${environment.apiUrl}/api/settings/audit/precios`;
 
   getPriceAuditLogs(desde?: string, hasta?: string): Observable<PriceAuditLog[]> {
     let params = new HttpParams();

@@ -7,7 +7,7 @@ import { SeguroConvenio } from '../models/convenio.model';
 @Injectable({ providedIn: 'root' })
 export class ConveniosService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/convenios`;
+  private apiUrl = `${environment.apiUrl}/api/convenios`;
 
   getAll(): Observable<SeguroConvenio[]> { 
     return this.http.get<SeguroConvenio[]>(this.apiUrl); 

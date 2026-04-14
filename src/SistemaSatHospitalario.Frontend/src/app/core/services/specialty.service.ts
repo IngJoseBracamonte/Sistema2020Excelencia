@@ -14,7 +14,7 @@ export interface Especialidad {
 })
 export class SpecialtyService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/Especialidades`;
+  private baseUrl = `${environment.apiUrl}/api/Especialidades`;
 
   getAll(): Observable<Especialidad[]> {
     return this.http.get<Especialidad[]>(this.baseUrl);

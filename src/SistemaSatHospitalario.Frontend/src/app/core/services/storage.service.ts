@@ -11,7 +11,8 @@ export class StorageService {
     TOKEN: 'jwt_token',
     USERNAME: 'username',
     ROLE: 'user_role',
-    USER_ID: 'user_id'
+    USER_ID: 'user_id',
+    PERMISSIONS: 'user_permissions'
   };
 
   /**
@@ -38,11 +39,16 @@ export class StorageService {
   /**
    * High-level Session Management (Standardized)
    */
-  public saveAuthData(token: string, username: string, role: string, id: string): void {
+  public saveAuthData(token: string, username: string, role: string, id: string, permissions: string[]): void {
     this.setItem(StorageService.KEYS.TOKEN, token);
     this.setItem(StorageService.KEYS.USERNAME, username);
     this.setItem(StorageService.KEYS.ROLE, role);
     this.setItem(StorageService.KEYS.USER_ID, id);
+    this.setItem(StorageService.KEYS.PERMISSIONS, JSON.stringify(permissions));
+  }
+
+  public savePermissions(permissions: string[]): void {
+    this.setItem(StorageService.KEYS.PERMISSIONS, JSON.stringify(permissions));
   }
 
   public clearAuthData(): void {
@@ -50,14 +56,21 @@ export class StorageService {
     this.removeItem(StorageService.KEYS.USERNAME);
     this.removeItem(StorageService.KEYS.ROLE);
     this.removeItem(StorageService.KEYS.USER_ID);
+    this.removeItem(StorageService.KEYS.PERMISSIONS);
+  }
+
+  public clearPermissions(): void {
+    this.removeItem(StorageService.KEYS.PERMISSIONS);
   }
 
   public getAuthData() {
+    const perms = this.getItem(StorageService.KEYS.PERMISSIONS);
     return {
       token: this.getItem(StorageService.KEYS.TOKEN),
       username: this.getItem(StorageService.KEYS.USERNAME),
       role: this.getItem(StorageService.KEYS.ROLE),
-      id: this.getItem(StorageService.KEYS.USER_ID)
+      id: this.getItem(StorageService.KEYS.USER_ID),
+      permissions: perms ? JSON.parse(perms) : []
     };
   }
 }

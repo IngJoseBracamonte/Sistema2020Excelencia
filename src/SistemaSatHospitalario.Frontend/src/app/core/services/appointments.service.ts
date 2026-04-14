@@ -30,7 +30,7 @@ export interface DoctorScheduleResponse {
 })
 export class AppointmentsService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/Appointments`;
+  private baseUrl = `${environment.apiUrl}/api/Appointments`;
 
   getDoctorsBySpecialty(specialty: string): Observable<Doctor[]> {
     return this.http.get<Doctor[]>(`${this.baseUrl}/Doctors/${specialty}`);
@@ -51,7 +51,7 @@ export class AppointmentsService {
   }
 
   getActiveAppointments(fecha?: string, medicoId?: string): Observable<any[]> {
-    let url = `${environment.apiUrl}/Billing/Appointments`;
+    let url = `${environment.apiUrl}/api/Billing/Appointments`;
     const params = [];
     if (fecha) params.push(`fecha=${fecha}`);
     if (medicoId) params.push(`medicoId=${medicoId}`);

@@ -61,7 +61,7 @@ export interface CajaSummaryDto {
 })
 export class CajaService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/Caja`;
+  private baseUrl = `${environment.apiUrl}/api/Caja`;
 
   // Signal reactivo para observar el estado local
   public isCajaAbierta = signal<boolean>(false);

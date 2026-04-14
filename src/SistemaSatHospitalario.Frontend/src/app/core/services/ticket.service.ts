@@ -9,7 +9,7 @@ import { environment } from '../../../environments/environment';
 })
 export class TicketService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/tickets`;
+  private apiUrl = `${environment.apiUrl}/api/tickets`;
 
   getTickets(resueltos?: boolean): Observable<TicketError[]> {
     let url = this.apiUrl;

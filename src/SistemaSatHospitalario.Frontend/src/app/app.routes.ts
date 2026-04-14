@@ -18,6 +18,8 @@ export const routes: Routes = [
             { path: 'cajas', loadComponent: () => import('./features/admision/cajas/cajas.component').then(m => m.CajasComponent) },
             { path: 'facturacion', loadComponent: () => import('./features/admision/facturacion/facturacion.component').then(m => m.FacturacionComponent) },
             { path: 'cxc', loadComponent: () => import('./features/admision/receivables/receivables.component').then(m => m.ReceivablesComponent) },
+            { path: 'expediente-facturacion', loadComponent: () => import('./features/admision/expediente/expediente-facturacion.component').then(m => m.ExpedienteFacturacionComponent) },
+            { path: 'control-citas', loadComponent: () => import('./features/admision/expediente/control-citas.component').then(m => m.ControlCitasComponent) },
             { path: 'expedientes', loadComponent: () => import('./features/admision/patient-history/patient-history.component').then(m => m.PatientHistoryComponent) },
             { path: 'catalog', loadComponent: () => import('./features/admin/catalog/catalog-management.component').then(m => m.CatalogManagementComponent) },
             { path: 'medicos', loadComponent: () => import('./features/admin/medicos/medico-management.component').then(m => m.MedicoManagementComponent) },

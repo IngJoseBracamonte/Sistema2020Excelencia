@@ -9,5 +9,6 @@ namespace SistemaSatHospitalario.Core.Domain.DTOs
         public Guid UserId { get; set; }
         public string Username { get; set; }
         public string Role { get; set; }
+        public System.Collections.Generic.List<string> Permissions { get; set; } = new();
     }
 }

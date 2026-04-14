@@ -31,7 +31,7 @@ describe('ReceivablesService', () => {
             expect(ars[0].pacienteNombre).toBe('JUAN PEREZ');
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/Receivables/Pending?searchTerm=JUAN&estado=Pendiente`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Receivables/Pending?searchTerm=JUAN&estado=Pendiente`);
         expect(req.request.method).toBe('GET');
         req.flush(mockARs);
     });
@@ -47,7 +47,7 @@ describe('ReceivablesService', () => {
             expect(response.success).toBeTrue();
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/Receivables/Settle`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Receivables/Settle`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(payload);
         req.flush({ success: true });

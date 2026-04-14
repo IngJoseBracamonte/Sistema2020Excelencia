@@ -46,7 +46,7 @@ export interface PatientHistory {
 })
 export class PatientService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/Patient`;
+  private apiUrl = `${environment.apiUrl}/api/Patient`;
 
   searchPatients(term: string): Observable<PatientRecord[]> {
     return this.http.get<PatientRecord[]>(`${this.apiUrl}/search?term=${term}`);

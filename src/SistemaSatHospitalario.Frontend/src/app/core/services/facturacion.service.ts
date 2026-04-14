@@ -95,8 +95,8 @@ export interface ReceiptPrintData {
 })
 export class FacturacionService {
   private http = inject(HttpClient);
-  private billingUrl = `${environment.apiUrl}/Billing`;
-  private receiptUrl = `${environment.apiUrl}/ReciboFactura`;
+  private billingUrl = `${environment.apiUrl}/api/Billing`;
+  private receiptUrl = `${environment.apiUrl}/api/ReciboFactura`;
 
   closeAccount(request: any): Observable<any> {
     // Al cerrar cuenta, se espera cuentaId (Guid)

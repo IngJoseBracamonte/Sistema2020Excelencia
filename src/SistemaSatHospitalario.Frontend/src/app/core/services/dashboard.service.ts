@@ -28,7 +28,7 @@ export interface BusinessInsights {
 export class DashboardService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
-  private baseUrl = `${environment.apiUrl}/Dashboard`;
+  private baseUrl = `${environment.apiUrl}/api/Dashboard`;
 
   getInsights(): Observable<BusinessInsights> {
     // El rol se envía para que el Backend filtre la información sensible

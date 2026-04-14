@@ -50,7 +50,7 @@ describe('AuthService', () => {
             expect(service.currentUser()?.username).toBe('admin');
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/Auth/Login`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Auth/Login`);
         expect(req.request.method).toBe('POST');
         req.flush(mockResponse);
 
@@ -69,7 +69,7 @@ describe('AuthService', () => {
             }
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/Auth/Login`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Auth/Login`);
         req.error(new ErrorEvent('Unauthorized'), { status: 401 });
     });
 

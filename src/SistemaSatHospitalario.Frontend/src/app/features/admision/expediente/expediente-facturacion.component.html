@@ -1,0 +1,143 @@
+<div class="p-8 max-w-[1700px] space-y-6 animate-fade-in relative z-10">
+    <!-- Header Estilo Premium -->
+    <div class="px-0 pb-2 animate-fade-in relative">
+        <div class="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all">
+            <div class="flex items-center gap-6">
+                <div class="h-14 w-14 bg-indigo-500/5 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-500">
+                    <lucide-icon [name]="icons.FileText" class="w-7 h-7"></lucide-icon>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Expediente de Facturación</h1>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Auditoría y Control de Estudios Procesados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Consolidados -->
+    <div class="px-0 animate-fade-in-up">
+        <div class="flex flex-col md:flex-row items-stretch bg-white/[0.02] border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
+            <div class="relative flex-[1.5] min-w-[250px]">
+                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()"
+                    placeholder="Buscar Paciente o Cédula..."
+                    class="w-full pl-20 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600 uppercase">
+                <lucide-icon [name]="icons.Search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></lucide-icon>
+            </div>
+
+            <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+            <div class="flex items-center gap-4 px-4 flex-1 justify-around">
+                <div class="flex flex-col">
+                    <span class="text-[7px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Desde</span>
+                    <input type="date" [ngModel]="startDate()" (ngModelChange)="startDate.set($event); refresh()"
+                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                </div>
+                <div class="h-6 w-px bg-white/10 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[7px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Hasta</span>
+                    <input type="date" [ngModel]="endDate()" (ngModelChange)="endDate.set($event); refresh()"
+                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                </div>
+            </div>
+
+            <button (click)="refresh()"
+                class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">
+                <span *ngIf="!isLoading()">Filtrar ahora</span>
+                <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla de Expediente -->
+    <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-white/5">
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estudio</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Convenio</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Metodo</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Monto ($)</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Facturado Por</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    <tr *ngIf="isLoading()" class="bg-transparent">
+                        <td colspan="8" class="px-6 py-16 text-center opacity-40">
+                            <lucide-icon [name]="icons.RefreshCcw" class="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4"></lucide-icon>
+                            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Cargando expediente...</p>
+                        </td>
+                    </tr>
+
+                    <tr *ngIf="!isLoading() && records().length === 0" class="bg-transparent">
+                        <td colspan="8" class="px-6 py-16 text-center opacity-40">
+                            <lucide-icon [name]="icons.Info" class="w-8 h-8 text-slate-500 mx-auto mb-4"></lucide-icon>
+                            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">No hay registros para este período</p>
+                        </td>
+                    </tr>
+
+                    <tr *ngFor="let row of records()" class="hover:bg-white/[0.04] transition-all border-l-2 border-transparent hover:border-indigo-500">
+                        <!-- Fecha -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-black text-white leading-none">{{ row.fecha | date:'dd' }}</span>
+                                <span class="text-[8px] font-black uppercase text-indigo-500 tracking-widest">{{ row.fecha | date:'MMM' }}</span>
+                            </div>
+                        </td>
+                        <!-- Paciente -->
+                        <td class="px-6 py-4">
+                            <div>
+                                <h4 class="text-[11px] font-black text-white uppercase tracking-tight leading-tight">{{ row.pacienteNombre }}</h4>
+                                <div class="flex gap-2 mt-1">
+                                    <span class="text-[8px] font-mono text-slate-500 uppercase tracking-widest italic">{{ row.pacienteCedula }}</span>
+                                    <span class="text-[8px] font-mono text-slate-600 uppercase tracking-widest italic">{{ row.pacienteTelefono }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <!-- Estudio -->
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] font-black text-slate-300 uppercase tracking-tight">{{ row.estudio }}</span>
+                                <span class="text-[7px] font-black text-slate-600 uppercase tracking-widest mt-0.5 opacity-50">{{ row.tipoServicio }}</span>
+                            </div>
+                        </td>
+                        <!-- Convenio -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <lucide-icon [name]="icons.ShieldCheck" class="w-3 h-3 text-slate-500"></lucide-icon>
+                                <span class="text-[10px] font-black text-slate-500 uppercase tracking-tight">{{ row.seguroNombre }}</span>
+                            </div>
+                        </td>
+                        <!-- Metodo -->
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                {{ row.metodoPago }}
+                            </span>
+                        </td>
+                        <!-- Monto -->
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-xs font-black text-white/90 font-mono tracking-tighter">$ {{ row.montoUSD | number:'1.2-2' }}</span>
+                        </td>
+                        <!-- Facturado Por -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <lucide-icon [name]="icons.User" class="w-3 h-3 text-indigo-400"></lucide-icon>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase italic tracking-tight">{{ row.facturadoPor }}</span>
+                            </div>
+                        </td>
+                        <!-- Estado -->
+                        <td class="px-6 py-4 text-center">
+                            <span [ngClass]="row.estado === 'Facturado' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'"
+                                class="inline-flex items-center px-4 py-1 border rounded-lg text-[8px] font-black uppercase tracking-[0.2em]">
+                                {{ row.estado }}
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
