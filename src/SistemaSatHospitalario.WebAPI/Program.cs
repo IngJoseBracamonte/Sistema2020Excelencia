@@ -278,6 +278,18 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
 
         @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260323131051_AddEspecialidadEntity', '9.0.0');",
 
+        // 0.c Bootstrap Data: TasaCambio
+        @"SET @tcount = (SELECT COUNT(*) FROM `TasaCambio`);
+          SET @s = IF(@tcount = 0, 'INSERT INTO `TasaCambio` (Id, Fecha, Monto, Activo) VALUES (UUID(), NOW(), 36.5, 1)', 'SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
+        // 0.d Bootstrap Data: ConfiguracionGeneral
+        @"SET @ccount = (SELECT COUNT(*) FROM `ConfiguracionGeneral`);
+          SET @s = IF(@ccount = 0, 
+            'INSERT INTO `ConfiguracionGeneral` (Id, NombreEmpresa, Rif, Iva, ClaveSupervisor, UltimaActualizacion) VALUES (UUID(), ""SAT Hospitalario (Cloud)"", ""J-00000000-0"", 15.0, ""1234"", NOW())', 
+            'SELECT 1');
+          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         @"CREATE TABLE IF NOT EXISTS `SegurosConvenios` (
             `Id` int NOT NULL AUTO_INCREMENT,
             `Nombre` varchar(200) NOT NULL,
