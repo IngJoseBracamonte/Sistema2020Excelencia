@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
+using SistemaSatHospitalario.Infrastructure.Common.Helpers;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
@@ -25,13 +26,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task InitializeAsync()
         {
-            var connStr = _configuration.GetConnectionString("LegacyConnection");
+            var rawConnStr = _configuration.GetConnectionString("LegacyConnection");
 
-            if (string.IsNullOrWhiteSpace(connStr))
+            if (string.IsNullOrWhiteSpace(rawConnStr))
             {
-                _logger.LogCritical("ERROR CRÍTICO: La cadena de conexión 'LegacyConnection' está vacía o no existe. El sistema Legacy no puede ser accesado.");
-                throw new InvalidOperationException("LegacyConnection string is missing or empty. Please configure it in your environment variables as ConnectionStrings__LegacyConnection.");
+                _logger.LogCritical("ERROR CRÍTICO: La cadena de conexión 'LegacyConnection' está vacía o no existe.");
+                throw new InvalidOperationException("LegacyConnection string is missing or empty.");
             }
+
+            var connStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
 
             try
             {
@@ -40,25 +43,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 await RunConnectionTestAsync(connStr);
                 
                 _logger.LogInformation("Legacy Database Inicializada (Check de Conexión Fuerte OK).");
-            }
-            catch (Exception ex) when (ex.Message.Contains("Unknown database", StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning("Fallo por 'Base de Datos desconocida'. Intentando auto-recuperación mediante normalización a minúsculas...");
-                
-                try 
-                {
-                    var builder = new MySqlConnector.MySqlConnectionStringBuilder(connStr);
-                    builder.Database = builder.Database.ToLowerInvariant();
-                    var normalizedConnStr = builder.ConnectionString;
-
-                    await RunConnectionTestAsync(normalizedConnStr);
-                    _logger.LogInformation("✅ Conexión con Legacy Database establecida tras normalización (Uso de '{DbName}').", builder.Database);
-                }
-                catch (Exception retryEx)
-                {
-                    _logger.LogCritical(retryEx, "ERROR CRÍTICO: No se pudo conectar a la base de datos Legacy tras intento de normalización.");
-                    throw new Exception($"Fallo crítico al inicializar la conexión Legacy: {retryEx.Message}", retryEx);
-                }
             }
             catch (Exception ex)
             {

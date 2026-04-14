@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using MySqlConnector;
 using Dapper;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
+using SistemaSatHospitalario.Infrastructure.Common.Helpers;
 
 using SistemaSatHospitalario.Core.Domain.DTOs.Legacy;
 
@@ -17,7 +18,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public LegacyQueryService(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("LegacyConnection") ?? "";
+            var rawConnStr = configuration.GetConnectionString("LegacyConnection") ?? "";
+            _connectionString = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
         }
 
         public async Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken ct)

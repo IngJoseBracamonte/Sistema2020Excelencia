@@ -12,6 +12,7 @@ using Dapper;
 using System.Linq;
 using SistemaSatHospitalario.Core.Domain.DTOs.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Infrastructure.Common.Helpers;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
@@ -31,7 +32,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             _context = context;
             _queryService = queryService;
             _logger = logger;
-            _connectionString = configuration.GetConnectionString("LegacyConnection") ?? "";
+            
+            var rawConnStr = configuration.GetConnectionString("LegacyConnection") ?? "";
+            _connectionString = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
         }
 
         public async Task<int> GenerarOrdenLaboratorioAsync(
