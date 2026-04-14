@@ -240,11 +240,9 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
         // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
         "SET SESSION sql_require_primary_key = 0;",
 
-        // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
-        "SET SESSION sql_require_primary_key = 0;",
-
         // 0.b Tablas Requeridas (Migración awareness - Evitar colisión en DB nuevas)
-        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddEspecialidadEntity%');
+        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
+                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddEspecialidadEntity%'), 0);
           SET @table = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Especialidades');
           SET @s = IF(@applied > 0 AND @table = 0, 'CREATE TABLE `Especialidades` (`Id` char(36) NOT NULL, `Nombre` longtext NOT NULL, `Activo` tinyint(1) NOT NULL, PRIMARY KEY (`Id`))', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
@@ -269,61 +267,73 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
                 'SELECT 1')
           );
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 2. Medicos.HonorarioBase (Migration: AddMedicoHonorarioBase)
-        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddMedicoHonorarioBase%');
+        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
+                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddMedicoHonorarioBase%'), 0);
           SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='HonorarioBase');
           SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `Medicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0.00', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 3. ServiciosClinicos.Category (Sólo si la migración ya figura como aplicada pero la columna falta)
-        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddServiceCategoryToServicioClinico%');
+        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
+                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddServiceCategoryToServicioClinico%'), 0);
           SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='Category');
           SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `Category` int NOT NULL DEFAULT 0', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
 
-        // 4. ServiciosClinicos.HonorarioBase
-        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddHonorariumBaseToCatalog%');
+        // 4. ServiciosClinicos.HonorarioBase (Migration: AddHonorariumBaseToCatalog)
+        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
+                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddHonorariumBaseToCatalog%'), 0);
           SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='HonorarioBase');
           SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0.00', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 5. ServiciosClinicos.LegacyMappingId
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='LegacyMappingId');
-          SET @s = IF(@col=0,'ALTER TABLE `ServiciosClinicos` ADD COLUMN `LegacyMappingId` longtext NULL','SELECT 1');
+
         // 5. DetallesPago.FechaPago
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND COLUMN_NAME='FechaPago');
           SET @s = IF(@col=0,'ALTER TABLE `DetallesPago` ADD COLUMN `FechaPago` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00''','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 5. ServiciosClinicos.LegacyMappingId (Migration: AddLegacyMappingId)
-        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%');
+
+        // 6. ServiciosClinicos.LegacyMappingId (Migration: AddLegacyMappingId)
+        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
+                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%'), 0);
           SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='LegacyMappingId');
           SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `LegacyMappingId` longtext NULL', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
 
-        // 6. DetallesServicioCuenta.LegacyMappingId (Migration: AddLegacyMappingId)
-        @"SET @applied = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') AND (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%');
+        // 7. DetallesServicioCuenta.LegacyMappingId (Migration: AddLegacyMappingId)
+        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
+                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%'), 0);
           SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='LegacyMappingId');
           SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `LegacyMappingId` longtext NULL', 'SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-        // 7. DetallesServicioCuenta.Honorario
+
+        // 8. DetallesServicioCuenta.Honorario
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='Honorario');
-          SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `Honorario` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
+          SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `Honorario` decimal(18,2) NOT NULL DEFAULT 0','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 9. RecibosFacturas.MontoVueltoUSD
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='RecibosFacturas' AND COLUMN_NAME='MontoVueltoUSD');
-          SET @s = IF(@col=0,'ALTER TABLE `RecibosFacturas` ADD COLUMN `MontoVueltoUSD` decimal(65,30) NOT NULL DEFAULT 0','SELECT 1');
+          SET @s = IF(@col=0,'ALTER TABLE `RecibosFacturas` ADD COLUMN `MontoVueltoUSD` decimal(18,2) NOT NULL DEFAULT 0','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 10. CuentasPorCobrar.FechaCreacion (rename from FechaEmision or add)
         @"SET @cn = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaCreacion');
           SET @co = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaEmision');
           SET @s = IF(@cn>0,'SELECT 1',IF(@co>0,'ALTER TABLE `CuentasPorCobrar` CHANGE COLUMN `FechaEmision` `FechaCreacion` datetime(6) NOT NULL','ALTER TABLE `CuentasPorCobrar` ADD COLUMN `FechaCreacion` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00'''));
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 10b. CuentasPorCobrar.IsAudited
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='IsAudited');
           SET @s = IF(@col=0,'ALTER TABLE `CuentasPorCobrar` ADD COLUMN `IsAudited` tinyint(1) NOT NULL DEFAULT 0','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 11. ConfiguracionGeneral.ClaveSupervisor
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ConfiguracionGeneral' AND COLUMN_NAME='ClaveSupervisor');
           SET @s = IF(@col=0,'ALTER TABLE `ConfiguracionGeneral` ADD COLUMN `ClaveSupervisor` longtext NOT NULL','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 12. Tabla AuditLogsPrecios
         @"CREATE TABLE IF NOT EXISTS `AuditLogsPrecios` (
             `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -334,18 +344,21 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
             `UsuarioOperador` varchar(100) NOT NULL,
             `AutorizadoPor` varchar(100) NOT NULL,
             `FechaModificacion` datetime(6) NOT NULL,
-            `HonorarioAnterior` decimal(65,30) NOT NULL DEFAULT 0,
-            `NuevoHonorario` decimal(65,30) NOT NULL DEFAULT 0,
+            `HonorarioAnterior` decimal(18,2) NOT NULL DEFAULT 0,
+            `NuevoHonorario` decimal(18,2) NOT NULL DEFAULT 0,
             PRIMARY KEY (`Id`)
         ) CHARACTER SET utf8mb4;",
+
         // 13. Índice Medicos.EspecialidadId
         @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND INDEX_NAME='IX_Medicos_EspecialidadId');
           SET @s = IF(@idx=0,'CREATE INDEX `IX_Medicos_EspecialidadId` ON `Medicos` (`EspecialidadId`)','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 14. Índice DetallesPago.FechaPago
         @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND INDEX_NAME='IX_DetallesPago_FechaPago');
           SET @s = IF(@idx=0,'CREATE INDEX `IX_DetallesPago_FechaPago` ON `DetallesPago` (`FechaPago`)','SELECT 1');
           PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
+
         // 15. Discriminador TPH para OrdenesDeServicio (Requerido para OrdenRX)
         @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='OrdenesDeServicio' AND COLUMN_NAME='Discriminator');
           SET @s = IF(@col=0,'ALTER TABLE `OrdenesDeServicio` ADD COLUMN `Discriminator` longtext NOT NULL','SELECT 1');
@@ -362,7 +375,7 @@ static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogg
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "[SCHEMA-REPAIR] Error en repair (puede ser esperado): {Sql}", sql.Substring(0, Math.Min(80, sql.Length)));
+            logger.LogWarning(ex, "[SCHEMA-REPAIR] Error en repair (puede ser esperado): {Sql}", sql.Length > 80 ? sql.Substring(0, 80) : sql);
         }
     }
 
