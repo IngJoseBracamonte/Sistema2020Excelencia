@@ -45,9 +45,26 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
                     
                     await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
-                    await _context.Database.MigrateAsync();
                     
-                    _logger.LogInformation("Migraciones aplicadas con éxito.");
+                    try 
+                    {
+                        await _context.Database.MigrateAsync();
+                        _logger.LogInformation("Migraciones aplicadas con éxito.");
+                    }
+                    catch (Exception ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogWarning("Conflicto detectado: Las tablas ya existen pero el historial de EF Core está ausente.");
+                        _logger.LogInformation("Sincronizando historial de migraciones manualmente (Baseline: InitialIdentityMySql)...");
+                        
+                        // Aseguramos que la tabla de historial exista antes del insert
+                        await _context.Database.ExecuteSqlRawAsync(
+                            "CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (`MigrationId` varchar(150) NOT NULL, `ProductVersion` varchar(32) NOT NULL, PRIMARY KEY (`MigrationId`)) CHARACTER SET=utf8mb4;");
+                        
+                        await _context.Database.ExecuteSqlRawAsync(
+                            "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20260414054517_InitialIdentityMySql', '9.0.2');");
+                        
+                        _logger.LogInformation("Sincronización de Baseline completada. El sistema puede continuar.");
+                    }
                 }
                 else
                 {
