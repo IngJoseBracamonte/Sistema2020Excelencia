@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -96,10 +98,9 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
 
         public static IServiceCollection AddCustomForwardedHeaders(this IServiceCollection services)
         {
-            services.Configure<Microsoft.AspNetCore.HttpOverrides.ForwardedHeadersOptions>(options =>
+            services.Configure<ForwardedHeadersOptions>(options =>
             {
-                options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
-                                         Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
                 
                 // Limpiar redes conocidas para confiar en los encabezados del proxy de la nube (Render/Azure)
                 options.KnownNetworks.Clear();
