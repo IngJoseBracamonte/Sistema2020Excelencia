@@ -66,7 +66,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     CategoryId = (int)s.Category,
                     EsLegacy = false,
                     Activo = s.Activo,
-                    PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase
+                    PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase,
+                    EspecialidadId = s.EspecialidadId
                 };
                 item.CalculatePrices(tasa);
                 result.Add(item);

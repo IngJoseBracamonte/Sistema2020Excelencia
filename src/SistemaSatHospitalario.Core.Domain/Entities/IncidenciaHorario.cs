@@ -39,6 +39,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
     public enum TipoComentarioHorario
     {
         Informativo = 1,
-        Incidencia = 2
+        Incidencia = 2,
+        Bloqueo = 3,
+        Vacaciones = 4
     }
 }

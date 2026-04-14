@@ -92,47 +92,59 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedServiciosClinicosAsync()
         {
-            if (!await _context.ServiciosClinicos.AnyAsync())
+            var defaults = new List<ServicioClinico>
             {
-                _context.ServiciosClinicos.AddRange(
-                    new ServicioClinico("S001", "Consulta Medica General", 30.00m, "Consulta"),
-                    new ServicioClinico("S002", "Radiografía Tórax", 45.00m, "RX")
-                );
-                await _context.SaveChangesAsync();
+                new ServicioClinico("S001", "Consulta Medica General", 30.00m, "Consulta"),
+                new ServicioClinico("S002", "Radiografía Tórax", 45.00m, "RX")
+            };
+
+            foreach (var s in defaults)
+            {
+                if (!await _context.ServiciosClinicos.AnyAsync(x => x.Codigo == s.Codigo))
+                {
+                    _context.ServiciosClinicos.Add(s);
+                }
             }
+
+            if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
         }
 
         private async Task SeedEspecialidadesAsync()
         {
-            if (!await _context.Especialidades.AnyAsync())
+            var names = new[] { "Diagnóstico Diferencial", "Oncología", "Cardiología", "Pediatría", "Traumatología" };
+
+            foreach (var name in names)
             {
-                _context.Especialidades.AddRange(
-                    new Especialidad("Diagnóstico Diferencial"),
-                    new Especialidad("Oncología"),
-                    new Especialidad("Cardiología"),
-                    new Especialidad("Pediatría"),
-                    new Especialidad("Traumatología")
-                );
-                await _context.SaveChangesAsync();
+                if (!await _context.Especialidades.AnyAsync(e => e.Nombre == name))
+                {
+                    _context.Especialidades.Add(new Especialidad(name));
+                }
             }
+
+            if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
         }
 
         private async Task SeedMedicosAsync()
         {
-            if (!await _context.Medicos.AnyAsync())
+            var medicDefaults = new[]
             {
-                var diagDif = await _context.Especialidades.FirstOrDefaultAsync(e => e.Nombre == "Diagnóstico Diferencial");
-                var onco = await _context.Especialidades.FirstOrDefaultAsync(e => e.Nombre == "Oncología");
+                (Name: "Gregory House", Speciality: "Diagnóstico Diferencial"),
+                (Name: "James Wilson", Speciality: "Oncología")
+            };
 
-                if (diagDif != null && onco != null)
+            foreach (var m in medicDefaults)
+            {
+                if (!await _context.Medicos.AnyAsync(x => x.Nombre == m.Name))
                 {
-                    _context.Medicos.AddRange(
-                        new Medico("Gregory House", diagDif.Id),
-                        new Medico("James Wilson", onco.Id)
-                    );
-                    await _context.SaveChangesAsync();
+                    var spec = await _context.Especialidades.FirstOrDefaultAsync(e => e.Nombre == m.Speciality);
+                    if (spec != null)
+                    {
+                        _context.Medicos.Add(new Medico(m.Name, spec.Id));
+                    }
                 }
             }
+
+            if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
         }
 
         private async Task SeedPacientesAsync()
@@ -176,9 +188,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedCajaDiariaAsync()
         {
-            if (!await _context.CajasDiarias.AnyAsync())
+            // Evitar duplicar cajas si el sistema se reinicia (Check por NombreUsuario 'admin')
+            if (!await _context.CajasDiarias.AnyAsync(c => c.NombreUsuario == "admin"))
             {
-                // Un cajero genérico asumiendo un ID de de admin
                 _context.CajasDiarias.Add(
                     new CajaDiaria(50.00m, 1500.00m, "1", "admin")
                 );
@@ -199,6 +211,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedTasaCambioAsync()
         {
+            // Solo sembramos si no hay NINGUNA tasa definida.
             if (!await _context.TasaCambio.AnyAsync())
             {
                 _logger.LogInformation("Sembrando tasa de cambio inicial (Baseline 36.50)...");

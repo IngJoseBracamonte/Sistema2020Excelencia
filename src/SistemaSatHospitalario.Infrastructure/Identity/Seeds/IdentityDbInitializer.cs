@@ -85,8 +85,10 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                 }
 
                 // Seed Admin User
-                if (_userManager.Users.All(u => u.UserName != "admin"))
+                var adminUser = await _userManager.FindByNameAsync("admin");
+                if (adminUser == null)
                 {
+                    _logger.LogInformation("Creando usuario administrador maestro...");
                     var defaultUser = new UsuarioHospital
                     {
                         UserName = "admin",
@@ -103,6 +105,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     if (result.Succeeded)
                     {
                         await _userManager.AddToRoleAsync(defaultUser, "Admin");
+                    }
+                }
+                else 
+                {
+                    // Asegurar que el admin siempre tenga el rol Admin (Reparación automática)
+                    if (!await _userManager.IsInRoleAsync(adminUser, "Admin"))
+                    {
+                        await _userManager.AddToRoleAsync(adminUser, "Admin");
                     }
                 }
 

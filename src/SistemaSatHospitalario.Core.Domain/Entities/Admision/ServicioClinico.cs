@@ -13,6 +13,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? LegacyMappingId { get; set; }
         public ServiceCategory Category { get; set; } 
         public bool Activo { get; set; }
+        public Guid? EspecialidadId { get; set; }
+        public virtual Especialidad? Especialidad { get; set; }
 
         private ServicioClinico() { }
 
@@ -24,6 +26,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             PrecioBase = precioBase;
             TipoServicio = tipoServicio;
             Activo = true;
+        }
+
+        public void SetEspecialidad(Guid especialidadId)
+        {
+            EspecialidadId = especialidadId;
         }
 
         public void Desactivar() => Activo = false;

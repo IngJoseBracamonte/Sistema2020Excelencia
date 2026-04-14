@@ -55,14 +55,14 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                         }
                         catch (Exception ex)
                         {
-                            if (ex.Message.Contains("Unknown database", StringComparison.OrdinalIgnoreCase))
+                            logger.LogWarning("❌ Intento {Attempt}/{Total} FALLIDO. Motivo: {ErrorMessage}", i, retries, ex.Message);
+                            
+                            // Si el error es "Access denied" o similar y estamos en modo diseño, podríamos continuar
+                            if (ex.Message.Contains("Access denied") || ex.Message.Contains("Unknown database") || ex.Message.Contains("Connect failure"))
                             {
-                                canConnect = true;
-                                logger.LogInformation("ℹ️ Respuesta del Servidor: 'Base de Datos inexistente'. El servidor está activo. Procediendo a creación automática.");
-                                break;
+                                if (i == retries) logger.LogWarning("⚠️ No se pudo conectar a la DB. Continuando carga de host para permitir herramientas de diseño (Migrations).");
                             }
 
-                            logger.LogWarning("❌ Intento {Attempt}/{Total} FALLIDO. Motivo: {ErrorMessage}", i, retries, ex.Message);
                             if (i < retries) await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
                         }
                     }

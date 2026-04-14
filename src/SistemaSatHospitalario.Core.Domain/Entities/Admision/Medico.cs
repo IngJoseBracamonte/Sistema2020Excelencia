@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public virtual Especialidad Especialidad { get; private set; }
         public bool Activo { get; private set; }
         public decimal HonorarioBase { get; private set; }
+        public int IntervaloTurnoMinutos { get; private set; } = 30;
 
         private Medico() { }
 
@@ -20,6 +21,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             EspecialidadId = especialidadId;
             Activo = true;
             HonorarioBase = honorarioBase;
+            IntervaloTurnoMinutos = 30;
+        }
+
+        public void SetIntervalo(int minutos)
+        {
+            if (minutos <= 0) throw new ArgumentException("El intervalo debe ser mayor a 0.");
+            IntervaloTurnoMinutos = minutos;
         }
 
         public void Update(string nombre, Guid especialidadId, decimal honorarioBase)

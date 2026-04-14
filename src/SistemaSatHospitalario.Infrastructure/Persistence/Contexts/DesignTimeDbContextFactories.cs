@@ -16,8 +16,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             if (provider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
             {
-                var conStr = "Server=localhost;Port=3306;Database=SatHospitalario;Uid=root;Pwd=Labordono1818;Connection Timeout=20;";
-                optionsBuilder.UseMySql(conStr, ServerVersion.AutoDetect(conStr));
+                var conStr = "Server=localhost;Port=3306;Database=SatHospitalario;Uid=root;Pwd=;Connection Timeout=20;";
+                optionsBuilder.UseMySql(conStr, new MySqlServerVersion(new Version(8, 0, 21)));
             }
             else
             {
@@ -37,8 +37,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             if (provider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
             {
-                var conStr = "Server=localhost;Port=3306;Database=SatHospitalarioIdentity;Uid=root;Pwd=Labordono1818;Connection Timeout=20;";
-                optionsBuilder.UseMySql(conStr, ServerVersion.AutoDetect(conStr));
+                var conStr = "Server=localhost;Port=3306;Database=SatHospitalarioIdentity;Uid=root;Pwd=;Connection Timeout=20;";
+                optionsBuilder.UseMySql(conStr, new MySqlServerVersion(new Version(8, 0, 21)));
             }
             else
             {

@@ -22,7 +22,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                          ?? throw new InvalidOperationException("mysql-identity (or DefaultConnection) connection string not found.");
             
             services.AddDbContext<SatHospitalarioIdentityDbContext>(options =>
-                options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
+                options.UseMySql(conStr, new MySqlServerVersion(new Version(8, 0, 21)), 
                     b => {
                         b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName);
                         b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
@@ -39,7 +39,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                          ?? throw new InvalidOperationException("mysql-system (or DefaultConnection) connection string not found.");
             
             services.AddDbContext<SatHospitalarioDbContext>(options =>
-                options.UseMySql(conStr, ServerVersion.AutoDetect(conStr), 
+                options.UseMySql(conStr, new MySqlServerVersion(new Version(8, 0, 21)), 
                     b => {
                         b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName);
                         b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);

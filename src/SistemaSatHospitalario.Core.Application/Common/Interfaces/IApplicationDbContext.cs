@@ -33,6 +33,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; }
         DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; }
         DbSet<LogAuditoriaPrecio> AuditLogsPrecios { get; }
+        DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
         Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }

@@ -175,6 +175,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                             throw new InvalidOperationException($"El servicio '{item.Descripcion}' requiere la asignación de un médico y un horario de cita para ser facturado.");
                         }
 
+                        // [BUG-FIX] Strict Specialty Validation (V15.0)
+                        if (Guid.TryParse(item.ServicioId, out Guid sGuid))
+                        {
+                            var servicio = await _context.ServiciosClinicos.FindAsync(new object[] { sGuid }, ct);
+                            var medico = await _context.Medicos.FindAsync(new object[] { item.MedicoId.Value }, ct);
+
+                            if (servicio != null && medico != null && servicio.EspecialidadId.HasValue)
+                            {
+                                if (servicio.EspecialidadId.Value != medico.EspecialidadId)
+                                {
+                                    _logger.LogError("[SYNC] Mismatch de Especialidad: Servicio '{Serv}' ({SpecS}) vs Médico '{Med}' ({SpecM})", 
+                                        servicio.Descripcion, servicio.EspecialidadId, medico.Nombre, medico.EspecialidadId);
+                                    throw new InvalidOperationException($"No se puede asignar el médico '{medico.Nombre}' a la consulta de '{servicio.Descripcion}' porque las especialidades no coinciden.");
+                                }
+                            }
+                        }
+
                         _logger.LogInformation("[SYNC] Registrando cita médica - Medico: {MedicoId}, Hora: {Hora}", item.MedicoId, item.HoraCita);
                         await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
                     }

@@ -35,6 +35,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; set; }
         public DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; set; }
         public DbSet<LogAuditoriaPrecio> AuditLogsPrecios { get; set; }
+        public DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -201,6 +202,22 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("ServiciosClinicos");
                 entity.HasKey(s => s.Id);
                 entity.Property(s => s.PrecioBase).HasPrecision(18, 2);
+
+                entity.HasOne(s => s.Especialidad)
+                      .WithMany()
+                      .HasForeignKey(s => s.EspecialidadId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<HorarioAtencionMedico>(entity =>
+            {
+                entity.ToTable("HorariosAtencionMedicos");
+                entity.HasKey(h => h.Id);
+
+                entity.HasOne<Medico>()
+                      .WithMany()
+                      .HasForeignKey(h => h.MedicoId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<PrecioServicioConvenio>(entity =>
