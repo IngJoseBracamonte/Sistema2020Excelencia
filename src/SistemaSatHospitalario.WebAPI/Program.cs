@@ -14,11 +14,26 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using Serilog;
+using Serilog.Events;
 
 // [SEC-004] Standardize Claim Mapping - Prevents ASP.NET Core from rewriting claim names (V14.1 Senior Patch)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-var builder = WebApplication.CreateBuilder(args);
+// [PHASE-1] Serilog Configuration (Observability)
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+try 
+{
+    Log.Information("Iniciando Sistema Sat Hospitalario (Cloud-Native Mode)...");
+    
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog();
 
 // Add Aspire ServiceDefaults for OpenTelemetry and HealthChecks
 builder.AddServiceDefaults();
@@ -50,12 +65,24 @@ builder.Services.AddCors(options =>
     options.DefaultPolicyName = "AngularPolicy";
     options.AddPolicy("AngularPolicy", policy =>
     {
-        // [MOD-CORS] Modificado para permitir cualquier origen (Netlify, local, etc) 
-        // Compatible con AllowCredentials()
-        policy.SetIsOriginAllowed(origin => true) 
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        var deployMode = builder.Configuration["DeploymentSettings:Mode"] ?? "Local";
+        
+        if (deployMode.Equals("Cloud", StringComparison.OrdinalIgnoreCase))
+        {
+            // [PRO-CLOUD] CORS Whitelist Enforced
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // [DEV-LOCAL] Flexible Policy
+            policy.SetIsOriginAllowed(origin => true) 
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
     });
 });
 
@@ -96,14 +123,40 @@ builder.Services.AddAuthentication(options =>
         
         // [SEC-004] Explicit Claim Mapping for Names and Roles (GEN-001 Compliance)
         NameClaimType = ClaimTypes.Name,
-        RoleClaimType = ClaimTypes.Role
+        RoleClaimType = ClaimTypes.Role,
+        
+        // [PHASE-2] Sliding Expiration Support
+        RequireExpirationTime = true,
+        ValidateLifetime = true
     };
 });
 builder.Services.AddAuthorization();
 
+// Fase 1 CLOUD: Health Checks Infrastructure
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<SatHospitalarioDbContext>("Database");
+
 // Global exception handler configuration
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+// [PHASE-3] Distributed Caching Infrastructure (Redis/Memory Hybrid)
+var redisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnection;
+        options.InstanceName = "SatHospitalario_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+
+// [PHASE-3] Background Processing Infrastructure
+builder.Services.AddHostedService<SistemaSatHospitalario.WebAPI.Infrastructure.SystemOptimizationService>();
 
 var app = builder.Build();
 
@@ -146,6 +199,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRateLimiter();
+
+// Fase 1 CLOUD: Health Checks (Observability) - V1 Senior Patch
+app.MapHealthChecks("/health");
 
 // ----- Database Initializer (Robust Check V14.0) -----
 using (var scope = app.Services.CreateScope())
@@ -196,8 +252,9 @@ using (var scope = app.Services.CreateScope())
             throw new Exception("Database is unavailable after multiple retries.");
         }
 
-        // [CLOUD-FIX] Reparar esquema antes de ejecutar initializers
-        await RepairCloudSchemaAsync(context, logger);
+        // Fase 0/1 [CLOUD]: Inicialización de bases de datos
+        var deployMode = builder.Configuration["DeploymentSettings:Mode"] ?? "Local";
+        logger.LogInformation("Entorno de ejecución detectado: {Mode}", deployMode);
 
         logger.LogInformation("Iniciando secuencia de inicialización de esquemas...");
         var initializers = services.GetServices<IDatabaseInitializer>();
@@ -228,199 +285,15 @@ app.MapControllers();
 app.MapHub<SistemaSatHospitalario.WebAPI.Hubs.DashboardHub>("/hub/dashboard");
 app.MapHub<SistemaSatHospitalario.WebAPI.Hubs.TasaHub>("/hub/tasa");
 
+
 app.Run();
 
-// ===== CLOUD SCHEMA REPAIR (MySQL Idempotent) =====
-static async Task RepairCloudSchemaAsync(SatHospitalarioDbContext context, ILogger logger)
+}
+catch (Exception ex)
 {
-    logger.LogInformation("[SCHEMA-REPAIR] Iniciando reparación idempotente de esquema MySQL para Cloud...");
-    
-    var repairs = new List<string>
-    {
-        // 0. Compatibilidad Aiven/Managed MySQL (Primary Key Requirement)
-        "SET SESSION sql_require_primary_key = 0;",
-
-        // 0.b Creación Agresiva de Tablas Críticas para Dashboard (Bypass Migraciones fallidas)
-        @"CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (
-            `MigrationId` varchar(150) NOT NULL,
-            `ProductVersion` varchar(32) NOT NULL,
-            PRIMARY KEY (`MigrationId`)
-        ) CHARACTER SET utf8mb4;",
-
-        @"CREATE TABLE IF NOT EXISTS `TasaCambio` (
-            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-            `Fecha` datetime(6) NOT NULL,
-            `Monto` decimal(18,2) NOT NULL,
-            `Activo` tinyint(1) NOT NULL,
-            PRIMARY KEY (`Id`)
-        ) CHARACTER SET utf8mb4;",
-
-        @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260323032100_AddTasaCambio', '9.0.0');",
-
-        @"CREATE TABLE IF NOT EXISTS `ConfiguracionGeneral` (
-            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-            `NombreEmpresa` longtext NOT NULL,
-            `Rif` longtext NOT NULL,
-            `Iva` decimal(18,2) NOT NULL,
-            `ClaveSupervisor` longtext NOT NULL,
-            `UltimaActualizacion` datetime(6) NOT NULL,
-            PRIMARY KEY (`Id`)
-        ) CHARACTER SET utf8mb4;",
-
-        @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260325014012_AddSystemSettingsAndErrorTickets', '9.0.0');",
-
-        @"CREATE TABLE IF NOT EXISTS `Especialidades` (
-            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-            `Nombre` longtext NOT NULL,
-            `Activo` tinyint(1) NOT NULL,
-            PRIMARY KEY (`Id`)
-        ) CHARACTER SET utf8mb4;",
-
-        @"INSERT IGNORE INTO `__EFMigrationsHistory` VALUES ('20260323131051_AddEspecialidadEntity', '9.0.0');",
-
-        // 0.c Bootstrap Data: TasaCambio
-        @"SET @tcount = (SELECT COUNT(*) FROM `TasaCambio`);
-          SET @s = IF(@tcount = 0, 'INSERT INTO `TasaCambio` (Id, Fecha, Monto, Activo) VALUES (UUID(), NOW(), 36.5, 1)', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 0.d Bootstrap Data: ConfiguracionGeneral
-        @"SET @ccount = (SELECT COUNT(*) FROM `ConfiguracionGeneral`);
-          SET @s = IF(@ccount = 0, 
-            'INSERT INTO `ConfiguracionGeneral` (Id, NombreEmpresa, Rif, Iva, ClaveSupervisor, UltimaActualizacion) VALUES (UUID(), ""SAT Hospitalario (Cloud)"", ""J-00000000-0"", 15.0, ""1234"", NOW())', 
-            'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        @"CREATE TABLE IF NOT EXISTS `SegurosConvenios` (
-            `Id` int NOT NULL AUTO_INCREMENT,
-            `Nombre` varchar(200) NOT NULL,
-            `Rtn` varchar(50) NULL,
-            `Direccion` varchar(500) NULL,
-            `Telefono` varchar(50) NULL,
-            `Email` varchar(150) NULL,
-            PRIMARY KEY (`Id`)
-        ) CHARACTER SET utf8mb4;",
-
-        // 1. Medicos.EspecialidadId (Asegurar tipo CHAR(36) para evitar error de BLOB en INDEX)
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='EspecialidadId');
-          SET @type = (SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='EspecialidadId');
-          SET @s = IF(@col=0,
-            'ALTER TABLE `Medicos` ADD COLUMN `EspecialidadId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT ""00000000-0000-0000-0000-000000000000""',
-            IF(@type='longtext' OR @type='text',
-                'ALTER TABLE `Medicos` MODIFY COLUMN `EspecialidadId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL',
-                'SELECT 1')
-          );
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 2. Medicos.HonorarioBase (Migration: AddMedicoHonorarioBase)
-        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
-                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddMedicoHonorarioBase%'), 0);
-          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND COLUMN_NAME='HonorarioBase');
-          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `Medicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0.00', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 3. ServiciosClinicos.Category (Sólo si la migración ya figura como aplicada pero la columna falta)
-        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
-                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddServiceCategoryToServicioClinico%'), 0);
-          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='Category');
-          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `Category` int NOT NULL DEFAULT 0', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 4. ServiciosClinicos.HonorarioBase (Migration: AddHonorariumBaseToCatalog)
-        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
-                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddHonorariumBaseToCatalog%'), 0);
-          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='HonorarioBase');
-          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `HonorarioBase` decimal(18,2) NOT NULL DEFAULT 0.00', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 5. DetallesPago.FechaPago
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND COLUMN_NAME='FechaPago');
-          SET @s = IF(@col=0,'ALTER TABLE `DetallesPago` ADD COLUMN `FechaPago` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00''','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 6. ServiciosClinicos.LegacyMappingId (Migration: AddLegacyMappingId)
-        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
-                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%'), 0);
-          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ServiciosClinicos' AND COLUMN_NAME='LegacyMappingId');
-          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `ServiciosClinicos` ADD COLUMN `LegacyMappingId` longtext NULL', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 7. DetallesServicioCuenta.LegacyMappingId (Migration: AddLegacyMappingId)
-        @"SET @applied = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='__EFMigrationsHistory') > 0, 
-                           (SELECT COUNT(*) FROM `__EFMigrationsHistory` WHERE `MigrationId` LIKE '%AddLegacyMappingId%'), 0);
-          SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='LegacyMappingId');
-          SET @s = IF(@applied > 0 AND @col = 0, 'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `LegacyMappingId` longtext NULL', 'SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 8. DetallesServicioCuenta.Honorario
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesServicioCuenta' AND COLUMN_NAME='Honorario');
-          SET @s = IF(@col=0,'ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `Honorario` decimal(18,2) NOT NULL DEFAULT 0','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 9. RecibosFacturas.MontoVueltoUSD
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='RecibosFacturas' AND COLUMN_NAME='MontoVueltoUSD');
-          SET @s = IF(@col=0,'ALTER TABLE `RecibosFacturas` ADD COLUMN `MontoVueltoUSD` decimal(18,2) NOT NULL DEFAULT 0','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 10. CuentasPorCobrar.FechaCreacion (rename from FechaEmision or add)
-        @"SET @cn = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaCreacion');
-          SET @co = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='FechaEmision');
-          SET @s = IF(@cn>0,'SELECT 1',IF(@co>0,'ALTER TABLE `CuentasPorCobrar` CHANGE COLUMN `FechaEmision` `FechaCreacion` datetime(6) NOT NULL','ALTER TABLE `CuentasPorCobrar` ADD COLUMN `FechaCreacion` datetime(6) NOT NULL DEFAULT ''0001-01-01 00:00:00'''));
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 10b. CuentasPorCobrar.IsAudited
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='CuentasPorCobrar' AND COLUMN_NAME='IsAudited');
-          SET @s = IF(@col=0,'ALTER TABLE `CuentasPorCobrar` ADD COLUMN `IsAudited` tinyint(1) NOT NULL DEFAULT 0','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 11. ConfiguracionGeneral.ClaveSupervisor
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ConfiguracionGeneral' AND COLUMN_NAME='ClaveSupervisor');
-          SET @s = IF(@col=0,'ALTER TABLE `ConfiguracionGeneral` ADD COLUMN `ClaveSupervisor` longtext NOT NULL','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 12. Tabla AuditLogsPrecios
-        @"CREATE TABLE IF NOT EXISTS `AuditLogsPrecios` (
-            `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-            `DetalleServicioId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-            `DescripcionServicio` varchar(500) NOT NULL,
-            `PrecioOriginal` decimal(18,2) NOT NULL,
-            `PrecioModificado` decimal(18,2) NOT NULL,
-            `UsuarioOperador` varchar(100) NOT NULL,
-            `AutorizadoPor` varchar(100) NOT NULL,
-            `FechaModificacion` datetime(6) NOT NULL,
-            `HonorarioAnterior` decimal(18,2) NOT NULL DEFAULT 0,
-            `NuevoHonorario` decimal(18,2) NOT NULL DEFAULT 0,
-            PRIMARY KEY (`Id`)
-        ) CHARACTER SET utf8mb4;",
-
-        // 13. Índice Medicos.EspecialidadId
-        @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='Medicos' AND INDEX_NAME='IX_Medicos_EspecialidadId');
-          SET @s = IF(@idx=0,'CREATE INDEX `IX_Medicos_EspecialidadId` ON `Medicos` (`EspecialidadId`)','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 14. Índice DetallesPago.FechaPago
-        @"SET @idx = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='DetallesPago' AND INDEX_NAME='IX_DetallesPago_FechaPago');
-          SET @s = IF(@idx=0,'CREATE INDEX `IX_DetallesPago_FechaPago` ON `DetallesPago` (`FechaPago`)','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;",
-
-        // 15. Discriminador TPH para OrdenesDeServicio (Requerido para OrdenRX)
-        @"SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='OrdenesDeServicio' AND COLUMN_NAME='Discriminator');
-          SET @s = IF(@col=0,'ALTER TABLE `OrdenesDeServicio` ADD COLUMN `Discriminator` longtext NOT NULL','SELECT 1');
-          PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;"
-    };
-
-    int repaired = 0;
-    foreach (var sql in repairs)
-    {
-        try
-        {
-            await context.Database.ExecuteSqlRawAsync(sql);
-            repaired++;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "[SCHEMA-REPAIR] Error en repair (puede ser esperado): {Sql}", sql.Length > 80 ? sql.Substring(0, 80) : sql);
-        }
-    }
-
-    logger.LogInformation("[SCHEMA-REPAIR] Completado. {Repaired}/{Total} ejecutadas.", repaired, repairs.Count);
+    Log.Fatal(ex, "El sistema falló durante el arranque.");
+}
+finally
+{
+    Log.CloseAndFlush();
 }

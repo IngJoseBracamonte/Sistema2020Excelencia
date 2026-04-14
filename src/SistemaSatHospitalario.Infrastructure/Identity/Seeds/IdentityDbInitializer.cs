@@ -33,15 +33,26 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
         {
             try
             {
-                _logger.LogInformation("Aplicando migraciones a Identity Database...");
+                var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
                 
-                // Senior Robust Fix: Abrir conexión manualmente para asegurar que el SET SESSION 
-                // persista durante toda la operación de MigrateAsync en Aiven.
-                var connection = _context.Database.GetDbConnection();
-                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
-                
-                await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
-                await _context.Database.MigrateAsync();
+                if (pendingMigrations.Any())
+                {
+                    _logger.LogInformation("Detectadas {Count} migraciones pendientes. Aplicando a Identity Database...", pendingMigrations.Count());
+                    
+                    // Senior Robust Fix: Abrir conexión manualmente para asegurar que el SET SESSION 
+                    // persista durante toda la operación de MigrateAsync en Aiven.
+                    var connection = _context.Database.GetDbConnection();
+                    if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+                    
+                    await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
+                    await _context.Database.MigrateAsync();
+                    
+                    _logger.LogInformation("Migraciones aplicadas con éxito.");
+                }
+                else
+                {
+                    _logger.LogInformation("Identity Database ya está actualizada. No se requieren migraciones.");
+                }
 
                 _logger.LogInformation("Poblando Identity Roles y Usuarios Defaults...");
 

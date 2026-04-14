@@ -30,15 +30,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         {
             try
             {
-                _logger.LogInformation("Aplicando migraciones a System Database...");
+                var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
                 
-                // Senior Robust Fix: Abrir conexión manualmente para asegurar que el SET SESSION 
-                // persista durante toda la operación de MigrateAsync.
-                var connection = _context.Database.GetDbConnection();
-                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
-                
-                await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
-                await _context.Database.MigrateAsync();
+                if (pendingMigrations.Any())
+                {
+                    _logger.LogInformation("Detectadas {Count} migraciones pendientes. Aplicando a System Database...", pendingMigrations.Count());
+                    
+                    // Senior Robust Fix: Abrir conexión manualmente para asegurar que el SET SESSION 
+                    // persista durante toda la operación de MigrateAsync.
+                    var connection = _context.Database.GetDbConnection();
+                    if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+                    
+                    await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
+                    await _context.Database.MigrateAsync();
+                    
+                    _logger.LogInformation("Migraciones aplicadas con éxito.");
+                }
+                else
+                {
+                    _logger.LogInformation("System Database ya está actualizada. No se requieren migraciones.");
+                }
 
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 

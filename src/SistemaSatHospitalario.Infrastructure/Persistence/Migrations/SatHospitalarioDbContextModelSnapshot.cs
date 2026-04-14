@@ -205,6 +205,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<bool>("IsAudited")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<decimal>("MontoPagadoBase")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -668,7 +671,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("tasacambio", (string)null);
+                    b.ToTable("TasaCambio", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.ErrorTicket", b =>

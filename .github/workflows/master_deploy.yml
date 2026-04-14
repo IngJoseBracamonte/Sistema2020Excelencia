@@ -1,0 +1,51 @@
+name: master_deploy_orchestration
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build_backend:
+    name: Build & Test .NET API
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    - name: Restore dependencies
+      run: dotnet restore src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj
+    - name: Build
+      run: dotnet build src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj --no-restore -c Release
+    - name: Trigger Render Deploy
+      if: github.event_name == 'push'
+      run: |
+        curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
+  build_frontend:
+    name: Build & Deploy Angular (Netlify)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install dependencies
+      working-directory: ./src/SistemaSatHospitalario.Frontend
+      run: npm install
+    - name: Build
+      working-directory: ./src/SistemaSatHospitalario.Frontend
+      run: npm run build -- --configuration=production
+    - name: Deploy to Netlify
+      if: github.event_name == 'push'
+      uses: nwtgck/actions-netlify@v3.0
+      with:
+        publish-dir: './src/SistemaSatHospitalario.Frontend/dist/sistema-sat-hospitalario'
+        production-deploy: true
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
