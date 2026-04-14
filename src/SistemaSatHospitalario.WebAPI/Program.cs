@@ -221,34 +221,37 @@ using (var scope = app.Services.CreateScope())
         {
             try
             {
-                // CanConnect no siempre da el error real, OpenConnection es más explícito
+                // Senior Diagnostic: Indicar el objetivo de conexión (V14.1)
+                var builderCon = new MySqlConnector.MySqlConnectionStringBuilder(context.Database.GetConnectionString());
+                logger.LogInformation("Intento {Attempt}/{Total}: Probando conexión a {Server} (DB: {Database})...", i, retries, builderCon.Server, builderCon.Database);
+
                 await context.Database.OpenConnectionAsync();
                 await context.Database.CloseConnectionAsync();
                 canConnect = true;
-                logger.LogInformation("Conexión a Base de Datos establecida correctamente.");
+                logger.LogInformation("✅ Conexión a Base de Datos establecida correctamente.");
                 break;
             }
             catch (Exception ex)
             {
-                // Si el error es "Unknown database" (1049 en MySql), el servidor está vivo
-                // y podemos proceder para que MigrateAsync cree la base de datos.
+                // Si el error es "Unknown database" (1049), el servidor responde y está vivo
                 if (ex.Message.Contains("Unknown database", StringComparison.OrdinalIgnoreCase) || 
                     ex.InnerException?.Message.Contains("Unknown database", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     canConnect = true;
-                    logger.LogInformation("Servidor de Base de Datos respondio: 'Base de Datos inexistente'. Procediendo a la creacion de esquemas...");
+                    logger.LogInformation("ℹ️ Respuesta del Servidor: 'Base de Datos inexistente'. El servidor está activo. Procediendo a creación automática.");
                     break;
                 }
 
-                logger.LogWarning("Intento {Attempt}/{Total}: No se pudo conectar. Motivo: {ErrorMessage}. Reintentando en {Delay}s...", i, retries, ex.Message, delaySeconds);
-                await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+                logger.LogWarning("❌ Intento {Attempt}/{Total} FALLIDO. Motivo: {ErrorMessage}", i, retries, ex.Message);
+                if (i < retries) await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
             }
         }
 
         if (!canConnect)
         {
-            logger.LogCritical("ERROR CRÍTICO: No se pudo establecer conexión con la Base de Datos tras {Total} intentos. El sistema no puede iniciar.", retries);
-            throw new Exception("Database is unavailable after multiple retries.");
+            var builderCon = new MySqlConnector.MySqlConnectionStringBuilder(context.Database.GetConnectionString());
+            logger.LogCritical("FATAL: No se pudo alcanzar el servidor {Server} tras {Total} intentos. Verifique que el servicio esté corriendo.", builderCon.Server, retries);
+            throw new Exception($"Il servidor {builderCon.Server} no responde.");
         }
 
         // Fase 0/1 [CLOUD]: Inicialización de bases de datos
