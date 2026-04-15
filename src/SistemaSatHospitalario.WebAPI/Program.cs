@@ -30,6 +30,10 @@ try
     builder.Services.AddOpenApi();
     builder.Services.AddControllers();
 
+    // Business & Data Layers
+    builder.Services.AddApplicationServices();
+    builder.Services.AddInfrastructureServices(builder.Configuration);
+
     // Abstractions
     builder.Services.AddCustomRateLimiting();
     builder.Services.AddCustomForwardedHeaders();
@@ -37,10 +41,6 @@ try
     builder.Services.AddCustomIdentityAndJwt(builder.Configuration, builder.Environment.IsDevelopment());
     builder.Services.AddCustomHealthChecks();
     builder.Services.AddCustomCaching(builder.Configuration);
-
-    // Business & Data Layers
-    builder.Services.AddApplicationServices();
-    builder.Services.AddInfrastructureServices(builder.Configuration);
     builder.Services.AddSignalR();
     
     // Notification Services
