@@ -86,9 +86,11 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     claims.Add(new Claim(PermissionConstants.Type, permission));
                 }
 
+                var claimsIdentity = new ClaimsIdentity(claims, "Bearer", "unique_name", "role");
+
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = new ClaimsIdentity(claims),
+                    Subject = claimsIdentity,
                     Expires = expiration,
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                     Issuer = _configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI",
