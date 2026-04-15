@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
 using SistemaSatHospitalario.Infrastructure.Common.Helpers;
+using MySqlConnector;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
@@ -38,27 +39,49 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
             try
             {
-                _logger.LogInformation("Verificando conectividad fuerte con Legacy Database...");
+                _logger.LogInformation("Verificando existencia de base de datos Legacy...");
+                await EnsureDatabaseExistsAsync(connStr);
 
-                await RunConnectionTestAsync(connStr);
+                _logger.LogInformation("Aplicando migraciones a Legacy Database (Enforcing Primary Keys)...");
                 
-                _logger.LogInformation("Legacy Database Inicializada (Check de Conexión Fuerte OK).");
+                // Senior Defensive Pattern: Asegurar que sql_require_primary_key no bloquee la creación de __EFMigrationsHistory
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+                
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "SET SESSION sql_require_primary_key = 0;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                await _context.Database.MigrateAsync();
+                
+                _logger.LogInformation("Legacy Database Inicializada y Migrada Correctamente.");
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "ERROR CRÍTICO: No se pudo conectar a la base de datos Legacy.");
+                _logger.LogCritical(ex, "ERROR CRÍTICO: No se pudo inicializar la base de datos Legacy.");
                 throw new Exception($"Fallo crítico al inicializar la conexión Legacy: {ex.Message}", ex);
             }
         }
 
-        private async Task RunConnectionTestAsync(string connStr)
+        private async Task EnsureDatabaseExistsAsync(string connStr)
         {
-            using var connection = new MySqlConnector.MySqlConnection(connStr);
+            var builder = new MySqlConnectionStringBuilder(connStr);
+            var databaseName = builder.Database;
+
+            // Conectamos sin base de datos seleccionada para poder crearla
+            builder.Database = null; 
+            var serverConnStr = builder.ConnectionString;
+
+            using var connection = new MySqlConnection(serverConnStr);
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT 1";
-            await cmd.ExecuteScalarAsync();
+            cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{databaseName}` CHARACTER SET utf8mb4;";
+            await cmd.ExecuteNonQueryAsync();
+            
+            _logger.LogInformation($"Base de datos `{databaseName}` verificada/creada.");
         }
     }
 }
