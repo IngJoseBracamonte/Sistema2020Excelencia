@@ -129,7 +129,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 
                     b.HasKey("IdOrden");
 
-                    b.ToTable("Orden", (string)null);
+                    b.ToTable("ordenes", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.PerfilLegacy", b =>
@@ -150,12 +150,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal>("PrecioDOlar")
+                    b.Property<decimal>("PrecioDolar")
                         .HasColumnType("decimal(65,30)");
 
                     b.HasKey("IdPerfil");
 
-                    b.ToTable("Perfiles", (string)null);
+                    b.ToTable("perfil", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.PerfilesAnalisisLegacy", b =>
@@ -177,7 +177,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 
                     b.HasKey("IdDetalle");
 
-                    b.ToTable("PerfilesAnalisis", (string)null);
+                    b.ToTable("perfilesanalisis", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.PerfilesFacturadosLegacy", b =>
@@ -188,18 +188,25 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdFacturado"));
 
+                    b.Property<string>("Facturado")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<int>("IdOrden")
                         .HasColumnType("int");
 
                     b.Property<int>("IdPerfil")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("PrecioTotal")
+                    b.Property<int>("IdPersona")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PrecioPerfil")
                         .HasColumnType("decimal(65,30)");
 
                     b.HasKey("IdFacturado");
 
-                    b.ToTable("PerfilesFacturados", (string)null);
+                    b.ToTable("perfilesfacturados", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.ResultadosPacienteLegacy", b =>
@@ -279,7 +286,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 
                     b.HasKey("IdResultadoPaciente");
 
-                    b.ToTable("ResultadosPaciente", (string)null);
+                    b.ToTable("resultadospaciente", (string)null);
                 });
 #pragma warning restore 612, 618
         }

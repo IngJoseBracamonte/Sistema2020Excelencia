@@ -73,13 +73,24 @@ void ConfigureApi(IResourceBuilder<IResourceWithEnvironment> resource, IResource
         resource.WithEnvironment("ConnectionStrings__LegacyConnection", ProcessConnStr(legacyConn));
     }
     
-    resource.WithEnvironment("DatabaseProvider", dbProviderName)
-        .WithEnvironment("ConnectionStrings__mysql-system", ProcessConnStr(GetConnectionString("mysql-system-query")))
-        .WithEnvironment("ConnectionStrings__mysql-identity", ProcessConnStr(GetConnectionString("mysql-identity-query")))
-        .WithEnvironment("JwtConfig__Secret", GetConnectionString("jwt-secret"))
-        .WithEnvironment("EmailSettings__SmtpUser", GetConnectionString("smtp-user"))
-        .WithEnvironment("EmailSettings__SmtpPass", GetConnectionString("smtp-pass"))
-        .WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
+    resource.WithEnvironment("DatabaseProvider", dbProviderName);
+    
+    var systemConn = ProcessConnStr(GetConnectionString("mysql-system-query"));
+    if (!string.IsNullOrEmpty(systemConn)) resource.WithEnvironment("ConnectionStrings__mysql-system", systemConn);
+    
+    var identityConn = ProcessConnStr(GetConnectionString("mysql-identity-query"));
+    if (!string.IsNullOrEmpty(identityConn)) resource.WithEnvironment("ConnectionStrings__mysql-identity", identityConn);
+    
+    var jwtSecret = GetConnectionString("jwt-secret");
+    if (!string.IsNullOrEmpty(jwtSecret)) resource.WithEnvironment("JwtConfig__Secret", jwtSecret);
+    
+    var smtpUser = GetConnectionString("smtp-user");
+    if (!string.IsNullOrEmpty(smtpUser)) resource.WithEnvironment("EmailSettings__SmtpUser", smtpUser);
+    
+    var smtpPass = GetConnectionString("smtp-pass");
+    if (!string.IsNullOrEmpty(smtpPass)) resource.WithEnvironment("EmailSettings__SmtpPass", smtpPass);
+
+    resource.WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
         .WithEnvironment("JwtConfig__Audience", builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA")
         // Whitelist both localhost and explicit IPs to avoid CORS issues with fixed IP binding
         .WithEnvironment("AllowedOrigins", $"{frontendResource.GetEndpoint("http")},https://sathospital.netlify.app,http://localhost:4200,http://127.0.0.1:4200,http://0.0.0.0:4200,http://localhost:80,http://localhost");

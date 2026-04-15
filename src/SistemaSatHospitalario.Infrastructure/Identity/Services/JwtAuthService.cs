@@ -95,8 +95,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     Subject = new ClaimsIdentity(claims),
                     Expires = expiration,
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                    Issuer = _configuration["JwtConfig:Issuer"],
-                    Audience = _configuration["JwtConfig:Audience"]
+                    Issuer = _configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI",
+                    Audience = _configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA"
                 };
 
                 var token = tokenHandler.CreateToken(tokenDescriptor);

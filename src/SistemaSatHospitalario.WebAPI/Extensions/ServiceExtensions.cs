@@ -80,15 +80,29 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
+                    ValidateIssuer = !isDevelopment,
                     ValidIssuer = configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI",
-                    ValidateAudience = true,
+                    ValidateAudience = !isDevelopment,
                     ValidAudience = configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA",
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero,
+                    ClockSkew = TimeSpan.FromMinutes(5),
                     NameClaimType = "unique_name",
                     RoleClaimType = "role",
                     RequireExpirationTime = true
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
                 };
             });
 

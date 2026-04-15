@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialSystemMySql : Migration
+    public partial class InitialApplication : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -90,6 +90,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     Iva = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
                     ClaveSupervisor = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    FacturarLaboratorio = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    MostrarDetalleFacturacion = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     UltimaActualizacion = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
@@ -195,7 +197,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     NombreCorto = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     TelefonoContact = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FechaNacimiento = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -261,30 +264,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SegurosConvenios", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ServiciosClinicos",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Codigo = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Descripcion = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PrecioBase = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    HonorarioBase = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    TipoServicio = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    LegacyMappingId = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Category = table.Column<int>(type: "int", nullable: false),
-                    Activo = table.Column<bool>(type: "tinyint(1)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ServiciosClinicos", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -364,6 +343,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     FechaCarga = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     LegacyMappingId = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Realizado = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    FechaRealizacion = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UsuarioTecnico = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -424,13 +407,45 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     EspecialidadId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Activo = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    HonorarioBase = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
+                    HonorarioBase = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    IntervaloTurnoMinutos = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Medicos", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Medicos_Especialidades_EspecialidadId",
+                        column: x => x.EspecialidadId,
+                        principalTable: "Especialidades",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ServiciosClinicos",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Codigo = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Descripcion = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    PrecioBase = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    HonorarioBase = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    TipoServicio = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LegacyMappingId = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Category = table.Column<int>(type: "int", nullable: false),
+                    Activo = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    EspecialidadId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ServiciosClinicos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ServiciosClinicos_Especialidades_EspecialidadId",
                         column: x => x.EspecialidadId,
                         principalTable: "Especialidades",
                         principalColumn: "Id",
@@ -499,33 +514,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PreciosServicioConvenio",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    ServicioClinicoId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    SeguroConvenioId = table.Column<int>(type: "int", nullable: false),
-                    PrecioDiferencial = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PreciosServicioConvenio", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PreciosServicioConvenio_SegurosConvenios_SeguroConvenioId",
-                        column: x => x.SeguroConvenioId,
-                        principalTable: "SegurosConvenios",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PreciosServicioConvenio_ServiciosClinicos_ServicioClinicoId",
-                        column: x => x.ServicioClinicoId,
-                        principalTable: "ServiciosClinicos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "DetallesPago",
                 columns: table => new
                 {
@@ -584,6 +572,55 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
+            migrationBuilder.CreateTable(
+                name: "HorariosAtencionMedicos",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    MedicoId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    DiaSemana = table.Column<int>(type: "int", nullable: false),
+                    HoraInicio = table.Column<TimeSpan>(type: "time(6)", nullable: false),
+                    HoraFin = table.Column<TimeSpan>(type: "time(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HorariosAtencionMedicos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_HorariosAtencionMedicos_Medicos_MedicoId",
+                        column: x => x.MedicoId,
+                        principalTable: "Medicos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "PreciosServicioConvenio",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ServicioClinicoId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    SeguroConvenioId = table.Column<int>(type: "int", nullable: false),
+                    PrecioDiferencial = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PreciosServicioConvenio", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PreciosServicioConvenio_SegurosConvenios_SeguroConvenioId",
+                        column: x => x.SeguroConvenioId,
+                        principalTable: "SegurosConvenios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PreciosServicioConvenio_ServiciosClinicos_ServicioClinicoId",
+                        column: x => x.ServicioClinicoId,
+                        principalTable: "ServiciosClinicos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.CreateIndex(
                 name: "IX_BloqueosHorarios_MedicoId_HoraPautada",
                 table: "BloqueosHorarios",
@@ -637,6 +674,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 column: "CuentaServicioId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_HorariosAtencionMedicos_MedicoId",
+                table: "HorariosAtencionMedicos",
+                column: "MedicoId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Medicos_EspecialidadId",
                 table: "Medicos",
                 column: "EspecialidadId");
@@ -683,6 +725,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 table: "ReservasTemporales",
                 columns: new[] { "MedicoId", "HoraPautada" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiciosClinicos_EspecialidadId",
+                table: "ServiciosClinicos",
+                column: "EspecialidadId");
         }
 
         /// <inheritdoc />
@@ -716,6 +763,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 name: "ErrorTickets");
 
             migrationBuilder.DropTable(
+                name: "HorariosAtencionMedicos");
+
+            migrationBuilder.DropTable(
                 name: "IncidenciasHorario");
 
             migrationBuilder.DropTable(
@@ -737,10 +787,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 name: "TurnosMedicos");
 
             migrationBuilder.DropTable(
-                name: "Medicos");
+                name: "RecibosFacturas");
 
             migrationBuilder.DropTable(
-                name: "RecibosFacturas");
+                name: "Medicos");
 
             migrationBuilder.DropTable(
                 name: "PacientesAdmision");
@@ -752,13 +802,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                 name: "ServiciosClinicos");
 
             migrationBuilder.DropTable(
-                name: "Especialidades");
-
-            migrationBuilder.DropTable(
                 name: "CajasDiarias");
 
             migrationBuilder.DropTable(
                 name: "CuentasServicios");
+
+            migrationBuilder.DropTable(
+                name: "Especialidades");
         }
     }
 }

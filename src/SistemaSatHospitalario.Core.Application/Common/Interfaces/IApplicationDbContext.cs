@@ -39,5 +39,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }
         Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
         Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken);
+        Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade Database { get; }
     }
 }

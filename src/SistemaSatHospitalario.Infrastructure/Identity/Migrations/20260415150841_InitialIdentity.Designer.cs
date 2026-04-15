@@ -12,8 +12,8 @@ using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
 {
     [DbContext(typeof(SatHospitalarioIdentityDbContext))]
-    [Migration("20260414054517_InitialIdentityMySql")]
-    partial class InitialIdentityMySql
+    [Migration("20260415150841_InitialIdentity")]
+    partial class InitialIdentity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

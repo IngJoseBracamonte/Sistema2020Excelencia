@@ -20,6 +20,14 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public int TotalOrdenesRxHoy { get; set; }
         public int OrdenesRxProcesadasHoy { get; set; }
         public decimal VentasRxHoy { get; set; }
+        public List<InsightAlertDto> PotentialAlerts { get; set; } = new();
+    }
+
+    public class InsightAlertDto
+    {
+        public string Severity { get; set; } = "Warning";
+        public string Message { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
     }
 
     public class RevenueBySpecialtyDto

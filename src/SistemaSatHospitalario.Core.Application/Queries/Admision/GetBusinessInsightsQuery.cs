@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using Microsoft.Extensions.Logging;
 
 using SistemaSatHospitalario.Core.Domain.Constants;
 
@@ -21,49 +22,55 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IDateTimeProvider _dateTime;
+        private readonly ILogger<GetBusinessInsightsQueryHandler> _logger;
 
-        public GetBusinessInsightsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
+        public GetBusinessInsightsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTime, ILogger<GetBusinessInsightsQueryHandler> logger)
         {
             _context = context;
             _currentUserService = currentUserService;
+            _dateTime = dateTime;
+            _logger = logger;
         }
 
         public async Task<BusinessInsightsDto> Handle(GetBusinessInsightsQuery request, CancellationToken cancellationToken)
         {
             var userRole = _currentUserService.Role;
             
-            // [SENIOR NOTE] Usamos la zona horaria del hospital (UTC-4) para calcular "Hoy"
-            // Esto asegura que los cierres de caja y recaudación coincidan con el día operativo real.
-            var hospitalNow = DateTime.UtcNow.AddHours(-4);
-            var today = hospitalNow.Date;
-            var tomorrow = today.AddDays(1);
+            // [SENIOR REFACTOR] Using IDateTimeProvider to ensure operational consistency
+            var todayUtc = _dateTime.TodayUtc;
+            var tomorrowUtc = _dateTime.TomorrowUtc;
             
-            // Convertimos de vuelta a UTC para filtrar en la base de datos (si las fechas se guardan en UTC)
-            var todayUtc = today.AddHours(4);
-            var tomorrowUtc = tomorrow.AddHours(4);
             var response = new BusinessInsightsDto();
 
             // 1. Métricas de Caja/Admisión (Admin o Cajeros)
             if (AuthorizationConstants.IsCajero(userRole))
             {
+                _logger.LogInformation("[INSIGHTS] Calculando ventas para hoy ({Today} a {Tomorrow})", todayUtc, tomorrowUtc);
+                
                 // Ventas Netas hoy (Facturado hoy) - Senior Correction: Usamos FechaPago real de los detalles
                 response.TotalVentasHoy = await _context.DetallesPago
                     .AsNoTracking()
                     .Where(d => d.FechaPago >= todayUtc && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscal != EstadoConstants.Anulada)
                     .SumAsync(d => d.EquivalenteAbonadoBase, cancellationToken);
+                
+                _logger.LogInformation("[INSIGHTS] Total Ventas Hoy: {Total}", response.TotalVentasHoy);
 
                 // Pacientes Atendidos -> Refactor: Mostramos INGRESOS de hoy para reflejar actividad real
-                // Anteriormente solo mostraba Cuentas de hoy facturadas (ocultaba ingresos nuevos)
                 response.PacientesAtendidosHoy = await _context.CuentasServicios
                     .AsNoTracking()
                     .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
                     .CountAsync(cancellationToken);
+                
+                _logger.LogInformation("[INSIGHTS] Pacientes Atendidos Hoy: {Count}", response.PacientesAtendidosHoy);
 
                 // Turnos Pautados Hoy
                 response.TurnosPautadosHoy = await _context.CitasMedicas
                     .AsNoTracking()
                     .Where(c => c.HoraPautada >= todayUtc && c.HoraPautada < tomorrowUtc && c.Estado != EstadoConstants.Cancelado)
                     .CountAsync(cancellationToken);
+                
+                _logger.LogInformation("[INSIGHTS] Turnos Pautados Hoy: {Count}", response.TurnosPautadosHoy);
             }
 
             // 2. Métricas de RX (Admin o RX)
@@ -120,21 +127,30 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 // --- ANALYTICS ENRICHMENT (Fase 6) ---
 
-                // 1. Tendencia de Ingresos (Últimos 7 días)
-                var lastWeek = todayUtc.AddDays(-7);
-                var rawTrend = await _context.DetallesPago
+                // 1. Tendencia de Ingresos (Últimos 7 días) - Senior Refactor: In-memory grouping for TZ resilience
+                var lastWeekStartUtc = todayUtc.AddDays(-6);
+                var rawPayments = await _context.DetallesPago
                     .AsNoTracking()
-                    .Where(d => d.FechaPago >= lastWeek && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscal != EstadoConstants.Anulada)
-                    .GroupBy(d => d.FechaPago.Date)
-                    .Select(g => new { Fecha = g.Key, Monto = g.Sum(x => x.EquivalenteAbonadoBase) })
+                    .Where(d => d.FechaPago >= lastWeekStartUtc && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscal != EstadoConstants.Anulada)
+                    .Select(d => new { d.FechaPago, d.EquivalenteAbonadoBase })
                     .ToListAsync(cancellationToken);
+                
+                _logger.LogInformation("[INSIGHTS] Procesando {Count} pagos para tendencia de 7 días", rawPayments.Count);
 
                 response.TendenciaIngresos = Enumerable.Range(0, 7)
-                    .Select(offset => today.AddDays(-6 + offset))
-                    .Select(date => new RevenueTrendDto
-                    {
-                        Fecha = date.ToString("dd/MM"),
-                        Monto = rawTrend.FirstOrDefault(t => t.Fecha == date.AddHours(4).Date)?.Monto ?? 0
+                    .Select(offset => _dateTime.HospitalNow.Date.AddDays(-6 + offset))
+                    .Select(hospitalDate => {
+                        var amount = rawPayments
+                            .Where(p => p.FechaPago.AddHours(-4).Date == hospitalDate)
+                            .Sum(p => p.EquivalenteAbonadoBase);
+                        
+                        _logger.LogDebug("[INSIGHTS] Tendencia {Date}: {Amount}", hospitalDate.ToString("dd/MM"), amount);
+                        
+                        return new RevenueTrendDto
+                        {
+                            Fecha = hospitalDate.ToString("dd/MM"),
+                            Monto = amount
+                        };
                     })
                     .ToList();
 
@@ -158,6 +174,39 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         new PatientDistributionDto { Etiqueta = "Particular", Valor = particularCount },
                         new PatientDistributionDto { Etiqueta = "Convenios/Seguros", Valor = insuranceCount }
                     };
+                }
+
+                // 3. --- PROBUG DETECTION (Fase 6) ---
+                
+                // Alert 1: Cuentas sin procesar de hoy (Potential Revenue Leak)
+                var unprocessedAccounts = await _context.CuentasServicios
+                    .AsNoTracking()
+                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado == "Procesando")
+                    .CountAsync(cancellationToken);
+
+                if (unprocessedAccounts > 0)
+                {
+                    response.PotentialAlerts.Add(new InsightAlertDto {
+                        Type = "Data Integrity",
+                        Severity = "High",
+                        Message = $"Hay {unprocessedAccounts} cuentas de hoy atrapadas en estado 'Procesando'."
+                    });
+                }
+
+                // Alert 2: Picos de errores técnicos
+                var oneHourAgo = _dateTime.UtcNow.AddHours(-1);
+                var recentErrors = await _context.ErrorTickets
+                    .AsNoTracking()
+                    .Where(e => e.FechaCreacion >= oneHourAgo)
+                    .CountAsync(cancellationToken);
+
+                if (recentErrors > 5)
+                {
+                    response.PotentialAlerts.Add(new InsightAlertDto {
+                        Type = "System Stability",
+                        Severity = "Critical",
+                        Message = $"Se detectaron {recentErrors} errores técnicos en la última hora. Revisar Diagnostics."
+                    });
                 }
             }
 

@@ -11,7 +11,12 @@ using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
+using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
+using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using Xunit;
+using Moq;
+using Microsoft.Extensions.Logging;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Tests.Unit.Admision
 {
@@ -19,9 +24,16 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
     {
         private readonly SqliteConnection _connection;
         private readonly SatHospitalarioDbContext _context;
+        private readonly Mock<ICurrentUserService> _userServiceMock;
+        private readonly Mock<IDateTimeProvider> _dateTimeMock;
+        private readonly Mock<ILogger<GetBusinessInsightsQueryHandler>> _loggerMock;
 
         public CollectionIntegrationTests()
         {
+            _userServiceMock = new Mock<ICurrentUserService>();
+            _dateTimeMock = new Mock<IDateTimeProvider>();
+            _loggerMock = new Mock<ILogger<GetBusinessInsightsQueryHandler>>();
+
             _connection = new SqliteConnection("Filename=:memory:");
             _connection.Open();
 
@@ -100,21 +112,37 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             // Caso: Pago a las 23:00 local de HOY (en UTC ya es mañana)
             var fechaPagoUtcToday = todayLocal.AddHours(23).AddHours(4); 
 
-            var recibo = new ReciboFactura(_seed.CuentaId, _seed.CajaId, null, 50.00m, 10.00m);
-            _context.RecibosFactura.Add(recibo);
-            await _context.SaveChangesAsync();
+            var recibo = new ReciboFactura(_seed.CuentaId, _seed.PacienteId, _seed.CajaId, 50.00m, 10.00m);
+            recibo.AgregarDetallePago("Efectivo", "REF", 10.00m, 10.00m);
+            var detalle = recibo.DetallesPago.First();
             
-            var detalle = new DetallePago(recibo.Id, "Efectivo", "REF", 10.00m, 10.00m);
+            // Forzamos la fecha de pago para el test de zona horaria
             typeof(DetallePago).GetProperty(nameof(DetallePago.FechaPago))?.SetValue(detalle, fechaPagoUtcToday);
-            _context.DetallesPago.Add(detalle);
+            
+            // Agregamos una cuenta de servicio vinculada para evitar fallos de JOIN en el Dashboard
+            var cuenta = new CuentaServicios(_seed.PacienteId, "admin", "Particular");
+            typeof(CuentaServicios).GetProperty(nameof(CuentaServicios.Id))?.SetValue(cuenta, _seed.CuentaId);
+            typeof(CuentaServicios).GetProperty(nameof(CuentaServicios.FechaCarga))?.SetValue(cuenta, fechaPagoUtcToday.AddHours(-1));
+            
+            _context.CuentasServicios.Add(cuenta);
+            _context.RecibosFactura.Add(recibo);
+            
             await _context.SaveChangesAsync();
 
             // Act
-            var handler = new GetBusinessInsightsQueryHandler(_context);
-            var insights = await handler.Handle(new GetBusinessInsightsQuery { UserRole = "Admin" }, CancellationToken.None);
+            _userServiceMock.Setup(u => u.Role).Returns("Admin");
+            _dateTimeMock.Setup(d => d.HospitalNow).Returns(hospitalNow);
+            _dateTimeMock.Setup(d => d.TodayUtc).Returns(todayLocal.AddHours(4));
+            _dateTimeMock.Setup(d => d.TomorrowUtc).Returns(todayLocal.AddDays(1).AddHours(4));
+
+            var handler = new GetBusinessInsightsQueryHandler(_context, _userServiceMock.Object, _dateTimeMock.Object, _loggerMock.Object);
+            var insights = await handler.Handle(new GetBusinessInsightsQuery(), CancellationToken.None);
 
             // Assert
             insights.TotalVentasHoy.Should().Be(10.00m);
+            insights.TendenciaIngresos.Should().NotBeEmpty();
+            // El pago a las 23:00 local debe estar en el bucket de 'HOY' en la tendencia
+            insights.TendenciaIngresos.Last().Monto.Should().Be(10.00m);
         }
 
         [Fact]
@@ -131,7 +159,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             var command = new SettleARCommand
             {
                 ArId = ar.Id,
-                Payments = new List<PaymentItem> { new() { Amount = 50.00m, Method = "Efectivo", Reference = "R1" } },
+                Payments = new List<PaymentItem> { new() { Amount = 50.00m, AmountMoneda = 50.00m, Method = "Efectivo", Reference = "R1" } },
                 Observaciones = "T"
             };
 

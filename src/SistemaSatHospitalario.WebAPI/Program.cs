@@ -5,6 +5,7 @@ using SistemaSatHospitalario.Infrastructure;
 using SistemaSatHospitalario.WebAPI.Extensions;
 using SistemaSatHospitalario.WebAPI.Infrastructure;
 using System.IdentityModel.Tokens.Jwt;
+using Scalar.AspNetCore;
 
 // [SEC-004] Standardize Claim Mapping (V14.1 Senior Patch)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -61,6 +62,11 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
+        app.MapScalarApiReference(options => 
+        {
+            options.WithTitle("Sistema Sat Hospitalario API (Senior Dashboard)")
+                   .WithDefaultHttpClient(Scalar.AspNetCore.ScalarTarget.CSharp, Scalar.AspNetCore.ScalarClient.HttpClient);
+        });
     }
     else
     {

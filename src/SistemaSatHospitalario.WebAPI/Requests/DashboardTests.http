@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:5000
+@authToken = Bearer <TU_TOKEN_AQUI>
+
+### 1. Obtener Insights del Dashboard (Admin)
+# Verifica Ventas Hoy, Pacientes y Tendencia de 7 días.
+# El reporte detallado aparecerá en los logs de la consola de la API.
+GET {{baseUrl}}/api/Dashboard/Insights
+Authorization: {{authToken}}
+Accept: application/json
+
+### 2. Verificar Salud del Sistema (Diagnostics)
+# Revisa latencia de DB, uso de memoria y anomalías recientes.
+GET {{baseUrl}}/api/Diagnostics/HealthInsight
+Authorization: {{authToken}}
+Accept: application/json
+
+### 3. Autenticación (Login)
+# Usa este endpoint para obtener un token nuevo si caduca.
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "Admin123*!"
+}

@@ -85,6 +85,9 @@ namespace SistemaSatHospitalario.Infrastructure
             // Legacy Diagnostics (V12.3)
             services.AddSingleton<ILegacyErrorReportingService, SistemaSatHospitalario.Infrastructure.Services.LegacyErrorReportingService>();
 
+            // [PHASE-6] Standardized Time Infrastructure
+            services.AddSingleton<IDateTimeProvider, SistemaSatHospitalario.Infrastructure.Services.MachineDateTimeProvider>();
+
             return services;
         }
     }
