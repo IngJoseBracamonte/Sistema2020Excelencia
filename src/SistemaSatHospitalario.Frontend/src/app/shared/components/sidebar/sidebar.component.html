@@ -8,17 +8,17 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar pb-10">
-        <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mb-2 opacity-60">Menu Principal</div>
+    <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar pb-10">
+        <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mb-4 opacity-60">Menu Principal</div>
         
-        <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-item">
+        <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.Dashboard" class="w-5 h-5 mr-3"></lucide-icon>
-            Dashboard
+            <span class="font-bold">Dashboard</span>
         </a>
 
-        <a *ngIf="permissionService.can('Permissions.Facturacion.View')" routerLink="/facturacion" routerLinkActive="active-link" class="nav-item">
+        <a *ngIf="permissionService.can('Permissions.Facturacion.View')" routerLink="/facturacion" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.Billing" class="w-5 h-5 mr-3"></lucide-icon>
-            Facturación
+            <span class="font-bold">Facturación</span>
         </a>
 
         <!-- Operativo / Gestión -->

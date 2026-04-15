@@ -145,3 +145,57 @@ select option {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-glow);
 }
+
+/* Sidebar Navigation Premium V2.0 */
+.glass-sidebar {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border-right: 1px solid var(--glass-border);
+}
+
+.nav-item {
+  display: flex !important;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  border-radius: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0.25rem;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item.active-link {
+  background: linear-gradient(90deg, var(--primary-soft), transparent);
+  color: var(--text-main);
+  border-left: 3px solid var(--primary);
+  box-shadow: 10px 0 30px rgba(225, 29, 72, 0.1);
+}
+
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+  opacity: 0.8;
+}
+
+.nav-subitem:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.nav-subitem.active-sublink {
+  color: var(--primary);
+  font-weight: 700;
+}
