@@ -4,6 +4,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Diagnostics;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using SistemaSatHospitalario.Infrastructure.Common.Helpers;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers
 {
@@ -18,12 +19,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
     {
         private readonly IApplicationDbContext _context;
         private readonly IDateTimeProvider _dateTime;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<DiagnosticsController> _logger;
         private static readonly DateTime _startTime = DateTime.UtcNow;
 
-        public DiagnosticsController(IApplicationDbContext context, IDateTimeProvider dateTime)
+        public DiagnosticsController(
+            IApplicationDbContext context, 
+            IDateTimeProvider dateTime,
+            IConfiguration configuration,
+            ILogger<DiagnosticsController> logger)
         {
             _context = context;
             _dateTime = dateTime;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpGet("HealthInsight")]
@@ -64,6 +73,63 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
             };
 
             return Ok(insight);
+        }
+
+        [HttpGet("legacy-status")]
+        public async Task<IActionResult> GetLegacyStatus()
+        {
+            var rawConnStr = _configuration.GetConnectionString("LegacyConnection");
+
+            if (string.IsNullOrEmpty(rawConnStr))
+            {
+                return Ok(new { Status = "NOT_CONFIGURED", Timestamp = DateTime.UtcNow });
+            }
+
+            try
+            {
+                // Senior Architecture: Normalize and Enhance for Cloud
+                var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
+                conStr = ConnectionStringHelper.EnhanceForCloud(conStr);
+
+                var builder = new MySqlConnector.MySqlConnectionStringBuilder(conStr);
+                
+                using var connection = new MySqlConnector.MySqlConnection(conStr);
+                await connection.OpenAsync();
+
+                var stats = new
+                {
+                    Pacientes = await GetTableCountAsync(connection, "datospersonales"),
+                    Ordenes = await GetTableCountAsync(connection, "ordenes"),
+                    Resultados = await GetTableCountAsync(connection, "resultadospaciente")
+                };
+
+                await connection.CloseAsync();
+
+                return Ok(new
+                {
+                    Status = "CONNECTED",
+                    Server = builder.Server,
+                    Database = builder.Database,
+                    TableCounts = stats,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { Status = "ERROR", Message = ex.Message, Timestamp = DateTime.UtcNow });
+            }
+        }
+
+        private static async Task<int> GetTableCountAsync(MySqlConnector.MySqlConnection connection, string tableName)
+        {
+            try
+            {
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = $"SELECT COUNT(*) FROM `{tableName}`";
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch { return -1; }
         }
     }
 }
