@@ -71,14 +71,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
 
                 var claims = new List<Claim>
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim("unique_name", user.UserName ?? "unknown")
+                    new Claim(ClaimTypes.Name, user.UserName ?? "unknown")
                 };
                 
                 foreach (var role in roles)
                 {
-                    claims.Add(new Claim("role", role));
+                    claims.Add(new Claim(ClaimTypes.Role, role));
                 }
 
                 foreach (var permission in allPermissions)
@@ -86,7 +86,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     claims.Add(new Claim(PermissionConstants.Type, permission));
                 }
 
-                var claimsIdentity = new ClaimsIdentity(claims, "Bearer", "unique_name", "role");
+                var claimsIdentity = new ClaimsIdentity(claims, "Bearer", ClaimTypes.Name, ClaimTypes.Role);
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {

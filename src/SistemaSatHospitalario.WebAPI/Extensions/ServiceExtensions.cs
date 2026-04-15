@@ -89,8 +89,8 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                     ValidAudience = configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA",
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(5),
-                    NameClaimType = "unique_name",
-                    RoleClaimType = "role",
+                    NameClaimType = ClaimTypes.Name,
+                    RoleClaimType = ClaimTypes.Role,
                     RequireExpirationTime = true
                 };
 
