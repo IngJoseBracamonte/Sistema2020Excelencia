@@ -35,12 +35,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 throw new InvalidOperationException("LegacyConnection string is missing or empty.");
             }
 
-            var connStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
+            // Senior Architecture: Normalize and Enhance for Cloud
+            var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
+            conStr = ConnectionStringHelper.EnhanceForCloud(conStr);
 
             try
             {
-                _logger.LogInformation("Verificando existencia de base de datos Legacy...");
-                await EnsureDatabaseExistsAsync(connStr);
+                var builder = new MySqlConnectionStringBuilder(conStr);
+                _logger.LogInformation("Verificando existencia de base de datos Legacy en {Host}:{Port}...", builder.Server, builder.Port);
+                
+                await EnsureDatabaseExistsAsync(conStr);
 
                 _logger.LogInformation("Aplicando migraciones a Legacy Database (Enforcing Primary Keys)...");
                 
@@ -60,8 +64,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "ERROR CRÍTICO: No se pudo inicializar la base de datos Legacy.");
-                throw new Exception($"Fallo crítico al inicializar la conexión Legacy: {ex.Message}", ex);
+                // Extraemos info de host para el log de error
+                var builder = new MySqlConnectionStringBuilder(conStr);
+                _logger.LogCritical(ex, "ERROR CRÍTICO: No se pudo inicializar la base de datos Legacy en {Host}:{Port}.", builder.Server, builder.Port);
+                throw new Exception($"Fallo crítico al inicializar la conexión Legacy ({builder.Server}): {ex.Message}", ex);
             }
         }
 

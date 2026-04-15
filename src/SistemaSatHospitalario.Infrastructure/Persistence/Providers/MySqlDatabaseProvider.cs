@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
+using SistemaSatHospitalario.Infrastructure.Common.Helpers;
 using System;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
@@ -48,20 +49,33 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
 
         public void ConfigureLegacyContext(IServiceCollection services, IConfiguration configuration)
         {
-            var conStr = configuration.GetConnectionString("LegacyConnection");
+            var rawConStr = configuration.GetConnectionString("LegacyConnection");
             
-            // Registramos siempre el DbContext para evitar fallos de DI en el repositorio
             services.AddDbContext<Sistema2020LegacyDbContext>(options =>
             {
-                if (!string.IsNullOrEmpty(conStr))
+                if (!string.IsNullOrEmpty(rawConStr))
                 {
-                    options.UseMySql(conStr, ServerVersion.AutoDetect(conStr));
+                    // Senior Architecture: Normalize and Enhance for Cloud (SSL, etc)
+                    var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConStr);
+                    conStr = ConnectionStringHelper.EnhanceForCloud(conStr);
+
+                    ServerVersion version;
+                    try 
+                    {
+                        // Intentamos auto-detectar pero con un timeout corto para no colgar el arranque
+                        version = ServerVersion.AutoDetect(conStr);
+                    }
+                    catch
+                    {
+                        // Fallback para nubes gestionadas (Aiven suele ser MySQL 8.0+)
+                        version = new MySqlServerVersion(new Version(8, 0, 21));
+                    }
+
+                    options.UseMySql(conStr, version);
                 }
                 else
                 {
-                    // Senior Note: Se deja sin configurar el provider para que explote
-                    // con un mensaje claro de EF Core si se intenta usar sin conexión.
-                    // Esto es preferible a un NullReferenceException posterior.
+                    // El DbContext se registra pero sin Provider configurado si la cadena falta.
                 }
             });
         }

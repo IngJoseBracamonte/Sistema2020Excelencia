@@ -30,7 +30,7 @@ namespace SistemaSatHospitalario.Infrastructure.Common.Helpers
                     if (originalDb != normalizedDb)
                     {
                         builder.Database = normalizedDb;
-                        return builder.ConnectionString;
+                        connectionString = builder.ConnectionString;
                     }
                 }
             }
@@ -39,6 +39,42 @@ namespace SistemaSatHospitalario.Infrastructure.Common.Helpers
                 // Silent fallback to avoid breaking startup if the string is malformed
             }
             
+            return connectionString;
+        }
+
+        /// <summary>
+        /// Detects if the connection is pointing to a cloud managed database (like Aiven)
+        /// and enforces secure defaults (SSL, Public Key Retrieval).
+        /// </summary>
+        public static string EnhanceForCloud(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString)) return connectionString;
+
+            try
+            {
+                var builder = new MySqlConnector.MySqlConnectionStringBuilder(connectionString);
+                var host = builder.Server?.ToLowerInvariant() ?? "";
+
+                // Aiven Detection Strategy
+                if (host.Contains("aivencloud.com"))
+                {
+                    // Enforced secure defaults for Managed Cloud Databases
+                    if (builder.SslMode == MySqlConnector.MySqlSslMode.None)
+                    {
+                        builder.SslMode = MySqlConnector.MySqlSslMode.Required;
+                    }
+
+                    builder.AllowPublicKeyRetrieval = true;
+                    builder.AllowUserVariables = true; // Essential for migrations and complex queries
+                    
+                    return builder.ConnectionString;
+                }
+            }
+            catch
+            {
+                // Fallback to original if parsing fails
+            }
+
             return connectionString;
         }
     }
