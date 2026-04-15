@@ -63,9 +63,12 @@
             <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none transition-colors group-focus-within:text-primary">
               <lucide-icon [name]="icons.Lock" class="h-5 w-5 text-muted/60 transition-colors"></lucide-icon>
             </div>
-            <input id="password" formControlName="password" type="password" autocomplete="current-password" required
-              class="appearance-none block w-full pl-14 pr-5 py-4 bg-surface border border-glass-border rounded-2xl shadow-sm placeholder:text-muted/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all duration-300 font-medium"
+            <input id="password" formControlName="password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password" required
+              class="appearance-none block w-full pl-14 pr-12 py-4 bg-surface border border-glass-border rounded-2xl shadow-sm placeholder:text-muted/20 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-all duration-300 font-medium"
               placeholder="••••••••">
+            <button type="button" (click)="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-5 flex items-center text-muted/40 hover:text-primary transition-colors focus:outline-none focus:text-primary">
+              <lucide-icon [name]="showPassword() ? icons.EyeOff : icons.Eye" class="h-5 w-5"></lucide-icon>
+            </button>
           </div>
         </div>
 

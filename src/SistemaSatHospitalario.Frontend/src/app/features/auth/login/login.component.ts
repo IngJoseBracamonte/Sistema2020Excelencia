@@ -8,7 +8,9 @@ import {
   User,
   Lock,
   AlertCircle,
-  RefreshCcw
+  RefreshCcw,
+  Eye,
+  EyeOff
 } from 'lucide-angular';
 
 @Component({
@@ -23,8 +25,11 @@ export class LoginComponent {
     User,
     Lock,
     AlertCircle,
-    RefreshCcw
+    RefreshCcw,
+    Eye,
+    EyeOff
   };
+  
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -35,7 +40,12 @@ export class LoginComponent {
   });
 
   isLoading = signal(false);
+  showPassword = signal(false);
   errorMessage = signal('');
+
+  togglePasswordVisibility() {
+    this.showPassword.update(v => !v);
+  }
 
   onSubmit() {
     if (this.loginForm.invalid) return;
