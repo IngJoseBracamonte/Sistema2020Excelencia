@@ -1,9 +1,12 @@
-using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Legacy
 {
     public class OrdenLegacy
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int IdOrden { get; set; }
         public int IdPersona { get; set; } // Referencia a DatosPersonales
         public DateTime Fecha { get; set; }

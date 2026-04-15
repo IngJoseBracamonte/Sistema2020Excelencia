@@ -22,6 +22,25 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.ConvenioEmpresaLegacy", b =>
+                {
+                    b.Property<int>("IDConvenio")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IDConvenio"));
+
+                    b.Property<int?>("IDTasa")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombre")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("IDConvenio");
+
+                    b.ToTable("convenios", (string)null);
+                });
+
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.DatosPersonalesLegacy", b =>
                 {
                     b.Property<int>("IdPersona")

@@ -12,8 +12,8 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 {
     [DbContext(typeof(Sistema2020LegacyDbContext))]
-    [Migration("20260415150904_InitialLegacy")]
-    partial class InitialLegacy
+    [Migration("20260415171253_InitialLegacyReset")]
+    partial class InitialLegacyReset
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,25 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
+
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.ConvenioEmpresaLegacy", b =>
+                {
+                    b.Property<int>("IDConvenio")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IDConvenio"));
+
+                    b.Property<int?>("IDTasa")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombre")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("IDConvenio");
+
+                    b.ToTable("convenios", (string)null);
+                });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Legacy.DatosPersonalesLegacy", b =>
                 {

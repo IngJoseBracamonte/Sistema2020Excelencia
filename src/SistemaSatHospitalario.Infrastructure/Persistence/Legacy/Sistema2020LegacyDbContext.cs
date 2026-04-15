@@ -13,6 +13,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         public DbSet<PerfilLegacy> Perfil { get; set; }
         public DbSet<PerfilesAnalisisLegacy> PerfilesAnalisis { get; set; }
         public DbSet<PerfilesFacturadosLegacy> PerfilesFacturados { get; set; }
+        public DbSet<ConvenioEmpresaLegacy> ConveniosEmpresa { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -22,6 +23,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             {
                 entity.ToTable("ordenes");
                 entity.HasKey(e => e.IdOrden);
+                entity.Property(e => e.IdOrden).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<ResultadosPacienteLegacy>(entity =>
@@ -57,6 +59,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 entity.ToTable("perfilesfacturados");
                 entity.HasKey(e => e.IdFacturado);
                 entity.Property(e => e.IdFacturado).ValueGeneratedOnAdd();
+            });
+
+            modelBuilder.Entity<ConvenioEmpresaLegacy>(entity =>
+            {
+                entity.ToTable("convenios");
+                entity.HasKey(e => e.IDConvenio);
+                entity.Property(e => e.IDConvenio).ValueGeneratedOnAdd();
             });
         }
     }

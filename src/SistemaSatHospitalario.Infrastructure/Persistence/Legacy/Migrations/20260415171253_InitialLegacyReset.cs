@@ -7,12 +7,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialLegacy : Migration
+    public partial class InitialLegacyReset : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "convenios",
+                columns: table => new
+                {
+                    IDConvenio = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    Nombre = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IDTasa = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_convenios", x => x.IDConvenio);
+                })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
@@ -177,6 +193,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "convenios");
+
             migrationBuilder.DropTable(
                 name: "datospersonales");
 

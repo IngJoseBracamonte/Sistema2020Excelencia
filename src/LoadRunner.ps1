@@ -1,14 +1,14 @@
 param(
+    [string]$BaseUrl = "http://localhost:5218",
     [int]$Users = 5,
-    [int]$Iterations = 10
+    [int]$Iterations = 10,
+    [string]$Username = "admin",
+    [string]$Password = "Admin123*!"
 )
 
 Write-Host "--- MOTOR DE PRUEBAS DE CARGA (LOADRUNNER) ---" -ForegroundColor Cyan
+Write-Host "Entorno Objetivo: $BaseUrl" -ForegroundColor Gray
 Write-Host "Simulando carga de $Users usuarios concurrentes por $Iterations iteraciones..." -ForegroundColor Gray
-
-$baseUrl = "http://localhost:5218"
-$adminUser = "admin"
-$adminPass = "Admin123*!"
 
 $results = @()
 $scriptBlock = {
@@ -29,7 +29,7 @@ Write-Host "Lanzando pruebas de Login..." -ForegroundColor Yellow
 $jobs = @()
 foreach ($i in 1..$Users) {
     foreach ($j in 1..$Iterations) {
-        $jobs += Start-Job -ScriptBlock $scriptBlock -ArgumentList @($baseUrl, $adminUser, $adminPass)
+        $jobs += Start-Job -ScriptBlock $scriptBlock -ArgumentList @($BaseUrl, $Username, $Password)
     }
 }
 

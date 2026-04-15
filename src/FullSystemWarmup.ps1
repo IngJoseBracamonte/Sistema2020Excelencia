@@ -1,9 +1,12 @@
-Write-Host "--- SIMULADOR DE CARGA INICIAL (WARMUP) ---" -ForegroundColor Cyan
-Write-Host "Simulando flujo completo tras el Login..." -ForegroundColor Gray
+param(
+    [string]$BaseUrl = "http://localhost:5218",
+    [string]$Username = "admin",
+    [string]$Password = "Admin123*!"
+)
 
-$baseUrl = "http://localhost:5218"
-$adminUser = "admin"
-$adminPass = "Admin123*!"
+Write-Host "--- SIMULADOR DE CARGA INICIAL (WARMUP) ---" -ForegroundColor Cyan
+Write-Host "Entorno Objetivo: $BaseUrl" -ForegroundColor Gray
+Write-Host "Simulando flujo completo tras el Login..." -ForegroundColor Gray
 
 function Show-ModuleStatus($name, $status, $time, $details) {
     $color = if ($status -eq "OK") { "Green" } else { "Red" }
@@ -16,10 +19,11 @@ function Show-ModuleStatus($name, $status, $time, $details) {
 # 1. AUTENTICACIÓN
 $sw = [diagnostics.stopwatch]::StartNew()
 try {
-    $loginBody = @{ username = $adminUser; password = $adminPass } | ConvertTo-Json
-    $loginRes = Invoke-RestMethod -Uri "$baseUrl/api/Auth/login" -Method Post -Body $loginBody -ContentType "application/json"
+    $loginBody = @{ username = $Username; password = $Password } | ConvertTo-Json
+    $loginRes = Invoke-RestMethod -Uri "$BaseUrl/api/Auth/login" -Method Post -Body $loginBody -ContentType "application/json"
     $sw.Stop()
-    $token = $loginRes.token
+    $token = if ($loginRes.token) { $loginRes.token } else { $loginRes.Token }
+    if (!$token) { throw "Token not found in response" }
     Show-ModuleStatus "IDENTITY/AUTH" "OK" $sw.ElapsedMilliseconds "Token obtenido con éxito"
 } catch {
     $sw.Stop()
@@ -32,9 +36,9 @@ $headers = @{ Authorization = "Bearer $token" }
 # 2. PERFIL DE USUARIO
 $sw.Restart()
 try {
-    $profileRes = Invoke-RestMethod -Uri "$baseUrl/api/Auth/debug-users" -Method Get -Headers $headers
+    $profileRes = Invoke-RestMethod -Uri "$BaseUrl/api/Auth/debug-users" -Method Get -Headers $headers
     $sw.Stop()
-    $details = "User: $($adminUser) | Roles: OK"
+    $details = "User: $($Username) | Roles: OK"
     Show-ModuleStatus "USER_PROFILE" "OK" $sw.ElapsedMilliseconds $details
 } catch {
     $sw.Stop()
@@ -44,7 +48,7 @@ try {
 # 3. DASHBOARD / FINANCIAL INSIGHTS
 $sw.Restart()
 try {
-    $insightsRes = Invoke-RestMethod -Uri "$baseUrl/api/Dashboard/Insights" -Method Get -Headers $headers
+    $insightsRes = Invoke-RestMethod -Uri "$BaseUrl/api/Dashboard/Insights" -Method Get -Headers $headers
     $sw.Stop()
     $details = "Ventas: $($insightsRes.ventasHoy) | Pacientes: $($insightsRes.pacientesHoy)"
     Show-ModuleStatus "FINANCE_INSIGHTS" "OK" $sw.ElapsedMilliseconds $details
@@ -53,11 +57,10 @@ try {
     Show-ModuleStatus "FINANCE_INSIGHTS" "FAIL" $sw.ElapsedMilliseconds $_.Exception.Message
 }
 
-# 4. CONSULTAS / CITAS
+# 4. CONSULTAS / CITAS (Vía Billing Controller)
 $sw.Restart()
 try {
-    # Usamos una especialidad de ejemplo que siempre existe
-    $appointmentsRes = Invoke-RestMethod -Uri "$baseUrl/api/Appointments/Doctors/Generales" -Method Get -Headers $headers
+    $appointmentsRes = Invoke-RestMethod -Uri "$BaseUrl/api/Billing/Appointments" -Method Get -Headers $headers
     $sw.Stop()
     Show-ModuleStatus "APPOINTMENTS" "OK" $sw.ElapsedMilliseconds "Módulo de citas disponible"
 } catch {
@@ -68,9 +71,9 @@ try {
 # 5. RADIOLOGÍA / VENTAS RX
 $sw.Restart()
 try {
-    $billingRes = Invoke-RestMethod -Uri "$baseUrl/api/Billing/DailyBilledPatients" -Method Get -Headers $headers
+    $billingRes = Invoke-RestMethod -Uri "$BaseUrl/api/Billing/DailyBilledPatients" -Method Get -Headers $headers
     $sw.Stop()
-    Show-ModuleStatus "RX_MODULE" "OK" $sw.ElapsedMilliseconds "Módulo de facturación disponible"
+    Show-ModuleStatus "RX_MODULE" "OK" $sw.ElapsedMilliseconds "Módulo de facturacuón disponible"
 } catch {
     $sw.Stop()
     Show-ModuleStatus "RX_MODULE" "FAIL" $sw.ElapsedMilliseconds $_.Exception.Message
@@ -79,7 +82,7 @@ try {
 # 6. EXPEDIENTE DE FACTURACIÓN (AUDITORÍA)
 $sw.Restart()
 try {
-    $expRes = Invoke-RestMethod -Uri "$baseUrl/api/Expediente/billing" -Method Get -Headers $headers
+    $expRes = Invoke-RestMethod -Uri "$BaseUrl/api/Expediente/billing" -Method Get -Headers $headers
     $sw.Stop()
     Show-ModuleStatus "BILLING_AUDIT" "OK" $sw.ElapsedMilliseconds "Módulo de auditoría listo"
 } catch {
@@ -90,7 +93,7 @@ try {
 # 7. DIAGNÓSTICOS DE INFRAESTRUCTURA
 $sw.Restart()
 try {
-    $healthRes = Invoke-RestMethod -Uri "$baseUrl/api/Diagnostics/HealthInsight" -Method Get -Headers $headers
+    $healthRes = Invoke-RestMethod -Uri "$BaseUrl/api/Diagnostics/HealthInsight" -Method Get -Headers $headers
     $sw.Stop()
     $details = "DB Latency: $($healthRes.databaseLatency)ms"
     Show-ModuleStatus "INFRA_HEALTH" "OK" $sw.ElapsedMilliseconds $details
