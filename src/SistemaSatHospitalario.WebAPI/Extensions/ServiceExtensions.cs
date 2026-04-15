@@ -74,7 +74,10 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
             })
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = !isDevelopment;
+                // Senior Note: En la nube (Render/Azure/AWS), el SSL se termina en el proxy.
+                // La solicitud llega como HTTP al servidor. Desactivamos RequireHttpsMetadata
+                // para evitar que el middleware rechace tokens válidos por no detectar HTTPS local.
+                options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

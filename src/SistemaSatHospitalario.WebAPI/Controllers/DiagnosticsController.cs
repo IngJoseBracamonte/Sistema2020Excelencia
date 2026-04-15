@@ -5,6 +5,7 @@ using SistemaSatHospitalario.Core.Application.DTOs.Diagnostics;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Infrastructure.Common.Helpers;
+using System.Runtime.InteropServices;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers
 {
@@ -21,18 +22,36 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
         private readonly IDateTimeProvider _dateTime;
         private readonly IConfiguration _configuration;
         private readonly ILogger<DiagnosticsController> _logger;
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
         private static readonly DateTime _startTime = DateTime.UtcNow;
 
         public DiagnosticsController(
             IApplicationDbContext context, 
             IDateTimeProvider dateTime,
             IConfiguration configuration,
-            ILogger<DiagnosticsController> logger)
+            ILogger<DiagnosticsController> logger,
+            Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
         {
             _context = context;
             _dateTime = dateTime;
             _configuration = configuration;
             _logger = logger;
+            _env = env;
+        }
+
+        [AllowAnonymous]
+        [HttpGet("environment-status")]
+        public IActionResult GetEnvironmentStatus()
+        {
+            return Ok(new
+            {
+                EnvironmentName = _env.EnvironmentName,
+                IsDevelopment = _env.IsDevelopment(),
+                IsProduction = _env.IsProduction(),
+                Runtime = RuntimeInformation.FrameworkDescription,
+                OS = RuntimeInformation.OSDescription,
+                ServerTime = DateTime.UtcNow
+            });
         }
 
         [HttpGet("HealthInsight")]
