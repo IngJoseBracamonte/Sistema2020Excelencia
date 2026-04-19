@@ -106,3 +106,389 @@
    at MySqlConnector.MySqlConnection.OpenAsync(Nullable`1 ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlConnection.cs:line 567
    at Dapper.SqlMapper.QueryAsync[T](IDbConnection cnn, Type effectiveType, CommandDefinition command) in /_/Dapper/SqlMapper.Async.cs:line 433
    at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.SearchPatientsLimitedAsync(String term, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 176
+[2026-04-17 14:35:18] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-17 14:35:18] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 14:36:14] [ERROR] [LEGACY ERROR] GetAvailableProfilesAsync: Unknown column 'NombrePerfil' in 'field list' | Exception: Unknown column 'NombrePerfil' in 'field list' | StackTrace:    at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1081
+   at MySqlConnector.Core.ResultSet.ReadResultSetHeaderAsync(IOBehavior ioBehavior) in /_/src/MySqlConnector/Core/ResultSet.cs:line 37
+   at MySqlConnector.MySqlDataReader.ActivateResultSet(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 131
+   at MySqlConnector.MySqlDataReader.InitAsync(CommandListPosition commandListPosition, ICommandPayloadCreator payloadCreator, IDictionary`2 cachedProcedures, IMySqlCommand command, CommandBehavior behavior, Activity activity, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 487
+   at MySqlConnector.Core.CommandExecutor.ExecuteReaderAsync(CommandListPosition commandListPosition, ICommandPayloadCreator payloadCreator, CommandBehavior behavior, Activity activity, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/CommandExecutor.cs:line 56
+   at MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior behavior, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlCommand.cs:line 357
+   at MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlCommand.cs:line 350
+   at Dapper.SqlMapper.QueryAsync[T](IDbConnection cnn, Type effectiveType, CommandDefinition command) in /_/Dapper/SqlMapper.Async.cs:line 434
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GetAvailableProfilesAsync(CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 200
+[2026-04-17 14:40:32] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-17 14:40:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 14:42:39] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: e13bceff-0a19-4b03-981a-0fecfa3edb2d
+[2026-04-17 14:42:39] [TRACE] [CLOSE-ACCOUNT] Procesando 3 ítems de Laboratorio para Legado.
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: e13bceff-0a19-4b03-981a-0fecfa3edb2d ===
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Paciente encontrado: 24556681 | NombreCorto: JOSE GREGORIO BRACAMONTE GIL | IdLegacy: 657
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 657
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 4
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC]   -> Detalle: 'CONSULTA ONCOLOGICA' | TipoServicio: 'CONSULTA' | EsLab: False | LegacyMappingId: ''
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC]   -> Detalle: 'TIEMPO PARCIAL DE TROMBOPLASTINA (PTT)' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '62'
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC]   -> Detalle: 'HEMATOLOGIA COMPLETA' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '1'
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC]   -> Detalle: 'TIEMPO DE PROTROMBINA (PT)' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '56'
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Item Lab: 'TIEMPO PARCIAL DE TROMBOPLASTINA (PTT)' | MappingId raw: '62'
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=62, Precio=3.00
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Item Lab: 'HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=3.00
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Item Lab: 'TIEMPO DE PROTROMBINA (PT)' | MappingId raw: '56'
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=56, Precio=3.00
+[2026-04-17 14:42:39] [TRACE] [LEGACY-SYNC] Generando orden con 3 perfiles para paciente legacy 657...
+[2026-04-17 14:42:39] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 657, Convenio: 1
+[2026-04-17 14:42:39] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-04-17 14:42:39] [TRACE] [LEGACY-REPO] 'orden' insertada (ID: 27976)
+[2026-04-17 14:42:39] [ERROR] [LEGACY-REPO] [TRANSACTION] ROLLBACK | Outer: An error occurred while saving the entity changes. See the inner exception for details. | Inner: Unknown column 'IdFacturado' in 'field list' | InnerInner:  | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 82
+[2026-04-17 14:42:39] [ERROR] [LEGACY-REPO] Error persistente al generar orden | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 82
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 127
+[2026-04-17 14:42:39] [ERROR] [CLOSE-ACCOUNT] Error Crítico en Cuenta e13bceff-0a19-4b03-981a-0fecfa3edb2d | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 82
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 127
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.CachedLegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\CachedLegacyLabRepository.cs:line 34
+   at SistemaSatHospitalario.Core.Application.Commands.Admision.CloseAccountCommandHandler.ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Core.Application\Commands\Admision\CloseAccountCommandHandler.cs:line 270
+   at SistemaSatHospitalario.Core.Application.Commands.Admision.CloseAccountCommandHandler.Handle(CloseAccountCommand request, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Core.Application\Commands\Admision\CloseAccountCommandHandler.cs:line 112
+[2026-04-17 14:55:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 15:10:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 15:25:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 15:40:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 15:55:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 16:10:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 16:25:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 16:40:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 16:55:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 17:10:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 17:25:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 17:40:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 17:55:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 18:10:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 18:25:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 18:40:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 18:55:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 19:10:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 19:25:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 19:40:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 19:55:32] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 20:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 20:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 20:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 20:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 21:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 21:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 21:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 21:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 22:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 22:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 22:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 22:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 23:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 23:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 23:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-17 23:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 00:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 00:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 00:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 00:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 01:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 01:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 01:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 01:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 02:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 02:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 02:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 02:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 03:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 03:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 03:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 03:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 04:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 04:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 04:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 04:55:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 05:10:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 05:25:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 05:40:33] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 05:55:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 06:10:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 06:25:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 06:40:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 06:55:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 07:10:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 07:25:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 07:40:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 07:55:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 08:10:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 08:25:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 08:40:35] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 08:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 09:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 09:25:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 09:40:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 09:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 10:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 10:25:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 10:40:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 10:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 11:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 11:25:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 11:40:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 11:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 12:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 12:25:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 12:40:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 12:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 13:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 13:25:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 13:40:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 13:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 14:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 14:25:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 14:40:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 14:55:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 15:10:36] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 15:24:55] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 15:24:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 15:25:16] [ERROR] [LEGACY ERROR] GetAvailableProfilesAsync: Unknown column 'Descripcion' in 'field list' | Exception: Unknown column 'Descripcion' in 'field list' | StackTrace:    at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1081
+   at MySqlConnector.Core.ResultSet.ReadResultSetHeaderAsync(IOBehavior ioBehavior) in /_/src/MySqlConnector/Core/ResultSet.cs:line 37
+   at MySqlConnector.MySqlDataReader.ActivateResultSet(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 131
+   at MySqlConnector.MySqlDataReader.InitAsync(CommandListPosition commandListPosition, ICommandPayloadCreator payloadCreator, IDictionary`2 cachedProcedures, IMySqlCommand command, CommandBehavior behavior, Activity activity, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 487
+   at MySqlConnector.Core.CommandExecutor.ExecuteReaderAsync(CommandListPosition commandListPosition, ICommandPayloadCreator payloadCreator, CommandBehavior behavior, Activity activity, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/CommandExecutor.cs:line 56
+   at MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior behavior, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlCommand.cs:line 357
+   at MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlCommand.cs:line 350
+   at Dapper.SqlMapper.QueryAsync[T](IDbConnection cnn, Type effectiveType, CommandDefinition command) in /_/Dapper/SqlMapper.Async.cs:line 434
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GetAvailableProfilesAsync(CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 212
+[2026-04-18 15:39:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 15:54:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 16:09:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 16:24:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 16:39:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 16:54:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 17:09:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 17:15:27] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 17:15:27] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 17:16:39] [ERROR] [LEGACY ERROR] GetAvailableProfilesAsync: Unknown column 'Descripcion' in 'field list' | Exception: Unknown column 'Descripcion' in 'field list' | StackTrace:    at MySqlConnector.Core.ServerSession.ReceiveReplyAsync(IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/ServerSession.cs:line 1081
+   at MySqlConnector.Core.ResultSet.ReadResultSetHeaderAsync(IOBehavior ioBehavior) in /_/src/MySqlConnector/Core/ResultSet.cs:line 37
+   at MySqlConnector.MySqlDataReader.ActivateResultSet(CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 131
+   at MySqlConnector.MySqlDataReader.InitAsync(CommandListPosition commandListPosition, ICommandPayloadCreator payloadCreator, IDictionary`2 cachedProcedures, IMySqlCommand command, CommandBehavior behavior, Activity activity, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlDataReader.cs:line 487
+   at MySqlConnector.Core.CommandExecutor.ExecuteReaderAsync(CommandListPosition commandListPosition, ICommandPayloadCreator payloadCreator, CommandBehavior behavior, Activity activity, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/Core/CommandExecutor.cs:line 56
+   at MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior behavior, IOBehavior ioBehavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlCommand.cs:line 357
+   at MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) in /_/src/MySqlConnector/MySqlCommand.cs:line 350
+   at Dapper.SqlMapper.QueryAsync[T](IDbConnection cnn, Type effectiveType, CommandDefinition command) in /_/Dapper/SqlMapper.Async.cs:line 434
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GetAvailableProfilesAsync(CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 212
+[2026-04-18 17:19:10] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 17:19:10] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 17:20:13] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 17:20:13] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 17:33:26] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 214 perfiles de la base de datos.
+[2026-04-18 17:35:13] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 17:41:00] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 457ce845-3f8a-420a-acd6-10c520471ee0
+[2026-04-18 17:41:01] [TRACE] [CLOSE-ACCOUNT] Procesando 3 ítems de Laboratorio para Legado.
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 457ce845-3f8a-420a-acd6-10c520471ee0 ===
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Paciente encontrado: 24556681 | NombreCorto: JOSE GREGORIO BRACAMONTE GIL | IdLegacy: 657
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 657
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 4
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC]   -> Detalle: 'HEMATOLOGIA COMPLETA' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '1'
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC]   -> Detalle: 'DESCRIPCION DE FROTIS' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '75'
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC]   -> Detalle: 'FIBRINOGENO' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '67'
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC]   -> Detalle: 'CONSULTA ONCOLOGICA' | TipoServicio: 'CONSULTA' | EsLab: False | LegacyMappingId: ''
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Item Lab: 'HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=3.00
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Item Lab: 'DESCRIPCION DE FROTIS' | MappingId raw: '75'
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=75, Precio=4.00
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Item Lab: 'FIBRINOGENO' | MappingId raw: '67'
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=67, Precio=4.00
+[2026-04-18 17:41:01] [TRACE] [LEGACY-SYNC] Generando orden con 3 perfiles para paciente legacy 657...
+[2026-04-18 17:41:01] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 657, Convenio: 1
+[2026-04-18 17:41:01] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-04-18 17:41:01] [TRACE] [LEGACY-REPO] 'orden' insertada (ID: 27977)
+[2026-04-18 17:41:01] [ERROR] [LEGACY-REPO] [TRANSACTION] ROLLBACK | Outer: An error occurred while saving the entity changes. See the inner exception for details. | Inner: Unknown column 'id' in 'field list' | InnerInner:  | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 82
+[2026-04-18 17:41:01] [ERROR] [LEGACY-REPO] Error persistente al generar orden | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 82
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 127
+[2026-04-18 17:41:01] [ERROR] [CLOSE-ACCOUNT] Error Crítico en Cuenta 457ce845-3f8a-420a-acd6-10c520471ee0 | Exception: An error occurred while saving the entity changes. See the inner exception for details. | StackTrace:    at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Pomelo.EntityFrameworkCore.MySql.Storage.Internal.MySqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 82
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.LegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\LegacyLabRepository.cs:line 127
+   at SistemaSatHospitalario.Infrastructure.Persistence.Legacy.CachedLegacyLabRepository.GenerarOrdenLaboratorioAsync(OrdenLegacy orden, List`1 perfilesAFacturar, List`1 resultados, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Infrastructure\Persistence\Legacy\CachedLegacyLabRepository.cs:line 34
+   at SistemaSatHospitalario.Core.Application.Commands.Admision.CloseAccountCommandHandler.ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Core.Application\Commands\Admision\CloseAccountCommandHandler.cs:line 270
+   at SistemaSatHospitalario.Core.Application.Commands.Admision.CloseAccountCommandHandler.Handle(CloseAccountCommand request, CancellationToken cancellationToken) in C:\Src\src\Sistema2020Excelencia\src\SistemaSatHospitalario.Core.Application\Commands\Admision\CloseAccountCommandHandler.cs:line 112
+[2026-04-18 17:45:50] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 17:45:50] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 18:00:50] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 18:15:50] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 18:28:17] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 18:28:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 18:32:41] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 214 perfiles de la base de datos.
+[2026-04-18 18:33:15] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 342638b3-e48b-41ac-b1ce-dcd5ccfecd5a
+[2026-04-18 18:33:15] [TRACE] [CLOSE-ACCOUNT] Procesando 3 ítems de Laboratorio para Legado.
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 342638b3-e48b-41ac-b1ce-dcd5ccfecd5a ===
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Paciente encontrado: 7318923 | NombreCorto: BRUNEQUILDE GIL | IdLegacy: 1091
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 1091
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 4
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC]   -> Detalle: 'CONSULTA ONCOLOGICA' | TipoServicio: 'CONSULTA' | EsLab: False | LegacyMappingId: ''
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC]   -> Detalle: 'TIEMPO DE PROTROMBINA (PT)' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '56'
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC]   -> Detalle: 'TIEMPO PARCIAL DE TROMBOPLASTINA (PTT)' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '62'
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC]   -> Detalle: 'FIBRINOGENO' | TipoServicio: 'LABORATORIO' | EsLab: True | LegacyMappingId: '67'
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Item Lab: 'TIEMPO DE PROTROMBINA (PT)' | MappingId raw: '56'
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=56, Precio=3.00
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Item Lab: 'TIEMPO PARCIAL DE TROMBOPLASTINA (PTT)' | MappingId raw: '62'
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=62, Precio=3.00
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Item Lab: 'FIBRINOGENO' | MappingId raw: '67'
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=67, Precio=4.00
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] Generando orden con 3 perfiles para paciente legacy 1091...
+[2026-04-18 18:33:15] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-04-18 18:33:15] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 1091, Convenio: 1
+[2026-04-18 18:33:15] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-04-18 18:33:15] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 27978)
+[2026-04-18 18:33:15] [TRACE] [LEGACY-REPO] 3 perfiles insertados via Raw SQL.
+[2026-04-18 18:33:15] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===
+[2026-04-18 18:33:15] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 342638b3-e48b-41ac-b1ce-dcd5ccfecd5a
+[2026-04-18 18:43:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 18:58:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 19:13:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 19:28:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 19:43:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 19:58:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 20:13:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 20:28:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 20:43:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 20:58:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 21:13:17] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 21:28:19] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 21:43:19] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 21:57:39] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-04-18 21:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 22:10:20] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 214 perfiles de la base de datos.
+[2026-04-18 22:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 22:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 22:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 22:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 23:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 23:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 23:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-18 23:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 00:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 00:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 00:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 00:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 01:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 01:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 01:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 01:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 02:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 02:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 02:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 02:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 03:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 03:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 03:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 03:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 04:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 04:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 04:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 04:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 05:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 05:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 05:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 05:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 06:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 06:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 06:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 06:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 07:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 07:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 07:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 07:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 08:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 08:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 08:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 08:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 09:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 09:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 09:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 09:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 10:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 10:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 10:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 10:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 11:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 11:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 11:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 11:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 12:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 12:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 12:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 12:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 13:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 13:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 13:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 13:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 14:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 14:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 14:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 14:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 15:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 15:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 15:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 15:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 16:12:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 16:27:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 16:42:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-19 16:54:50] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 214 perfiles de la base de datos.
+[2026-04-19 16:57:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).

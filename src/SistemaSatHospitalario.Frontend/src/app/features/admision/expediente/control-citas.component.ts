@@ -23,7 +23,7 @@ import { ExpedienteService, ControlCitaRow } from '../../../core/services/expedi
 @Component({
   selector: 'app-control-citas',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './control-citas.component.html'
 })
 export class ControlCitasComponent implements OnInit {

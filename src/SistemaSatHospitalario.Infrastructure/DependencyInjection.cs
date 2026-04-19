@@ -88,6 +88,12 @@ namespace SistemaSatHospitalario.Infrastructure
             // [PHASE-6] Standardized Time Infrastructure
             services.AddSingleton<IDateTimeProvider, SistemaSatHospitalario.Infrastructure.Services.MachineDateTimeProvider>();
 
+            // [PHASE-7] Proactive Monitoring Automation
+            services.AddHostedService<SistemaSatHospitalario.Infrastructure.Services.LegacyLabMonitoringWorker>();
+
+            // [PHASE-8] Automated PDF Generation
+            services.AddTransient<IPdfService, SistemaSatHospitalario.Infrastructure.Services.PdfGenerationService>();
+            
             return services;
         }
     }

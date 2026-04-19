@@ -17,7 +17,7 @@ using System.Text.RegularExpressions;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
-    public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, Guid>
+    public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, CloseAccountResult>
     {
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
@@ -39,7 +39,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _logger = logger;
         }
 
-        public async Task<Guid> Handle(CloseAccountCommand request, CancellationToken cancellationToken)
+        public async Task<CloseAccountResult> Handle(CloseAccountCommand request, CancellationToken cancellationToken)
         {
             _logger.LogTrace($"[CLOSE-ACCOUNT] Iniciando proceso para Cuenta: {request.CuentaId}");
 
@@ -119,10 +119,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError($"[CLOSE-ACCOUNT] Error Crítico en Cuenta {request.CuentaId}", ex);
-                throw new Exception($"Error crítico en el cierre de cuenta (V10.9): {ex.Message}", ex);
+                
+                string errorMsg = ex.InnerException is InvalidOperationException 
+                    ? $"Error de Infraestructura: {ex.Message}" 
+                    : $"Error crítico en el cierre de cuenta (V10.9): {ex.Message}";
+                    
+                throw new Exception(errorMsg, ex);
             }
 
-            return recibo.Id;
+            return new CloseAccountResult
+            {
+                ReciboId = recibo.Id,
+                CuentaId = cuenta.Id,
+                TotalUsd = recibo.TotalFacturadoUSD,
+                SincronizacionLegacyExitosa = true, // If we reached here, commit was successful
+                Mensaje = "Cuenta cerrada y sincronizada exitosamente."
+            };
         }
 
         private async Task ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct)
@@ -213,8 +225,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 if (string.IsNullOrEmpty(mappingId) && item.Descripcion.Contains(EstadoConstants.PrefixLab))
                 {
-                    mappingId = item.Descripcion.Replace(EstadoConstants.PrefixLab, "").Trim();
-                    _logger.LogTrace($"[LEGACY-SYNC] Self-Healing: extraído mappingId='{mappingId}' desde descripción");
+                    // Senior Self-Healing: Extract first positive integer after the prefix
+                    var match = Regex.Match(item.Descripcion, $@"{Regex.Escape(EstadoConstants.PrefixLab)}(\d+)");
+                    if (match.Success)
+                    {
+                        mappingId = match.Groups[1].Value;
+                        _logger.LogTrace($"[LEGACY-SYNC] Self-Healing: extraído mappingId='{mappingId}' vía Regex desde descripción");
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(mappingId) && int.TryParse(mappingId, out int idPerfil))

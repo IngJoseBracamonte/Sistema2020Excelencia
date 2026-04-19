@@ -56,7 +56,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                 if (!string.IsNullOrEmpty(rawConStr))
                 {
                     // Senior Architecture: Normalize and Enhance for Cloud (SSL, etc)
-                    var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConStr);
+                    var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConStr, forceLowercase: false);
                     conStr = ConnectionStringHelper.EnhanceForCloud(conStr);
 
                     ServerVersion version;

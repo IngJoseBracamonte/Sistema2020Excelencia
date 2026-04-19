@@ -58,7 +58,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             {
                 entity.ToTable("perfilesfacturados");
                 entity.HasKey(e => e.IdFacturado);
-                entity.Property(e => e.IdFacturado).ValueGeneratedOnAdd();
+                entity.Property(e => e.IdFacturado).HasColumnName("id").ValueGeneratedOnAdd(); // Map to 'id' for legacy compatibility
             });
 
             modelBuilder.Entity<ConvenioEmpresaLegacy>(entity =>

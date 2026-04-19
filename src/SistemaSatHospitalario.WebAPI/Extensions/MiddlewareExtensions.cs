@@ -38,7 +38,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                     logger.LogInformation("Iniciando secuencia de robustecimiento: verificando conexión a Base de Datos...");
                     
                     // [NEW] Garantizar existencia de bases de datos antes de continuar
-                    var connStrings = new[] { "mysql-system", "mysql-identity" };
+                    var connStrings = new[] { "mysql-system", "mysql-identity", "LegacyConnection" };
                     foreach (var connKey in connStrings)
                     {
                         var fullConStr = configuration.GetConnectionString(connKey);
@@ -51,7 +51,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                             using var conn = new MySqlConnection(builder.ConnectionString);
                             await conn.OpenAsync();
                             using var cmd = conn.CreateCommand();
-                            cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{dbName}`;";
+                            cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{dbName}` CHARACTER SET utf8mb4;";
                             await cmd.ExecuteNonQueryAsync();
                             logger.LogInformation("Garantizada existencia de base de datos: {Database}", dbName);
                         }

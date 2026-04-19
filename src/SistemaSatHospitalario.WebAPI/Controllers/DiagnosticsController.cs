@@ -106,8 +106,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
 
             try
             {
-                // Senior Architecture: Normalize and Enhance for Cloud
-                var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
+                // Senior Architecture: Normalize (preserve case for legacy) and Enhance for Cloud
+                var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr, forceLowercase: false);
                 conStr = ConnectionStringHelper.EnhanceForCloud(conStr);
 
                 var builder = new MySqlConnector.MySqlConnectionStringBuilder(conStr);

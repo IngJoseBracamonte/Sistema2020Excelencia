@@ -9,10 +9,11 @@ namespace SistemaSatHospitalario.Infrastructure.Common.Helpers
     public static class ConnectionStringHelper
     {
         /// <summary>
-        /// Normalizes the database name in a MySQL connection string to lowercase.
-        /// This ensures compatibility with case-sensitive environments (Docker/Linux).
+        /// Normalizes the database name in a MySQL connection string.
+        /// By default, it forces lowercase to ensure compatibility with case-sensitive environments (Docker/Linux).
+        /// Set forceLowercase to false for legacy systems that require specific casing (e.g. Sistema2020).
         /// </summary>
-        public static string NormalizeMySqlConnectionString(string connectionString)
+        public static string NormalizeMySqlConnectionString(string connectionString, bool forceLowercase = false)
         {
             if (string.IsNullOrWhiteSpace(connectionString)) return connectionString;
             
@@ -21,15 +22,15 @@ namespace SistemaSatHospitalario.Infrastructure.Common.Helpers
                 var builder = new MySqlConnector.MySqlConnectionStringBuilder(connectionString);
                 var originalDb = builder.Database;
                 
-                // [MICRO-CICLO 31] Auto-Normalization strategy:
-                // We force lowercase as confirmed by the database tool view (sistema2020, sathospitalario).
                 if (!string.IsNullOrEmpty(originalDb))
                 {
-                    var normalizedDb = originalDb.ToLowerInvariant();
+                    // [MICRO-CICLO 31] Normalized strategy:
+                    // Force lowercase for internal systems by default, but allow case-preservation for legacy externos.
+                    var targetDb = forceLowercase ? originalDb.ToLowerInvariant() : originalDb;
                     
-                    if (originalDb != normalizedDb)
+                    if (originalDb != targetDb)
                     {
-                        builder.Database = normalizedDb;
+                        builder.Database = targetDb;
                         connectionString = builder.ConnectionString;
                     }
                 }

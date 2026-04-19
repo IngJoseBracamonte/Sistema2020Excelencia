@@ -85,7 +85,10 @@ export class CajasComponent implements OnInit {
 
     this.cajaService.cerrarCaja().subscribe({
       next: (res: any) => {
-        this.actionMessage.set('Su sesión de caja ha sido cerrada con éxito.');
+        // [COMPLETENESS] Mostrar resumen financiero al cerrar (V12.4)
+        const summary = `Cierre Exitoso. Total USD: $${res.saldoFinalUSD.toFixed(2)}. Usuario: ${res.usuario}`;
+        this.actionMessage.set(summary);
+        
         this.isMiCajaAbierta.set(false);
         this.isLoading.set(false);
         this.checkStatus();

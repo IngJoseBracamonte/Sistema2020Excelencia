@@ -1,3 +1,4 @@
+import { environment } from '../../../../environments/environment';
 import { ServiceCategory } from '../../../core/models/service-category.enum';
 import { AtmAmountDirective } from '../../../shared/directives/atm-amount.directive';
 import { CurrencyBsPipe } from '../../../shared/pipes/currency-bs.pipe';
@@ -890,12 +891,13 @@ export class FacturacionComponent {
       next: (res: any) => {
         const p = this.selectedPatientData();
         const pacienteNombre = p ? `${p.nombre} ${p.apellidos || ''}` : '';
-        this.actionMessage.set(`¡Facturación Exitosa! Paciente: ${pacienteNombre}. Recibo: ${res.numeroRecibo || res.reciboId}`);
+        this.actionMessage.set(`¡Facturación Exitosa! Paciente: ${pacienteNombre}.`);
 
-        // Confirmación de Impresión No Intrínseca (Requerimiento Pro)
-        const deseaImprimir = confirm("¿Desea imprimir el comprobante de pago ahora?");
-        if (deseaImprimir) {
-          this.imprimirRecibo(res.reciboId);
+        // Automatización Total (V12.4): Abrir PDF directamente
+        const reciboId = res.reciboId || res.id;
+        if (reciboId) {
+          const downloadUrl = `${environment.apiUrl}/api/ReciboFactura/${reciboId}/Download`;
+          window.open(downloadUrl, '_blank');
         }
 
         this.resetForm();

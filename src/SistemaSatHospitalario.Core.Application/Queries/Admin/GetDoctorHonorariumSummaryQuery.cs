@@ -40,7 +40,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                                  where cs.Estado == EstadoConstants.Facturada
                                     && cs.FechaCierre >= start 
                                     && cs.FechaCierre <= end
-                                    && detail.TipoServicio == EstadoConstants.Medico
+                                    && (detail.TipoServicio == EstadoConstants.Medico || detail.TipoServicio == "CONSULTA" || detail.TipoServicio == "CONS")
                                  group detail by new { cita.MedicoId, cita.Medico.Nombre } into g
                                  select new DoctorHonorariumSummaryDto
                                  {

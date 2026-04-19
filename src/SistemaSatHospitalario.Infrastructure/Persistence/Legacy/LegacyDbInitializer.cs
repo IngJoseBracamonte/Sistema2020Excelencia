@@ -42,11 +42,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             try
             {
                 var builder = new MySqlConnectionStringBuilder(conStr);
-                _logger.LogInformation("Verificando existencia de base de datos Legacy en {Host}:{Port}...", builder.Server, builder.Port);
+                _logger.LogInformation("Verificando existencia de base de datos Legacy en {Host}:{Port} (DB: {Database})...", builder.Server, builder.Port, builder.Database);
                 
                 await EnsureDatabaseExistsAsync(conStr);
+                
+                // Pequeña pausa para asegurar visibilidad en el pool (especialmente en Cloud)
+                await Task.Delay(500);
 
-                _logger.LogInformation("Aplicando migraciones a Legacy Database (Enforcing Primary Keys)...");
+                _logger.LogInformation("Aplicando esquemas a Legacy Database '{Database}'...", builder.Database);
                 
                 // Senior Defensive Pattern: Asegurar que sql_require_primary_key no bloquee la creación de __EFMigrationsHistory
                 var connection = _context.Database.GetDbConnection();
@@ -60,7 +63,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
                 await _context.Database.MigrateAsync();
                 
-                _logger.LogInformation("Legacy Database Inicializada y Migrada Correctamente.");
+                _logger.LogInformation("✅ Legacy Database '{Database}' Inicializada y Migrada Correctamente.", builder.Database);
             }
             catch (Exception ex)
             {

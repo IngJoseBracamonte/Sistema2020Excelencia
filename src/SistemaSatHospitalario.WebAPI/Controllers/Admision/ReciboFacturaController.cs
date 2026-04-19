@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -16,10 +17,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class ReciboFacturaController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IPdfService _pdfService;
 
-        public ReciboFacturaController(IMediator mediator)
+        public ReciboFacturaController(IMediator mediator, IPdfService pdfService)
         {
             _mediator = mediator;
+            _pdfService = pdfService;
         }
 
         [HttpPost("RegistrarPagoMultidivisa")]
@@ -46,6 +49,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var result = await _mediator.Send(new GetReciboPdfQuery { ReciboId = id });
             if (result == null) return NotFound();
             return Ok(result);
+        }
+
+        [HttpGet("{id}/Download")]
+        [AllowAnonymous] // Permitimos acceso directo para la pestaña de impresión (V12.4)
+        public async Task<IActionResult> Download(Guid id)
+        {
+            // 1. Obtener datos serializados para el PDF
+            var data = await _mediator.Send(new GetReciboPdfQuery { ReciboId = id });
+            if (data == null) return NotFound("El recibo no existe.");
+
+            // 2. Generar PDF vía QuestPDF
+            var pdfBytes = _pdfService.GenerarReciboPdf(data);
+
+            // 3. Retornar archivo para visualización en navegador
+            return File(pdfBytes, "application/pdf", $"Recibo_{data.NumeroRecibo}.pdf");
         }
     }
 }

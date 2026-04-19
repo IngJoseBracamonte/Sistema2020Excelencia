@@ -20,7 +20,7 @@ import { ExpedienteService, ExpedienteFacturacionRow } from '../../../core/servi
 @Component({
   selector: 'app-expediente-facturacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink, CurrencyPipe],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './expediente-facturacion.component.html'
 })
 export class ExpedienteFacturacionComponent implements OnInit {

@@ -53,17 +53,9 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
             
             var servicioId = Guid.NewGuid();
-            cuenta.AgregarServicio(servicioId, "Perfil Lipidico", 50, 0, 1, EstadoConstants.Laboratorio, "Admin");
+            cuenta.AgregarServicio(servicioId, "Perfil Lipidico", 50, 0, 1, EstadoConstants.Laboratorio, "Admin", "123");
 
-            var servicios = new List<ServicioClinico> 
-            { 
-                new ServicioClinico("123", "Perfil Lipidico", 50, EstadoConstants.Laboratorio)
-            };
-            // Note: In real scenarios, the ID in account must match the service. 
-            // Since we mock the context, we'll ensure the IDs align in the setup.
-            typeof(ServicioClinico).GetProperty("Id")?.SetValue(servicios[0], servicioId);
-
-            SetupMocks(cuenta, paciente, servicios.AsQueryable());
+            SetupMocks(cuenta, paciente, new List<ServicioClinico>().AsQueryable());
 
             // Act
             await _handler.Handle(new CloseAccountCommand 
@@ -90,15 +82,10 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
             
             var servicioId = Guid.NewGuid();
-            cuenta.AgregarServicio(servicioId, "Perfil ABC", 50, 0, 1, EstadoConstants.Laboratorio, "Admin");
+            // In a real scenario, the UI/Backend sets the mapping ID when adding to account
+            cuenta.AgregarServicio(servicioId, "PERF-999 Profile", 50, 0, 1, EstadoConstants.Laboratorio, "Admin", "999");
 
-            var servicios = new List<ServicioClinico> 
-            { 
-                new ServicioClinico("PERF-999", "Perfil ABC", 50, EstadoConstants.Laboratorio)
-            };
-            typeof(ServicioClinico).GetProperty("Id")?.SetValue(servicios[0], servicioId);
-
-            SetupMocks(cuenta, paciente, servicios.AsQueryable());
+            SetupMocks(cuenta, paciente, new List<ServicioClinico>().AsQueryable());
 
             // Act
             await _handler.Handle(new CloseAccountCommand 
@@ -112,6 +99,67 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _legacyRepoMock.Verify(r => r.GenerarOrdenLaboratorioAsync(
                 It.IsAny<OrdenLegacy>(),
                 It.Is<List<PerfilesFacturadosLegacy>>(p => p.Any(x => x.IdPerfil == 999)),
+                It.IsAny<List<ResultadosPacienteLegacy>>(),
+                It.IsAny<CancellationToken>()
+            ), Times.Once);
+        }
+
+        [Fact]
+        public async Task Should_TriggerJITOnboarding_When_PatientLacksLegacyId()
+        {
+            // Arrange
+            var paciente = new PacienteAdmision("V-7318923", "Brunequilde Gil", "555-000", null);
+            var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
+            
+            var servicioId = Guid.NewGuid();
+            cuenta.AgregarServicio(servicioId, "PERFIL 20", 50, 0, 1, EstadoConstants.Laboratorio, "Admin", "1403");
+
+            SetupMocks(cuenta, paciente, new List<ServicioClinico>().AsQueryable());
+
+            _legacyRepoMock.Setup(r => r.GetPatientByCedulaAsync(paciente.CedulaPasaporte, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((DatosPersonalesLegacy)null);
+            
+            _legacyRepoMock.Setup(r => r.CreatePatientLegacyAsync(It.IsAny<DatosPersonalesLegacy>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(2000);
+
+            // Act
+            await _handler.Handle(new CloseAccountCommand 
+            { 
+                CuentaId = cuenta.Id, 
+                UsuarioId = "1", 
+                Pagos = new List<DetallePagoDto>() 
+            }, CancellationToken.None);
+
+            // Assert
+            paciente.IdPacienteLegacy.Should().Be(2000);
+            _legacyRepoMock.Verify(r => r.CreatePatientLegacyAsync(It.IsAny<DatosPersonalesLegacy>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Should_ApplySelfHealing_When_MappingIdIsMissing_ButDescriptionHasPrefix()
+        {
+            // Arrange
+            var paciente = new PacienteAdmision("12345", "Test Patient", "555-000", 101);
+            var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
+            
+            var servicioId = Guid.NewGuid();
+            // MappingId is null, but description has LAB-1234
+            cuenta.AgregarServicio(servicioId, "LAB-1234 Test Service", 20, 0, 1, EstadoConstants.Laboratorio, "Admin", null);
+
+            SetupMocks(cuenta, paciente, new List<ServicioClinico>().AsQueryable());
+
+            // Act
+            await _handler.Handle(new CloseAccountCommand 
+            { 
+                CuentaId = cuenta.Id, 
+                UsuarioId = "1", 
+                Pagos = new List<DetallePagoDto>() 
+            }, CancellationToken.None);
+
+            // Assert
+            _legacyRepoMock.Verify(r => r.GenerarOrdenLaboratorioAsync(
+                It.IsAny<OrdenLegacy>(),
+                It.Is<List<PerfilesFacturadosLegacy>>(p => p.Any(x => x.IdPerfil == 1234)),
                 It.IsAny<List<ResultadosPacienteLegacy>>(),
                 It.IsAny<CancellationToken>()
             ), Times.Once);

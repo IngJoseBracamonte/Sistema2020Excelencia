@@ -21,7 +21,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("billing")]
-        public async Task<IActionResult> GetBillingExpediente([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string searchTerm)
+        public async Task<IActionResult> GetBillingExpediente([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? searchTerm = null)
         {
             var result = await _mediator.Send(new GetExpedienteFacturacionQuery 
             { 
