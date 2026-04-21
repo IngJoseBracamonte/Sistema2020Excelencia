@@ -13,9 +13,10 @@ import {
     Trash2,
     Database,
     Stethoscope,
-    Microscope,
     Scan,
-    X
+    X,
+    Check,
+    Clock
 } from 'lucide-angular';
 
 @Component({
@@ -35,16 +36,21 @@ export class CatalogManagementComponent implements OnInit {
   public filteredCatalog = signal<CatalogItem[]>([]);
   public isLoading = signal<boolean>(false);
   public typeFilter = signal<string | null>(null);
-  
+  // Tab State
+  public activeTab = signal<'general' | 'sugerencias'>('general');
+
   // Modal State
   public showModal = signal<boolean>(false);
   public isEditing = signal<boolean>(false);
+  public searchQuery = signal<string>('');
   public currentItem = signal<Partial<CatalogItem>>({
     codigo: '',
     descripcion: '',
     precioUsd: 0,
+    honorarioBase: 0,
     tipo: 'CONSULTA',
-    activo: true
+    activo: true,
+    sugerenciasIds: []
   });
 
   public tipos = ['CONSULTA', 'LABORATORIO', 'RX', 'PROCEDIMIENTO', 'MEDICINA', 'SERVICIO'];
@@ -57,14 +63,18 @@ export class CatalogManagementComponent implements OnInit {
     Trash2,
     Database,
     Stethoscope,
-    Microscope,
     Scan,
-    X
+    X,
+    Check,
+    Clock
   };
 
   ngOnInit() {
     this.route.queryParams.subscribe((params: any) => {
       this.typeFilter.set(params['type'] || null);
+      if (params['tab'] === 'sugerencias' || params['tab'] === 'general') {
+        this.activeTab.set(params['tab']);
+      }
       this.refreshCatalog();
     });
   }
@@ -82,12 +92,53 @@ export class CatalogManagementComponent implements OnInit {
   }
 
   applyFilter() {
-    const filter = this.typeFilter();
-    if (filter) {
-      this.filteredCatalog.set(this.catalog().filter((i: CatalogItem) => i.tipo?.toUpperCase() === filter.toUpperCase()));
-    } else {
-      this.filteredCatalog.set(this.catalog());
+    let filtered = this.catalog();
+    const type = this.typeFilter();
+    const query = this.searchQuery().toLowerCase();
+    const tab = this.activeTab();
+
+    // Filtro por Tab (Desactivado para mostrar todo)
+    /* if (tab === 'sugerencias') {
+      filtered = filtered.filter(i => i.sugerenciasIds && i.sugerenciasIds.length > 0);
+    } */
+
+    // Filtro por Tipo
+    if (type) {
+      filtered = filtered.filter(i => i.tipo?.toUpperCase() === type.toUpperCase());
     }
+
+    // Filtro por Búsqueda
+    if (query) {
+      filtered = filtered.filter(i => 
+        i.descripcion?.toLowerCase().includes(query) || 
+        i.codigo?.toLowerCase().includes(query)
+      );
+    }
+
+    this.filteredCatalog.set(filtered);
+  }
+
+  onTabChange(tab: 'general' | 'sugerencias') {
+    this.activeTab.set(tab);
+    this.applyFilter();
+  }
+
+  toggleSugerencia(id: string) {
+    const item = this.currentItem();
+    const currentSugerencias = [...(item.sugerenciasIds || [])];
+    const index = currentSugerencias.indexOf(id);
+
+    if (index > -1) {
+      currentSugerencias.splice(index, 1);
+    } else {
+      currentSugerencias.push(id);
+    }
+
+    this.currentItem.set({ ...item, sugerenciasIds: currentSugerencias });
+  }
+
+  isSugerenciaSelected(id: string): boolean {
+    return (this.currentItem().sugerenciasIds || []).includes(id);
   }
 
   openCreate() {
@@ -96,8 +147,10 @@ export class CatalogManagementComponent implements OnInit {
       codigo: '',
       descripcion: '',
       precioUsd: 0,
+      honorarioBase: 0,
       tipo: 'CONSULTA',
-      activo: true
+      activo: true,
+      sugerenciasIds: []
     });
     this.showModal.set(true);
   }

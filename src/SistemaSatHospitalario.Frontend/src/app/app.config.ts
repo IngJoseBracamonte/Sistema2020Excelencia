@@ -15,7 +15,7 @@ import {
   CreditCard, RefreshCcw, Check, Plus, User, Calendar, Search, Package, 
   Clock, SearchX, Info, ChevronRight, Trash2, X, Lock, UserPlus, Phone, 
   Mail, Layout, ShieldAlert, CalendarCheck, Edit3,
-  Stethoscope, Activity, DollarSign
+  Stethoscope, Activity, DollarSign, Star
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
@@ -36,7 +36,7 @@ export const appConfig: ApplicationConfig = {
       CreditCard, RefreshCcw, Check, Plus, User, Calendar, Search, Package, 
       Clock, SearchX, Info, ChevronRight, Trash2, X, Lock, UserPlus, Phone, 
       Mail, Layout, ShieldAlert, CalendarCheck, Edit3,
-      Stethoscope, Activity, DollarSign
+      Stethoscope, Activity, DollarSign, Star
     }))
   ]
 };

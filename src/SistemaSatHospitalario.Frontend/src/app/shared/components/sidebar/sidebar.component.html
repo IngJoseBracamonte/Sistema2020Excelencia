@@ -21,6 +21,11 @@
             <span class="font-bold">Facturación</span>
         </a>
 
+        <a routerLink="/seguros" routerLinkActive="active-link" class="nav-item flex items-center">
+            <lucide-icon [name]="icons.ShieldCheck" class="w-5 h-5 mr-3 text-emerald-500"></lucide-icon>
+            <span class="font-bold">Seguros & Compromisos</span>
+        </a>
+
         <!-- Operativo / Gestión -->
         <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
         
@@ -38,7 +43,7 @@
             </button>
             <div *ngIf="dropdownsOpen().caja" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/cajas" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Cajas</a>
-                <a routerLink="/catalog" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active-sublink" class="nav-subitem">Catálogo General</a>
+                <a routerLink="/catalog" routerLinkActive="active-sublink" class="nav-subitem">Maestro de Servicios</a>
             </div>
         </div>
 
@@ -100,6 +105,7 @@
                 <a routerLink="/settings" [queryParams]="{tab: 'medicos'}" routerLinkActive="active-sublink" class="nav-subitem">Turnos Médicos</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Seguridad & RBAC</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'citas'}" routerLinkActive="active-sublink" class="nav-subitem">Monitor de Agenda</a>
             </div>
         </div>
     </nav>

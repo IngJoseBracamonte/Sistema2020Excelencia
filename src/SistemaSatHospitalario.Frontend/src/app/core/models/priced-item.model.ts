@@ -13,6 +13,10 @@ export abstract class BasePricedItem {
   categoryId: number; // V5.2 structural classification
   esLegacy: boolean;
   activo?: boolean;
+  honorarioBase?: number;
+  HonorarioBase?: number;
+  sugerenciasIds?: string[];
+  SugerenciasIds?: string[];
 
   constructor(data: any) {
     this.id = data.id || data.Id;
@@ -26,6 +30,8 @@ export abstract class BasePricedItem {
     this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;
     this.activo = data.activo ?? data.Activo;
+    this.honorarioBase = data.honorarioBase ?? data.HonorarioBase ?? 0;
+    this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
   }
 
   /**

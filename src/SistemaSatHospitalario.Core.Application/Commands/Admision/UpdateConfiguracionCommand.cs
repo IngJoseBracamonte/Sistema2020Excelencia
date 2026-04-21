@@ -15,6 +15,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string ClaveSupervisor { get; set; }
         public bool FacturarLaboratorio { get; set; }
         public bool MostrarDetalleFacturacion { get; set; }
+        public string? LogoBase64 { get; set; }
     }
 
     public class UpdateConfiguracionCommandHandler : IRequestHandler<UpdateConfiguracionCommand, bool>
@@ -38,7 +39,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Iva, 
                 request.ClaveSupervisor, 
                 request.FacturarLaboratorio, 
-                request.MostrarDetalleFacturacion
+                request.MostrarDetalleFacturacion,
+                request.LogoBase64
             );
             
             return await _context.SaveChangesAsync(cancellationToken) > 0;

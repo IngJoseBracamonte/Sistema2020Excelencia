@@ -16,6 +16,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string NombreCorto { get; protected set; }
         public string TelefonoContact { get; protected set; }
         public DateTime? FechaNacimiento { get; protected set; }
+        public string NombreCompleto => NombreCorto; // Alias para compatibilidad con reportes avanzados
 
         // Historial de ordenes
         private readonly List<OrdenDeServicio> _ordenes = new();

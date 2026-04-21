@@ -56,8 +56,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<CajaDiaria>> ObtenerHistorialCierresAsync(DateTime desde, DateTime hasta, string? usuarioId, CancellationToken cancellationToken)
         {
+            var start = desde.Date;
+            var end = hasta.Date.AddDays(1).AddTicks(-1);
+
             var query = _context.CajasDiarias
-                                .Where(c => c.Estado == "Cerrada" && c.FechaCierre >= desde && c.FechaCierre <= hasta);
+                                .Where(c => c.Estado == "Cerrada" && c.FechaCierre >= start && c.FechaCierre <= end);
 
             if (!string.IsNullOrEmpty(usuarioId))
             {

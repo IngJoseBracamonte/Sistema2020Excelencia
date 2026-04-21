@@ -5,6 +5,7 @@ export interface ConfiguracionGeneral {
   facturarLaboratorio?: boolean;
   mostrarDetalleFacturacion?: boolean;
   claveSupervisor?: string;
+  logoBase64?: string;
 }
 
 export interface UserDto {

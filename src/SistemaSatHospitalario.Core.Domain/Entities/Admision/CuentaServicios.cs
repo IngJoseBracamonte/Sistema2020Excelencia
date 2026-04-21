@@ -18,6 +18,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         // Se cambió de Guid? a int? para sincronización con Legacy
         public int? ConvenioId { get; private set; }
 
+        public virtual PacienteAdmision Paciente { get; private set; }
+
         private readonly List<DetalleServicioCuenta> _detalles = new();
         public IReadOnlyCollection<DetalleServicioCuenta> Detalles => _detalles.AsReadOnly();
 

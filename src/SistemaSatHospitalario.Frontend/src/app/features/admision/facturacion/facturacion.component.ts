@@ -25,6 +25,7 @@ import { PrintService } from '../../../core/services/print.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { SupervisorAuthDialogComponent } from '../../../shared/components/supervisor-auth-dialog/supervisor-auth-dialog.component';
+import { FilterByDayPipe } from '../../../shared/pipes/filter-by-day.pipe';
 import { ViewChild } from '@angular/core';
 import { toObservable, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -65,7 +66,8 @@ import {
     ServiceCatalogComponent, 
     BillingCartComponent, 
     PaymentModuleComponent,
-    SupervisorAuthDialogComponent
+    SupervisorAuthDialogComponent,
+    FilterByDayPipe
   ],
   templateUrl: './facturacion.component.html',
   styleUrl: './facturacion.component.css'
@@ -273,6 +275,7 @@ export class FacturacionComponent {
   public showScheduleModal = signal<boolean>(false);
   public scheduleLoading = signal<boolean>(false);
   public availableSlots = signal<ScheduleEntry[]>([]);
+  public medicoWorkingHours = signal<any[]>([]);
   public selectedSlot = signal<string | null>(null);
   public comentarioCita = signal<string | null>(null);
   public fechaCita = signal<string>(new Date().toISOString().split('T')[0]);
@@ -282,6 +285,12 @@ export class FacturacionComponent {
     const id = this.selectedMedicoId();
     if (!id) return '';
     return this.medicosFiltrados().find(m => m.id === id)?.nombre || '';
+  });
+
+  public telefonoMedicoSeleccionado = computed(() => {
+    const id = this.selectedMedicoId();
+    if (!id) return '';
+    return this.medicosFiltrados().find(m => m.id === id)?.telefono || '';
   });
 
   public getHoraRango(hora: string): string {
@@ -304,6 +313,11 @@ export class FacturacionComponent {
     const endStr = String(endH).padStart(2, '0') + ':' + endM;
 
     return `${timePart} - ${endStr}`;
+  }
+
+  public getDayFromDate(dateStr: string): number {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.getDay(); // 0-6 (Dom-Sab)
   }
 
   // Helpers de Precio para Template (Fix micro-ciclo 34)
@@ -622,6 +636,12 @@ export class FacturacionComponent {
     this.showScheduleModal.set(true);
     const dateToSearch = this.fechaCita();
 
+    // Cargar horario de referencia (V5.1)
+    this.settingsService.getMedicosHorarios().subscribe(res => {
+      const match = res.find(x => x.medicoId === this.selectedMedicoId());
+      if (match) this.medicoWorkingHours.set(match.horarios);
+    });
+
     // Ahora pasamos el pacienteId para detectar "Tu Cita" (V4.9)
     this.appointmentsService.getDoctorScheduleWithPatient(
       this.selectedMedicoId()!,
@@ -835,6 +855,19 @@ export class FacturacionComponent {
         }]);
         this.resetCitaSelection();
         this.actionMessage.set("Servicio cargado exitosamente.");
+
+        // AUTO-SUGERENCIA: Resaltar servicios relacionados (ej: Informes de Tomografía/RX)
+        if (s.sugerenciasIds && s.sugerenciasIds.length > 0) {
+          const firstSugId = s.sugerenciasIds[0];
+          this.suggestedServiceId.set(firstSugId);
+          this.actionMessage.set(`¡Estudio añadido! Se sugiere cargar también el informe del especialista.`);
+          
+          // Opcional: Hacer scroll al buscador para que vea la sugerencia resaltada
+          setTimeout(() => {
+            const el = document.querySelector('.suggested-highlight');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        }
         this.errorMessage.set(null);
         this.isLoading.set(false);
       },

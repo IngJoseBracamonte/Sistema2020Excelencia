@@ -15,6 +15,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; private set; }
         public string Estado { get; private set; } // Pendiente, Parcial, Pagada
         public bool IsAudited { get; private set; }
+        public bool CompromisoGenerado { get; private set; }
 
         public CuentaServicios Cuenta { get; private set; }
 
@@ -41,6 +42,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void MarcarComoAuditada()
         {
             IsAudited = true;
+        }
+
+        public void MarcarCompromisoGenerado()
+        {
+            CompromisoGenerado = true;
         }
     }
 }

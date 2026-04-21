@@ -29,6 +29,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     NombreEmpresa = c.NombreEmpresa,
                     Rif = c.Rif,
                     Iva = c.Iva,
+                    LogoBase64 = c.LogoBase64,
                     UltimaActualizacion = c.UltimaActualizacion
                 })
                 .FirstOrDefaultAsync(cancellationToken);

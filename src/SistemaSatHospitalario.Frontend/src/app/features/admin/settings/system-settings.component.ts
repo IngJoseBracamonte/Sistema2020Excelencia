@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -22,7 +23,9 @@ import {
   Info,
   Check,
   X,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Package
 } from 'lucide-angular';
 import { SettingsService, SecurityConfig } from '../../../core/services/settings.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
@@ -55,14 +58,16 @@ export class SystemSettingsComponent implements OnInit {
     iva: 16,
     facturarLaboratorio: false,
     mostrarDetalleFacturacion: false,
-    claveSupervisor: ''
+    claveSupervisor: '',
+    logoBase64: ''
   };
 
   // --- CONVENIOS TAB ---
   public convenios = signal<SeguroConvenio[]>([]);
   public showConvenioModal = false;
-  public newC: any = { nombre: '', rtn: '', direccion: '', telefono: '', email: '' };
+  public newC: any = { nombre: '', rtn: '', direccion: '', telefono: '', email: '', activo: true };
   public managingPricesConvenioId: number | null = null;
+  public selectedConvenioName = '';
   public perfilPrices = signal<any[]>([]);
   public searchPerfilesQuery = '';
 
@@ -77,15 +82,18 @@ export class SystemSettingsComponent implements OnInit {
   // --- MEDICOS TAB (SCHEDULES) ---
   public medicosHorarios = signal<any[]>([]);
   public selectedMedicoId = signal<string | null>(null);
-  public selectedMedico = computed(() => this.medicosHorarios().find(m => m.medicoId === this.selectedMedicoId()));
+  public selectedMedico = computed(() => this.medicosHorarios().find(m => m.MedicoId === this.selectedMedicoId()));
   
   // --- CITAS TAB (MONITORING) ---
   public activeAppointments = signal<any[]>([]);
   public fechaFiltroCitas = new Date().toISOString().split('T')[0];
 
+
+
   public readonly icons = { 
     Settings, Save, RefreshCw, Database, Users, User, Shield, Plus, Trash2, Edit, 
-    Clock, Calendar: LucideCalendar, Stethoscope, Lock, ChevronRight, Info, Check, X, AlertCircle 
+    Clock, Calendar: LucideCalendar, Stethoscope, Lock, ChevronRight, Info, Check, X, AlertCircle, Search, 
+    Package: Package
   };
 
   ngOnInit() {
@@ -102,18 +110,74 @@ export class SystemSettingsComponent implements OnInit {
     if (this.activeTab === 'citas') this.loadAppointments();
     if (this.activeTab === 'medicos') this.loadMedicosHorarios();
     if (this.activeTab === 'usuarios') this.loadSecurityMatrix();
+    if (this.activeTab === 'convenios') this.loadConvenios();
   }
 
   loadData() {
     this.settingsService.getConfig().subscribe(data => { if (data) this.configData = data; });
-    this.conveniosService.getAll().subscribe(data => this.convenios.set(data));
+    this.loadConvenios();
     this.settingsService.getUsers().subscribe(data => this.users.set(data));
+  }
+
+  loadConvenios() {
+    this.conveniosService.getAll().subscribe(data => this.convenios.set(data));
   }
 
   // --- GENERAL LOGIC ---
   saveGeneral() {
     this.settingsService.updateConfig(this.configData).subscribe(() => {
       alert('Ajustes generales actualizados con éxito.');
+    });
+  }
+
+  onLogoUpload(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.configData.logoBase64 = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // --- CONVENIOS LOGIC ---
+  saveConvenio() {
+    if (!this.newC.nombre) return;
+    const action = this.newC.id ? this.conveniosService.update(this.newC) : this.conveniosService.create(this.newC);
+    action.subscribe(() => {
+      this.showConvenioModal = false;
+      this.newC = { nombre: '', rtn: '', direccion: '', telefono: '', email: '', activo: true };
+      this.loadConvenios();
+    });
+  }
+
+  editConvenio(c: SeguroConvenio) {
+    this.newC = { ...c };
+    this.showConvenioModal = true;
+  }
+
+  deleteConvenio(id: number) {
+    if (!confirm('¿Eliminar convenio?')) return;
+    this.conveniosService.delete(id).subscribe(() => this.loadConvenios());
+  }
+
+  managePrices(c: SeguroConvenio) {
+    this.managingPricesConvenioId = c.id!;
+    this.selectedConvenioName = c.nombre;
+    this.conveniosService.getPrecios(c.id!).subscribe(res => {
+      this.perfilPrices.set(res);
+    });
+  }
+
+  updatePrecio(p: any) {
+    const cmd = {
+      convenioId: this.managingPricesConvenioId,
+      perfilId: p.perfilId,
+      precioFijo: p.precioFijo
+    };
+    this.conveniosService.updatePrecio(cmd).subscribe(() => {
+      // Opcional: Feedback visual
     });
   }
 
@@ -171,7 +235,7 @@ export class SystemSettingsComponent implements OnInit {
   }
 
   saveMedicoSchedule(medico: any) {
-    this.settingsService.syncMedicoSchedules(medico.medicoId, medico.horarios).subscribe(() => {
+    this.settingsService.syncMedicoSchedules(medico.medicoId, medico.horarios, medico.telefono).subscribe(() => {
       alert(`Horario de ${medico.medicoNombre} sincronizado.`);
     });
   }

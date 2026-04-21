@@ -134,5 +134,107 @@ namespace SistemaSatHospitalario.Infrastructure.Services
 
             return document;
         }
+
+        public byte[] GenerarCompromisoPagoPdf(CompromisoPagoDto data, string? logoBase64)
+        {
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(2, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
+
+                    page.Header().Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            if (!string.IsNullOrEmpty(logoBase64))
+                            {
+                                try
+                                {
+                                    var imageBytes = Convert.FromBase64String(logoBase64.Split(',').Last());
+                                    col.Item().Height(60).Image(imageBytes);
+                                }
+                                catch { }
+                            }
+                        });
+
+                        row.RelativeItem().AlignRight().Column(col =>
+                        {
+                            col.Item().Text("CENTRO DIAGNOSTICO CLINICO LA EXCELENCIA C.A").FontSize(10).SemiBold();
+                            col.Item().Text("RIF: J-41168255-1").FontSize(10);
+                        });
+                    });
+
+                    page.Content().PaddingVertical(20).Column(column =>
+                    {
+                        column.Item().AlignCenter().PaddingBottom(20)
+                            .Text("COMPROMISO DE PAGO").FontSize(14).SemiBold().Underline();
+
+                        column.Item().Text(text =>
+                        {
+                            text.Span("Yo ");
+                            text.Span($"{data.NombreResponsable}").SemiBold();
+                            text.Span($" ({data.RelacionResponsable}), titular de la cédula de identidad ");
+                            text.Span($"{data.CedulaResponsable}").SemiBold();
+                            text.Span($", domiciliado en {data.DireccionResponsable}, teléfonos {data.TelefonoResponsable}, me comprometo a cancelar la deuda por concepto de ");
+                            text.Span($"{data.Conceptos}").SemiBold();
+                            text.Span($" realizada a ");
+                            text.Span($"{data.NombrePaciente}").SemiBold();
+                            text.Span($", edad {data.EdadPaciente}, titular de la cédula de identidad ");
+                            text.Span($"{data.CedulaPaciente}").SemiBold();
+                            text.Span(".");
+                        });
+
+                        column.Item().PaddingTop(10).Text(text =>
+                        {
+                            text.Span("Reconozco que la deuda que tengo con el CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA C.A RIF a partir del ");
+                            text.Span($"{data.FechaCompromiso:dd/MM/yyyy}").SemiBold();
+                            text.Span($", asciende a la cantidad de ");
+                            text.Span($"${data.MontoTotal:N2}").SemiBold();
+                            text.Span($". La misma será liquidada en su totalidad en {data.DiasLiquidar} días continuos a partir de la fecha en que fue adquirido este compromiso dividido en {data.Cuotas} cuotas.");
+                        });
+
+                        column.Item().PaddingTop(10).Text(text =>
+                        {
+                            text.Span($"Queda establecido así en este documento que el día {data.FechaVencimiento.Day} del mes de {data.FechaVencimiento.ToString("MMMM")} del presente año ({data.FechaVencimiento.Year}) quedara saldada la deuda hacía con ustedes.");
+                        });
+
+                        column.Item().PaddingTop(10).Text(text =>
+                        {
+                            text.Span("En caso de no cumplir con el pago en la fecha antes mencionada me hare responsable de las medidas legales que considere conveniente. No obstante me comprometo a cumplir al pie de la letra con lo establecido para no llevar esto a consecuencias en las que me haga acreedor de una sanción.");
+                        });
+
+                        column.Item().PaddingTop(20).Text("Sin otro particular, quedo a la orden para cualquier asunto");
+
+                        // Firmas
+                        column.Item().PaddingTop(60).Row(row =>
+                        {
+                            row.RelativeItem().AlignCenter().Column(c =>
+                            {
+                                c.Item().LineHorizontal(1);
+                                c.Item().PaddingTop(5).Text("DEUDOR").SemiBold();
+                                c.Item().Text($"Nombre y Apellido: {data.NombreResponsable}");
+                                c.Item().Text($"C.I: {data.CedulaResponsable}");
+                            });
+
+                            row.ConstantItem(40); // Spacer
+
+                            row.RelativeItem().AlignCenter().Column(c =>
+                            {
+                                c.Item().LineHorizontal(1);
+                                c.Item().PaddingTop(5).Text("ACREEDOR DE LA DEUDA").SemiBold();
+                                c.Item().Text("Nombre y Apellido: ________________");
+                                c.Item().Text("C.I: ________________");
+                            });
+                        });
+                    });
+                });
+            }).GeneratePdf();
+
+            return document;
+        }
     }
 }

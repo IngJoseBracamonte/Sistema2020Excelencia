@@ -13,6 +13,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
     public class SyncMedicoSchedulesCommand : IRequest<bool>
     {
         public Guid MedicoId { get; set; }
+        public string? Telefono { get; set; }
         public List<HorarioBloqueDto> Horarios { get; set; }
     }
 
@@ -36,6 +37,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
         {
             var medic = await _context.Medicos.FindAsync(new object[] { request.MedicoId }, cancellationToken);
             if (medic == null) return false;
+
+            // Update Phone
+            medic.Update(medic.Nombre, medic.EspecialidadId, medic.HonorarioBase, request.Telefono);
 
             // Remove existing schedules for this medic
             var existing = await _context.HorariosAtencionMedicos

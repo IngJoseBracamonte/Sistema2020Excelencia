@@ -26,6 +26,8 @@ export class CatalogService {
       codigo: item.codigo,
       precioUsd: item.precioUsd,
       tipo: item.tipo,
+      honorarioBase: item.honorarioBase ?? 0,
+      sugerenciasIds: item.sugerenciasIds ?? [],
       activo: item.activo ?? true
     });
   }
@@ -37,6 +39,8 @@ export class CatalogService {
       codigo: item.codigo,
       precioUsd: item.precioUsd,
       tipo: item.tipo,
+      honorarioBase: item.honorarioBase ?? 0,
+      sugerenciasIds: item.sugerenciasIds ?? [],
       activo: item.activo ?? true
     });
   }

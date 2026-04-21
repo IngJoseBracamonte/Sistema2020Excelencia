@@ -44,12 +44,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         from sm in smGroup.DefaultIfEmpty()
                         select new { d, c, p, rf, sm };
 
-            // Filtros de fecha
+            // Filtros de fecha (V12.2): Límites precisos del día
             if (request.StartDate.HasValue)
-                query = query.Where(x => x.d.FechaCarga >= request.StartDate.Value);
+                query = query.Where(x => x.d.FechaCarga >= request.StartDate.Value.Date);
             
             if (request.EndDate.HasValue)
-                query = query.Where(x => x.d.FechaCarga <= request.EndDate.Value);
+                query = query.Where(x => x.d.FechaCarga <= request.EndDate.Value.Date.AddDays(1).AddTicks(-1));
 
             // Filtro Laboratorio
             if (!facturarLaboratorio)

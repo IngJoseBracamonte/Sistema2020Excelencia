@@ -77,9 +77,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (request.StartDate.HasValue || request.EndDate.HasValue)
             {
-                // TZ Resilience V12.0: Expandimos el rango para capturar desfases UTC/Local
-                var start = request.StartDate?.Date.AddHours(-12) ?? DateTime.MinValue;
-                var end = (request.EndDate?.Date.AddDays(1) ?? DateTime.MaxValue.AddDays(-1)).AddHours(12);
+                // Standard Date Range (V12.1): Precise daily boundaries without excessive overlap
+                var start = request.StartDate?.Date ?? DateTime.MinValue;
+                var end = request.EndDate?.Date.AddDays(1).AddTicks(-1) ?? DateTime.MaxValue;
                 
                 query = query.Where(ar => ar.FechaEmision >= start && ar.FechaEmision <= end);
             }

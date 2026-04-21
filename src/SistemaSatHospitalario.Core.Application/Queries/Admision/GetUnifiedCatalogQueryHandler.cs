@@ -42,6 +42,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // 1. Obtener servicios nativos (RX, Consultas, etc.)
             // V11.16 Senior Fix: Filtramos por Categoría, no por Descripción (Evita colisiones con stubs de $0.00)
             var serviciosNativos = await _context.ServiciosClinicos
+                .Include(s => s.Sugerencias)
                 .Where(s => s.Activo && s.Category != ServiceCategory.Laboratory)
                 .ToListAsync(cancellationToken);
 
@@ -67,7 +68,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     EsLegacy = false,
                     Activo = s.Activo,
                     PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase,
-                    EspecialidadId = s.EspecialidadId
+                    HonorarioBase = s.HonorarioBase,
+                    EspecialidadId = s.EspecialidadId,
+                    SugerenciasIds = s.Sugerencias.Select(sg => sg.ServicioSugeridoId.ToString()).ToList()
                 };
                 item.CalculatePrices(tasa);
                 result.Add(item);

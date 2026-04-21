@@ -11,10 +11,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public bool Activo { get; private set; }
         public decimal HonorarioBase { get; private set; }
         public int IntervaloTurnoMinutos { get; private set; } = 30;
+        public string? Telefono { get; private set; }
 
         private Medico() { }
 
-        public Medico(string nombre, Guid especialidadId, decimal honorarioBase = 0)
+        public Medico(string nombre, Guid especialidadId, decimal honorarioBase = 0, string? telefono = null)
         {
             Id = Guid.NewGuid();
             Nombre = nombre;
@@ -22,6 +23,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Activo = true;
             HonorarioBase = honorarioBase;
             IntervaloTurnoMinutos = 30;
+            Telefono = telefono;
         }
 
         public void SetIntervalo(int minutos)
@@ -30,11 +32,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             IntervaloTurnoMinutos = minutos;
         }
 
-        public void Update(string nombre, Guid especialidadId, decimal honorarioBase)
+        public void Update(string nombre, Guid especialidadId, decimal honorarioBase, string? telefono = null)
         {
             Nombre = nombre;
             EspecialidadId = especialidadId;
             HonorarioBase = honorarioBase;
+            Telefono = telefono;
         }
 
         public void SetEstado(bool activo)

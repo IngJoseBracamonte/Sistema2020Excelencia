@@ -8,6 +8,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string NombreEmpresa { get; set; }
         public string Rif { get; set; }
         public decimal Iva { get; set; }
+        public string? LogoBase64 { get; set; }
         public DateTime UltimaActualizacion { get; set; }
     }
 }

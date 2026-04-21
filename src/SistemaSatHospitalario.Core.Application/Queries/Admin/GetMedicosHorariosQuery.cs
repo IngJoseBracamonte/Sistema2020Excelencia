@@ -18,6 +18,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
         public Guid MedicoId { get; set; }
         public string MedicoNombre { get; set; }
         public string Especialidad { get; set; }
+        public string? Telefono { get; set; }
         public List<HorarioBloqueDto> Horarios { get; set; } = new();
     }
 
@@ -51,6 +52,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 MedicoId = m.Id,
                 MedicoNombre = m.Nombre,
                 Especialidad = m.Especialidad.Nombre,
+                Telefono = m.Telefono,
                 Horarios = horarios
                     .Where(h => h.MedicoId == m.Id)
                     .OrderBy(h => h.DiaSemana)

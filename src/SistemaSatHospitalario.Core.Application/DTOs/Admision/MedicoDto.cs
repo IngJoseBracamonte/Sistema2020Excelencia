@@ -10,5 +10,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public Guid EspecialidadId { get; set; }
         public decimal HonorarioBase { get; set; }
         public bool Activo { get; set; }
+        public string? Telefono { get; set; }
     }
 }

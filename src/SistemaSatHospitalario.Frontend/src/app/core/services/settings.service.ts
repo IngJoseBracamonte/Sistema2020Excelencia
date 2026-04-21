@@ -121,8 +121,8 @@ export class SettingsService {
     return this.http.get<any[]>(`${this.proApiUrl}/medicos/horarios`);
   }
 
-  syncMedicoSchedules(medicoId: string, horarios: any[]): Observable<any> {
-    return this.http.post(`${this.proApiUrl}/medicos/horarios/sync`, { medicoId, horarios });
+  syncMedicoSchedules(medicoId: string, horarios: any[], telefono?: string): Observable<any> {
+    return this.http.post(`${this.proApiUrl}/medicos/horarios/sync`, { medicoId, horarios, telefono });
   }
 }
 

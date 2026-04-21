@@ -26,6 +26,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<Medico> Medicos { get; set; }
         public DbSet<TasaCambio> TasaCambio { get; set; }
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
+        public DbSet<ServicioSugerencia> ServiciosSugerencias { get; set; }
         public DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; set; }
         public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
         public DbSet<ReservaTemporal> ReservasTemporales { get; set; }
@@ -163,6 +164,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithOne()
                       .HasForeignKey(d => d.CuentaServicioId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.Paciente)
+                      .WithMany()
+                      .HasForeignKey(c => c.PacienteId)
+                      .OnDelete(DeleteBehavior.Restrict);
                 
                 // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.FechaCarga);
@@ -305,6 +311,23 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("ConfiguracionGeneral");
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.Iva).HasPrecision(5, 2);
+                entity.Property(c => c.LogoBase64).HasColumnType("longtext");
+            });
+
+            builder.Entity<ServicioSugerencia>(entity =>
+            {
+                entity.ToTable("serviciossugerencias"); // Obligatorio minúscula por restricción MySQL Cloud
+                entity.HasKey(s => s.Id);
+
+                entity.HasOne(s => s.ServicioOrigen)
+                      .WithMany(sc => sc.Sugerencias)
+                      .HasForeignKey(s => s.ServicioOrigenId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(s => s.ServicioSugerido)
+                      .WithMany()
+                      .HasForeignKey(s => s.ServicioSugeridoId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<LogAuditoriaPrecio>(entity =>

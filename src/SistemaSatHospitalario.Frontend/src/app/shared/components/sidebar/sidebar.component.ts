@@ -73,6 +73,7 @@ export class SidebarComponent implements OnInit {
         Category: Bookmark,
         ChevronDown: ChevronDown,
         Audit: ShieldCheck,
+        ShieldCheck: ShieldCheck,
         Reportes: BarChart3
     };
 
