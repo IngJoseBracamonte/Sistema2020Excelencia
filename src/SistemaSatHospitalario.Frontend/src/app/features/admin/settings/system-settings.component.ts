@@ -25,7 +25,8 @@ import {
   X,
   AlertCircle,
   Search,
-  Package
+  Package,
+  ArrowLeft
 } from 'lucide-angular';
 import { SettingsService, SecurityConfig } from '../../../core/services/settings.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
@@ -82,7 +83,7 @@ export class SystemSettingsComponent implements OnInit {
   // --- MEDICOS TAB (SCHEDULES) ---
   public medicosHorarios = signal<any[]>([]);
   public selectedMedicoId = signal<string | null>(null);
-  public selectedMedico = computed(() => this.medicosHorarios().find(m => m.MedicoId === this.selectedMedicoId()));
+  public selectedMedico = computed(() => this.medicosHorarios().find(m => m.medicoId === this.selectedMedicoId()));
   
   // --- CITAS TAB (MONITORING) ---
   public activeAppointments = signal<any[]>([]);
@@ -93,7 +94,8 @@ export class SystemSettingsComponent implements OnInit {
   public readonly icons = { 
     Settings, Save, RefreshCw, Database, Users, User, Shield, Plus, Trash2, Edit, 
     Clock, Calendar: LucideCalendar, Stethoscope, Lock, ChevronRight, Info, Check, X, AlertCircle, Search, 
-    Package: Package
+    Package: Package,
+    ArrowLeft: ArrowLeft
   };
 
   ngOnInit() {

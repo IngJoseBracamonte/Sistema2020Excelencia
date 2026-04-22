@@ -13,40 +13,40 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Sidebar Navigation -->
-        <div class="lg:col-span-1 space-y-4">
+        <div class="lg:col-span-2 space-y-3">
             <button (click)="activeTab = 'general'; onTabChange()" 
                 [ngClass]="activeTab === 'general' ? 'bg-indigo-500/10 border-indigo-500/40 text-white' : 'border-white/5 text-slate-500'"
-                class="w-full text-left p-6 rounded-2xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
+                class="w-full text-left p-4 rounded-xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
                 <lucide-icon [name]="icons.Database" class="w-5 h-5"></lucide-icon>
                 <span class="font-black text-[10px] uppercase tracking-widest">General & Finanzas</span>
             </button>
 
             <button (click)="activeTab = 'medicos'; onTabChange()" 
                 [ngClass]="activeTab === 'medicos' ? 'bg-amber-500/10 border-amber-500/40 text-white' : 'border-white/5 text-slate-500'"
-                class="w-full text-left p-6 rounded-2xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
+                class="w-full text-left p-4 rounded-xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
                 <lucide-icon [name]="icons.Stethoscope" class="w-5 h-5"></lucide-icon>
                 <span class="font-black text-[10px] uppercase tracking-widest">Turnos Médicos</span>
             </button>
 
             <button (click)="activeTab = 'convenios'; onTabChange()" 
                 [ngClass]="activeTab === 'convenios' ? 'bg-emerald-500/10 border-emerald-500/40 text-white' : 'border-white/5 text-slate-500'"
-                class="w-full text-left p-6 rounded-2xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
+                class="w-full text-left p-4 rounded-xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
                 <lucide-icon [name]="icons.Shield" class="w-5 h-5"></lucide-icon>
                 <span class="font-black text-[10px] uppercase tracking-widest">Convenios</span>
             </button>
 
             <button (click)="activeTab = 'usuarios'; onTabChange()" 
                 [ngClass]="activeTab === 'usuarios' ? 'bg-rose-500/10 border-rose-500/40 text-white' : 'border-white/5 text-slate-500'"
-                class="w-full text-left p-6 rounded-2xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
+                class="w-full text-left p-4 rounded-xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
                 <lucide-icon [name]="icons.Lock" class="w-5 h-5"></lucide-icon>
                 <span class="font-black text-[10px] uppercase tracking-widest">Seguridad & RBAC</span>
             </button>
 
             <button (click)="activeTab = 'citas'; onTabChange()" 
                 [ngClass]="activeTab === 'citas' ? 'bg-blue-500/10 border-blue-500/40 text-white' : 'border-white/5 text-slate-500'"
-                class="w-full text-left p-6 rounded-2xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
+                class="w-full text-left p-4 rounded-xl border flex items-center space-x-4 transition-all hover:bg-white/5 group relative overflow-hidden">
                 <lucide-icon [name]="icons.Clock" class="w-5 h-5"></lucide-icon>
                 <span class="font-black text-[10px] uppercase tracking-widest">Monitor de Agenda</span>
             </button>
@@ -54,7 +54,7 @@
         </div>
 
         <!-- Content Area -->
-        <div class="lg:col-span-3 bg-white/[0.02] border border-white/5 rounded-[3rem] p-10 shadow-2xl min-h-[700px]">
+        <div class="lg:col-span-10 bg-white/[0.02] border border-white/5 rounded-[3rem] p-10 shadow-2xl min-h-[700px]">
             
             <!-- TAB: GENERAL -->
             <div *ngIf="activeTab === 'general'" class="space-y-10 animate-fade-in">
@@ -168,6 +168,10 @@
 
                 <!-- Detalle del Médico (Vista de Horarios) -->
                 <div *ngIf="selectedMedicoId() && selectedMedico() as m" class="animate-fade-in-up">
+                    <button (click)="selectedMedicoId.set(null)" class="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-white transition-colors mb-6 uppercase tracking-[0.2em] group">
+                        <lucide-icon [name]="icons.ArrowLeft" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></lucide-icon> Volver a la lista
+                    </button>
+
                     <div class="bg-white/[0.02] border border-white/5 rounded-[3rem] p-10 relative overflow-hidden mb-8">
                         <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full -z-10 blur-[80px]"></div>
                         
@@ -213,18 +217,20 @@
                             
                             <div class="space-y-3">
                                 <div *ngFor="let h of m.horarios; let i = index">
-                                    <div *ngIf="h.diaSemana === day" class="flex items-center gap-3 bg-black/40 p-3 rounded-2xl border border-white/5 group/block hover:border-amber-500/30 transition-all shadow-lg">
-                                        <div class="flex flex-col flex-1">
-                                            <span class="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1 ml-1">Inicio</span>
-                                            <input type="time" [(ngModel)]="h.inicio" class="bg-transparent border-none p-0 text-[10px] font-black text-white w-full outline-none">
+                                    <div *ngIf="h.diaSemana === day" class="bg-black/40 p-4 rounded-2xl border border-white/5 hover:border-amber-500/30 transition-all shadow-lg group/block relative">
+                                        <div class="space-y-4">
+                                            <div class="flex flex-col">
+                                                <span class="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1">Entrada</span>
+                                                <input type="time" [(ngModel)]="h.inicio" class="bg-white/5 border border-white/5 p-2.5 rounded-xl text-xs font-black text-white outline-none focus:border-amber-500/50 transition-all">
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1">Salida</span>
+                                                <input type="time" [(ngModel)]="h.fin" class="bg-white/5 border border-white/5 p-2.5 rounded-xl text-xs font-black text-white outline-none focus:border-amber-500/50 transition-all">
+                                            </div>
                                         </div>
-                                        <div class="h-6 w-px bg-white/10 mt-2"></div>
-                                        <div class="flex flex-col flex-1">
-                                            <span class="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1 ml-1">Cierre</span>
-                                            <input type="time" [(ngModel)]="h.fin" class="bg-transparent border-none p-0 text-[10px] font-black text-white w-full outline-none">
-                                        </div>
-                                        <button (click)="removeScheduleBlock(m, i)" class="text-rose-500/30 hover:text-rose-500 p-1 transition-colors mt-2">
-                                            <lucide-icon [name]="icons.X" class="w-3.5 h-3.5"></lucide-icon>
+                                        
+                                        <button (click)="removeScheduleBlock(m, i)" class="absolute -top-2 -right-2 h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/block:opacity-100 transition-all scale-75 group-hover/block:scale-100">
+                                            <lucide-icon [name]="icons.X" class="w-3 h-3"></lucide-icon>
                                         </button>
                                     </div>
                                 </div>
@@ -234,6 +240,13 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Action Bar (Bottom) -->
+                    <div class="mt-12 flex justify-center">
+                        <button (click)="saveMedicoSchedule(m)" class="bg-amber-500 hover:bg-amber-600 text-white px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 transition-all active:scale-95 flex items-center group">
+                            <lucide-icon [name]="icons.Save" class="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform"></lucide-icon> Guardar Cambios de Horario
+                        </button>
                     </div>
                 </div>
             </div>

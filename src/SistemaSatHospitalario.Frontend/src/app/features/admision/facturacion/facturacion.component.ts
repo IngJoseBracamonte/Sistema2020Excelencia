@@ -320,6 +320,11 @@ export class FacturacionComponent {
     return d.getDay(); // 0-6 (Dom-Sab)
   }
 
+  public getDayName(day: number): string {
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return days[day];
+  }
+
   // Helpers de Precio para Template (Fix micro-ciclo 34)
   public getFormattedBs(item: any): string {
     const tasa = this.tasaCambioDia();
@@ -636,26 +641,44 @@ export class FacturacionComponent {
     this.showScheduleModal.set(true);
     const dateToSearch = this.fechaCita();
 
-    // Cargar horario de referencia (V5.1)
+    // Cargar horario de referencia (V5.1) y sincronizar agenda
     this.settingsService.getMedicosHorarios().subscribe(res => {
       const match = res.find(x => x.medicoId === this.selectedMedicoId());
-      if (match) this.medicoWorkingHours.set(match.horarios);
-    });
+      const schedules = match ? match.horarios : [];
+      this.medicoWorkingHours.set(schedules);
 
-    // Ahora pasamos el pacienteId para detectar "Tu Cita" (V4.9)
-    this.appointmentsService.getDoctorScheduleWithPatient(
-      this.selectedMedicoId()!,
-      dateToSearch,
-      this.pacienteId() || undefined
-    ).subscribe({
-      next: (res: any) => {
-        this.availableSlots.set(res.turnos);
-        this.scheduleLoading.set(false);
-      },
-      error: () => {
-        this.errorMessage.set("No se pudo cargar la agenda del médico.");
-        this.scheduleLoading.set(false);
-      }
+      const dayOfWeek = this.getDayFromDate(dateToSearch);
+      const daySchedules = schedules.filter((h: any) => h.diaSemana === dayOfWeek);
+
+      this.appointmentsService.getDoctorScheduleWithPatient(
+        this.selectedMedicoId()!,
+        dateToSearch,
+        this.pacienteId() || undefined
+      ).subscribe({
+        next: (res: any) => {
+          if (daySchedules.length > 0) {
+            // Filtrar slots que caen dentro de los rangos configurados (V6.0)
+            const filteredSlots = res.turnos.filter((slot: any) => {
+              // Extraer solo la hora HH:mm de la fecha ISO de forma manual (V6.1 Consistency Fix)
+              let slotTime = slot.hora;
+              if (slotTime.includes('T')) {
+                slotTime = slotTime.split('T')[1].substring(0, 5);
+              } else if (slotTime.length > 5 && slotTime.includes(':')) {
+                slotTime = slotTime.substring(0, 5);
+              }
+              return daySchedules.some((h: any) => slotTime >= h.inicio && slotTime < h.fin);
+            });
+            this.availableSlots.set(filteredSlots);
+          } else {
+            this.availableSlots.set([]);
+          }
+          this.scheduleLoading.set(false);
+        },
+        error: () => {
+          this.errorMessage.set("No se pudo cargar la agenda del médico.");
+          this.scheduleLoading.set(false);
+        }
+      });
     });
   }
 

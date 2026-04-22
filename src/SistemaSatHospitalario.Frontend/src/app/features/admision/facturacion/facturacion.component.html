@@ -240,8 +240,8 @@
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Horario de Referencia:</p>
                             <div class="flex gap-1">
                                 <ng-container *ngFor="let h of medicoWorkingHours()">
-                                    <span *ngIf="h.DiaSemana === getDayFromDate(fechaCita())" class="text-[9px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                                        {{ h.Inicio }} - {{ h.Fin }}
+                                    <span *ngIf="h.diaSemana === getDayFromDate(fechaCita())" class="text-[9px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                        {{ h.inicio }} - {{ h.fin }}
                                     </span>
                                 </ng-container>
                                 <span *ngIf="(medicoWorkingHours() | filterByDay:getDayFromDate(fechaCita())).length === 0" class="text-[9px] font-black text-slate-600 uppercase italic">Sin horario pautado</span>
