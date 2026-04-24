@@ -16,6 +16,8 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         // Estados de Cuenta de Servicios
         public const string Abierta = "Abierta";
         public const string Facturada = "Facturada";
+        public const string PendienteAprobacion = "Pendiente Aprobación";
+        public const string Validada = "Validada";
 
         // Tipos de Ingreso / Convenios
         public const string Particular = "Particular";

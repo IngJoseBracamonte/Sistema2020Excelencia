@@ -14,6 +14,8 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
             public const string View = "Permissions.Facturacion.View";
             public const string Create = "Permissions.Facturacion.Create";
             public const string Cancel = "Permissions.Facturacion.Cancel";
+            public const string Convenio = "Permissions.Facturacion.Convenio";
+            public const string Particular = "Permissions.Facturacion.Particular";
         }
 
         public static class Citas

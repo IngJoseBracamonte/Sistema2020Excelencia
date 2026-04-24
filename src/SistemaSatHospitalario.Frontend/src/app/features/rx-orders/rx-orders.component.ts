@@ -17,7 +17,9 @@ export class RxOrdersComponent implements OnInit {
 
   ngOnInit(): void {
     // Si bien RX es Minimalista, conectamos a SignalR si el operador debe ver colas live
-    this.signalRService.startConnection(this.authService.getToken() || '');
+    const token = this.authService.getToken() || '';
+    const role = this.authService.currentUser()?.role || '';
+    this.signalRService.startConnection(token, role);
   }
 
   logout(): void {

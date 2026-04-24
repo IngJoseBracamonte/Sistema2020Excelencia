@@ -162,7 +162,13 @@ export class CatalogManagementComponent implements OnInit {
   }
 
   save() {
-    const item = this.currentItem();
+    const item = { ...this.currentItem() };
+    
+    // Si es consulta, forzamos honorarioBase a 0 para evitar conflictos (User Request V2.0)
+    if (item.tipo === 'CONSULTA') {
+      item.honorarioBase = 0;
+    }
+
     if (this.isEditing() && item.id) {
       this.catalogService.updateItem(item as CatalogItem).subscribe(() => {
         this.showModal.set(false);

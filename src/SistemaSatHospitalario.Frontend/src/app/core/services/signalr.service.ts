@@ -15,58 +15,70 @@ export interface TicketUpdate {
 })
 export class SignalrService {
   private hubConnection: signalR.HubConnection | undefined;
+  private notificationConnection: signalR.HubConnection | undefined;
 
   // Array Signal Reactivo
   public incomingTickets = signal<TicketUpdate[]>([]);
+  public incomingNotifications = signal<any[]>([]);
   public connectionStatus = signal<string>('Desconectado');
 
   constructor() { }
 
-  public startConnection = (token: string) => {
-    // Evitar múltiples llamadas al inicializador (Senior Patterns V11.0)
-    if (this.hubConnection && this.hubConnection.state !== signalR.HubConnectionState.Disconnected) {
-      console.log(`[SIGNALR DEBUG] Ignorando inicio: Estado actual es ${this.hubConnection.state}`);
-      return;
+  public startConnection = (token: string, role?: string) => {
+    // 1. Dashboard Hub
+    if (!this.hubConnection || this.hubConnection.state === signalR.HubConnectionState.Disconnected) {
+      this.hubConnection = new signalR.HubConnectionBuilder()
+        .withUrl(`${environment.apiUrl.replace('/api', '')}/hub/dashboard`, {
+          accessTokenFactory: () => token
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      this.hubConnection.start()
+        .then(() => {
+          this.connectionStatus.set('Conectado');
+          this.addTicketUpdatesListener();
+        })
+        .catch(err => console.error('[SIGNALR DASHBOARD] Error: ' + err));
     }
 
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      // URL de Kestrel para Hubs - Configurar el Access_Token factory para WS PWA
-      .withUrl(`${environment.apiUrl.replace('/api', '')}/hub/dashboard`, {
-        accessTokenFactory: () => token
-      })
-      .withAutomaticReconnect()
-      .build();
+    // 2. Notification Hub
+    if (!this.notificationConnection || this.notificationConnection.state === signalR.HubConnectionState.Disconnected) {
+      this.notificationConnection = new signalR.HubConnectionBuilder()
+        .withUrl(`${environment.apiUrl.replace('/api', '')}/hub/notifications`, {
+          accessTokenFactory: () => token
+        })
+        .withAutomaticReconnect()
+        .build();
 
-    this.hubConnection
-      .start()
-      .then(() => {
-        this.connectionStatus.set('Conectado');
-        this.addTicketUpdatesListener();
-        console.log('[SIGNALR DEBUG] Conexión establecida exitosamente.');
-      })
-      .catch(err => console.error('[SIGNALR DEBUG] Error estableciendo conexión: ' + err));
-
-    this.hubConnection.onreconnecting(() => this.connectionStatus.set('Reconectando...'));
-    this.hubConnection.onreconnected(() => this.connectionStatus.set('Conectado'));
-    this.hubConnection.onclose(() => this.connectionStatus.set('Desconectado'));
+      this.notificationConnection.start()
+        .then(() => {
+          this.addNotificationListener();
+          // Join Admin group if role is admin
+          if (role?.toLowerCase().includes('admin')) {
+            this.notificationConnection?.invoke('JoinGroup', 'Admin');
+          }
+        })
+        .catch(err => console.error('[SIGNALR NOTIFY] Error: ' + err));
+    }
   }
 
   private addTicketUpdatesListener = () => {
-    this.incomingTickets.set([]); // Limpiar previas (Reset V2.5)
     this.hubConnection?.on('ReceiveTicketUpdate', (data: TicketUpdate) => {
-      // Angular 19 Signals Update - Inmuatibilidad
       this.incomingTickets.update(tickets => [data, ...tickets]);
     });
   }
 
+  private addNotificationListener = () => {
+    this.notificationConnection?.on('ReceiveNotification', (data: any) => {
+      this.incomingNotifications.update(nots => [data, ...nots]);
+      console.log('[SIGNALR NOTIFY] Nueva Notificación:', data);
+    });
+  }
+
   public stopConnection = () => {
-    if (this.hubConnection && this.hubConnection.state !== signalR.HubConnectionState.Disconnected) {
-      this.hubConnection.stop()
-        .then(() => {
-          this.connectionStatus.set('Desconectado');
-          console.log('[SIGNALR DEBUG] Conexión cerrada intencionalmente.');
-        })
-        .catch(err => console.error('[SIGNALR DEBUG] Error cerrando conexión: ' + err));
-    }
+    this.hubConnection?.stop();
+    this.notificationConnection?.stop();
+    this.connectionStatus.set('Desconectado');
   }
 }

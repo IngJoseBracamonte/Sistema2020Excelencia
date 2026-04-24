@@ -9,9 +9,13 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands;
+using SistemaSatHospitalario.Core.Application.Commands.Auth;
+using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Infrastructure.Identity.Models;
-
-    using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
     namespace SistemaSatHospitalario.WebAPI.Controllers
 {
@@ -120,5 +124,47 @@ using SistemaSatHospitalario.Infrastructure.Identity.Models;
             });
         }
         // ===== END TEMPORARY DEBUG =====
+        [HttpPost("request-reset")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RequestReset([FromBody] RequestPasswordResetCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return result ? Ok(new { message = "Solicitud enviada correctamente. Contacte al administrador para aprobación." }) : BadRequest(new { message = "No se pudo procesar la solicitud." });
+        }
+
+        [HttpGet("pending-resets")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetPendingResets()
+        {
+            var result = await _mediator.Send(new GetPendingResetsQuery());
+            return Ok(result);
+        }
+
+        [HttpPost("approve-reset")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ApproveReset([FromBody] ApprovePasswordResetCommand command)
+        {
+            command.AdminUser = User.Identity?.Name ?? "Admin";
+            var result = await _mediator.Send(command);
+            return result ? Ok(new { message = "Reset aprobado correctamente." }) : BadRequest(new { message = "No se pudo aprobar el reset." });
+        }
+
+        [HttpPost("complete-reset")]
+        [Authorize]
+        public async Task<IActionResult> CompleteReset([FromBody] CompletePasswordResetCommand command)
+        {
+            command.Username = User.Identity?.Name ?? command.Username;
+            var result = await _mediator.Send(command);
+            return result ? Ok(new { message = "Contraseña actualizada correctamente." }) : BadRequest(new { message = "No se pudo actualizar la contraseña." });
+        }
+    }
+
+    public class GetPendingResetsQuery : IRequest<List<PasswordResetRequestDto>> { }
+
+    public class GetPendingResetsQueryHandler : IRequestHandler<GetPendingResetsQuery, List<PasswordResetRequestDto>>
+    {
+        private readonly IIdentityService _identityService;
+        public GetPendingResetsQueryHandler(IIdentityService identityService) => _identityService = identityService;
+        public async Task<List<PasswordResetRequestDto>> Handle(GetPendingResetsQuery request, CancellationToken ct) => await _identityService.GetPendingResetRequestsAsync();
     }
 }

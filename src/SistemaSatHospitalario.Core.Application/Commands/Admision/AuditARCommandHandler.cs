@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (ar == null)
                 throw new Exception("La cuenta por cobrar no existe.");
 
-            ar.MarcarComoAuditada();
+            ar.MarcarComoAuditada(request.UsuarioAuditor);
             
             await _context.SaveChangesAsync(cancellationToken);
             return true;

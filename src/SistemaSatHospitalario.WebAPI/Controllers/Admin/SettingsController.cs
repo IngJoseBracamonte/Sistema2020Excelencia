@@ -105,6 +105,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var result = await _identityService.CreateUserAsync(request.Username, request.Email, request.Password, request.Roles);
             return result ? Ok() : BadRequest(new { error = "Error al crear usuario." });
         }
+
+        [HttpPost("users/permissions")]
+        public async Task<IActionResult> UpdateUserPermissions([FromBody] UpdateUserPermissionsRequest request)
+        {
+            var result = await _identityService.UpdateUserPermissionsAsync(request.UserId, request.Permissions);
+            return result ? Ok() : BadRequest();
+        }
     }
 
     public class CreateUserRequest
@@ -113,5 +120,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public string Email { get; set; }
         public string Password { get; set; }
         public List<string> Roles { get; set; }
+    }
+
+    public class UpdateUserPermissionsRequest
+    {
+        public Guid UserId { get; set; }
+        public List<string> Permissions { get; set; }
     }
 }

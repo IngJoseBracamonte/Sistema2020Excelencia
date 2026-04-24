@@ -74,7 +74,9 @@
 
         <div class="flex items-center justify-end">
           <div class="text-[10px] font-black uppercase tracking-widest">
-            <a href="#" class="text-muted hover:text-primary transition-colors"> ¿Olvidó su contraseña? </a>
+            <button type="button" (click)="requestPasswordReset()" class="text-muted hover:text-primary transition-colors focus:outline-none"> 
+              ¿Olvidó su contraseña? 
+            </button>
           </div>
         </div>
 

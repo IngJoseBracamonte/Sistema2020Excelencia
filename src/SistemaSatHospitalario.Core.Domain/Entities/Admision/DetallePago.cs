@@ -11,12 +11,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal MontoAbonadoMoneda { get; protected set; }
         public decimal EquivalenteAbonadoBase { get; protected set; }
         public DateTime FechaPago { get; protected set; }
+        public string UsuarioCarga { get; protected set; }
 
         public ReciboFactura ReciboFactura { get; protected set; }
 
         protected DetallePago() { }
 
-        public DetallePago(Guid reciboFacturaId, string metodoPago, string referenciaBancaria, decimal montoAbonadoMoneda, decimal equivalenteAbonadoBase)
+        public DetallePago(Guid reciboFacturaId, string metodoPago, string referenciaBancaria, decimal montoAbonadoMoneda, decimal equivalenteAbonadoBase, string usuarioCarga)
         {
             if (montoAbonadoMoneda == 0) throw new ArgumentException("El monto no puede ser 0.");
             
@@ -26,6 +27,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             ReferenciaBancaria = referenciaBancaria;
             MontoAbonadoMoneda = montoAbonadoMoneda;
             EquivalenteAbonadoBase = equivalenteAbonadoBase;
+            UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
             FechaPago = DateTime.UtcNow;
         }
     }

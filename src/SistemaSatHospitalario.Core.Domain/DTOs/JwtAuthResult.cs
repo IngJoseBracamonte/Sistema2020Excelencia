@@ -10,5 +10,6 @@ namespace SistemaSatHospitalario.Core.Domain.DTOs
         public string Username { get; set; }
         public string Role { get; set; }
         public System.Collections.Generic.List<string> Permissions { get; set; } = new();
+        public bool RequirePasswordReset { get; set; }
     }
 }

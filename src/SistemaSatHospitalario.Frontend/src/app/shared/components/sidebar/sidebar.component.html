@@ -16,18 +16,37 @@
             <span class="font-bold">Dashboard</span>
         </a>
 
-        <a *ngIf="permissionService.can('Permissions.Facturacion.View')" routerLink="/facturacion" routerLinkActive="active-link" class="nav-item flex items-center">
-            <lucide-icon [name]="icons.Billing" class="w-5 h-5 mr-3"></lucide-icon>
-            <span class="font-bold">Facturación</span>
+        <!-- Facturación Dropdown (Para Administrativos) -->
+        <div *ngIf="isAdministrativeGroup() && permissionService.can('Permissions.Facturacion.View')" class="space-y-1">
+            <button (click)="toggleDropdown('facturacion')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().facturacion }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Billing" class="w-5 h-5 mr-3 text-indigo-500"></lucide-icon>
+                    Gestión de Facturación
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().facturacion"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().facturacion" class="pl-8 space-y-1 animate-fade-in">
+                <a *ngIf="permissionService.can('Permissions.Facturacion.Convenio')" routerLink="/facturacion" [queryParams]="{type: 'Seguro'}" routerLinkActive="active-sublink" class="nav-subitem">Facturación de Seguros</a>
+                <!-- Hospitalización y Emergencia omitidos por solicitud (Not Ready) -->
+            </div>
+        </div>
+
+        <!-- Órdenes RX (Prioridad para Asistente RX) -->
+        <a *ngIf="isRxAssistant() || isAdmin()" routerLink="/rx-orders" routerLinkActive="active-link" class="nav-item flex items-center">
+            <lucide-icon [name]="icons.RX" class="w-5 h-5 mr-3 text-rose-500"></lucide-icon>
+            <span class="font-bold">Órdenes RX</span>
         </a>
 
-        <a routerLink="/seguros" routerLinkActive="active-link" class="nav-item flex items-center">
+        <a *ngIf="isAdministrativeGroup()" routerLink="/seguros" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.ShieldCheck" class="w-5 h-5 mr-3 text-emerald-500"></lucide-icon>
             <span class="font-bold">Seguros & Compromisos</span>
         </a>
 
         <!-- Operativo / Gestión -->
-        <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
+        <div *ngIf="!isRxAssistant() || isAdmin()" class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
         
         <!-- Dropdown: Caja y Catálogos -->
         <div *ngIf="permissionService.can('Permissions.Admin.ManageCatalog')" class="space-y-1">
@@ -48,7 +67,7 @@
         </div>
 
         <!-- Dropdown: Reportes Operativos -->
-        <div class="space-y-1">
+        <div *ngIf="isAdministrativeGroup()" class="space-y-1">
             <button (click)="toggleDropdown('reportes')" 
                 class="w-full flex items-center justify-between nav-item group"
                 [ngClass]="{ 'bg-white/5': dropdownsOpen().reportes }">
@@ -70,7 +89,7 @@
         </div>
 
         <!-- Dropdown: Gestión Médica -->
-        <div *ngIf="permissionService.can('Permissions.Admin.ManageMedicos')" class="space-y-1">
+        <div *ngIf="isAdministrativeGroup() && permissionService.can('Permissions.Admin.ManageMedicos')" class="space-y-1">
             <button (click)="toggleDropdown('medica')" 
                 class="w-full flex items-center justify-between nav-item group"
                 [ngClass]="{ 'bg-white/5': dropdownsOpen().medica }">
@@ -83,8 +102,10 @@
             </button>
             <div *ngIf="dropdownsOpen().medica" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Médicos Nominal</a>
+                <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Turnos Médicos</a>
                 <a routerLink="/especialidades" routerLinkActive="active-sublink" class="nav-subitem">Especialidades</a>
                 <a *ngIf="isAdmin()" routerLink="/admin/reportes/calculo-honorarios" routerLinkActive="active-sublink" class="nav-subitem">Cálculo de Honorarios</a>
+                <a routerLink="/settings" [queryParams]="{tab: 'citas'}" routerLinkActive="active-sublink" class="nav-subitem">Monitor de Agenda</a>
             </div>
         </div>
 
@@ -102,10 +123,9 @@
             </button>
             <div *ngIf="dropdownsOpen().settings" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">General & Finanzas</a>
-                <a routerLink="/settings" [queryParams]="{tab: 'medicos'}" routerLinkActive="active-sublink" class="nav-subitem">Turnos Médicos</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Seguridad & RBAC</a>
-                <a routerLink="/settings" [queryParams]="{tab: 'citas'}" routerLinkActive="active-sublink" class="nav-subitem">Monitor de Agenda</a>
+                <a *ngIf="isAdmin()" routerLink="/admin/reset-requests" routerLinkActive="active-sublink" class="nav-subitem">Solicitudes de Reset</a>
             </div>
         </div>
     </nav>

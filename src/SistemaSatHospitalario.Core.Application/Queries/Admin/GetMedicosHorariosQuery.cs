@@ -51,7 +51,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             {
                 MedicoId = m.Id,
                 MedicoNombre = m.Nombre,
-                Especialidad = m.Especialidad.Nombre,
+                Especialidad = m.Especialidad?.Nombre ?? "Sin Especialidad",
                 Telefono = m.Telefono,
                 Horarios = horarios
                     .Where(h => h.MedicoId == m.Id)

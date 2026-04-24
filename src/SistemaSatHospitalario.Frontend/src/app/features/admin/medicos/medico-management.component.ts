@@ -1,29 +1,37 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MedicoService, Medico } from '../../../core/services/medico.service';
 import { SpecialtyService, Especialidad } from '../../../core/services/specialty.service';
 import {
     LucideAngularModule,
-    UserPlus,
-    UserCog,
-    Trash2,
     X,
     Save,
     Stethoscope,
-    FileText
+    FileText,
+    Clock,
+    Plus as PlusIcon,
+    ArrowLeft,
+    Database,
+    UserPlus,
+    UserCog,
+    Trash2
 } from 'lucide-angular';
 import { RouterModule } from '@angular/router';
+import { SettingsService } from '../../../core/services/settings.service';
+import { AppointmentsService } from '../../../core/services/appointments.service';
+import { FilterByDayPipe } from '../../../shared/pipes/filter-by-day.pipe';
 
 @Component({
   selector: 'app-medico-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, RouterModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, RouterModule, FilterByDayPipe],
   templateUrl: './medico-management.component.html'
 })
 export class MedicoManagementComponent implements OnInit {
   private medicoService = inject(MedicoService);
   private specialtyService = inject(SpecialtyService);
+  private settingsService = inject(SettingsService);
 
   public medicos = signal<Medico[]>([]);
   public especialidadesCatalogo = signal<Especialidad[]>([]);
@@ -36,7 +44,17 @@ export class MedicoManagementComponent implements OnInit {
     nombre: '',
     especialidadId: '',
     activo: true,
-    honorarioBase: 0
+    honorarioBase: 0,
+    telefono: ''
+  });
+  // Schedule State
+  public showScheduleView = signal<boolean>(false);
+  public medicosHorarios = signal<any[]>([]);
+  public selectedMedicoId = signal<string | null>(null);
+  public selectedMedico = computed(() => {
+    const id = this.selectedMedicoId();
+    if (!id) return null;
+    return this.medicosHorarios().find(m => m.medicoId?.toLowerCase() === id.toLowerCase());
   });
 
   readonly icons = {
@@ -46,7 +64,11 @@ export class MedicoManagementComponent implements OnInit {
     Close: X,
     Save: Save,
     Doctor: Stethoscope,
-    Report: FileText
+    Report: FileText,
+    Clock: Clock,
+    PlusSchedule: PlusIcon,
+    ArrowLeft: ArrowLeft,
+    X: X
   };
 
   ngOnInit() {
@@ -73,7 +95,8 @@ export class MedicoManagementComponent implements OnInit {
       nombre: '',
       especialidadId: '',
       activo: true,
-      honorarioBase: 0
+      honorarioBase: 0,
+      telefono: ''
     });
     this.showModal.set(true);
   }
@@ -108,5 +131,44 @@ export class MedicoManagementComponent implements OnInit {
     if (confirm('¿Estás seguro de eliminar este médico?')) {
       this.medicoService.delete(id).subscribe(() => this.refresh());
     }
+  }
+
+  // --- SCHEDULE LOGIC (Moved from Settings) ---
+  loadMedicosHorarios() {
+    this.settingsService.getMedicosHorarios().subscribe(res => this.medicosHorarios.set(res));
+  }
+
+  openSchedule(medicoId: string) {
+    this.selectedMedicoId.set(medicoId);
+    this.loadMedicosHorarios();
+    this.showScheduleView.set(true);
+  }
+
+  closeSchedule() {
+    this.showScheduleView.set(false);
+    this.selectedMedicoId.set(null);
+  }
+
+  getDayName(day: number): string {
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return days[day];
+  }
+
+  addScheduleBlock(medico: any, day: number) {
+    medico.horarios.push({
+      diaSemana: day,
+      inicio: '08:00',
+      fin: '12:00'
+    });
+  }
+
+  removeScheduleBlock(medico: any, index: number) {
+    medico.horarios.splice(index, 1);
+  }
+
+  saveMedicoSchedule(medico: any) {
+    this.settingsService.syncMedicoSchedules(medico.medicoId, medico.horarios, medico.telefono).subscribe(() => {
+      alert(`Horario de ${medico.medicoNombre} sincronizado.`);
+    });
   }
 }

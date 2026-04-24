@@ -3,6 +3,7 @@ import { ServiceCategory } from '../../../core/models/service-category.enum';
 import { AtmAmountDirective } from '../../../shared/directives/atm-amount.directive';
 import { CurrencyBsPipe } from '../../../shared/pipes/currency-bs.pipe';
 import { Component, inject, signal, computed, effect } from '@angular/core';
+import { PermissionService } from '../../../core/services/permission.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -12,6 +13,7 @@ import { FacturacionService, DetallePagoDto, CargarServicioACuentaRequest, Recei
 import { AuthService } from '../../../core/services/auth.service';
 import { AppointmentsService, Doctor, ScheduleEntry } from '../../../core/services/appointments.service';
 import { SpecialtyService, Especialidad as Specialty } from '../../../core/services/specialty.service';
+import { ActivatedRoute } from '@angular/router';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { CatalogItem } from '../../../core/models/priced-item.model';
 import { BillingFacadeService } from '../../../core/services/billing-facade.service';
@@ -58,13 +60,13 @@ import {
   selector: 'app-facturacion',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    LucideAngularModule, 
-    CurrencyBsPipe, 
-    PatientSelectorComponent, 
-    ServiceCatalogComponent, 
-    BillingCartComponent, 
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    CurrencyBsPipe,
+    PatientSelectorComponent,
+    ServiceCatalogComponent,
+    BillingCartComponent,
     PaymentModuleComponent,
     SupervisorAuthDialogComponent,
     FilterByDayPipe
@@ -108,7 +110,9 @@ export class FacturacionComponent {
   private conveniosService = inject(ConveniosService);
   private settingsService = inject(SettingsService);
   public billingFacade = inject(BillingFacadeService);
-  
+  public permissionService = inject(PermissionService);
+  private route = inject(ActivatedRoute);
+
   @ViewChild('supervisorDialog') supervisorDialog!: SupervisorAuthDialogComponent;
   @ViewChild('billingCart') billingCart!: BillingCartComponent;
 
@@ -117,7 +121,7 @@ export class FacturacionComponent {
   public isAdmin = computed(() => this.authService.isAdministrador());
   public isParticularAssistant = computed(() => this.authService.isParticularAssistant());
   public isInsuranceAssistant = computed(() => this.authService.isInsuranceAssistant());
-  
+
   public isRxAssistant = computed(() => {
     const role = this.user()?.role?.toLowerCase() || '';
     return (role === 'rx' || role === 'farmacia' || role === 'asistente rx') && !this.isAdmin();
@@ -141,7 +145,7 @@ export class FacturacionComponent {
   public pacienteId = signal<string | null>(null);
   public selectedPatientData = signal<PatientRecord | null>(null);
   public pacienteSeleccionado = computed(() => !!this.pacienteId());
-  
+
   public cuentaId = this.billingFacade.cuentaId;
   public carritoLocal = this.billingFacade.carritoLocal;
   public serviciosEnBackend = this.billingFacade.serviciosEnBackend;
@@ -151,7 +155,7 @@ export class FacturacionComponent {
   public totalCargadoBS = this.billingFacade.totalCargadoBS;
 
   public tipoIngreso = signal<string>('Particular');
-  public convenioId = signal<number | null>(null); 
+  public convenioId = signal<number | null>(null);
   public tasaCambioDia = this.billingFacade.tasaCambioDia;
   public editandoTasa = signal<boolean>(false);
   public tasaEditValue = signal<number>(0);
@@ -178,8 +182,12 @@ export class FacturacionComponent {
       error: () => this.tasaCambioDia.set(36.5) // Fallback
     });
 
-    // 4. Inicialización de Estados Seguros según Rol
-    if (this.isInsuranceAssistant()) {
+    // 4. Inicialización de Estados Seguros según Rol y QueryParams (Fase 40)
+    const typeParam = this.route.snapshot.queryParamMap.get('type');
+    
+    if (typeParam) {
+      this.tipoIngreso.set(typeParam);
+    } else if (this.isInsuranceAssistant()) {
       this.tipoIngreso.set('Seguro');
     } else if (this.isParticularAssistant()) {
       this.tipoIngreso.set('Particular');
@@ -406,7 +414,7 @@ export class FacturacionComponent {
   private solicitarNuevoPrecio() {
     if (!this.pendingEditInfo) return;
     const { index, isBackend } = this.pendingEditInfo;
-    
+
     // UI REFINEMENT (Phase 9): Passing both price and honorary to the inline editor
     const item = isBackend ? this.serviciosEnBackend()[index] : this.carritoLocal()[index];
     const currentPrice = item.precioUsd || item.PrecioUsd || item.precio || 0;
@@ -512,9 +520,9 @@ export class FacturacionComponent {
     this.isLoading.set(true);
     try {
       await firstValueFrom(this.billingFacade.syncCartWithBackend(
-        pId, 
-        this.tipoIngreso(), 
-        this.user()?.username || '', 
+        pId,
+        this.tipoIngreso(),
+        this.user()?.username || '',
         this.convenioId(),
         this.selectedPatientData()?.idPacienteLegacy
       ));
@@ -608,7 +616,7 @@ export class FacturacionComponent {
     this.catalogService.getUnifiedCatalog(convenioId).subscribe({
       next: (items: CatalogItem[]) => {
         this.billingFacade.servicesCatalog.set(items);
-        
+
         // Sincronización de precios si hay items en carrito (Legacy Fix V2.1)
         if (this.carritoLocal().length > 0) {
           this.billingFacade.carritoLocal.update(cart => cart.map(localItem => {
@@ -670,7 +678,9 @@ export class FacturacionComponent {
             });
             this.availableSlots.set(filteredSlots);
           } else {
-            this.availableSlots.set([]);
+            // [V7.1 Fix] Si no hay horarios específicos definidos para este día,
+            // respetamos el fallback automático del servidor (usualmente 8 AM - 6:30 PM).
+            this.availableSlots.set(res.turnos);
           }
           this.scheduleLoading.set(false);
         },
@@ -884,7 +894,7 @@ export class FacturacionComponent {
           const firstSugId = s.sugerenciasIds[0];
           this.suggestedServiceId.set(firstSugId);
           this.actionMessage.set(`¡Estudio añadido! Se sugiere cargar también el informe del especialista.`);
-          
+
           // Opcional: Hacer scroll al buscador para que vea la sugerencia resaltada
           setTimeout(() => {
             const el = document.querySelector('.suggested-highlight');

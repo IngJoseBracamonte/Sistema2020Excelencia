@@ -72,4 +72,24 @@ export class LoginComponent {
       }
     });
   }
+
+  requestPasswordReset() {
+    const username = this.loginForm.value.username;
+    if (!username) {
+      this.errorMessage.set('Por favor, ingrese su nombre de usuario primero.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.authService.requestPasswordReset(username).subscribe({
+      next: (res) => {
+        this.isLoading.set(false);
+        this.errorMessage.set('Solicitud enviada. Contacte al Administrador.');
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Error al enviar solicitud.');
+      }
+    });
+  }
 }

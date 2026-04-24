@@ -28,10 +28,10 @@
                 </div>
              </div>
              <div class="h-10 w-px bg-white/5 mx-2"></div>
-             <button *ngIf="isAdmin() && !editandoTasa()" (click)="editarTasa()" class="h-12 w-12 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95 cursor-pointer">
+             <button *ngIf="permissionService.can('Permissions.Admin.ManageTasa') && !editandoTasa()" (click)="editarTasa()" class="h-12 w-12 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all active:scale-95 cursor-pointer">
                 <lucide-icon [name]="icons.Edit3" class="w-6 h-6"></lucide-icon>
              </button>
-             <div *ngIf="!isAdmin() || editandoTasa()" class="h-12 w-12 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 border border-rose-500/20">
+             <div *ngIf="!permissionService.can('Permissions.Admin.ManageTasa') || editandoTasa()" class="h-12 w-12 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 border border-rose-500/20">
                 <lucide-icon [name]="icons.RefreshCcw" class="w-6 h-6"></lucide-icon>
              </div>
         </div>

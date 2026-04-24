@@ -135,12 +135,12 @@
                     <input type="text" [(ngModel)]="currentItem().descripcion" class="w-full bg-white/5 border border-white/5 p-3 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid gap-4" [ngClass]="currentItem().tipo === 'CONSULTA' ? 'grid-cols-1' : 'grid-cols-2'">
                     <div class="space-y-1">
                         <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">PRECIO (USD)</label>
                         <input type="number" [(ngModel)]="currentItem().precioUsd" class="w-full bg-white/5 border border-white/5 p-3 rounded-xl text-emerald-400 font-black text-lg outline-none focus:border-indigo-500">
                     </div>
-                    <div class="space-y-1">
+                    <div *ngIf="currentItem().tipo !== 'CONSULTA'" class="space-y-1">
                         <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">HONORARIO (USD)</label>
                         <input type="number" [(ngModel)]="currentItem().honorarioBase" class="w-full bg-white/5 border border-white/5 p-3 rounded-xl text-amber-500 font-black text-lg outline-none focus:border-indigo-500">
                     </div>

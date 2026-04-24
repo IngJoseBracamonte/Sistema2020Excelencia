@@ -30,12 +30,32 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                // Enriquecimiento de Auditoría (V15.0)
+                command.CajeroUserId = User.Identity?.Name ?? "Sistama";
+                
                 var idRecibo = await _mediator.Send(command);
                 return Ok(new 
                 { 
                     Message = "El pago multidivisa ha sido asimilado, los saldos se registraron a la Orden y Caja en sesión.", 
                     ReciboId = idRecibo 
                 });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("EmitirFactura")]
+        [Authorize(Roles = "Admin,Administrador,Cajero")]
+        public async Task<IActionResult> EmitirFactura([FromBody] EmitirFacturaFiscalCommand command)
+        {
+            try
+            {
+                command.UsuarioEmision = User.Identity?.Name ?? "Sistama";
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Factura emitida formalmente." });
+                return BadRequest(new { Error = "No se pudo emitir la factura." });
             }
             catch (Exception ex)
             {

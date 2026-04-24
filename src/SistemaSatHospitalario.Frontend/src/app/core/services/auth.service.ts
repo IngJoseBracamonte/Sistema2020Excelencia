@@ -18,6 +18,7 @@ export interface AuthResponse {
   role: string;
   id: string;
   permissions: string[];
+  requirePasswordReset: boolean;
 }
 
 @Injectable({
@@ -79,7 +80,8 @@ export class AuthService {
         username: data.username, 
         role: data.role, 
         id: data.id,
-        permissions: data.permissions
+        permissions: data.permissions,
+        requirePasswordReset: data.requirePasswordReset
       };
     }
     return null;
@@ -92,18 +94,23 @@ export class AuthService {
         const permissions = response.permissions || [];
         
         // Almacenar usando el nuevo StorageService
-        this.storage.saveAuthData(response.token, response.username, response.role, id, permissions);
+        this.storage.saveAuthData(response.token, response.username, response.role, id, permissions, response.requirePasswordReset);
 
         const authResp: AuthResponse = {
           token: response.token,
           username: response.username,
           role: response.role,
           id: id,
-          permissions: permissions
+          permissions: permissions,
+          requirePasswordReset: response.requirePasswordReset
         };
 
         // Actualizar UI reactiva
         this.currentUser.set(authResp);
+
+        if (response.requirePasswordReset) {
+          this.router.navigate(['/reset-password']);
+        }
       }),
       catchError(err => throwError(() => new Error('Credenciales inválidas o Error en el Servidor')))
     );
@@ -121,5 +128,9 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  requestPasswordReset(username: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/Auth/request-reset`, { username });
   }
 }

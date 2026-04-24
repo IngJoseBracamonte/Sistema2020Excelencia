@@ -45,6 +45,7 @@ namespace SistemaSatHospitalario.Infrastructure
                 options.Password.RequireLowercase = true;
                 options.Password.RequireUppercase = true;
                 options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false; // Relajado para coincidir con validación UI
                 options.User.RequireUniqueEmail = false; // Desactivado por solicitud (Micro-Ciclo 30)
             })
             .AddEntityFrameworkStores<SatHospitalarioIdentityDbContext>()
@@ -93,6 +94,9 @@ namespace SistemaSatHospitalario.Infrastructure
 
             // [PHASE-8] Automated PDF Generation
             services.AddTransient<IPdfService, SistemaSatHospitalario.Infrastructure.Services.PdfGenerationService>();
+
+            // [PHASE-9] Security & Cleanup Automation
+            services.AddHostedService<SistemaSatHospitalario.Infrastructure.BackgroundJobs.ReservaTemporalAutoCleaner>();
             
             return services;
         }

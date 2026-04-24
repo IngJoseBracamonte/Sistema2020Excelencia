@@ -12,7 +12,8 @@ export class StorageService {
     USERNAME: 'username',
     ROLE: 'user_role',
     USER_ID: 'user_id',
-    PERMISSIONS: 'user_permissions'
+    PERMISSIONS: 'user_permissions',
+    REQUIRE_RESET: 'require_reset'
   };
 
   /**
@@ -39,12 +40,13 @@ export class StorageService {
   /**
    * High-level Session Management (Standardized)
    */
-  public saveAuthData(token: string, username: string, role: string, id: string, permissions: string[]): void {
+  public saveAuthData(token: string, username: string, role: string, id: string, permissions: string[], requireReset: boolean): void {
     this.setItem(StorageService.KEYS.TOKEN, token);
     this.setItem(StorageService.KEYS.USERNAME, username);
     this.setItem(StorageService.KEYS.ROLE, role);
     this.setItem(StorageService.KEYS.USER_ID, id);
     this.setItem(StorageService.KEYS.PERMISSIONS, JSON.stringify(permissions));
+    this.setItem(StorageService.KEYS.REQUIRE_RESET, requireReset ? 'true' : 'false');
   }
 
   public savePermissions(permissions: string[]): void {
@@ -57,6 +59,7 @@ export class StorageService {
     this.removeItem(StorageService.KEYS.ROLE);
     this.removeItem(StorageService.KEYS.USER_ID);
     this.removeItem(StorageService.KEYS.PERMISSIONS);
+    this.removeItem(StorageService.KEYS.REQUIRE_RESET);
   }
 
   public clearPermissions(): void {
@@ -70,7 +73,8 @@ export class StorageService {
       username: this.getItem(StorageService.KEYS.USERNAME),
       role: this.getItem(StorageService.KEYS.ROLE),
       id: this.getItem(StorageService.KEYS.USER_ID),
-      permissions: perms ? JSON.parse(perms) : []
+      permissions: perms ? JSON.parse(perms) : [],
+      requirePasswordReset: this.getItem(StorageService.KEYS.REQUIRE_RESET) === 'true'
     };
   }
 }

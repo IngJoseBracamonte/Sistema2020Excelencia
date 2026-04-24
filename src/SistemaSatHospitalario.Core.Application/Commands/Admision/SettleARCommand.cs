@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Guid ArId { get; set; }
         public List<PaymentItem> Payments { get; set; } = new List<PaymentItem>();
         public string Observaciones { get; set; }
+        public string UsuarioCarga { get; set; } = string.Empty;
     }
 
     public class PaymentItem

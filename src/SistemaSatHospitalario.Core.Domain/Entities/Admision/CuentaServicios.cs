@@ -19,6 +19,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int? ConvenioId { get; private set; }
 
         public virtual PacienteAdmision Paciente { get; private set; }
+        
+        // --- AUDIT & VALIDATION (Senior Traceability V15.0) ---
+        public string? UsuarioValidacion { get; private set; }
+        public DateTime? FechaValidacion { get; private set; }
+        public string? UsuarioAuditoria { get; private set; }
+        public DateTime? FechaAuditoria { get; private set; }
 
         private readonly List<DetalleServicioCuenta> _detalles = new();
         public IReadOnlyCollection<DetalleServicioCuenta> Detalles => _detalles.AsReadOnly();
@@ -88,6 +94,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             Estado = EstadoConstants.Anulada;
             FechaCierre = DateTime.UtcNow;
+        }
+
+        public void Validar(string usuario)
+        {
+            UsuarioValidacion = usuario ?? throw new ArgumentNullException(nameof(usuario));
+            FechaValidacion = DateTime.UtcNow;
+            Estado = EstadoConstants.Validada;
+        }
+
+        public void Auditar(string usuario)
+        {
+            UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
+            FechaAuditoria = DateTime.UtcNow;
+            // La auditoría puede ser un estado final o una marca sobre una cuenta facturada
         }
     }
 }

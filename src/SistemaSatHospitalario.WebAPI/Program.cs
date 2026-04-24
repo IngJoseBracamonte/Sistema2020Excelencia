@@ -89,6 +89,17 @@ try
     app.MapControllers();
     app.MapCustomHubs();
 
+    // [TELEMETRY] Direct Minimal API for Frontend Logs (Bypass Controller Issues)
+    app.MapPost("/api/diagnostics/logs", (LogPayload payload, ILogger<Program> logger) => {
+        switch (payload.Level?.ToLower())
+        {
+            case "error": logger.LogError("[FE-ERROR] {Message} | Context: {Context}", payload.Message, payload.Context); break;
+            case "warning": logger.LogWarning("[FE-WARN] {Message}", payload.Message); break;
+            default: logger.LogInformation("[FE-INFO] {Message}", payload.Message); break;
+        }
+        return Results.Ok(new { Success = true });
+    }).AllowAnonymous();
+
     app.Run();
 }
 catch (Exception ex)
@@ -98,4 +109,10 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+public class LogPayload {
+    public string Level { get; set; } = "info";
+    public string Message { get; set; }
+    public object Context { get; set; }
 }

@@ -19,6 +19,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal MontoVueltoUSD { get; protected set; } // Pachón Pro V11.2 Change Support
         public decimal TasaBcvUsada => TasaCambioDia;
         public DateTime FechaEmision { get; protected set; }
+        public string? UsuarioEmision { get; protected set; }
         public string Estado => EstadoFiscal;
 
         public CuentaServicios CuentaServicio { get; protected set; }
@@ -43,10 +44,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             NumeroRecibo = $"REC-{DateTime.Now:yyyyMMdd}-{Id.ToString().Substring(0, 8)}";
         }
 
-        public void Emitir(string nroControlFiscal)
+        public void Emitir(string nroControlFiscal, string usuarioEmision)
         {
             if (EstadoFiscal != EstadoConstants.Borrador) throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
             NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
+            UsuarioEmision = usuarioEmision ?? throw new ArgumentNullException(nameof(usuarioEmision));
             EstadoFiscal = EstadoConstants.Emitida;
         }
 
@@ -55,10 +57,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             EstadoFiscal = EstadoConstants.Anulada;
         }
 
-        public void AgregarDetallePago(string metodoPago, string referencia, decimal montoCambiario, decimal equivalenteBase)
+        public void AgregarDetallePago(string metodoPago, string referencia, decimal montoCambiario, decimal equivalenteBase, string usuarioCarga)
         {
             if (EstadoFiscal == EstadoConstants.Anulada) throw new InvalidOperationException("No se pueden agregar pagos a un recibo anulado.");
-            _detallesPago.Add(new DetallePago(Id, metodoPago, referencia, montoCambiario, equivalenteBase));
+            _detallesPago.Add(new DetallePago(Id, metodoPago, referencia, montoCambiario, equivalenteBase, usuarioCarga));
         }
 
         public decimal ObtenerTotalPagadoBase() => _detallesPago.Sum(p => p.EquivalenteAbonadoBase);

@@ -12,5 +12,6 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Models
         public int? LegacyCajeroId { get; set; }
 
         public bool EsActivo { get; set; } = true;
+        public bool RequirePasswordReset { get; set; } = false;
     }
 }

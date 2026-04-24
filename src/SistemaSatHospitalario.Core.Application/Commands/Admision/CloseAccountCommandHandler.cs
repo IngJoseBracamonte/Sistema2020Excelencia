@@ -68,7 +68,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var recibo = new ReciboFactura(cuenta.Id, cuenta.PacienteId, caja.Id, request.TasaCambio, totalCuenta, montoVueltoUSD);
             foreach (var p in request.Pagos)
             {
-                recibo.AgregarDetallePago(p.MetodoPago, p.ReferenciaBancaria, p.MontoAbonadoMoneda, p.EquivalenteAbonadoBase);
+                recibo.AgregarDetallePago(p.MetodoPago, p.ReferenciaBancaria, p.MontoAbonadoMoneda, p.EquivalenteAbonadoBase, request.UsuarioCajero);
             }
 
             // 2. Gestionar Saldo Pendiente (AR)

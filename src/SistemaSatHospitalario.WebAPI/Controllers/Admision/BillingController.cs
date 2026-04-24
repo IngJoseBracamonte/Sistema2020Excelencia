@@ -236,5 +236,39 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpPost("ValidarCuenta")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor,Asistente Seguro,Asistente de Seguros")]
+        public async Task<IActionResult> ValidarCuenta([FromBody] ValidarCuentaCommand command)
+        {
+            try
+            {
+                command.UsuarioValidador = User.GetUserName();
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Cuenta validada exitosamente." });
+                return BadRequest(new { Error = "No se pudo validar la cuenta." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("AuditarCuenta")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor")]
+        public async Task<IActionResult> AuditarCuenta([FromBody] AuditarCuentaCommand command)
+        {
+            try
+            {
+                command.UsuarioAuditor = User.GetUserName();
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Cuenta marcada como auditada." });
+                return BadRequest(new { Error = "No se pudo auditar la cuenta." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }

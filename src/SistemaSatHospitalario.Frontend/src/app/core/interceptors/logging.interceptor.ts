@@ -1,15 +1,20 @@
-import { HttpInterceptorFn } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 
 export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
-    console.log(`[HTTP DEBUG] Sending request to: ${req.url}`);
-    console.log(`[HTTP DEBUG] Headers:`, req.headers.keys());
-    console.log(`[HTTP DEBUG] Auth Header:`, req.headers.get('Authorization'));
-    
+    const router = inject(Router);
+
     return next(req).pipe(
-        tap({
-            next: (event) => console.log(`[HTTP DEBUG] Response from ${req.url}:`, event),
-            error: (err) => console.error(`[HTTP DEBUG] Error from ${req.url}:`, err)
+        catchError((err: HttpErrorResponse) => {
+            // Redirección profesional a pantalla de error en español
+            if (err.status === 401 || err.status === 403 || err.status === 404 || err.status >= 500 || err.status === 0) {
+                router.navigate(['/error', err.status || '0']);
+            }
+
+            return throwError(() => err);
         })
     );
 };

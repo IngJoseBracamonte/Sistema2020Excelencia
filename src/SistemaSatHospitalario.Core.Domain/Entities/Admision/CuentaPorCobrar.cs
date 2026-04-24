@@ -15,6 +15,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; private set; }
         public string Estado { get; private set; } // Pendiente, Parcial, Pagada
         public bool IsAudited { get; private set; }
+        public string? UsuarioAuditoria { get; private set; }
+        public DateTime? FechaAuditoria { get; private set; }
         public bool CompromisoGenerado { get; private set; }
 
         public CuentaServicios Cuenta { get; private set; }
@@ -39,9 +41,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoPagadoBase = MontoTotalBase;
         }
 
-        public void MarcarComoAuditada()
+        public void MarcarComoAuditada(string usuario)
         {
             IsAudited = true;
+            UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
+            FechaAuditoria = DateTime.UtcNow;
         }
 
         public void MarcarCompromisoGenerado()

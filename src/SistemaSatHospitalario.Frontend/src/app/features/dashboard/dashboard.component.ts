@@ -60,7 +60,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.jwtToken) {
-      this.signalRService.startConnection(this.jwtToken);
+      const role = this.authService.currentUser()?.role || '';
+      this.signalRService.startConnection(this.jwtToken, role);
     }
     this.refreshKPIs();
     

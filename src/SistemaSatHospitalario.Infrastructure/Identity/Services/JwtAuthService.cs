@@ -45,8 +45,10 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
 
                 var roles = await _userManager.GetRolesAsync(user);
                 
-                // Fetch permissions (claims) for all roles
+                // --- FETCH PERMISSIONS (Role Claims + User Claims) ---
                 var allPermissions = new List<string>();
+
+                // 1. Permissions from ROLES
                 foreach (var roleName in roles)
                 {
                     var role = await _roleManager.FindByNameAsync(roleName);
@@ -59,6 +61,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                         allPermissions.AddRange(permissions);
                     }
                 }
+
+                // 2. Permissions directly on the USER (User Claims)
+                var userClaimsDirect = await _userManager.GetClaimsAsync(user);
+                var directPermissions = userClaimsDirect
+                    .Where(c => c.Type == PermissionConstants.Type)
+                    .Select(c => c.Value);
+                allPermissions.AddRange(directPermissions);
+
                 allPermissions = allPermissions.Distinct().ToList();
                 
                 var tokenHandler = new JwtSecurityTokenHandler();
@@ -106,7 +116,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     UserId = user.Id,
                     Username = user.UserName,
                     Role = roles.Count > 0 ? roles[0] : "AsignarRol",
-                    Permissions = allPermissions
+                    Permissions = allPermissions,
+                    RequirePasswordReset = user.RequirePasswordReset
                 };
             }
             catch (Exception ex)

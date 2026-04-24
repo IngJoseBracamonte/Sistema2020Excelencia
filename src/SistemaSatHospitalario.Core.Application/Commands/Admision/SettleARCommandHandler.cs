@@ -69,7 +69,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     var amountUSD = Math.Round(payment.Amount, 2);
                     totalAbonadoUSD += amountUSD;
 
-                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD);
+                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD, request.UsuarioCarga);
                     _context.DetallesPago.Add(detalle);
                 }
 

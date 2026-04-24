@@ -40,13 +40,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // [SENIOR REFACTOR] Using IDateTimeProvider to ensure operational consistency
             var todayUtc = _dateTime.TodayUtc;
             var tomorrowUtc = _dateTime.TomorrowUtc;
+            var todayLocal = _dateTime.HospitalNow.Date;
+            var tomorrowLocal = todayLocal.AddDays(1);
             
             var response = new BusinessInsightsDto();
 
             // 1. Métricas de Caja/Admisión (Admin o Cajeros)
             if (AuthorizationConstants.IsCajero(userRole))
             {
-                _logger.LogInformation("[INSIGHTS] Calculando ventas para hoy ({Today} a {Tomorrow})", todayUtc, tomorrowUtc);
+                _logger.LogInformation("[INSIGHTS] Calculando ventas para hoy ({Today} a {Tomorrow})", todayLocal, tomorrowLocal);
                 
                 // Ventas Netas hoy (Facturado hoy) - Senior Correction: Usamos FechaPago real de los detalles
                 response.TotalVentasHoy = await _context.DetallesPago
@@ -67,7 +69,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Turnos Pautados Hoy
                 response.TurnosPautadosHoy = await _context.CitasMedicas
                     .AsNoTracking()
-                    .Where(c => c.HoraPautada >= todayUtc && c.HoraPautada < tomorrowUtc && c.Estado != EstadoConstants.Cancelado)
+                    .Where(c => c.HoraPautada >= todayLocal && c.HoraPautada < tomorrowLocal && c.Estado != EstadoConstants.Cancelado)
                     .CountAsync(cancellationToken);
                 
                 _logger.LogInformation("[INSIGHTS] Turnos Pautados Hoy: {Count}", response.TurnosPautadosHoy);

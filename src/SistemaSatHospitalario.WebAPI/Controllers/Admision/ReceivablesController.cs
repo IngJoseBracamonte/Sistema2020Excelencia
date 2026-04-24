@@ -50,6 +50,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                command.UsuarioCarga = User.Identity?.Name ?? "Sistama";
                 var success = await _mediator.Send(command);
                 return Ok(new { Message = "Cobro procesado exitosamente.", Success = success });
             }
@@ -64,6 +65,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                command.UsuarioAuditor = User.Identity?.Name ?? "Sistama";
                 var success = await _mediator.Send(command);
                 return Ok(new { Message = "Auditoría procesada exitosamente.", Success = success });
             }

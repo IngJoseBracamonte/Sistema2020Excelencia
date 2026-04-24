@@ -24,6 +24,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class DoctorScheduleResponse
     {
         public Guid MedicoId { get; set; }
+        public string MedicoNombre { get; set; }
+        public string? Telefono { get; set; }
         public DateTime Fecha { get; set; }
         public List<ScheduleEntry> Turnos { get; set; } = new List<ScheduleEntry>();
     }

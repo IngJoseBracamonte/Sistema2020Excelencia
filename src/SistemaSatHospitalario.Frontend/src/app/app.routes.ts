@@ -9,6 +9,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
     },
     {
+        path: 'reset-password',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent)
+    },
+    {
         path: '',
         component: UserLayoutComponent,
         canActivate: [authGuard],
@@ -29,11 +34,16 @@ export const routes: Routes = [
             { path: 'admin/audit/precios', loadComponent: () => import('./features/admin/audit/price-audit.component').then(m => m.PriceAuditComponent) },
             { path: 'admin/audit/cuentas', loadComponent: () => import('./features/admision/auditing/auditing.component').then(m => m.AuditingComponent) },
             { path: 'especialidades', loadComponent: () => import('./features/admin/especialidades/especialidad-management.component').then(m => m.EspecialidadManagementComponent) },
+            { path: 'admin/reset-requests', loadComponent: () => import('./features/admin/reset-requests/password-reset-requests.component').then(m => m.PasswordResetRequestsComponent) },
             { path: 'settings', loadComponent: () => import('./features/admin/settings/system-settings.component').then(m => m.SystemSettingsComponent) },
             { path: 'tickets', loadComponent: () => import('./features/admin/tickets/tickets.component').then(m => m.AdminTicketsComponent) },
             { path: 'seguros', loadComponent: () => import('./features/seguros/seguros-dashboard.component').then(m => m.SegurosDashboardComponent) },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },
-    { path: '**', redirectTo: 'dashboard' }
+    {
+        path: 'error/:code',
+        loadComponent: () => import('./shared/components/system-error/system-error.component').then(m => m.SystemErrorComponent)
+    },
+    { path: '**', redirectTo: 'error/404' }
 ];

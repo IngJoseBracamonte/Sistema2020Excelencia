@@ -3,19 +3,19 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { 
-  LucideAngularModule, 
-  Settings, 
-  Save, 
-  RefreshCw, 
-  Database, 
-  Users, 
-  Shield, 
-  Plus, 
-  Trash2, 
-  Edit, 
-  Clock, 
-  Calendar as LucideCalendar, 
+import {
+  LucideAngularModule,
+  Settings,
+  Save,
+  RefreshCw,
+  Database,
+  Users,
+  Shield,
+  Plus,
+  Trash2,
+  Edit,
+  Clock,
+  Calendar as LucideCalendar,
   Stethoscope,
   Lock,
   User,
@@ -26,7 +26,11 @@ import {
   AlertCircle,
   Search,
   Package,
-  ArrowLeft
+  ArrowLeft,
+  Mail,
+  UserPlus,
+  Eye,
+  EyeOff
 } from 'lucide-angular';
 import { SettingsService, SecurityConfig } from '../../../core/services/settings.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
@@ -34,12 +38,12 @@ import { AppointmentsService } from '../../../core/services/appointments.service
 import { ConfiguracionGeneral, UserDto } from '../../../core/models/settings.model';
 import { SeguroConvenio } from '../../../core/models/convenio.model';
 import { PermissionService } from '../../../core/services/permission.service';
-import { FilterByDayPipe } from '../../../shared/pipes/filter-by-day.pipe';
+
 
 @Component({
   selector: 'app-system-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, FilterByDayPipe],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './system-settings.component.html'
 })
 export class SystemSettingsComponent implements OnInit {
@@ -49,13 +53,13 @@ export class SystemSettingsComponent implements OnInit {
   public permissionService = inject(PermissionService);
   private route = inject(ActivatedRoute);
 
-  public activeTab = 'general';
+  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' = 'general';
   public isLoading = signal<boolean>(false);
 
   // --- GENERAL TAB ---
-  public configData: ConfiguracionGeneral = { 
-    nombreEmpresa: '', 
-    rif: '', 
+  public configData: ConfiguracionGeneral = {
+    nombreEmpresa: '',
+    rif: '',
     iva: 16,
     facturarLaboratorio: false,
     mostrarDetalleFacturacion: false,
@@ -77,25 +81,33 @@ export class SystemSettingsComponent implements OnInit {
   public showRoleModal = false;
   public newRoleName = '';
   public showUserModal = false;
+  public securitySubTab = signal<'usuarios' | 'roles'>('usuarios');
   public users = signal<UserDto[]>([]);
+  public roles = signal<string[]>([]);
+  public selectedUserForPermissions = signal<UserDto | null>(null);
+  public showPermissionsModal = signal<boolean>(false);
+  public showPassword = false;
+  public showConfirmPassword = false;
   public newU: any = { username: '', email: '', password: '', roles: [] };
+  public confirmPassword = '';
+  public editingUserId: string | null = null;
 
-  // --- MEDICOS TAB (SCHEDULES) ---
-  public medicosHorarios = signal<any[]>([]);
-  public selectedMedicoId = signal<string | null>(null);
-  public selectedMedico = computed(() => this.medicosHorarios().find(m => m.medicoId === this.selectedMedicoId()));
-  
-  // --- CITAS TAB (MONITORING) ---
+  // --- MONITOR TAB ---
   public activeAppointments = signal<any[]>([]);
-  public fechaFiltroCitas = new Date().toISOString().split('T')[0];
 
 
 
-  public readonly icons = { 
-    Settings, Save, RefreshCw, Database, Users, User, Shield, Plus, Trash2, Edit, 
-    Clock, Calendar: LucideCalendar, Stethoscope, Lock, ChevronRight, Info, Check, X, AlertCircle, Search, 
+
+
+  public readonly icons = {
+    Settings, Save, RefreshCw, Database, Users, User, Shield, Plus, Trash2, Edit,
+    Clock, Calendar: LucideCalendar, Stethoscope, Lock, ChevronRight, Info, Check, X, AlertCircle, Search,
     Package: Package,
-    ArrowLeft: ArrowLeft
+    ArrowLeft: ArrowLeft,
+    Mail: Mail,
+    UserPlus: UserPlus,
+    Eye: Eye,
+    EyeOff: EyeOff
   };
 
   ngOnInit() {
@@ -108,11 +120,50 @@ export class SystemSettingsComponent implements OnInit {
     });
   }
 
+  get passwordRules() {
+    const p = this.newU.password || '';
+    return {
+      length: p.length >= 8,
+      upper: /[A-Z]/.test(p),
+      lower: /[a-z]/.test(p),
+      digit: /\d/.test(p)
+    };
+  }
+
+  get isUsernameTaken() {
+    if (this.editingUserId) return false;
+    return this.users().some(u => u.username.toLowerCase() === (this.newU.username || '').toLowerCase());
+  }
+
   onTabChange() {
-    if (this.activeTab === 'citas') this.loadAppointments();
-    if (this.activeTab === 'medicos') this.loadMedicosHorarios();
-    if (this.activeTab === 'usuarios') this.loadSecurityMatrix();
+    if (this.activeTab === 'usuarios') {
+      this.loadSecurityMatrix();
+      this.settingsService.getUsers().subscribe(data => this.users.set(data));
+    }
     if (this.activeTab === 'convenios') this.loadConvenios();
+    if (this.activeTab === 'citas') this.loadAppointments();
+  }
+
+  loadAppointments() {
+    this.appointmentsService.getActiveAppointments().subscribe((res: any[]) => this.activeAppointments.set(res));
+  }
+
+  cancelAppointment(app: any) {
+    const isReserva = app.status === 'RESERVA' || app.pacienteNombre.includes('RESERVA');
+    const msg = isReserva ? 'RESERVA TEMPORAL' : 'CITA';
+    
+    if (confirm(`¿Está seguro que desea ANULAR esta ${msg}?`)) {
+      this.appointmentsService.adminManageSchedule({
+        action: 'Delete',
+        type: isReserva ? 'Reserva' : 'Cita',
+        targetId: app.id.toString()
+      }).subscribe({
+        next: () => {
+          this.loadAppointments();
+        },
+        error: (err) => alert(err.error?.error || 'Error al anular')
+      });
+    }
   }
 
   loadData() {
@@ -213,27 +264,10 @@ export class SystemSettingsComponent implements OnInit {
     } else {
       newPerms.push(permission);
     }
-    
+
     this.settingsService.updateRolePermissions(role.name, newPerms).subscribe(() => {
       role.permissions = newPerms;
     });
-  }
-
-  // --- MEDICOS & SCHEDULES ---
-  loadMedicosHorarios() {
-    this.settingsService.getMedicosHorarios().subscribe(res => this.medicosHorarios.set(res));
-  }
-
-  addScheduleBlock(medico: any, day: number) {
-    medico.horarios.push({
-      diaSemana: day,
-      inicio: '08:00',
-      fin: '12:00'
-    });
-  }
-
-  removeScheduleBlock(medico: any, index: number) {
-    medico.horarios.splice(index, 1);
   }
 
   saveMedicoSchedule(medico: any) {
@@ -242,19 +276,82 @@ export class SystemSettingsComponent implements OnInit {
     });
   }
 
-  // --- CITAS MONITORING ---
-  loadAppointments() {
-    this.appointmentsService.getActiveAppointments(this.fechaFiltroCitas).subscribe(data => {
-      this.activeAppointments.set(data);
-    });
+
+
+  // --- USER CREATION & EDITING ---
+  openNewUserModal() {
+    this.editingUserId = null;
+    this.newU = { username: '', email: '', password: '', roles: [] };
+    this.showUserModal = true;
   }
 
-  // --- USER CREATION ---
+  editUser(user: UserDto) {
+    this.editingUserId = user.id;
+    this.newU = {
+      username: user.username,
+      email: user.email,
+      password: '', // Leave blank
+      roles: [...user.roles]
+    };
+    this.showUserModal = true;
+  }
+
   saveUser() {
-    this.settingsService.createUser(this.newU).subscribe(() => {
-      this.showUserModal = false;
-      this.loadData();
-      alert('Usuario creado.');
+    if (this.editingUserId) {
+      this.settingsService.updateUserRoles(this.editingUserId, this.newU.roles).subscribe({
+        next: () => {
+          this.showUserModal = false;
+          this.loadData();
+        },
+        error: (err) => alert(err.error?.error || 'Error al actualizar roles')
+      });
+    } else {
+      if (this.newU.password !== this.confirmPassword) {
+        alert('Las contraseñas no coinciden.');
+        return;
+      }
+      if (this.isUsernameTaken) {
+        alert('El nombre de usuario ya está en uso.');
+        return;
+      }
+      this.settingsService.createUser(this.newU).subscribe({
+        next: () => {
+          this.showUserModal = false;
+          this.loadData();
+        },
+        error: (err) => alert(err.error?.error || 'Error al crear usuario')
+      });
+    }
+  }
+
+  // --- USER PERMISSIONS (GRANULAR) ---
+  manageUserPermissions(user: UserDto) {
+    this.selectedUserForPermissions.set({ ...user, permissions: [...(user.permissions || [])] });
+    this.showPermissionsModal.set(true);
+  }
+
+  toggleUserPermission(permission: string) {
+    const user = this.selectedUserForPermissions();
+    if (!user) return;
+
+    const perms = [...user.permissions];
+    const index = perms.indexOf(permission);
+    if (index > -1) {
+      perms.splice(index, 1);
+    } else {
+      perms.push(permission);
+    }
+    user.permissions = perms;
+    this.selectedUserForPermissions.set({ ...user });
+  }
+
+  saveUserPermissions() {
+    const user = this.selectedUserForPermissions();
+    if (!user) return;
+
+    this.settingsService.updateUserPermissions(user.id, user.permissions).subscribe(() => {
+      this.showPermissionsModal.set(false);
+      this.loadData(); // Refresh list
     });
   }
 

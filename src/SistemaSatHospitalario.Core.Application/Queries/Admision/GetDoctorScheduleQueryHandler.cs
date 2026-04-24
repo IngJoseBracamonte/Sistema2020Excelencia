@@ -34,6 +34,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var response = new DoctorScheduleResponse
             {
                 MedicoId = request.MedicoId,
+                MedicoNombre = medico.Nombre,
+                Telefono = medico.Telefono,
                 Fecha = request.Fecha.Date,
                 Turnos = new List<ScheduleEntry>()
             };

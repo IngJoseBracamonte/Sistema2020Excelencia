@@ -13,6 +13,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Contexts
         {
         }
 
+        public DbSet<PasswordResetRequest> PasswordResetRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -62,6 +64,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Contexts
             {
                 entity.ToTable("UsuarioTokens");
                 entity.Property(ut => ut.UserId).HasColumnType("char(36)");
+            });
+
+            builder.Entity<PasswordResetRequest>(entity =>
+            {
+                entity.ToTable("PasswordResetRequests");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Id).HasColumnType("char(36)");
+                entity.Property(x => x.UsuarioId).HasColumnType("char(36)");
             });
         }
     }

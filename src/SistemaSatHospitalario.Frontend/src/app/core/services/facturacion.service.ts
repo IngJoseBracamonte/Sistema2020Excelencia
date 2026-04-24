@@ -161,4 +161,16 @@ export class FacturacionService {
   cancelAppointment(appointmentId: string): Observable<any> {
     return this.http.post<any>(`${this.billingUrl}/CancelAppointment/${appointmentId}`, {});
   }
+
+  validarCuenta(cuentaId: string): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/ValidarCuenta`, { cuentaId });
+  }
+
+  auditarCuenta(cuentaId: string): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/AuditarCuenta`, { cuentaId });
+  }
+
+  emitirFactura(reciboId: string, nroControl: string): Observable<any> {
+    return this.http.post<any>(`${this.receiptUrl}/EmitirFactura`, { reciboId, nroControlFiscal: nroControl });
+  }
 }

@@ -10,6 +10,7 @@ export interface Medico {
   especialidad?: string;
   activo: boolean;
   honorarioBase?: number; // V1.0 Security Matrix
+  telefono?: string;
 }
 
 export interface DoctorHonorariaDto {

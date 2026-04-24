@@ -152,6 +152,37 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
                     b.ToTable("UsuarioTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SistemaSatHospitalario.Infrastructure.Identity.Models.PasswordResetRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("FechaProcesado")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("FechaSolicitud")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ProcesadoPor")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PasswordResetRequests", (string)null);
+                });
+
             modelBuilder.Entity("SistemaSatHospitalario.Infrastructure.Identity.Models.UsuarioHospital", b =>
                 {
                     b.Property<Guid>("Id")
@@ -207,6 +238,9 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("RequirePasswordReset")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("SecurityStamp")

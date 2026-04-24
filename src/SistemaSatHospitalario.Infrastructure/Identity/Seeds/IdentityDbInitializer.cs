@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 using SistemaSatHospitalario.Infrastructure.Identity.Models;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
 {
@@ -71,48 +72,135 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     _logger.LogInformation("Identity Database ya está actualizada. No se requieren migraciones.");
                 }
 
-                _logger.LogInformation("Poblando Identity Roles y Usuarios Defaults...");
+                _logger.LogInformation("Poblando Identity Roles, Usuarios y Permisos Defaults (Arquitectura V15.0)...");
 
-                // Seed Roles
-                var roles = new[] { "Admin", "Cajero", "Supervisor", "Asistente de Seguros", "Médico", "Asistente Particular", "Asistente RX", "Asistente de Tomografía" };
+                // --- 1. SEED ROLES ---
+                var roles = new[] { 
+                    "Admin", "Cajero", "Supervisor", "Asistente de Seguros", 
+                    "Médico", "Asistente Particular", "Asistente RX", "Asistente de Tomografía" 
+                };
 
-                foreach (var role in roles)
+                foreach (var roleName in roles)
                 {
-                    if (!await _roleManager.RoleExistsAsync(role))
+                    if (!await _roleManager.RoleExistsAsync(roleName))
                     {
-                        await _roleManager.CreateAsync(new IdentityRole<Guid> { Name = role });
+                        await _roleManager.CreateAsync(new IdentityRole<Guid> { Name = roleName });
                     }
                 }
 
-                // Seed Admin User
-                var adminUser = await _userManager.FindByNameAsync("admin");
-                if (adminUser == null)
+                // --- 2. DEFINICIÓN DE PERMISOS PREDETERMINADOS (DICCIONARIO DE ARQUITECTURA) ---
+                var roleDefaults = new System.Collections.Generic.Dictionary<string, string[]>
                 {
-                    _logger.LogInformation("Creando usuario administrador maestro...");
-                    var defaultUser = new UsuarioHospital
-                    {
-                        UserName = "admin",
-                        Email = "admin@hospital.local",
-                        NombreReal = "Administrador",
-                        ApellidoReal = "Maestro",
-                        LegacyCajeroId = 1, 
-                        EmailConfirmed = true,
-                        PhoneNumberConfirmed = true,
-                        EsActivo = true
-                    };
+                    { "Admin", new[] { 
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Facturacion.View, PermissionConstants.Facturacion.Create, PermissionConstants.Facturacion.Cancel, PermissionConstants.Facturacion.Convenio, PermissionConstants.Facturacion.Particular,
+                        PermissionConstants.Citas.ViewControl, PermissionConstants.Citas.Manage, PermissionConstants.Citas.Cancel, PermissionConstants.Citas.Atender,
+                        PermissionConstants.Reportes.ViewCxC, PermissionConstants.Reportes.ViewExpediente, PermissionConstants.Reportes.ViewAudit, PermissionConstants.Reportes.ViewOrders,
+                        PermissionConstants.Admin.AccessSettings, PermissionConstants.Admin.ManageUsers, PermissionConstants.Admin.ManageCatalog, PermissionConstants.Admin.ManageMedicos, PermissionConstants.Admin.ManageTasa
+                    } },
+                    { "Cajero", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Facturacion.View, PermissionConstants.Facturacion.Create, PermissionConstants.Facturacion.Particular,
+                        PermissionConstants.Citas.ViewControl,
+                        PermissionConstants.Reportes.ViewExpediente
+                    } },
+                    { "Supervisor", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Facturacion.View, PermissionConstants.Facturacion.Create, PermissionConstants.Facturacion.Cancel, PermissionConstants.Facturacion.Convenio, PermissionConstants.Facturacion.Particular,
+                        PermissionConstants.Citas.ViewControl, PermissionConstants.Citas.Manage, PermissionConstants.Citas.Cancel,
+                        PermissionConstants.Reportes.ViewCxC, PermissionConstants.Reportes.ViewExpediente, PermissionConstants.Reportes.ViewAudit, PermissionConstants.Reportes.ViewOrders,
+                        PermissionConstants.Admin.AccessSettings, PermissionConstants.Admin.ManageCatalog, PermissionConstants.Admin.ManageMedicos
+                    } },
+                    { "Asistente de Seguros", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Facturacion.View, PermissionConstants.Facturacion.Create, PermissionConstants.Facturacion.Convenio,
+                        PermissionConstants.Citas.ViewControl,
+                        PermissionConstants.Reportes.ViewCxC, PermissionConstants.Reportes.ViewExpediente
+                    } },
+                    { "Médico", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Citas.ViewControl, PermissionConstants.Citas.Atender,
+                        PermissionConstants.Reportes.ViewOrders
+                    } },
+                    { "Asistente Particular", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Facturacion.View, PermissionConstants.Facturacion.Create, PermissionConstants.Facturacion.Particular,
+                        PermissionConstants.Citas.ViewControl,
+                        PermissionConstants.Reportes.ViewExpediente
+                    } },
+                    { "Asistente RX", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Reportes.ViewOrders,
+                        PermissionConstants.Citas.ViewControl
+                    } },
+                    { "Asistente de Tomografía", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Reportes.ViewOrders
+                    } }
+                };
 
-                    var result = await _userManager.CreateAsync(defaultUser, "Admin123*!");
-                    if (result.Succeeded)
-                    {
-                        await _userManager.AddToRoleAsync(defaultUser, "Admin");
-                    }
-                }
-                else 
+                // --- 3. SEED TEST USERS (USER-CENTRIC PERMISSIONS) ---
+                var testUsers = new[] {
+                    new { User = "admin", Role = "Admin", Email = "admin@hospital.local", Pwd = "Admin123*!" },
+                    new { User = "user_cajero", Role = "Cajero", Email = "cajero@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_supervisor", Role = "Supervisor", Email = "supervisor@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_seguros", Role = "Asistente de Seguros", Email = "seguros@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_medico", Role = "Médico", Email = "medico@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_particular", Role = "Asistente Particular", Email = "particular@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_rx", Role = "Asistente RX", Email = "rx@test.local", Pwd = "AsistenteRx24" },
+                    new { User = "user_tomografia", Role = "Asistente de Tomografía", Email = "tomografia@test.local", Pwd = "Hospital2026*!" }
+                };
+
+                foreach (var userData in testUsers)
                 {
-                    // Asegurar que el admin siempre tenga el rol Admin (Reparación automática)
-                    if (!await _userManager.IsInRoleAsync(adminUser, "Admin"))
+                    var user = await _userManager.FindByNameAsync(userData.User);
+                    if (user == null)
                     {
-                        await _userManager.AddToRoleAsync(adminUser, "Admin");
+                        user = new UsuarioHospital
+                        {
+                            UserName = userData.User,
+                            Email = userData.Email,
+                            NombreReal = userData.User.Replace("user_", "").ToUpper(),
+                            ApellidoReal = "Personal",
+                            EmailConfirmed = true,
+                            EsActivo = true
+                        };
+
+                        var result = await _userManager.CreateAsync(user, userData.Pwd);
+                        if (result.Succeeded)
+                        {
+                            await _userManager.AddToRoleAsync(user, userData.Role);
+                            
+                            // [USER-CENTRIC] Assign permissions directly to the user as Claims
+                            if (roleDefaults.TryGetValue(userData.Role, out var permissions))
+                            {
+                                foreach (var perm in permissions)
+                                {
+                                    await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim(PermissionConstants.Type, perm));
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Asegurar que el usuario tenga su rol y sus permisos base si no los tiene
+                        if (!await _userManager.IsInRoleAsync(user, userData.Role))
+                        {
+                            await _userManager.AddToRoleAsync(user, userData.Role);
+                        }
+
+                        // Sincronización proactiva de permisos (Si el usuario no tiene claims de tipo Permission)
+                        var userClaims = await _userManager.GetClaimsAsync(user);
+                        if (!userClaims.Any(c => c.Type == PermissionConstants.Type))
+                        {
+                            if (roleDefaults.TryGetValue(userData.Role, out var permissions))
+                            {
+                                foreach (var perm in permissions)
+                                {
+                                    await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim(PermissionConstants.Type, perm));
+                                }
+                            }
+                        }
                     }
                 }
 

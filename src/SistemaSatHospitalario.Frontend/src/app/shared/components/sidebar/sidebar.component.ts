@@ -38,7 +38,8 @@ export class SidebarComponent implements OnInit {
         caja: false,
         reportes: false,
         medica: false,
-        settings: false
+        settings: false,
+        facturacion: false
     });
 
     ngOnInit() {
@@ -54,6 +55,9 @@ export class SidebarComponent implements OnInit {
         }
         if (url.includes('/settings')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), settings: true });
+        }
+        if (url.includes('/facturacion')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), facturacion: true });
         }
     }
 
@@ -77,14 +81,35 @@ export class SidebarComponent implements OnInit {
         Reportes: BarChart3
     };
 
-    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes') {
+    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion') {
         this.dropdownsOpen.update(prev => ({
             ...prev,
             [key]: !prev[key as keyof typeof prev]
         }));
     }
 
+    // Role Helpers (Senior Pattern)
     isAdmin(): boolean {
         return this.auth.isAdministrador();
+    }
+
+    isParticularAssistant(): boolean {
+        return this.auth.isParticularAssistant();
+    }
+
+    isInsuranceAssistant(): boolean {
+        return this.auth.isInsuranceAssistant();
+    }
+
+    isRxAssistant(): boolean {
+        return this.auth.isFarmacia();
+    }
+
+    isAdministrativeGroup(): boolean {
+        return this.isAdmin() || this.isParticularAssistant() || this.isInsuranceAssistant() || this.isSupervisor();
+    }
+
+    isSupervisor(): boolean {
+        return this.auth.isSupervisor();
     }
 }

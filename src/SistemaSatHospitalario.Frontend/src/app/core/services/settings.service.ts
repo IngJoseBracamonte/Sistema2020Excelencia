@@ -96,6 +96,10 @@ export class SettingsService {
     return this.http.post(`${this.apiUrl}/users/roles`, { userId, roles }); 
   }
 
+  updateUserPermissions(userId: string, permissions: string[]): Observable<any> {
+    return this.http.post(`${this.proApiUrl}/users/permissions`, { userId, permissions });
+  }
+
   // --- NEW MASTER SETTINGS PRO (RBAC & MEDICOS) ---
   private proApiUrl = `${environment.apiUrl}/api/Settings`;
 

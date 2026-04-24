@@ -7,5 +7,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
     public interface INotificationService
     {
         Task SendValidationAlertAsync(string title, string message, string category, object? metadata = null, CancellationToken ct = default);
+        Task SendNotificationToGroupAsync(string groupName, string title, string message, string category = "General", object? metadata = null, CancellationToken ct = default);
     }
 }
