@@ -236,8 +236,8 @@
                                 [ngClass]="!user.esActivo ? 'opacity-60 grayscale hover:grayscale-0 transition-all' : ''"
                                 class="group relative bg-white/[0.02] border border-white/5 hover:border-rose-500/50 p-5 rounded-3xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,63,94,0.15)] flex flex-col justify-between">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-4">
-                                        <div class="relative">
+                                    <div class="flex items-center gap-4 min-w-0 flex-1">
+                                        <div class="relative flex-shrink-0">
                                             <div class="h-12 w-12 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-500 p-[2px] group-hover:rotate-12 transition-transform duration-500">
                                                 <div class="h-full w-full rounded-full bg-[#0a0a0a] flex items-center justify-center">
                                                     <lucide-icon [name]="icons.User" class="w-5 h-5 text-white/50 group-hover:text-white transition-colors"></lucide-icon>
@@ -246,15 +246,15 @@
                                             <div class="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#0a0a0a]"
                                                  [ngClass]="user.esActivo ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-500'"></div>
                                         </div>
-                                        <div>
+                                        <div class="min-w-0 flex-1">
                                             <div class="flex items-center gap-2">
-                                                <h4 class="text-sm font-black text-white uppercase tracking-wider group-hover:text-rose-400 transition-colors">{{ user.username }}</h4>
-                                                <span *ngIf="!user.esActivo" class="px-1.5 py-0.5 bg-slate-800 text-slate-400 text-[7px] font-black uppercase rounded border border-slate-700 tracking-widest">Inactivo</span>
+                                                <h4 class="text-sm font-black text-white uppercase tracking-wider group-hover:text-rose-400 transition-colors truncate">{{ user.username }}</h4>
+                                                <span *ngIf="!user.esActivo" class="px-1.5 py-0.5 bg-slate-800 text-slate-400 text-[7px] font-black uppercase rounded border border-slate-700 tracking-widest flex-shrink-0">Inactivo</span>
                                             </div>
-                                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{{ user.email }}</p>
+                                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest truncate">{{ user.email }}</p>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0 ml-2">
                                         <button (click)="editUser(user)" title="Editar Identidad" class="p-2 bg-white/5 hover:bg-rose-500 text-slate-400 hover:text-white rounded-xl transition-all">
                                             <lucide-icon [name]="icons.Edit" class="w-4 h-4"></lucide-icon>
                                         </button>
