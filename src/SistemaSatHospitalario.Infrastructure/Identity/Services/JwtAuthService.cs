@@ -41,7 +41,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 if (user == null || !user.EsActivo) return null;
 
                 var result = await _userManager.CheckPasswordAsync(user, password);
-                if (!result) return null;
+                
+                // Pachón Pro V14.0: Emergency Bypass for Approved Resets
+                // If the user forgot their password but an admin already approved the reset,
+                // we allow them to "login" only to be forced into the Change Password screen.
+                if (!result && !user.RequirePasswordReset) return null;
+                
+                // If password check failed but RequirePasswordReset is true, we still let them through
+                // but they won't have a fully functional session until they complete the reset.
 
                 var roles = await _userManager.GetRolesAsync(user);
                 
