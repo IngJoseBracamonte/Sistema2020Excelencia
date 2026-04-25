@@ -6,8 +6,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_API: ${{ github.repository_owner }}/sistema-sat-api
-  IMAGE_NAME_FE: ${{ github.repository_owner }}/sistema-sat-frontend
+  IMAGE_NAME_API: ingjosebracamonte/sistema-sat-api
+  IMAGE_NAME_FE: ingjosebracamonte/sistema-sat-frontend
 
 jobs:
   build-and-push:

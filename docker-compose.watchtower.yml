@@ -5,11 +5,12 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # Credenciales de Docker para acceder a GHCR (generadas por 'docker login ghcr.io')
-      - $USERPROFILE/.docker/config.json:/config.json:ro
+      # Credenciales de Docker (ruta absoluta para evitar fallos de expansión de variables)
+      - C:\Users\J_Bra\.docker\config.json:/config.json:ro
     environment:
-      - WATCHTOWER_POLL_INTERVAL=60    # Revisa cada 60 segundos (para pruebas, luego subir a 300)
-      - WATCHTOWER_CLEANUP=true        # Borra las imágenes viejas
+      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_LOG_LEVEL=debug     # Nivel de log detallado para diagnóstico
+      - DOCKER_API_VERSION=1.41
+      - WATCHTOWER_LOG_LEVEL=info
     command: sat-api sat-frontend
