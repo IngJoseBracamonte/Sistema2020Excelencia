@@ -884,3 +884,5 @@
 [2026-04-25 00:50:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
 [2026-04-25 13:28:29] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
 [2026-04-25 13:28:29] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-25 13:43:29] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-04-25 13:58:29] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).

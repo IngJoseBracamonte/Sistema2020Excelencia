@@ -12,7 +12,7 @@ import { TelemetryService } from './core/services/telemetry.service';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
 import { 
   LucideAngularModule, 
-  Stethoscope, Activity, DollarSign, Star,
+  Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
   LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ShieldCheck, BarChart3, Github
 } from 'lucide-angular';
 
@@ -31,7 +31,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: LOCALE_ID, useValue: 'es' },
     importProvidersFrom(LucideAngularModule.pick({
-      Stethoscope, Activity, DollarSign, Star,
+      Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
       LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ShieldCheck, BarChart3, Github
     }))
   ]
