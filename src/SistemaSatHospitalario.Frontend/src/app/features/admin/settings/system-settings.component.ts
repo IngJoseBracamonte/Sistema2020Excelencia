@@ -83,6 +83,17 @@ export class SystemSettingsComponent implements OnInit {
   public showUserModal = false;
   public securitySubTab = signal<'usuarios' | 'roles'>('usuarios');
   public users = signal<UserDto[]>([]);
+  public searchUserQuery = signal<string>('');
+  
+  public filteredUsers = computed(() => {
+    const query = this.searchUserQuery().toLowerCase();
+    return this.users().filter(u => 
+      u.username.toLowerCase().includes(query) || 
+      u.email.toLowerCase().includes(query) ||
+      u.roles.some(r => r.toLowerCase().includes(query))
+    );
+  });
+
   public roles = signal<string[]>([]);
   public selectedUserForPermissions = signal<UserDto | null>(null);
   public showPermissionsModal = signal<boolean>(false);

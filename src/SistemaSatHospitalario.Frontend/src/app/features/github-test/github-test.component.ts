@@ -24,7 +24,7 @@ import { LucideAngularModule, Github } from 'lucide-angular';
           Esto ha sido subido desde <span class="text-blue-400 font-bold">GitHub por PUSH</span>. 
           La automatización de despliegue continuo está funcionando correctamente.
           <br>
-          <span class="text-sm opacity-50 font-mono mt-4 block">Build Artifact: v1.2.40</span>
+          <span class="text-sm opacity-50 font-mono mt-4 block">Build Artifact: v1.2.41</span>
         </p>
         <div class="flex items-center justify-center gap-3 py-4 px-6 bg-blue-500/10 rounded-2xl border border-blue-500/20 w-fit mx-auto">
           <div class="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>

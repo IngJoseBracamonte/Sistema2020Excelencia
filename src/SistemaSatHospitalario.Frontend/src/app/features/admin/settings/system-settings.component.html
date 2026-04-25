@@ -227,12 +227,16 @@
                             </h3>
                             <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/5">
                                 <lucide-icon [name]="icons.Search" class="w-3.5 h-3.5 text-slate-500"></lucide-icon>
-                                <input type="text" placeholder="BUSCAR USUARIO..." class="bg-transparent border-none text-[9px] font-black text-white outline-none w-32 placeholder:text-slate-600">
+                                <input type="text" 
+                                    [ngModel]="searchUserQuery()" 
+                                    (ngModelChange)="searchUserQuery.set($event)"
+                                    placeholder="BUSCAR USUARIO..." 
+                                    class="bg-transparent border-none text-[9px] font-black text-white outline-none w-32 placeholder:text-slate-600">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 max-h-[650px] overflow-y-auto pr-4 custom-scrollbar">
-                            <div *ngFor="let user of users()" 
+                            <div *ngFor="let user of filteredUsers()" 
                                 [ngClass]="!user.esActivo ? 'opacity-60 grayscale hover:grayscale-0 transition-all' : ''"
                                 class="group relative bg-white/[0.02] border border-white/5 hover:border-rose-500/50 p-5 rounded-3xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(244,63,94,0.15)] flex flex-col justify-between">
                                 <div class="flex items-center justify-between">
