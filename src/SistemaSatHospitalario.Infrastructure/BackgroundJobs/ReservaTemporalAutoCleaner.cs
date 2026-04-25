@@ -33,11 +33,11 @@ namespace SistemaSatHospitalario.Infrastructure.BackgroundJobs
                     {
                         var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
                         
-                        // Definir el umbral de limpieza (reservas de hace más de 24 horas)
-                        var threshold = DateTime.Now.AddHours(-24);
+                        // Definir el umbral de limpieza (reservas expiradas)
+                        var utcNow = DateTime.UtcNow;
 
                         var expiredReservations = await context.ReservasTemporales
-                            .Where(r => r.CreatedAt < threshold)
+                            .Where(r => r.ExpiracionUtc < utcNow)
                             .ToListAsync(stoppingToken);
 
                         if (expiredReservations.Any())
