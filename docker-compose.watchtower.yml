@@ -11,5 +11,5 @@ services:
       - WATCHTOWER_POLL_INTERVAL=300 # Revisa cada 5 minutos (300 seg)
       - WATCHTOWER_CLEANUP=true      # Borra las imágenes viejas para no llenar el disco
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - DOCKER_API_VERSION=1.35      # Compatibilidad con Docker Desktop local
+      - DOCKER_API_VERSION=1.41      # Ajustado a requerimiento de Docker Desktop
     command: sat-api sat-frontend

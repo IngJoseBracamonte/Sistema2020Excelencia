@@ -12,10 +12,8 @@ import { TelemetryService } from './core/services/telemetry.service';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
 import { 
   LucideAngularModule, 
-  CreditCard, RefreshCcw, Check, Plus, User, Calendar, Search, Package, 
-  Clock, SearchX, Info, ChevronRight, Trash2, X, Lock, UserPlus, Phone, 
-  Mail, Layout, ShieldAlert, CalendarCheck, Edit3,
-  Stethoscope, Activity, DollarSign, Star
+  Stethoscope, Activity, DollarSign, Star,
+  LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ShieldCheck, BarChart3, Github
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
@@ -32,11 +30,9 @@ export const appConfig: ApplicationConfig = {
     TelemetryService,
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: LOCALE_ID, useValue: 'es' },
-    importProvidersFrom(LucideAngularModule.pick({ 
-      CreditCard, RefreshCcw, Check, Plus, User, Calendar, Search, Package, 
-      Clock, SearchX, Info, ChevronRight, Trash2, X, Lock, UserPlus, Phone, 
-      Mail, Layout, ShieldAlert, CalendarCheck, Edit3,
-      Stethoscope, Activity, DollarSign, Star
+    importProvidersFrom(LucideAngularModule.pick({
+      Stethoscope, Activity, DollarSign, Star,
+      LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ShieldCheck, BarChart3, Github
     }))
   ]
 };
