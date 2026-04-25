@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // V11.16 Senior Fix: Filtramos por Categoría, no por Descripción (Evita colisiones con stubs de $0.00)
             var serviciosNativos = await _context.ServiciosClinicos
                 .Include(s => s.Sugerencias)
-                .Where(s => s.Activo && s.Category != ServiceCategory.Laboratory)
+                .Where(s => s.Activo)
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener precios por convenio si aplica
