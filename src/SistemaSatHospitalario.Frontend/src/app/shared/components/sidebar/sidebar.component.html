@@ -110,7 +110,6 @@
             </button>
             <div *ngIf="dropdownsOpen().medica" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Médicos Nominal</a>
-                <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Turnos Médicos</a>
                 <a routerLink="/especialidades" routerLinkActive="active-sublink" class="nav-subitem">Especialidades</a>
                 <a *ngIf="isAdmin()" routerLink="/admin/reportes/calculo-honorarios" routerLinkActive="active-sublink" class="nav-subitem">Cálculo de Honorarios</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'citas'}" routerLinkActive="active-sublink" class="nav-subitem">Monitor de Agenda</a>

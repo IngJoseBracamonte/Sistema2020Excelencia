@@ -221,6 +221,15 @@ function Get-Configuration {
         if (-not $MysqlPassword) { $script:MysqlPassword = "Labordono1818" }
     }
 
+    # Detectar IP Local Automáticamente
+    try {
+        $script:LocalIp = (Get-NetRoute -DestinationPrefix 0.0.0.0/0 | Get-NetIPInterface | Get-NetIPAddress -AddressFamily IPv4 | Select-Object -First 1).IPAddress
+        Write-Ok "IP Local detectada: $LocalIp"
+    } catch {
+        $script:LocalIp = "127.0.0.1"
+        Write-Warn "No se pudo detectar IP local, usando 127.0.0.1"
+    }
+
     Write-Ok "Dominio: $DomainName"
     Write-Ok "MySQL: $MysqlUser@localhost:$MysqlPort"
 }
@@ -237,6 +246,7 @@ function New-EnvFile {
 
     $envContent = @"
 DOMAIN_NAME=$DomainName
+LOCAL_IP=$LocalIp
 HOST_PORT=$HostPort
 MYSQL_HOST=host.docker.internal
 MYSQL_PORT=$MysqlPort

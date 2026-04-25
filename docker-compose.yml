@@ -59,7 +59,7 @@ services:
       - JwtConfig__Audience=${JWT_AUDIENCE:-SistemaSatHospitalario_PWA}
 
       # --- CORS ---
-      - AllowedOrigins=http://${DOMAIN_NAME:-hospital.local},http://localhost,http://127.0.0.1,http://localhost:80
+      - AllowedOrigins=http://${DOMAIN_NAME:-hospital.local},http://${LOCAL_IP:-127.0.0.1},http://localhost,http://127.0.0.1,http://localhost:80
 
       # --- Deployment ---
       - DeploymentSettings__Mode=Docker

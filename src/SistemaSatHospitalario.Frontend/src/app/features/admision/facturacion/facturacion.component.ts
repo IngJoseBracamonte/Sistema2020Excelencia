@@ -182,21 +182,22 @@ export class FacturacionComponent {
       error: () => this.tasaCambioDia.set(36.5) // Fallback
     });
 
-    // 4. Inicialización de Estados Seguros según Rol y QueryParams (Fase 40)
-    const typeParam = this.route.snapshot.queryParamMap.get('type');
-    
-    if (typeParam) {
-      this.tipoIngreso.set(typeParam);
-    } else if (this.isInsuranceAssistant()) {
-      this.tipoIngreso.set('Seguro');
-    } else if (this.isParticularAssistant()) {
-      this.tipoIngreso.set('Particular');
-    }
+    // 4. Inicialización Reactiva de Estados según QueryParams (Fase 40)
+    this.route.queryParams.pipe(takeUntilDestroyed()).subscribe(params => {
+      const typeParam = params['type'];
+      
+      if (typeParam) {
+        this.tipoIngreso.set(typeParam);
+      } else if (this.isInsuranceAssistant()) {
+        this.tipoIngreso.set('Seguro');
+      } else if (this.isParticularAssistant()) {
+        this.tipoIngreso.set('Particular');
+      }
 
-    // [V15.2 Patch] Para Particular, iniciar directamente en Estudios (Fase 1 de 2)
-    if (this.tipoIngreso() === 'Particular') {
-        this.currentStep.set(1);
-    }
+      // [V15.2 Patch] Resetear wizard al cambiar de modo
+      this.currentStep.set(1);
+      this.billingFacade.resetCart(); // Limpiar por seguridad al cambiar flujo
+    });
 
     // 5. Cargar Especialidades Dinámicas
     this.specialtyService.getAll().pipe(takeUntilDestroyed()).subscribe(res => {

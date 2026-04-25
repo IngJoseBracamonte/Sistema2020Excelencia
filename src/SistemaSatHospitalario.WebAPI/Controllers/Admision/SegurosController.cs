@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = "Administrador,Asistente Seguro,Asistente de Seguros")]
+    [Authorize(Roles = "Admin,Administrador,Asistente Seguro,Asistente de Seguros")]
     [ApiController]
     [Route("api/[controller]")]
     public class SegurosController : ControllerBase
