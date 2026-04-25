@@ -7,7 +7,8 @@ export interface TicketUpdate {
   status: string;
   patientName: string;
   servicioNombre: string;
-  pacienteId: number;
+  pacienteId?: number;
+  tipoServicio: string; // RX o TOMO
 }
 
 @Injectable({

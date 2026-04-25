@@ -147,7 +147,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     new { User = "user_seguros", Role = "Asistente de Seguros", Email = "seguros@test.local", Pwd = "Hospital2026*!" },
                     new { User = "user_medico", Role = "Médico", Email = "medico@test.local", Pwd = "Hospital2026*!" },
                     new { User = "user_particular", Role = "Asistente Particular", Email = "particular@test.local", Pwd = "Hospital2026*!" },
-                    new { User = "user_rx", Role = "Asistente RX", Email = "rx@test.local", Pwd = "AsistenteRx24" },
+                    new { User = "user_rx", Role = "Asistente RX", Email = "rx@test.local", Pwd = "Hospital2026*!" },
                     new { User = "user_tomografia", Role = "Asistente de Tomografía", Email = "tomografia@test.local", Pwd = "Hospital2026*!" }
                 };
 
@@ -183,19 +183,39 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     }
                     else
                     {
+                        // [V15.1 Patch] Asegurar que la contraseña coincida con el seeder para pruebas de automatización
+                        var passToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                        await _userManager.ResetPasswordAsync(user, passToken, userData.Pwd);
+
                         // Asegurar que el usuario tenga su rol y sus permisos base si no los tiene
                         if (!await _userManager.IsInRoleAsync(user, userData.Role))
                         {
                             await _userManager.AddToRoleAsync(user, userData.Role);
                         }
 
-                        // Sincronización proactiva de permisos (Si el usuario no tiene claims de tipo Permission)
+                        // Sincronización proactiva de permisos (V15.4 Robust Sync)
                         var userClaims = await _userManager.GetClaimsAsync(user);
-                        if (!userClaims.Any(c => c.Type == PermissionConstants.Type))
+                        var currentPermissionClaims = userClaims.Where(c => c.Type == PermissionConstants.Type).ToList();
+                        
+                        if (roleDefaults.TryGetValue(userData.Role, out var targetPermissions))
                         {
-                            if (roleDefaults.TryGetValue(userData.Role, out var permissions))
+                            // Si el número de permisos cambió o hay permisos faltantes, sincronizamos
+                            var currentPermStrings = currentPermissionClaims.Select(c => c.Value).ToList();
+                            bool needsSync = targetPermissions.Any(p => !currentPermStrings.Contains(p)) || 
+                                             currentPermStrings.Any(p => !targetPermissions.Contains(p));
+
+                            if (needsSync)
                             {
-                                foreach (var perm in permissions)
+                                _logger.LogInformation("Sincronizando permisos para el usuario {User} (Rol: {Role})...", userData.User, userData.Role);
+                                
+                                // Eliminar permisos actuales de tipo Permission
+                                foreach (var claim in currentPermissionClaims)
+                                {
+                                    await _userManager.RemoveClaimAsync(user, claim);
+                                }
+
+                                // Agregar los nuevos permisos por defecto
+                                foreach (var perm in targetPermissions)
                                 {
                                     await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim(PermissionConstants.Type, perm));
                                 }

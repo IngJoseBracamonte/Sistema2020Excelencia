@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-using SistemaSatHospitalario.WebAPI.Hubs;
+using SistemaSatHospitalario.Infrastructure.Hubs;
 using System.Threading;
 using System.Threading.Tasks;
 

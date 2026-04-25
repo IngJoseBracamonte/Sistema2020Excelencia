@@ -1,0 +1,9 @@
+# ═══════════════════════════════════════════
+# Docker Ignore — Frontend Build Context
+# ═══════════════════════════════════════════
+
+node_modules/
+.angular/
+dist/
+.vscode/
+*.md

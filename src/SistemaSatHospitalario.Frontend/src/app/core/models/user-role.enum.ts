@@ -5,6 +5,7 @@ export enum UserRole {
   AsistenteSeguro = 'Asistente Seguro',
   AsistenteSeguros = 'Asistente de Seguros', // Variación en el sistema
   AsistenteRX = 'Asistente RX',
+  AsistenteTomografia = 'Asistente de Tomografía',
   Medico = 'Médico',
   Cajero = 'Cajero',
   Supervisor = 'Supervisor'
@@ -12,6 +13,6 @@ export enum UserRole {
 
 export const RoleGroups = {
   Administrative: [UserRole.Admin, UserRole.Administrador, UserRole.Supervisor],
-  Support: [UserRole.AsistenteParticular, UserRole.AsistenteSeguro, UserRole.AsistenteSeguros, UserRole.AsistenteRX],
+  Support: [UserRole.AsistenteParticular, UserRole.AsistenteSeguro, UserRole.AsistenteSeguros, UserRole.AsistenteRX, UserRole.AsistenteTomografia],
   Clinical: [UserRole.Medico]
 };

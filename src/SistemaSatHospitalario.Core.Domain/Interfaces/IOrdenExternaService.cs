@@ -6,6 +6,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces
     public interface IOrdenExternaService
     {
         Task EnviarOrdenRXAsync(string estudio, string paciente, CancellationToken cancellationToken);
+        Task EnviarOrdenTomoAsync(string estudio, string paciente, CancellationToken cancellationToken);
         Task EnviarOrdenLegacyAsync(decimal monto, int idPersona, CancellationToken cancellationToken);
     }
 }

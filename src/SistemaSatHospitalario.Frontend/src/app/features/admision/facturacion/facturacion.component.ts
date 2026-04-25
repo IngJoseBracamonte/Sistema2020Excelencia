@@ -139,7 +139,7 @@ export class FacturacionComponent {
 
   // --- Estados del Wizard (SSoT) ---
   public currentStep = signal<number>(1);
-  public maxSteps = 3;
+  public maxSteps = computed(() => this.tipoIngreso() === 'Particular' ? 2 : 3);
 
   // --- Estados de Cuenta y Carrito (Delegados al Facade V11.1 Guid) ---
   public pacienteId = signal<string | null>(null);
@@ -191,6 +191,11 @@ export class FacturacionComponent {
       this.tipoIngreso.set('Seguro');
     } else if (this.isParticularAssistant()) {
       this.tipoIngreso.set('Particular');
+    }
+
+    // [V15.2 Patch] Para Particular, iniciar directamente en Estudios (Fase 1 de 2)
+    if (this.tipoIngreso() === 'Particular') {
+        this.currentStep.set(1);
     }
 
     // 5. Cargar Especialidades Dinámicas
@@ -449,17 +454,26 @@ export class FacturacionComponent {
 
   // Navegación del Wizard
   nextStep() {
-    if (this.currentStep() < this.maxSteps) {
-      // Paso 1: Convenio (Nuevo Orden)
-      if (this.currentStep() === 1 && this.tipoIngreso() === 'Seguro' && !this.convenioId()) {
-        this.errorMessage.set("Debe seleccionar un convenio para continuar.");
-        return;
+    if (this.currentStep() < this.maxSteps()) {
+      // Validaciones para flujo de 3 pasos (Seguros)
+      if (this.maxSteps() === 3) {
+        if (this.currentStep() === 1 && this.tipoIngreso() === 'Seguro' && !this.convenioId()) {
+          this.errorMessage.set("Debe seleccionar un convenio para continuar.");
+          return;
+        }
+        if (this.currentStep() === 2 && this.serviciosCargados().length === 0) {
+          this.errorMessage.set("Debe añadir al menos un servicio para continuar.");
+          return;
+        }
+      } 
+      // Validaciones para flujo de 2 pasos (Particular)
+      else if (this.maxSteps() === 2) {
+        if (this.currentStep() === 1 && this.serviciosCargados().length === 0) {
+          this.errorMessage.set("Debe añadir al menos un servicio para continuar.");
+          return;
+        }
       }
-      // Paso 2: Estudios (Nuevo Orden)
-      if (this.currentStep() === 2 && this.serviciosCargados().length === 0) {
-        this.errorMessage.set("Debe añadir al menos un servicio para continuar.");
-        return;
-      }
+
       this.errorMessage.set(null);
       this.currentStep.update(s => s + 1);
     }

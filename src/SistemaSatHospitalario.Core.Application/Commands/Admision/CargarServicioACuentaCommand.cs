@@ -156,6 +156,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 await _externaService.EnviarOrdenRXAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
             }
+            else if (request.TipoServicio.Equals(EstadoConstants.TOMO, StringComparison.OrdinalIgnoreCase))
+            {
+                await _externaService.EnviarOrdenTomoAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
+            }
             
             await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, ct);
         }

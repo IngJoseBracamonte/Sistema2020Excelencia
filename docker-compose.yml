@@ -1,0 +1,128 @@
+# ═══════════════════════════════════════════════════════════════════
+# Docker Compose — Sistema Sat Hospitalario
+# Orquestador de contenedores para despliegue local en Windows
+#
+# MySQL corre NATIVO en el host Windows (no containerizado).
+# Los contenedores se conectan al MySQL del host via host.docker.internal.
+#
+# Uso:
+#   docker-compose build          → Construir imágenes
+#   docker-compose up -d          → Levantar servicios
+#   docker-compose down           → Detener servicios
+#   docker-compose logs -f api    → Ver logs de la API
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # ─────────────────────────────────────────
+  # 📦 Redis — Caché Distribuido
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: sat-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - sat-network
+    volumes:
+      - redis-data:/data
+
+  # ─────────────────────────────────────────
+  # ⚙️ WebAPI — .NET 10 Backend
+  # ─────────────────────────────────────────
+  api:
+    build:
+      context: ./src
+      dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
+    container_name: sat-api
+    restart: unless-stopped
+    environment:
+      # --- Runtime ---
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DatabaseProvider=MySql
+
+      # --- Conexiones a MySQL del Host Windows ---
+      # host.docker.internal resuelve al IP del host desde dentro del contenedor
+      - ConnectionStrings__mysql-system=server=${MYSQL_HOST:-host.docker.internal};port=${MYSQL_PORT:-3306};database=${MYSQL_SYSTEM_DB:-SatHospitalario};user=${MYSQL_USER:-root};password=${MYSQL_PASSWORD};AllowPublicKeyRetrieval=True;SslMode=None
+      - ConnectionStrings__mysql-identity=server=${MYSQL_HOST:-host.docker.internal};port=${MYSQL_PORT:-3306};database=${MYSQL_IDENTITY_DB:-SatHospitalarioIdentity};user=${MYSQL_USER:-root};password=${MYSQL_PASSWORD};AllowPublicKeyRetrieval=True;SslMode=None
+      - ConnectionStrings__LegacyConnection=server=${MYSQL_HOST:-host.docker.internal};port=${MYSQL_PORT:-3306};database=${MYSQL_LEGACY_DB:-sistema2020};user=${MYSQL_USER:-root};password=${MYSQL_PASSWORD};AllowPublicKeyRetrieval=True;SslMode=None;Allow User Variables=True
+      - ConnectionStrings__Redis=redis:6379
+
+      # --- JWT ---
+      - JwtConfig__Secret=${JWT_SECRET}
+      - JwtConfig__Issuer=${JWT_ISSUER:-SistemaSatHospitalarioAPI}
+      - JwtConfig__Audience=${JWT_AUDIENCE:-SistemaSatHospitalario_PWA}
+
+      # --- CORS ---
+      - AllowedOrigins=http://${DOMAIN_NAME:-hospital.local},http://localhost,http://127.0.0.1,http://localhost:80
+
+      # --- Deployment ---
+      - DeploymentSettings__Mode=Docker
+      - DeploymentSettings__ApplyAggressiveRepair=false
+
+      # --- Email (Opcional) ---
+      - EmailSettings__SmtpHost=${SMTP_HOST:-}
+      - EmailSettings__SmtpPort=${SMTP_PORT:-2525}
+      - EmailSettings__SmtpUser=${SMTP_USER:-}
+      - EmailSettings__SmtpPass=${SMTP_PASS:-}
+    extra_hosts:
+      # Garantiza resolución DNS al host Windows en todas las versiones de Docker Desktop
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    networks:
+      - sat-network
+    volumes:
+      - api-logs:/app/Logs
+
+  # ─────────────────────────────────────────
+  # 🎨 Frontend — Angular PWA + Nginx Proxy
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./src/SistemaSatHospitalario.Frontend
+      dockerfile: Dockerfile
+    container_name: sat-frontend
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-80}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sat-network
+
+# ─────────────────────────────────────────
+# 🌐 Red Docker
+# ─────────────────────────────────────────
+networks:
+  sat-network:
+    driver: bridge
+    name: sat-hospital-network
+
+# ─────────────────────────────────────────
+# 💾 Volúmenes Persistentes
+# ─────────────────────────────────────────
+volumes:
+  api-logs:
+    name: sat-api-logs
+  redis-data:
+    name: sat-redis-data

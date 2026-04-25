@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
-namespace SistemaSatHospitalario.WebAPI.Hubs
+namespace SistemaSatHospitalario.Infrastructure.Hubs
 {
     public class TasaHub : Hub
     {

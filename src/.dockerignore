@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════
+# Docker Ignore — WebAPI Build Context (./src)
+# ═══════════════════════════════════════════
+
+# Build artifacts
+**/bin/
+**/obj/
+
+# IDE
+**/.vs/
+**/.vscode/
+**/*.user
+
+# Frontend (tiene su propio Dockerfile)
+SistemaSatHospitalario.Frontend/
+SistemaSatHospitalario.AppHost/
+SistemaSatHospitalario.UnitTests/
+
+# Scratch & temp
+scratch/
+*.txt
+*.md
+
+# Node (por si acaso)
+**/node_modules/
+**/.angular/
+**/dist/

@@ -374,3 +374,8 @@ override.tf.json
 _override.tf
 _override.tf.json
 .terraform.lock.hcl
+
+# --- DOCKER (Credentials & Backups) ---
+.env
+deploy/docker/backups/
+.env.template

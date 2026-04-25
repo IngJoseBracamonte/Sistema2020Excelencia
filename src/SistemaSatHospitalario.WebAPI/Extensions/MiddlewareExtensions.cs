@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
-using SistemaSatHospitalario.WebAPI.Hubs;
+using SistemaSatHospitalario.Infrastructure.Hubs;
 using System.Diagnostics;
 
 namespace SistemaSatHospitalario.WebAPI.Extensions

@@ -66,9 +66,26 @@ export class AuthService {
   
   public isMedico = (): boolean => this.hasRole(UserRole.Medico);
   
+  /**
+   * Senior Imaging Strategy (V16.0):
+   * Differentiates between RX and Tomography assistants while sharing the same base infrastructure.
+   */
+  public isImagingOperator = (): boolean => 
+    this.isRxAssistant() || this.isTomographyAssistant() || this.isAdministrador();
+
+  public isRxAssistant = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role.includes('rx') || this.isAdministrador();
+  };
+
+  public isTomographyAssistant = (): boolean => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role.includes('tomografía') || role.includes('tomografia') || this.isAdministrador();
+  };
+
   public isFarmacia = (): boolean => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role === 'rx' || role === 'farmacia' || role === 'asistente rx' || this.isAdministrador();
+    return role === 'farmacia';
   };
 
   // Recupera la sesión persistida (Abstracted via StorageService)

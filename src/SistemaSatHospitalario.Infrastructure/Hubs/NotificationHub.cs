@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Threading.Tasks;
 
-namespace SistemaSatHospitalario.WebAPI.Hubs
+namespace SistemaSatHospitalario.Infrastructure.Hubs
 {
     /// <summary>
     /// Senior Notification Hub (V15.0).

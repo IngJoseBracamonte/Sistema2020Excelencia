@@ -102,7 +102,11 @@ export class SidebarComponent implements OnInit {
     }
 
     isRxAssistant(): boolean {
-        return this.auth.isFarmacia();
+        return this.auth.isRxAssistant();
+    }
+
+    isTomographyAssistant(): boolean {
+        return this.auth.isTomographyAssistant();
     }
 
     isAdministrativeGroup(): boolean {

@@ -1,44 +1,40 @@
-# Stage 1: Build the Angular app
-FROM node:22 AS build
+# ═══════════════════════════════════════════════════════════
+# Dockerfile — Sistema Sat Hospitalario Frontend (Angular 19)
+# Multi-stage: Node 22 (build) → Nginx Alpine (serve)
+# ═══════════════════════════════════════════════════════════
+
+# Stage 1: Build Angular
+FROM node:22-alpine AS build
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copiar package files e instalar dependencias (cache layer)
 COPY package*.json ./
-RUN npm install
+RUN npm install --prefer-offline --no-audit --legacy-peer-deps
 
-# Copy the rest of the application code
+# Copiar código fuente y compilar
 COPY . .
+RUN npm run build -- --configuration docker
 
-# Build the application
-RUN npm run build -- --configuration production
+# Stage 2: Serve con Nginx
+FROM nginx:alpine AS final
 
-# Stage 2: Serve the application using Nginx
-FROM nginx:alpine
+LABEL maintainer="SistemaSatHospitalario" \
+      description="Hospital System Frontend PWA" \
+      version="1.0"
+
+# Instalar curl para healthcheck
+RUN apk add --no-cache curl
+
+# Copiar el build de Angular al directorio de Nginx
 COPY --from=build /app/dist/sistema-sat-hospitalario.frontend/browser /usr/share/nginx/html
 
-# Expose port 80
+# Copiar configuración Nginx personalizada (proxy a API + SPA routing)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 
-# Configure Nginx to handle SPA routing and Proxy requests to the Backend
-RUN echo 'server { \
-    listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
-    } \
-    location /api/ { \
-        proxy_pass http://api:8080/api/; \
-        proxy_http_version 1.1; \
-        proxy_set_header Upgrade $http_upgrade; \
-        proxy_set_header Connection "upgrade"; \
-        proxy_set_header Host $host; \
-        proxy_cache_bypass $http_upgrade; \
-    } \
-    error_page 500 502 503 504 /50x.html; \
-    location = /50x.html { \
-        root /usr/share/nginx/html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Health check nativo Docker
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \
+    CMD curl -f http://localhost:80/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
