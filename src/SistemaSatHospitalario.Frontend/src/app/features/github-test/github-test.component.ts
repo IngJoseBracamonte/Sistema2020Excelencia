@@ -1,11 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, Github } from 'lucide-angular';
 
 @Component({
   selector: 'app-github-test',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
+  providers: [
+    { provide: LucideAngularModule, useValue: LucideAngularModule.pick({ Github }) }
+  ],
   template: `
     <div class="min-h-screen bg-slate-950 p-8 flex items-center justify-center">
       <div class="max-w-2xl w-full bg-slate-900/50 backdrop-blur-xl border border-blue-500/30 rounded-[40px] p-12 text-center shadow-2xl shadow-blue-500/10">
