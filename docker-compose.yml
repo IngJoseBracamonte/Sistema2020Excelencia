@@ -36,9 +36,11 @@ services:
   # ⚙️ WebAPI — .NET 10 Backend
   # ─────────────────────────────────────────
   api:
-    build:
-      context: ./src
-      dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
+    image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
+    # Para compilar localmente en vez de usar GHCR, comenta 'image:' y descomenta:
+    # build:
+    #   context: ./src
+    #   dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
     container_name: sat-api
     restart: unless-stopped
     environment:
@@ -91,9 +93,11 @@ services:
   # 🎨 Frontend — Angular PWA + Nginx Proxy
   # ─────────────────────────────────────────
   frontend:
-    build:
-      context: ./src/SistemaSatHospitalario.Frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
+    # Para compilar localmente en vez de usar GHCR, comenta 'image:' y descomenta:
+    # build:
+    #   context: ./src/SistemaSatHospitalario.Frontend
+    #   dockerfile: Dockerfile
     container_name: sat-frontend
     restart: unless-stopped
     ports:

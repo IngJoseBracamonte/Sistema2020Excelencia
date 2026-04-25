@@ -5,11 +5,11 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # Si tu repositorio es privado, necesitaremos configurar el config.json de docker
-      #- /home/user/.docker/config.json:/config.json
+      # Credenciales de Docker para acceder a GHCR (generadas por 'docker login ghcr.io')
+      - $USERPROFILE/.docker/config.json:/config.json:ro
     environment:
-      - WATCHTOWER_POLL_INTERVAL=300 # Revisa cada 5 minutos (300 seg)
-      - WATCHTOWER_CLEANUP=true      # Borra las imágenes viejas para no llenar el disco
+      - WATCHTOWER_POLL_INTERVAL=60    # Revisa cada 60 segundos (para pruebas, luego subir a 300)
+      - WATCHTOWER_CLEANUP=true        # Borra las imágenes viejas
       - WATCHTOWER_INCLUDE_RESTARTING=true
-      - DOCKER_API_VERSION=1.41      # Ajustado a requerimiento de Docker Desktop
+      - WATCHTOWER_LOG_LEVEL=debug     # Nivel de log detallado para diagnóstico
     command: sat-api sat-frontend
