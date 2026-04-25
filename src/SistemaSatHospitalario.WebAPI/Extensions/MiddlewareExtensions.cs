@@ -101,6 +101,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
 
                     // [V16.3 FIX] Crear tabla OrdenesImagenes si no existe (Fuerza Bruta para Estabilidad)
                     logger.LogInformation("Verificando consistencia de tablas de Imágenes...");
+                    await context.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS `OrdenesImagenes`;"); 
                     const string createTableSql = @"
                         CREATE TABLE IF NOT EXISTS `OrdenesImagenes` (
                             `Id` INT NOT NULL AUTO_INCREMENT,
@@ -112,7 +113,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                             `TipoServicio` VARCHAR(50) NOT NULL,
                             `FechaCreacion` DATETIME(6) NOT NULL,
                             `FechaProcesado` DATETIME(6) NULL,
-                            `UsuarioProcesado` VARCHAR(255) NULL,
+                            `ProcesadoPor` VARCHAR(255) NULL,
                             PRIMARY KEY (`Id`),
                             INDEX `IX_OrdenesImagenes_Estado` (`Estado`),
                             INDEX `IX_OrdenesImagenes_TipoServicio` (`TipoServicio`)
