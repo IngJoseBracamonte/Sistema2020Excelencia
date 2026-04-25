@@ -44,7 +44,7 @@ jobs:
       if: github.event_name == 'push'
       uses: nwtgck/actions-netlify@v3.0
       with:
-        publish-dir: './src/SistemaSatHospitalario.Frontend/dist/sistema-sat-hospitalario'
+        publish-dir: './src/SistemaSatHospitalario.Frontend/dist/sistema-sat-hospitalario.frontend/browser'
         production-deploy: true
       env:
         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
