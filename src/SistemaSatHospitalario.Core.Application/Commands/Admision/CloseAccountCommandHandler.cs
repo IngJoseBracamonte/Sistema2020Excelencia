@@ -24,19 +24,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ICajaAdministrativaRepository _cajaRepository;
         private readonly IBillingRepository _billingRepository;
         private readonly ILegacyErrorReportingService _logger;
+        private readonly IOrdenExternaService _ordenExternaService;
 
         public CloseAccountCommandHandler(
             IApplicationDbContext context, 
             ILegacyLabRepository legacyRepository,
             ICajaAdministrativaRepository cajaRepository,
             IBillingRepository billingRepository,
-            ILegacyErrorReportingService logger)
+            ILegacyErrorReportingService logger,
+            IOrdenExternaService ordenExternaService)
         {
             _context = context;
             _legacyRepository = legacyRepository;
             _cajaRepository = cajaRepository;
             _billingRepository = billingRepository;
             _logger = logger;
+            _ordenExternaService = ordenExternaService;
         }
 
         public async Task<CloseAccountResult> Handle(CloseAccountCommand request, CancellationToken cancellationToken)
@@ -111,6 +114,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _logger.LogTrace($"[CLOSE-ACCOUNT] Procesando {itemsLab.Count} ítems de Laboratorio para Legado.");
                     await ProcessLegacyOrder(cuenta, cancellationToken);
                 }
+
+                // 4.6 EJECUCIÓN IMÁGENES (RX/TOMO) - Fase 16.2
+                await ProcessImagingOrders(cuenta, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
                 _logger.LogTrace($"[CLOSE-ACCOUNT] Cuenta cerrada exitosamente: {cuenta.Id}");
@@ -269,6 +275,27 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, perfilesFacturados, new List<ResultadosPacienteLegacy>(), ct);
             _logger.LogTrace($"[LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===");
+        }
+
+        private async Task ProcessImagingOrders(CuentaServicios cuenta, CancellationToken ct)
+        {
+            var items = cuenta.Detalles.Where(d => d.TipoServicio == EstadoConstants.RX || d.TipoServicio == EstadoConstants.TOMO).ToList();
+            if (!items.Any()) return;
+
+            var paciente = await _context.PacientesAdmision.AsNoTracking().FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, ct);
+            string nombrePaciente = paciente?.NombreCompleto ?? "Paciente Desconocido";
+
+            foreach (var item in items)
+            {
+                if (item.TipoServicio == EstadoConstants.RX)
+                {
+                    await _ordenExternaService.EnviarOrdenRXAsync(cuenta.Id, cuenta.PacienteId, item.Descripcion, nombrePaciente, ct);
+                }
+                else if (item.TipoServicio == EstadoConstants.TOMO)
+                {
+                    await _ordenExternaService.EnviarOrdenTomoAsync(cuenta.Id, cuenta.PacienteId, item.Descripcion, nombrePaciente, ct);
+                }
+            }
         }
     }
 }

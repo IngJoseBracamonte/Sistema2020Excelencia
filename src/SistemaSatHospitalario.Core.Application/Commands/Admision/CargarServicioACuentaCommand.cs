@@ -152,15 +152,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         private async Task NotificarSistemasExternosAsync(CargarServicioACuentaCommand request, CancellationToken ct)
         {
-            if (request.TipoServicio.Equals(EstadoConstants.RX, StringComparison.OrdinalIgnoreCase))
-            {
-                await _externaService.EnviarOrdenRXAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
-            }
-            else if (request.TipoServicio.Equals(EstadoConstants.TOMO, StringComparison.OrdinalIgnoreCase))
-            {
-                await _externaService.EnviarOrdenTomoAsync(request.Descripcion, $"PacienteID:{request.PacienteId}", ct);
-            }
-            
+            // Senior Logic (V16.2): Las órdenes de imágenes ahora se disparan al CERRAR la cuenta
+            // para evitar órdenes huérfanas de servicios no pagados.
+            // Se mantiene la notificación de legado para trazabilidad financiera.
             await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, ct);
         }
     }

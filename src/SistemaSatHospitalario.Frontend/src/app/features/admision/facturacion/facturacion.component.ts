@@ -182,9 +182,10 @@ export class FacturacionComponent {
       error: () => this.tasaCambioDia.set(36.5) // Fallback
     });
 
-    // 4. Inicialización Reactiva de Estados según QueryParams (Fase 40)
+    // 4. Inicialización Reactiva de Estados según QueryParams (Fase 41 - Ultra Robust)
     this.route.queryParams.pipe(takeUntilDestroyed()).subscribe(params => {
       const typeParam = params['type'];
+      const oldType = this.tipoIngreso();
       
       if (typeParam) {
         this.tipoIngreso.set(typeParam);
@@ -194,9 +195,15 @@ export class FacturacionComponent {
         this.tipoIngreso.set('Particular');
       }
 
-      // [V15.2 Patch] Resetear wizard al cambiar de modo
-      this.currentStep.set(1);
-      this.billingFacade.resetCart(); // Limpiar por seguridad al cambiar flujo
+      // Si el tipo cambió o es la primera carga, reseteamos al paso 1 del flujo correspondiente
+      if (typeParam !== oldType || !this.pacienteId()) {
+          this.currentStep.set(1);
+          this.billingFacade.resetCart();
+          
+          // Forzar recarga de catálogo con el nuevo contexto
+          const currentConv = typeParam === 'Seguro' ? this.convenioId() : null;
+          this.refreshCatalog(currentConv);
+      }
     });
 
     // 5. Cargar Especialidades Dinámicas

@@ -230,6 +230,10 @@ function Get-Configuration {
         Write-Warn "No se pudo detectar IP local, usando 127.0.0.1"
     }
 
+    # Detectar Nombre de la PC
+    $script:PcName = $env:COMPUTERNAME
+    Write-Ok "Nombre de PC detectado: $PcName"
+
     Write-Ok "Dominio: $DomainName"
     Write-Ok "MySQL: $MysqlUser@localhost:$MysqlPort"
 }
@@ -247,6 +251,7 @@ function New-EnvFile {
     $envContent = @"
 DOMAIN_NAME=$DomainName
 LOCAL_IP=$LocalIp
+PC_NAME=$PcName
 HOST_PORT=$HostPort
 MYSQL_HOST=host.docker.internal
 MYSQL_PORT=$MysqlPort

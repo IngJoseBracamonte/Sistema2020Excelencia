@@ -98,6 +98,29 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                         logger.LogInformation("Ejecutando inicializador: {InitializerType}", initializer.GetType().Name);
                         await initializer.InitializeAsync();
                     }
+
+                    // [V16.3 FIX] Crear tabla OrdenesImagenes si no existe (Fuerza Bruta para Estabilidad)
+                    logger.LogInformation("Verificando consistencia de tablas de Imágenes...");
+                    const string createTableSql = @"
+                        CREATE TABLE IF NOT EXISTS `OrdenesImagenes` (
+                            `Id` INT NOT NULL AUTO_INCREMENT,
+                            `CuentaId` CHAR(36) NOT NULL,
+                            `PacienteId` CHAR(36) NOT NULL,
+                            `PacienteNombre` VARCHAR(255) NOT NULL,
+                            `Estudio` VARCHAR(500) NOT NULL,
+                            `Estado` VARCHAR(50) NOT NULL,
+                            `TipoServicio` VARCHAR(50) NOT NULL,
+                            `FechaCreacion` DATETIME(6) NOT NULL,
+                            `FechaProcesado` DATETIME(6) NULL,
+                            `UsuarioProcesado` VARCHAR(255) NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_OrdenesImagenes_Estado` (`Estado`),
+                            INDEX `IX_OrdenesImagenes_TipoServicio` (`TipoServicio`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+                    
+                    await context.Database.ExecuteSqlRawAsync(createTableSql);
+                    logger.LogInformation("✅ Tabla OrdenesImagenes garantizada.");
+
                     logger.LogInformation("Secuencia de inicialización completada exitosamente.");
                 }
                 catch (Exception ex)

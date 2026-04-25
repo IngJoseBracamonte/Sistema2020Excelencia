@@ -135,6 +135,12 @@
                 <a *ngIf="isAdmin()" routerLink="/admin/reset-requests" routerLinkActive="active-sublink" class="nav-subitem">Solicitudes de Reset</a>
             </div>
         </div>
+
+        <!-- GitHub Deploy Test (SOLO PARA PRUEBA CI/CD) -->
+        <a routerLink="/github-test" routerLinkActive="active-link" class="nav-item flex items-center mt-6 border-t border-blue-500/20 pt-4">
+            <lucide-icon [name]="icons.Github" class="w-5 h-5 mr-3 text-blue-400"></lucide-icon>
+            <span class="font-black text-blue-400 text-[10px] uppercase tracking-widest">Test GitHub Push</span>
+        </a>
     </nav>
 
     <!-- User Profile -->

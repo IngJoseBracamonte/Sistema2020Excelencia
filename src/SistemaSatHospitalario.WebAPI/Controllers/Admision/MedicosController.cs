@@ -10,9 +10,11 @@ using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admin;
 using SistemaSatHospitalario.Core.Application.Queries;
 
+using SistemaSatHospitalario.Core.Domain.Constants;
+
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = "Admin,Administrador,Cajero,Supervisor,Asistente de Seguros,Médico")]
+    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.Cajero + "," + AuthorizationConstants.Supervisor + "," + AuthorizationConstants.AsistenteDeSeguros + "," + AuthorizationConstants.Medico)]
     [ApiController]
     [Route("api/[controller]")]
     public class MedicosController : ControllerBase

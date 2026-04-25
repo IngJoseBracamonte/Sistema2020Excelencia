@@ -35,6 +35,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<LogAuditoriaPrecio> AuditLogsPrecios { get; }
         DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; }
         DbSet<ServicioSugerencia> ServiciosSugerencias { get; }
+        DbSet<OrdenImagen> OrdenesImagenes { get; set; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
         Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }

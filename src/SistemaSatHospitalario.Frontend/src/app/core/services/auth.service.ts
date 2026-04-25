@@ -62,9 +62,11 @@ export class AuthService {
   public isSupervisor = (): boolean => 
     this.hasRole(UserRole.Supervisor) || this.isAdministrador();
 
-  public isCajero = (): boolean => this.isParticularAssistant() || this.isInsuranceAssistant();
+  public isCajero = (): boolean => 
+    this.isParticularAssistant() || this.isInsuranceAssistant() || this.isAdministrador();
   
-  public isMedico = (): boolean => this.hasRole(UserRole.Medico);
+  public isMedico = (): boolean => 
+    this.hasRole(UserRole.Medico) || this.isAdministrador();
   
   /**
    * Senior Imaging Strategy (V16.0):
@@ -85,7 +87,7 @@ export class AuthService {
 
   public isFarmacia = (): boolean => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role === 'farmacia';
+    return role === 'farmacia' || this.isAdministrador();
   };
 
   // Recupera la sesión persistida (Abstracted via StorageService)

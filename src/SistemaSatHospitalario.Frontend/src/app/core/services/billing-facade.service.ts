@@ -150,6 +150,13 @@ export class BillingFacadeService {
     this.currentSupervisorKey.set(null);
   }
 
+  public resetCart() {
+    this.clearAll();
+    this.searchTermServicio.set('');
+    this.selectedEspecialidad.set(null);
+    this.selectedMedicoId.set(null);
+  }
+
    /**
    * Sincroniza el carrito local con el backend mediante una única transacción atómica (V11.1 Guid)
    */

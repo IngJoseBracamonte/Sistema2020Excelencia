@@ -13,9 +13,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.WebAPI.Infrastructure.Security;
 
+using SistemaSatHospitalario.Core.Domain.Constants;
+
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = "Admin,Administrador,Asistente Particular,Asistente Seguro,Asistente de Seguros,Asistente RX,Médico,Cajero")]
+    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.AsistenteParticular + "," + AuthorizationConstants.AsistenteSeguro + "," + AuthorizationConstants.AsistenteDeSeguros + "," + AuthorizationConstants.AsistenteRX + "," + AuthorizationConstants.Medico + "," + AuthorizationConstants.Cajero)]
     [ApiController]
     [Route("api/[controller]")]
     public class BillingController : ControllerBase

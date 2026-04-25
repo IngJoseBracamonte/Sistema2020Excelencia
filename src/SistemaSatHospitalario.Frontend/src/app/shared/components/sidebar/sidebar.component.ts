@@ -20,7 +20,8 @@ import {
     Bookmark,
     ChevronDown,
     ShieldCheck,
-    BarChart3
+    BarChart3,
+    Github
 } from 'lucide-angular';
 
 @Component({
@@ -78,7 +79,8 @@ export class SidebarComponent implements OnInit {
         ChevronDown: ChevronDown,
         Audit: ShieldCheck,
         ShieldCheck: ShieldCheck,
-        Reportes: BarChart3
+        Reportes: BarChart3,
+        Github: Github
     };
 
     toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion') {

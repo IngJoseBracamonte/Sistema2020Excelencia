@@ -23,14 +23,17 @@ Write-Host @"
 Write-Header "[1/3] Verificando IP Local..."
 try {
     $LocalIp = (Get-NetRoute -DestinationPrefix 0.0.0.0/0 | Get-NetIPInterface | Get-NetIPAddress -AddressFamily IPv4 | Select-Object -First 1).IPAddress
+    $PcName = $env:COMPUTERNAME
     Write-Ok "IP Local detectada: $LocalIp"
+    Write-Ok "Nombre de PC detectado: $PcName"
     
-    # Actualizar LOCAL_IP en el .env si existe
+    # Actualizar LOCAL_IP y PC_NAME en el .env si existe
     if (Test-Path ".env") {
         $envContent = Get-Content ".env"
         $newContent = $envContent -replace "LOCAL_IP=.*", "LOCAL_IP=$LocalIp"
+        $newContent = $newContent -replace "PC_NAME=.*", "PC_NAME=$PcName"
         $newContent | Set-Content ".env"
-        Write-Ok "Archivo .env actualizado con la IP actual."
+        Write-Ok "Archivo .env actualizado con la IP y Nombre de PC actuales."
     }
 } catch {
     Write-Info "No se pudo actualizar la IP, se mantendra la anterior."

@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -28,7 +29,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         /// Abre la Caja Diaria para el usuario actual. (Uso manual restringido a Administradores).
         /// </summary>
         [HttpPost("Abrir")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AbrirCaja([FromBody] AbrirCajaCommand command)

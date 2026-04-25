@@ -7,9 +7,11 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using System.Linq;
 
+using SistemaSatHospitalario.Core.Domain.Constants;
+
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = "Admin,Administrador,Asistente Seguro,Asistente de Seguros")]
+    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.AsistenteSeguro + "," + AuthorizationConstants.AsistenteDeSeguros)]
     [ApiController]
     [Route("api/[controller]")]
     public class SegurosController : ControllerBase
