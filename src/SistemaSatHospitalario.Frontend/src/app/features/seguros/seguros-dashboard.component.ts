@@ -120,12 +120,20 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                             <span class="text-sm font-black font-mono tracking-tighter text-emerald-400">$ {{ p.montoTotalBase | number:'1.2-2' }}</span>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <button (click)="openCompromiso(p)" 
-                                [class]="p.compromisoGenerado ? 'bg-emerald-500 text-white' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'"
-                                class="inline-flex items-center gap-2 px-6 py-2 border border-emerald-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-emerald-500/5">
-                                {{ p.compromisoGenerado ? 'Ver / Re-emitir' : 'Generar Compromiso' }}
-                                <lucide-icon [name]="icons.Download" class="w-3 h-3 group-hover/btn:translate-y-0.5 transition-transform"></lucide-icon>
-                            </button>
+                            <div class="flex items-center justify-center gap-2">
+                                <button (click)="openCompromiso(p, true)" 
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all hover:bg-indigo-500 hover:text-white hover:scale-105 active:scale-95 group/btn shadow-lg shadow-indigo-500/5">
+                                    Emitir Garantía
+                                    <lucide-icon [name]="icons.Shield" class="w-3 h-3 group-hover/btn:scale-110 transition-transform"></lucide-icon>
+                                </button>
+                                
+                                <button (click)="openCompromiso(p, false)" 
+                                    [class]="p.compromisoGenerado ? 'bg-emerald-500 text-white' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'"
+                                    class="inline-flex items-center gap-2 px-4 py-2 border border-emerald-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-emerald-500/5">
+                                    {{ p.compromisoGenerado ? 'Re-emitir Compromiso' : 'Generar Compromiso' }}
+                                    <lucide-icon [name]="icons.Download" class="w-3 h-3 group-hover/btn:translate-y-0.5 transition-transform"></lucide-icon>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     <tr *ngIf="pacientes().length === 0">
@@ -142,11 +150,11 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
     <!-- Modal Compromiso de Pago -->
     <div *ngIf="showModal()" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-surface-card border border-white/5 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-6">Generar Compromiso de Pago</h2>
+            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-6">{{ isGarantia() ? 'Emitir Garantía de Pago' : 'Generar Compromiso de Pago' }}</h2>
             
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nombre del Responsable</label>
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nombre del Responsable / Garante</label>
                     <input type="text" [(ngModel)]="compromisoData.nombreResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none">
                 </div>
                 <div class="space-y-2">
@@ -177,8 +185,8 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
 
             <div class="flex justify-end gap-4">
                 <button (click)="showModal.set(false)" class="px-6 py-4 rounded-xl border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5 transition-all">Cancelar</button>
-                <button (click)="generarPdf()" class="px-6 py-4 rounded-xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center shadow-lg shadow-emerald-500/20" [disabled]="isGenerating()">
-                    <lucide-icon [name]="icons.Download" class="w-4 h-4 mr-2"></lucide-icon> {{ isGenerating() ? 'Generando...' : 'Descargar PDF' }}
+                <button (click)="generarPdf()" [class]="isGarantia() ? 'bg-indigo-500' : 'bg-emerald-500'" class="px-6 py-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all flex items-center shadow-lg shadow-emerald-500/20" [disabled]="isGenerating()">
+                    <lucide-icon [name]="icons.Download" class="w-4 h-4 mr-2"></lucide-icon> {{ isGenerating() ? 'Generando...' : (isGarantia() ? 'Descargar Garantía' : 'Descargar Compromiso') }}
                 </button>
             </div>
         </div>
@@ -199,6 +207,7 @@ export class SegurosDashboardComponent implements OnInit {
   public estadoFiltro = signal<string>('Todos'); // Todos, Pendiente, Generado
   
   public showModal = signal(false);
+  public isGarantia = signal(false);
   public isGenerating = signal(false);
   public compromisoData: any = {};
 
@@ -229,11 +238,12 @@ export class SegurosDashboardComponent implements OnInit {
     });
   }
 
-  openCompromiso(paciente: any) {
+  openCompromiso(paciente: any, garantia: boolean = false) {
     const today = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30); // Por defecto 30 días
 
+    this.isGarantia.set(garantia);
     this.compromisoData = {
       cuentaPorCobrarId: paciente.id,
       nombreResponsable: paciente.pacienteNombre,
@@ -241,7 +251,7 @@ export class SegurosDashboardComponent implements OnInit {
       cedulaResponsable: paciente.pacienteCedula,
       direccionResponsable: 'No especificada',
       telefonoResponsable: 'No especificado',
-      conceptos: 'Servicios Médicos',
+      conceptos: 'Servicios Médicos Hospitalarios',
       nombrePaciente: paciente.pacienteNombre,
       edadPaciente: 0,
       cedulaPaciente: paciente.pacienteCedula,
@@ -262,12 +272,15 @@ export class SegurosDashboardComponent implements OnInit {
     futureDate.setDate(futureDate.getDate() + this.compromisoData.diasLiquidar);
     this.compromisoData.fechaVencimiento = futureDate.toISOString();
 
-    this.http.post(`${this.apiUrl}/compromiso-pago`, this.compromisoData, { responseType: 'blob' }).subscribe({
+    const endpoint = this.isGarantia() ? 'garantia-pago' : 'compromiso-pago';
+
+    this.http.post(`${this.apiUrl}/${endpoint}`, this.compromisoData, { responseType: 'blob' }).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         window.open(url, '_blank');
         this.isGenerating.set(false);
         this.showModal.set(false);
+        this.loadPacientes(); // Refresh list to update status if needed
       },
       error: () => {
         alert('Error al generar PDF');

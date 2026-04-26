@@ -46,6 +46,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return File(pdfBytes, "application/pdf", $"Compromiso_Pago_{dto.CedulaResponsable}.pdf");
         }
 
+        [HttpPost("garantia-pago")]
+        public async Task<IActionResult> GenerarGarantia([FromBody] CompromisoPagoDto dto)
+        {
+            var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync();
+            var logoBase64 = config?.LogoBase64;
+
+            var pdfBytes = _pdfService.GenerarGarantiaPdf(dto, logoBase64);
+            
+            return File(pdfBytes, "application/pdf", $"Garantia_{dto.CedulaResponsable}.pdf");
+        }
+
         [HttpGet("ingresados")]
         public async Task<IActionResult> GetPacientesIngresados(
             [FromQuery] DateTime? desde, 

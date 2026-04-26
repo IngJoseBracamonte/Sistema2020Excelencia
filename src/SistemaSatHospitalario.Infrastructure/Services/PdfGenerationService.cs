@@ -235,6 +235,96 @@ namespace SistemaSatHospitalario.Infrastructure.Services
             }).GeneratePdf();
 
             return document;
+        public byte[] GenerarGarantiaPdf(CompromisoPagoDto data, string? logoBase64)
+        {
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(2, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
+
+                    page.Header().Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            if (!string.IsNullOrEmpty(logoBase64))
+                            {
+                                try
+                                {
+                                    var imageBytes = Convert.FromBase64String(logoBase64.Split(',').Last());
+                                    col.Item().Height(60).Image(imageBytes);
+                                }
+                                catch { }
+                            }
+                        });
+
+                        row.RelativeItem().AlignRight().Column(col =>
+                        {
+                            col.Item().Text("CENTRO DIAGNOSTICO CLINICO LA EXCELENCIA C.A").FontSize(10).SemiBold();
+                            col.Item().Text("RIF: J-41168255-1").FontSize(10);
+                        });
+                    });
+
+                    page.Content().PaddingVertical(20).Column(column =>
+                    {
+                        column.Item().AlignCenter().PaddingBottom(20)
+                            .Text("GARANTIA DE PAGO").FontSize(14).SemiBold().Underline();
+
+                        column.Item().Text(text =>
+                        {
+                            text.Span("En la ciudad de Guanare, Yo ");
+                            text.Span($"{data.NombreResponsable}").SemiBold();
+                            text.Span($" ({data.RelacionResponsable}), titular de la cédula de identidad ");
+                            text.Span($"{data.CedulaResponsable}").SemiBold();
+                            text.Span($", en mi condición de Garante, declaro mediante el presente documento que garantizo la totalidad de los gastos médicos y servicios hospitalarios realizados a ");
+                            text.Span($"{data.NombrePaciente}").SemiBold();
+                            text.Span($", titular de la cédula de identidad ");
+                            text.Span($"{data.CedulaPaciente}").SemiBold();
+                            text.Span(".");
+                        });
+
+                        column.Item().PaddingTop(10).Text(text =>
+                        {
+                            text.Span("Esta garantía respalda la cuenta del paciente por un monto referencial de ");
+                            text.Span($"${data.MontoTotal:N2}").SemiBold();
+                            text.Span($", comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a {data.DiasLiquidar} días.");
+                        });
+
+                        column.Item().PaddingTop(10).Text(text =>
+                        {
+                            text.Span("Acepto que este documento sirve como título ejecutivo y respaldo legal de la deuda contraída con el CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA C.A.");
+                        });
+
+                        column.Item().PaddingTop(20).Text("Sin otro particular, firmo conforme:");
+
+                        // Firmas
+                        column.Item().PaddingTop(60).Row(row =>
+                        {
+                            row.RelativeItem().AlignCenter().Column(c =>
+                            {
+                                c.Item().LineHorizontal(1);
+                                c.Item().PaddingTop(5).Text("EL GARANTE").SemiBold();
+                                c.Item().Text($"Nombre: {data.NombreResponsable}");
+                                c.Item().Text($"C.I: {data.CedulaResponsable}");
+                            });
+
+                            row.ConstantItem(40); // Spacer
+
+                            row.RelativeItem().AlignCenter().Column(c =>
+                            {
+                                c.Item().LineHorizontal(1);
+                                c.Item().PaddingTop(5).Text("POR LA CLINICA").SemiBold();
+                                c.Item().Text("Sello y Firma Autorizada");
+                            });
+                        });
+                    });
+                });
+            }).GeneratePdf();
+
+            return document;
         }
     }
 }

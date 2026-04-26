@@ -19,5 +19,13 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         /// <param name="logoBase64">Logo opcional en Base64.</param>
         /// <returns>Bytes del archivo PDF generado.</returns>
         byte[] GenerarCompromisoPagoPdf(CompromisoPagoDto data, string? logoBase64);
+
+        /// <summary>
+        /// Genera el documento de Garantía de Pago en formato PDF.
+        /// </summary>
+        /// <param name="data">Datos de la garantía y logo en base64 opcional.</param>
+        /// <param name="logoBase64">Logo opcional en Base64.</param>
+        /// <returns>Bytes del archivo PDF generado.</returns>
+        byte[] GenerarGarantiaPdf(CompromisoPagoDto data, string? logoBase64);
     }
 }
