@@ -10,6 +10,8 @@ import { CurrencyBsPipe } from '../../../../../shared/pipes/currency-bs.pipe';
  * Encapsula el resumen financiero, el listado de servicios cargados y la acción final de cobro.
  * Centraliza los cálculos de totales delegando al Facade.
  */
+import { FacturacionService } from '../../../../../core/services/facturacion.service';
+
 @Component({
   selector: 'app-billing-cart',
   standalone: true,
@@ -18,10 +20,12 @@ import { CurrencyBsPipe } from '../../../../../shared/pipes/currency-bs.pipe';
 })
 export class BillingCartComponent {
   public billingFacade = inject(BillingFacadeService);
+  private facturacionService = inject(FacturacionService);
 
   // --- Inputs de Contexto ---
   @Input() isAdmin = false;
   @Input() pacienteSeleccionado = false;
+  @Input() patientData: any = null;
   @Input() currentStep = 1;
   @Input() isLoading = false;
 
@@ -95,5 +99,48 @@ export class BillingCartComponent {
     this.editingIndex.set(null);
     this.tempPrice.set(0);
     this.tempHonorary.set(0);
+  }
+
+  // --- Lógica de Garantías (V12.5 - No Tech Debt) ---
+  public isGuarantee(s: any): boolean {
+    const desc = (s.descripcion || s.Descripcion || '').toUpperCase();
+    return desc.includes('GARANTIA');
+  }
+
+  public imprimirGarantia(s: any) {
+    if (!this.patientData) {
+      alert('Debe seleccionar un paciente primero.');
+      return;
+    }
+
+    const price = s.precioUsd ?? s.PrecioUsd ?? s.precio ?? 0;
+    
+    const dto = {
+      nombreResponsable: this.patientData.nombre + ' ' + this.patientData.apellidos,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: this.patientData.cedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: this.patientData.celular || 'No especificado',
+      conceptos: (s.descripcion || s.Descripcion || 'GARANTIA DE PAGO'),
+      nombrePaciente: this.patientData.nombre + ' ' + this.patientData.apellidos,
+      edadPaciente: 0,
+      cedulaPaciente: this.patientData.cedula,
+      montoTotal: price,
+      diasLiquidar: 30,
+      cuotas: 1,
+      fechaCompromiso: new Date().toISOString().split('T')[0],
+      fechaVencimiento: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString()
+    };
+
+    this.facturacionService.generarGarantiaPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      },
+      error: (err) => {
+        console.error('Error al generar PDF de garantía:', err);
+        alert('No se pudo generar el documento de garantía.');
+      }
+    });
   }
 }

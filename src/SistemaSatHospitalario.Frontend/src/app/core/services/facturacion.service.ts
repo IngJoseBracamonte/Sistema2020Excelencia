@@ -97,6 +97,11 @@ export class FacturacionService {
   private http = inject(HttpClient);
   private billingUrl = `${environment.apiUrl}/api/Billing`;
   private receiptUrl = `${environment.apiUrl}/api/ReciboFactura`;
+  private segurosUrl = `${environment.apiUrl}/api/Seguros`;
+
+  generarGarantiaPdf(dto: any): Observable<Blob> {
+    return this.http.post(`${this.segurosUrl}/garantia-pago`, dto, { responseType: 'blob' });
+  }
 
   closeAccount(request: any): Observable<any> {
     // Al cerrar cuenta, se espera cuentaId (Guid)
