@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
 import { BillingFacadeService } from '../../../core/services/billing-facade.service';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
-import { PdfService } from '../../../core/services/pdf.service';
+import { PdfService } from '../../../../app/core/services/pdf.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { environment } from '../../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
@@ -67,10 +68,10 @@ import { firstValueFrom } from 'rxjs';
   `
 })
 export class SanityCheckComponent {
-  private pdfService = inject(PdfService);
-  private catalogService = inject(CatalogService);
-  private settingsService = inject(SettingsService);
-  private http = inject(HttpClient);
+  private pdfService: PdfService = inject(PdfService);
+  private catalogService: CatalogService = inject(CatalogService);
+  private settingsService: SettingsService = inject(SettingsService);
+  private http: HttpClient = inject(HttpClient);
 
   isRunning = signal(false);
   logs = signal<{time: Date, message: string, type: 'info' | 'error' | 'warn'}[]>([]);
@@ -144,7 +145,7 @@ export class SanityCheckComponent {
     this.updateTest('pdf-receipt', { status: 'running' });
     try {
         const dummyData: any = { numeroRecibo: 'T-01', pacienteNombre: 'T', pacienteCedula: '0', detalles: [], totalUSD: 0, totalBS: 0, tasaBcv: 0, fechaEmision: new Date(), pagos: [] };
-        const blob = await firstValueFrom(this.pdfService.generateRecibo(dummyData));
+        const blob = await firstValueFrom(this.pdfService.generateRecibo(dummyData)) as Blob;
         this.updateTest('pdf-receipt', { status: 'success', message: `${blob.size} bytes` });
     } catch (e) {
         this.updateTest('pdf-receipt', { status: 'error' });
@@ -155,7 +156,7 @@ export class SanityCheckComponent {
     this.updateTest('pdf-guarantee', { status: 'running' });
     try {
         const dummyData: any = { nombreResponsable: 'T', cedulaResponsable: '0', nombrePaciente: 'T', montoTotal: 0, fechaCompromiso: new Date(), fechaVencimiento: new Date() };
-        const blob = await firstValueFrom(this.pdfService.generateCompromiso(dummyData));
+        const blob = await firstValueFrom(this.pdfService.generateCompromiso(dummyData)) as Blob;
         this.updateTest('pdf-guarantee', { status: 'success', message: `${blob.size} bytes` });
     } catch (e) {
         this.updateTest('pdf-guarantee', { status: 'error' });
@@ -176,7 +177,7 @@ export class SanityCheckComponent {
   private async testLaboratory() {
     this.updateTest('laboratory', { status: 'running' });
     try {
-        const data = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/ReciboFactura/MonitoringOrders`));
+        const data = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/ReciboFactura/MonitoringOrders`)) as any[];
         this.updateTest('laboratory', { status: 'success', message: `${data.length} órdenes` });
     } catch (e) {
         this.updateTest('laboratory', { status: 'error', message: 'API Off' });
