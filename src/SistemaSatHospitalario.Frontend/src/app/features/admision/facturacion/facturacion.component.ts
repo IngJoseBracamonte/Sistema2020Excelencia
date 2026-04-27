@@ -862,6 +862,9 @@ export class FacturacionComponent {
         }]);
         this.resetCitaSelection();
         this.actionMessage.set(`Servicio "${finalDescripcion}" añadido al carrito temporal.`);
+        
+        // Activar sugerencias también en el carrito local (V11.17)
+        this.triggerSuggestion(s);
       } else {
         this.errorMessage.set("Este servicio ya está en el carrito.");
       }
@@ -912,17 +915,8 @@ export class FacturacionComponent {
         this.actionMessage.set("Servicio cargado exitosamente.");
 
         // AUTO-SUGERENCIA: Resaltar servicios relacionados (ej: Informes de Tomografía/RX)
-        if (s.sugerenciasIds && s.sugerenciasIds.length > 0) {
-          const firstSugId = s.sugerenciasIds[0];
-          this.suggestedServiceId.set(firstSugId);
-          this.actionMessage.set(`¡Estudio añadido! Se sugiere cargar también el informe del especialista.`);
-
-          // Opcional: Hacer scroll al buscador para que vea la sugerencia resaltada
-          setTimeout(() => {
-            const el = document.querySelector('.suggested-highlight');
-            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 300);
-        }
+        this.triggerSuggestion(s);
+        
         this.errorMessage.set(null);
         this.isLoading.set(false);
       },
@@ -935,6 +929,22 @@ export class FacturacionComponent {
 
 
 
+
+  private triggerSuggestion(s: CatalogItem) {
+    if (s.sugerenciasIds && s.sugerenciasIds.length > 0) {
+      const firstSugId = s.sugerenciasIds[0];
+      this.suggestedServiceId.set(firstSugId);
+      this.actionMessage.set(`¡Servicio añadido! Tenemos una sugerencia relacionada para usted.`);
+
+      // Feedback visual: Scroll hasta la sugerencia resaltada
+      setTimeout(() => {
+        const el = document.querySelector('.suggested-highlight');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  }
 
   async procesarCobro() {
     if (!this.pacienteSeleccionado()) {
