@@ -5,6 +5,7 @@ import { BillingFacadeService } from '../../../core/services/billing-facade.serv
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
 import { PdfService } from '../../../core/services/pdf.service';
 import { SettingsService } from '../../../core/services/settings.service';
+import { environment } from '../../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -69,6 +70,7 @@ export class SanityCheckComponent {
   private pdfService = inject(PdfService);
   private catalogService = inject(CatalogService);
   private settingsService = inject(SettingsService);
+  private http = inject(HttpClient);
 
   isRunning = signal(false);
   logs = signal<{time: Date, message: string, type: 'info' | 'error' | 'warn'}[]>([]);
@@ -79,6 +81,7 @@ export class SanityCheckComponent {
     { id: 'suggestions', name: 'Sugerencias', description: 'Motor automático.', icon: 'sparkles', status: 'idle', message: '' },
     { id: 'settings', name: 'Configuración', description: 'Cloud sync.', icon: 'settings', status: 'idle', message: '' },
     { id: 'catalog', name: 'Catálogo', description: 'Precios y servicios.', icon: 'database', status: 'idle', message: '' },
+    { id: 'laboratory', name: 'Lab Monitor', description: 'Sync Legacy.', icon: 'flask-conical', status: 'idle', message: '' },
     { id: 'backend', name: 'API Core', description: 'Disponibilidad.', icon: 'server', status: 'idle', message: '' }
   ]);
 
@@ -100,6 +103,7 @@ export class SanityCheckComponent {
         await this.testSettings();
         await this.testPdfReceipt();
         await this.testPdfLegal();
+        await this.testLaboratory();
         await this.testSuggestions();
     } catch (e) {} finally {
         this.isRunning.set(false);
@@ -166,6 +170,16 @@ export class SanityCheckComponent {
         this.updateTest('suggestions', { status: has ? 'success' : 'warn' });
     } catch (e) {
         this.updateTest('suggestions', { status: 'error' });
+    }
+  }
+
+  private async testLaboratory() {
+    this.updateTest('laboratory', { status: 'running' });
+    try {
+        const data = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/ReciboFactura/MonitoringOrders`));
+        this.updateTest('laboratory', { status: 'success', message: `${data.length} órdenes` });
+    } catch (e) {
+        this.updateTest('laboratory', { status: 'error', message: 'API Off' });
     }
   }
 }
