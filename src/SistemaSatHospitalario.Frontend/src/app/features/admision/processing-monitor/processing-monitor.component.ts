@@ -2,9 +2,9 @@ import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { LucideAngularModule, Monitor, RefreshCw, Clock, FlaskConical, ClipboardCheck } from 'lucide-angular';
-import { environment } from '../../../environments/environment';
-import { SignalrService } from '../../core/services/signalr.service';
-import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
+import { SignalrService } from '../../../core/services/signalr.service';
+import { AuthService } from '../../../core/services/auth.service';
  
 interface MonitoringOrder {
   cuentaId: string;
@@ -109,8 +109,8 @@ interface MonitoringOrder {
 })
 export class ProcessingMonitorComponent implements OnInit {
   private http = inject(HttpClient);
-  private signalR = inject(SignalrService);
-  private auth = inject(AuthService);
+  private signalR: SignalrService = inject(SignalrService);
+  private auth: AuthService = inject(AuthService);
  
   readonly icons = {
     Monitor: Monitor,
