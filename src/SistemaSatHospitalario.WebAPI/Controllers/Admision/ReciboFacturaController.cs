@@ -78,12 +78,26 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             // 1. Obtener datos serializados para el PDF
             var data = await _mediator.Send(new GetReciboPdfQuery { ReciboId = id });
             if (data == null) return NotFound("El recibo no existe.");
-
+ 
             // 2. Generar PDF vía QuestPDF
             var pdfBytes = _pdfService.GenerarReciboPdf(data);
-
+ 
             // 3. Retornar archivo para visualización en navegador
             return File(pdfBytes, "application/pdf", $"Recibo_{data.NumeroRecibo}.pdf");
+        }
+
+        [HttpPost("GeneratePdf")]
+        public IActionResult GeneratePdf([FromBody] ReciboPdfDto data)
+        {
+            try
+            {
+                var pdfBytes = _pdfService.GenerarReciboPdf(data);
+                return File(pdfBytes, "application/pdf", "Recibo_Prueba.pdf");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
     }
 }

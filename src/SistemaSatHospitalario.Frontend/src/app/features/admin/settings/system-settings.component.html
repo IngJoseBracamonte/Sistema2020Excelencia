@@ -47,7 +47,7 @@
         <div class="hidden lg:flex items-center gap-4 px-8 border-l border-white/10">
             <div class="text-right">
                 <p class="text-[7px] font-black text-slate-500 uppercase tracking-widest">Estado del Sistema</p>
-                <p class="text-[9px] font-black text-emerald-400 uppercase tracking-tighter">Operativo / Cloud Native</p>
+                <p class="text-[9px] font-black text-emerald-400 uppercase tracking-tighter">Operativo / Alta Disponibilidad</p>
             </div>
             <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]"></div>
         </div>
@@ -91,7 +91,7 @@
                         <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Logo Institucional (Para Reportes/PDF)</label>
                         <div class="flex items-center gap-4">
                             <input type="file" accept="image/*" (change)="onLogoUpload($event)" class="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-white font-black text-xs focus:border-indigo-500 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/20 file:text-indigo-400 hover:file:bg-indigo-500/30">
-                            <img *ngIf="configData.logoBase64" [src]="configData.logoBase64" class="h-16 rounded-lg border border-white/10" alt="Logo preview">
+                            <img *ngIf="configData.logoBase64" [src]="configData.logoBase64" class="h-16 rounded-lg border border-white/10" alt="Vista previa del Logo">
                         </div>
                     </div>
                 </div>
@@ -515,7 +515,7 @@
                 <button type="button" (click)="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
                     <lucide-icon [name]="showConfirmPassword ? icons.EyeOff : icons.Eye" class="w-3.5 h-3.5"></lucide-icon>
                 </button>
-                <p *ngIf="confirmPassword && newU.password !== confirmPassword" class="text-[7px] text-rose-500 mt-1 ml-4 uppercase font-black">Mismatch</p>
+                <p *ngIf="confirmPassword && newU.password !== confirmPassword" class="text-[7px] text-rose-500 mt-1 ml-4 uppercase font-black">Las claves no coinciden</p>
             </div>
 
             <div class="pt-2">

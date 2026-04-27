@@ -100,8 +100,8 @@
                 <!-- Bar Chart: Especialidades -->
                 <div class="bg-surface-card rounded-[2.5rem] shadow-lg border border-glass-border overflow-hidden">
                     <div class="p-8 border-b border-glass-border flex justify-between items-center text-main">
-                        <h3 class="text-sm font-black uppercase tracking-widest">Revenue by Specialty</h3>
-                        <span class="text-xs font-bold text-muted italic">Live Data</span>
+                        <h3 class="text-sm font-black uppercase tracking-widest">Ingresos por Especialidad</h3>
+                        <span class="text-xs font-bold text-muted italic">Datos en Vivo</span>
                     </div>
                     <div class="p-8">
                         <div class="space-y-6">
@@ -122,25 +122,25 @@
                 <!-- Mini Charts Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-surface-card rounded-[2.5rem] p-8 text-white border border-white/5">
-                        <h3 class="text-sm font-black uppercase tracking-widest mb-8 text-slate-500">Top Insurances</h3>
+                        <h3 class="text-sm font-black uppercase tracking-widest mb-8 text-slate-500">Principales Seguros</h3>
                         <div class="space-y-4">
                             <div *ngFor="let seg of insights()?.ventasPorSeguro" class="flex items-center justify-between border-b border-white/5 pb-4 last:border-0">
                                 <div>
                                     <p class="text-xs font-bold text-slate-300">{{ seg.seguro }}</p>
-                                    <p class="text-[9px] font-black text-emerald-400 tracking-widest uppercase">Coverage Volume</p>
+                                    <p class="text-[9px] font-black text-emerald-400 tracking-widest uppercase">Volumen de Cobertura</p>
                                 </div>
                                 <h4 class="text-xl font-black text-white">Bs. {{ (seg.monto || 0) * (tasa() || 1) | number:'1.2-2' }}</h4>
                             </div>
                         </div>
                     </div>
                     <div class="bg-surface-card rounded-[2.5rem] p-8 border border-white/5 flex flex-col items-center justify-center text-center">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Total Orders RX</p>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Total Órdenes RX</p>
                         <div class="h-24 w-24 circular-progress mb-4" [style.--progress]="(insights()?.totalOrdenesRxHoy || 0) > 0 ? ((insights()?.ordenesRxProcesadasHoy || 0) / (insights()?.totalOrdenesRxHoy || 1) * 360) : 0 + 'deg'">
                             <div class="circular-content font-black text-primary">
                                 {{ insights()?.ordenesRxProcesadasHoy || 0 }} / {{ insights()?.totalOrdenesRxHoy || 0 }}
                             </div>
                         </div>
-                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Throughput: {{ ((insights()?.ordenesRxProcesadasHoy || 0) / (insights()?.totalOrdenesRxHoy || 1)) | percent:'1.1-1' }}</p>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Rendimiento: {{ ((insights()?.ordenesRxProcesadasHoy || 0) / (insights()?.totalOrdenesRxHoy || 1)) | percent:'1.1-1' }}</p>
                     </div>
                 </div>
             </div>

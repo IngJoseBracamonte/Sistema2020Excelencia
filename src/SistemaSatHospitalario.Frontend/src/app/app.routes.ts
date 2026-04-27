@@ -38,6 +38,7 @@ export const routes: Routes = [
             { path: 'admin/reset-requests', loadComponent: () => import('./features/admin/reset-requests/password-reset-requests.component').then(m => m.PasswordResetRequestsComponent) },
             { path: 'settings', loadComponent: () => import('./features/admin/settings/system-settings.component').then(m => m.SystemSettingsComponent) },
             { path: 'tickets', loadComponent: () => import('./features/admin/tickets/tickets.component').then(m => m.AdminTicketsComponent) },
+            { path: 'admin/health', loadComponent: () => import('./features/admin/sanity-check/sanity-check.component').then(m => m.SanityCheckComponent) },
             { path: 'seguros', loadComponent: () => import('./features/seguros/seguros-dashboard.component').then(m => m.SegurosDashboardComponent) },
             { path: 'github-test', loadComponent: () => import('./features/github-test/github-test.component').then(m => m.GithubTestComponent) },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

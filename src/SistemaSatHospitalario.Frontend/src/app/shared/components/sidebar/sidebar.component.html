@@ -13,7 +13,7 @@
         
         <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.Dashboard" class="w-5 h-5 mr-3"></lucide-icon>
-            <span class="font-bold">Dashboard</span>
+            <span class="font-bold">Panel de Control</span>
         </a>
 
         <!-- Facturación Dropdown (Para Administrativos) -->
@@ -49,7 +49,7 @@
 
         <a *ngIf="isAdministrativeGroup()" routerLink="/seguros" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.ShieldCheck" class="w-5 h-5 mr-3 text-emerald-500"></lucide-icon>
-            <span class="font-bold">Seguros & Compromisos</span>
+            <span class="font-bold">Seguros, Garantías & Compromisos</span>
         </a>
 
         <!-- Operativo / Gestión -->
@@ -132,6 +132,7 @@
                 <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">General & Finanzas</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Seguridad & RBAC</a>
+                <a *ngIf="isAdmin()" routerLink="/admin/health" routerLinkActive="active-sublink" class="nav-subitem">Integridad del Sistema</a>
                 <a *ngIf="isAdmin()" routerLink="/admin/reset-requests" routerLinkActive="active-sublink" class="nav-subitem">Solicitudes de Reset</a>
             </div>
         </div>
@@ -139,7 +140,7 @@
         <!-- GitHub Deploy Test (SOLO PARA PRUEBA CI/CD) -->
         <a routerLink="/github-test" routerLinkActive="active-link" class="nav-item flex items-center mt-6 border-t border-blue-500/20 pt-4">
             <lucide-icon [name]="icons.Github" class="w-5 h-5 mr-3 text-blue-400"></lucide-icon>
-            <span class="font-black text-blue-400 text-[10px] uppercase tracking-widest">Test GitHub Push</span>
+            <span class="font-black text-blue-400 text-[10px] uppercase tracking-widest">Estado del Sistema</span>
         </a>
     </nav>
 
