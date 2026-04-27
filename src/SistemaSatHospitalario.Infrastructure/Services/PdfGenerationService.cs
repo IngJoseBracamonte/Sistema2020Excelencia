@@ -235,6 +235,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services
             }).GeneratePdf();
 
             return document;
+        }
+
         public byte[] GenerarGarantiaPdf(CompromisoPagoDto data, string? logoBase64)
         {
             var document = Document.Create(container =>
