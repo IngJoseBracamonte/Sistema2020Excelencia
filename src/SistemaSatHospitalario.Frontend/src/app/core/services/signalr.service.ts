@@ -59,6 +59,8 @@ export class SignalrService {
           if (role?.toLowerCase().includes('admin')) {
             this.notificationConnection?.invoke('JoinGroup', 'Admin');
           }
+          // Todos los que ven el monitor se unen a este grupo
+          this.notificationConnection?.invoke('JoinGroup', 'ProcessingOrders');
         })
         .catch(err => console.error('[SIGNALR NOTIFY] Error: ' + err));
     }

@@ -25,5 +25,8 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
         // Mantenimiento de Convenios Legacy
         Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken);
         Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken);
+        
+        // V16.3: Monitoreo de Procesamiento (Worker)
+        Task<int?> GetMuestraStatusAsync(int legacyOrderId, CancellationToken cancellationToken);
     }
 }

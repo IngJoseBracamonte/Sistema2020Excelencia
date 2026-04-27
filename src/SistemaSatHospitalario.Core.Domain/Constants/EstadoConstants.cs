@@ -83,8 +83,11 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const string Cancelado = "Cancelado"; // Nota: Algunas entidades usan masculino por legado
 
         // Estados de Cuentas por Cobrar
-        public const string Parcial = "Parcial";
         public const string Pagada = "Pagada";
         public const string Cobrada = "Cobrada";
+ 
+        // Estados de Procesamiento (V16.3 Monitor)
+        public const string ProcesamientoPendiente = "PENDIENTE";
+        public const string ProcesamientoProcesada = "PROCESADA";
     }
 }

@@ -122,6 +122,19 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                     await context.Database.ExecuteSqlRawAsync(createTableSql);
                     logger.LogInformation("✅ Tabla OrdenesImagenes garantizada.");
 
+                    // [V16.3 FIX] Asegurar columnas de monitoreo en CuentasServicios
+                    logger.LogInformation("Sincronizando esquema de monitoreo en CuentasServicios...");
+                    try 
+                    {
+                        await context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `LegacyOrderId` INT NULL;");
+                        await context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `ProcesamientoEstado` VARCHAR(50) NULL;");
+                        logger.LogInformation("✅ Columnas de monitoreo agregadas exitosamente.");
+                    }
+                    catch (Exception ex) when (ex.Message.Contains("Duplicate column name"))
+                    {
+                        logger.LogInformation("ℹ️ Las columnas de monitoreo ya existen.");
+                    }
+ 
                     logger.LogInformation("Secuencia de inicialización completada exitosamente.");
                 }
                 catch (Exception ex)

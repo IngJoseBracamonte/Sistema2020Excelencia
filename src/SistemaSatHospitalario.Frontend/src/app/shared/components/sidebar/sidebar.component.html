@@ -46,6 +46,12 @@
             <lucide-icon [name]="icons.RX" class="w-5 h-5 mr-3 text-sky-500"></lucide-icon>
             <span class="font-bold">Órdenes Tomografía</span>
         </a>
+ 
+        <!-- Monitor de Laboratorio (V16.3 Processing) -->
+        <a *ngIf="isAdministrativeGroup() || isAdmin()" routerLink="/processing-monitor" routerLinkActive="active-link" class="nav-item flex items-center">
+            <lucide-icon [name]="icons.Lab" class="w-5 h-5 mr-3 text-amber-500"></lucide-icon>
+            <span class="font-bold">Monitor de Laboratorio</span>
+        </a>
 
         <a *ngIf="isAdministrativeGroup()" routerLink="/seguros" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.ShieldCheck" class="w-5 h-5 mr-3 text-emerald-500"></lucide-icon>

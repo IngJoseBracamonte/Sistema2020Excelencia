@@ -296,5 +296,21 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 return new List<int>();
             }
         }
+ 
+        public async Task<int?> GetMuestraStatusAsync(int legacyOrderId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(_connectionString)) return null;
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                const string sql = "SELECT Muestra FROM ordenes WHERE IdOrden = @legacyOrderId LIMIT 1";
+                return await connection.QueryFirstOrDefaultAsync<int?>(sql, new { legacyOrderId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[LEGACY ERROR] GetMuestraStatusAsync (Order: {legacyOrderId}): {ex.Message}", ex);
+                return null;
+            }
+        }
     }
 }

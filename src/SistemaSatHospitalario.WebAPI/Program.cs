@@ -49,6 +49,7 @@ try
 
     // Background Processing
     builder.Services.AddHostedService<SystemOptimizationService>();
+    builder.Services.AddHostedService<LegacyOrderStatusWorker>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 

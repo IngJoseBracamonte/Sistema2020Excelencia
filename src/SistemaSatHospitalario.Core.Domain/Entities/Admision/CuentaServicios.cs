@@ -15,9 +15,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime? FechaCierre { get; private set; }
         public string Estado { get; private set; } // Abierta, Facturada, Anulada
         public string TipoIngreso { get; private set; } // Particular, Seguro, Hospitalizacion, Emergencia
-        // Se cambió de Guid? a int? para sincronización con Legacy
         public int? ConvenioId { get; private set; }
-
+        public int? LegacyOrderId { get; private set; }
+        public string? ProcesamientoEstado { get; private set; } // PENDIENTE, PROCESADA
+ 
         public virtual PacienteAdmision Paciente { get; private set; }
         
         // --- AUDIT & VALIDATION (Senior Traceability V15.0) ---
@@ -108,6 +109,17 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
             FechaAuditoria = DateTime.UtcNow;
             // La auditoría puede ser un estado final o una marca sobre una cuenta facturada
+        }
+
+        public void AsignarLegacyOrder(int legacyOrderId)
+        {
+            LegacyOrderId = legacyOrderId;
+            ProcesamientoEstado = EstadoConstants.ProcesamientoPendiente;
+        }
+
+        public void ActualizarProcesamiento(string nuevoEstado)
+        {
+            ProcesamientoEstado = nuevoEstado;
         }
     }
 }

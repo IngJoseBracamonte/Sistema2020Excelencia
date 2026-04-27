@@ -99,5 +99,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpGet("MonitoringOrders")]
+        public async Task<ActionResult<List<MonitoringOrderDto>>> GetMonitoringOrders()
+        {
+            return Ok(await _mediator.Send(new GetMonitoringOrdersQuery()));
+        }
     }
 }

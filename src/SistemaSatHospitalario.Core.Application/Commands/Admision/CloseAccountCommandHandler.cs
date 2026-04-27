@@ -112,7 +112,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (itemsLab.Any())
                 {
                     _logger.LogTrace($"[CLOSE-ACCOUNT] Procesando {itemsLab.Count} ítems de Laboratorio para Legado.");
-                    await ProcessLegacyOrder(cuenta, cancellationToken);
+                    var legacyOrderId = await ProcessLegacyOrder(cuenta, cancellationToken);
+                    if (legacyOrderId > 0)
+                    {
+                        cuenta.AsignarLegacyOrder(legacyOrderId);
+                        await _billingRepository.ActualizarCuentaAsync(cuenta, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
                 }
 
                 // 4.6 EJECUCIÓN IMÁGENES (RX/TOMO) - Fase 16.2
@@ -143,7 +149,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             };
         }
 
-        private async Task ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct)
+        private async Task<int> ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct)
         {
             _logger.LogTrace($"[LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: {cuenta.Id} ===");
             
@@ -154,7 +160,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (paciente == null) 
             {
                 _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No se encontró el paciente nativo {cuenta.PacienteId}");
-                return;
+                return 0;
             }
             
             _logger.LogTrace($"[LEGACY-SYNC] Paciente encontrado: {paciente.CedulaPasaporte} | NombreCorto: {paciente.NombreCorto} | IdLegacy: {paciente.IdPacienteLegacy}");
@@ -197,7 +203,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     else
                     {
                         _logger.LogTrace($"[LEGACY-SYNC] ERROR: Falló la creación del paciente en Legacy.");
-                        return;
+                        return 0;
                     }
                 }
                 
@@ -220,7 +226,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (!labItems.Any())
             {
                 _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No hay ítems de laboratorio después del filtro EsLaboratorio");
-                return;
+                return 0;
             }
 
             var perfilesFacturados = new List<PerfilesFacturadosLegacy>();
@@ -260,7 +266,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (!perfilesFacturados.Any())
             {
                 _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No se generaron perfiles facturados válidos. La orden NO se creará.");
-                return;
+                return 0;
             }
 
             _logger.LogTrace($"[LEGACY-SYNC] Generando orden con {perfilesFacturados.Count} perfiles para paciente legacy {legacyId}...");
@@ -273,8 +279,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 HoraIngreso = DateTime.Now.ToString("HH:mm:ss")
             };
 
-            await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, perfilesFacturados, new List<ResultadosPacienteLegacy>(), ct);
-            _logger.LogTrace($"[LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente ===");
+            var idOrden = await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, perfilesFacturados, new List<ResultadosPacienteLegacy>(), ct);
+            _logger.LogTrace($"[LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: {idOrden}) ===");
+            return idOrden;
         }
 
         private async Task ProcessImagingOrders(CuentaServicios cuenta, CancellationToken ct)

@@ -23,6 +23,7 @@ export const routes: Routes = [
             { path: 'tomo-orders', loadComponent: () => import('./features/rx-orders/rx-orders.component').then(m => m.RxOrdersComponent) },
             { path: 'cajas', loadComponent: () => import('./features/admision/cajas/cajas.component').then(m => m.CajasComponent) },
             { path: 'facturacion', loadComponent: () => import('./features/admision/facturacion/facturacion.component').then(m => m.FacturacionComponent) },
+            { path: 'processing-monitor', loadComponent: () => import('./features/admision/processing-monitor/processing-monitor.component').then(m => m.ProcessingMonitorComponent) },
             { path: 'cxc', loadComponent: () => import('./features/admision/receivables/receivables.component').then(m => m.ReceivablesComponent) },
             { path: 'expediente-facturacion', loadComponent: () => import('./features/admision/expediente/expediente-facturacion.component').then(m => m.ExpedienteFacturacionComponent) },
             { path: 'control-citas', loadComponent: () => import('./features/admision/expediente/control-citas.component').then(m => m.ControlCitasComponent) },

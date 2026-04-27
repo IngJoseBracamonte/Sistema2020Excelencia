@@ -21,7 +21,8 @@ import {
     ChevronDown,
     ShieldCheck,
     BarChart3,
-    Github
+    Github,
+    FlaskConical
 } from 'lucide-angular';
 
 @Component({
@@ -80,7 +81,8 @@ export class SidebarComponent implements OnInit {
         Audit: ShieldCheck,
         ShieldCheck: ShieldCheck,
         Reportes: BarChart3,
-        Github: Github
+        Github: Github,
+        Lab: FlaskConical
     };
 
     toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion') {
