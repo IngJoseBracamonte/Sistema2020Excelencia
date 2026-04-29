@@ -99,5 +99,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 return await _innerRepository.GetLegacyAgreementsIdsAsync(cancellationToken);
             }) ?? new List<int>();
         }
+
+        public async Task<int?> GetMuestraStatusAsync(int legacyOrderId, CancellationToken cancellationToken)
+        {
+            var cacheKey = $"MuestraStatus_{legacyOrderId}";
+            
+            return await _cache.GetOrCreateAsync(cacheKey, async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = ShortCacheDuration;
+                return await _innerRepository.GetMuestraStatusAsync(legacyOrderId, cancellationToken);
+            });
+        }
     }
 }

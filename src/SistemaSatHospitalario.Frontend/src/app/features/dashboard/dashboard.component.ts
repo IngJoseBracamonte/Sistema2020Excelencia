@@ -28,16 +28,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public userName = computed(() => this.authService.currentUser()?.username || 'Usuario');
   public userRole = computed(() => this.authService.currentUser()?.role || 'Asistente');
   
-  public isAdmin = computed(() => {
-    const role = this.authService.currentUser()?.role?.toLowerCase();
-    return role === 'administrador' || role === 'admin';
-  });
-
-  public isRxAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('rx'));
-  public isParticularAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('particular'));
-  public isInsuranceAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('seguro'));
-  public isHospitalAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('hospitalario'));
-  public isEmergencyAssistant = computed(() => this.authService.currentUser()?.role?.toLowerCase().includes('emergencia'));
+  public isAdmin = this.authService.isAdmin;
+  public isRxAssistant = this.authService.isRxAssistant;
+  public isParticularAssistant = this.authService.isParticularAssistant;
+  public isInsuranceAssistant = this.authService.isInsuranceAssistant;
+  public isHospitalAssistant = this.authService.isHospitalAssistant;
+  public isEmergencyAssistant = this.authService.isEmergencyAssistant;
 
   public tickets = this.signalRService.incomingTickets;
   public now = new Date();

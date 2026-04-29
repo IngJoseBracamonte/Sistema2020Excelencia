@@ -1,11 +1,11 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap, catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { StorageService } from './storage.service';
-import { UserRole, RoleGroups } from '../models/user-role.enum';
+import { UserRole, RoleGroups, RoleKeywords } from '../models/user-role.enum';
 
 export interface LoginRequest {
   username: string;
@@ -50,45 +50,62 @@ export class AuthService {
     return roles.some(r => r.toLowerCase() === currentRole.toLowerCase());
   }
 
-  public isAdministrador = (): boolean => 
-    this.isInGroup(RoleGroups.Administrative);
-  
-  public isParticularAssistant = (): boolean => 
-    this.hasRole(UserRole.AsistenteParticular) || this.isAdministrador();
+  // Helpers de Roles Reactivos (Senior Standardized V17.0)
+  public isAdmin = computed(() => this.isInGroup(RoleGroups.Administrative));
+  public isAdministrador = this.isAdmin; // Alias para compatibilidad
 
-  public isInsuranceAssistant = (): boolean => 
-    this.hasRole(UserRole.AsistenteSeguro) || this.hasRole(UserRole.AsistenteSeguros) || this.isAdministrador();
+  public isParticularAssistant = computed(() => 
+    this.hasRole(UserRole.AsistenteParticular) || this.isAdmin()
+  );
 
-  public isSupervisor = (): boolean => 
-    this.hasRole(UserRole.Supervisor) || this.isAdministrador();
+  public isInsuranceAssistant = computed(() => 
+    this.hasRole(UserRole.AsistenteSeguro) || this.hasRole(UserRole.AsistenteSeguros) || this.isAdmin()
+  );
 
-  public isCajero = (): boolean => 
-    this.isParticularAssistant() || this.isInsuranceAssistant() || this.isAdministrador();
+  public isSupervisor = computed(() => 
+    this.hasRole(UserRole.Supervisor) || this.isAdmin()
+  );
+
+  public isCajero = computed(() => 
+    this.isParticularAssistant() || this.isInsuranceAssistant() || this.isAdmin()
+  );
   
-  public isMedico = (): boolean => 
-    this.hasRole(UserRole.Medico) || this.isAdministrador();
-  
+  public isMedico = computed(() => 
+    this.hasRole(UserRole.Medico) || this.isAdmin()
+  );
+
   /**
    * Senior Imaging Strategy (V16.0):
    * Differentiates between RX and Tomography assistants while sharing the same base infrastructure.
    */
-  public isImagingOperator = (): boolean => 
-    this.isRxAssistant() || this.isTomographyAssistant() || this.isAdministrador();
+  public isImagingOperator = computed(() => 
+    this.isRxAssistant() || this.isTomographyAssistant() || this.isAdmin()
+  );
 
-  public isRxAssistant = (): boolean => {
+  public isRxAssistant = computed(() => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role.includes('rx') || this.isAdministrador();
-  };
+    return (role.includes(RoleKeywords.RX) || role.includes(RoleKeywords.Farmacia) || role.includes(RoleKeywords.AsistenteRX)) && !this.isAdmin();
+  });
 
-  public isTomographyAssistant = (): boolean => {
+  public isTomographyAssistant = computed(() => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role.includes('tomografía') || role.includes('tomografia') || this.isAdministrador();
-  };
+    return role.includes('tomografía') || role.includes('tomografia') || this.isAdmin();
+  });
 
-  public isFarmacia = (): boolean => {
+  public isFarmacia = computed(() => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role === 'farmacia' || this.isAdministrador();
-  };
+    return role === RoleKeywords.Farmacia || this.isAdmin();
+  });
+
+  public isHospitalAssistant = computed(() => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role.includes(RoleKeywords.Hospitalario) || this.isAdmin();
+  });
+
+  public isEmergencyAssistant = computed(() => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role.includes(RoleKeywords.Emergencia) || this.isAdmin();
+  });
 
   // Recupera la sesión persistida (Abstracted via StorageService)
   private getUserFromSession(): AuthResponse | null {

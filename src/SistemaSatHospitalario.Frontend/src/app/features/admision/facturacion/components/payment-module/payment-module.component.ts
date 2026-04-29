@@ -20,23 +20,14 @@ export class PaymentModuleComponent {
 
   // --- Estado Local del Formulario de Pago ---
   public currentPago = {
-    metodoPago: 'Punto de Venta Bs',
+    metodoPago: 'Punto',
     referenciaBancaria: '',
     montoAbonadoMoneda: 0
   };
   // Campo de display separado para evitar conflicto con [value] binding de Angular
   public displayMonto = '0,00';
 
-  public metodosDisponibles = [
-    'Efectivo Dólar ($)', 
-    'Zelle', 
-    'USDT (Binance)', 
-    'Punto Dólares', 
-    'Efectivo BS', 
-    'Pago Móvil', 
-    'Transferencia', 
-    'Punto de Venta Bs'
-  ];
+  public metodosDisponibles = this.billingFacade.catalogMetodosPago;
 
   // Selectores del Facade
   public pagos = this.billingFacade.pagos;
@@ -68,8 +59,7 @@ export class PaymentModuleComponent {
   }
 
   public isBs(): boolean {
-    const m = (this.currentPago.metodoPago || '').toLowerCase();
-    return m.includes('bs') || m.includes('móvil') || m.includes('punto de venta');
+    return this.billingFacade.isMethodBs(this.currentPago.metodoPago);
   }
 
   public agregarPago() {

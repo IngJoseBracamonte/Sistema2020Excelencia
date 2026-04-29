@@ -59,8 +59,7 @@ export class LoginComponent {
     }).subscribe({
       next: (res: any) => {
         this.isLoading.set(false);
-        // Si el usuario es de RX enviarlo a RX, si no a dashboard
-        if (res.role === 'Asistente RX') {
+        if (this.authService.isRxAssistant()) {
           this.router.navigate(['/rx-orders']);
         } else {
           this.router.navigate(['/dashboard']);

@@ -80,6 +80,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 
                 // Senior Maintenance Pattern: Asegurar integridad de fechas de recaudación
                 await FixOrphanPaymentDatesAsync();
+                await SeedMetodosPagoAsync();
 
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
@@ -239,6 +240,33 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             {
                 _logger.LogWarning(ex, "El auto-mantenimiento de fechas de pago falló. El Dashboard podría mostrar datos incompletos transitoriamente.");
             }
+        }
+        private async Task SeedMetodosPagoAsync()
+        {
+            if (await _context.CatalogoMetodosPago.AnyAsync()) return;
+
+            _logger.LogInformation("Sembrando catálogo de métodos de pago y vueltos...");
+
+            var metodos = new List<CatalogoMetodoPago>
+            {
+                // Métodos de Pago
+                new CatalogoMetodoPago("EFECTIVO DOLAR ($)", "Dolar Efectivo", true, false, 1),
+                new CatalogoMetodoPago("ZELLE", "Zelle", true, false, 2),
+                new CatalogoMetodoPago("USDT (BINANCE)", "USDT", true, false, 3),
+                new CatalogoMetodoPago("PUNTO DE VENTA USD", "Punto Dolares", true, false, 4),
+                new CatalogoMetodoPago("EFECTIVO (BS)", "Efectivo BS", false, false, 5),
+                new CatalogoMetodoPago("PAGO MÓVIL", "Pago Movil", false, false, 6),
+                new CatalogoMetodoPago("TRANSFERENCIA", "Transferencia", false, false, 7),
+                new CatalogoMetodoPago("PUNTO DE VENTA BS", "Punto", false, false, 8),
+
+                // Métodos de Vuelto
+                new CatalogoMetodoPago("VUELTO EFECTIVO ($)", "Vuelto Efectivo USD", true, true, 1),
+                new CatalogoMetodoPago("VUELTO PAGO MÓVIL (BS)", "Vuelto Pago Movil", false, true, 2),
+                new CatalogoMetodoPago("VUELTO EFECTIVO (BS)", "Vuelto Efectivo BS", false, true, 3)
+            };
+
+            _context.CatalogoMetodosPago.AddRange(metodos);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,7 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LucideAngularModule, AlertTriangle, RefreshCw, Home, ShieldAlert, Ghost, WifiOff } from 'lucide-angular';
+import { LucideAngularModule, RefreshCw, Home } from 'lucide-angular';
+import { BaseErrorComponent, ErrorUIConfig } from './system-error-base';
 
 @Component({
   selector: 'app-system-error',
@@ -12,25 +13,25 @@ import { LucideAngularModule, AlertTriangle, RefreshCw, Home, ShieldAlert, Ghost
         <div class="max-w-2xl w-full text-center space-y-12 relative">
             <!-- Glow dinámico basado en el tipo de error -->
             <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-[120px] animate-pulse opacity-20"
-                 [ngClass]="getConfig().glowClass"></div>
+                 [ngClass]="currentConfig.glowClass"></div>
             
             <div class="relative inline-block">
                 <div class="h-32 w-32 border rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl transition-transform duration-500 hover:rotate-0 rotate-6"
-                     [ngClass]="getConfig().iconContainerClass">
-                    <lucide-icon [name]="getConfig().icon" class="w-16 h-16 animate-bounce" [ngClass]="getConfig().iconClass"></lucide-icon>
+                     [ngClass]="currentConfig.iconContainerClass">
+                    <lucide-icon [name]="currentConfig.icon" class="w-16 h-16 animate-bounce" [ngClass]="currentConfig.iconClass"></lucide-icon>
                 </div>
                 <div class="absolute -bottom-2 -right-2 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl"
-                     [ngClass]="getConfig().badgeClass">
+                     [ngClass]="currentConfig.badgeClass">
                     Error {{ errorCode }}
                 </div>
             </div>
 
             <div class="space-y-4">
                 <h1 class="text-6xl font-black text-white tracking-tighter uppercase leading-none">
-                    {{ getConfig().title }} <span class="text-transparent bg-clip-text" [ngClass]="getConfig().gradientClass">{{ getConfig().highlight }}</span>
+                    {{ currentConfig.title }} <span class="text-transparent bg-clip-text" [ngClass]="currentConfig.gradientClass">{{ currentConfig.highlight }}</span>
                 </h1>
                 <p class="text-slate-400 font-medium text-lg max-w-lg mx-auto">
-                    {{ getConfig().message }}
+                    {{ currentConfig.message }}
                 </p>
             </div>
 
@@ -57,79 +58,20 @@ import { LucideAngularModule, AlertTriangle, RefreshCw, Home, ShieldAlert, Ghost
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
-export class SystemErrorComponent implements OnInit {
+export class SystemErrorComponent extends BaseErrorComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   
   errorCode: string = '500';
-  readonly icons = { AlertTriangle, RefreshCw, Home, ShieldAlert, Ghost, WifiOff };
+  currentConfig!: ErrorUIConfig;
+  
+  readonly icons = { RefreshCw, Home };
 
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.errorCode = params['code'] || '500';
+      this.currentConfig = this.getErrorConfig(this.errorCode);
     });
-  }
-
-  getConfig() {
-    const configs: any = {
-      '404': {
-        title: 'Página',
-        highlight: 'No Encontrada',
-        message: 'El recurso que buscas parece haber sido movido o eliminado del servidor.',
-        icon: this.icons.Ghost,
-        glowClass: 'bg-indigo-500/20',
-        iconContainerClass: 'bg-indigo-500/10 border-indigo-500/20',
-        iconClass: 'text-indigo-400',
-        badgeClass: 'bg-indigo-600',
-        gradientClass: 'bg-gradient-to-r from-indigo-400 to-blue-500'
-      },
-      '401': {
-        title: 'Acceso',
-        highlight: 'Restringido',
-        message: 'No tienes los permisos necesarios o tu sesión ha expirado. Por favor, reidentifícate.',
-        icon: this.icons.ShieldAlert,
-        glowClass: 'bg-amber-500/20',
-        iconContainerClass: 'bg-amber-500/10 border-amber-500/20',
-        iconClass: 'text-amber-400',
-        badgeClass: 'bg-amber-600',
-        gradientClass: 'bg-gradient-to-r from-amber-400 to-orange-500'
-      },
-      '403': {
-        title: 'Acceso',
-        highlight: 'Prohibido',
-        message: 'Tu rango actual no permite acceder a este sector del sistema hospitalario.',
-        icon: this.icons.ShieldAlert,
-        glowClass: 'bg-amber-500/20',
-        iconContainerClass: 'bg-amber-500/10 border-amber-500/20',
-        iconClass: 'text-amber-400',
-        badgeClass: 'bg-amber-600',
-        gradientClass: 'bg-gradient-to-r from-amber-400 to-orange-500'
-      },
-      '0': {
-        title: 'Sin',
-        highlight: 'Conexión',
-        message: 'No logramos establecer contacto con el núcleo del sistema. Revisa tu conexión a internet.',
-        icon: this.icons.WifiOff,
-        glowClass: 'bg-slate-500/20',
-        iconContainerClass: 'bg-slate-500/10 border-slate-500/20',
-        iconClass: 'text-slate-400',
-        badgeClass: 'bg-slate-600',
-        gradientClass: 'bg-gradient-to-r from-slate-400 to-zinc-500'
-      },
-      'default': {
-        title: 'Fallo',
-        highlight: 'Crítico',
-        message: 'Se ha producido una interrupción inesperada. El equipo técnico ha sido notificado.',
-        icon: this.icons.AlertTriangle,
-        glowClass: 'bg-rose-500/20',
-        iconContainerClass: 'bg-rose-500/10 border-rose-500/20',
-        iconClass: 'text-rose-400',
-        badgeClass: 'bg-rose-600',
-        gradientClass: 'bg-gradient-to-r from-rose-400 to-pink-600'
-      }
-    };
-
-    return configs[this.errorCode] || configs['default'];
   }
 
   retry() {

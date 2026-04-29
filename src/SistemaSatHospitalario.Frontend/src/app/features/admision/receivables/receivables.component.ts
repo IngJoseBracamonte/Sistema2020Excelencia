@@ -18,6 +18,7 @@ import {
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR, SettleARRequest, PaymentItemDto } from '../../../core/services/receivables.service';
 import { SettingsService } from '../../../core/services/settings.service';
+import { CatalogService } from '../../../core/services/catalog.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -43,6 +44,7 @@ export class ReceivablesComponent implements OnInit {
   };
   private arService = inject(ReceivablesService);
   private settingsService = inject(SettingsService);
+  private catalogService = inject(CatalogService);
   private tasaSubscription?: Subscription;
 
   // Signals para estado
@@ -75,31 +77,24 @@ export class ReceivablesComponent implements OnInit {
   // Modal Settlement Premium (Refactored to Signals for Reactivity)
   public selectedAR = signal<PendingAR | null>(null);
   public payments = signal<PaymentItemDto[]>([]);
-  public pmSelected = signal<string>('Efectivo BS');
+  public pmSelected = signal<string>('Punto');
   public amSelected = signal<number>(0);
   public rfSelected = signal<string>('');
-  public catalogMethods = [
-    { name: 'EFECTIVO DOLAR ($)', value: 'Dolar Efectivo', isUSD: true },
-    { name: 'ZELLE', value: 'Zelle', isUSD: true },
-    { name: 'USDT (BINANCE)', value: 'USDT', isUSD: true },
-    { name: 'PUNTO DE VENTA USD', value: 'Punto Dolares', isUSD: true },
-    { name: 'EFECTIVO (BS)', value: 'Efectivo BS', isUSD: false },
-    { name: 'PAGO MÓVIL', value: 'Pago Movil', isUSD: false },
-    { name: 'TRANSFERENCIA', value: 'Transferencia', isUSD: false },
-    { name: 'PUNTO DE VENTA BS', value: 'Punto', isUSD: false }
-  ];
-  public catalogVueltos = [
-    { name: 'VUELTO EFECTIVO ($)', value: 'Vuelto Efectivo USD', isUSD: true },
-    { name: 'VUELTO PAGO MÓVIL (BS)', value: 'Vuelto Pago Movil', isUSD: false },
-    { name: 'VUELTO EFECTIVO (BS)', value: 'Vuelto Efectivo BS', isUSD: false }
-  ];
-  public methodVuelto = signal<string>('Vuelto Efectivo USD');
+  public catalogMethods = signal<any[]>([]);
+  public catalogVueltos = signal<any[]>([]);
+  public methodVuelto = signal<string>('');
   public observaciones = signal<string>('');
 
   // Currency helper (Reactive Signal dependency)
   public currentCurrency = computed(() => {
     const methodValue = this.pmSelected();
-    const method = this.catalogMethods.find(m => m.value === methodValue);
+    const method = this.catalogMethods().find(m => m.value === methodValue);
+    return method?.isUSD ? 'USD' : 'Bs.';
+  });
+
+  public currentChangeCurrency = computed(() => {
+    const methodValue = this.methodVuelto();
+    const method = this.catalogVueltos().find(m => m.value === methodValue);
     return method?.isUSD ? 'USD' : 'Bs.';
   });
 
@@ -132,11 +127,33 @@ export class ReceivablesComponent implements OnInit {
 
   ngOnInit() {
     this.refresh();
+    this.loadPaymentCatalogs();
     // Forzar actualización de tasa al entrar al módulo (Senior Pattern)
     this.settingsService.refreshTasa();
     
     this.tasaSubscription = this.settingsService.tasa$.subscribe(tasa => {
       this.tasaCambio.set(tasa);
+    });
+  }
+
+  loadPaymentCatalogs() {
+    this.catalogService.getPaymentMethods().subscribe(res => {
+      const methods = res.filter(x => !x.isVuelto);
+      const changes = res.filter(x => x.isVuelto);
+      
+      this.catalogMethods.set(methods);
+      this.catalogVueltos.set(changes);
+      
+      if (changes.length > 0) {
+        this.methodVuelto.set(changes[0].value);
+      }
+      
+      // Intentar setear un default si existe
+      if (methods.some(m => m.value === 'Punto')) {
+          this.pmSelected.set('Punto');
+      } else if (methods.length > 0) {
+          this.pmSelected.set(methods[0].value);
+      }
     });
   }
 
@@ -171,10 +188,9 @@ export class ReceivablesComponent implements OnInit {
   }
 
   resetNewPayment(amountUSD: number = 0) {
-    const isUSD = this.catalogMethods.find(m => m.value === 'Efectivo BS')?.isUSD ?? false;
+    const isUSD = this.catalogMethods().find(m => m.value === this.pmSelected())?.isUSD ?? false;
     const initialAmount = isUSD ? amountUSD : amountUSD * this.tasaCambio();
     
-    this.pmSelected.set('Efectivo BS');
     this.amSelected.set(initialAmount > 0 ? initialAmount : 0);
     this.rfSelected.set('');
   }
@@ -208,7 +224,7 @@ export class ReceivablesComponent implements OnInit {
     const amountUSD = this.changeAmountUSD();
     if (amountUSD <= 0) return;
 
-    const method = this.catalogVueltos.find(m => m.value === this.methodVuelto());
+    const method = this.catalogVueltos().find(m => m.value === this.methodVuelto());
     const isUSD = method?.isUSD ?? false;
     
     const amountOriginal = isUSD ? amountUSD : amountUSD * this.tasaCambio();

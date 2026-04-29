@@ -85,6 +85,7 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         // Estados de Cuentas por Cobrar
         public const string Pagada = "Pagada";
         public const string Cobrada = "Cobrada";
+        public const string Parcial = "Parcial";
  
         // Estados de Procesamiento (V16.3 Monitor)
         public const string ProcesamientoPendiente = "PENDIENTE";

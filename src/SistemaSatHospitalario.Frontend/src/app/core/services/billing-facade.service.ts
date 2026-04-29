@@ -4,6 +4,7 @@ import { CatalogItem } from '../models/priced-item.model';
 import { SpecialtyService } from './specialty.service';
 import { AppointmentsService, Doctor } from './appointments.service';
 import { AuthService } from './auth.service';
+import { CatalogService } from './catalog.service';
 import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { concatMap, tap, catchError, finalize, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed, toSignal, toObservable } from '@angular/core/rxjs-interop';
@@ -23,6 +24,7 @@ export class BillingFacadeService {
   private settingsService = inject(SettingsService);
   private specialtyService = inject(SpecialtyService);
   private appointmentsService = inject(AppointmentsService);
+  private catalogService = inject(CatalogService);
 
   // --- Estado Requerido (Signals) ---
   public carritoLocal = signal<any[]>([]);
@@ -39,6 +41,7 @@ export class BillingFacadeService {
   public servicesCatalog = signal<CatalogItem[]>([]);
   public medicos = signal<any[]>([]);
   public especialidades = signal<string[]>([]);
+  public catalogMetodosPago = signal<any[]>([]);
 
   // --- Selectores (Computed Signals) ---
   public serviciosCargados = computed(() => [
@@ -105,6 +108,22 @@ export class BillingFacadeService {
   constructor() {
     // Sincronizar tasa de cambio global
     this.settingsService.tasa$.subscribe(tasa => this.tasaCambioDia.set(tasa));
+    this.loadPaymentCatalog();
+  }
+
+  private loadPaymentCatalog() {
+    this.catalogService.getPaymentMethods().subscribe(res => {
+      this.catalogMetodosPago.set(res.filter(x => !x.isVuelto));
+    });
+  }
+
+  public isMethodBs(methodName: string): boolean {
+    const method = this.catalogMetodosPago().find(m => m.value === methodName || m.name === methodName);
+    if (method) return !method.isUSD;
+    
+    // Fallback logic for legacy strings
+    const m = (methodName || '').toLowerCase();
+    return m.includes('bs') || m.includes('móvil') || m.includes('punto');
   }
 
   // --- Acciones de Negocio ---

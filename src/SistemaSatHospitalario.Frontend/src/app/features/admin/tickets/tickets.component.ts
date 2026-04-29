@@ -70,9 +70,9 @@ export class AdminTicketsComponent implements OnInit {
 
   onFilterChange(event: any) {
     const value = event.target.value;
-    if (value === 'all') this.filterResueltos.set(undefined);
-    else if (value === 'pending') this.filterResueltos.set(false);
-    else if (value === 'resolved') this.filterResueltos.set(true);
+    if (value === 'todos') this.filterResueltos.set(undefined);
+    else if (value === 'pendientes') this.filterResueltos.set(false);
+    else if (value === 'resueltos') this.filterResueltos.set(true);
 
     this.loadTickets();
   }
@@ -104,7 +104,5 @@ export class AdminTicketsComponent implements OnInit {
     });
   }
 
-  isAdmin(): boolean {
-    return this.authService.currentUser()?.role === 'Administrator';
-  }
+  isAdmin = this.authService.isAdmin;
 }

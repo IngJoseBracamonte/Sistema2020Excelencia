@@ -383,12 +383,12 @@
                                 <select [ngModel]="pmSelected()" (ngModelChange)="onMethodChange($event)"
                                     class="w-full bg-black/40 border border-white/10 p-3 rounded-2xl text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all outline-none appearance-none cursor-pointer text-white shadow-inner">
                                     <optgroup label="CRÉDITO / DIVISAS (USD)">
-                                        <ng-container *ngFor="let m of catalogMethods">
+                                        <ng-container *ngFor="let m of catalogMethods()">
                                             <option *ngIf="m.isUSD" [value]="m.value">{{ m.name }}</option>
                                         </ng-container>
                                     </optgroup>
                                     <optgroup label="MONEDA NACIONAL (BS.)">
-                                        <ng-container *ngFor="let m of catalogMethods">
+                                        <ng-container *ngFor="let m of catalogMethods()">
                                             <option *ngIf="!m.isUSD" [value]="m.value">{{ m.name }}</option>
                                         </ng-container>
                                     </optgroup>
@@ -457,11 +457,15 @@
                             <label
                                 class="text-[8px] font-black text-emerald-500/70 uppercase tracking-widest ml-1">Método
                                 para registrar salida</label>
-                            <select [(ngModel)]="methodVuelto"
-                                class="w-full bg-black/40 border border-emerald-500/20 p-3 rounded-2xl text-[10px] font-black uppercase text-white outline-none focus:border-emerald-500 transition-all shadow-inner cursor-pointer"
-                                (change)="methodVuelto.set($any($event.target).value)">
-                                <option *ngFor="let m of catalogVueltos" [value]="m.value">{{ m.name }}</option>
+                            <select [ngModel]="methodVuelto()" (ngModelChange)="methodVuelto.set($event)"
+                                class="w-full bg-black/40 border border-emerald-500/20 p-3 rounded-2xl text-[10px] font-black uppercase text-white outline-none focus:border-emerald-500 transition-all shadow-inner cursor-pointer">
+                                <option *ngFor="let m of catalogVueltos()" [value]="m.value">{{ m.name }}</option>
                             </select>
+                            <div *ngIf="currentChangeCurrency() === 'Bs.'"
+                                class="flex items-center justify-between px-2 py-1 bg-amber-500/5 border border-amber-500/10 rounded-lg animate-fade-in shrink-0">
+                                <span class="text-[8px] font-black text-amber-500 uppercase tracking-widest">Monto en Bs a Entregar</span>
+                                <span class="text-[9px] font-black text-amber-400 font-mono truncate ml-2">Bs. {{ (changeAmountUSD() * tasaCambio()) | number:'1.2-2' }}</span>
+                            </div>
                             <button (click)="addVuelto()"
                                 class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1rem] font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-emerald-600/20">
                                 <lucide-icon [name]="icons.Check" class="w-4 h-4 mr-2"></lucide-icon>

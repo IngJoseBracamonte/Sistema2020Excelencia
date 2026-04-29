@@ -118,24 +118,12 @@ export class FacturacionComponent {
 
   // --- Estados de Facturación y Usuario (Senior Design Patterns) ---
   public user = this.authService.currentUser;
-  public isAdmin = computed(() => this.authService.isAdministrador());
-  public isParticularAssistant = computed(() => this.authService.isParticularAssistant());
-  public isInsuranceAssistant = computed(() => this.authService.isInsuranceAssistant());
-
-  public isRxAssistant = computed(() => {
-    const role = this.user()?.role?.toLowerCase() || '';
-    return (role === 'rx' || role === 'farmacia' || role === 'asistente rx') && !this.isAdmin();
-  });
-
-  public isHospitalAssistant = computed(() => {
-    const role = this.user()?.role?.toLowerCase() || '';
-    return role.includes('hospitalario') || this.isAdmin();
-  });
-
-  public isEmergencyAssistant = computed(() => {
-    const role = this.user()?.role?.toLowerCase() || '';
-    return role.includes('emergencia') || this.isAdmin();
-  });
+  public isAdmin = this.authService.isAdmin;
+  public isParticularAssistant = this.authService.isParticularAssistant;
+  public isInsuranceAssistant = this.authService.isInsuranceAssistant;
+  public isRxAssistant = this.authService.isRxAssistant;
+  public isHospitalAssistant = this.authService.isHospitalAssistant;
+  public isEmergencyAssistant = this.authService.isEmergencyAssistant;
 
   // --- Estados del Wizard (SSoT) ---
   public currentStep = signal<number>(1);

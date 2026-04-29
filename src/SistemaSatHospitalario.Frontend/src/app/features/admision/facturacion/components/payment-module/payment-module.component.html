@@ -11,7 +11,7 @@
             <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Método de Pago</label>
             <select [(ngModel)]="currentPago.metodoPago" 
                 class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all uppercase appearance-none cursor-pointer">
-                <option *ngFor="let m of metodosDisponibles" [value]="m">{{ m }}</option>
+                <option *ngFor="let m of metodosDisponibles()" [value]="m.value">{{ m.name }}</option>
             </select>
         </div>
         <div class="space-y-2">

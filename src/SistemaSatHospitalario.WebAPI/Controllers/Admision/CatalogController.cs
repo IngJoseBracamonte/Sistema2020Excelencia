@@ -33,6 +33,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(result);
         }
 
+        [HttpGet("payment-methods")]
+        public async Task<ActionResult<List<PaymentMethodDto>>> GetPaymentMethods()
+        {
+            var result = await _mediator.Send(new GetPaymentMethodsQuery());
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<ActionResult<Guid>> Create([FromBody] CreateCatalogItemCommand command)
         {

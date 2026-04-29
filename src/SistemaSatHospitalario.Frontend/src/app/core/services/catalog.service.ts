@@ -20,6 +20,10 @@ export class CatalogService {
     );
   }
 
+  getPaymentMethods(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/payment-methods`);
+  }
+
   createItem(item: Partial<CatalogItem>): Observable<string> {
     return this.http.post<string>(this.apiUrl, {
       descripcion: item.descripcion,

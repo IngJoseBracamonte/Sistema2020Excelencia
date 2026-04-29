@@ -51,13 +51,11 @@ export class CajasComponent implements OnInit {
   public personalReport = signal<DailyClosingReport | null>(null);
   public isMiCajaAbierta = signal<boolean>(false);
 
-  get isAdministrador(): boolean {
-    return this.authService.currentUser()?.role === 'Administrador';
-  }
+  public isAdministrador = this.authService.isAdmin;
 
   ngOnInit() {
     this.checkStatus();
-    if (this.isAdministrador) {
+    if (this.isAdministrador()) {
       this.refrescarAdmin();
     }
   }
@@ -101,7 +99,7 @@ export class CajasComponent implements OnInit {
   }
 
   refrescarAdmin() {
-    if (!this.isAdministrador) return;
+    if (!this.isAdministrador()) return;
     this.cajaService.obtenerResumenDiario().subscribe(res => this.resumenCaja.set(res));
     this.cajaService.obtenerHistorial().subscribe(res => this.historialAdmin.set(res));
   }

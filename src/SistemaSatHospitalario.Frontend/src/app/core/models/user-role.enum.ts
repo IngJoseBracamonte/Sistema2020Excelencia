@@ -8,8 +8,20 @@ export enum UserRole {
   AsistenteTomografia = 'Asistente de Tomografía',
   Medico = 'Médico',
   Cajero = 'Cajero',
-  Supervisor = 'Supervisor'
+  Supervisor = 'Supervisor',
+  Farmacia = 'Farmacia',
+  RX = 'RX',
+  Hospitalario = 'Hospitalario',
+  Emergencia = 'Emergencia'
 }
+
+export const RoleKeywords = {
+  RX: 'rx',
+  Farmacia: 'farmacia',
+  Hospitalario: 'hospitalario',
+  Emergencia: 'emergencia',
+  AsistenteRX: 'asistente rx'
+};
 
 export const RoleGroups = {
   Administrative: [UserRole.Admin, UserRole.Administrador, UserRole.Supervisor],

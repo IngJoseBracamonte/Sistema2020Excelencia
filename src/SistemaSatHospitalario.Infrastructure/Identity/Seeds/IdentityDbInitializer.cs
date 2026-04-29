@@ -77,7 +77,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                 // --- 1. SEED ROLES ---
                 var roles = new[] { 
                     "Admin", "Cajero", "Supervisor", "Asistente de Seguros", 
-                    "Médico", "Asistente Particular", "Asistente RX", "Asistente de Tomografía" 
+                    "Médico", "Asistente Particular", "Asistente RX", "Asistente de Tomografía",
+                    "Asistente Hospitalario", "Asistente de Emergencia"
                 };
 
                 foreach (var roleName in roles)
@@ -136,6 +137,16 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     { "Asistente de Tomografía", new[] {
                         PermissionConstants.Dashboard.View,
                         PermissionConstants.Reportes.ViewOrders
+                    } },
+                    { "Asistente Hospitalario", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Reportes.ViewExpediente,
+                        PermissionConstants.Citas.ViewControl
+                    } },
+                    { "Asistente de Emergencia", new[] {
+                        PermissionConstants.Dashboard.View,
+                        PermissionConstants.Reportes.ViewExpediente,
+                        PermissionConstants.Citas.ViewControl
                     } }
                 };
 
@@ -148,7 +159,9 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                     new { User = "user_medico", Role = "Médico", Email = "medico@test.local", Pwd = "Hospital2026*!" },
                     new { User = "user_particular", Role = "Asistente Particular", Email = "particular@test.local", Pwd = "Hospital2026*!" },
                     new { User = "user_rx", Role = "Asistente RX", Email = "rx@test.local", Pwd = "Hospital2026*!" },
-                    new { User = "user_tomografia", Role = "Asistente de Tomografía", Email = "tomografia@test.local", Pwd = "Hospital2026*!" }
+                    new { User = "user_tomografia", Role = "Asistente de Tomografía", Email = "tomografia@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_hospitalario", Role = "Asistente Hospitalario", Email = "hospital@test.local", Pwd = "Hospital2026*!" },
+                    new { User = "user_emergencia", Role = "Asistente de Emergencia", Email = "emergencia@test.local", Pwd = "Hospital2026*!" }
                 };
 
                 foreach (var userData in testUsers)
