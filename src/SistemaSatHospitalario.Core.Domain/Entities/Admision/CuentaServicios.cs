@@ -20,6 +20,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? ProcesamientoEstado { get; private set; } // PENDIENTE, PROCESADA
  
         public virtual PacienteAdmision Paciente { get; private set; }
+        public virtual SeguroConvenio Convenio { get; private set; }
+
         
         // --- AUDIT & VALIDATION (Senior Traceability V15.0) ---
         public string? UsuarioValidacion { get; private set; }

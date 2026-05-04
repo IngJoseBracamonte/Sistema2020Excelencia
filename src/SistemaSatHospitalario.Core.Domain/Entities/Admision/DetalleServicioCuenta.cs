@@ -15,6 +15,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string UsuarioCarga { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public string? LegacyMappingId { get; private set; }
+        public Guid? MedicoResponsableId { get; private set; }
+        public string? CategoriaHonorario { get; private set; }
+        public virtual CuentaServicios CuentaServicio { get; private set; }
+
 
         // [PHASE-6] Technical Validation Fields (Senior Traceability)
         public bool Realizado { get; private set; }
@@ -47,5 +51,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaRealizacion = DateTime.UtcNow;
             UsuarioTecnico = usuario;
         }
+
+        public void AsignarMedicoResponsable(Guid medicoId, string categoria)
+        {
+            MedicoResponsableId = medicoId;
+            CategoriaHonorario = categoria;
+        }
     }
 }
+

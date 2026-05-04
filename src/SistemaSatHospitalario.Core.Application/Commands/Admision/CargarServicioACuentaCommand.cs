@@ -2,7 +2,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
@@ -40,13 +43,15 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IBillingRepository _repository;
         private readonly IOrdenExternaService _externaService;
         private readonly IApplicationDbContext _context;
+        private readonly IHonorariumMapperService _mapperService;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
 
-        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService, IApplicationDbContext context, ILogger<CargarServicioACuentaCommandHandler> logger)
+        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService, IApplicationDbContext context, IHonorariumMapperService mapperService, ILogger<CargarServicioACuentaCommandHandler> logger)
         {
             _repository = repository;
             _externaService = externaService;
             _context = context;
+            _mapperService = mapperService;
             _logger = logger;
         }
 
@@ -114,6 +119,27 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.TipoServicio, 
                 request.UsuarioCarga,
                 legacyId);
+
+            // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
+            if (detalle.Honorario > 0)
+            {
+                string? categoriaMapeada = await _mapperService.MapToCategoryAsync(request.TipoServicio);
+                if (categoriaMapeada != HonorarioConstants.CategoriaOtros)
+                {
+                    var config = await _context.HonorariosConfig
+                        .FirstOrDefaultAsync(h => h.CategoriaServicio == categoriaMapeada, cancellationToken);
+                    if (config?.MedicoDefaultId != null)
+                    {
+                        detalle.AsignarMedicoResponsable(config.MedicoDefaultId.Value, categoriaMapeada);
+                        var medicoNombre = (await _context.Medicos.FindAsync(new object[] { config.MedicoDefaultId.Value }, cancellationToken))?.Nombre;
+                        _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                            detalle.Id, request.Descripcion, HonorarioConstants.AccionAsignacionDefault,
+                            null, null, config.MedicoDefaultId.Value, medicoNombre,
+                            request.UsuarioCarga, "Auto-asignado por configuración"));
+                    }
+                }
+            }
+
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 

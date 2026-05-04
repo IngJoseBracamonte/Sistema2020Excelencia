@@ -13,8 +13,8 @@ import { GlobalErrorHandler } from './core/errors/global-error-handler';
 import { 
   LucideAngularModule, 
   Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
-  LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ShieldCheck, BarChart3, Github,
-  Edit3, Trash2, Check, X, RefreshCcw
+  LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,
+  Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
@@ -33,8 +33,8 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'es' },
     importProvidersFrom(LucideAngularModule.pick({
       Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
-      LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ShieldCheck, BarChart3, Github,
-      Edit3, Trash2, Check, X, RefreshCcw
+      LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,
+      Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap
     }))
   ]
 };

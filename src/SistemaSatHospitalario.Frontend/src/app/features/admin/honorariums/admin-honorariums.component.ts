@@ -44,21 +44,21 @@ import { LucideAngularModule, Stethoscope, Calendar, DollarSign, Activity } from
 
         <!-- Dashboard Cards (Resúmenes) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="midnight-panel p-8 group overflow-hidden relative">
+            <div class="bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 group overflow-hidden relative shadow-2xl">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full blur-2xl"></div>
                 <div class="relative z-10">
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Médicos con Actividad</p>
                     <div class="text-4xl font-black text-white tracking-tighter">{{ data().length }}</div>
                 </div>
             </div>
-            <div class="midnight-panel p-8 group overflow-hidden relative">
+            <div class="bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 group overflow-hidden relative shadow-2xl">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full blur-2xl"></div>
                 <div class="relative z-10">
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Honorarios Acumulados</p>
                     <div class="text-4xl font-black text-emerald-400 tracking-tighter font-mono">$ {{ totalAcumulado() | number:'1.2-2' }}</div>
                 </div>
             </div>
-            <div class="midnight-panel p-8 group overflow-hidden relative">
+            <div class="bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 group overflow-hidden relative shadow-2xl">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-bl-full blur-2xl"></div>
                 <div class="relative z-10">
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Promedio por Servicio</p>
@@ -68,7 +68,7 @@ import { LucideAngularModule, Stethoscope, Calendar, DollarSign, Activity } from
         </div>
 
         <!-- Tabla de Resultados -->
-        <div class="midnight-panel overflow-hidden border border-white/5 relative shadow-2xl">
+        <div class="bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-[2rem] overflow-hidden relative shadow-2xl">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -79,25 +79,42 @@ import { LucideAngularModule, Stethoscope, Calendar, DollarSign, Activity } from
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
-                        <tr *ngFor="let row of data()" class="hover:bg-white/5 transition-all group/row">
-                            <td class="px-8 py-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="h-10 w-10 bg-surface rounded-xl border border-white/5 flex items-center justify-center text-slate-500 group-hover/row:text-blue-500 group-hover/row:border-blue-500/20 transition-all">
-                                        <lucide-icon name="stethoscope" class="w-5 h-5"></lucide-icon>
+                        <ng-container *ngFor="let row of data()">
+                            <tr (click)="toggleExpand(row.medicoId)" 
+                                class="hover:bg-white/10 transition-all cursor-pointer" 
+                                [ngClass]="{'bg-white/10': expandedRow() === row.medicoId}">
+                                <td class="px-8 py-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="h-10 w-10 bg-slate-800 rounded-xl border border-white/5 flex items-center justify-center text-slate-500 transition-all">
+                                            <lucide-icon [name]="expandedRow() === row.medicoId ? 'chevron-down' : 'stethoscope'" class="w-5 h-5"></lucide-icon>
+                                        </div>
+                                        <div>
+                                            <div class="text-[11px] font-black text-white uppercase tracking-tight transition-colors leading-none mb-1">{{ row.medicoNombre }}</div>
+                                            <div class="text-[8px] font-mono text-slate-500 tracking-wider">ID: {{ row.medicoId.substring(0,8).toUpperCase() }}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[11px] font-black text-white uppercase tracking-tight group-hover/row:text-blue-400 transition-colors leading-none mb-1">{{ row.medicoNombre }}</div>
-                                        <div class="text-[8px] font-mono text-slate-500 tracking-wider">ID: {{ row.medicoId.substring(0,8).toUpperCase() }}</div>
+                                </td>
+                                <td class="px-8 py-4 text-center">
+                                    <span class="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-white tracking-widest border border-white/5">{{ row.cantidadServicios }}</span>
+                                </td>
+                                <td class="px-8 py-4 text-right">
+                                    <span class="text-sm font-black text-emerald-400 font-mono tracking-tighter">$ {{ row.totalHonorarios | number:'1.2-2' }}</span>
+                                </td>
+                            </tr>
+
+                            <!-- Breakdown Row -->
+                            <tr *ngIf="expandedRow() === row.medicoId" class="bg-white/[0.02] animate-in fade-in slide-in-from-top-2 duration-200">
+                                <td colspan="3" class="px-8 py-6">
+                                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                        <div *ngFor="let cat of row.desglose" class="bg-surface-card/40 backdrop-blur-xl border border-glass-border p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">{{ cat.categoria }}</span>
+                                            <span class="text-lg font-black text-white leading-none">{{ cat.cantidad }}</span>
+                                            <span class="text-[10px] font-mono text-emerald-400 mt-1 font-bold">$ {{ cat.total | number:'1.2-2' }}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-8 py-4 text-center">
-                                <span class="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-white tracking-widest border border-white/5">{{ row.cantidadServicios }}</span>
-                            </td>
-                            <td class="px-8 py-4 text-right">
-                                <span class="text-sm font-black text-emerald-400 font-mono tracking-tighter">$ {{ row.totalHonorarios | number:'1.2-2' }}</span>
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                        </ng-container>
 
                         <!-- Empty State -->
                         <tr *ngIf="data().length === 0 && !isLoading()">
@@ -125,12 +142,6 @@ import { LucideAngularModule, Stethoscope, Calendar, DollarSign, Activity } from
     </div>
   `,
   styles: [`
-    .midnight-panel {
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 2rem;
-    }
     input[type="date"]::-webkit-calendar-picker-indicator {
         filter: invert(1);
         opacity: 0.5;
@@ -145,6 +156,7 @@ export class AdminHonorariumsComponent implements OnInit {
   public endDate = signal<string>(new Date().toISOString().split('T')[0]);
   public data = signal<DoctorHonorariumSummaryDto[]>([]);
   public isLoading = signal<boolean>(false);
+  public expandedRow = signal<string | null>(null);
 
   ngOnInit() {
     this.calcular();
@@ -175,5 +187,13 @@ export class AdminHonorariumsComponent implements OnInit {
   promedioPorServicio() {
     const totalSvc = this.totalServicios();
     return totalSvc > 0 ? this.totalAcumulado() / totalSvc : 0;
+  }
+
+  toggleExpand(medicoId: string) {
+    if (this.expandedRow() === medicoId) {
+      this.expandedRow.set(null);
+    } else {
+      this.expandedRow.set(medicoId);
+    }
   }
 }

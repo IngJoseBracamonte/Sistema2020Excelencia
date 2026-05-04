@@ -173,13 +173,23 @@
                                     ar.saldoPendiente | number:'1.2-2' }}</span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <button *ngIf="ar.estado === 'Pendiente'"
-                                    (click)="$event.stopPropagation(); abrirCobro(ar)"
-                                    class="inline-flex items-center gap-2 px-6 py-2 bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-rose-500/5">
-                                    Liquidar
-                                    <lucide-icon [name]="icons.ChevronRight"
-                                        class="w-3 h-3 group-hover/btn:translate-x-1 transition-transform"></lucide-icon>
-                                </button>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button *ngIf="ar.estado === 'Pendiente'"
+                                        (click)="$event.stopPropagation(); abrirCobro(ar)"
+                                        class="inline-flex items-center gap-2 px-6 py-2 bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-rose-500/5">
+                                        Liquidar
+                                        <lucide-icon [name]="icons.ChevronRight"
+                                            class="w-3 h-3 group-hover/btn:translate-x-1 transition-transform"></lucide-icon>
+                                    </button>
+
+                                    <!-- Botón de Seguros (Acceso Directo V12.1) -->
+                                    <button *ngIf="ar.seguroNombre.includes('Convenio')"
+                                        (click)="$event.stopPropagation(); openCompromiso(ar)"
+                                        class="p-2 bg-indigo-500/10 hover:bg-indigo-500 border border-indigo-500/20 text-indigo-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 group/shield"
+                                        title="Gestionar Compromiso de Pago">
+                                        <lucide-icon [name]="icons.Shield" class="w-4 h-4"></lucide-icon>
+                                    </button>
+                                </div>
                                 <span *ngIf="ar.estado === 'Cobrada'"
                                     class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
                                     <lucide-icon [name]="icons.Check" class="w-3 h-3 text-emerald-500"></lucide-icon>
@@ -472,9 +482,7 @@
                                 REGISTRAR VUELTO
                             </button>
                         </div>
-                    </div>
-
-                    <!-- BOTÓN FINAL DE LIQUIDACIÓN -->
+                            <!-- BOTÓN FINAL DE LIQUIDACIÓN -->
                     <div class="pt-4">
                         <button (click)="liquidar()"
                             [disabled]="isSettling() || payments().length === 0 || requiresChange()"
@@ -500,6 +508,74 @@
                                 totalPaidUSD() | number:'1.2-2' }}</span>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gestión de Seguros (V12.1 Premium Integration) -->
+    <div *ngIf="showInsuranceModal()" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-surface-card border border-white/5 rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl relative overflow-hidden animate-scale-in">
+            <!-- Glow Decorativo -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-[80px]"></div>
+            
+            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-6 flex items-center gap-3">
+                <lucide-icon [name]="icons.Shield" class="w-7 h-7 text-indigo-500"></lucide-icon>
+                {{ isGarantia() ? 'Emitir Garantía de Pago' : 'Generar Compromiso de Pago' }}
+            </h2>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nombre del Responsable / Garante</label>
+                    <input type="text" [(ngModel)]="compromisoData.nombreResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cédula del Responsable</label>
+                    <input type="text" [(ngModel)]="compromisoData.cedulaResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Relación con Paciente</label>
+                    <input type="text" [(ngModel)]="compromisoData.relacionResponsable" placeholder="Ej: Padre" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Teléfono Responsable</label>
+                    <input type="text" [(ngModel)]="compromisoData.telefonoResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2 col-span-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Dirección Responsable</label>
+                    <input type="text" [(ngModel)]="compromisoData.direccionResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2 col-span-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Conceptos (Servicios Facturados)</label>
+                    <textarea [(ngModel)]="compromisoData.conceptos" rows="2" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all resize-none"></textarea>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Días para Liquidar</label>
+                    <input type="number" [(ngModel)]="compromisoData.diasLiquidar" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cuotas</label>
+                    <input type="number" [(ngModel)]="compromisoData.cuotas" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Edad del Paciente</label>
+                    <input type="number" [(ngModel)]="compromisoData.edadPaciente" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl mb-6">
+                <div class="flex items-center gap-3">
+                    <button (click)="isGarantia.set(!isGarantia())" 
+                        class="px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                        [class]="isGarantia() ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-400 hover:text-white'">
+                        Cambiar a {{ isGarantia() ? 'Compromiso' : 'Garantía' }}
+                    </button>
+                </div>
+                <div class="flex gap-3">
+                    <button (click)="showInsuranceModal.set(false)" class="px-6 py-4 rounded-xl border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5 transition-all">Cancelar</button>
+                    <button (click)="generarPdfSeguro()" [class]="isGarantia() ? 'bg-indigo-600' : 'bg-emerald-600'" class="px-6 py-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all flex items-center shadow-lg shadow-indigo-500/20 active:scale-95" [disabled]="isGenerating()">
+                        <lucide-icon [name]="icons.Download" class="w-4 h-4 mr-2"></lucide-icon> {{ isGenerating() ? 'Generando...' : (isGarantia() ? 'Descargar Garantía' : 'Descargar Compromiso') }}
+                    </button>
                 </div>
             </div>
         </div>

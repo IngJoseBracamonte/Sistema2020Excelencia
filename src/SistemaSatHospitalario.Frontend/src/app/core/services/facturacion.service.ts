@@ -103,6 +103,10 @@ export class FacturacionService {
     return this.http.post(`${this.segurosUrl}/garantia-pago`, dto, { responseType: 'blob' });
   }
 
+  generarCompromisoPdf(dto: any): Observable<Blob> {
+    return this.http.post(`${this.segurosUrl}/compromiso-pago`, dto, { responseType: 'blob' });
+  }
+
   closeAccount(request: any): Observable<any> {
     // Al cerrar cuenta, se espera cuentaId (Guid)
     return this.http.post<any>(`${this.billingUrl}/CloseAccount`, request);

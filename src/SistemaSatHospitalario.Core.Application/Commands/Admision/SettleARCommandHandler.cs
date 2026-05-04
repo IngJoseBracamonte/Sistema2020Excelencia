@@ -13,11 +13,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class SettleARCommandHandler : IRequestHandler<SettleARCommand, bool>
     {
         private readonly IApplicationDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public SettleARCommandHandler(IApplicationDbContext context)
+        public SettleARCommandHandler(IApplicationDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
+
 
         public async Task<bool> Handle(SettleARCommand request, CancellationToken cancellationToken)
         {
@@ -97,7 +100,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 await transaction.CommitAsync(cancellationToken);
+
+                // [PRO-FEATURE] Notificación Silenciosa de Liquidación
+                if (nuevoEstado == EstadoConstants.Cobrada)
+                {
+                    await _notificationService.CreatePersistentNotificationAsync(
+                        "Cuenta Liquidada",
+                        $"La cuenta del paciente {ar.Cuenta?.Paciente?.NombreCorto ?? "N/A"} ha sido saldada en su totalidad ($ {nuevoMontoPagado:N2}).",
+                        "Success",
+                        actionUrl: $"/facturacion?arId={ar.Id}",
+                        ct: cancellationToken
+                    );
+                }
+
                 return true;
+
             }
             catch (Exception ex)
             {

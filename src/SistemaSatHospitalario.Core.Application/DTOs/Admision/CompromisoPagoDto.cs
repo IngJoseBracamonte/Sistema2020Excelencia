@@ -20,6 +20,8 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal MontoTotal { get; set; }
         public int DiasLiquidar { get; set; }
         public int Cuotas { get; set; }
+        public decimal MontoGarantia { get; set; }
+        public string? DescripcionGarantia { get; set; }
         public DateTime FechaCompromiso { get; set; }
         public DateTime FechaVencimiento { get; set; }
     }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, ChevronRight, Check } from 'lucide-angular';
+import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, ChevronRight, Check, AlertTriangle } from 'lucide-angular';
 
 @Component({
   selector: 'app-seguros-dashboard',
@@ -109,12 +109,25 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <span *ngIf="p.compromisoGenerado" class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                GENERADO
-                            </span>
-                            <span *ngIf="!p.compromisoGenerado" class="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/5 border border-rose-500/10 text-rose-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                PENDIENTE
-                            </span>
+                            <div class="flex flex-col gap-1 items-center">
+                                <span *ngIf="p.compromisoGenerado" class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    COMPROMISO: SI
+                                </span>
+                                <span *ngIf="p.garantiaGenerada" class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/5 border border-indigo-500/10 text-indigo-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    GARANTÍA: SI
+                                </span>
+                                <span *ngIf="!p.compromisoGenerado && !p.garantiaGenerada" class="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/5 border border-rose-500/10 text-rose-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    PENDIENTE
+                                </span>
+                            </div>
+
+                            <!-- Semáforo de Morosidad (> 30 días) -->
+                            <div *ngIf="p.esMoroso" class="mt-2 flex items-center justify-center gap-1.5 animate-pulse">
+                                <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                                <span class="text-[7px] font-black text-rose-500 uppercase tracking-tighter">Moroso (>30d)</span>
+                                <lucide-icon [name]="icons.AlertTriangle" class="w-2.5 h-2.5 text-rose-500"></lucide-icon>
+                            </div>
+
                         </td>
                         <td class="px-6 py-4 text-right">
                             <span class="text-sm font-black font-mono tracking-tighter text-emerald-400">$ {{ p.montoTotalBase | number:'1.2-2' }}</span>
@@ -122,12 +135,14 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <button (click)="openCompromiso(p, true)" 
-                                    class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all hover:bg-indigo-500 hover:text-white hover:scale-105 active:scale-95 group/btn shadow-lg shadow-indigo-500/5">
-                                    Emitir Garantía
+                                    [class]="p.garantiaGenerada ? 'bg-indigo-500 text-white' : 'bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white'"
+                                    class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-indigo-500/5">
+                                    {{ p.garantiaGenerada ? 'Re-emitir Garantía' : 'Emitir Garantía' }}
                                     <lucide-icon [name]="icons.Shield" class="w-3 h-3 group-hover/btn:scale-110 transition-transform"></lucide-icon>
                                 </button>
                                 
                                 <button (click)="openCompromiso(p, false)" 
+
                                     [class]="p.compromisoGenerado ? 'bg-emerald-500 text-white' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'"
                                     class="inline-flex items-center gap-2 px-4 py-2 border border-emerald-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-emerald-500/5">
                                     {{ p.compromisoGenerado ? 'Re-emitir Compromiso' : 'Generar Compromiso' }}
@@ -181,7 +196,20 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cuotas</label>
                     <input type="number" [(ngModel)]="compromisoData.cuotas" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none">
                 </div>
+
+                <!-- Campos específicos de Garantía -->
+                <ng-container *ngIf="isGarantia()">
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Valor de la Garantía ($)</label>
+                        <input type="number" [(ngModel)]="compromisoData.montoGarantia" placeholder="Ej: 500" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Descripción del Bien en Garantía</label>
+                        <input type="text" [(ngModel)]="compromisoData.descripcionGarantia" placeholder="Ej: Motocicleta marca Suzuki" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                </ng-container>
             </div>
+
 
             <div class="flex justify-end gap-4">
                 <button (click)="showModal.set(false)" class="px-6 py-4 rounded-xl border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5 transition-all">Cancelar</button>
@@ -198,7 +226,8 @@ export class SegurosDashboardComponent implements OnInit {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Seguros`;
 
-  public icons = { Shield, Download, Calendar, Search, RefreshCcw, ChevronRight, Check };
+  public icons = { Shield, Download, Calendar, Search, RefreshCcw, ChevronRight, Check, AlertTriangle };
+
   public isLoading = signal(false);
   public pacientes = signal<any[]>([]);
   public fechaDesde = signal<string>(new Date().toISOString().split('T')[0]);
@@ -256,7 +285,10 @@ export class SegurosDashboardComponent implements OnInit {
       edadPaciente: 0,
       cedulaPaciente: paciente.pacienteCedula,
       montoTotal: paciente.montoTotalBase,
+      montoGarantia: 0,
+      descripcionGarantia: '',
       diasLiquidar: 30,
+
       cuotas: 1,
       fechaCompromiso: today.toISOString().split('T')[0],
       fechaVencimiento: futureDate.toISOString().split('T')[0]

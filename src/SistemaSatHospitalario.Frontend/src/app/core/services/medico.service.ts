@@ -27,6 +27,13 @@ export interface DoctorHonorariumSummaryDto {
   medicoNombre: string;
   cantidadServicios: number;
   totalHonorarios: number;
+  desglose: HonorarioDesgloseCategoriaDto[];
+}
+
+export interface HonorarioDesgloseCategoriaDto {
+  categoria: string;
+  cantidad: number;
+  total: number;
 }
 
 @Injectable({

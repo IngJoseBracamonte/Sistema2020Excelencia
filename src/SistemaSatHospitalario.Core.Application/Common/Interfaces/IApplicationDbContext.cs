@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Entities.Common;
+
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,6 +39,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<ServicioSugerencia> ServiciosSugerencias { get; }
         DbSet<OrdenImagen> OrdenesImagenes { get; set; }
         DbSet<CatalogoMetodoPago> CatalogoMetodosPago { get; }
+        DbSet<DocumentLog> DocumentLogs { get; }
+        DbSet<Notification> Notifications { get; }
+        DbSet<HonorarioConfig> HonorariosConfig { get; }
+        DbSet<LogAsignacionHonorario> LogsAsignacionHonorario { get; }
+        DbSet<HonorariumMappingRule> HonorariumMappingRules { get; }
+
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
         Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }

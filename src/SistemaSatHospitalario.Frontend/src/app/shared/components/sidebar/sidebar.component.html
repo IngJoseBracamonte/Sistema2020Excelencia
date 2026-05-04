@@ -99,7 +99,9 @@
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewOrders')" routerLink="/rx-orders" routerLinkActive="active-sublink" class="nav-subitem">Órdenes RX</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewOrders')" routerLink="/tomo-orders" routerLinkActive="active-sublink" class="nav-subitem">Órdenes Tomografía</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewExpediente')" routerLink="/expedientes" routerLinkActive="active-sublink" class="nav-subitem">Expedientes</a>
+                <a *ngIf="isAdmin() || isSupervisor()" routerLink="/admin/seguros/gerencia" routerLinkActive="active-sublink" class="nav-subitem text-emerald-500 font-black italic">Consolidado de Seguros</a>
             </div>
+
         </div>
 
         <!-- Dropdown: Gestión Médica -->
@@ -118,6 +120,8 @@
                 <a routerLink="/medicos" routerLinkActive="active-sublink" class="nav-subitem">Médicos Nominal</a>
                 <a routerLink="/especialidades" routerLinkActive="active-sublink" class="nav-subitem">Especialidades</a>
                 <a *ngIf="isAdmin()" routerLink="/admin/reportes/calculo-honorarios" routerLinkActive="active-sublink" class="nav-subitem">Cálculo de Honorarios</a>
+                <a *ngIf="isAdmin()" routerLink="/admin/honorarios/asignaciones" routerLinkActive="active-sublink" class="nav-subitem text-blue-500 font-black italic">Panel de Asignaciones</a>
+                <a *ngIf="isAdmin()" routerLink="/admin/honorarios/config" routerLinkActive="active-sublink" class="nav-subitem text-amber-500 font-black italic tracking-tight">Config. Honorarios</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'citas'}" routerLinkActive="active-sublink" class="nav-subitem">Monitor de Agenda</a>
             </div>
         </div>

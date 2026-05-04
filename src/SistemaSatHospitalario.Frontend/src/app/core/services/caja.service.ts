@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -76,6 +76,18 @@ export class CajaService {
     return this.http.post<any>(`${this.baseUrl}/Cerrar`, {}).pipe(
       tap(() => this.isCajaAbierta.set(false))
     );
+  }
+
+  exportExcelCashClosing(userId?: string, date?: string, auditMode: boolean = false): Observable<Blob> {
+    let params = new HttpParams();
+    if (userId) params = params.set('userId', userId);
+    if (date) params = params.set('date', date);
+    params = params.set('auditMode', auditMode.toString());
+
+    return this.http.get(`${environment.apiUrl}/api/Reports/cash-closing`, {
+      params,
+      responseType: 'blob'
+    });
   }
 
   obtenerResumenDiario(): Observable<ResumenCajaGlobalDto> {

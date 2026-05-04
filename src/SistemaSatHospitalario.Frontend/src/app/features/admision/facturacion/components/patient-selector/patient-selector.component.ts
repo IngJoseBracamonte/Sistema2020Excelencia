@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, Search, ChevronRight, User, Edit3 } from 'lucide-angular';
 import { PatientRecord } from '../../../../../core/services/patient.service';
 
 /**
@@ -58,7 +58,7 @@ import { PatientRecord } from '../../../../../core/services/patient.service';
                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ p.cedula }}</span>
                         </div>
                     </div>
-                    <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+                    <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4"></lucide-icon>
                 </button>
             </div>
 
@@ -110,4 +110,5 @@ export class PatientSelectorComponent {
   @Output() register = new EventEmitter<string>();
 
   public searchTerm = '';
+  readonly icons = { Search, ChevronRight, User, Edit3 };
 }

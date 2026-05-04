@@ -376,6 +376,6 @@ _override.tf.json
 .terraform.lock.hcl
 
 # --- DOCKER (Credentials & Backups) ---
-.env
+instalacion/
 deploy/docker/backups/
 .env.template

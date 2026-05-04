@@ -21,6 +21,10 @@ namespace SistemaSatHospitalario.Core.Application
             
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+            // Core Mapping Services (V18.5 Dynamic Rules)
+            services.AddMemoryCache();
+            services.AddScoped<Common.Services.IHonorariumMapperService, Common.Services.HonorariumMapperService>();
+
             return services;
         }
     }

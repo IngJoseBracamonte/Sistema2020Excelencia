@@ -115,8 +115,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 command.UsuarioId = User.GetUserId();
                 command.UsuarioCajero = User.GetCajeroName();
 
-                var reciboId = await _mediator.Send(command);
-                return Ok(new { Message = "Cuenta cerrada y facturada exitosamente.", ReciboId = reciboId });
+                var result = await _mediator.Send(command);
+                return Ok(new { 
+                    Message = "Cuenta cerrada y facturada exitosamente.", 
+                    ReciboId = result.ReciboId,
+                    CuentaPorCobrarId = result.CuentaPorCobrarId
+                });
             }
             catch (Exception ex)
             {

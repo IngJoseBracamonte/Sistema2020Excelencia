@@ -33,6 +33,8 @@ export const routes: Routes = [
             { path: 'admin/analytics', loadComponent: () => import('./features/admin/analytics/admin-analytics.component').then(m => m.AdminAnalyticsComponent) },
             { path: 'admin/reportes/honorarios', loadComponent: () => import('./features/admin/medicos/components/honoraria-report/honoraria-report.component').then(m => m.HonorariaReportComponent) },
             { path: 'admin/reportes/calculo-honorarios', loadComponent: () => import('./features/admin/honorariums/admin-honorariums.component').then(m => m.AdminHonorariumsComponent) },
+            { path: 'admin/honorarios/asignaciones', loadComponent: () => import('./features/admin/honorariums/honorario-asignaciones.component').then(m => m.HonorarioAsignacionesComponent) },
+            { path: 'admin/honorarios/config', loadComponent: () => import('./features/admin/honorariums/honorario-config.component').then(m => m.HonorarioConfigComponent) },
             { path: 'admin/audit/precios', loadComponent: () => import('./features/admin/audit/price-audit.component').then(m => m.PriceAuditComponent) },
             { path: 'admin/audit/cuentas', loadComponent: () => import('./features/admision/auditing/auditing.component').then(m => m.AuditingComponent) },
             { path: 'especialidades', loadComponent: () => import('./features/admin/especialidades/especialidad-management.component').then(m => m.EspecialidadManagementComponent) },
@@ -41,7 +43,9 @@ export const routes: Routes = [
             { path: 'tickets', loadComponent: () => import('./features/admin/tickets/tickets.component').then(m => m.AdminTicketsComponent) },
             { path: 'admin/health', loadComponent: () => import('./features/admin/sanity-check/sanity-check.component').then(m => m.SanityCheckComponent) },
             { path: 'seguros', loadComponent: () => import('./features/seguros/seguros-dashboard.component').then(m => m.SegurosDashboardComponent) },
+            { path: 'admin/seguros/gerencia', loadComponent: () => import('./features/admin/seguros-gerencia/management-insurance-dashboard.component').then(m => m.ManagementInsuranceDashboardComponent) },
             { path: 'github-test', loadComponent: () => import('./features/github-test/github-test.component').then(m => m.GithubTestComponent) },
+
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },

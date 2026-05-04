@@ -14,4 +14,14 @@ public static class DiagnosticsConfig
         "auth.login_attempts", 
         unit: "{attempts}", 
         description: "Número de intentos de inicio de sesión");
+
+    public static readonly Counter<long> HonorariumMappingHits = Meter.CreateCounter<long>(
+        "honorarium.mapping.hits",
+        unit: "{hits}",
+        description: "Número de mapeos de honorarios exitosos");
+
+    public static readonly Counter<long> HonorariumMappingMisses = Meter.CreateCounter<long>(
+        "honorarium.mapping.misses",
+        unit: "{misses}",
+        description: "Número de fallos en el mapeo de honorarios (sin regla)");
 }

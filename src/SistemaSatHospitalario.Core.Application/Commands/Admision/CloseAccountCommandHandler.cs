@@ -81,6 +81,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 4. Finalizar Cuenta (V10.9 SQL Direct Fix)
             // Usamos SQL Directo para puentear el Change Tracker de EF y evitar el error "Affected 0 rows"
             using var transaction = await _context.BeginTransactionAsync(cancellationToken);
+            CuentaPorCobrar? ar = null;
             try 
             {
                 // 4.1 Validamos existencia física (AsNoTracking para frescura total)
@@ -93,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // 4.2 Lógica de Negocio (AR y Legacy usando la cuenta original cargada al inicio)
                 if (totalPagado < totalCuenta)
                 {
-                    var ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
+                    ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
                     _context.CuentasPorCobrar.Add(ar);
                 }
 
@@ -143,6 +144,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 ReciboId = recibo.Id,
                 CuentaId = cuenta.Id,
+                CuentaPorCobrarId = ar?.Id,
                 TotalUsd = recibo.TotalFacturadoUSD,
                 SincronizacionLegacyExitosa = true, // If we reached here, commit was successful
                 Mensaje = "Cuenta cerrada y sincronizada exitosamente."

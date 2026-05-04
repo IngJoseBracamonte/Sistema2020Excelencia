@@ -8,6 +8,7 @@ using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using System.Linq;
 
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -18,12 +19,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     {
         private readonly IPdfService _pdfService;
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SegurosController(IPdfService pdfService, IApplicationDbContext context)
+        public SegurosController(IPdfService pdfService, IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _pdfService = pdfService;
             _context = context;
+            _currentUserService = currentUserService;
         }
+
 
         [HttpPost("compromiso-pago")]
         public async Task<IActionResult> GenerarCompromisoPago([FromBody] CompromisoPagoDto dto)
@@ -37,9 +41,22 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 if (cxc != null)
                 {
                     cxc.MarcarCompromisoGenerado();
+                    
+                    // Registrar Auditoría
+                    var log = new DocumentLog(
+                        "Compromiso de Pago", 
+                        cxc.Id.ToString(), 
+                        "Generación", 
+                        _currentUserService.UserId?.ToString() ?? "System", 
+                        _currentUserService.UserName ?? "Sistema",
+                        $"Generado para {dto.NombrePaciente}");
+                    
+                    _context.DocumentLogs.Add(log);
+                    
                     await _context.SaveChangesAsync(default);
                 }
             }
+
 
             var pdfBytes = _pdfService.GenerarCompromisoPagoPdf(dto, logoBase64);
             
@@ -52,10 +69,34 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync();
             var logoBase64 = config?.LogoBase64;
 
+            // Actualizar estado en DB si el ID está presente
+            if (dto.CuentaPorCobrarId.HasValue)
+            {
+                var cxc = await _context.CuentasPorCobrar.FindAsync(dto.CuentaPorCobrarId.Value);
+                if (cxc != null)
+                {
+                    cxc.MarcarGarantiaGenerada();
+                }
+            }
+
+            // Registrar Auditoría
+
+            var log = new DocumentLog(
+                "Garantía de Pago", 
+                dto.CuentaPorCobrarId?.ToString() ?? "N/A", 
+                "Generación", 
+                _currentUserService.UserId?.ToString() ?? "System", 
+                _currentUserService.UserName ?? "Sistema",
+                $"Garantía para {dto.NombrePaciente}");
+            
+            _context.DocumentLogs.Add(log);
+            await _context.SaveChangesAsync(default);
+
             var pdfBytes = _pdfService.GenerarGarantiaPdf(dto, logoBase64);
             
             return File(pdfBytes, "application/pdf", $"Garantia_{dto.CedulaResponsable}.pdf");
         }
+
 
         [HttpGet("ingresados")]
         public async Task<IActionResult> GetPacientesIngresados(
@@ -96,11 +137,38 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     PacienteId = c.Cuenta.Paciente.Id,
                     c.MontoTotalBase,
                     SeguroNombre = "Convenio #" + c.Cuenta.ConvenioId,
-                    c.CompromisoGenerado
+                    c.CompromisoGenerado,
+                    c.GarantiaGenerada,
+                    EsMoroso = c.FechaCreacion < DateTime.UtcNow.AddDays(-30)
+
                 })
                 .ToListAsync();
 
             return Ok(cuentas);
         }
+
+        [HttpGet("consolidado-gerencia")]
+        public async Task<IActionResult> GetConsolidadoGerencia()
+        {
+            var hoy = DateTime.UtcNow;
+            var haceUnMes = hoy.AddDays(-30);
+
+            var consolidado = await _context.CuentasPorCobrar
+                .AsNoTracking()
+                .Include(c => c.Cuenta)
+                .ThenInclude(c => c.Convenio)
+                .GroupBy(c => new { c.Cuenta.ConvenioId, c.Cuenta.Convenio.Nombre })
+                .Select(g => new
+                {
+                    Nombre = g.Key.Nombre ?? "Convenio #" + g.Key.ConvenioId,
+                    Pacientes = g.Count(),
+                    Monto = g.Sum(c => c.MontoTotalBase - c.MontoPagadoBase),
+                    Criticos = g.Count(c => c.FechaCreacion < haceUnMes && c.Estado != EstadoConstants.Cobrada)
+                })
+                .ToListAsync();
+
+            return Ok(consolidado);
+        }
     }
 }
+

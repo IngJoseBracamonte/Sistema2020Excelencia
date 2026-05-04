@@ -45,7 +45,6 @@ try
     
     // Notification Services
     builder.Services.AddScoped<SistemaSatHospitalario.Core.Application.Common.Interfaces.ITasaNotificationService, TasaNotificationService>();
-    builder.Services.AddScoped<SistemaSatHospitalario.Core.Application.Common.Interfaces.INotificationService, NotificationService>();
 
     // Background Processing
     builder.Services.AddHostedService<SystemOptimizationService>();
@@ -77,7 +76,6 @@ try
 
     app.UseCustomSecurityHeaders();
     app.UseRateLimiter();
-    app.MapHealthChecks("/health");
 
     // Database Initialization (Robust Loop)
     await app.UseDatabaseInitializationAsync();

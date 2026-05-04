@@ -8,10 +8,10 @@ using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using Microsoft.Extensions.Logging;
-
+using SistemaSatHospitalario.Core.Domain.Constants;
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize]
+    [Authorize(Roles = AuthorizationConstants.AdminRoles)]
     [ApiController]
     [Route("api/[controller]")]
     public class CatalogController : ControllerBase

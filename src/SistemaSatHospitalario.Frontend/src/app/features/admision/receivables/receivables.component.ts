@@ -14,9 +14,12 @@ import {
   Info,
   CreditCard,
   Plus,
-  Trash2
+  Trash2,
+  Shield,
+  Download
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR, SettleARRequest, PaymentItemDto } from '../../../core/services/receivables.service';
+import { FacturacionService } from '../../../core/services/facturacion.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { Subscription } from 'rxjs';
@@ -40,9 +43,12 @@ export class ReceivablesComponent implements OnInit {
     Info,
     CreditCard,
     Plus,
-    Trash2
+    Trash2,
+    Shield,
+    Download
   };
   private arService = inject(ReceivablesService);
+  private facturacionService = inject(FacturacionService);
   private settingsService = inject(SettingsService);
   private catalogService = inject(CatalogService);
   private tasaSubscription?: Subscription;
@@ -59,6 +65,12 @@ export class ReceivablesComponent implements OnInit {
 
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
+
+  // Gestión de Seguros (V12.1 Integration)
+  public showInsuranceModal = signal(false);
+  public isGarantia = signal(false);
+  public isGenerating = signal(false);
+  public compromisoData: any = {};
 
   // Accordion Logic (Angular-Pro Patterns)
   public expandedRows = signal<Set<string>>(new Set<string>());
@@ -284,5 +296,58 @@ export class ReceivablesComponent implements OnInit {
   onFilterChange(newVal: any) {
     this.filterEstado.set(newVal);
     this.refresh();
+  }
+
+  // --- Lógica de Seguros (Reutilizada de Seguros Dashboard) ---
+  openCompromiso(ar: PendingAR, garantia: boolean = false) {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 30);
+
+    this.isGarantia.set(garantia);
+    this.compromisoData = {
+      cuentaPorCobrarId: ar.id,
+      nombreResponsable: ar.pacienteNombre,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: ar.pacienteCedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: 'No especificado',
+      conceptos: ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios',
+      nombrePaciente: ar.pacienteNombre,
+      edadPaciente: 0,
+      cedulaPaciente: ar.pacienteCedula,
+      montoTotal: ar.montoTotal,
+      diasLiquidar: 30,
+      cuotas: 1,
+      fechaCompromiso: today.toISOString().split('T')[0],
+      fechaVencimiento: futureDate.toISOString().split('T')[0]
+    };
+    this.showInsuranceModal.set(true);
+  }
+
+  generarPdfSeguro() {
+    this.isGenerating.set(true);
+    
+    const futureDate = new Date(this.compromisoData.fechaCompromiso);
+    futureDate.setDate(futureDate.getDate() + this.compromisoData.diasLiquidar);
+    this.compromisoData.fechaVencimiento = futureDate.toISOString();
+
+    const request = this.isGarantia() ? 
+      this.facturacionService.generarGarantiaPdf(this.compromisoData) : 
+      this.facturacionService.generarCompromisoPdf(this.compromisoData);
+
+    request.subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGenerating.set(false);
+        this.showInsuranceModal.set(false);
+        this.actionMessage.set(this.isGarantia() ? 'Garantía generada con éxito' : 'Compromiso de pago generado con éxito');
+      },
+      error: () => {
+        this.errorMessage.set('Error al generar el documento PDF');
+        this.isGenerating.set(false);
+      }
+    });
   }
 }

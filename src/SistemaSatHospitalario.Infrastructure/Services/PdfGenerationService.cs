@@ -6,6 +6,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using System;
 using System.Linq;
+using System.Globalization;
 
 namespace SistemaSatHospitalario.Infrastructure.Services
 {
@@ -199,12 +200,12 @@ namespace SistemaSatHospitalario.Infrastructure.Services
 
                         column.Item().PaddingTop(10).Text(text =>
                         {
-                            text.Span($"Queda establecido así en este documento que el día {data.FechaVencimiento.Day} del mes de {data.FechaVencimiento.ToString("MMMM")} del presente año ({data.FechaVencimiento.Year}) quedara saldada la deuda hacía con ustedes.");
+                            text.Span($"Queda establecido así en este documento que el día {data.FechaVencimiento.Day} del mes de {data.FechaVencimiento.ToString("MMMM", new CultureInfo("es-ES"))} del presente año ({data.FechaVencimiento.Year}) quedará saldada la deuda hacia con ustedes.");
                         });
 
                         column.Item().PaddingTop(10).Text(text =>
                         {
-                            text.Span("En caso de no cumplir con el pago en la fecha antes mencionada me hare responsable de las medidas legales que considere conveniente. No obstante me comprometo a cumplir al pie de la letra con lo establecido para no llevar esto a consecuencias en las que me haga acreedor de una sanción.");
+                            text.Span("En caso de no cumplir con el pago en la fecha antes mencionada me haré responsable de las medidas legales que considere conveniente. No obstante me comprometo a cumplir al pie de la letra con lo establecido para no llevar esto a consecuencias en las que me haga acreedor de una sanción.");
                         });
 
                         column.Item().PaddingTop(20).Text("Sin otro particular, quedo a la orden para cualquier asunto");
@@ -292,8 +293,18 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                         {
                             text.Span("Esta garantía respalda la cuenta del paciente por un monto referencial de ");
                             text.Span($"${data.MontoTotal:N2}").SemiBold();
-                            text.Span($", comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a {data.DiasLiquidar} días.");
+                            text.Span($", comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a {data.DiasLiquidar} días. ");
+                            
+                            if (data.MontoGarantia > 0)
+                            {
+                                text.Span("Como respaldo físico de esta garantía, se hace entrega/registro de: ");
+                                text.Span($"{data.DescripcionGarantia ?? "Bien mueble/inmueble"}").SemiBold();
+                                text.Span(" con un valor estimado de ");
+                                text.Span($"${data.MontoGarantia:N2}").SemiBold();
+                                text.Span(".");
+                            }
                         });
+
 
                         column.Item().PaddingTop(10).Text(text =>
                         {

@@ -108,14 +108,21 @@
             <h3 class="text-2xl font-black text-white mb-4 uppercase tracking-tight leading-tight">Cierre de <br>Jornada</h3>
             <p class="text-slate-500 text-[11px] font-black uppercase tracking-widest mb-12 leading-relaxed italic px-4">Bloqueo Maestro de Estación & Auditoría Operativa.</p>
             
-            <button (click)="cerrarMiCaja()" [disabled]="isLoading() || !isMiCajaAbierta()"
-                class="w-full py-6 px-10 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center shadow-2xl transform active:scale-95 disabled:opacity-30 translate-y-0 hover:-translate-y-1"
-                [ngClass]="isMiCajaAbierta() ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/30' : 'bg-slate-900 text-slate-600 cursor-not-allowed border border-white/5'">
-                <span *ngIf="isLoading()" class="animate-spin mr-3">
-                    <lucide-icon [name]="icons.RefreshCcw" class="h-5 w-5"></lucide-icon>
-                </span>
-                {{ isLoading() ? 'SINCRONIZANDO...' : 'EJECUTAR CIERRE' }}
-            </button>
+            <div class="flex flex-col w-full space-y-3">
+                <button (click)="cerrarMiCaja()" [disabled]="isLoading() || !isMiCajaAbierta()"
+                    class="w-full py-6 px-10 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center shadow-2xl transform active:scale-95 disabled:opacity-30 translate-y-0 hover:-translate-y-1"
+                    [ngClass]="isMiCajaAbierta() ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/30' : 'bg-slate-900 text-slate-600 cursor-not-allowed border border-white/5'">
+                    <span *ngIf="isLoading()" class="animate-spin mr-3">
+                        <lucide-icon [name]="icons.RefreshCcw" class="h-5 w-5"></lucide-icon>
+                    </span>
+                    {{ isLoading() ? 'SINCRONIZANDO...' : 'EJECUTAR CIERRE' }}
+                </button>
+                <button (click)="exportarMiCaja()" *ngIf="isMiCajaAbierta()"
+                    class="w-full py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] transition-all border border-emerald-500/20 flex items-center justify-center group">
+                    <lucide-icon [name]="icons.DollarSign" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></lucide-icon>
+                    DESCARGAR EXCEL PERSONAL
+                </button>
+            </div>
             <p *ngIf="!isMiCajaAbierta()" class="text-[10px] text-rose-500/60 mt-8 leading-tight italic uppercase font-black tracking-widest">
                 * Sin actividad pendiente de cierre.
             </p>
@@ -155,9 +162,14 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-xl font-black text-emerald-400 font-mono tracking-tighter">${{ t.recaudadoBase | number:'1.2-2' }}</p>
-                            <span class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 block">Recaudado</span>
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right mr-4">
+                                <p class="text-xl font-black text-emerald-400 font-mono tracking-tighter">${{ t.recaudadoBase | number:'1.2-2' }}</p>
+                                <span class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 block">Recaudado</span>
+                            </div>
+                            <button (click)="exportarAuditoria(t.cajeroUserId)" class="h-12 w-12 bg-white/5 hover:bg-emerald-500 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/5">
+                                <lucide-icon [name]="icons.DollarSign" class="w-5 h-5"></lucide-icon>
+                            </button>
                         </div>
                     </div>
 
@@ -206,11 +218,17 @@
                         </div>
                     </div>
 
-                    <button (click)="refrescarAdmin()" class="w-full py-7 bg-white hover:bg-rose-50 border-none text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-[0_25px_50px_-12px_rgba(255,255,255,0.15)] transition-all flex justify-center items-center group active:scale-95 overflow-hidden relative">
-                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <lucide-icon [name]="icons.RefreshCcw" class="mr-4 h-6 w-6 group-hover:rotate-180 transition-transform duration-700 ease-in-out"></lucide-icon>
-                        SINCRONIZAR AUDITORÍA
-                    </button>
+                    <div class="flex flex-col space-y-4">
+                        <button (click)="refrescarAdmin()" class="w-full py-7 bg-white hover:bg-rose-50 border-none text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-[0_25px_50px_-12px_rgba(255,255,255,0.15)] transition-all flex justify-center items-center group active:scale-95 overflow-hidden relative">
+                            <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <lucide-icon [name]="icons.RefreshCcw" class="mr-4 h-6 w-6 group-hover:rotate-180 transition-transform duration-700 ease-in-out"></lucide-icon>
+                            SINCRONIZAR AUDITORÍA
+                        </button>
+                        <button (click)="exportarAuditoria()" class="w-full py-5 bg-rose-500 hover:bg-rose-600 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex justify-center items-center group shadow-xl shadow-rose-500/20 active:scale-95">
+                            <lucide-icon [name]="icons.DollarSign" class="mr-3 h-5 w-5 group-hover:scale-110 transition-transform"></lucide-icon>
+                            REPORTE GLOBAL EXCEL
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

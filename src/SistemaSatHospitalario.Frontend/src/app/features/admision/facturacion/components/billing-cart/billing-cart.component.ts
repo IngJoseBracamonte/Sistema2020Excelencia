@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, User, Edit3, Check, X, ShieldCheck, Slash, Trash2, RefreshCcw, ShieldCheck as ShieldCheckIcon } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 import { BillingFacadeService } from '../../../../../core/services/billing-facade.service';
 import { CurrencyBsPipe } from '../../../../../shared/pipes/currency-bs.pipe';
@@ -28,11 +28,12 @@ export class BillingCartComponent {
   @Input() patientData: any = null;
   @Input() currentStep = 1;
   @Input() isLoading = false;
+  @Input() isInsuranceFlow = false;
 
   // --- Outputs de Acción ---
   @Output() verCitas = new EventEmitter<void>();
   @Output() procesar = new EventEmitter<void>();
-  @Output() omitir = new EventEmitter<void>();
+  @Output() omitir = new EventEmitter<boolean>();
   @Output() quitar = new EventEmitter<{ index: number, isBackend: boolean }>();
   @Output() editarPrecio = new EventEmitter<{ index: number, isBackend: boolean }>();
   @Output() precioCambiado = new EventEmitter<{ index: number, isBackend: boolean, newPrice: number, newHonorary: number }>();
@@ -143,4 +144,6 @@ export class BillingCartComponent {
       }
     });
   }
+
+  readonly icons = { User, Edit3, Check, X, ShieldCheck, Slash, Trash2, RefreshCcw };
 }

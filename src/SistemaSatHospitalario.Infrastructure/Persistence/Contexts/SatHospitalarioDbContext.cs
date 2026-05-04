@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Entities.Common;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+
 using SistemaSatHospitalario.Core.Domain.Common;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
@@ -39,6 +41,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; set; }
         public DbSet<OrdenImagen> OrdenesImagenes { get; set; }
         public DbSet<CatalogoMetodoPago> CatalogoMetodosPago { get; set; }
+        public DbSet<DocumentLog> DocumentLogs { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<HonorarioConfig> HonorariosConfig { get; set; }
+        public DbSet<LogAsignacionHonorario> LogsAsignacionHonorario { get; set; }
+        public DbSet<HonorariumMappingRule> HonorariumMappingRules { get; set; }
+
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -118,6 +126,31 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(s => s.Email).HasMaxLength(150);
             });
 
+            builder.Entity<HonorarioConfig>(entity =>
+            {
+                entity.ToTable("HonorariosConfig");
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.CategoriaServicio).IsRequired().HasMaxLength(50);
+                entity.HasOne(h => h.MedicoDefault).WithMany().HasForeignKey(h => h.MedicoDefaultId).OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(h => h.CategoriaServicio).IsUnique();
+            });
+
+            builder.Entity<LogAsignacionHonorario>(entity =>
+            {
+                entity.ToTable("LogsAsignacionHonorario");
+                entity.HasKey(l => l.Id);
+                entity.Property(l => l.TipoAccion).IsRequired().HasMaxLength(50);
+                entity.HasIndex(l => l.FechaAccion);
+                entity.HasIndex(l => l.DetalleServicioId);
+            });
+
+            builder.Entity<DetalleServicioCuenta>()
+                .HasOne<Medico>()
+                .WithMany()
+                .HasForeignKey(d => d.MedicoResponsableId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+
             builder.Entity<PacienteAdmision>(entity =>
             {
                 entity.ToTable("PacientesAdmision");
@@ -163,7 +196,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(c => c.Id);
                 
                 entity.HasMany(c => c.Detalles)
-                      .WithOne()
+                      .WithOne(d => d.CuentaServicio)
                       .HasForeignKey(d => d.CuentaServicioId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -359,6 +392,44 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(c => c.Valor).IsRequired().HasMaxLength(100);
                 entity.HasIndex(c => c.Valor).IsUnique();
             });
+
+            builder.Entity<DocumentLog>(entity =>
+            {
+                entity.ToTable("DocumentLogs");
+                entity.HasKey(d => d.Id);
+                entity.Property(d => d.DocumentType).IsRequired().HasMaxLength(100);
+                entity.Property(d => d.ReferenceId).IsRequired().HasMaxLength(100);
+                entity.Property(d => d.Action).IsRequired().HasMaxLength(100);
+                entity.Property(d => d.UserId).IsRequired().HasMaxLength(100);
+                entity.Property(d => d.UserName).IsRequired().HasMaxLength(200);
+                entity.HasIndex(d => d.ReferenceId);
+                entity.HasIndex(d => d.Timestamp);
+            });
+
+            builder.Entity<Notification>(entity =>
+            {
+                entity.ToTable("Notifications");
+                entity.HasKey(n => n.Id);
+                entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
+                entity.Property(n => n.Message).IsRequired().HasMaxLength(500);
+                entity.Property(n => n.Type).IsRequired().HasMaxLength(50);
+                entity.Property(n => n.TargetUserId).HasMaxLength(100);
+                entity.Property(n => n.TargetRole).HasMaxLength(100);
+                entity.HasIndex(n => n.TargetUserId);
+                entity.HasIndex(n => n.TargetRole);
+                entity.HasIndex(n => n.Timestamp);
+            });
+
+            builder.Entity<HonorariumMappingRule>(entity =>
+            {
+                entity.ToTable("HonorariumMappingRules");
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.Pattern).IsRequired().HasMaxLength(100);
+                entity.Property(h => h.Category).IsRequired().HasMaxLength(50);
+                entity.HasIndex(h => h.Priority);
+                entity.HasIndex(h => h.IsActive);
+            });
         }
+
     }
 }

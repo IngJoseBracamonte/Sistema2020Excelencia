@@ -103,4 +103,50 @@ export class CajasComponent implements OnInit {
     this.cajaService.obtenerResumenDiario().subscribe(res => this.resumenCaja.set(res));
     this.cajaService.obtenerHistorial().subscribe(res => this.historialAdmin.set(res));
   }
+
+  exportarAuditoria(userId?: string) {
+    this.isLoading.set(true);
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    this.cajaService.exportExcelCashClosing(userId, dateStr, true).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const label = userId || 'Global';
+        a.download = `Auditoria_Caja_${label}_${dateStr}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.errorMessage.set("Error al exportar Excel de auditoría");
+      }
+    });
+  }
+
+  exportarMiCaja() {
+    const user = this.authService.currentUser();
+    if (!user) return;
+    
+    this.isLoading.set(true);
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    this.cajaService.exportExcelCashClosing(user.username, dateStr, false).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Cierre_Caja_${user.username}_${dateStr}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.errorMessage.set("Error al exportar su reporte de caja");
+      }
+    });
+  }
 }

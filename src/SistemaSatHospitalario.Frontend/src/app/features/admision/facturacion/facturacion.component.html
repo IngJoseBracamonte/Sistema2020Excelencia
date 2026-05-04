@@ -139,11 +139,11 @@
                             class="bg-primary text-white text-[10px] font-black px-5 py-2.5 rounded-full shadow-lg shadow-primary/20 uppercase tracking-widest transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50">Paso 1 → Continuar</button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                         <div class="space-y-4">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Tipo de Responsable Principal</label>
                             <select [ngModel]="tipoIngreso()" (ngModelChange)="tipoIngreso.set($event)" [disabled]="!isAdmin() || !!cuentaId()"
-                                class="w-full px-6 py-5 bg-surface-card border border-glass-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-main shadow-sm appearance-none cursor-pointer">
+                                class="w-full px-6 py-5 bg-surface-card border border-glass-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-main shadow-sm appearance-none cursor-pointer min-h-[70px]">
                                 <option *ngIf="isAdmin() || isParticularAssistant()" value="Particular">👥 Particular</option>
                                 <option *ngIf="isAdmin() || isInsuranceAssistant()" value="Seguro">🛡️ Seguro / Empresa</option>
                                 <option *ngIf="isAdmin() || isHospitalAssistant()" value="Hospitalizacion">🏥 Hospitalización</option>
@@ -154,7 +154,7 @@
                         <div *ngIf="tipoIngreso() === 'Seguro'" class="animate-scale-in space-y-4">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Institución / Aseguradora</label>
                             <select [ngModel]="convenioId()" (ngModelChange)="convenioId.set($event)" [disabled]="!!cuentaId()"
-                                class="w-full px-6 py-5 bg-primary/5 border border-primary/10 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-primary shadow-sm cursor-pointer">
+                                class="w-full px-6 py-5 bg-primary/5 border border-primary/10 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-primary shadow-sm appearance-none cursor-pointer min-h-[70px]">
                                 <option [value]="null">--- Seleccione ---</option>
                                 <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre }}</option>
                             </select>
@@ -201,12 +201,13 @@
                 [patientData]="selectedPatientData()"
                 [currentStep]="currentStep()"
                 [isLoading]="isLoading()"
+                [isInsuranceFlow]="tipoIngreso() === 'Seguro'"
                 (verCitas)="verCitasActivas()"
                 (quitar)="quitarServicio($event)"
                 (editarPrecio)="handleEditarPrecio($event)"
                 (precioCambiado)="onPrecioCambiado($event)"
                 (procesar)="procesarCobro()"
-                (omitir)="omitirComprobante()">
+                (omitir)="omitirComprobante($event)">
             </app-billing-cart>
             
             <div *ngIf="(isAdmin() || isInsuranceAssistant()) && cuentaId() && tipoIngreso() === 'Seguro'" class="mt-4 pt-4 border-t border-white/5">
@@ -443,7 +444,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-1.5">
                             <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Correo Electrónico</label>
                             <div class="flex space-x-2">
@@ -454,6 +455,13 @@
                                     <option *ngFor="let t of tiposCorreo" [value]="t">{{ t }}</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <!-- Dirección (V12.1 Requirement) -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación</label>
+                            <input type="text" [(ngModel)]="newPatientData.direccion" placeholder="Ej: Av. Las Américas, Edif. X"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
                         </div>
                     </div>
                 </div>
@@ -560,4 +568,50 @@
     #supervisorDialog 
     (onConfirm)="onSupervisorAuthorized($event)">
 </app-supervisor-auth-dialog>
+
+<!-- MODAL DE ÉXITO POST-FACTURACIÓN (V12.1 Premium Experience) -->
+<div *ngIf="billingSuccess()" class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-[#05080f]/95 backdrop-blur-3xl animate-fade-in">
+    <div class="relative bg-surface-card border border-white/10 rounded-[4rem] w-full max-w-2xl p-12 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden text-center animate-scale-in">
+        <!-- Glows Decorativos -->
+        <div class="absolute -top-32 -left-32 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px]"></div>
+        <div class="absolute -bottom-32 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-[100px]"></div>
+
+        <!-- Icono de Éxito Gigante -->
+        <div class="mx-auto w-24 h-24 bg-emerald-500/10 border border-emerald-500/20 rounded-[2.5rem] flex items-center justify-center text-emerald-500 mb-8 shadow-2xl shadow-emerald-500/20">
+            <lucide-icon [name]="icons.Check" class="w-12 h-12"></lucide-icon>
+        </div>
+
+        <h2 class="text-4xl font-black text-white uppercase tracking-tighter mb-2">¡PROCESO COMPLETADO!</h2>
+        <p class="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-12">La cuenta ha sido cerrada y sincronizada exitosamente</p>
+
+        <!-- Acciones Post-Facturación -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
+            <!-- Sección Seguros -->
+            <ng-container *ngIf="isInsuranceFlow()">
+                <button (click)="imprimirCompromiso()" [disabled]="isGeneratingPdf()"
+                    class="group flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-[2.5rem] hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all active:scale-95 disabled:opacity-50">
+                    <div class="w-12 h-12 bg-indigo-500/20 text-indigo-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <lucide-icon [name]="icons.ShieldAlert" class="w-6 h-6"></lucide-icon>
+                    </div>
+                    <span class="text-[10px] font-black text-white uppercase tracking-widest">Imprimir Compromiso</span>
+                </button>
+
+                <button (click)="imprimirGarantia()" [disabled]="isGeneratingPdf()"
+                    class="group flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-[2.5rem] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all active:scale-95 disabled:opacity-50">
+                    <div class="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+                    </div>
+                    <span class="text-[10px] font-black text-white uppercase tracking-widest">Imprimir Garantía</span>
+                </button>
+            </ng-container>
+
+            <!-- Acción General -->
+            <button (click)="finalizarFlujoFacturacion()" class="md:col-span-2 w-full py-6 bg-primary hover:bg-rose-600 text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs transition-all active:scale-95 shadow-2xl shadow-rose-500/20">
+                FINALIZAR Y CONTINUAR
+            </button>
+        </div>
+
+        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest opacity-40">Sistema Sat Hospitalario • Módulo de Admisión V12.1</p>
+    </div>
+</div>
 </div>

@@ -15,6 +15,7 @@ using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
 using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 using SistemaSatHospitalario.Infrastructure.Integration;
 using SistemaSatHospitalario.Infrastructure.Persistence.Providers;
+using SistemaSatHospitalario.Infrastructure.Services;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 
@@ -97,8 +98,15 @@ namespace SistemaSatHospitalario.Infrastructure
 
             // [PHASE-9] Security & Cleanup Automation
             services.AddHostedService<SistemaSatHospitalario.Infrastructure.BackgroundJobs.ReservaTemporalAutoCleaner>();
+
+            // [PHASE-10] Excel Reporting Engine
+            services.AddScoped<IExcelService, ExcelService>();
+
+            // [PRO-FEATURES] Real-time & Persistent Notifications
+            services.AddScoped<INotificationService, NotificationService>();
             
             return services;
+
         }
     }
 }

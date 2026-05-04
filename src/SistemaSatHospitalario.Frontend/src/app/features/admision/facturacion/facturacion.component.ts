@@ -352,6 +352,12 @@ export class FacturacionComponent {
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
 
+  // V12.1: Post-Billing Success States
+  public billingSuccess = signal(false);
+  public lastBillResult = signal<any>(null);
+  public isInsuranceFlow = signal(false);
+  public isGeneratingPdf = signal(false);
+
   private _toastEffect = effect(() => {
     const action = this.actionMessage();
     const error = this.errorMessage();
@@ -374,18 +380,19 @@ export class FacturacionComponent {
   public showRegisterModal = signal<boolean>(false);
   public noResultsFound = signal<boolean>(false);
 
-  public newPatientData: Partial<PatientRecord> = {
+  public newPatientData: any = {
     cedula: '',
     nombre: '',
     apellidos: '',
-    sexo: 'M',
-    fechaNacimiento: new Date().toISOString().split('T')[0],
     correo: '',
-    tipoCorreo: '@gmail.com',
     celular: '',
-    codigoCelular: '0414',
     telefono: '',
-    codigoTelefono: '0212'
+    direccion: '', // V12.1 Premium Requirement
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    sexo: 'ND',
+    tipoCorreo: '@gmail.com',
+    codigoCelular: '0414',
+    codigoTelefono: '0274'
   };
 
   // Listas para Registro de Pacientes (Pachón Pro V2.9)
@@ -998,9 +1005,16 @@ export class FacturacionComponent {
 
   /**
    * Strategy Pattern: Cierra la cuenta omitiendo deliberadamente la impresión.
-   * Ideal para casos donde el comprobante se entregó previamente o no es requerido.
+   * @param autoPrintCompromiso Si es true y es flujo de seguro, genera el PDF automáticamente al finalizar.
+   * [Fase 12.1 Refinement]
    */
-  async omitirComprobante() {
+  async omitirComprobante(autoPrintCompromiso: boolean = false) {
+    // Si ya fue exitoso y el usuario hace clic otra vez en "Compromiso de Pago", simplemente re-imprimir
+    if (this.billingSuccess() && autoPrintCompromiso && this.isInsuranceFlow()) {
+       this.imprimirCompromiso();
+       return;
+    }
+
     if (!this.pacienteSeleccionado()) {
       this.errorMessage.set("⚠️ Debe seleccionar un paciente en el Paso 3 antes de cerrar la cuenta.");
       return;
@@ -1035,8 +1049,17 @@ export class FacturacionComponent {
       next: (res: any) => {
         const p = this.selectedPatientData();
         const pacienteNombre = p ? `${p.nombre} ${p.apellidos || ''}` : '';
+        
+        // V12.1 Integration: Capturar resultado para panel de éxito
+        this.lastBillResult.set(res);
+        this.isInsuranceFlow.set(this.tipoIngreso() === 'Seguro');
+        this.billingSuccess.set(true);
+
+        if (autoPrintCompromiso && this.isInsuranceFlow()) {
+           this.imprimirCompromiso();
+        }
+
         this.actionMessage.set(`Ha agregado satisfactoriamente a: ${pacienteNombre}`);
-        this.resetForm();
         this.isLoading.set(false);
       },
       error: (err: any) => {
@@ -1139,5 +1162,98 @@ export class FacturacionComponent {
     this.pacienteId.set(null);
     this.selectedPatientData.set(null);
     this.currentStep.set(1);
+    this.billingSuccess.set(false); // V12.1
+  }
+
+  // --- Lógica de Gestión de Documentos Post-Facturación (V12.1) ---
+  private calcularEdad(fechaNacimiento: string): number {
+    if (!fechaNacimiento) return 0;
+    const today = new Date();
+    const birth = new Date(fechaNacimiento);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  imprimirCompromiso() {
+    const res = this.lastBillResult();
+    const p = this.selectedPatientData();
+    if (!res || !p) return;
+
+    this.isGeneratingPdf.set(true);
+    const dto = {
+      cuentaPorCobrarId: res.cuentaPorCobrarId,
+      nombreResponsable: `${p.nombre} ${p.apellidos}`,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: p.cedula,
+      direccionResponsable: p.direccion || 'No especificada',
+      telefonoResponsable: p.celular || p.telefono || 'No especificado', // Fix: Use celular as primary
+      conceptos: this.serviciosCargados().map(s => s.descripcion).join(', '),
+      nombrePaciente: `${p.nombre} ${p.apellidos}`,
+      edadPaciente: this.calcularEdad(p.fechaNacimiento || ''),
+      cedulaPaciente: p.cedula,
+      montoTotal: this.totalCargadoUSD(), // Use cart total instead of possibly null server response
+      diasLiquidar: 30,
+      cuotas: 1,
+      fechaCompromiso: new Date().toISOString()
+    };
+
+    this.facturacionService.generarCompromisoPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGeneratingPdf.set(false);
+      },
+      error: () => {
+        this.errorMessage.set('Error al generar compromiso de pago');
+        this.isGeneratingPdf.set(false);
+      }
+    });
+  }
+
+  imprimirGarantia() {
+      // Similar a compromiso pero llamando a generarGarantiaPdf
+      const res = this.lastBillResult();
+      const p = this.selectedPatientData();
+      if (!res || !p) return;
+  
+      this.isGeneratingPdf.set(true);
+      const dto = {
+        cuentaPorCobrarId: res.cuentaPorCobrarId,
+        nombreResponsable: `${p.nombre} ${p.apellidos}`,
+        relacionResponsable: 'Titular',
+        cedulaResponsable: p.cedula,
+        direccionResponsable: p.direccion || 'No especificada',
+        telefonoResponsable: p.celular || p.telefono || 'No especificado',
+        conceptos: this.serviciosCargados().map(s => s.descripcion).join(', '),
+        nombrePaciente: `${p.nombre} ${p.apellidos}`,
+        edadPaciente: this.calcularEdad(p.fechaNacimiento || ''),
+        cedulaPaciente: p.cedula,
+        montoTotal: this.totalCargadoUSD(),
+        diasLiquidar: 30,
+        cuotas: 1,
+        fechaCompromiso: new Date().toISOString()
+      };
+  
+      this.facturacionService.generarGarantiaPdf(dto).subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          this.isGeneratingPdf.set(false);
+        },
+        error: () => {
+          this.errorMessage.set('Error al generar garantía de pago');
+          this.isGeneratingPdf.set(false);
+        }
+      });
+  }
+
+  finalizarFlujoFacturacion() {
+    this.resetForm();
+    this.billingSuccess.set(false);
+    this.lastBillResult.set(null);
   }
 }

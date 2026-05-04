@@ -110,7 +110,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading.set(true);
-    // Usar username como identificador de cajero
     this.cajaService.getPersonalReport(user.username).subscribe({
       next: (report: DailyClosingReport) => {
         this.isLoading.set(false);
@@ -120,6 +119,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         this.isLoading.set(false);
         this.errorMessage.set("No se pudo generar el reporte de cierre.");
+      }
+    });
+  }
+
+  exportarExcel() {
+    const user = this.authService.currentUser();
+    if (!user) return;
+
+    this.isLoading.set(true);
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    this.cajaService.exportExcelCashClosing(user.username, dateStr, false).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Cierre_Caja_${user.username}_${dateStr}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.errorMessage.set("Error al exportar Excel");
       }
     });
   }

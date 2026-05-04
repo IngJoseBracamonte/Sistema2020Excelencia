@@ -19,6 +19,7 @@ export interface PatientRecord {
   codigoCelular?: string;
   telefono?: string;
   codigoTelefono?: string;
+  direccion?: string;
   source?: string;
   esLegacy?: boolean;
   activo?: boolean;

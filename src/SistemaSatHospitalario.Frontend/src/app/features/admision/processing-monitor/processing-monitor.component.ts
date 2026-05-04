@@ -128,11 +128,7 @@ export class ProcessingMonitorComponent implements OnInit {
     this.setupSignalR();
   }
 
-  setupSignalR() {
-    const token = this.auth.getToken() || '';
-    const role = this.auth.currentUser()?.role || '';
-    this.signalR.startConnection(token, role);
-    
+  constructor() {
     // Escuchar notificaciones del worker en tiempo real
     effect(() => {
       const nots = this.signalR.incomingNotifications();
@@ -151,6 +147,12 @@ export class ProcessingMonitorComponent implements OnInit {
         }
       }
     }, { allowSignalWrites: true });
+  }
+
+  setupSignalR() {
+    const token = this.auth.getToken() || '';
+    const role = this.auth.currentUser()?.role || '';
+    this.signalR.startConnection(token, role);
   }
 
   loadOrders() {
