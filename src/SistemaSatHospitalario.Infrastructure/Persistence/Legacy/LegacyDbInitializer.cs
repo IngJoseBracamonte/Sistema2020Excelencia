@@ -61,7 +61,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                await _context.Database.MigrateAsync();
+                // await _context.Database.MigrateAsync();
                 
                 _logger.LogInformation("✅ Legacy Database '{Database}' Inicializada y Migrada Correctamente.", builder.Database);
             }

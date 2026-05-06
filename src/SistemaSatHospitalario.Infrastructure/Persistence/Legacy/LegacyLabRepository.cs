@@ -177,7 +177,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             try
             {
                 using var connection = new MySqlConnection(_connectionString);
-                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Visible
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
                                      FROM datospersonales WHERE Cedula = @cedula LIMIT 1";
                 return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { cedula });
             }
@@ -195,7 +195,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             try
             {
                 using var connection = new MySqlConnection(_connectionString);
-                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Visible
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
                                      FROM datospersonales WHERE IdPersona = @legacyId LIMIT 1";
                 var res = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { legacyId });
                 if (res == null) return null;
@@ -206,8 +206,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                     Nombre = (string)res.Nombre,
                     Apellidos = (string)res.Apellidos,
                     Sexo = (string)res.Sexo,
-                    Fecha = (string)res.Fecha,
-                    Visible = (int)res.Visible
+                    Fecha = (string)res.Fecha
                 };
             }
             catch (global::System.Exception ex)
@@ -223,7 +222,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             try
             {
                 using var connection = new MySqlConnection(_connectionString);
-                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Visible
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
                                      FROM datospersonales 
                                      WHERE Cedula LIKE @term OR Nombre LIKE @term OR Apellidos LIKE @term 
                                      LIMIT 20";

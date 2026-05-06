@@ -193,8 +193,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         Correo = "",
                         TipoCorreo = "@gmail.com",
                         CodigoCelular = "0414",
-                        CodigoTelefono = "0212",
-                        Visible = 1
+                        CodigoTelefono = "0212"
                     };
                     int newId = await _legacyRepository.CreatePatientLegacyAsync(legacyPatient, ct);
                     if (newId > 0)

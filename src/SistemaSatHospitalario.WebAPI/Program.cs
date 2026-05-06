@@ -20,7 +20,7 @@ Log.Logger = new LoggerConfiguration()
 
 try 
 {
-    Log.Information("Iniciando Sistema Sat Hospitalario (Cloud-Native Mode)...");
+    Log.Information("Iniciando Sistema Sat Hospitalario v1.2.49 (Cloud-Native Mode)...");
     
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
@@ -59,6 +59,8 @@ try
     app.UseForwardedHeaders();
     app.UseExceptionHandler();
 
+    var deployMode = app.Configuration["DeploymentSettings:Mode"] ?? "Local";
+
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
@@ -68,8 +70,9 @@ try
                    .WithDefaultHttpClient(Scalar.AspNetCore.ScalarTarget.CSharp, Scalar.AspNetCore.ScalarClient.HttpClient);
         });
     }
-    else
+    else if (!deployMode.Equals("Docker", StringComparison.OrdinalIgnoreCase))
     {
+        // Solo redirigir a HTTPS si NO estamos en Docker (ej. Cloud Native manual)
         app.UseHttpsRedirection();
         app.UseHsts();
     }

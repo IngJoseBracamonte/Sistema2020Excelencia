@@ -64,8 +64,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     Celular = request.Celular ?? "",
                     CodigoCelular = request.CodigoCelular ?? "",
                     Telefono = request.Telefono ?? "",
-                    CodigoTelefono = request.CodigoTelefono ?? "",
-                    Visible = 1
+                    CodigoTelefono = request.CodigoTelefono ?? ""
                 };
 
                 unifiedId = await _legacyRepository.CreatePatientLegacyAsync(legacyPatient, cancellationToken);

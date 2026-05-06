@@ -1,21 +1,21 @@
-# ═══════════════════════════════════════════════════════════════════
-# Docker Compose — Sistema Sat Hospitalario
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# Docker Compose â€” Sistema Sat Hospitalario
 # Orquestador de contenedores para despliegue local en Windows
 #
 # MySQL corre NATIVO en el host Windows (no containerizado).
 # Los contenedores se conectan al MySQL del host via host.docker.internal.
 #
 # Uso:
-#   docker-compose build          → Construir imágenes
-#   docker-compose up -d          → Levantar servicios
-#   docker-compose down           → Detener servicios
-#   docker-compose logs -f api    → Ver logs de la API
-# ═══════════════════════════════════════════════════════════════════
+#   docker-compose build          â†’ Construir imÃ¡genes
+#   docker-compose up -d          â†’ Levantar servicios
+#   docker-compose down           â†’ Detener servicios
+#   docker-compose logs -f api    â†’ Ver logs de la API
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 services:
-  # ─────────────────────────────────────────
-  # 📦 Redis — Caché Distribuido
-  # ─────────────────────────────────────────
+  # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ðŸ“¦ Redis â€” CachÃ© Distribuido
+  # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   redis:
     image: redis:7-alpine
     container_name: sat-redis
@@ -32,15 +32,14 @@ services:
     volumes:
       - redis-data:/data
 
-  # ─────────────────────────────────────────
-  # ⚙️ WebAPI — .NET 10 Backend
-  # ─────────────────────────────────────────
+  # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # âš™ï¸ WebAPI â€” .NET 10 Backend
+  # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   api:
-    # image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
-    # Para compilar localmente en vez de usar GHCR, comenta 'image:' y descomenta:
-    build:
-      context: ./src
-      dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
+    image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
+    # build:
+    #   context: ./src
+    #   dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
     container_name: sat-api
     restart: unless-stopped
     ports:
@@ -63,7 +62,7 @@ services:
       - JwtConfig__Audience=${JWT_AUDIENCE:-SistemaSatHospitalario_PWA}
 
       # --- CORS ---
-      - AllowedOrigins=http://${DOMAIN_NAME:-hospital.local},http://${LOCAL_IP:-127.0.0.1},http://${PC_NAME:-localhost},http://localhost,http://127.0.0.1,http://localhost:80
+      - AllowedOrigins=http://localhost,http://127.0.0.1,http://192.168.10.9,http://JOSEBRACAMONTE
 
       # --- Deployment ---
       - DeploymentSettings__Mode=Docker
@@ -75,7 +74,7 @@ services:
       - EmailSettings__SmtpUser=${SMTP_USER:-}
       - EmailSettings__SmtpPass=${SMTP_PASS:-}
     extra_hosts:
-      # Garantiza resolución DNS al host Windows en todas las versiones de Docker Desktop
+      # Garantiza resoluciÃ³n DNS al host Windows en todas las versiones de Docker Desktop
       - "host.docker.internal:host-gateway"
     depends_on:
       redis:
@@ -91,15 +90,14 @@ services:
     volumes:
       - api-logs:/app/Logs
 
-  # ─────────────────────────────────────────
-  # 🎨 Frontend — Angular PWA + Nginx Proxy
-  # ─────────────────────────────────────────
+  # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ðŸŽ¨ Frontend â€” Angular PWA + Nginx Proxy
+  # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   frontend:
-    # image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
-    # Para compilar localmente en vez de usar GHCR, comenta 'image:' y descomenta:
-    build:
-      context: ./src/SistemaSatHospitalario.Frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
+    # build:
+    #   context: ./src/SistemaSatHospitalario.Frontend
+    #   dockerfile: Dockerfile
     container_name: sat-frontend
     restart: unless-stopped
     ports:
@@ -125,22 +123,24 @@ services:
     environment:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_POLL_INTERVAL=300
+      - DOCKER_API_VERSION=1.40
     networks:
       - sat-network
 
-# ─────────────────────────────────────────
-# 🌐 Red Docker
-# ─────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ðŸŒ Red Docker
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 networks:
   sat-network:
     driver: bridge
     name: sat-hospital-network
 
-# ─────────────────────────────────────────
-# 💾 Volúmenes Persistentes
-# ─────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ðŸ’¾ VolÃºmenes Persistentes
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 volumes:
   api-logs:
     name: sat-api-logs
   redis-data:
     name: sat-redis-data
+

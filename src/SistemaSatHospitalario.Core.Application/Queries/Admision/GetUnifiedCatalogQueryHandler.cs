@@ -147,6 +147,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             return result;
+
+            return result;
         }
     }
 }
