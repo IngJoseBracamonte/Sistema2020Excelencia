@@ -110,9 +110,21 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
-      timeout: 5s
-      retries: 3
+      timeout: 10s
+      retries: 5
       start_period: 10s
+    networks:
+      - sat-network
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: sat-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
     networks:
       - sat-network
 
