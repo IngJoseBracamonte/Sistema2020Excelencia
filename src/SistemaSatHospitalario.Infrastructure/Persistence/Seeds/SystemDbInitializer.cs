@@ -81,6 +81,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 // Senior Maintenance Pattern: Asegurar integridad de fechas de recaudación
                 await FixOrphanPaymentDatesAsync();
                 await SeedMetodosPagoAsync();
+                await SeedHonorarioConfigAsync();
 
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
@@ -95,15 +96,22 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         {
             var defaults = new List<ServicioClinico>
             {
-                new ServicioClinico("S001", "Consulta Medica General", 30.00m, "Consulta"),
-                new ServicioClinico("S002", "Radiografía Tórax", 45.00m, "RX")
+                new ServicioClinico("S001", "Consulta Medica General", 30.00m, "Consulta") { HonorariumCategory = "CONSULTA" },
+                new ServicioClinico("S002", "Radiografía Tórax", 45.00m, "RX") { HonorariumCategory = "RX" },
+                new ServicioClinico("S003", "Informe Médico Especializado", 15.00m, "Informe") { HonorariumCategory = "INFORME" }
             };
 
             foreach (var s in defaults)
             {
-                if (!await _context.ServiciosClinicos.AnyAsync(x => x.Codigo == s.Codigo))
+                var existing = await _context.ServiciosClinicos.FirstOrDefaultAsync(x => x.Codigo == s.Codigo);
+                if (existing == null)
                 {
                     _context.ServiciosClinicos.Add(s);
+                }
+                else if (string.IsNullOrEmpty(existing.HonorariumCategory))
+                {
+                    // Senior Maintenance: Actualizamos servicios existentes sin categoría (Migración Pro)
+                    existing.HonorariumCategory = s.HonorariumCategory;
                 }
             }
 
@@ -266,6 +274,37 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             };
 
             _context.CatalogoMetodosPago.AddRange(metodos);
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task SeedHonorarioConfigAsync()
+        {
+            if (await _context.HonorariosConfig.AnyAsync()) return;
+
+            _logger.LogInformation("Sembrando configuración inicial de honorarios...");
+
+            // Intentamos obtener un médico por defecto para el seed (Gregory House si existe)
+            var medicoDefault = await _context.Medicos.FirstOrDefaultAsync(m => m.Nombre.Contains("House"));
+            var usuario = "Sistema";
+
+            var categories = new[] { "CONSULTA", "RX", "INFORME" };
+
+            foreach (var cat in categories)
+            {
+                var conf = new HonorarioConfig(cat, usuario);
+                if (medicoDefault != null) conf.AsignarMedicoDefault(medicoDefault.Id, usuario, "Auto-asignado por Initializer");
+                _context.HonorariosConfig.Add(conf);
+            }
+
+            // También sembramos las reglas de mapeo para fallback (compatibilidad con Sistema 2020 si aplicara)
+            if (!await _context.HonorariumMappingRules.AnyAsync())
+            {
+                _context.HonorariumMappingRules.Add(new HonorariumMappingRule("RX", "RX", MappingRuleType.Contains, 1, usuario));
+                _context.HonorariumMappingRules.Add(new HonorariumMappingRule("RADI", "RX", MappingRuleType.Contains, 2, usuario));
+                _context.HonorariumMappingRules.Add(new HonorariumMappingRule("INFO", "INFORME", MappingRuleType.Contains, 3, usuario));
+                _context.HonorariumMappingRules.Add(new HonorariumMappingRule("CONS", "CONSULTA", MappingRuleType.Contains, 4, usuario));
+            }
+
             await _context.SaveChangesAsync();
         }
     }

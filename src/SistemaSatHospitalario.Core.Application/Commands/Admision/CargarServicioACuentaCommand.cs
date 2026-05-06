@@ -123,7 +123,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
             if (detalle.Honorario > 0)
             {
-                string? categoriaMapeada = await _mapperService.MapToCategoryAsync(request.TipoServicio);
+                Guid? serviceId = Guid.TryParse(request.ServicioId, out var sid) ? sid : null;
+                string? categoriaMapeada = await _mapperService.MapToCategoryAsync(request.TipoServicio, serviceId);
                 if (categoriaMapeada != HonorarioConstants.CategoriaOtros)
                 {
                     var config = await _context.HonorariosConfig

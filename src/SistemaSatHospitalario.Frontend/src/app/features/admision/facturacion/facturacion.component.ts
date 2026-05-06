@@ -155,7 +155,7 @@ export class FacturacionComponent {
   public searchTermServicio = this.billingFacade.searchTermServicio;
   public selectedEspecialidad = this.billingFacade.selectedEspecialidad;
   public selectedMedicoId = this.billingFacade.selectedMedicoId;
-  public suggestedServiceId = signal<string | null>(null);
+  public suggestedServices = signal<CatalogItem[]>([]);
   public convenios = signal<any[]>([]);
 
   constructor() {
@@ -238,23 +238,24 @@ export class FacturacionComponent {
   private _specialtyEffect = effect(() => {
     const esp = this.selectedEspecialidad();
     if (!esp) {
-      this.suggestedServiceId.set(null);
+      this.suggestedServices.set([]);
       return;
     }
 
     const searchTerm = this.getSearchKey(esp);
-    const service = this.billingFacade.servicesCatalog().find((s: CatalogItem) =>
+    const matches = this.billingFacade.servicesCatalog().filter((s: CatalogItem) =>
       s.isConsultation &&
       s.descripcion.toUpperCase().includes(searchTerm)
     );
 
-    if (service) {
-      this.suggestedServiceId.set(service.id);
-      // Opcional: Si el usuario quiere "todo automático", podríamos hacer auto-scroll o pre-selección
+    if (matches.length > 0) {
+      this.suggestedServices.set(matches);
     } else {
       // Fallback a General si no hay específico
-      const general = this.billingFacade.servicesCatalog().find((s: CatalogItem) => s.id === 'S001' || s.descripcion.includes('GENERAL'));
-      this.suggestedServiceId.set(general?.id || null);
+      const general = this.billingFacade.servicesCatalog().filter((s: CatalogItem) => 
+        s.id === 'S001' || s.descripcion.toUpperCase().includes('GENERAL')
+      );
+      this.suggestedServices.set(general);
     }
   });
 
@@ -357,6 +358,15 @@ export class FacturacionComponent {
   public lastBillResult = signal<any>(null);
   public isInsuranceFlow = signal(false);
   public isGeneratingPdf = signal(false);
+
+  // Metadatos para Documentos Detallados (V12.1)
+  public docMetadata = signal({
+    quienAutorizo: '',
+    doctorProcedimiento: '',
+    informacionAdicional: '',
+    diasLiquidar: 1,
+    cuotas: 1
+  });
 
   private _toastEffect = effect(() => {
     const action = this.actionMessage();
@@ -927,9 +937,11 @@ export class FacturacionComponent {
 
   private triggerSuggestion(s: CatalogItem) {
     if (s.sugerenciasIds && s.sugerenciasIds.length > 0) {
-      const firstSugId = s.sugerenciasIds[0];
-      this.suggestedServiceId.set(firstSugId);
-      this.actionMessage.set(`¡Servicio añadido! Tenemos una sugerencia relacionada para usted.`);
+      const matches = this.billingFacade.servicesCatalog().filter(item => 
+        s.sugerenciasIds!.includes(item.id)
+      );
+      this.suggestedServices.set(matches);
+      this.actionMessage.set(`¡Servicio añadido! Tenemos sugerencias relacionadas para usted.`);
 
       // Feedback visual: Scroll hasta la sugerencia resaltada
       setTimeout(() => {
@@ -1195,10 +1207,17 @@ export class FacturacionComponent {
       nombrePaciente: `${p.nombre} ${p.apellidos}`,
       edadPaciente: this.calcularEdad(p.fechaNacimiento || ''),
       cedulaPaciente: p.cedula,
-      montoTotal: this.totalCargadoUSD(), // Use cart total instead of possibly null server response
-      diasLiquidar: 30,
-      cuotas: 1,
-      fechaCompromiso: new Date().toISOString()
+      direccionPaciente: p.direccion,
+      telefonoPaciente: p.celular || p.telefono,
+      montoTotal: this.totalCargadoUSD(), // Use cart total
+      diasLiquidar: this.docMetadata().diasLiquidar,
+      cuotas: this.docMetadata().cuotas,
+      quienAutorizo: this.docMetadata().quienAutorizo,
+      doctorProcedimiento: this.docMetadata().doctorProcedimiento,
+      informacionAdicional: this.docMetadata().informacionAdicional,
+      esPagoCompletado: this.lastBillResult()?.totalPagado >= this.lastBillResult()?.montoTotal,
+      fechaCompromiso: new Date().toISOString(),
+      fechaVencimiento: new Date(Date.now() + (this.docMetadata().diasLiquidar * 24 * 60 * 60 * 1000)).toISOString()
     };
 
     this.facturacionService.generarCompromisoPdf(dto).subscribe({
@@ -1232,10 +1251,17 @@ export class FacturacionComponent {
         nombrePaciente: `${p.nombre} ${p.apellidos}`,
         edadPaciente: this.calcularEdad(p.fechaNacimiento || ''),
         cedulaPaciente: p.cedula,
+        direccionPaciente: p.direccion,
+        telefonoPaciente: p.celular || p.telefono,
         montoTotal: this.totalCargadoUSD(),
-        diasLiquidar: 30,
-        cuotas: 1,
-        fechaCompromiso: new Date().toISOString()
+        diasLiquidar: this.docMetadata().diasLiquidar,
+        cuotas: this.docMetadata().cuotas,
+        quienAutorizo: this.docMetadata().quienAutorizo,
+        doctorProcedimiento: this.docMetadata().doctorProcedimiento,
+        informacionAdicional: this.docMetadata().informacionAdicional,
+        esPagoCompletado: this.lastBillResult()?.totalPagado >= this.lastBillResult()?.montoTotal,
+        fechaCompromiso: new Date().toISOString(),
+        fechaVencimiento: new Date(Date.now() + (this.docMetadata().diasLiquidar * 24 * 60 * 60 * 1000)).toISOString()
       };
   
       this.facturacionService.generarGarantiaPdf(dto).subscribe({

@@ -21,7 +21,7 @@ export class ServiceCatalogComponent {
 
   // --- Inputs de Control UI ---
   @Input() isRxAssistant = false;
-  @Input() suggestedServiceId: string | null = null;
+  @Input() suggestedServices: CatalogItem[] = [];
   @Input() selectedSlot: string | null = null;
 
   // --- Outputs de Orquestación ---
@@ -53,6 +53,10 @@ export class ServiceCatalogComponent {
     const desc = s.descripcion.toUpperCase();
     const match = this.especialidades().find((e: string) => desc.includes(e.toUpperCase().substring(0, 4)));
     if (match) this.selectedEsp = match;
+  }
+
+  public isSuggested(serviceId: string): boolean {
+    return this.suggestedServices.some(s => s.id === serviceId);
   }
 
   public calculatePriceBs(item: CatalogItem): number {

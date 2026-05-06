@@ -69,6 +69,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Activo = s.Activo,
                     PrecioUsd = preciosConvenio.ContainsKey(s.Id) ? preciosConvenio[s.Id] : s.PrecioBase,
                     HonorarioBase = s.HonorarioBase,
+                    HonorariumCategory = s.HonorariumCategory,
                     EspecialidadId = s.EspecialidadId,
                     SugerenciasIds = s.Sugerencias.Select(sg => sg.ServicioSugeridoId.ToString()).ToList()
                 };

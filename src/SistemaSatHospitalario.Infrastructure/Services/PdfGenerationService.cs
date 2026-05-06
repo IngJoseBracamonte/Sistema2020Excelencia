@@ -172,52 +172,115 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                     page.Content().PaddingVertical(20).Column(column =>
                     {
                         column.Item().AlignCenter().PaddingBottom(20)
-                            .Text("COMPROMISO DE PAGO").FontSize(14).SemiBold().Underline();
+                            .Text(data.EsPagoCompletado ? "COMPROBANTE DE PAGO" : "COMPROMISO DE PAGO").FontSize(14).SemiBold().Underline();
+
+                        bool esMismoPaciente = data.NombreResponsable.Trim().Equals(data.NombrePaciente.Trim(), StringComparison.OrdinalIgnoreCase);
 
                         column.Item().Text(text =>
                         {
                             text.Span("Yo ");
                             text.Span($"{data.NombreResponsable}").SemiBold();
-                            text.Span($" ({data.RelacionResponsable}), titular de la cédula de identidad ");
+                            text.Span(esMismoPaciente ? " (Titular)" : $" ({data.RelacionResponsable})");
+                            text.Span(", titular de la cédula de identidad ");
                             text.Span($"{data.CedulaResponsable}").SemiBold();
-                            text.Span($", domiciliado en {data.DireccionResponsable}, teléfonos {data.TelefonoResponsable}, me comprometo a cancelar la deuda por concepto de ");
+                            text.Span($", domiciliado en {data.DireccionResponsable}, teléfonos {data.TelefonoResponsable}, ");
+                            
+                            if (data.EsPagoCompletado)
+                            {
+                                text.Span("hago constar que he cancelado en su totalidad la cuenta por concepto de ");
+                            }
+                            else
+                            {
+                                text.Span("me comprometo a cancelar la deuda por concepto de ");
+                            }
+                            
                             text.Span($"{data.Conceptos}").SemiBold();
-                            text.Span($" realizada a ");
-                            text.Span($"{data.NombrePaciente}").SemiBold();
-                            text.Span($", edad {data.EdadPaciente}, titular de la cédula de identidad ");
-                            text.Span($"{data.CedulaPaciente}").SemiBold();
+                            
+                            if (!esMismoPaciente)
+                            {
+                                text.Span(" realizada a ");
+                                text.Span($"{data.NombrePaciente}").SemiBold();
+                                text.Span($", titular de la cédula de identidad ");
+                                text.Span($"{data.CedulaPaciente}").SemiBold();
+                            }
+                            
                             text.Span(".");
                         });
 
-                        column.Item().PaddingTop(10).Text(text =>
+                        if (!string.IsNullOrEmpty(data.InformacionAdicional))
                         {
-                            text.Span("Reconozco que la deuda que tengo con el CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA C.A RIF a partir del ");
-                            text.Span($"{data.FechaCompromiso:dd/MM/yyyy}").SemiBold();
-                            text.Span($", asciende a la cantidad de ");
-                            text.Span($"${data.MontoTotal:N2}").SemiBold();
-                            text.Span($". La misma será liquidada en su totalidad en {data.DiasLiquidar} días continuos a partir de la fecha en que fue adquirido este compromiso dividido en {data.Cuotas} cuotas.");
-                        });
+                            column.Item().PaddingTop(10).Text(text =>
+                            {
+                                text.Span("Información adicional: ").SemiBold();
+                                text.Span(data.InformacionAdicional);
+                            });
+                        }
 
-                        column.Item().PaddingTop(10).Text(text =>
+                        if (data.EsPagoCompletado)
                         {
-                            text.Span($"Queda establecido así en este documento que el día {data.FechaVencimiento.Day} del mes de {data.FechaVencimiento.ToString("MMMM", new CultureInfo("es-ES"))} del presente año ({data.FechaVencimiento.Year}) quedará saldada la deuda hacia con ustedes.");
-                        });
-
-                        column.Item().PaddingTop(10).Text(text =>
+                            column.Item().PaddingTop(10).Text(text =>
+                            {
+                                text.Span("Se certifica que a la fecha ");
+                                text.Span($"{data.FechaCompromiso:dd/MM/yyyy}").SemiBold();
+                                text.Span(", la cantidad de ");
+                                text.Span($"${data.MontoTotal:N2}").SemiBold();
+                                text.Span(" ha sido recibida conforme por los servicios prestados, quedando la cuenta solvente ante esta institución.");
+                            });
+                        }
+                        else
                         {
-                            text.Span("En caso de no cumplir con el pago en la fecha antes mencionada me haré responsable de las medidas legales que considere conveniente. No obstante me comprometo a cumplir al pie de la letra con lo establecido para no llevar esto a consecuencias en las que me haga acreedor de una sanción.");
-                        });
+                            column.Item().PaddingTop(10).Text(text =>
+                            {
+                                text.Span("Reconozco que la deuda que tengo con el CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA C.A a partir del ");
+                                text.Span($"{data.FechaCompromiso:dd/MM/yyyy}").SemiBold();
+                                text.Span(", asciende a la cantidad de ");
+                                text.Span($"${data.MontoTotal:N2}").SemiBold();
+                                text.Span($". La misma será liquidada en su totalidad en {data.DiasLiquidar} días continuos a partir de la fecha en que fue adquirido este compromiso dividido en {data.Cuotas} cuotas.");
+                            });
 
-                        column.Item().PaddingTop(20).Text("Sin otro particular, quedo a la orden para cualquier asunto");
+                            column.Item().PaddingTop(10).Text(text =>
+                            {
+                                text.Span($"Queda establecido así en este documento que el día {data.FechaVencimiento.Day} del mes de {data.FechaVencimiento.ToString("MMMM", new CultureInfo("es-ES"))} del presente año ({data.FechaVencimiento.Year}) quedará saldada la deuda hacia con ustedes.");
+                            });
+
+                            column.Item().PaddingTop(10).Text(text =>
+                            {
+                                text.Span("En caso de no cumplir con el pago en la fecha antes mencionada me haré responsable de las medidas legales que considere conveniente.");
+                            });
+                        }
+
+                        // Campos de Autorización y Doctor
+                        if (!string.IsNullOrEmpty(data.QuienAutorizo) || !string.IsNullOrEmpty(data.DoctorProcedimiento))
+                        {
+                            column.Item().PaddingTop(15).BorderTop(0.5f).BorderColor(Colors.Grey.Lighten2).PaddingTop(5).Row(row =>
+                            {
+                                if (!string.IsNullOrEmpty(data.QuienAutorizo))
+                                {
+                                    row.RelativeItem().Text(t => {
+                                        t.Span("Autorizado por: ").FontSize(9).SemiBold();
+                                        t.Span(data.QuienAutorizo).FontSize(9);
+                                    });
+                                }
+                                if (!string.IsNullOrEmpty(data.DoctorProcedimiento))
+                                {
+                                    row.RelativeItem().AlignRight().Text(t => {
+                                        t.Span("Doctor(a): ").FontSize(9).SemiBold();
+                                        t.Span(data.DoctorProcedimiento).FontSize(9);
+                                    });
+                                }
+                            });
+                        }
+
+                        column.Item().PaddingTop(20).Text("Sin otro particular, firmo conforme:");
 
                         // Firmas
-                        column.Item().PaddingTop(60).Row(row =>
+                        column.Item().PaddingTop(50).Row(row =>
                         {
                             row.RelativeItem().AlignCenter().Column(c =>
                             {
                                 c.Item().LineHorizontal(1);
-                                c.Item().PaddingTop(5).Text("DEUDOR").SemiBold();
-                                c.Item().Text($"Nombre y Apellido: {data.NombreResponsable}");
+                                c.Item().PaddingTop(5).Text(data.EsPagoCompletado ? "CLIENTE / PAGADOR" : "DEUDOR").SemiBold();
+                                c.Item().Text($"{data.NombreResponsable}");
                                 c.Item().Text($"C.I: {data.CedulaResponsable}");
                             });
 
@@ -226,9 +289,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             row.RelativeItem().AlignCenter().Column(c =>
                             {
                                 c.Item().LineHorizontal(1);
-                                c.Item().PaddingTop(5).Text("ACREEDOR DE LA DEUDA").SemiBold();
-                                c.Item().Text("Nombre y Apellido: ________________");
-                                c.Item().Text("C.I: ________________");
+                                c.Item().PaddingTop(5).Text("POR LA CLINICA").SemiBold();
+                                c.Item().Text("Firma Autorizada y Sello");
                             });
                         });
                     });

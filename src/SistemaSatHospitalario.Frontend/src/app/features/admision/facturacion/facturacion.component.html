@@ -113,7 +113,7 @@
                 <!-- Service Catalog (SOLID SRP Component V7.0) -->
                 <app-service-catalog
                     [isRxAssistant]="isRxAssistant()"
-                    [suggestedServiceId]="suggestedServiceId()"
+                    [suggestedServices]="suggestedServices()"
                     [selectedSlot]="selectedSlot()"
                     (next)="nextStep()"
                     (agendar)="abrirModalHorarios()"
@@ -582,28 +582,56 @@
         </div>
 
         <h2 class="text-4xl font-black text-white uppercase tracking-tighter mb-2">¡PROCESO COMPLETADO!</h2>
-        <p class="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-12">La cuenta ha sido cerrada y sincronizada exitosamente</p>
+        <p class="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">La cuenta ha sido cerrada y sincronizada exitosamente</p>
+
+        <!-- Formulario de Metadatos para Documentos (Nuevo V12.1) -->
+        <div class="bg-white/5 border border-white/10 rounded-[2rem] p-6 mb-8 space-y-4 animate-fade-in-up">
+            <div class="flex items-center space-x-3 mb-2">
+                <lucide-icon [name]="icons.Edit3" class="w-4 h-4 text-primary"></lucide-icon>
+                <h4 class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Información para Documentos (Opcional)</h4>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" [(ngModel)]="docMetadata().quienAutorizo" placeholder="¿QUIÉN AUTORIZÓ?" 
+                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+                <input type="text" [(ngModel)]="docMetadata().doctorProcedimiento" placeholder="DOCTOR REALIZÓ" 
+                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+            </div>
+            <textarea [(ngModel)]="docMetadata().informacionAdicional" placeholder="INFORMACIÓN ESPECÍFICA / COMENTARIOS..." 
+                class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary h-20 uppercase"></textarea>
+            
+            <div *ngIf="lastBillResult()?.totalPagado < lastBillResult()?.montoTotal" class="grid grid-cols-2 gap-4 pt-2 border-t border-white/5">
+                <div class="space-y-1">
+                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Días para Liquidar</label>
+                    <input type="number" [(ngModel)]="docMetadata().diasLiquidar" class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Número de Cuotas</label>
+                    <input type="number" [(ngModel)]="docMetadata().cuotas" class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary">
+                </div>
+            </div>
+        </div>
 
         <!-- Acciones Post-Facturación -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-            <!-- Sección Seguros -->
-            <ng-container *ngIf="isInsuranceFlow()">
-                <button (click)="imprimirCompromiso()" [disabled]="isGeneratingPdf()"
-                    class="group flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-[2.5rem] hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all active:scale-95 disabled:opacity-50">
-                    <div class="w-12 h-12 bg-indigo-500/20 text-indigo-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <lucide-icon [name]="icons.ShieldAlert" class="w-6 h-6"></lucide-icon>
-                    </div>
-                    <span class="text-[10px] font-black text-white uppercase tracking-widest">Imprimir Compromiso</span>
-                </button>
+            <!-- Acción Principal: Compromiso / Comprobante (Para todos los flujos) -->
+            <button (click)="imprimirCompromiso()" [disabled]="isGeneratingPdf()"
+                class="group flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-[2.5rem] hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all active:scale-95 disabled:opacity-50">
+                <div class="w-12 h-12 bg-indigo-500/20 text-indigo-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <lucide-icon [name]="icons.ShieldAlert" class="w-6 h-6"></lucide-icon>
+                </div>
+                <span class="text-[10px] font-black text-white uppercase tracking-widest">
+                    {{ lastBillResult()?.totalPagado >= lastBillResult()?.montoTotal ? 'Imprimir Comprobante' : 'Imprimir Compromiso' }}
+                </span>
+            </button>
 
-                <button (click)="imprimirGarantia()" [disabled]="isGeneratingPdf()"
-                    class="group flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-[2.5rem] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all active:scale-95 disabled:opacity-50">
-                    <div class="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
-                    </div>
-                    <span class="text-[10px] font-black text-white uppercase tracking-widest">Imprimir Garantía</span>
-                </button>
-            </ng-container>
+            <!-- Acción Secundaria: Garantía (SOLO PARA PARTICULAR según requerimiento) -->
+            <button *ngIf="tipoIngreso() === 'Particular'" (click)="imprimirGarantia()" [disabled]="isGeneratingPdf()"
+                class="group flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-[2.5rem] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all active:scale-95 disabled:opacity-50">
+                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+                </div>
+                <span class="text-[10px] font-black text-white uppercase tracking-widest">Imprimir Garantía</span>
+            </button>
 
             <!-- Acción General -->
             <button (click)="finalizarFlujoFacturacion()" class="md:col-span-2 w-full py-6 bg-primary hover:bg-rose-600 text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs transition-all active:scale-95 shadow-2xl shadow-rose-500/20">

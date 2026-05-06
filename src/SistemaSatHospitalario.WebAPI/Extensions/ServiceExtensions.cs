@@ -120,7 +120,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
                 
                 // Limpiar redes conocidas para confiar en los encabezados del proxy de la nube (Render/Azure)
-                options.KnownNetworks.Clear();
+                options.KnownIPNetworks.Clear();
                 options.KnownProxies.Clear();
             });
 

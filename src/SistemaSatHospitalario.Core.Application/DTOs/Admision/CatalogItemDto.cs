@@ -15,6 +15,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public int CategoryId { get; set; } // Consultation=1, Lab=2, etc. (V5.2)
         public bool EsLegacy { get; set; }
         public bool Activo { get; set; }
+        public string? HonorariumCategory { get; set; }
         public Guid? EspecialidadId { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
 

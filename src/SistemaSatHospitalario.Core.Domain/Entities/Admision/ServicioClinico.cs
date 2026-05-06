@@ -12,6 +12,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string TipoServicio { get; set; } // Legacy compatibility
         public string? LegacyMappingId { get; set; }
         public ServiceCategory Category { get; set; } 
+        public string? HonorariumCategory { get; set; } // Nuevo: Clasificación explícita para honorarios
         public bool Activo { get; set; }
         public Guid? EspecialidadId { get; set; }
         public virtual Especialidad? Especialidad { get; set; }

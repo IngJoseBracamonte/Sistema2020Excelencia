@@ -18,6 +18,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Tipo { get; set; } // LABORATORIO, RX, CONSULTA, etc.
         public bool Activo { get; set; } = true;
         public decimal HonorarioBase { get; set; }
+        public string? HonorariumCategory { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
     }
 
@@ -35,7 +36,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var item = new ServicioClinico(request.Codigo, request.Descripcion, request.PrecioUsd, request.Tipo)
             {
                 Activo = request.Activo,
-                HonorarioBase = request.HonorarioBase
+                HonorarioBase = request.HonorarioBase,
+                HonorariumCategory = request.HonorariumCategory
             };
 
             await _context.ServiciosClinicos.AddAsync(item, cancellationToken);

@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         /// Obtiene el historial de cierres para administración (Totales y por Usuario).
         /// </summary>
         [HttpGet("Historial")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<IActionResult> ObtenerHistorial([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta, [FromQuery] string? usuarioId)
         {
             var query = new GetCajaSummariesQuery 
@@ -86,7 +86,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("Resumen")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<IActionResult> ObtenerResumen()
         {
             var resumen = await _mediator.Send(new ObtenerResumenCajasQuery());

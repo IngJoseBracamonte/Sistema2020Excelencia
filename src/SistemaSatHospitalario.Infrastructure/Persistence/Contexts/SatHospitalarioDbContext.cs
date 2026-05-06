@@ -248,6 +248,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(s => s.EspecialidadId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(s => s.HonorariumCategory).HasMaxLength(50);
             });
 
             builder.Entity<HorarioAtencionMedico>(entity =>

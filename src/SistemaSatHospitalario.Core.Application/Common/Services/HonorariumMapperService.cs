@@ -13,7 +13,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 {
     public interface IHonorariumMapperService
     {
-        Task<string> MapToCategoryAsync(string tipoServicio);
+        Task<string> MapToCategoryAsync(string tipoServicio, Guid? serviceId = null);
         void InvalidateCache();
     }
 
@@ -30,8 +30,24 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             _cache = cache;
         }
 
-        public async Task<string> MapToCategoryAsync(string tipoServicio)
+        public async Task<string> MapToCategoryAsync(string tipoServicio, Guid? serviceId = null)
         {
+            // 1. Prioridad: Clasificación explícita en el catálogo de servicios (Pro Plan)
+            if (serviceId.HasValue && serviceId != Guid.Empty)
+            {
+                var servicio = await _context.ServiciosClinicos
+                    .AsNoTracking()
+                    .Where(s => s.Id == serviceId)
+                    .Select(s => s.HonorariumCategory)
+                    .FirstOrDefaultAsync();
+
+                if (!string.IsNullOrWhiteSpace(servicio))
+                {
+                    return servicio;
+                }
+            }
+
+            // 2. Fallback: Reglas dinámicas por TipoServicio (Prefixes/Rules)
             if (string.IsNullOrWhiteSpace(tipoServicio)) return HonorarioConstants.CategoriaOtros;
 
             var rules = await GetRulesAsync();

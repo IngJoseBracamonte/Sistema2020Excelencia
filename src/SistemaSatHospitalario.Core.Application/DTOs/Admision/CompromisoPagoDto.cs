@@ -16,12 +16,20 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string NombrePaciente { get; set; }
         public int EdadPaciente { get; set; }
         public string CedulaPaciente { get; set; }
+        public string? DireccionPaciente { get; set; }
+        public string? TelefonoPaciente { get; set; }
         
         public decimal MontoTotal { get; set; }
         public int DiasLiquidar { get; set; }
         public int Cuotas { get; set; }
         public decimal MontoGarantia { get; set; }
         public string? DescripcionGarantia { get; set; }
+        
+        public string? QuienAutorizo { get; set; }
+        public string? DoctorProcedimiento { get; set; }
+        public string? InformacionAdicional { get; set; }
+        public bool EsPagoCompletado { get; set; }
+
         public DateTime FechaCompromiso { get; set; }
         public DateTime FechaVencimiento { get; set; }
     }

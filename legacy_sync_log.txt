@@ -1276,3 +1276,28 @@
 [2026-05-04 16:50:58] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 212 perfiles de la base de datos.
 [2026-05-04 16:55:42] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
 [2026-05-04 17:10:42] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-04 17:17:03] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-04 17:17:03] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 12:02:25] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-05 12:02:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 12:04:07] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 212 perfiles de la base de datos.
+[2026-05-05 12:17:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 12:32:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 12:47:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 13:02:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 13:17:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 13:32:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 13:47:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 14:02:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 14:17:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 14:32:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 14:47:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 15:02:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 15:17:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 15:32:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 15:47:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 16:02:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 16:17:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 16:32:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 16:47:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-05 17:02:25] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
