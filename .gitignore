@@ -379,3 +379,6 @@ _override.tf.json
 instalacion/
 deploy/docker/backups/
 .env.template
+.env
+.env.*
+!.env.template
