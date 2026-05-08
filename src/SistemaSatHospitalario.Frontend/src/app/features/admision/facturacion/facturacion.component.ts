@@ -238,7 +238,6 @@ export class FacturacionComponent {
   private _specialtyEffect = effect(() => {
     const esp = this.selectedEspecialidad();
     if (!esp) {
-      this.suggestedServices.set([]);
       return;
     }
 
@@ -748,7 +747,7 @@ export class FacturacionComponent {
         next: () => {
           this.selectedSlot.set(this.getHoraRango(slot.hora));
           // Guardar la fecha y hora completa de la reserva
-          this.horaCita.set(slot.hora);
+          this.horaCita.set(horaNormalizada);
           this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
           this.showScheduleModal.set(false);
           this.isLoading.set(false);
