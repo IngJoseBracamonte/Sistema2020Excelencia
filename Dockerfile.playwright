@@ -1,0 +1,19 @@
+FROM mcr.microsoft.com/playwright:v1.50.0-focal
+
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY src/SistemaSatHospitalario.Frontend/package*.json ./
+RUN npm install
+
+# Copy the rest of the frontend files (where tests are usually located)
+COPY src/SistemaSatHospitalario.Frontend/ ./
+
+# Install browsers
+RUN npx playwright install --with-deps
+
+# Copy the reporting script
+COPY playwright-runner.js ./
+
+# Run the tests every 15 minutes
+CMD ["node", "playwright-runner.js"]

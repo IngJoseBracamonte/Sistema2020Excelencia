@@ -30,7 +30,9 @@ import {
   Mail,
   UserPlus,
   Eye,
-  EyeOff
+  EyeOff,
+  Terminal,
+  Play
 } from 'lucide-angular';
 import { SettingsService, SecurityConfig } from '../../../core/services/settings.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
@@ -53,7 +55,7 @@ export class SystemSettingsComponent implements OnInit {
   public permissionService = inject(PermissionService);
   private route = inject(ActivatedRoute);
 
-  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' = 'general';
+  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'instalacion' = 'general';
   public isLoading = signal<boolean>(false);
 
   // --- GENERAL TAB ---
@@ -118,7 +120,9 @@ export class SystemSettingsComponent implements OnInit {
     Mail: Mail,
     UserPlus: UserPlus,
     Eye: Eye,
-    EyeOff: EyeOff
+    EyeOff: EyeOff,
+    Terminal: Terminal,
+    Play: Play
   };
 
   ngOnInit() {

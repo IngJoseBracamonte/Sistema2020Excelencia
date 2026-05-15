@@ -11,9 +11,9 @@ using Microsoft.IdentityModel.Tokens;
 using SistemaSatHospitalario.Core.Domain.DTOs;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Infrastructure.Identity.Models;
-
 using System.Linq;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using Serilog;
 
 namespace SistemaSatHospitalario.Infrastructure.Identity.Services
 {
@@ -38,45 +38,70 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
             try 
             {
                 var user = await _userManager.FindByNameAsync(username);
-                if (user == null || !user.EsActivo) return null;
-
-                var result = await _userManager.CheckPasswordAsync(user, password);
-                
-                // Pachón Pro V14.0: Emergency Bypass for Approved Resets
-                // If the user forgot their password but an admin already approved the reset,
-                // we allow them to "login" only to be forced into the Change Password screen.
-                if (!result && !user.RequirePasswordReset) return null;
-                
-                // If password check failed but RequirePasswordReset is true, we still let them through
-                // but they won't have a fully functional session until they complete the reset.
-
-                var roles = await _userManager.GetRolesAsync(user);
-                
-                // --- FETCH PERMISSIONS (Role Claims + User Claims) ---
-                var allPermissions = new List<string>();
-
-                // 1. Permissions from ROLES
-                foreach (var roleName in roles)
+                if (user == null)
                 {
-                    var role = await _roleManager.FindByNameAsync(roleName);
-                    if (role != null)
-                    {
-                        var roleClaims = await _roleManager.GetClaimsAsync(role);
-                        var permissions = roleClaims
-                            .Where(c => c.Type == PermissionConstants.Type)
-                            .Select(c => c.Value);
-                        allPermissions.AddRange(permissions);
-                    }
+                    Log.Warning("Intento de login fallido: Usuario no encontrado. Username: {Username}", username);
+                    return null;
                 }
 
-                // 2. Permissions directly on the USER (User Claims)
-                var userClaimsDirect = await _userManager.GetClaimsAsync(user);
-                var directPermissions = userClaimsDirect
-                    .Where(c => c.Type == PermissionConstants.Type)
-                    .Select(c => c.Value);
-                allPermissions.AddRange(directPermissions);
+                if (!user.EsActivo)
+                {
+                    Log.Warning("Intento de login fallido: Usuario desactivado. Username: {Username}", username);
+                    return null;
+                }
 
-                allPermissions = allPermissions.Distinct().ToList();
+                var result = await _userManager.CheckPasswordAsync(user, password);
+                bool isBypassMode = !result && user.RequirePasswordReset;
+
+                if (!result && !isBypassMode)
+                {
+                    Log.Warning("Intento de login fallido: Contraseña incorrecta. Username: {Username}", username);
+                    return null;
+                }
+
+                if (isBypassMode)
+                {
+                    Log.Information("Login mediante Bypass de Emergencia (Password Reset requerido). Username: {Username}", username);
+                }
+                else
+                {
+                    Log.Information("Login exitoso. Username: {Username}", username);
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var allPermissions = new List<string>();
+
+                // Si es modo bypass, NO cargamos permisos para evitar escalada de privilegios
+                if (!isBypassMode)
+                {
+                    // 1. Permissions from ROLES
+                    foreach (var roleName in roles)
+                    {
+                        var role = await _roleManager.FindByNameAsync(roleName);
+                        if (role != null)
+                        {
+                            var roleClaims = await _roleManager.GetClaimsAsync(role);
+                            var permissions = roleClaims
+                                .Where(c => c.Type == PermissionConstants.Type)
+                                .Select(c => c.Value);
+                            allPermissions.AddRange(permissions);
+                        }
+                    }
+
+                    // 2. Permissions directly on the USER (User Claims)
+                    var userClaimsDirect = await _userManager.GetClaimsAsync(user);
+                    var directPermissions = userClaimsDirect
+                        .Where(c => c.Type == PermissionConstants.Type)
+                        .Select(c => c.Value);
+                    allPermissions.AddRange(directPermissions);
+
+                    allPermissions = allPermissions.Distinct().ToList();
+                }
+                else
+                {
+                    // En modo bypass, solo permitimos una "permisión" mínima si fuera necesaria para la UI
+                    allPermissions.Add("Identity.Password.Reset");
+                }
                 
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var keyStr = _configuration["JwtConfig:Secret"];
@@ -84,23 +109,27 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     throw new InvalidOperationException("Revise JwtConfig:Secret en appsettings. Debe tener al menos 32 caracteres.");
 
                 var key = Encoding.ASCII.GetBytes(keyStr);
-                var expiration = DateTime.UtcNow.AddHours(8); 
+                var expiration = isBypassMode ? DateTime.UtcNow.AddMinutes(15) : DateTime.UtcNow.AddHours(8); 
 
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(ClaimTypes.Name, user.UserName ?? "unknown")
+                    new Claim(ClaimTypes.Name, user.UserName ?? "unknown"),
+                    new Claim("IsRestrictedSession", isBypassMode.ToString().ToLower())
                 };
                 
-                foreach (var role in roles)
+                if (!isBypassMode)
                 {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
-                }
+                    foreach (var role in roles)
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, role));
+                    }
 
-                foreach (var permission in allPermissions)
-                {
-                    claims.Add(new Claim(PermissionConstants.Type, permission));
+                    foreach (var permission in allPermissions)
+                    {
+                        claims.Add(new Claim(PermissionConstants.Type, permission));
+                    }
                 }
 
                 var claimsIdentity = new ClaimsIdentity(claims, "Bearer", ClaimTypes.Name, ClaimTypes.Role);
@@ -122,13 +151,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     Expiration = expiration,
                     UserId = user.Id,
                     Username = user.UserName,
-                    Role = roles.Count > 0 ? roles[0] : "AsignarRol",
+                    Role = isBypassMode ? "Restringido" : (roles.Count > 0 ? roles[0] : "AsignarRol"),
                     Permissions = allPermissions,
                     RequirePasswordReset = user.RequirePasswordReset
                 };
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "ERROR CRÍTICO durante la autenticación del usuario {Username}", username);
                 throw new InvalidOperationException($"Error durante la autenticación: {ex.Message}.", ex);
             }
         }

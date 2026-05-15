@@ -41,6 +41,12 @@
                 class="px-10 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3">
                 <lucide-icon [name]="icons.Clock" class="w-4 h-4"></lucide-icon> Monitor
             </button>
+
+            <button (click)="activeTab = 'instalacion'; onTabChange()" 
+                [ngClass]="activeTab === 'instalacion' ? 'bg-amber-500 text-white shadow-xl shadow-amber-500/40 scale-105' : 'text-slate-500 hover:text-white hover:bg-white/5'"
+                class="px-10 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3">
+                <lucide-icon [name]="icons.Terminal" class="w-4 h-4"></lucide-icon> Instalación
+            </button>
         </div>
 
         <!-- System Status Indicator (Premium Touch) -->
@@ -378,6 +384,65 @@
                         <lucide-icon [name]="icons.Calendar" class="w-12 h-12 mx-auto mb-4 text-slate-500"></lucide-icon>
                         <p class="text-xs font-black text-slate-500 uppercase tracking-widest">No hay citas activas en el monitor</p>
                     </div>
+            </div>
+
+            <!-- TAB: INSTALACIÓN DE PRUEBAS (Playwright) -->
+            <div *ngIf="activeTab === 'instalacion'" class="space-y-10 animate-fade-in">
+                <div class="flex justify-between items-end border-b border-white/5 pb-6">
+                    <div>
+                        <h2 class="text-xl font-black text-white uppercase tracking-tighter">Instalación & Testing</h2>
+                        <p class="text-[8px] text-amber-500 font-bold uppercase tracking-widest mt-1">Infraestructura de Pruebas Playwright (E2E)</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Instruction Card -->
+                    <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 space-y-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                                <lucide-icon [name]="icons.Play" class="w-6 h-6"></lucide-icon>
+                            </div>
+                            <h3 class="text-sm font-black text-white uppercase tracking-widest">Ejecución de Pruebas</h3>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase leading-relaxed">
+                            Para validar la integridad de la interfaz y los flujos críticos de facturación en este servidor local, ejecute:
+                        </p>
+                        <div class="bg-black/60 p-6 rounded-2xl border border-white/10 font-mono text-amber-400 text-xs flex justify-between items-center group relative">
+                            <code>npx playwright test</code>
+                            <button class="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all text-white/50 hover:text-white" (click)="addLog('Comando copiado', 'info')">
+                                <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
+                        <p class="text-[8px] text-slate-600 font-black uppercase tracking-[0.2em] italic">Nota: Asegúrese de estar en la carpeta raíz del frontend.</p>
+                    </div>
+
+                    <!-- Requirement Card -->
+                    <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 bg-indigo-500/10 text-indigo-500 rounded-2xl flex items-center justify-center border border-indigo-500/20">
+                                <lucide-icon [name]="icons.Database" class="w-6 h-6"></lucide-icon>
+                            </div>
+                            <h3 class="text-sm font-black text-white uppercase tracking-widest">Requisitos Locales</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-4 p-4 bg-black/20 rounded-2xl border border-white/5">
+                                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5"></div>
+                                <div>
+                                    <p class="text-[9px] font-black text-white uppercase tracking-widest">Node.js v18+</p>
+                                    <p class="text-[8px] text-slate-500 uppercase font-bold mt-1">Motor de ejecución javascript</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4 p-4 bg-black/20 rounded-2xl border border-white/5">
+                                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5"></div>
+                                <div>
+                                    <p class="text-[9px] font-black text-white uppercase tracking-widest">Playwright Browsers</p>
+                                    <p class="text-[8px] text-slate-500 uppercase font-bold mt-1">npx playwright install</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

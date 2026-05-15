@@ -62,7 +62,7 @@ services:
       - JwtConfig__Audience=${JWT_AUDIENCE:-SistemaSatHospitalario_PWA}
 
       # --- CORS ---
-      - AllowedOrigins=http://localhost,http://127.0.0.1,http://192.168.10.9,http://JOSEBRACAMONTE
+      - AllowedOrigins=http://localhost,http://127.0.0.1,http://192.168.10.9,http://JOSEBRACAMONTE,http://SERVIDOREX,http://servidorex
 
       # --- Deployment ---
       - DeploymentSettings__Mode=Docker
@@ -127,9 +127,26 @@ services:
     networks:
       - sat-network
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# ðŸŒ Red Docker
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  playwright-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    container_name: sat-playwright-bot
+    restart: unless-stopped
+    environment:
+      - API_URL=http://api:8080/api/Tickets/report
+      - BASE_URL=http://frontend:80
+    depends_on:
+      api:
+        condition: service_started
+      frontend:
+        condition: service_started
+    networks:
+      - sat-network
+
+# --------------------------------------------------------
+# 🌐 Red Docker
+# --------------------------------------------------------
 networks:
   sat-network:
     driver: bridge

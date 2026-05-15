@@ -11,12 +11,21 @@ using Scalar.AspNetCore;
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // [PHASE-1] Serilog Configuration
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
+if (!Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.Equals("Testing", StringComparison.OrdinalIgnoreCase) ?? true)
+{
+    Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+        .CreateLogger();
+}
+else
+{
+    Log.Logger = new LoggerConfiguration()
+        .WriteTo.Console()
+        .CreateLogger();
+}
 
 try 
 {
@@ -81,7 +90,10 @@ try
     app.UseRateLimiter();
 
     // Database Initialization (Robust Loop)
-    await app.UseDatabaseInitializationAsync();
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        await app.UseDatabaseInitializationAsync();
+    }
 
     app.UseRouting();
     app.UseCors("AngularPolicy");
@@ -106,7 +118,9 @@ try
 }
 catch (Exception ex)
 {
+    File.WriteAllText("startup_error.txt", ex.ToString());
     Log.Fatal(ex, "El sistema falló durante el arranque.");
+    throw;
 }
 finally
 {
@@ -118,3 +132,5 @@ public class LogPayload {
     public string Message { get; set; }
     public object Context { get; set; }
 }
+
+public partial class Program { }

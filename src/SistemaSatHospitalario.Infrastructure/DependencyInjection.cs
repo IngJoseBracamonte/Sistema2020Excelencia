@@ -26,10 +26,14 @@ namespace SistemaSatHospitalario.Infrastructure
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             var dbProviderName = configuration.GetValue<string>("DatabaseProvider") ?? "MySql";
+            Console.WriteLine($"[DEBUG] DatabaseProvider from config: '{dbProviderName}'");
             
-            IDatabaseProvider dbProvider = dbProviderName.Equals("MySql", StringComparison.OrdinalIgnoreCase)
-                ? new MySqlDatabaseProvider()
-                : new SqlServerDatabaseProvider();
+            IDatabaseProvider dbProvider = dbProviderName.ToLower() switch
+            {
+                "mysql" => new MySqlDatabaseProvider(),
+                "sqlite" => new SqliteDatabaseProvider(),
+                _ => new SqlServerDatabaseProvider()
+            };
 
             // Configure Contexts using the selected strategy (SOLID: Strategy Pattern)
             dbProvider.ConfigureIdentityContext(services, configuration);
