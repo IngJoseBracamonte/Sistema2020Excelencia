@@ -115,7 +115,7 @@ else
         .WithHttpEndpoint(port: 8080, name: "endpoint-api")
         .WithExternalHttpEndpoints();
 
-    var frontendNpm = builder.AddNpmApp("frontend", "../SistemaSatHospitalario.Frontend", "start")
+    var frontendNpm = builder.AddNpmApp("frontend", "../SistemaSatHospitalario.Frontend", "start:aspire")
         .WithHttpEndpoint(port: 4200, env: "PORT", name: "http")
         .WithExternalHttpEndpoints()
         .WithReference(apiProject.GetEndpoint("endpoint-api"))
