@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Info,
   BarChart3,
-  Eye
+  Eye,
+  Calendar
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR } from '../../../core/services/receivables.service';
 
@@ -35,7 +36,8 @@ export class AuditingComponent implements OnInit {
     AlertCircle,
     Info,
     Reportes: BarChart3,
-    Eye
+    Eye,
+    Calendar
   };
 
   private arService = inject(ReceivablesService);

@@ -31,22 +31,22 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             var start = request.StartDate.Date;
             var end = request.EndDate.Date.AddDays(1).AddTicks(-1);
 
-            // 1. Fetch all relevant details in the date range
-            var rawData = await (from detail in _context.DetallesServicioCuenta
-                                 join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
-                                 join cita in _context.CitasMedicas on cs.Id equals cita.CuentaServicioId into citaJoin
-                                 from cita in citaJoin.DefaultIfEmpty()
-                                 where cs.Estado == EstadoConstants.Facturada
-                                    && cs.FechaCierre >= start 
-                                    && cs.FechaCierre <= end
-                                    && detail.Honorario > 0
-                                 select new
-                                 {
-                                     MedicoId = detail.MedicoResponsableId ?? (cita != null ? cita.MedicoId : (Guid?)null),
-                                     detail.Honorario,
-                                     detail.Cantidad,
-                                     Categoria = detail.CategoriaHonorario ?? (cita != null ? HonorarioConstants.CategoriaConsulta : HonorarioConstants.CategoriaOtros)
-                                 }).ToListAsync(cancellationToken);
+             // 1. Fetch all relevant details in the date range
+             var rawData = await (from detail in _context.DetallesServicioCuenta
+                                  join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
+                                  join cita in _context.CitasMedicas on cs.Id equals cita.CuentaServicioId into citaJoin
+                                  from cita in citaJoin.DefaultIfEmpty()
+                                  where (cs.Estado == EstadoConstants.Facturada || (cs.Estado == EstadoConstants.Abierta && cita != null && cita.Estado == EstadoConstants.Atendida))
+                                     && (cs.FechaCierre ?? cs.FechaCarga) >= start 
+                                     && (cs.FechaCierre ?? cs.FechaCarga) <= end
+                                     && detail.Honorario > 0
+                                  select new
+                                  {
+                                      MedicoId = detail.MedicoResponsableId ?? (cita != null ? cita.MedicoId : (Guid?)null),
+                                      detail.Honorario,
+                                      detail.Cantidad,
+                                      Categoria = detail.CategoriaHonorario ?? (cita != null ? HonorarioConstants.CategoriaConsulta : HonorarioConstants.CategoriaOtros)
+                                  }).ToListAsync(cancellationToken);
 
             // 2. Filter out items without a responsible physician
             var filteredData = rawData.Where(x => x.MedicoId.HasValue).ToList();

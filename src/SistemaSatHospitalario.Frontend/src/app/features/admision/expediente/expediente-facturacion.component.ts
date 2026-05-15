@@ -13,7 +13,8 @@ import {
   Info,
   DollarSign,
   User,
-  ShieldCheck
+  ShieldCheck,
+  Calendar
 } from 'lucide-angular';
 import { ExpedienteService, ExpedienteFacturacionRow } from '../../../core/services/expediente.service';
 
@@ -34,7 +35,8 @@ export class ExpedienteFacturacionComponent implements OnInit {
     Info,
     DollarSign,
     User,
-    ShieldCheck
+    ShieldCheck,
+    Calendar
   };
 
   private expedienteService = inject(ExpedienteService);

@@ -1331,3 +1331,70 @@
 [2026-05-08 01:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
 [2026-05-08 01:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
 [2026-05-08 02:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 02:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 02:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 02:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 03:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 03:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 03:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 03:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 04:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 04:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 04:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 04:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 05:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 05:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 05:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 05:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 06:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 06:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 06:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 06:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 07:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 07:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 07:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 07:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 08:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 08:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 08:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 08:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 09:09:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 09:24:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 09:39:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-08 09:54:39] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 00:21:38] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-15 00:21:38] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 00:23:24] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 212 perfiles de la base de datos.
+[2026-05-15 00:24:22] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: bc2bbc8e-802b-4201-83cb-9b0b98b07ebc
+[2026-05-15 00:24:22] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: bc2bbc8e-802b-4201-83cb-9b0b98b07ebc
+[2026-05-15 00:29:23] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 2e952c86-1417-4cee-a38a-7b094f3d993d
+[2026-05-15 00:29:23] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 2e952c86-1417-4cee-a38a-7b094f3d993d
+[2026-05-15 00:36:38] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 00:51:38] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 11:51:11] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-15 11:51:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 11:58:26] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 212 perfiles de la base de datos.
+[2026-05-15 12:01:39] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 76b689f8-063f-4141-871f-997ac1493c56
+[2026-05-15 12:01:39] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 76b689f8-063f-4141-871f-997ac1493c56
+[2026-05-15 12:06:05] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: a414dd84-0cc9-4064-a46f-de1ee2c36385
+[2026-05-15 12:06:05] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: a414dd84-0cc9-4064-a46f-de1ee2c36385
+[2026-05-15 12:06:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 12:21:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 12:36:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 12:51:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 13:06:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 13:21:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 13:34:10] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: aa017a8d-58be-435d-95c5-fdd5109f9832
+[2026-05-15 13:34:10] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: aa017a8d-58be-435d-95c5-fdd5109f9832
+[2026-05-15 13:35:08] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 473502e7-9c02-46e8-beb6-98c7902cd13f
+[2026-05-15 13:35:08] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 473502e7-9c02-46e8-beb6-98c7902cd13f
+[2026-05-15 13:36:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 13:38:28] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: fe75be67-1173-4a3a-94bd-88df6405e54e
+[2026-05-15 13:38:28] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: fe75be67-1173-4a3a-94bd-88df6405e54e
+[2026-05-15 13:40:35] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 99045157-838e-4ba2-ae7b-60de40df91b9
+[2026-05-15 13:40:35] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 99045157-838e-4ba2-ae7b-60de40df91b9
+[2026-05-15 13:43:31] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 5f32361f-3791-4aef-8167-07bed5c5dc19
+[2026-05-15 13:43:31] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 5f32361f-3791-4aef-8167-07bed5c5dc19
+[2026-05-15 13:43:37] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 5f32361f-3791-4aef-8167-07bed5c5dc19
+[2026-05-15 13:51:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-15 14:06:11] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).

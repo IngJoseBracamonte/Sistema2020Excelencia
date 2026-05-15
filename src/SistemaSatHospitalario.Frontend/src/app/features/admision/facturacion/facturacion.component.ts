@@ -52,6 +52,7 @@ import {
   Mail,
   Layout,
   ShieldAlert,
+  Shield,
   CalendarCheck,
   Edit3
 } from 'lucide-angular';
@@ -96,6 +97,7 @@ export class FacturacionComponent {
     Mail,
     Layout,
     ShieldAlert,
+    Shield,
     CalendarCheck,
     Edit3
   };
@@ -1020,8 +1022,8 @@ export class FacturacionComponent {
    * [Fase 12.1 Refinement]
    */
   async omitirComprobante(autoPrintCompromiso: boolean = false) {
-    // Si ya fue exitoso y el usuario hace clic otra vez en "Compromiso de Pago", simplemente re-imprimir
-    if (this.billingSuccess() && autoPrintCompromiso && this.isInsuranceFlow()) {
+    // Si ya fue exitoso y el usuario hace clic otra vez en "Compromiso de Pago", simplemente re-imprimir (V12.6 Fix: Particular Flow)
+    if (this.billingSuccess() && autoPrintCompromiso) {
        this.imprimirCompromiso();
        return;
     }
@@ -1066,7 +1068,7 @@ export class FacturacionComponent {
         this.isInsuranceFlow.set(this.tipoIngreso() === 'Seguro');
         this.billingSuccess.set(true);
 
-        if (autoPrintCompromiso && this.isInsuranceFlow()) {
+        if (autoPrintCompromiso) {
            this.imprimirCompromiso();
         }
 

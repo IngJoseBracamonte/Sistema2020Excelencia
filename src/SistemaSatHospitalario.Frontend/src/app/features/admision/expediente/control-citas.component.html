@@ -45,10 +45,14 @@
             <div class="hidden md:block w-px bg-white/5 my-2"></div>
 
             <div class="flex items-center gap-4 px-8 flex-1">
-                <div class="flex flex-col">
+                <div class="flex flex-col relative group">
                     <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Fecha de Atención</span>
                     <input type="date" [ngModel]="dateFilter()" (ngModelChange)="dateFilter.set($event); refresh()"
-                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ dateFilter() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-amber-500 opacity-40"></lucide-icon>
+                    </div>
                 </div>
             </div>
 

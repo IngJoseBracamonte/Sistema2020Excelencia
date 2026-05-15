@@ -16,7 +16,8 @@ import {
   Plus,
   Trash2,
   Shield,
-  Download
+  Download,
+  Calendar
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR, SettleARRequest, PaymentItemDto } from '../../../core/services/receivables.service';
 import { FacturacionService } from '../../../core/services/facturacion.service';
@@ -45,7 +46,8 @@ export class ReceivablesComponent implements OnInit {
     Plus,
     Trash2,
     Shield,
-    Download
+    Download,
+    Calendar
   };
   private arService = inject(ReceivablesService);
   private facturacionService = inject(FacturacionService);
@@ -305,6 +307,7 @@ export class ReceivablesComponent implements OnInit {
     futureDate.setDate(futureDate.getDate() + 30);
 
     this.isGarantia.set(garantia);
+    const isCobrada = ar.estado === 'Cobrada';
     this.compromisoData = {
       cuentaPorCobrarId: ar.id,
       nombreResponsable: ar.pacienteNombre,
@@ -319,6 +322,7 @@ export class ReceivablesComponent implements OnInit {
       montoTotal: ar.montoTotal,
       diasLiquidar: 30,
       cuotas: 1,
+      esPagoCompletado: isCobrada,
       fechaCompromiso: today.toISOString().split('T')[0],
       fechaVencimiento: futureDate.toISOString().split('T')[0]
     };

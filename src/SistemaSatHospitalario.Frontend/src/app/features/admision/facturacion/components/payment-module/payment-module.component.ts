@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, CreditCard, Trash2 } from 'lucide-angular';
 import { BillingFacadeService } from '../../../../../core/services/billing-facade.service';
 import { AtmAmountDirective } from '../../../../../shared/directives/atm-amount.directive';
 
@@ -33,10 +33,10 @@ export class PaymentModuleComponent {
   public pagos = this.billingFacade.pagos;
   public tasaCambio = this.billingFacade.tasaCambioDia;
 
-  // Icons proxy (lucide names)
+  // Icons proxy (lucide objects - V1.1 Fix)
   public icons = {
-    CreditCard: 'credit-card',
-    Trash2: 'trash-2'
+    CreditCard,
+    Trash2
   };
 
   public onMontoChanged(newAmount: number) {

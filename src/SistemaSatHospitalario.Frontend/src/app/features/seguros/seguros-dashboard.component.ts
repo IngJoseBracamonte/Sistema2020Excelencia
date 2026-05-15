@@ -43,16 +43,24 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
 
             <!-- Selectores de Fecha -->
             <div class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl md:bg-transparent md:rounded-none flex-1 justify-around">
-                <div class="flex flex-col">
+                <div class="flex flex-col relative group">
                     <span class="text-[7px] font-black text-emerald-500 uppercase tracking-widest mb-0.5">Desde</span>
                     <input type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event); loadPacientes()"
-                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ fechaDesde() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-emerald-500 opacity-40"></lucide-icon>
+                    </div>
                 </div>
                 <div class="h-6 w-px bg-white/10 mx-2"></div>
-                <div class="flex flex-col">
+                <div class="flex flex-col relative group">
                     <span class="text-[7px] font-black text-emerald-500 uppercase tracking-widest mb-0.5">Hasta</span>
                     <input type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event); loadPacientes()"
-                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ fechaHasta() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-emerald-500 opacity-40"></lucide-icon>
+                    </div>
                 </div>
             </div>
 
@@ -95,8 +103,7 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     <tr *ngFor="let p of pacientes()" class="hover:bg-white/[0.04] transition-all group/row border-l-2 border-transparent">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <span class="text-xs font-black text-white leading-none">{{ p.fechaCreacion | date:'dd' }}</span>
-                                <span class="text-[8px] font-black uppercase text-emerald-500 tracking-widest">{{ p.fechaCreacion | date:'MMM' }}</span>
+                                <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ p.fechaCreacion | date:'dd/MM/yyyy' }}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">

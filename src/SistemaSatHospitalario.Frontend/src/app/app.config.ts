@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
+import localeEsVe from '@angular/common/locales/es-VE';
 
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -18,6 +19,7 @@ import {
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
+registerLocaleData(localeEsVe);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,7 +32,7 @@ export const appConfig: ApplicationConfig = {
     }),
     TelemetryService,
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
-    { provide: LOCALE_ID, useValue: 'es' },
+    { provide: LOCALE_ID, useValue: 'es-VE' },
     importProvidersFrom(LucideAngularModule.pick({
       Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
       LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,

@@ -27,16 +27,24 @@
             <div class="hidden md:block w-px bg-white/5 my-2"></div>
 
             <div class="flex items-center gap-4 px-4 flex-1 justify-around">
-                <div class="flex flex-col">
+                <div class="flex flex-col relative group">
                     <span class="text-[7px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Desde</span>
                     <input type="date" [ngModel]="startDate()" (ngModelChange)="startDate.set($event); refresh()"
-                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ startDate() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-indigo-500 opacity-40"></lucide-icon>
+                    </div>
                 </div>
                 <div class="h-6 w-px bg-white/10 mx-2"></div>
-                <div class="flex flex-col">
+                <div class="flex flex-col relative group">
                     <span class="text-[7px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Hasta</span>
                     <input type="date" [ngModel]="endDate()" (ngModelChange)="endDate.set($event); refresh()"
-                        class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ endDate() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-indigo-500 opacity-40"></lucide-icon>
+                    </div>
                 </div>
             </div>
 
@@ -83,8 +91,7 @@
                         <!-- Fecha -->
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <span class="text-xs font-black text-white leading-none">{{ row.fecha | date:'dd' }}</span>
-                                <span class="text-[8px] font-black uppercase text-indigo-500 tracking-widest">{{ row.fecha | date:'MMM' }}</span>
+                                <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ row.fecha | date:'dd/MM/yyyy' }}</span>
                             </div>
                         </td>
                         <!-- Paciente -->

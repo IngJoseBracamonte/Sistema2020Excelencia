@@ -25,14 +25,22 @@ import { LucideAngularModule, Stethoscope, Calendar, DollarSign, Activity } from
             <!-- Filtros de Fecha Consolidados -->
             <div class="flex items-center bg-surface-card/40 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 gap-2 shadow-2xl">
                 <div class="flex items-center px-4 py-2 gap-4">
-                    <div class="flex flex-col">
+                    <div class="flex flex-col relative group">
                         <span class="text-[7px] font-black text-blue-500 uppercase tracking-widest mb-0.5">Desde</span>
-                        <input type="date" [(ngModel)]="startDate" class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        <input type="date" [(ngModel)]="startDate" (ngModelChange)="calcular()" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                            {{ startDate() | date:'dd/MM/yyyy' }}
+                            <lucide-icon name="calendar" class="w-3 h-3 text-blue-500 opacity-40"></lucide-icon>
+                        </div>
                     </div>
                     <div class="w-px h-6 bg-white/10"></div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col relative group">
                         <span class="text-[7px] font-black text-blue-500 uppercase tracking-widest mb-0.5">Hasta</span>
-                        <input type="date" [(ngModel)]="endDate" class="bg-transparent border-none p-0 text-[10px] font-black text-white focus:ring-0 uppercase cursor-pointer">
+                        <input type="date" [(ngModel)]="endDate" (ngModelChange)="calcular()" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                            {{ endDate() | date:'dd/MM/yyyy' }}
+                            <lucide-icon name="calendar" class="w-3 h-3 text-blue-500 opacity-40"></lucide-icon>
+                        </div>
                     </div>
                 </div>
                 <button (click)="calcular()" [disabled]="isLoading()" 
