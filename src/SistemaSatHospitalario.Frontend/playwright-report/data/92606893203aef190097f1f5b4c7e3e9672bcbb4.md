@@ -12,9 +12,9 @@
 # Error details
 
 ```
-Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4200/
+Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost/
 Call log:
-  - navigating to "http://localhost:4200/", waiting until "load"
+  - navigating to "http://localhost/", waiting until "load"
 
 ```
 
@@ -25,10 +25,10 @@ Call log:
   2  | 
   3  | test('App should be accessible and show login page', async ({ page }) => {
   4  |   // We assume the app is running on localhost:4200 (dev) or localhost:80 (docker)
-  5  |   const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
+  5  |   const baseUrl = process.env['BASE_URL'] || 'http://localhost';
   6  |   
 > 7  |   await page.goto(baseUrl);
-     |              ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4200/
+     |              ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost/
   8  |   
   9  |   // Check if we are redirected to login or see the login form
   10 |   await expect(page).toHaveTitle(/SAT Hosp/i);
@@ -39,7 +39,7 @@ Call log:
   15 | });
   16 | 
   17 | test('API Health check', async ({ request }) => {
-  18 |   const apiUrl = process.env.API_URL || 'http://localhost:5000';
+  18 |   const apiUrl = process.env['API_URL'] || 'http://localhost:5000';
   19 |   const response = await request.get(`${apiUrl}/api/Tickets/report`, {
   20 |     headers: { 'X-Testing-Token': 'S4T_Hosp_Testing_2026' }
   21 |   });

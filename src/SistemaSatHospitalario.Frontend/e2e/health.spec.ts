@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('App should be accessible and show login page', async ({ page }) => {
   // We assume the app is running on localhost:4200 (dev) or localhost:80 (docker)
-  const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
+  const baseUrl = process.env['BASE_URL'] || 'http://localhost';
   
   await page.goto(baseUrl);
   
@@ -15,7 +15,7 @@ test('App should be accessible and show login page', async ({ page }) => {
 });
 
 test('API Health check', async ({ request }) => {
-  const apiUrl = process.env.API_URL || 'http://localhost:5000';
+  const apiUrl = process.env['API_URL'] || 'http://localhost:5000';
   const response = await request.get(`${apiUrl}/api/Tickets/report`, {
     headers: { 'X-Testing-Token': 'S4T_Hosp_Testing_2026' }
   });
