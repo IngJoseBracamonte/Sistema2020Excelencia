@@ -4,7 +4,7 @@ const { env } = require('process');
 // El nombre de la variable de entorno suele ser services__[resource]__[endpoint]__[index]
 const target = env['services__api__endpoint-api__0'] || 
                env['services__api__http__0'] || 
-               'http://localhost:8080';
+               'http://localhost:5218';
 
 console.log(`[Frontend Proxy] Reenviando peticiones de /api hacia: ${target}`);
 
