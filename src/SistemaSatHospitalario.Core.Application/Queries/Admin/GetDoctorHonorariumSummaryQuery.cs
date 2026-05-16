@@ -37,8 +37,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                                   join cita in _context.CitasMedicas on cs.Id equals cita.CuentaServicioId into citaJoin
                                   from cita in citaJoin.DefaultIfEmpty()
                                   where ((cita != null && cita.Estado == EstadoConstants.Atendida) || (cita == null && detail.Realizado))
-                                     && (cs.FechaCierre ?? cs.FechaCarga) >= start 
-                                     && (cs.FechaCierre ?? cs.FechaCarga) <= end
+                                     && (cita != null ? cita.HoraPautada : (cs.FechaCierre ?? cs.FechaCarga)) >= start 
+                                     && (cita != null ? cita.HoraPautada : (cs.FechaCierre ?? cs.FechaCarga)) <= end
                                      && detail.Honorario > 0
                                   select new
                                   {

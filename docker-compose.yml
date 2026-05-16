@@ -37,9 +37,9 @@ services:
   # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   api:
     image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
-    # build:
-    #   context: ./src
-    #   dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
+    build:
+      context: ./src
+      dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
     container_name: sat-api
     restart: unless-stopped
     ports:
