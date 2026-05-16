@@ -54,7 +54,8 @@ import {
   ShieldAlert,
   Shield,
   CalendarCheck,
-  Edit3
+  Edit3,
+  Sparkles
 } from 'lucide-angular';
 
 @Component({
@@ -99,7 +100,8 @@ export class FacturacionComponent {
     ShieldAlert,
     Shield,
     CalendarCheck,
-    Edit3
+    Edit3,
+    Sparkles
   };
   private facturacionService = inject(FacturacionService);
   private authService = inject(AuthService);
@@ -159,6 +161,11 @@ export class FacturacionComponent {
   public selectedMedicoId = this.billingFacade.selectedMedicoId;
   public suggestedServices = signal<CatalogItem[]>([]);
   public convenios = signal<any[]>([]);
+
+  // --- Sugerencias Dinámicas (Fase 12.5) ---
+  public showSuggestionModal = signal<boolean>(false);
+  public currentSuggestion = signal<CatalogItem | null>(null);
+  private suggestionQueue: CatalogItem[] = [];
 
   constructor() {
     // 1. Sincronización Real-time de Tasa via SignalR
@@ -747,19 +754,24 @@ export class FacturacionComponent {
     this.facturacionService.reservarTurno(payload)
       .subscribe({
         next: () => {
-          this.selectedSlot.set(this.getHoraRango(slot.hora));
-          // Guardar la fecha y hora completa de la reserva
+          const horaFormateada = this.getHoraRango(slot.hora);
+          this.selectedSlot.set(horaFormateada);
           this.horaCita.set(horaNormalizada);
           this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
           this.showScheduleModal.set(false);
           this.isLoading.set(false);
-          this.errorMessage.set(null); // Limpiar error si logró agendar
-          this.actionMessage.set("Horario reservado temporalmente para esta facturación.");
+          this.errorMessage.set(null);
+          this.actionMessage.set(`Horario ${horaFormateada} reservado temporalmente.`);
+
+          // [V12.5 Auto-Add] Intentar cargar el servicio de consulta automáticamente
+          const matchingConsultation = this.suggestedServices().find(s => s.isConsultation);
+          if (matchingConsultation) {
+            this.cargarServicio(matchingConsultation.id);
+          }
         },
         error: (err) => {
           this.errorMessage.set(err.error?.error || "No se pudo reservar el turno. Intente con otro.");
           this.isLoading.set(false);
-          // Refrescar agenda por si cambió
           this.abrirModalHorarios();
         }
       });
@@ -941,17 +953,37 @@ export class FacturacionComponent {
       const matches = this.billingFacade.servicesCatalog().filter(item => 
         s.sugerenciasIds!.includes(item.id)
       );
-      this.suggestedServices.set(matches);
-      this.actionMessage.set(`¡Servicio añadido! Tenemos sugerencias relacionadas para usted.`);
-
-      // Feedback visual: Scroll hasta la sugerencia resaltada
-      setTimeout(() => {
-        const el = document.querySelector('.suggested-highlight');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 300);
+      
+      // Filtrar las que ya están en el carrito (V12.5 Robustness)
+      const filteredMatches = matches.filter(m => !this.serviciosCargados().some(c => c.id === m.id));
+      
+      if (filteredMatches.length > 0) {
+        this.suggestionQueue = [...filteredMatches];
+        this.procesarSiguienteSugerencia();
+      }
     }
+  }
+
+  private procesarSiguienteSugerencia() {
+    if (this.suggestionQueue.length > 0) {
+      this.currentSuggestion.set(this.suggestionQueue.shift()!);
+      this.showSuggestionModal.set(true);
+    } else {
+      this.showSuggestionModal.set(false);
+      this.currentSuggestion.set(null);
+    }
+  }
+
+  public aceptarSugerencia() {
+    const s = this.currentSuggestion();
+    if (s) {
+      this.cargarServicio(s.id);
+      this.procesarSiguienteSugerencia();
+    }
+  }
+
+  public rechazarSugerencia() {
+    this.procesarSiguienteSugerencia();
   }
 
   async procesarCobro() {

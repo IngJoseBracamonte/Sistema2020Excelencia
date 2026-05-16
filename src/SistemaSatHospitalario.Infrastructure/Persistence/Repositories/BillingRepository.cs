@@ -96,6 +96,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             }
         }
 
+        public async Task LiberarReservaTemporalAsync(Guid medicoId, DateTime hora, string usuarioId, CancellationToken cancellationToken)
+        {
+            // Normalizar a precisión de minuto
+            var targetHora = new DateTime(hora.Year, hora.Month, hora.Day, hora.Hour, hora.Minute, 0, DateTimeKind.Unspecified);
+
+            await _context.ReservasTemporales
+                .Where(r => r.MedicoId == medicoId && r.HoraPautada == targetHora && r.UsuarioId == usuarioId)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
         public async Task GuardarCambiosAsync(CancellationToken cancellationToken)
         {
             await _context.SaveChangesAsync(cancellationToken);

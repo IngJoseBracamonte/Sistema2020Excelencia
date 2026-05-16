@@ -139,6 +139,10 @@ export class FacturacionService {
     return this.http.post<any>(`${this.billingUrl}/ReservarTurno`, payload);
   }
 
+  liberarTurno(medicoId: string, horaPautada: string): Observable<any> {
+    return this.http.delete<any>(`${this.billingUrl}/LiberarTurno?medicoId=${medicoId}&horaPautada=${encodeURIComponent(horaPautada)}`);
+  }
+
   bloquearHorario(payload: BloquearHorarioRequest): Observable<any> {
     return this.http.post<any>(`${this.billingUrl}/BloquearHorario`, payload);
   }

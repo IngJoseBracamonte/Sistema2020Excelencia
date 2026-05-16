@@ -1,10 +1,10 @@
-FROM mcr.microsoft.com/playwright:v1.50.0-focal
+FROM mcr.microsoft.com/playwright:v1.60.0-noble
 
 WORKDIR /app
 
 # Copy package.json and install dependencies
 COPY src/SistemaSatHospitalario.Frontend/package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy the rest of the frontend files (where tests are usually located)
 COPY src/SistemaSatHospitalario.Frontend/ ./

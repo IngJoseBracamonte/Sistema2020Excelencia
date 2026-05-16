@@ -225,6 +225,27 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
         }
 
+        [HttpDelete("LiberarTurno")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> LiberarTurno([FromQuery] Guid medicoId, [FromQuery] DateTime horaPautada)
+        {
+            try
+            {
+                var command = new LiberarTurnoCommand 
+                { 
+                    MedicoId = medicoId, 
+                    HoraPautada = horaPautada,
+                    UsuarioId = User.GetUserId()
+                };
+                await _mediator.Send(command);
+                return Ok(new { Message = "Turno liberado." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
         [HttpPost("BloquearHorario")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -148,6 +148,11 @@ export class BillingFacadeService {
         );
       }
     } else {
+      const item = this.carritoLocal()[index];
+      // Si es una consulta local con reserva, liberarla en el backend
+      if (item.medicoId && item.horaCita) {
+        this.facturacionService.liberarTurno(item.medicoId, item.horaCita).subscribe();
+      }
       this.carritoLocal.update(prev => prev.filter((_, i) => i !== index));
     }
     return of(null);

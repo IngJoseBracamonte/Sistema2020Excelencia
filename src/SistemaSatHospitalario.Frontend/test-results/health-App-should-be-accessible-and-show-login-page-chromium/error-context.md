@@ -12,10 +12,32 @@
 # Error details
 
 ```
-Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost/
-Call log:
-  - navigating to "http://localhost/", waiting until "load"
+Error: expect(page).toHaveTitle(expected) failed
 
+Expected pattern: /SAT Hosp/i
+Received string:  "SistemaSatHospitalarioFrontend"
+Timeout: 5000ms
+
+Call log:
+  - Expect "toHaveTitle" with timeout 5000ms
+    13 × unexpected value "SistemaSatHospitalarioFrontend"
+
+```
+
+```yaml
+- img "Logo SAT"
+- heading "Satélite Hospitalario" [level=2]
+- paragraph: SISTEMA DE GESTIÓN DE EXCELENCIA
+- text: Usuario
+- textbox "Usuario":
+  - /placeholder: admin
+- text: Contraseña
+- textbox "Contraseña":
+  - /placeholder: ••••••••
+- button
+- button "¿Olvidó su contraseña?"
+- button "Ingresar al Sistema" [disabled]
+- paragraph: Desarrollado por DeepMind Advanced Agency • 2026
 ```
 
 # Test source
@@ -27,11 +49,11 @@ Call log:
   4  |   // We assume the app is running on localhost:4200 (dev) or localhost:80 (docker)
   5  |   const baseUrl = process.env['BASE_URL'] || 'http://localhost';
   6  |   
-> 7  |   await page.goto(baseUrl);
-     |              ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost/
+  7  |   await page.goto(baseUrl);
   8  |   
   9  |   // Check if we are redirected to login or see the login form
-  10 |   await expect(page).toHaveTitle(/SAT Hosp/i);
+> 10 |   await expect(page).toHaveTitle(/SAT Hosp/i);
+     |                      ^ Error: expect(page).toHaveTitle(expected) failed
   11 |   
   12 |   // Check if login button exists
   13 |   const loginBtn = page.getByRole('button', { name: /INICIAR SESIÃ“N/i });
