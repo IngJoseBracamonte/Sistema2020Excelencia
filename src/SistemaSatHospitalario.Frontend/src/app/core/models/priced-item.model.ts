@@ -25,7 +25,7 @@ export abstract class BasePricedItem {
     this.precio = data.precio || data.Precio || 0;
     this.precioBs = data.precioBs ?? data.PrecioBs;
     this.precioUsd = data.precioUsd ?? data.PrecioUsd;
-    this.honorarioUsd = data.honorarioUsd ?? data.HonorarioUsd;
+    this.honorarioUsd = data.honorarioUsd ?? data.HonorarioUsd ?? data.honorarioBase ?? data.HonorarioBase ?? 0;
     this.tipo = data.tipo || data.Tipo;
     this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;

@@ -31,38 +31,76 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             var start = request.StartDate.Date;
             var end = request.EndDate.Date.AddDays(1).AddTicks(-1);
 
-             // 1. Fetch all relevant details in the date range
-             var rawData = await (from detail in _context.DetallesServicioCuenta
-                                  join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
-                                  join cita in _context.CitasMedicas on cs.Id equals cita.CuentaServicioId into citaJoin
-                                  from cita in citaJoin.DefaultIfEmpty()
-                                  where ((cita != null && cita.Estado == EstadoConstants.Atendida) || (cita == null && detail.Realizado))
-                                     && (cita != null ? cita.HoraPautada : (cs.FechaCierre ?? cs.FechaCarga)) >= start 
-                                     && (cita != null ? cita.HoraPautada : (cs.FechaCierre ?? cs.FechaCarga)) <= end
-                                     && detail.Honorario > 0
-                                  select new
-                                  {
-                                      MedicoId = detail.MedicoResponsableId ?? (cita != null ? cita.MedicoId : (Guid?)null),
-                                      detail.Honorario,
-                                      detail.Cantidad,
-                                      Categoria = detail.CategoriaHonorario ?? (cita != null ? HonorarioConstants.CategoriaConsulta : HonorarioConstants.CategoriaOtros)
-                                  }).ToListAsync(cancellationToken);
+            // ═══ Paso 1: Consultas Atendidas ═══
+            // Fuente primaria de honorarios médicos.
+            // Filtro directo por CitasMedicas.Estado + rango de fecha en HoraPautada.
+            // Fallback: detail.Honorario → detail.Precio (el precio del servicio ES el honorario del médico)
+            var fromCitas = await (
+                from cita in _context.CitasMedicas
+                join detail in _context.DetallesServicioCuenta
+                    on cita.CuentaServicioId equals detail.CuentaServicioId
+                where cita.Estado == EstadoConstants.Atendida
+                   && cita.HoraPautada >= start
+                   && cita.HoraPautada <= end
+                select new
+                {
+                    MedicoId = (Guid?)(detail.MedicoResponsableId ?? cita.MedicoId),
+                    detail.Honorario,
+                    detail.Precio,
+                    detail.Cantidad,
+                    detail.CategoriaHonorario
+                }
+            ).ToListAsync(cancellationToken);
 
-            // 2. Filter out items without a responsible physician
-            var filteredData = rawData.Where(x => x.MedicoId.HasValue).ToList();
+            // ═══ Paso 2: Servicios Técnicos Realizados (sin cita asociada) ═══
+            // Ej: RX, Laboratorio marcados como Realizado con médico y honorario asignado.
+            var fromServicios = await (
+                from detail in _context.DetallesServicioCuenta
+                join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
+                join cita in _context.CitasMedicas on cs.Id equals cita.CuentaServicioId into citaJoin
+                from cita in citaJoin.DefaultIfEmpty()
+                where cita == null
+                   && detail.Realizado
+                   && detail.Honorario > 0
+                   && detail.MedicoResponsableId != null
+                   && (cs.FechaCierre ?? cs.FechaCarga) >= start
+                   && (cs.FechaCierre ?? cs.FechaCarga) <= end
+                select new
+                {
+                    MedicoId = (Guid?)detail.MedicoResponsableId,
+                    detail.Honorario,
+                    detail.Precio,
+                    detail.Cantidad,
+                    detail.CategoriaHonorario
+                }
+            ).ToListAsync(cancellationToken);
 
-            // 3. Get physician names
-            var medicoIds = filteredData.Select(x => x.MedicoId!.Value).Distinct().ToList();
+            // ═══ Paso 3: Consolidación en memoria ═══
+            var allItems = fromCitas.Concat(fromServicios)
+                .Select(x => new
+                {
+                    x.MedicoId,
+                    // Cadena de fallback: Honorario explícito → Precio del servicio
+                    Honorario = x.Honorario > 0 ? x.Honorario : x.Precio,
+                    x.Cantidad,
+                    Categoria = x.CategoriaHonorario ?? HonorarioConstants.CategoriaConsulta
+                })
+                .Where(x => x.MedicoId.HasValue && x.Honorario > 0)
+                .ToList();
+
+            // ═══ Paso 4: Nombres de médicos ═══
+            var medicoIds = allItems.Select(x => x.MedicoId!.Value).Distinct().ToList();
             var medicos = await _context.Medicos
                 .Where(m => medicoIds.Contains(m.Id))
                 .ToDictionaryAsync(m => m.Id, m => m.Nombre, cancellationToken);
 
-            // 4. Group and aggregate
-            var result = filteredData.GroupBy(x => x.MedicoId!.Value)
+            // ═══ Paso 5: Agrupación y resultado ═══
+            return allItems
+                .GroupBy(x => x.MedicoId!.Value)
                 .Select(g => new DoctorHonorariumSummaryDto
                 {
                     MedicoId = g.Key,
-                    MedicoNombre = medicos.ContainsKey(g.Key) ? medicos[g.Key] : "Médico Desconocido",
+                    MedicoNombre = medicos.GetValueOrDefault(g.Key, "Médico Desconocido"),
                     CantidadServicios = g.Count(),
                     TotalHonorarios = g.Sum(x => x.Honorario * x.Cantidad),
                     Desglose = g.GroupBy(x => x.Categoria)
@@ -75,8 +113,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 })
                 .OrderBy(m => m.MedicoNombre)
                 .ToList();
-
-            return result;
         }
     }
 }
