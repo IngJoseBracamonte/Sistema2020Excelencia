@@ -217,8 +217,13 @@ export class BillingFacadeService {
       })
     };
     
-    // Generación de Clave de Idempotencia (V12.0 Robustness)
-    const idempotencyKey = crypto.randomUUID();
+    // Generación de Clave de Idempotencia (V12.0 Robustness - Safe for HTTP non-secure contexts)
+    const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
 
     return this.facturacionService.syncBulk(payload, idempotencyKey).pipe(
       tap((res: any) => {
