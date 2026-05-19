@@ -1,0 +1,340 @@
+<div class="p-8 max-w-[1700px] space-y-6 animate-fade-in relative z-10">
+    <!-- Header Premium Estilo Imagenología -->
+    <div class="px-0 pb-2 animate-fade-in relative">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all gap-4">
+            <div class="flex items-center gap-6">
+                <div class="h-14 w-14 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+                    <lucide-icon [name]="icons.Tv" class="w-7 h-7"></lucide-icon>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Consolidado de Imagenología</h1>
+                    <p class="text-[8px] font-black text-rose-400/60 uppercase tracking-[0.2em] mt-2 italic">Auditoría Operativa de RX y Tomografía (Estación de Control)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 mr-2 animate-ping"></span>
+                    Estación de Monitoreo
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wow Metrics Cards Section -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up">
+        <!-- Card 1: Total Estudios -->
+        <div class="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-bl-full blur-2xl transition-all duration-500 group-hover:scale-125"></div>
+            <div class="relative z-10">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Estudios Totales (Filtro)</p>
+                <div class="text-4xl font-black text-white tracking-tighter">{{ totalToday() }}</div>
+                <div class="flex items-center gap-2 mt-2">
+                    <lucide-icon [name]="icons.Activity" class="w-3 h-3 text-rose-500"></lucide-icon>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Ordenados en Rango</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Pendientes -->
+        <div class="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full blur-2xl transition-all duration-500 group-hover:scale-125"></div>
+            <div class="relative z-10">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">En Cola de Espera</p>
+                <div class="text-4xl font-black text-amber-500 tracking-tighter">{{ pendingCount() }}</div>
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Por procesar en cabina</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Procesados -->
+        <div class="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full blur-2xl transition-all duration-500 group-hover:scale-125"></div>
+            <div class="relative z-10">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Estudios Procesados</p>
+                <div class="text-4xl font-black text-emerald-400 tracking-tighter">{{ processedCount() }}</div>
+                <div class="flex items-center gap-2 mt-2">
+                    <lucide-icon [name]="icons.Check" class="w-3 h-3 text-emerald-500"></lucide-icon>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Estudios validados</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Tiempo Promedio de Respuesta -->
+        <div class="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 relative overflow-hidden group shadow-2xl">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-sky-500/5 rounded-bl-full blur-2xl transition-all duration-500 group-hover:scale-125"></div>
+            <div class="relative z-10">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Tiempo Prom. de Respuesta</p>
+                <div class="text-4xl font-black text-sky-400 tracking-tighter font-mono">{{ averageResponseTime() }} <span class="text-xs font-black text-slate-500">MIN</span></div>
+                <div class="flex items-center gap-2 mt-2">
+                    <lucide-icon [name]="icons.Clock" class="w-3 h-3 text-sky-500"></lucide-icon>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Eficiencia en min.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Unificados Premium -->
+    <div class="px-0 animate-fade-in-up">
+        <div class="flex flex-col lg:flex-row items-stretch bg-white/[0.02] border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
+            
+            <!-- Buscador Superior de Paciente / Estudio -->
+            <div class="relative flex-[1.5] min-w-[250px] flex items-center">
+                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()" placeholder="Buscar Paciente o Estudio..."
+                    class="w-full pl-14 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600 uppercase">
+                <lucide-icon [name]="icons.Search"
+                    class="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-rose-500 transition-colors"></lucide-icon>
+            </div>
+
+            <div class="hidden lg:block w-px bg-white/5 my-2"></div>
+
+            <!-- Rango de Fechas Integrado (dd/MM/yyyy display override) -->
+            <div class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl lg:bg-transparent lg:rounded-none flex-1 justify-around py-3 lg:py-0">
+                <div class="flex flex-col relative group cursor-pointer">
+                    <span class="text-[7px] font-black text-rose-400 uppercase tracking-widest mb-0.5">Desde</span>
+                    <input type="date" [ngModel]="startDate()" (ngModelChange)="startDate.set($event); refresh()"
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ startDate() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-rose-400 opacity-55"></lucide-icon>
+                    </div>
+                </div>
+                
+                <div class="h-6 w-px bg-white/10 mx-2"></div>
+                
+                <div class="flex flex-col relative group cursor-pointer">
+                    <span class="text-[7px] font-black text-rose-400 uppercase tracking-widest mb-0.5">Hasta</span>
+                    <input type="date" [ngModel]="endDate()" (ngModelChange)="endDate.set($event); refresh()"
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                        {{ endDate() | date:'dd/MM/yyyy' }}
+                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-rose-400 opacity-55"></lucide-icon>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden lg:block w-px bg-white/5 my-2"></div>
+
+            <!-- Selector de Tipo de Servicio (RX / TOMO) -->
+            <div class="relative flex-1 flex items-center py-2 lg:py-0">
+                <div class="w-full relative">
+                    <span class="absolute left-6 top-1 text-[6px] font-black text-rose-400 uppercase tracking-widest pointer-events-none">Servicio</span>
+                    <select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); refresh()"
+                        class="w-full pl-6 pr-10 pt-4 pb-2 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
+                        <option value="ALL">TODOS LOS SERVICIOS</option>
+                        <option value="RX">RX (RADIOLOGÍA)</option>
+                        <option value="TOMO">TOMOGRAFÍA (TOMO)</option>
+                    </select>
+                    <lucide-icon [name]="icons.ChevronDown"
+                        class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></lucide-icon>
+                </div>
+            </div>
+
+            <div class="hidden lg:block w-px bg-white/5 my-2"></div>
+
+            <!-- Selector de Estado de Orden -->
+            <div class="relative flex-1 flex items-center py-2 lg:py-0">
+                <div class="w-full relative">
+                    <span class="absolute left-6 top-1 text-[6px] font-black text-rose-400 uppercase tracking-widest pointer-events-none">Estado</span>
+                    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); refresh()"
+                        class="w-full pl-6 pr-10 pt-4 pb-2 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
+                        <option value="ALL">TODOS LOS ESTADOS</option>
+                        <option value="Pendiente">POR PROCESAR (PENDIENTES)</option>
+                        <option value="Procesado">PROCESADAS / VALIDACIÓN</option>
+                        <option value="Anulado">ANULADAS</option>
+                    </select>
+                    <lucide-icon [name]="icons.ChevronDown"
+                        class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></lucide-icon>
+                </div>
+            </div>
+
+            <button (click)="refresh()"
+                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20 flex items-center justify-center gap-2">
+                <span *ngIf="!isLoading()">FILTRAR</span>
+                <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertas de Éxito y Acción -->
+    <div *ngIf="actionMessage()"
+        class="bg-emerald-500/10 backdrop-blur-md p-4 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ actionMessage() }}</span>
+        </div>
+    </div>
+
+    <!-- Tabla de Imagenología Histórica / Monitor -->
+    <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-white/5 bg-white/[0.01]">
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Servicio</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha Ingreso</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estudio Solicitado</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    <!-- Loading State -->
+                    <tr *ngIf="isLoading()" class="bg-transparent">
+                        <td colspan="6" class="px-6 py-16 text-center opacity-40">
+                            <lucide-icon [name]="icons.RefreshCcw" class="w-8 h-8 animate-spin text-rose-500 mx-auto mb-4"></lucide-icon>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cargando bitácora de estudios...</p>
+                        </td>
+                    </tr>
+
+                    <!-- Empty State -->
+                    <tr *ngIf="orders().length === 0 && !isLoading()" class="bg-transparent">
+                        <td colspan="6" class="px-6 py-20 text-center opacity-40">
+                            <lucide-icon [name]="icons.Camera" class="w-10 h-10 text-slate-500 mx-auto mb-4"></lucide-icon>
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">No se encontraron registros de estudios de imagenología</p>
+                        </td>
+                    </tr>
+
+                    <ng-container *ngFor="let order of orders()">
+                        <tr (click)="toggleRow(order.id)"
+                            class="hover:bg-white/[0.03] transition-all group/row cursor-pointer border-l-2 border-transparent"
+                            [ngClass]="{
+                                'bg-white/[0.02] border-rose-500': isExpanded(order.id),
+                                'opacity-60': order.estado === 'Anulado'
+                            }">
+                            
+                            <!-- Servicio (Badge de RX / TOMO) -->
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all"
+                                    [ngClass]="{
+                                        'bg-rose-500/10 border border-rose-500/20 text-rose-400': order.tipoServicio === 'RX',
+                                        'bg-sky-500/10 border border-sky-500/20 text-sky-400': order.tipoServicio === 'TOMO'
+                                    }">
+                                    {{ order.tipoServicio }}
+                                </span>
+                            </td>
+
+                            <!-- Fecha de Creación -->
+                            <td class="px-6 py-4">
+                                <span class="text-[10px] font-black text-white uppercase tracking-tighter">
+                                    {{ order.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+                                </span>
+                            </td>
+
+                            <!-- Paciente -->
+                            <td class="px-6 py-4">
+                                <div>
+                                    <h4 class="text-[11px] font-black text-white uppercase tracking-tight leading-tight group-hover/row:text-rose-400 transition-colors">
+                                        {{ order.pacienteNombre }}
+                                    </h4>
+                                </div>
+                            </td>
+
+                            <!-- Nombre del Estudio -->
+                            <td class="px-6 py-4">
+                                <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">
+                                    {{ order.estudio }}
+                                </span>
+                            </td>
+
+                            <!-- Estado con código de color HSL -->
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border"
+                                    [ngClass]="{
+                                        'bg-amber-500/5 border-amber-500/20 text-amber-500': order.estado === 'Pendiente',
+                                        'bg-emerald-500/5 border-emerald-500/20 text-emerald-400': order.estado === 'Procesado',
+                                        'bg-slate-500/5 border-slate-500/20 text-slate-500': order.estado === 'Anulado'
+                                    }">
+                                    <span class="w-1 h-1 rounded-full"
+                                        [ngClass]="{
+                                            'bg-amber-500': order.estado === 'Pendiente',
+                                            'bg-emerald-500': order.estado === 'Procesado',
+                                            'bg-slate-500': order.estado === 'Anulado'
+                                        }"></span>
+                                    {{ order.estado === 'Pendiente' ? 'POR PROCESAR' : order.estado }}
+                                </span>
+                            </td>
+
+                            <!-- Acciones Rápidas -->
+                            <td class="px-6 py-4 text-center" (click)="$event.stopPropagation()">
+                                <button *ngIf="order.estado !== 'Anulado'" (click)="cancelOrder(order)"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn border border-rose-500/20 shadow-lg shadow-rose-500/5">
+                                    ANULAR
+                                    <lucide-icon [name]="icons.Trash2" class="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform"></lucide-icon>
+                                </button>
+                                <span *ngIf="order.estado === 'Anulado'" class="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">
+                                    SIN ACCIONES
+                                </span>
+                            </td>
+                        </tr>
+
+                        <!-- Accordion Detail Row: Auditoría de Imagenología -->
+                        <tr *ngIf="isExpanded(order.id)"
+                            class="bg-[#0b1120]/40 border-x-2 border-rose-500/10 animate-fade-in">
+                            <td colspan="6" class="px-12 py-6">
+                                <div class="max-w-4xl space-y-4">
+                                    <div class="flex items-center justify-between pb-2 border-b border-white/5">
+                                        <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                                            <lucide-icon [name]="icons.Info" class="w-4 h-4 text-rose-400"></lucide-icon>
+                                            Metadatos de Auditoría y Control
+                                        </h5>
+                                        <span class="text-[8px] font-black text-rose-400/40 uppercase tracking-widest italic">Estación de Trazabilidad</span>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <!-- Origen / Admisión -->
+                                        <div class="flex items-center gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl">
+                                            <div class="h-10 w-10 bg-slate-800/80 rounded-xl flex items-center justify-center text-slate-500">
+                                                <lucide-icon [name]="icons.Calendar" class="w-5 h-5"></lucide-icon>
+                                            </div>
+                                            <div>
+                                                <span class="text-[7px] font-black text-rose-400 uppercase tracking-widest block mb-0.5">Ingresado en Caja</span>
+                                                <span class="text-[10px] font-bold text-white block">{{ order.fechaCreacion | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                                                <span class="text-[8px] font-bold text-slate-500 uppercase mt-0.5 block">ID Cuenta: {{ order.cuentaId.substring(0,8).toUpperCase() }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Asistente de Cabina -->
+                                        <div class="flex items-center gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl">
+                                            <div class="h-10 w-10 bg-slate-800/80 rounded-xl flex items-center justify-center text-slate-500">
+                                                <lucide-icon [name]="icons.User" class="w-5 h-5"></lucide-icon>
+                                            </div>
+                                            <div>
+                                                <span class="text-[7px] font-black text-rose-400 uppercase tracking-widest block mb-0.5">Validado / Procesado Por</span>
+                                                <span class="text-[10px] font-black text-white block uppercase">{{ order.procesadoPor || 'PENDIENTE DE PROCESO' }}</span>
+                                                <span class="text-[8px] font-bold text-slate-500 uppercase mt-0.5 block" *ngIf="order.fechaProcesado">
+                                                    Hora: {{ order.fechaProcesado | date:'HH:mm:ss' }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tiempos de Respuesta -->
+                                        <div class="flex items-center gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl">
+                                            <div class="h-10 w-10 bg-slate-800/80 rounded-xl flex items-center justify-center text-slate-500">
+                                                <lucide-icon [name]="icons.Clock" class="w-5 h-5"></lucide-icon>
+                                            </div>
+                                            <div>
+                                                <span class="text-[7px] font-black text-rose-400 uppercase tracking-widest block mb-0.5">Tiempo en Espera</span>
+                                                <span class="text-[10px] font-black text-white block" *ngIf="order.estado === 'Procesado'">
+                                                    {{ getResponseTime(order) }} Minutos transcurridos
+                                                </span>
+                                                <span class="text-[10px] font-black text-amber-500 block uppercase" *ngIf="order.estado === 'Pendiente'">
+                                                    En espera en sala de RX/TOMO
+                                                </span>
+                                                <span class="text-[10px] font-black text-slate-500 block uppercase" *ngIf="order.estado === 'Anulado'">
+                                                    ANULADO SIN EFECTO
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </ng-container>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -100,6 +100,7 @@
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewOrders')" routerLink="/tomo-orders" routerLinkActive="active-sublink" class="nav-subitem">Órdenes Tomografía</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewExpediente')" routerLink="/expedientes" routerLinkActive="active-sublink" class="nav-subitem">Expedientes</a>
                 <a *ngIf="isAdmin() || isSupervisor()" routerLink="/admin/seguros/gerencia" routerLinkActive="active-sublink" class="nav-subitem text-emerald-500 font-black italic">Consolidado de Seguros</a>
+                <a *ngIf="isAdmin() || isSupervisor()" routerLink="/admin/imaging-monitor" routerLinkActive="active-sublink" class="nav-subitem text-rose-400 font-black italic">Consolidado de Imagenología</a>
             </div>
 
         </div>

@@ -138,7 +138,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             var medicDefaults = new[]
             {
                 (Name: "Gregory House", Speciality: "Diagnóstico Diferencial"),
-                (Name: "James Wilson", Speciality: "Oncología")
+                (Name: "James Wilson", Speciality: "Oncología"),
+                (Name: "Stephen Strange", Speciality: "Cardiología"),
+                (Name: "Patch Adams", Speciality: "Pediatría"),
+                (Name: "John Watson", Speciality: "Traumatología")
             };
 
             foreach (var m in medicDefaults)

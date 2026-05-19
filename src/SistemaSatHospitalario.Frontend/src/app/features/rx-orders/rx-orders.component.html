@@ -39,17 +39,28 @@
             
             <div class="flex flex-col md:flex-row items-center gap-10">
                 <div class="text-6xl font-black text-white/5 tracking-tighter transition-colors" [ngClass]="'group-hover:text-' + stationColor() + '-500/10'">#{{ rx.orderId }}</div>
-                <div class="text-center md:text-left">
-                    <div class="text-[9px] uppercase font-black tracking-[0.3em] mb-2 opacity-60" [ngClass]="'text-' + stationColor() + '-500'">Paciente Asignado</div>
-                    <div class="text-2xl font-black text-white tracking-tight uppercase transition-colors leading-tight" [ngClass]="'group-hover:text-' + stationColor() + '-500'">{{ rx.patientName }}</div>
+                <div class="text-center md:text-left flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+                    <div>
+                        <div class="text-[9px] uppercase font-black tracking-[0.3em] mb-2 opacity-60" [ngClass]="'text-' + stationColor() + '-500'">Paciente Asignado</div>
+                        <div class="text-2xl font-black text-white tracking-tight uppercase transition-colors leading-tight" [ngClass]="'group-hover:text-' + stationColor() + '-500'">{{ rx.patientName }}</div>
+                    </div>
+                    
+                    <!-- Badge de Estado (Misma lógica de control de citas) -->
+                    <div class="mt-2 md:mt-0 flex">
+                        <span class="inline-flex items-center px-4 py-1 border rounded-lg text-[8px] font-black uppercase tracking-[0.2em]"
+                            [ngClass]="'bg-' + stationColor() + '-500/10 text-' + stationColor() + '-500 border-' + stationColor() + '-500/20'">
+                            NO PROCESADO
+                        </span>
+                    </div>
                 </div>
             </div>
             
             <div class="mt-8 md:mt-0">
                 <button (click)="confirmarProceso(rx.orderId)"
-                    class="text-white font-black py-5 px-10 rounded-2xl shadow-2xl transition-all transform hover:scale-[1.05] active:scale-95 text-xs uppercase tracking-[0.2em]"
+                    class="text-white font-black py-5 px-10 rounded-2xl shadow-2xl transition-all transform hover:scale-[1.05] active:scale-95 text-[10px] uppercase tracking-[0.2em] flex items-center gap-3"
                     [ngClass]="'bg-' + stationColor() + '-500 hover:bg-' + stationColor() + '-700 shadow-' + stationColor() + '-500/20'">
-                    PROCESADO
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    PROCESAR
                 </button>
             </div>
         </div>

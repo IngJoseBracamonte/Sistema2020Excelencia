@@ -49,9 +49,16 @@ export class ServiceCatalogComponent {
   public get selectedMedId(): string { return this.billingFacade.selectedMedicoId() || ''; }
   public set selectedMedId(val: string) { this.billingFacade.selectedMedicoId.set(val || null); }
 
+  private normalizeString(str: string): string {
+    return (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  }
+
   public seleccionarTipoConsulta(s: CatalogItem) {
-    const desc = s.descripcion.toUpperCase();
-    const match = this.especialidades().find((e: string) => desc.includes(e.toUpperCase().substring(0, 4)));
+    const desc = this.normalizeString(s.descripcion);
+    const match = this.especialidades().find((e: string) => {
+      const normalizedSpecialty = this.normalizeString(e);
+      return desc.includes(normalizedSpecialty.substring(0, 4));
+    });
     if (match) this.selectedEsp = match;
   }
 

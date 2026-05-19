@@ -37,6 +37,7 @@ export const routes: Routes = [
             { path: 'admin/honorarios/config', loadComponent: () => import('./features/admin/honorariums/honorario-config.component').then(m => m.HonorarioConfigComponent) },
             { path: 'admin/audit/precios', loadComponent: () => import('./features/admin/audit/price-audit.component').then(m => m.PriceAuditComponent) },
             { path: 'admin/audit/cuentas', loadComponent: () => import('./features/admision/auditing/auditing.component').then(m => m.AuditingComponent) },
+            { path: 'admin/imaging-monitor', loadComponent: () => import('./features/admin/imaging-monitor/imaging-monitor.component').then(m => m.ImagingMonitorComponent) },
             { path: 'especialidades', loadComponent: () => import('./features/admin/especialidades/especialidad-management.component').then(m => m.EspecialidadManagementComponent) },
             { path: 'admin/reset-requests', loadComponent: () => import('./features/admin/reset-requests/password-reset-requests.component').then(m => m.PasswordResetRequestsComponent) },
             { path: 'settings', loadComponent: () => import('./features/admin/settings/system-settings.component').then(m => m.SystemSettingsComponent) },

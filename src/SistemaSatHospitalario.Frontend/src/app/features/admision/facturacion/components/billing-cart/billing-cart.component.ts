@@ -114,18 +114,26 @@ export class BillingCartComponent {
       return;
     }
 
+    const p: any = this.patientData;
+    const nombre = p.nombre || p.Nombre || '';
+    const apellidos = p.apellidos || p.Apellidos || '';
+    const cedula = p.cedula || p.Cedula || '';
+    const celular = p.celular || p.Celular || '';
+    const telefono = p.telefono || p.Telefono || '';
+    const direccion = p.direccion || p.Direccion || 'No especificada';
+
     const price = s.precioUsd ?? s.PrecioUsd ?? s.precio ?? 0;
     
     const dto = {
-      nombreResponsable: this.patientData.nombre + ' ' + this.patientData.apellidos,
+      nombreResponsable: `${nombre} ${apellidos}`.trim(),
       relacionResponsable: 'Titular',
-      cedulaResponsable: this.patientData.cedula,
-      direccionResponsable: 'No especificada',
-      telefonoResponsable: this.patientData.celular || 'No especificado',
+      cedulaResponsable: cedula,
+      direccionResponsable: direccion,
+      telefonoResponsable: celular || telefono || 'No especificado',
       conceptos: (s.descripcion || s.Descripcion || 'GARANTIA DE PAGO'),
-      nombrePaciente: this.patientData.nombre + ' ' + this.patientData.apellidos,
+      nombrePaciente: `${nombre} ${apellidos}`.trim(),
       edadPaciente: 0,
-      cedulaPaciente: this.patientData.cedula,
+      cedulaPaciente: cedula,
       montoTotal: price,
       diasLiquidar: 30,
       cuotas: 1,

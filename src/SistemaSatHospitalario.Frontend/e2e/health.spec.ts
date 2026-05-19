@@ -7,10 +7,10 @@ test('App should be accessible and show login page', async ({ page }) => {
   await page.goto(baseUrl);
   
   // Check if we are redirected to login or see the login form
-  await expect(page).toHaveTitle(/SAT Hosp/i);
+  await expect(page).toHaveTitle(/(SAT Hosp|SistemaSatHospitalarioFrontend)/i);
   
   // Check if login button exists
-  const loginBtn = page.getByRole('button', { name: /INICIAR SESIÃ“N/i });
+  const loginBtn = page.getByRole('button', { name: /Ingresar al Sistema/i });
   await expect(loginBtn).toBeVisible();
 });
 

@@ -95,9 +95,9 @@ services:
   # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   frontend:
     image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
-    # build:
-    #   context: ./src/SistemaSatHospitalario.Frontend
-    #   dockerfile: Dockerfile
+    build:
+      context: ./src/SistemaSatHospitalario.Frontend
+      dockerfile: Dockerfile
     container_name: sat-frontend
     restart: unless-stopped
     ports:

@@ -534,15 +534,16 @@ export class FacturacionComponent {
     });
   }
 
-  seleccionarPaciente(p: PatientRecord) {
-    if (p.id) {
-      this.pacienteId.set(p.id);
+  seleccionarPaciente(p: PatientRecord | any) {
+    const pId = p.id || p.Id;
+    if (pId) {
+      this.pacienteId.set(pId);
       this.selectedPatientData.set(p);
       this.noResultsFound.set(false);
     }
     this.showResultadosBusqueda.set(false);
-    this.busquedaTermino.set(p.cedula);
-    this.actionMessage.set(`Paciente seleccionado: ${p.nombre} ${p.apellidos}`);
+    this.busquedaTermino.set(p.cedula || p.Cedula);
+    this.actionMessage.set(`Paciente seleccionado: ${p.nombre || p.Nombre || ''} ${p.apellidos || p.Apellidos || ''}`.trim());
   }
 
   /**
@@ -559,7 +560,7 @@ export class FacturacionComponent {
         this.tipoIngreso(),
         this.user()?.username || '',
         this.convenioId(),
-        this.selectedPatientData()?.idPacienteLegacy
+        this.selectedPatientData()?.idPacienteLegacy ?? (this.selectedPatientData() as any)?.IdPacienteLegacy
       ));
       this.isLoading.set(false);
       return true;
@@ -1032,8 +1033,10 @@ export class FacturacionComponent {
       pagos: this.pagos()
     }).subscribe({
       next: (res: any) => {
-        const p = this.selectedPatientData();
-        const pacienteNombre = p ? `${p.nombre} ${p.apellidos || ''}` : '';
+        const p: any = this.selectedPatientData();
+        const pNombre = p ? (p.nombre || p.Nombre || '') : '';
+        const pApellidos = p ? (p.apellidos || p.Apellidos || '') : '';
+        const pacienteNombre = p ? `${pNombre} ${pApellidos}`.trim() : '';
         this.actionMessage.set(`¡Facturación Exitosa! Paciente: ${pacienteNombre}.`);
 
         // Automatización Total (V12.4): Abrir PDF directamente
@@ -1097,8 +1100,10 @@ export class FacturacionComponent {
       pagos: this.pagos()
     }).subscribe({
       next: (res: any) => {
-        const p = this.selectedPatientData();
-        const pacienteNombre = p ? `${p.nombre} ${p.apellidos || ''}` : '';
+        const p: any = this.selectedPatientData();
+        const pNombre = p ? (p.nombre || p.Nombre || '') : '';
+        const pApellidos = p ? (p.apellidos || p.Apellidos || '') : '';
+        const pacienteNombre = p ? `${pNombre} ${pApellidos}`.trim() : '';
         
         // V12.1 Integration: Capturar resultado para panel de éxito
         this.lastBillResult.set(res);
@@ -1230,23 +1235,31 @@ export class FacturacionComponent {
 
   imprimirCompromiso() {
     const res = this.lastBillResult();
-    const p = this.selectedPatientData();
+    const p: any = this.selectedPatientData();
     if (!res || !p) return;
+
+    const nombre = p.nombre || p.Nombre || '';
+    const apellidos = p.apellidos || p.Apellidos || '';
+    const cedula = p.cedula || p.Cedula || '';
+    const direccion = p.direccion || p.Direccion || '';
+    const celular = p.celular || p.Celular || '';
+    const telefono = p.telefono || p.Telefono || '';
+    const fechaNacimiento = p.fechaNacimiento || p.FechaNacimiento || '';
 
     this.isGeneratingPdf.set(true);
     const dto = {
       cuentaPorCobrarId: res.cuentaPorCobrarId,
-      nombreResponsable: `${p.nombre} ${p.apellidos}`,
+      nombreResponsable: `${nombre} ${apellidos}`.trim(),
       relacionResponsable: 'Titular',
-      cedulaResponsable: p.cedula,
-      direccionResponsable: p.direccion || 'No especificada',
-      telefonoResponsable: p.celular || p.telefono || 'No especificado', // Fix: Use celular as primary
-      conceptos: this.serviciosCargados().map(s => s.descripcion).join(', '),
-      nombrePaciente: `${p.nombre} ${p.apellidos}`,
-      edadPaciente: this.calcularEdad(p.fechaNacimiento || ''),
-      cedulaPaciente: p.cedula,
-      direccionPaciente: p.direccion,
-      telefonoPaciente: p.celular || p.telefono,
+      cedulaResponsable: cedula,
+      direccionResponsable: direccion || 'No especificada',
+      telefonoResponsable: celular || telefono || 'No especificado', // Fix: Use celular as primary
+      conceptos: this.serviciosCargados().map(s => s.descripcion || s.Descripcion).join(', '),
+      nombrePaciente: `${nombre} ${apellidos}`.trim(),
+      edadPaciente: this.calcularEdad(fechaNacimiento || ''),
+      cedulaPaciente: cedula,
+      direccionPaciente: direccion,
+      telefonoPaciente: celular || telefono,
       montoTotal: this.totalCargadoUSD(), // Use cart total
       diasLiquidar: this.docMetadata().diasLiquidar,
       cuotas: this.docMetadata().cuotas,
@@ -1274,23 +1287,31 @@ export class FacturacionComponent {
   imprimirGarantia() {
       // Similar a compromiso pero llamando a generarGarantiaPdf
       const res = this.lastBillResult();
-      const p = this.selectedPatientData();
+      const p: any = this.selectedPatientData();
       if (!res || !p) return;
+
+      const nombre = p.nombre || p.Nombre || '';
+      const apellidos = p.apellidos || p.Apellidos || '';
+      const cedula = p.cedula || p.Cedula || '';
+      const direccion = p.direccion || p.Direccion || '';
+      const celular = p.celular || p.Celular || '';
+      const telefono = p.telefono || p.Telefono || '';
+      const fechaNacimiento = p.fechaNacimiento || p.FechaNacimiento || '';
   
       this.isGeneratingPdf.set(true);
       const dto = {
         cuentaPorCobrarId: res.cuentaPorCobrarId,
-        nombreResponsable: `${p.nombre} ${p.apellidos}`,
+        nombreResponsable: `${nombre} ${apellidos}`.trim(),
         relacionResponsable: 'Titular',
-        cedulaResponsable: p.cedula,
-        direccionResponsable: p.direccion || 'No especificada',
-        telefonoResponsable: p.celular || p.telefono || 'No especificado',
-        conceptos: this.serviciosCargados().map(s => s.descripcion).join(', '),
-        nombrePaciente: `${p.nombre} ${p.apellidos}`,
-        edadPaciente: this.calcularEdad(p.fechaNacimiento || ''),
-        cedulaPaciente: p.cedula,
-        direccionPaciente: p.direccion,
-        telefonoPaciente: p.celular || p.telefono,
+        cedulaResponsable: cedula,
+        direccionResponsable: direccion || 'No especificada',
+        telefonoResponsable: celular || telefono || 'No especificado',
+        conceptos: this.serviciosCargados().map(s => s.descripcion || s.Descripcion).join(', '),
+        nombrePaciente: `${nombre} ${apellidos}`.trim(),
+        edadPaciente: this.calcularEdad(fechaNacimiento || ''),
+        cedulaPaciente: cedula,
+        direccionPaciente: direccion,
+        telefonoPaciente: celular || telefono,
         montoTotal: this.totalCargadoUSD(),
         diasLiquidar: this.docMetadata().diasLiquidar,
         cuotas: this.docMetadata().cuotas,
