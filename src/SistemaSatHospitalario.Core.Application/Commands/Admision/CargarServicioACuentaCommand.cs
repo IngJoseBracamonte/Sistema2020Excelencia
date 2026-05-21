@@ -114,19 +114,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 legacyId = baseService.LegacyMappingId;
             }
 
+            decimal finalPrecio = request.Precio;
             decimal finalHonorario = request.Honorario;
             if (esConsulta && baseService != null)
             {
-                if (request.Honorario == baseService.HonorarioBase || request.Honorario == 0)
+                if (request.Precio == baseService.PrecioBase && (request.Honorario == baseService.HonorarioBase || request.Honorario == 0))
                 {
-                    finalHonorario = baseService.HonorarioBase + request.Precio;
+                    finalPrecio = baseService.PrecioBase + baseService.HonorarioBase;
+                }
+
+                if (request.Honorario == 0)
+                {
+                    finalHonorario = baseService.HonorarioBase;
+                }
+                else if (request.Honorario == baseService.HonorarioBase + baseService.PrecioBase)
+                {
+                    finalHonorario = baseService.HonorarioBase;
+                }
+                else
+                {
+                    finalHonorario = request.Honorario;
                 }
             }
 
             var detalle = cuenta.AgregarServicio(
                 esLab ? Guid.Empty : (Guid.TryParse(request.ServicioId, out var g) ? g : Guid.Empty), 
                 request.Descripcion, 
-                request.Precio, 
+                finalPrecio, 
                 finalHonorario,
                 request.Cantidad, 
                 request.TipoServicio, 

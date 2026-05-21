@@ -186,8 +186,9 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             capturedCuenta.Should().NotBeNull();
             capturedCuenta.Detalles.Should().HaveCount(1);
             
-            // Honorario final debe ser HonorarioBase + Precio (30 + 150 = 180)
-            capturedCuenta.Detalles.First().Honorario.Should().Be(180);
+            // Honorario final debe ser el base (30) y el precio la suma (180)
+            capturedCuenta.Detalles.First().Honorario.Should().Be(30);
+            capturedCuenta.Detalles.First().Precio.Should().Be(180);
         }
     }
 }

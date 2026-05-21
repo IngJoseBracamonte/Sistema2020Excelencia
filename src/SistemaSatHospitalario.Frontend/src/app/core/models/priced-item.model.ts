@@ -40,7 +40,9 @@ export abstract class BasePricedItem {
     } else {
       const baseHonorary = this.honorarioBase ?? 0;
       if (this.isConsultation) {
-        this.honorarioUsd = baseHonorary + priceVal;
+        this.honorarioUsd = baseHonorary;
+        this.precioUsd = baseHonorary + priceVal;
+        this.precio = baseHonorary + priceVal;
       } else {
         this.honorarioUsd = baseHonorary;
       }

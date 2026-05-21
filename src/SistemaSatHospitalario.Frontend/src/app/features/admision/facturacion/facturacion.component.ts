@@ -445,9 +445,14 @@ export class FacturacionComponent {
     const item = isBackend ? this.serviciosEnBackend()[index] : this.carritoLocal()[index];
     const currentPrice = item.precioUsd || item.PrecioUsd || item.precio || 0;
     const currentHonorary = item.honorarioUsd ?? item.HonorarioUsd ?? item.honorario ?? item.Honorario ?? item.honorarioBase ?? item.HonorarioBase ?? 0;
+    
+    const isConsult = item.isConsultation;
+    
+    const inputPrice = isConsult ? Math.max(0, currentPrice - currentHonorary) : currentPrice;
+    const inputHonorary = currentHonorary;
 
     // Delegar al componente cart que inicie el modo edición
-    this.billingCart.startEdit(index, isBackend, currentPrice, currentHonorary);
+    this.billingCart.startEdit(index, isBackend, inputPrice, inputHonorary);
     this.pendingEditInfo = null;
   }
 
@@ -464,7 +469,19 @@ export class FacturacionComponent {
     } else {
       this.billingFacade.carritoLocal.update(cart => {
         const newCart = [...cart];
-        newCart[index] = new CatalogItem({ ...newCart[index], precioUsd: newPrice, precio: newPrice, honorarioUsd: newHonorary });
+        const item = newCart[index];
+        const isConsult = item.isConsultation;
+        const finalPrice = isConsult ? (newPrice + newHonorary) : newPrice;
+        const finalHonorary = newHonorary;
+        const baseHon = isConsult ? newHonorary : item.honorarioBase;
+
+        newCart[index] = new CatalogItem({ 
+          ...item, 
+          precioUsd: finalPrice, 
+          precio: finalPrice, 
+          honorarioUsd: finalHonorary, 
+          honorarioBase: baseHon 
+        });
         return newCart;
       });
       this.actionMessage.set("Precio y Honorario modificados exitosamente.");

@@ -48,7 +48,7 @@
                     <div class="flex items-center space-x-2 bg-black/40 p-2 rounded-2xl border border-rose-500/30">
                         <!-- Precio Total -->
                         <div class="flex flex-col">
-                            <span class="text-[8px] font-black text-rose-500/60 uppercase ml-1">Total</span>
+                            <span class="text-[8px] font-black text-rose-500/60 uppercase ml-1">{{ s.isConsultation ? 'Cons.' : 'Total' }}</span>
                             <div class="flex items-center">
                                 <span class="text-[10px] font-black text-rose-500 ml-1">$</span>
                                 <input type="number" [(ngModel)]="tempPrice" (keyup.enter)="confirmEdit()" (keyup.escape)="cancelEdit()"

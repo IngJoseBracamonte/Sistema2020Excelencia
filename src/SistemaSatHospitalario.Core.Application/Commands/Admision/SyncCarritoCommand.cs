@@ -220,19 +220,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         legacyId = baseService.LegacyMappingId;
                     }
 
+                    decimal finalPrecio = item.Precio;
                     decimal finalHonorario = item.Honorario;
                     if (esConsulta && baseService != null)
                     {
-                        if (item.Honorario == baseService.HonorarioBase || item.Honorario == 0)
+                        if (item.Precio == baseService.PrecioBase && (item.Honorario == baseService.HonorarioBase || item.Honorario == 0))
                         {
-                            finalHonorario = baseService.HonorarioBase + item.Precio;
+                            finalPrecio = baseService.PrecioBase + baseService.HonorarioBase;
+                        }
+
+                        if (item.Honorario == 0)
+                        {
+                            finalHonorario = baseService.HonorarioBase;
+                        }
+                        else if (item.Honorario == baseService.HonorarioBase + baseService.PrecioBase)
+                        {
+                            finalHonorario = baseService.HonorarioBase;
+                        }
+                        else
+                        {
+                            finalHonorario = item.Honorario;
                         }
                     }
 
                     var detalle = cuenta.AgregarServicio(
                         serviceGuid, 
                         item.Descripcion, 
-                        item.Precio, 
+                        finalPrecio, 
                         finalHonorario,
                         item.Cantidad, 
                         item.TipoServicio, 
@@ -242,24 +256,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     // AUDIT LOG (Phase 9): Detect modification in price OR honorary and log it
                     if (baseService != null)
                     {
+                        decimal expectedDefaultPrecio = esConsulta ? (baseService.PrecioBase + baseService.HonorarioBase) : baseService.PrecioBase;
                         decimal expectedDefaultHonorario = baseService.HonorarioBase;
-                        if (esConsulta) expectedDefaultHonorario += item.Precio;
 
-                        if (baseService.PrecioBase != item.Precio || expectedDefaultHonorario != finalHonorario)
+                        if (expectedDefaultPrecio != finalPrecio || expectedDefaultHonorario != finalHonorario)
                         {
                             var auditLog = new LogAuditoriaPrecio(
                                 detalle.Id,
                                 item.Descripcion,
-                                baseService.PrecioBase,
-                                item.Precio,
-                                baseService.HonorarioBase,
+                                expectedDefaultPrecio,
+                                finalPrecio,
+                                expectedDefaultHonorario,
                                 finalHonorario,
                                 request.UsuarioCarga,
                                 string.IsNullOrEmpty(request.SupervisorKey) ? "Admin Privilegiado" : "Supervisor Key Autorizado"
                             );
                             await _context.AuditLogsPrecios.AddAsync(auditLog, ct);
                             _logger.LogInformation("[AUDIT] Cambio de precio/honorario detectado y registrado para '{Servicio}': P({OldP}->{NewP}), H({OldH}->{NewH})", 
-                                item.Descripcion, baseService.PrecioBase, item.Precio, baseService.HonorarioBase, finalHonorario);
+                                item.Descripcion, expectedDefaultPrecio, finalPrecio, expectedDefaultHonorario, finalHonorario);
                         }
                     }
 
