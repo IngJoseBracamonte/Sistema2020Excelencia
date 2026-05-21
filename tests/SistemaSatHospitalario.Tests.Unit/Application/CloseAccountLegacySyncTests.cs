@@ -41,7 +41,8 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 _legacyRepoMock.Object,
                 _cajaRepoMock.Object,
                 _billingRepoMock.Object,
-                new Mock<ILegacyErrorReportingService>().Object
+                new Mock<ILegacyErrorReportingService>().Object,
+                new Mock<IOrdenExternaService>().Object
             );
         }
 

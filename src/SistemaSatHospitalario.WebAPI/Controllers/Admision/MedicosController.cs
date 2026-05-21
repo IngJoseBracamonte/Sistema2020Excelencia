@@ -14,7 +14,7 @@ using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.Cajero + "," + AuthorizationConstants.Supervisor + "," + AuthorizationConstants.AsistenteDeSeguros + "," + AuthorizationConstants.Medico)]
+    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.Cajero + "," + AuthorizationConstants.Supervisor + "," + AuthorizationConstants.AsistenteDeSeguros + "," + AuthorizationConstants.Medico + "," + AuthorizationConstants.AsistenteRX + "," + AuthorizationConstants.AsistenteTomografia)]
     [ApiController]
     [Route("api/[controller]")]
     public class MedicosController : ControllerBase

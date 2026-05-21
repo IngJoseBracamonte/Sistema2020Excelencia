@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Infrastructure.Hubs;
@@ -20,11 +21,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly IHubContext<DashboardHub> _hubContext;
+        private readonly IHonorariumMapperService _mapperService;
 
-        public ImagingController(IApplicationDbContext context, IHubContext<DashboardHub> hubContext)
+        public ImagingController(IApplicationDbContext context, IHubContext<DashboardHub> hubContext, IHonorariumMapperService mapperService)
         {
             _context = context;
             _hubContext = hubContext;
+            _mapperService = mapperService;
         }
 
         [HttpGet("pending")]
@@ -133,5 +136,201 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             return Ok(new { Message = "Orden marcada como anulada." });
         }
+
+        [HttpPost("direct")]
+        public async Task<IActionResult> CreateDirectOrder([FromBody] CreateDirectOrderRequest request)
+        {
+            if (request == null) return BadRequest(new { Message = "Datos inválidos." });
+            if (string.IsNullOrEmpty(request.PacienteNombre) || string.IsNullOrEmpty(request.Estudio) || string.IsNullOrEmpty(request.TipoServicio))
+            {
+                return BadRequest(new { Message = "El nombre del paciente, el estudio y el tipo de servicio son obligatorios." });
+            }
+
+            var usuario = User.Identity?.Name ?? "Sistema";
+            var order = new OrdenImagen
+            {
+                CuentaId = Guid.Empty, // Se asociará al validar
+                PacienteId = request.PacienteId,
+                PacienteNombre = request.PacienteNombre,
+                Estudio = request.Estudio,
+                TipoServicio = request.TipoServicio.ToUpper(),
+                Estado = "Procesado", // Ya procesada por el asistente
+                FechaCreacion = DateTime.UtcNow,
+                EsDirecta = true,
+                RequiereValidacion = true,
+                Validada = false,
+                ProcesadoPor = usuario,
+                FechaProcesado = DateTime.UtcNow,
+                MedicoSolicitanteId = request.MedicoSolicitanteId,
+                MedicoSolicitanteNombre = request.MedicoSolicitanteNombre
+            };
+
+            _context.OrdenesImagenes.Add(order);
+            await _context.SaveChangesAsync(default);
+
+            // Broadcast SignalR update
+            await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
+                orderId = order.Id,
+                status = order.Estado,
+                patientName = order.PacienteNombre,
+                servicioNombre = order.Estudio,
+                tipoServicio = order.TipoServicio,
+                esDirecta = true,
+                requiereValidacion = true
+            });
+
+            return Ok(new { Message = "Orden directa procesada con éxito, pendiente de validación administrativa.", OrderId = order.Id });
+        }
+
+        [HttpGet("pending-validation")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor,Asistente Seguro,Asistente de Seguros")]
+        public async Task<IActionResult> GetPendingValidation([FromQuery] string? type)
+        {
+            var query = _context.OrdenesImagenes.AsNoTracking()
+                .Where(o => o.EsDirecta && o.RequiereValidacion && !o.Validada);
+
+            if (!string.IsNullOrEmpty(type) && !type.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(o => o.TipoServicio == type);
+            }
+
+            var orders = await query
+                .OrderByDescending(o => o.FechaCreacion)
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        [HttpGet("services")]
+        public async Task<IActionResult> GetImagingServices([FromQuery] string type)
+        {
+            if (string.IsNullOrEmpty(type)) return BadRequest(new { Message = "El tipo de servicio es obligatorio." });
+            var normalizedType = type.ToUpper();
+            
+            var services = await _context.ServiciosClinicos.AsNoTracking()
+                .Where(s => s.Activo && s.TipoServicio == normalizedType)
+                .OrderBy(s => s.Descripcion)
+                .Select(s => new {
+                    s.Id,
+                    s.Codigo,
+                    s.Descripcion,
+                    s.PrecioBase,
+                    s.HonorarioBase,
+                    s.TipoServicio
+                })
+                .ToListAsync();
+
+            return Ok(services);
+        }
+
+        [HttpPost("{id}/validate-direct")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor,Asistente Seguro,Asistente de Seguros")]
+        public async Task<IActionResult> ValidateDirectOrder(int id, [FromBody] ValidateDirectOrderRequest request)
+        {
+            if (request == null) return BadRequest(new { Message = "Datos de validación inválidos." });
+
+            var order = await _context.OrdenesImagenes.FindAsync(id);
+            if (order == null) return NotFound(new { Message = "Orden no encontrada." });
+            if (!order.EsDirecta || !order.RequiereValidacion) return BadRequest(new { Message = "La orden especificada no es una orden directa que requiera validación." });
+            if (order.Validada) return BadRequest(new { Message = "Esta orden directa ya fue validada anteriormente." });
+
+            var servicio = await _context.ServiciosClinicos.FindAsync(request.ServicioId);
+            if (servicio == null) return BadRequest(new { Message = "El servicio clínico especificado no existe en el catálogo." });
+
+            var usuario = User.Identity?.Name ?? "Sistema";
+
+            CuentaServicios? cuenta = null;
+            if (request.CuentaId.HasValue && request.CuentaId.Value != Guid.Empty)
+            {
+                cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
+                    .FirstOrDefaultAsync(c => c.Id == request.CuentaId.Value);
+                if (cuenta == null) return NotFound(new { Message = "La cuenta especificada no existe." });
+                if (cuenta.Estado != EstadoConstants.Abierta) return BadRequest(new { Message = "La cuenta seleccionada no está abierta." });
+            }
+            else
+            {
+                // Buscar cuenta abierta del paciente
+                cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
+                    .FirstOrDefaultAsync(c => c.PacienteId == order.PacienteId && c.Estado == EstadoConstants.Abierta);
+
+                if (cuenta == null)
+                {
+                    // Crear nueva cuenta si no hay una abierta
+                    cuenta = new CuentaServicios(order.PacienteId, usuario, request.TipoIngreso ?? EstadoConstants.Particular, request.ConvenioId);
+                    _context.CuentasServicios.Add(cuenta);
+                }
+            }
+
+            // Registrar el servicio en la cuenta
+            var precio = request.Precio ?? servicio.PrecioBase;
+            var honorario = request.Honorario ?? servicio.HonorarioBase;
+
+            var detalle = cuenta.AgregarServicio(
+                servicio.Id,
+                servicio.Descripcion,
+                precio,
+                honorario,
+                1,
+                order.TipoServicio,
+                usuario,
+                servicio.LegacyMappingId
+            );
+
+            // Marcar el servicio como ya realizado
+            detalle.MarcarRealizado(order.ProcesadoPor ?? usuario);
+
+            // Asignar el médico solicitante al detalle para cálculo de honorarios
+            if (order.MedicoSolicitanteId.HasValue)
+            {
+                var category = await _mapperService.MapToCategoryAsync(order.TipoServicio, servicio.Id);
+                detalle.AsignarMedicoResponsable(order.MedicoSolicitanteId.Value, category);
+
+                // Registrar en log de asignación de honorario
+                _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                    detalle.Id,
+                    servicio.Descripcion,
+                    HonorarioConstants.AccionAsignacionManual,
+                    null, null,
+                    order.MedicoSolicitanteId.Value,
+                    order.MedicoSolicitanteNombre,
+                    usuario,
+                    "Asignado automáticamente en validación de orden directa"
+                ));
+            }
+
+            // Actualizar estado de la orden
+            order.Validada = true;
+            order.ValidadorPor = usuario;
+            order.FechaValidacion = DateTime.UtcNow;
+            order.CuentaId = cuenta.Id; // Vincular la orden a la cuenta procesada
+
+            await _context.SaveChangesAsync(default);
+
+            return Ok(new { 
+                Message = "Orden directa validada y cargada a cuenta con éxito.",
+                CuentaId = cuenta.Id,
+                DetalleId = detalle.Id
+            });
+        }
+    }
+
+    public class CreateDirectOrderRequest
+    {
+        public Guid PacienteId { get; set; }
+        public string PacienteNombre { get; set; } = string.Empty;
+        public string Estudio { get; set; } = string.Empty;
+        public string TipoServicio { get; set; } = string.Empty; // RX o TOMO
+        public Guid? MedicoSolicitanteId { get; set; }
+        public string? MedicoSolicitanteNombre { get; set; }
+    }
+
+    public class ValidateDirectOrderRequest
+    {
+        public Guid? CuentaId { get; set; }
+        public Guid ServicioId { get; set; }
+        public decimal? Precio { get; set; }
+        public decimal? Honorario { get; set; }
+        public string? TipoIngreso { get; set; } // Particular, Seguro, etc.
+        public int? ConvenioId { get; set; }
     }
 }

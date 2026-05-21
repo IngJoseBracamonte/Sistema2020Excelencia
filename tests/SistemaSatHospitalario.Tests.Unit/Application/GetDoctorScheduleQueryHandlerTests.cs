@@ -36,6 +36,10 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var pacienteId = Guid.NewGuid();
             var fecha = DateTime.Today;
 
+            var medico = new Medico("Dr. House", Guid.NewGuid());
+            typeof(Medico).GetProperty("Id")?.SetValue(medico, medicoId);
+            _context.Medicos.Add(medico);
+
             _context.CitasMedicas.AddRange(
                 new CitaMedica(medicoId, pacienteId, Guid.NewGuid(), fecha.AddHours(10)), // Tu Cita
                 new CitaMedica(medicoId, Guid.NewGuid(), Guid.NewGuid(), fecha.AddHours(11)) // Otra Cita

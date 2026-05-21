@@ -99,5 +99,123 @@ namespace SistemaSatHospitalario.UnitTests.Application
             // Assert
             Assert.Equal(HonorarioConstants.CategoriaOtros, result);
         }
+
+        [Fact]
+        public async Task CompareOldVsNewHonorariumQueries()
+        {
+            // 1. Arrange - Setup Mock Data
+            var pacienteId = Guid.NewGuid();
+            var cuentaId = Guid.NewGuid();
+            
+            var medico = new Medico("Dr. Jose Bracamonte", Guid.NewGuid(), 35.00m);
+            var medicoId = medico.Id;
+
+            var cita = new CitaMedica(medicoId, pacienteId, cuentaId, DateTime.Today.AddHours(10));
+            cita.MarcarComoAtendida();
+
+            // Create account details
+            var detailConsulta = new DetalleServicioCuenta(
+                cuentaId, Guid.NewGuid(), "Consulta Especializada", 50.00m, 0.00m, 1, "MEDICO", "Cajero");
+            
+            var detailTomografia = new DetalleServicioCuenta(
+                cuentaId, Guid.NewGuid(), "Tomografía Computada", 450.00m, 0.00m, 1, "TOMO", "Cajero");
+
+            var citasMock = new List<CitaMedica> { cita }.BuildMockDbSet<CitaMedica>();
+            var detallesMock = new List<DetalleServicioCuenta> { detailConsulta, detailTomografia }.BuildMockDbSet<DetalleServicioCuenta>();
+            var medicosMock = new List<Medico> { medico }.BuildMockDbSet<Medico>();
+
+            _mockContext.Setup(c => c.CitasMedicas).Returns(citasMock.Object);
+            _mockContext.Setup(c => c.DetallesServicioCuenta).Returns(detallesMock.Object);
+            _mockContext.Setup(c => c.Medicos).Returns(medicosMock.Object);
+
+            var start = DateTime.Today;
+            var end = DateTime.Today.AddDays(1).AddTicks(-1);
+
+            // 2. Act - Run the OLD logic (simulated in memory)
+            var oldCitas = await (
+                from c in citasMock.Object
+                join d in detallesMock.Object
+                    on c.CuentaServicioId equals d.CuentaServicioId
+                where c.Estado == EstadoConstants.Atendida
+                   && c.HoraPautada >= start
+                   && c.HoraPautada <= end
+                select new
+                {
+                    MedicoId = (Guid?)(d.MedicoResponsableId ?? c.MedicoId),
+                    d.Honorario,
+                    d.Precio,
+                    d.Cantidad,
+                    d.CategoriaHonorario
+                }
+            ).ToListAsync();
+
+            var oldAllItems = oldCitas
+                .Select(x => new
+                {
+                    x.MedicoId,
+                    Honorario = x.Honorario > 0 ? x.Honorario : x.Precio,
+                    x.Cantidad
+                })
+                .ToList();
+
+            var oldTotal = oldAllItems.Sum(x => x.Honorario * x.Cantidad);
+
+            // 3. Act - Run the NEW logic (simulated in memory)
+            var newCitas = await (
+                from c in citasMock.Object
+                join d in detallesMock.Object
+                    on c.CuentaServicioId equals d.CuentaServicioId
+                join m in medicosMock.Object
+                    on c.MedicoId equals m.Id
+                where c.Estado == EstadoConstants.Atendida
+                   && c.HoraPautada >= start
+                   && c.HoraPautada <= end
+                   && (d.MedicoResponsableId == c.MedicoId || 
+                       (d.MedicoResponsableId == null && 
+                        (d.TipoServicio == "MEDICO" || d.TipoServicio == "Medico" || d.TipoServicio.Contains("CONS") || d.TipoServicio.Contains("MEDI"))))
+                select new
+                {
+                    MedicoId = (Guid?)(d.MedicoResponsableId ?? c.MedicoId),
+                    d.Honorario,
+                    d.Precio,
+                    d.Cantidad,
+                    d.CategoriaHonorario,
+                    MedicoHonorarioBase = m.HonorarioBase
+                }
+            ).ToListAsync();
+
+            var newAllItems = newCitas
+                .Select(x => new
+                {
+                    x.MedicoId,
+                    Honorario = x.Honorario > 0 ? x.Honorario : (x.MedicoHonorarioBase > 0 ? x.MedicoHonorarioBase : x.Precio),
+                    x.Cantidad
+                })
+                .ToList();
+
+            var newTotal = newAllItems.Sum(x => x.Honorario * x.Cantidad);
+
+            // Print the comparison results in a format we can capture
+            Console.WriteLine("================ HONORARIUM QUERY COMPARISON ================");
+            Console.WriteLine($"[OLD QUERY] Services assigned: {oldAllItems.Count}");
+            foreach (var item in oldAllItems)
+            {
+                Console.WriteLine($"   - MedicoId: {item.MedicoId}, Honorario calculado: ${item.Honorario}");
+            }
+            Console.WriteLine($"[OLD QUERY] Total Honorarium: ${oldTotal}");
+
+            Console.WriteLine($"[NEW QUERY] Services assigned: {newAllItems.Count}");
+            foreach (var item in newAllItems)
+            {
+                Console.WriteLine($"   - MedicoId: {item.MedicoId}, Honorario calculado: ${item.Honorario}");
+            }
+            Console.WriteLine($"[NEW QUERY] Total Honorarium: ${newTotal}");
+            Console.WriteLine("=============================================================");
+
+            // Assert that old logic incorrectly includes the tomography and falls back to consultation price ($500 total)
+            // while the new logic correctly includes only the consultation and falls back to Dr's base honorarium ($35)
+            Assert.Equal(500.00m, oldTotal); // $50 (consultation price fallback) + $450 (tomography price fallback) = $500
+            Assert.Equal(35.00m, newTotal);  // Dr. Jose Bracamonte's base honorarium of $35
+        }
     }
 }

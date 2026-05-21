@@ -20,6 +20,7 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const string AsistenteSeguro = "Asistente Seguro";
         public const string AsistenteDeSeguros = "Asistente de Seguros"; // Variación detectada
         public const string AsistenteRX = "Asistente RX";
+        public const string AsistenteTomografia = "Asistente de Tomografía";
         public const string Farmacia = "Farmacia";
 
         // Grupos Lógicos (Para [Authorize(Roles = ...)])

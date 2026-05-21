@@ -444,7 +444,7 @@ export class FacturacionComponent {
     // UI REFINEMENT (Phase 9): Passing both price and honorary to the inline editor
     const item = isBackend ? this.serviciosEnBackend()[index] : this.carritoLocal()[index];
     const currentPrice = item.precioUsd || item.PrecioUsd || item.precio || 0;
-    const currentHonorary = item.honorarioUsd || item.HonorarioUsd || 0;
+    const currentHonorary = item.honorarioUsd ?? item.HonorarioUsd ?? item.honorario ?? item.Honorario ?? item.honorarioBase ?? item.HonorarioBase ?? 0;
 
     // Delegar al componente cart que inicie el modo edición
     this.billingCart.startEdit(index, isBackend, currentPrice, currentHonorary);
@@ -464,7 +464,7 @@ export class FacturacionComponent {
     } else {
       this.billingFacade.carritoLocal.update(cart => {
         const newCart = [...cart];
-        newCart[index] = { ...newCart[index], precioUsd: newPrice, precio: newPrice, honorarioUsd: newHonorary };
+        newCart[index] = new CatalogItem({ ...newCart[index], precioUsd: newPrice, precio: newPrice, honorarioUsd: newHonorary });
         return newCart;
       });
       this.actionMessage.set("Precio y Honorario modificados exitosamente.");
@@ -871,14 +871,14 @@ export class FacturacionComponent {
     if (pId === null) {
       const yaEnCarrito = this.carritoLocal().some(x => x.id === s.id);
       if (!yaEnCarrito) {
-        this.carritoLocal.update(prev => [...prev, {
+        this.carritoLocal.update(prev => [...prev, new CatalogItem({
           ...s,
           descripcion: finalDescripcion,
           medicoId: esConsulta ? this.selectedMedicoId() : undefined,
           medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
           horaCita: esConsulta ? this.horaCita() : undefined,
           comentario: this.comentarioCita()
-        }]);
+        })]);
         this.resetCitaSelection();
         this.actionMessage.set(`Servicio "${finalDescripcion}" añadido al carrito temporal.`);
         
@@ -925,7 +925,7 @@ export class FacturacionComponent {
     this.facturacionService.cargarServicio(payload, idempotencyKey).subscribe({
       next: (res: any) => {
         this.cuentaId.set(res.cuentaId);
-        this.serviciosEnBackend.update((prev: any[]) => [...prev, {
+        this.serviciosEnBackend.update((prev: any[]) => [...prev, new CatalogItem({
           ...s,
           detalleId: res.detalleId, // Guárdalo para eliminación precisa (V4.8)
           medicoId: esConsulta ? this.selectedMedicoId() : undefined, // Guardar ID para limpieza de cita
@@ -934,7 +934,7 @@ export class FacturacionComponent {
           precio: payload.precio,
           precioBs: s.precioBs,
           precioUsd: s.precioUsd
-        }]);
+        })]);
         this.resetCitaSelection();
         this.actionMessage.set("Servicio cargado exitosamente.");
 

@@ -167,7 +167,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 foreach (var item in request.Items)
                 {
-                    if (EstadoConstants.EsConsulta(item.TipoServicio))
+                    ServicioClinico? baseService = null;
+                    Guid serviceGuid = Guid.Empty;
+                    if (Guid.TryParse(item.ServicioId, out Guid sGuid))
+                    {
+                        serviceGuid = sGuid;
+                        baseService = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == serviceGuid, ct);
+                    }
+
+                    bool esLab = EstadoConstants.EsLaboratorio(item.TipoServicio);
+                    bool esConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
+
+                    if (esConsulta)
                     {
                         if (!item.MedicoId.HasValue || !item.HoraCita.HasValue)
                         {
@@ -176,18 +187,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         }
 
                         // [BUG-FIX] Strict Specialty Validation (V15.0)
-                        if (Guid.TryParse(item.ServicioId, out Guid sGuid))
+                        if (baseService != null)
                         {
-                            var servicio = await _context.ServiciosClinicos.FindAsync(new object[] { sGuid }, ct);
                             var medico = await _context.Medicos.FindAsync(new object[] { item.MedicoId.Value }, ct);
 
-                            if (servicio != null && medico != null && servicio.EspecialidadId.HasValue)
+                            if (medico != null && baseService.EspecialidadId.HasValue)
                             {
-                                if (servicio.EspecialidadId.Value != medico.EspecialidadId)
+                                if (baseService.EspecialidadId.Value != medico.EspecialidadId)
                                 {
                                     _logger.LogError("[SYNC] Mismatch de Especialidad: Servicio '{Serv}' ({SpecS}) vs Médico '{Med}' ({SpecM})", 
-                                        servicio.Descripcion, servicio.EspecialidadId, medico.Nombre, medico.EspecialidadId);
-                                    throw new InvalidOperationException($"No se puede asignar el médico '{medico.Nombre}' a la consulta de '{servicio.Descripcion}' porque las especialidades no coinciden.");
+                                        baseService.Descripcion, baseService.EspecialidadId, medico.Nombre, medico.EspecialidadId);
+                                    throw new InvalidOperationException($"No se puede asignar el médico '{medico.Nombre}' a la consulta de '{baseService.Descripcion}' porque las especialidades no coinciden.");
                                 }
                             }
                         }
@@ -198,8 +208,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                     // Senior Enrichment V12.2: Capturar LegacyMappingId del catálogo
                     string? legacyId = null;
-                    bool esLab = EstadoConstants.EsLaboratorio(item.TipoServicio);
-                    Guid serviceGuid = Guid.Empty;
 
                     if (esLab)
                     {
@@ -207,41 +215,51 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         legacyId = item.ServicioId;
                         _logger.LogInformation("[SYNC] Lab Item: '{Desc}' → LegacyMappingId='{Id}'", item.Descripcion, legacyId);
                     }
-                    else if (Guid.TryParse(item.ServicioId, out serviceGuid))
+                    else if (baseService != null)
                     {
-                        var catalogo = await _context.ServiciosClinicos.FindAsync(new object[] { serviceGuid }, ct);
-                        legacyId = catalogo?.LegacyMappingId;
+                        legacyId = baseService.LegacyMappingId;
+                    }
+
+                    decimal finalHonorario = item.Honorario;
+                    if (esConsulta && baseService != null)
+                    {
+                        if (item.Honorario == baseService.HonorarioBase || item.Honorario == 0)
+                        {
+                            finalHonorario = baseService.HonorarioBase + item.Precio;
+                        }
                     }
 
                     var detalle = cuenta.AgregarServicio(
                         serviceGuid, 
                         item.Descripcion, 
                         item.Precio, 
-                        item.Honorario,
+                        finalHonorario,
                         item.Cantidad, 
                         item.TipoServicio, 
                         request.UsuarioCarga,
                         legacyId);
                     
                     // AUDIT LOG (Phase 9): Detect modification in price OR honorary and log it
-                    if (serviceGuid != Guid.Empty)
+                    if (baseService != null)
                     {
-                        var catalogo = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == serviceGuid, ct);
-                        if (catalogo != null && (catalogo.PrecioBase != item.Precio || catalogo.HonorarioBase != item.Honorario))
+                        decimal expectedDefaultHonorario = baseService.HonorarioBase;
+                        if (esConsulta) expectedDefaultHonorario += item.Precio;
+
+                        if (baseService.PrecioBase != item.Precio || expectedDefaultHonorario != finalHonorario)
                         {
                             var auditLog = new LogAuditoriaPrecio(
                                 detalle.Id,
                                 item.Descripcion,
-                                catalogo.PrecioBase,
+                                baseService.PrecioBase,
                                 item.Precio,
-                                catalogo.HonorarioBase,
-                                item.Honorario,
+                                baseService.HonorarioBase,
+                                finalHonorario,
                                 request.UsuarioCarga,
                                 string.IsNullOrEmpty(request.SupervisorKey) ? "Admin Privilegiado" : "Supervisor Key Autorizado"
                             );
                             await _context.AuditLogsPrecios.AddAsync(auditLog, ct);
                             _logger.LogInformation("[AUDIT] Cambio de precio/honorario detectado y registrado para '{Servicio}': P({OldP}->{NewP}), H({OldH}->{NewH})", 
-                                item.Descripcion, catalogo.PrecioBase, item.Precio, catalogo.HonorarioBase, item.Honorario);
+                                item.Descripcion, baseService.PrecioBase, item.Precio, baseService.HonorarioBase, finalHonorario);
                         }
                     }
 

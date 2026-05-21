@@ -98,10 +98,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .SumAsync(ar => ar.MontoTotalBase - ar.MontoPagadoBase, cancellationToken);
 
                 // Ventas por Especialidad (Top 5 hoy)
-                response.VentasPorEspecialidad = await _context.CuentasServicios
+                var specialtyDetails = await _context.CuentasServicios
                     .AsNoTracking()
                     .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
                     .SelectMany(c => c.Detalles)
+                    .Select(d => new { d.TipoServicio, d.Precio, d.Cantidad })
+                    .ToListAsync(cancellationToken);
+
+                response.VentasPorEspecialidad = specialtyDetails
                     .GroupBy(d => d.TipoServicio)
                     .Select(g => new RevenueBySpecialtyDto
                     {
@@ -110,22 +114,30 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     })
                     .OrderByDescending(x => x.Monto)
                     .Take(5)
-                    .ToListAsync(cancellationToken);
+                    .ToList();
 
                 // Ventas por Seguro (Top 5 hoy)
-                response.VentasPorSeguro = await (from c in _context.CuentasServicios.AsNoTracking()
-                                                   join s in _context.SegurosConvenios.AsNoTracking() on c.ConvenioId equals (int?)s.Id into joinSeg
-                                                   from s in joinSeg.DefaultIfEmpty()
-                                                   where c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada
-                                                   group c by s != null ? s.Nombre : EstadoConstants.Particular into g
-                                                   select new RevenueByInsuranceDto
-                                                   {
-                                                       Seguro = g.Key,
-                                                       Monto = g.SelectMany(x => x.Detalles).Sum(d => d.Precio * d.Cantidad)
-                                                   })
-                                                   .OrderByDescending(x => x.Monto)
-                                                   .Take(5)
-                                                   .ToListAsync(cancellationToken);
+                var rawInsuranceData = await (from c in _context.CuentasServicios.AsNoTracking()
+                                               join s in _context.SegurosConvenios.AsNoTracking() on c.ConvenioId equals (int?)s.Id into joinSeg
+                                               from s in joinSeg.DefaultIfEmpty()
+                                               where c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada
+                                               select new
+                                               {
+                                                   SeguroNombre = s != null ? s.Nombre : null,
+                                                   Detalles = c.Detalles.Select(d => new { d.Precio, d.Cantidad })
+                                               })
+                                               .ToListAsync(cancellationToken);
+
+                response.VentasPorSeguro = rawInsuranceData
+                    .GroupBy(x => x.SeguroNombre ?? EstadoConstants.Particular)
+                    .Select(g => new RevenueByInsuranceDto
+                    {
+                        Seguro = g.Key,
+                        Monto = g.SelectMany(x => x.Detalles).Sum(d => d.Precio * d.Cantidad)
+                    })
+                    .OrderByDescending(x => x.Monto)
+                    .Take(5)
+                    .ToList();
 
                 // --- ANALYTICS ENRICHMENT (Fase 6) ---
 

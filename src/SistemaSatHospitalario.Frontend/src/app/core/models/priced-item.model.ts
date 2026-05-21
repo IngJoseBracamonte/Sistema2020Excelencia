@@ -25,13 +25,26 @@ export abstract class BasePricedItem {
     this.precio = data.precio || data.Precio || 0;
     this.precioBs = data.precioBs ?? data.PrecioBs;
     this.precioUsd = data.precioUsd ?? data.PrecioUsd;
-    this.honorarioUsd = data.honorarioUsd ?? data.HonorarioUsd ?? data.honorarioBase ?? data.HonorarioBase ?? 0;
     this.tipo = data.tipo || data.Tipo;
     this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;
     this.activo = data.activo ?? data.Activo;
     this.honorarioBase = data.honorarioBase ?? data.HonorarioBase ?? 0;
     this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
+
+    const priceVal = this.precioUsd ?? 0;
+    if (data.honorarioUsd !== undefined && data.honorarioUsd !== null) {
+      this.honorarioUsd = data.honorarioUsd;
+    } else if (data.HonorarioUsd !== undefined && data.HonorarioUsd !== null) {
+      this.honorarioUsd = data.HonorarioUsd;
+    } else {
+      const baseHonorary = this.honorarioBase ?? 0;
+      if (this.isConsultation) {
+        this.honorarioUsd = baseHonorary + priceVal;
+      } else {
+        this.honorarioUsd = baseHonorary;
+      }
+    }
   }
 
   /**

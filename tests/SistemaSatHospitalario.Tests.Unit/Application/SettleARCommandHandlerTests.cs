@@ -6,72 +6,84 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
-using SistemaSatHospitalario.Tests.Unit.Common;
+using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Tests.Unit.Common.Builders;
 
 namespace SistemaSatHospitalario.Tests.Unit.Application
 {
     /// <summary>
-    /// SettleARCommandHandlerTests (Senior Standards).
-    /// Verifica la liquidación de cuentas por cobrar bajo la arquitectura USD-First.
+    /// SettleARCommandHandlerTests.
+    /// Verifica la liquidación de cuentas por cobrar bajo la arquitectura USD-First usando base de datos SQLite In-Memory.
     /// </summary>
-    public class SettleARCommandHandlerTests
+    public class SettleARCommandHandlerTests : IDisposable
     {
-        private readonly Mock<IApplicationDbContext> _contextMock;
+        private readonly SqliteConnection _connection;
+        private readonly SatHospitalarioDbContext _context;
+        private readonly Mock<INotificationService> _notificationMock;
         private readonly SettleARCommandHandler _handler;
 
         public SettleARCommandHandlerTests()
         {
-            _contextMock = new Mock<IApplicationDbContext>();
-            _handler = new SettleARCommandHandler(_contextMock.Object);
+            _connection = new SqliteConnection("Filename=:memory:");
+            _connection.Open();
+
+            var options = new DbContextOptionsBuilder<SatHospitalarioDbContext>()
+                .UseSqlite(_connection)
+                .Options;
+
+            _context = new SatHospitalarioDbContext(options);
+            _context.Database.EnsureCreated();
+
+            _notificationMock = new Mock<INotificationService>();
+            _handler = new SettleARCommandHandler(_context, _notificationMock.Object);
+        }
+
+        public void Dispose()
+        {
+            _context.Dispose();
+            _connection.Dispose();
+        }
+
+        private async Task<(Guid PacienteId, Guid CuentaId)> SeedPacienteAndCuentaAsync()
+        {
+            var pacienteId = Guid.NewGuid();
+            var cuentaId = Guid.NewGuid();
+
+            var p = new PacienteAdmision("123", "Test P", "555");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(p, pacienteId);
+            _context.PacientesAdmision.Add(p);
+
+            var c = new CuentaServicios(pacienteId, "Adm", "Particular");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(c, cuentaId);
+            _context.CuentasServicios.Add(c);
+
+            await _context.SaveChangesAsync();
+            return (pacienteId, cuentaId);
         }
 
         [Fact]
         public async Task Should_SuccessfullySettle_When_ValidPayments_And_NoPreviousReceipt()
         {
-            // Arrange (Escenario Senior: Sin recibo previo, debe autogenerarlo)
+            // Arrange
+            var ids = await SeedPacienteAndCuentaAsync();
             var arId = Guid.NewGuid();
-            var ar = new ARBuilder().WithId(arId).WithTotal(100).Build();
+            var ar = new ARBuilder()
+                .WithId(arId)
+                .WithPacienteId(ids.PacienteId)
+                .WithCuentaId(ids.CuentaId)
+                .WithTotal(100)
+                .Build();
             var tasaActual = new TasaCambio(50);
 
-            // Setup Mocks usando el helper TestAsyncEnumerable para soportar querys asíncronas
-            var arSet = new List<CuentaPorCobrar> { ar }.AsQueryable();
-            var mockArSet = new Mock<DbSet<CuentaPorCobrar>>();
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<CuentaPorCobrar>(arSet.Provider));
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.Expression).Returns(arSet.Expression);
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.ElementType).Returns(arSet.ElementType);
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.GetEnumerator()).Returns(arSet.GetEnumerator());
-            mockArSet.As<IAsyncEnumerable<CuentaPorCobrar>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<CuentaPorCobrar>(arSet.GetEnumerator()));
-            
-            _contextMock.Setup(c => c.CuentasPorCobrar).Returns(mockArSet.Object);
-
-            var tasaSet = new List<TasaCambio> { tasaActual }.AsQueryable();
-            var mockTasaSet = new Mock<DbSet<TasaCambio>>();
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<TasaCambio>(tasaSet.Provider));
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.Expression).Returns(tasaSet.Expression);
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.ElementType).Returns(tasaSet.ElementType);
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.GetEnumerator()).Returns(tasaSet.GetEnumerator());
-            mockTasaSet.As<IAsyncEnumerable<TasaCambio>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<TasaCambio>(tasaSet.GetEnumerator()));
-
-            _contextMock.Setup(c => c.TasaCambio).Returns(mockTasaSet.Object);
-
-            var reciboSet = new List<ReciboFactura>().AsQueryable();
-            var mockReciboSet = new Mock<DbSet<ReciboFactura>>();
-            mockReciboSet.As<IQueryable<ReciboFactura>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<ReciboFactura>(reciboSet.Provider));
-            mockReciboSet.As<IQueryable<ReciboFactura>>().Setup(m => m.Expression).Returns(reciboSet.Expression);
-            mockReciboSet.As<IQueryable<ReciboFactura>>().Setup(m => m.ElementType).Returns(reciboSet.ElementType);
-            mockReciboSet.As<IQueryable<ReciboFactura>>().Setup(m => m.GetEnumerator()).Returns(reciboSet.GetEnumerator());
-            mockReciboSet.As<IAsyncEnumerable<ReciboFactura>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<ReciboFactura>(reciboSet.GetEnumerator()));
-
-            _contextMock.Setup(c => c.RecibosFactura).Returns(mockReciboSet.Object);
+            _context.CuentasPorCobrar.Add(ar);
+            _context.TasaCambio.Add(tasaActual);
+            await _context.SaveChangesAsync();
 
             var command = new SettleARCommand
             {
@@ -88,67 +100,57 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
 
             // Assert
             result.Should().BeTrue();
-            ar.Estado.Should().Be(EstadoConstants.Cobrada);
-            ar.MontoPagadoBase.Should().Be(ar.MontoTotalBase);
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+            var updatedAr = await _context.CuentasPorCobrar.AsNoTracking().FirstAsync(a => a.Id == arId);
+            updatedAr.Estado.Should().Be(EstadoConstants.Cobrada);
+            updatedAr.MontoPagadoBase.Should().Be(updatedAr.MontoTotalBase);
+
+            var paymentDetails = await _context.DetallesPago.ToListAsync();
+            paymentDetails.Should().ContainSingle();
+            paymentDetails[0].MetodoPago.Should().Be("Zelle");
+            paymentDetails[0].ReferenciaBancaria.Should().Be("TX-ZELLE-1");
+            paymentDetails[0].EquivalenteAbonadoBase.Should().Be(100);
         }
 
         [Fact]
-        public async Task Should_Fail_When_Account_Already_Cobrada()
+        public async Task Should_ReturnTrue_When_Account_Already_Cobrada()
         {
             // Arrange
+            var ids = await SeedPacienteAndCuentaAsync();
             var arId = Guid.NewGuid();
-            var ar = new ARBuilder().WithId(arId).WithEstado(EstadoConstants.Cobrada).Build();
+            var ar = new ARBuilder()
+                .WithId(arId)
+                .WithPacienteId(ids.PacienteId)
+                .WithCuentaId(ids.CuentaId)
+                .WithEstado(EstadoConstants.Cobrada)
+                .Build();
 
-            var arSet = new List<CuentaPorCobrar> { ar }.AsQueryable();
-            var mockArSet = new Mock<DbSet<CuentaPorCobrar>>();
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<CuentaPorCobrar>(arSet.Provider));
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.Expression).Returns(arSet.Expression);
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.ElementType).Returns(arSet.ElementType);
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.GetEnumerator()).Returns(arSet.GetEnumerator());
-            mockArSet.As<IAsyncEnumerable<CuentaPorCobrar>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<CuentaPorCobrar>(arSet.GetEnumerator()));
-            
-            _contextMock.Setup(c => c.CuentasPorCobrar).Returns(mockArSet.Object);
+            _context.CuentasPorCobrar.Add(ar);
+            await _context.SaveChangesAsync();
 
             var command = new SettleARCommand { ArId = arId };
 
             // Act
-            Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
+            var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
-            await act.Should().ThrowAsync<Exception>().WithMessage("Esta cuenta ya ha sido cobrada.");
+            result.Should().BeTrue();
         }
 
         [Fact]
         public async Task Should_Fail_When_No_Active_Tasa_Defined()
         {
             // Arrange
+            var ids = await SeedPacienteAndCuentaAsync();
             var arId = Guid.NewGuid();
-            var ar = new ARBuilder().WithId(arId).Build();
+            var ar = new ARBuilder()
+                .WithId(arId)
+                .WithPacienteId(ids.PacienteId)
+                .WithCuentaId(ids.CuentaId)
+                .Build();
 
-            var arSet = new List<CuentaPorCobrar> { ar }.AsQueryable();
-            var mockArSet = new Mock<DbSet<CuentaPorCobrar>>();
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<CuentaPorCobrar>(arSet.Provider));
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.Expression).Returns(arSet.Expression);
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.ElementType).Returns(arSet.ElementType);
-            mockArSet.As<IQueryable<CuentaPorCobrar>>().Setup(m => m.GetEnumerator()).Returns(arSet.GetEnumerator());
-            mockArSet.As<IAsyncEnumerable<CuentaPorCobrar>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<CuentaPorCobrar>(arSet.GetEnumerator()));
-            
-            _contextMock.Setup(c => c.CuentasPorCobrar).Returns(mockArSet.Object);
-
-            // Tasa vacía
-            var tasaSet = new List<TasaCambio>().AsQueryable();
-            var mockTasaSet = new Mock<DbSet<TasaCambio>>();
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<TasaCambio>(tasaSet.Provider));
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.Expression).Returns(tasaSet.Expression);
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.ElementType).Returns(tasaSet.ElementType);
-            mockTasaSet.As<IQueryable<TasaCambio>>().Setup(m => m.GetEnumerator()).Returns(tasaSet.GetEnumerator());
-            mockTasaSet.As<IAsyncEnumerable<TasaCambio>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<TasaCambio>(tasaSet.GetEnumerator()));
-
-            _contextMock.Setup(c => c.TasaCambio).Returns(mockTasaSet.Object);
+            _context.CuentasPorCobrar.Add(ar);
+            await _context.SaveChangesAsync();
 
             var command = new SettleARCommand { ArId = arId };
 

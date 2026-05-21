@@ -34,21 +34,27 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             // ═══ Paso 1: Consultas Atendidas ═══
             // Fuente primaria de honorarios médicos.
             // Filtro directo por CitasMedicas.Estado + rango de fecha en HoraPautada.
-            // Fallback: detail.Honorario → detail.Precio (el precio del servicio ES el honorario del médico)
+            // Se restringe la unión de detalles para evitar asignación errónea de otros servicios en la misma cuenta.
             var fromCitas = await (
                 from cita in _context.CitasMedicas
                 join detail in _context.DetallesServicioCuenta
                     on cita.CuentaServicioId equals detail.CuentaServicioId
+                join medico in _context.Medicos
+                    on cita.MedicoId equals medico.Id
                 where cita.Estado == EstadoConstants.Atendida
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
+                   && (detail.MedicoResponsableId == cita.MedicoId || 
+                       (detail.MedicoResponsableId == null && 
+                        (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI"))))
                 select new
                 {
                     MedicoId = (Guid?)(detail.MedicoResponsableId ?? cita.MedicoId),
                     detail.Honorario,
                     detail.Precio,
                     detail.Cantidad,
-                    detail.CategoriaHonorario
+                    detail.CategoriaHonorario,
+                    MedicoHonorarioBase = medico.HonorarioBase
                 }
             ).ToListAsync(cancellationToken);
 
@@ -76,15 +82,21 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             ).ToListAsync(cancellationToken);
 
             // ═══ Paso 3: Consolidación en memoria ═══
-            var allItems = fromCitas.Concat(fromServicios)
-                .Select(x => new
+            var allItems = fromCitas.Select(x => new
                 {
                     x.MedicoId,
-                    // Cadena de fallback: Honorario explícito → Precio del servicio
-                    Honorario = x.Honorario > 0 ? x.Honorario : x.Precio,
+                    // Cadena de fallback: Honorario explícito en detalle -> Honorario base del médico -> Precio del servicio
+                    Honorario = x.Honorario > 0 ? x.Honorario : (x.MedicoHonorarioBase > 0 ? x.MedicoHonorarioBase : x.Precio),
                     x.Cantidad,
                     Categoria = x.CategoriaHonorario ?? HonorarioConstants.CategoriaConsulta
                 })
+                .Concat(fromServicios.Select(x => new
+                {
+                    x.MedicoId,
+                    Honorario = x.Honorario,
+                    x.Cantidad,
+                    Categoria = x.CategoriaHonorario ?? HonorarioConstants.CategoriaOtros
+                }))
                 .Where(x => x.MedicoId.HasValue && x.Honorario > 0)
                 .ToList();
 

@@ -35,7 +35,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         [Fact]
         public async Task Should_Schedule_When_NoColissionExists()
         {
-            var pacienteLegacy = new DatosPersonalesLegacy { IdPersona = 1, Nombre = "Test", Apellidos = "Legacy" };
+            var pacienteLegacy = new DatosPersonalesLegacy { IdPersona = 1, Nombre = "Test", Apellidos = "Legacy", Cedula = "V-12345" };
             _legacyRepositoryMock.Setup(r => r.GetPatientByIdAsync("1", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(pacienteLegacy);
 

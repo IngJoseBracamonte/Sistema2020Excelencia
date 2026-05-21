@@ -1,80 +1,33 @@
 <div class="p-8 max-w-[1700px] space-y-6 animate-fade-in relative z-10">
     <!-- Header Estilo Auditoría -->
     <div class="px-0 pb-2 animate-fade-in relative">
-        <div
-            class="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all gap-4">
             <div class="flex items-center gap-6">
-                <div
-                    class="h-14 w-14 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+                <div class="h-14 w-14 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.05)]">
                     <lucide-icon [name]="icons.Reportes" class="w-7 h-7"></lucide-icon>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Cuentas por
-                        Auditar</h1>
-                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Control de
-                        Integridad y Procesamiento</p>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Panel de Auditoría</h1>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Control de Integridad y Validación Operativa</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
+            
+            <!-- Tabs Navigation -->
+            <div class="flex items-center bg-white/5 border border-white/5 p-1 rounded-2xl">
+                <button (click)="setTab('cuentas')"
+                        [ngClass]="currentTab() === 'cuentas' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/10' : 'text-slate-400 hover:text-white'"
+                        class="px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all">
+                    Auditoría de Cuentas
+                </button>
+                <button (click)="setTab('ordenes-directas')"
+                        [ngClass]="currentTab() === 'ordenes-directas' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/10' : 'text-slate-400 hover:text-white'"
+                        class="px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2">
+                    Órdenes Directas
+                    <span *ngIf="directOrders().length > 0" class="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[9px] font-black rounded-full">
+                        {{ directOrders().length }}
+                    </span>
+                </button>
             </div>
-        </div>
-    </div>
-
-    <!-- Filtros de Auditoría -->
-    <div class="px-0 animate-fade-in-up">
-        <div
-            class="flex flex-col md:flex-row items-stretch bg-white/[0.02] border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
-            <div class="relative flex-[1.5] min-w-[250px]">
-                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
-                    (keyup.enter)="refresh()" placeholder="Buscar por Nombre o Cédula..."
-                    class="w-full pl-20 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600 uppercase">
-                <lucide-icon [name]="icons.Search"
-                    class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-amber-500 transition-colors"></lucide-icon>
-            </div>
-
-            <div class="hidden md:block w-px bg-white/5 my-2"></div>
-
-            <div
-                class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl md:bg-transparent md:rounded-none flex-1 justify-around">
-                <div class="flex flex-col relative group">
-                    <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Desde</span>
-                    <input type="date" [ngModel]="startDate()" (ngModelChange)="startDate.set($event); refresh()"
-                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
-                        {{ startDate() | date:'dd/MM/yyyy' }}
-                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-amber-500 opacity-40"></lucide-icon>
-                    </div>
-                </div>
-                <div class="h-6 w-px bg-white/10 mx-2"></div>
-                <div class="flex flex-col relative group">
-                    <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Hasta</span>
-                    <input type="date" [ngModel]="endDate()" (ngModelChange)="endDate.set($event); refresh()"
-                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                    <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
-                        {{ endDate() | date:'dd/MM/yyyy' }}
-                        <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-amber-500 opacity-40"></lucide-icon>
-                    </div>
-                </div>
-            </div>
-
-            <div class="hidden md:block w-px bg-white/5 my-2"></div>
-
-            <div class="relative flex-1">
-                <select [value]="filterAudit()" (change)="onFilterChange($any($event.target).value)"
-                    class="w-full h-full pl-6 pr-10 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
-                    <option value="Pendiente">POR PROCESAR</option>
-                    <option value="Procesada">PROCESADAS</option>
-                </select>
-                <lucide-icon [name]="icons.ChevronRight"
-                    class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
-            </div>
-
-            <button (click)="refresh()"
-                class="bg-amber-600 hover:bg-amber-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-500/20">
-                <span *ngIf="!isLoading()">FILTRAR</span>
-                <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw"
-                    class="w-4 h-4 animate-spin mx-auto"></lucide-icon>
-            </button>
         </div>
     </div>
 
@@ -87,155 +40,455 @@
         </div>
     </div>
 
-    <!-- Tabla de Auditoría -->
-    <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-white/5">
-                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha</th>
-                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente
-                        </th>
-                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Seguro
-                        </th>
-                        <th
-                            class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">
-                            Monto Total</th>
-                        <th
-                            class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">
-                            Saldo</th>
-                        <th
-                            class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">
-                            Acción</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    <tr *ngIf="isLoading()" class="bg-transparent">
-                        <td colspan="6" class="px-6 py-16 text-center opacity-40">
-                            <lucide-icon [name]="icons.RefreshCcw"
-                                class="w-8 h-8 animate-spin text-amber-500 mx-auto mb-4"></lucide-icon>
-                        </td>
-                    </tr>
+    <!-- CONTENIDO TAB 1: AUDITORÍA DE CUENTAS -->
+    <div *ngIf="currentTab() === 'cuentas'" class="space-y-6">
+        <!-- Filtros de Auditoría -->
+        <div class="px-0 animate-fade-in-up">
+            <div class="flex flex-col md:flex-row items-stretch bg-white/[0.02] border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
+                <div class="relative flex-[1.5] min-w-[250px]">
+                    <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+                        (keyup.enter)="refresh()" placeholder="Buscar por Nombre o Cédula..."
+                        class="w-full pl-20 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600 uppercase">
+                    <lucide-icon [name]="icons.Search"
+                        class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-amber-500 transition-colors"></lucide-icon>
+                </div>
 
-                    <ng-container *ngFor="let ar of receivables()">
-                        <tr (click)="toggleRow(ar.id)"
-                            class="hover:bg-white/[0.04] transition-all group/row cursor-pointer border-l-2 border-transparent"
-                            [ngClass]="{'bg-white/[0.03] border-amber-500': isExpanded(ar.id)}">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ ar.fechaEmision | date:'dd/MM/yyyy' }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2 group/link">
-                                    <div>
-                                        <h4
-                                            class="text-[11px] font-black text-white uppercase tracking-tight leading-tight group-hover/row:text-amber-500 transition-colors">
-                                            {{ ar.pacienteNombre }}</h4>
-                                        <p class="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-1">{{
-                                            ar.pacienteCedula }}</p>
-                                    </div>
-                                    <a [routerLink]="['/expedientes']" [queryParams]="{search: ar.pacienteCedula}"
-                                        class="p-1.5 rounded-lg bg-amber-500/5 text-amber-500 opacity-0 group-hover/link:opacity-100 group-hover/link:bg-amber-500/10 transition-all cursor-pointer"
-                                        title="Ver Expediente">
-                                        <lucide-icon [name]="icons.Search" class="w-3 h-3"></lucide-icon>
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="text-[10px] font-black text-slate-500 uppercase tracking-tight">{{
-                                    ar.seguroNombre }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="text-xs font-bold text-white/70 font-mono tracking-tighter opacity-80">$ {{
-                                    ar.montoTotal | number:'1.2-2' }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="text-sm font-black font-mono tracking-tighter text-amber-500/80">$ {{
-                                    ar.saldoPendiente | number:'1.2-2' }}</span>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <button *ngIf="!ar.isAudited" (click)="$event.stopPropagation(); procesarAuditoria(ar)"
-                                    class="inline-flex items-center gap-2 px-6 py-2 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn border border-amber-500/20 shadow-lg shadow-amber-500/5">
-                                    PROCESAR
-                                    <lucide-icon [name]="icons.Check"
-                                        class="w-3 h-3 group-hover/btn:scale-125 transition-transform"></lucide-icon>
-                                </button>
-                                <span *ngIf="ar.isAudited"
-                                    class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                    <lucide-icon [name]="icons.Reportes"
-                                        class="w-3 h-3 text-emerald-500 opacity-60"></lucide-icon>
-                                    PROCESADA
-                                </span>
+                <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+                <div class="flex items-center gap-4 px-4 bg-white/5 rounded-2xl md:bg-transparent md:rounded-none flex-1 justify-around">
+                    <div class="flex flex-col relative group">
+                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Desde</span>
+                        <input type="date" [ngModel]="startDate()" (ngModelChange)="startDate.set($event); refresh()"
+                            class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                            {{ startDate() | date:'dd/MM/yyyy' }}
+                            <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-amber-500 opacity-40"></lucide-icon>
+                        </div>
+                    </div>
+                    <div class="h-6 w-px bg-white/10 mx-2"></div>
+                    <div class="flex flex-col relative group">
+                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Hasta</span>
+                        <input type="date" [ngModel]="endDate()" (ngModelChange)="endDate.set($event); refresh()"
+                            class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <div class="bg-transparent border-none p-0 text-[10px] font-black text-white uppercase cursor-pointer flex items-center gap-2">
+                            {{ endDate() | date:'dd/MM/yyyy' }}
+                            <lucide-icon [name]="icons.Calendar" class="w-3 h-3 text-amber-500 opacity-40"></lucide-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+                <div class="relative flex-1">
+                    <select [value]="filterAudit()" (change)="onFilterChange($any($event.target).value)"
+                        class="w-full h-full pl-6 pr-10 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
+                        <option value="Pendiente">POR PROCESAR</option>
+                        <option value="Procesada">PROCESADAS</option>
+                    </select>
+                    <lucide-icon [name]="icons.ChevronRight"
+                        class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                </div>
+
+                <button (click)="refresh()"
+                    class="bg-amber-600 hover:bg-amber-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-500/20">
+                    <span *ngIf="!isLoading()">FILTRAR</span>
+                    <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw"
+                        class="w-4 h-4 animate-spin mx-auto"></lucide-icon>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Auditoría -->
+        <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Seguro</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Monto Total</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Saldo</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <tr *ngIf="isLoading()" class="bg-transparent">
+                            <td colspan="6" class="px-6 py-16 text-center opacity-40">
+                                <lucide-icon [name]="icons.RefreshCcw"
+                                    class="w-8 h-8 animate-spin text-amber-500 mx-auto mb-4"></lucide-icon>
                             </td>
                         </tr>
 
-                        <!-- Accordion Detail: Historial de Pagos -->
-                        <tr *ngIf="isExpanded(ar.id)"
-                            class="bg-[#0b1120]/50 border-x-2 border-amber-500/10 animate-fade-in">
-                            <td colspan="6" class="px-12 py-8">
-                                <div class="max-w-4xl">
-                                    <div class="flex items-center justify-between mb-6">
-                                        <h5
-                                            class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
-                                            <lucide-icon [name]="icons.Reportes"
-                                                class="w-4 h-4 text-amber-500"></lucide-icon>
-                                            Historial de Abonos Registrados
-                                        </h5>
-                                        <span
-                                            class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">Auditoría
-                                            Operativa</span>
+                        <ng-container *ngFor="let ar of receivables()">
+                            <tr (click)="toggleRow(ar.id)"
+                                class="hover:bg-white/[0.04] transition-all group/row cursor-pointer border-l-2 border-transparent"
+                                [ngClass]="{'bg-white/[0.03] border-amber-500': isExpanded(ar.id)}">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ ar.fechaEmision | date:'dd/MM/yyyy' }}</span>
                                     </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2 group/link">
+                                        <div>
+                                            <h4 class="text-[11px] font-black text-white uppercase tracking-tight leading-tight group-hover/row:text-amber-500 transition-colors">
+                                                {{ ar.pacienteNombre }}</h4>
+                                            <p class="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-1">{{ ar.pacienteCedula }}</p>
+                                        </div>
+                                        <a [routerLink]="['/expedientes']" [queryParams]="{search: ar.pacienteCedula}"
+                                            class="p-1.5 rounded-lg bg-amber-500/5 text-amber-500 opacity-0 group-hover/link:opacity-100 group-hover/link:bg-amber-500/10 transition-all cursor-pointer"
+                                            title="Ver Expediente" (click)="$event.stopPropagation()">
+                                            <lucide-icon [name]="icons.Search" class="w-3 h-3"></lucide-icon>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-tight">{{ ar.seguroNombre || 'PARTICULAR' }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <span class="text-xs font-bold text-white/70 font-mono tracking-tighter opacity-80">$ {{ ar.montoTotal | number:'1.2-2' }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <span class="text-sm font-black font-mono tracking-tighter text-amber-500/80">$ {{ ar.saldoPendiente | number:'1.2-2' }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <button *ngIf="!ar.isAudited" (click)="$event.stopPropagation(); procesarAuditoria(ar)"
+                                        class="inline-flex items-center gap-2 px-6 py-2 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn border border-amber-500/20 shadow-lg shadow-amber-500/5">
+                                        PROCESAR
+                                        <lucide-icon [name]="icons.Check" class="w-3 h-3 group-hover/btn:scale-125 transition-transform"></lucide-icon>
+                                    </button>
+                                    <span *ngIf="ar.isAudited"
+                                        class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                        <lucide-icon [name]="icons.Reportes" class="w-3 h-3 text-emerald-500 opacity-60"></lucide-icon>
+                                        PROCESADA
+                                    </span>
+                                </td>
+                            </tr>
 
-                                    <div class="space-y-3">
-                                        <div *ngFor="let pago of (ar.pagos || [])"
-                                            class="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/payment hover:bg-white/[0.04] transition-all">
-                                            <div class="flex items-center gap-6">
-                                                <div class="flex flex-col">
-                                                    <span
-                                                        class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Fecha</span>
-                                                    <span class="text-[10px] font-black text-white uppercase">{{
-                                                        pago.fecha | date:'dd/MM/yyyy' }}</span>
-                                                </div>
-                                                <div class="h-8 w-px bg-white/5"></div>
-                                                <div class="flex flex-col">
-                                                    <span
-                                                        class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Método</span>
-                                                    <span class="text-[10px] font-black text-white uppercase">{{
-                                                        pago.metodo }}</span>
-                                                </div>
-                                                <div class="h-8 w-px bg-white/5"></div>
-                                                <div class="flex flex-col">
-                                                    <span
-                                                        class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Referencia</span>
-                                                    <span class="text-[10px] font-mono text-slate-400 uppercase">{{
-                                                        pago.referencia || 'SIN REF' }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="text-right">
-                                                <span
-                                                    class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5 block">Monto
-                                                    Abonado</span>
-                                                <span
-                                                    class="text-sm font-black text-white font-mono tracking-tighter text-amber-500/90">$
-                                                    {{ pago.montoBase | number:'1.2-2' }}</span>
-                                            </div>
+                            <!-- Accordion Detail: Historial de Pagos -->
+                            <tr *ngIf="isExpanded(ar.id)"
+                                class="bg-[#0b1120]/50 border-x-2 border-amber-500/10 animate-fade-in">
+                                <td colspan="6" class="px-12 py-8">
+                                    <div class="max-w-4xl">
+                                        <div class="flex items-center justify-between mb-6">
+                                            <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                                <lucide-icon [name]="icons.Reportes" class="w-4 h-4 text-amber-500"></lucide-icon>
+                                                Historial de Abonos Registrados
+                                            </h5>
+                                            <span class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">Auditoría Operativa</span>
                                         </div>
 
-                                        <div *ngIf="!ar.pagos || ar.pagos.length === 0"
-                                            class="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
-                                            <lucide-icon [name]="icons.Info"
-                                                class="w-8 h-8 mx-auto mb-3 text-slate-600"></lucide-icon>
-                                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                                                No se encontraron pagos registrados para esta cuenta</p>
+                                        <div class="space-y-3">
+                                            <div *ngFor="let pago of (ar.pagos || [])"
+                                                class="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/payment hover:bg-white/[0.04] transition-all">
+                                                <div class="flex items-center gap-6">
+                                                    <div class="flex flex-col">
+                                                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Fecha</span>
+                                                        <span class="text-[10px] font-black text-white uppercase">{{ pago.fecha | date:'dd/MM/yyyy' }}</span>
+                                                    </div>
+                                                    <div class="h-8 w-px bg-white/5"></div>
+                                                    <div class="flex flex-col">
+                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Método</span>
+                                                        <span class="text-[10px] font-black text-white uppercase">{{ pago.metodo }}</span>
+                                                    </div>
+                                                    <div class="h-8 w-px bg-white/5"></div>
+                                                    <div class="flex flex-col">
+                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Referencia</span>
+                                                        <span class="text-[10px] font-mono text-slate-400 uppercase">{{ pago.referencia || 'SIN REF' }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5 block">Monto Abonado</span>
+                                                    <span class="text-sm font-black text-white font-mono tracking-tighter text-amber-500/90">$ {{ pago.montoBase | number:'1.2-2' }}</span>
+                                                </div>
+                                            </div>
+
+                                            <div *ngIf="!ar.pagos || ar.pagos.length === 0"
+                                                class="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
+                                                <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto mb-3 text-slate-600"></lucide-icon>
+                                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">No se encontraron pagos registrados para esta cuenta</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </td>
+                            </tr>
+                        </ng-container>
+
+                        <tr *ngIf="!isLoading() && receivables().length === 0">
+                            <td colspan="6" class="px-6 py-20 text-center text-slate-500">
+                                <lucide-icon [name]="icons.Info" class="w-12 h-12 mx-auto mb-4 opacity-40"></lucide-icon>
+                                <p class="text-xs font-bold uppercase tracking-widest">No hay cuentas por auditar que coincidan con la búsqueda</p>
                             </td>
                         </tr>
-                    </ng-container>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO TAB 2: VALIDACIÓN DE ÓRDENES DIRECTAS -->
+    <div *ngIf="currentTab() === 'ordenes-directas'" class="space-y-6 animate-fade-in">
+        <!-- Filtros Órdenes Directas -->
+        <div class="px-0">
+            <div class="flex flex-col md:flex-row items-stretch bg-white/[0.02] border border-white/5 rounded-[2rem] p-2 gap-2 relative overflow-hidden group">
+                <div class="relative flex-1">
+                    <select [value]="filterDirectType()" (change)="onDirectTypeFilterChange($any($event.target).value)"
+                            class="w-full h-full pl-6 pr-10 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
+                        <option value="ALL">TODAS LAS ESTACIONES (RX & TOMO)</option>
+                        <option value="RX">ESTACIÓN DE RX</option>
+                        <option value="TOMO">ESTACIÓN DE TOMOGRAFÍA</option>
+                    </select>
+                    <lucide-icon [name]="icons.ChevronRight"
+                                 class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                </div>
+
+                <button (click)="loadPendingDirectOrders()"
+                        class="bg-amber-600 hover:bg-amber-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-500/20">
+                    <span *ngIf="!isLoading()">FILTRAR</span>
+                    <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw"
+                                 class="w-4 h-4 animate-spin mx-auto"></lucide-icon>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Órdenes Directas -->
+        <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">ID</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estudio Solicitado (Texto)</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estación</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado</th>
+                            <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <tr *ngIf="isLoading()" class="bg-transparent">
+                            <td colspan="7" class="px-6 py-16 text-center opacity-40">
+                                <lucide-icon [name]="icons.RefreshCcw"
+                                             class="w-8 h-8 animate-spin text-amber-500 mx-auto mb-4"></lucide-icon>
+                            </td>
+                        </tr>
+
+                        <ng-container *ngFor="let order of directOrders()">
+                            <tr (click)="toggleDirectRow(order.id)"
+                                class="hover:bg-white/[0.04] transition-all group/row cursor-pointer border-l-2 border-transparent"
+                                [ngClass]="{'bg-white/[0.03] border-amber-500': isDirectExpanded(order.id)}">
+                                <td class="px-6 py-4">
+                                    <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ order.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</span>
+                                </td>
+                                <td class="px-6 py-4 font-mono text-slate-400 text-xs font-bold">
+                                    #{{ order.id }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2 group/link">
+                                        <div>
+                                            <h4 class="text-[11px] font-black text-white uppercase tracking-tight leading-tight group-hover/row:text-amber-500 transition-colors">
+                                                {{ order.pacienteNombre }}
+                                            </h4>
+                                        </div>
+                                        <a [routerLink]="['/expedientes']" [queryParams]="{search: order.pacienteNombre}"
+                                           class="p-1.5 rounded-lg bg-amber-500/5 text-amber-500 opacity-0 group-hover/link:opacity-100 group-hover/link:bg-amber-500/10 transition-all cursor-pointer"
+                                           title="Ver Expediente" (click)="$event.stopPropagation()">
+                                            <lucide-icon [name]="icons.Search" class="w-3 h-3"></lucide-icon>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-[10px] font-bold text-slate-300 uppercase tracking-tight">{{ order.estudio }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span *ngIf="order.tipoServicio === 'RX'" 
+                                          class="px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-[8px] font-black uppercase tracking-wider">
+                                        RX
+                                    </span>
+                                    <span *ngIf="order.tipoServicio === 'TOMO'" 
+                                          class="px-2.5 py-1 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-lg text-[8px] font-black uppercase tracking-wider">
+                                        TOMOGRAFÍA
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="px-2.5 py-1.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                        VAL. PENDIENTE
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <button (click)="$event.stopPropagation(); openValidationModal(order)"
+                                            class="inline-flex items-center gap-2 px-5 py-2 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 border border-amber-500/20 shadow-lg shadow-amber-500/5">
+                                        VALIDAR INGRESO
+                                        <lucide-icon [name]="icons.Check" class="w-3 h-3"></lucide-icon>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Detail row for Direct Order -->
+                            <tr *ngIf="isDirectExpanded(order.id)"
+                                class="bg-[#0b1120]/50 border-x-2 border-amber-500/10 animate-fade-in">
+                                <td colspan="7" class="px-12 py-8">
+                                    <div class="max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-slate-300">
+                                        <div class="space-y-3">
+                                            <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                                <lucide-icon [name]="icons.Info" class="w-4 h-4 text-amber-500"></lucide-icon>
+                                                Detalles del Solicitante
+                                            </h5>
+                                            <div class="space-y-2 bg-white/[0.01] border border-white/5 rounded-2xl p-4">
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500 font-bold">Médico Solicitante:</span>
+                                                    <span class="text-white uppercase font-bold">{{ order.medicoSolicitanteNombre || 'Sin Médico Solicitante' }}</span>
+                                                </div>
+                                                <div class="h-px bg-white/5"></div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500 font-bold">Fecha de Solicitud:</span>
+                                                    <span class="text-white font-mono">{{ order.fechaCreacion | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-3">
+                                            <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                                <lucide-icon [name]="icons.User" class="w-4 h-4 text-amber-500"></lucide-icon>
+                                                Asistente de Estación
+                                            </h5>
+                                            <div class="space-y-2 bg-white/[0.01] border border-white/5 rounded-2xl p-4">
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500 font-bold">Procesado Por:</span>
+                                                    <span class="text-white uppercase font-mono">{{ order.procesadoPor || 'Desconocido' }}</span>
+                                                </div>
+                                                <div class="h-px bg-white/5"></div>
+                                                <div class="flex justify-between">
+                                                    <span class="text-slate-500 font-bold">Fecha Procesamiento:</span>
+                                                    <span class="text-white font-mono">{{ order.fechaProcesado | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-container>
+
+                        <tr *ngIf="!isLoading() && directOrders().length === 0">
+                            <td colspan="7" class="px-6 py-20 text-center text-slate-500">
+                                <lucide-icon [name]="icons.Info" class="w-12 h-12 mx-auto mb-4 opacity-40"></lucide-icon>
+                                <p class="text-xs font-bold uppercase tracking-widest">No hay órdenes directas pendientes de validación</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Validación Administrativa (Mapeo a cuenta y servicio) -->
+    <div *ngIf="showValidationModal()" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-fade-in">
+        <div class="bg-[#0e1626] border border-white/10 rounded-[2.5rem] p-8 max-w-xl w-full relative shadow-2xl space-y-6 text-slate-200">
+            <!-- Close Button -->
+            <button (click)="closeValidationModal()" 
+                    class="absolute top-6 right-6 text-slate-500 hover:text-white hover:bg-white/5 p-2 rounded-xl transition-all">
+                <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="flex items-center gap-4">
+                <div class="h-12 w-12 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center">
+                    <lucide-icon [name]="icons.Stethoscope" class="w-6 h-6"></lucide-icon>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tight">Validar Orden Directa</h3>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Asignar cuenta y registrar cobro en el sistema</p>
+                </div>
+            </div>
+
+            <!-- Info Order Box -->
+            <div class="bg-white/5 border border-white/5 rounded-2xl p-4 text-xs space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-slate-500 font-bold">Paciente:</span>
+                    <span class="text-white font-black uppercase">{{ selectedDirectOrder()?.pacienteNombre }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500 font-bold">Estudio Solicitado:</span>
+                    <span class="text-amber-500 font-black uppercase">{{ selectedDirectOrder()?.estudio }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500 font-bold">Médico:</span>
+                    <span class="text-slate-300 font-bold uppercase">{{ selectedDirectOrder()?.medicoSolicitanteNombre || 'Sin Médico Asignado' }}</span>
+                </div>
+            </div>
+
+            <!-- Mapeo catálogo del servicio -->
+            <div class="space-y-2">
+                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Mapear a Servicio Clínico</label>
+                <div class="relative">
+                    <select [ngModel]="selectedService()" (ngModelChange)="selectService($event)"
+                            class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white outline-none focus:border-white/20 transition-all appearance-none cursor-pointer">
+                        <option [ngValue]="null">SELECCIONE EL SERVICIO DEL CATÁLOGO...</option>
+                        <option *ngFor="let s of clinicalServices()" [ngValue]="s">
+                            [{{ s.codigo }}] {{ s.descripcion }} - Base: ${{ s.precioBase }} / Hon: ${{ s.honorarioBase }}
+                        </option>
+                    </select>
+                    <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                </div>
+            </div>
+
+            <!-- Precios editables -->
+            <div *ngIf="selectedService()" class="grid grid-cols-2 gap-4 animate-fade-in">
+                <div class="space-y-1">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Precio Clínico Aplicado ($)</label>
+                    <input type="number" [(ngModel)]="overridePrecio"
+                           class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white focus:outline-none focus:border-white/20">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Honorario Médico Calculado ($)</label>
+                    <input type="number" [(ngModel)]="overrideHonorario"
+                           class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white focus:outline-none focus:border-white/20">
+                </div>
+            </div>
+
+            <!-- Parámetros de Facturación y Cuenta -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Tipo de Ingreso</label>
+                    <div class="relative">
+                        <select [(ngModel)]="tipoIngresoVal"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white outline-none appearance-none cursor-pointer">
+                            <option value="Particular">PARTICULAR</option>
+                            <option value="Seguro">ASEGURADORA</option>
+                        </select>
+                        <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                    </div>
+                </div>
+                
+                <div *ngIf="tipoIngresoVal() === 'Seguro'" class="space-y-1 animate-fade-in">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Convenio de Seguros</label>
+                    <div class="relative">
+                        <select [(ngModel)]="convenioIdVal"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white outline-none appearance-none cursor-pointer">
+                            <option [ngValue]="null">SELECCIONE CONVENIO...</option>
+                            <option *ngFor="let c of convenios()" [ngValue]="c.id">{{ c.nombre }}</option>
+                        </select>
+                        <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="flex items-center gap-4 pt-4">
+                <button (click)="closeValidationModal()"
+                        class="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                    CANCELAR
+                </button>
+                <button (click)="validateDirectOrder()"
+                        [disabled]="isLoading() || !selectedService()"
+                        class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2">
+                    <span *ngIf="!isLoading()">VALIDAR Y PROCESAR COBRO</span>
+                    <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -81,7 +81,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             _context.CuentasPorCobrar.Add(ar);
             await _context.SaveChangesAsync();
 
-            var handler = new SettleARCommandHandler(_context);
+            var handler = new SettleARCommandHandler(_context, new Mock<INotificationService>().Object);
             var command = new SettleARCommand
             {
                 ArId = ar.Id,
@@ -113,18 +113,17 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             var fechaPagoUtcToday = todayLocal.AddHours(23).AddHours(4); 
 
             var recibo = new ReciboFactura(_seed.CuentaId, _seed.PacienteId, _seed.CajaId, 50.00m, 10.00m);
-            recibo.AgregarDetallePago("Efectivo", "REF", 10.00m, 10.00m);
+            recibo.AgregarDetallePago("Efectivo", "REF", 10.00m, 10.00m, "admin");
             var detalle = recibo.DetallesPago.First();
             
             // Forzamos la fecha de pago para el test de zona horaria
             typeof(DetallePago).GetProperty(nameof(DetallePago.FechaPago))?.SetValue(detalle, fechaPagoUtcToday);
             
             // Agregamos una cuenta de servicio vinculada para evitar fallos de JOIN en el Dashboard
-            var cuenta = new CuentaServicios(_seed.PacienteId, "admin", "Particular");
-            typeof(CuentaServicios).GetProperty(nameof(CuentaServicios.Id))?.SetValue(cuenta, _seed.CuentaId);
+            var cuenta = _context.CuentasServicios.Local.FirstOrDefault(x => x.Id == _seed.CuentaId) 
+                         ?? await _context.CuentasServicios.FindAsync(_seed.CuentaId);
             typeof(CuentaServicios).GetProperty(nameof(CuentaServicios.FechaCarga))?.SetValue(cuenta, fechaPagoUtcToday.AddHours(-1));
             
-            _context.CuentasServicios.Add(cuenta);
             _context.RecibosFactura.Add(recibo);
             
             await _context.SaveChangesAsync();
@@ -134,6 +133,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             _dateTimeMock.Setup(d => d.HospitalNow).Returns(hospitalNow);
             _dateTimeMock.Setup(d => d.TodayUtc).Returns(todayLocal.AddHours(4));
             _dateTimeMock.Setup(d => d.TomorrowUtc).Returns(todayLocal.AddDays(1).AddHours(4));
+            _dateTimeMock.Setup(d => d.UtcNow).Returns(DateTime.UtcNow);
 
             var handler = new GetBusinessInsightsQueryHandler(_context, _userServiceMock.Object, _dateTimeMock.Object, _loggerMock.Object);
             var insights = await handler.Handle(new GetBusinessInsightsQuery(), CancellationToken.None);
@@ -155,7 +155,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             _context.CuentasPorCobrar.Add(ar);
             await _context.SaveChangesAsync();
 
-            var handler = new SettleARCommandHandler(_context);
+            var handler = new SettleARCommandHandler(_context, new Mock<INotificationService>().Object);
             var command = new SettleARCommand
             {
                 ArId = ar.Id,

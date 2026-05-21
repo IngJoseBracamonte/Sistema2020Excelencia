@@ -19,6 +19,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
         public string? ProcesadoPor { get; set; }
         public DateTime? FechaProcesado { get; set; }
+        public bool EsDirecta { get; set; } = false;
+        public bool RequiereValidacion { get; set; } = false;
+        public bool Validada { get; set; } = false;
+        public string? ValidadorPor { get; set; }
+        public DateTime? FechaValidacion { get; set; }
+        public Guid? MedicoSolicitanteId { get; set; }
+        public string? MedicoSolicitanteNombre { get; set; }
 
         public OrdenImagen() { }
 

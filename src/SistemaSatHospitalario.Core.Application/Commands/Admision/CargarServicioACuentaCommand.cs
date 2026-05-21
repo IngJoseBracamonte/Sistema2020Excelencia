@@ -67,10 +67,15 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // 2. Validación de Seguridad de Precios (Fase 1 - Matrix)
-            if (!request.IsPrivilegedUser && Guid.TryParse(request.ServicioId, out var svcId))
+            ServicioClinico? baseService = null;
+            if (Guid.TryParse(request.ServicioId, out var svcId))
             {
-                var baseService = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == svcId, cancellationToken);
-                if (baseService != null && baseService.PrecioBase != request.Precio)
+                baseService = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == svcId, cancellationToken);
+            }
+
+            if (!request.IsPrivilegedUser && baseService != null)
+            {
+                if (baseService.PrecioBase != request.Precio)
                 {
                     // El precio ha sido modificado, requiere Clave de Supervisor
                     var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
@@ -87,7 +92,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
 
             // 3. Procesar lógica específica de Consultas/Citas
-            bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio);
+            bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
             if (esConsulta)
             {
                 await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
@@ -103,18 +108,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 legacyId = request.ServicioId;
                 if (string.IsNullOrEmpty(legacyId)) throw new InvalidOperationException("Se requiere un ID de perfil para servicios de Laboratorio.");
             }
-            else if (Guid.TryParse(request.ServicioId, out var serviceGuid))
+            else if (baseService != null)
             {
                 // Para servicios nativos, buscamos en el catálogo el mapeo si existe
-                var catalogo = await _context.ServiciosClinicos.FindAsync(new object[] { serviceGuid }, cancellationToken);
-                legacyId = catalogo?.LegacyMappingId;
+                legacyId = baseService.LegacyMappingId;
+            }
+
+            decimal finalHonorario = request.Honorario;
+            if (esConsulta && baseService != null)
+            {
+                if (request.Honorario == baseService.HonorarioBase || request.Honorario == 0)
+                {
+                    finalHonorario = baseService.HonorarioBase + request.Precio;
+                }
             }
 
             var detalle = cuenta.AgregarServicio(
                 esLab ? Guid.Empty : (Guid.TryParse(request.ServicioId, out var g) ? g : Guid.Empty), 
                 request.Descripcion, 
                 request.Precio, 
-                request.Honorario,
+                finalHonorario,
                 request.Cantidad, 
                 request.TipoServicio, 
                 request.UsuarioCarga,

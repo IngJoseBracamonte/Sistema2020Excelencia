@@ -234,12 +234,12 @@ export class BillingFacadeService {
           ...prev, 
           ...items.map(s => {
             const syncInfo = res.detalles?.find((d: any) => d.servicioId === s.id);
-            return {
+            return new CatalogItem({
               ...s,
               detalleId: syncInfo?.detalleId,
               precioBs: s.precioBs || s.PrecioBs,
               precioUsd: s.precioUsd || s.PrecioUsd
-            };
+            });
           })
         ]);
         

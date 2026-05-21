@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -8,6 +9,8 @@ using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Tests.Unit.Common;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -18,15 +21,42 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
     {
         private readonly Mock<IBillingRepository> _repositoryMock;
         private readonly Mock<IOrdenExternaService> _externaServiceMock;
-        private readonly Mock<SistemaSatHospitalario.Core.Application.Common.Interfaces.IApplicationDbContext> _contextMock;
+        private readonly Mock<IApplicationDbContext> _contextMock;
+        private readonly Mock<IHonorariumMapperService> _mapperServiceMock;
         private readonly CargarServicioACuentaCommandHandler _handler;
 
         public CargarServicioACuentaCommandHandlerTests()
         {
             _repositoryMock = new Mock<IBillingRepository>();
             _externaServiceMock = new Mock<IOrdenExternaService>();
-            _contextMock = new Mock<SistemaSatHospitalario.Core.Application.Common.Interfaces.IApplicationDbContext>();
-            _handler = new CargarServicioACuentaCommandHandler(_repositoryMock.Object, _externaServiceMock.Object, _contextMock.Object, NullLogger<CargarServicioACuentaCommandHandler>.Instance);
+            _contextMock = new Mock<IApplicationDbContext>();
+            _mapperServiceMock = new Mock<IHonorariumMapperService>();
+
+            // Setup default empty DB sets to avoid NullReferenceExceptions
+            var emptyPacientes = new List<PacienteAdmision>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(emptyPacientes);
+
+            var emptyServicios = new List<ServicioClinico>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(emptyServicios);
+
+            var emptyConfig = new List<ConfiguracionGeneral>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.ConfiguracionGeneral).Returns(emptyConfig);
+
+            var emptyHonorarios = new List<HonorarioConfig>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.HonorariosConfig).Returns(emptyHonorarios);
+
+            var mockLogs = new Mock<DbSet<LogAsignacionHonorario>>();
+            _contextMock.Setup(c => c.LogsAsignacionHonorario).Returns(mockLogs.Object);
+
+            var emptyMedicos = new List<Medico>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.Medicos).Returns(emptyMedicos);
+
+            _handler = new CargarServicioACuentaCommandHandler(
+                _repositoryMock.Object, 
+                _externaServiceMock.Object, 
+                _contextMock.Object, 
+                _mapperServiceMock.Object, 
+                NullLogger<CargarServicioACuentaCommandHandler>.Instance);
         }
 
         [Fact]
@@ -36,19 +66,18 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var pacienteId = Guid.NewGuid();
             var servicioId = Guid.NewGuid();
 
-            // Setup Mocks usando el helper TestAsyncEnumerable para soportar querys asíncronas
+            // Setup Mocks
             var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
             typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
-            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable();
-            var mockPacienteSet = new Mock<DbSet<PacienteAdmision>>();
-            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<PacienteAdmision>(pacienteSet.Provider));
-            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.Expression).Returns(pacienteSet.Expression);
-            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.ElementType).Returns(pacienteSet.ElementType);
-            mockPacienteSet.As<IQueryable<PacienteAdmision>>().Setup(m => m.GetEnumerator()).Returns(pacienteSet.GetEnumerator());
-            mockPacienteSet.As<IAsyncEnumerable<PacienteAdmision>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-                .Returns(new TestAsyncEnumerator<PacienteAdmision>(pacienteSet.GetEnumerator()));
-            
-            _contextMock.Setup(c => c.PacientesAdmision).Returns(mockPacienteSet.Object);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("C001", "Consulta", 100, "Medico");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            service.Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation;
+            service.HonorarioBase = 20;
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
 
             _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((CuentaServicios)null);
@@ -85,8 +114,22 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         {
             // Arrange
             var pacienteId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
             var cuentaExistente = new CuentaServicios(pacienteId, "Admin", "Particular");
             
+            // Setup Mocks
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("E001", "Examen", 50, "Laboratorio");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            service.Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Other;
+            service.HonorarioBase = 0;
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
             _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cuentaExistente);
 
@@ -94,7 +137,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             {
                 PacienteId = pacienteId,
                 TipoIngreso = "Particular",
-                ServicioId = Guid.NewGuid().ToString(),
+                ServicioId = servicioId.ToString(),
                 Descripcion = "Examen",
                 Precio = 50,
                 Honorario = 0,
@@ -113,5 +156,61 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _repositoryMock.Verify(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()), Times.Never);
             _repositoryMock.Verify(r => r.GuardarCambiosAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task Should_SumPriceToHonorarium_When_ServiceIsConsultationAndHonorariumIsDefaultOrZero()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            CuentaServicios capturedCuenta = null;
+
+            // Setup Mocks
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("C001", "Consulta Médica", 100, "Medico");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            service.Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation;
+            service.HonorarioBase = 20;
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CuentaServicios)null);
+
+            _repositoryMock.Setup(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()))
+                .Callback<CuentaServicios, CancellationToken>((c, _) => capturedCuenta = c)
+                .Returns(Task.CompletedTask);
+
+            var command = new CargarServicioACuentaCommand
+            {
+                PacienteId = pacienteId,
+                TipoIngreso = "Particular",
+                ServicioId = servicioId.ToString(),
+                Descripcion = "Consulta Médica",
+                Precio = 100,
+                Honorario = 20, // Coincide con HonorarioBase
+                Cantidad = 1,
+                TipoServicio = "Medico",
+                UsuarioCarga = "Admin",
+                MedicoId = Guid.NewGuid(),
+                HoraCita = DateTime.Today.AddHours(10)
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            capturedCuenta.Should().NotBeNull();
+            capturedCuenta.Detalles.Should().HaveCount(1);
+            
+            // Honorario final debe ser HonorarioBase + Precio (20 + 100 = 120)
+            capturedCuenta.Detalles.First().Honorario.Should().Be(120);
+        }
     }
 }
+
