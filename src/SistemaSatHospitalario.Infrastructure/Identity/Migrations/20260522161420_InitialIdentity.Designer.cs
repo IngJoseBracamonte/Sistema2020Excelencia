@@ -12,8 +12,8 @@ using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
 {
     [DbContext(typeof(SatHospitalarioIdentityDbContext))]
-    [Migration("20260423192812_AddPasswordResetSupport")]
-    partial class AddPasswordResetSupport
+    [Migration("20260522161420_InitialIdentity")]
+    partial class InitialIdentity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -10,7 +10,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         {
             var optionsBuilder = new DbContextOptionsBuilder<Sistema2020LegacyDbContext>();
             var serverVersion = new MySqlServerVersion(new Version(8, 0, 21)); // Dummy version for DesignTime
-            optionsBuilder.UseMySql("Server=localhost;Database=dummyDb;Uid=root;Pwd=;", serverVersion);
+            optionsBuilder.UseMySql("Server=localhost;Database=sistema2020;Uid=root;Pwd=Labordono1818;", serverVersion);
 
             return new Sistema2020LegacyDbContext(optionsBuilder.Options);
         }

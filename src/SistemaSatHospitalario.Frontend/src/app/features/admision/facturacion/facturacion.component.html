@@ -477,6 +477,7 @@
                 </div>
             </div>
         </div>
+    </div>
     
     <!-- Panel Administrativo: Control de Citas Activas (Fase 10) -->
     <div *ngIf="showAdminAppointmentsModal()" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
@@ -643,28 +644,46 @@
     </div>
 </div>
 
-<!-- MODAL DE SUGERENCIAS DINÁMICAS (Fase 12.5) -->
-<div *ngIf="showSuggestionModal() && currentSuggestion()" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-    <div class="bg-surface-card border border-white/10 rounded-[3rem] w-full max-w-lg p-10 shadow-[0_0_80px_rgba(0,0,0,0.6)] animate-scale-in text-center relative overflow-hidden">
+<!-- MODAL DE SUGERENCIAS DINÁMICAS (Fase 12.5 Refactored) -->
+<div *ngIf="showSuggestionModal() && activeSuggestions().length > 0" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+    <div class="bg-surface-card border border-white/10 rounded-[3rem] w-full max-w-lg p-10 shadow-[0_0_80px_rgba(0,0,0,0.6)] animate-scale-in text-left relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
         
         <div class="mx-auto w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex items-center justify-center text-amber-500 mb-6 shadow-xl shadow-amber-500/10">
-            <lucide-icon name="sparkles" class="w-10 h-10 animate-pulse"></lucide-icon>
+            <lucide-icon [name]="icons.Sparkles" class="w-10 h-10 animate-pulse"></lucide-icon>
         </div>
 
-        <h3 class="text-2xl font-black text-white uppercase tracking-tighter mb-4">Servicio Sugerido</h3>
-        <p class="text-slate-400 text-sm font-bold leading-relaxed mb-8">
-            ¿Desea agregar <span class="text-amber-500 underline decoration-amber-500/30 underline-offset-4">{{ currentSuggestion()?.descripcion | uppercase }}</span> recomendado para el servicio actual?
+        <h3 class="text-2xl font-black text-white text-center uppercase tracking-tighter mb-4">Servicios Referidos</h3>
+        <p class="text-slate-400 text-sm font-bold text-center leading-relaxed mb-6">
+            Se han detectado servicios adicionales recomendados. Seleccione los que desea agregar a la cuenta:
         </p>
+
+        <!-- Checkbox List -->
+        <div class="space-y-3 mb-8 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+            <div *ngFor="let s of activeSuggestions()" 
+                 (click)="toggleSuggestionSelection(s.id)"
+                 class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-amber-500/30 transition-all cursor-pointer">
+                <div class="flex items-center space-x-3">
+                    <div [class]="selectedSuggestions()[s.id] ? 'bg-amber-500 text-black border-amber-500' : 'border-white/20 text-transparent'" 
+                         class="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0">
+                        <lucide-icon [name]="icons.Check" class="w-3.5 h-3.5 stroke-[3]"></lucide-icon>
+                    </div>
+                    <span class="text-xs font-black text-white uppercase">{{ s.descripcion }}</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold text-emerald-400 font-mono">$ {{ s.displayPriceUsd }}</span>
+                </div>
+            </div>
+        </div>
 
         <div class="grid grid-cols-2 gap-4">
             <button (click)="rechazarSugerencia()" 
                 class="py-4 bg-white/5 hover:bg-white/10 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all border border-white/5">
                 Omitir
             </button>
-            <button (click)="aceptarSugerencia()" 
+            <button (click)="aceptarSugerencias()" 
                 class="py-4 bg-amber-500 hover:bg-amber-600 text-black font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-amber-500/20 active:scale-95">
-                Agregar ahora
+                Agregar seleccionados
             </button>
         </div>
     </div>

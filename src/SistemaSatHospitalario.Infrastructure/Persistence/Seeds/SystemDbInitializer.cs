@@ -70,9 +70,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 
-                await SeedServiciosClinicosAsync();
                 await SeedEspecialidadesAsync();
+                await SeedServiciosClinicosAsync();
                 await SeedMedicosAsync();
+                await SeedServiciosSugerenciasAsync();
                 await SeedPacientesAsync();
                 await SeedCajaDiariaAsync();
                 await SeedConfiguracionAsync();
@@ -98,7 +99,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             {
                 new ServicioClinico("S001", "Consulta Medica General", 30.00m, "Consulta") { HonorariumCategory = "CONSULTA" },
                 new ServicioClinico("S002", "Radiografía Tórax", 45.00m, "RX") { HonorariumCategory = "RX" },
-                new ServicioClinico("S003", "Informe Médico Especializado", 15.00m, "Informe") { HonorariumCategory = "INFORME" }
+                new ServicioClinico("S003", "Informe Médico Especializado", 15.00m, "Informe") { HonorariumCategory = "INFORME" },
+                new ServicioClinico("S004", "Consulta Ginecologica", 60.00m, "Consulta") { HonorariumCategory = "CONSULTA" },
+                new ServicioClinico("S005", "Citologia", 25.00m, "Citologia") { HonorariumCategory = "CITOLOGIA" },
+                new ServicioClinico("S006", "Eco Ginecologico", 40.00m, "Eco") { HonorariumCategory = "INFORME" }
             };
 
             foreach (var s in defaults)
@@ -116,11 +120,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
 
             if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
+
+            // Link Consulta Ginecologica with specialty Ginecología
+            var specGine = await _context.Especialidades.FirstOrDefaultAsync(e => e.Nombre == "Ginecología");
+            var consultaGine = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S004");
+            if (specGine != null && consultaGine != null && consultaGine.EspecialidadId != specGine.Id)
+            {
+                consultaGine.SetEspecialidad(specGine.Id);
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task SeedEspecialidadesAsync()
         {
-            var names = new[] { "Diagnóstico Diferencial", "Oncología", "Cardiología", "Pediatría", "Traumatología" };
+            var names = new[] { "Diagnóstico Diferencial", "Oncología", "Cardiología", "Pediatría", "Traumatología", "Ginecología" };
 
             foreach (var name in names)
             {
@@ -141,7 +154,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 (Name: "James Wilson", Speciality: "Oncología"),
                 (Name: "Stephen Strange", Speciality: "Cardiología"),
                 (Name: "Patch Adams", Speciality: "Pediatría"),
-                (Name: "John Watson", Speciality: "Traumatología")
+                (Name: "John Watson", Speciality: "Traumatología"),
+                (Name: "Lisa Cuddy", Speciality: "Ginecología")
             };
 
             foreach (var m in medicDefaults)
@@ -153,6 +167,33 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     {
                         _context.Medicos.Add(new Medico(m.Name, spec.Id));
                     }
+                }
+            }
+
+            if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
+        }
+
+        private async Task SeedServiciosSugerenciasAsync()
+        {
+            var consultaGine = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S004");
+            var citologia = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S005");
+            var ecoGine = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S006");
+
+            if (consultaGine != null && citologia != null)
+            {
+                var exists = await _context.ServiciosSugerencias.AnyAsync(ss => ss.ServicioOrigenId == consultaGine.Id && ss.ServicioSugeridoId == citologia.Id);
+                if (!exists)
+                {
+                    _context.ServiciosSugerencias.Add(new ServicioSugerencia(consultaGine.Id, citologia.Id));
+                }
+            }
+
+            if (consultaGine != null && ecoGine != null)
+            {
+                var exists = await _context.ServiciosSugerencias.AnyAsync(ss => ss.ServicioOrigenId == consultaGine.Id && ss.ServicioSugeridoId == ecoGine.Id);
+                if (!exists)
+                {
+                    _context.ServiciosSugerencias.Add(new ServicioSugerencia(consultaGine.Id, ecoGine.Id));
                 }
             }
 
@@ -290,7 +331,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             var medicoDefault = await _context.Medicos.FirstOrDefaultAsync(m => m.Nombre.Contains("House"));
             var usuario = "Sistema";
 
-            var categories = new[] { "CONSULTA", "RX", "INFORME" };
+            var categories = new[] { "CONSULTA", "RX", "INFORME", "CITOLOGIA" };
 
             foreach (var cat in categories)
             {

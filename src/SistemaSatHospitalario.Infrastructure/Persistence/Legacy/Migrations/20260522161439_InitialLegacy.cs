@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialLegacyReset : Migration
+    public partial class InitialLegacy : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -58,8 +58,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                     CodigoCelular = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CodigoTelefono = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Visible = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -131,7 +130,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                 name: "perfilesfacturados",
                 columns: table => new
                 {
-                    IdFacturado = table.Column<int>(type: "int", nullable: false)
+                    id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     IdOrden = table.Column<int>(type: "int", nullable: false),
                     IdPersona = table.Column<int>(type: "int", nullable: false),
@@ -142,7 +141,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_perfilesfacturados", x => x.IdFacturado);
+                    table.PrimaryKey("PK_perfilesfacturados", x => x.id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 

@@ -162,10 +162,10 @@ export class FacturacionComponent {
   public suggestedServices = signal<CatalogItem[]>([]);
   public convenios = signal<any[]>([]);
 
-  // --- Sugerencias Dinámicas (Fase 12.5) ---
+  // --- Sugerencias Dinámicas (Fase 12.5 Refactored) ---
   public showSuggestionModal = signal<boolean>(false);
-  public currentSuggestion = signal<CatalogItem | null>(null);
-  private suggestionQueue: CatalogItem[] = [];
+  public activeSuggestions = signal<CatalogItem[]>([]);
+  public selectedSuggestions = signal<Record<string, boolean>>({});
 
   constructor() {
     // 1. Sincronización Real-time de Tasa via SignalR
@@ -775,6 +775,7 @@ export class FacturacionComponent {
       .subscribe({
         next: () => {
           const horaFormateada = this.getHoraRango(slot.hora);
+          console.log("DEBUG-TURNO: Reservado temporalmente:", horaFormateada);
           this.selectedSlot.set(horaFormateada);
           this.horaCita.set(horaNormalizada);
           this.comentarioCita.set(slot.comentario === 'Disponible' ? '' : slot.comentario);
@@ -784,12 +785,18 @@ export class FacturacionComponent {
           this.actionMessage.set(`Horario ${horaFormateada} reservado temporalmente.`);
 
           // [V12.5 Auto-Add] Intentar cargar el servicio de consulta automáticamente
+          console.log("DEBUG-TURNO: suggestedServices count:", this.suggestedServices().length);
+          console.log("DEBUG-TURNO: suggestedServices detail:", JSON.stringify(this.suggestedServices().map(s => ({ id: s.id, codigo: s.codigo, descripcion: s.descripcion, isConsultation: s.isConsultation }))));
           const matchingConsultation = this.suggestedServices().find(s => s.isConsultation);
           if (matchingConsultation) {
+            console.log("DEBUG-TURNO: Found matchingConsultation, calling cargarServicio with ID:", matchingConsultation.id);
             this.cargarServicio(matchingConsultation.id);
+          } else {
+            console.log("DEBUG-TURNO: No matchingConsultation found in suggestedServices.");
           }
         },
         error: (err) => {
+          console.log("DEBUG-TURNO: Error reserving slot:", JSON.stringify(err));
           this.errorMessage.set(err.error?.error || "No se pudo reservar el turno. Intente con otro.");
           this.isLoading.set(false);
           this.abrirModalHorarios();
@@ -856,8 +863,17 @@ export class FacturacionComponent {
   }
 
   cargarServicio(servId: string) {
+    this.cargarServicioAsync(servId).catch(() => {});
+  }
+
+  async cargarServicioAsync(servId: string, skipSuggestions = false): Promise<void> {
+    console.log("DEBUG-CARGAR: cargarServicioAsync called with ID:", servId, "skipSuggestions:", skipSuggestions);
     const s = this.billingFacade.servicesCatalog().find((x: CatalogItem) => x.id === servId);
-    if (!s) return;
+    if (!s) {
+      console.log("DEBUG-CARGAR: Service not found in servicesCatalog. ID:", servId);
+      return;
+    }
+    console.log("DEBUG-CARGAR: Found service in catalog:", s.codigo, s.descripcion);
 
     // Abstracción Senior: Identificación por Categoría de Dominio (V5.2)
     const esConsulta = s.isConsultation;
@@ -867,14 +883,14 @@ export class FacturacionComponent {
       if (!this.selectedMedicoId()) {
         this.seleccionarTipoConsulta(s);
         this.errorMessage.set(`Indique el médico para procesar la ${s.descripcion}.`);
-        return;
+        throw new Error("Médico requerido");
       }
 
       if (!this.selectedSlot() || !this.horaCita()) {
         this.isPendingConsultation.set(true); // Activar por si acaso el usuario vuelve a darle
         this.abrirModalHorarios();
         this.errorMessage.set(`Por favor, seleccione un horario disponible para el Dr. ${this.nombreMedicoSeleccionado()}.`);
-        return;
+        throw new Error("Horario requerido");
       }
     }
 
@@ -915,7 +931,9 @@ export class FacturacionComponent {
         this.actionMessage.set(`Servicio "${finalDescripcion}" añadido al carrito temporal.`);
         
         // Activar sugerencias también en el carrito local (V11.17)
-        this.triggerSuggestion(s);
+        if (!skipSuggestions) {
+          this.triggerSuggestion(s);
+        }
       } else {
         this.errorMessage.set("Este servicio ya está en el carrito.");
       }
@@ -954,76 +972,107 @@ export class FacturacionComponent {
           const r = Math.random() * 16 | 0;
           return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
-    this.facturacionService.cargarServicio(payload, idempotencyKey).subscribe({
-      next: (res: any) => {
-        this.cuentaId.set(res.cuentaId);
-        this.serviciosEnBackend.update((prev: any[]) => [...prev, new CatalogItem({
-          ...s,
-          detalleId: res.detalleId, // Guárdalo para eliminación precisa (V4.8)
-          medicoId: esConsulta ? this.selectedMedicoId() : undefined, // Guardar ID para limpieza de cita
-          hora: this.horaCita(),
-          medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
-          precio: payload.precio,
-          precioBs: payload.precio * this.tasaCambioDia(),
-          precioUsd: payload.precio,
-          honorarioUsd: payload.honorario,
-          honorarioBase: esConsulta ? doctorHonorary : s.honorarioBase
-        })]);
-        this.resetCitaSelection();
-        this.actionMessage.set("Servicio cargado exitosamente.");
 
-        // AUTO-SUGERENCIA: Resaltar servicios relacionados (ej: Informes de Tomografía/RX)
+    try {
+      const res: any = await firstValueFrom(this.facturacionService.cargarServicio(payload, idempotencyKey));
+      this.cuentaId.set(res.cuentaId);
+      this.serviciosEnBackend.update((prev: any[]) => [...prev, new CatalogItem({
+        ...s,
+        detalleId: res.detalleId, // Guárdalo para eliminación precisa (V4.8)
+        medicoId: esConsulta ? this.selectedMedicoId() : undefined, // Guardar ID para limpieza de cita
+        hora: this.horaCita(),
+        medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
+        precio: payload.precio,
+        precioBs: payload.precio * this.tasaCambioDia(),
+        precioUsd: payload.precio,
+        honorarioUsd: payload.honorario,
+        honorarioBase: esConsulta ? doctorHonorary : s.honorarioBase
+      })]);
+      this.resetCitaSelection();
+      this.actionMessage.set("Servicio cargado exitosamente.");
+
+      // AUTO-SUGERENCIA: Resaltar servicios relacionados (ej: Informes de Tomografía/RX)
+      if (!skipSuggestions) {
         this.triggerSuggestion(s);
-        
-        this.errorMessage.set(null);
-        this.isLoading.set(false);
-      },
-      error: (err: any) => {
-        this.errorMessage.set(err.error?.error || "Error al cargar servicio.");
-        this.isLoading.set(false);
       }
-    });
+      
+      this.errorMessage.set(null);
+    } catch (err: any) {
+      this.errorMessage.set(err.error?.error || "Error al cargar servicio.");
+      throw err;
+    } finally {
+      this.isLoading.set(false);
+    }
   }
-
-
-
 
   private triggerSuggestion(s: CatalogItem) {
-    if (s.sugerenciasIds && s.sugerenciasIds.length > 0) {
+    console.log("DEBUG-SUGGESTION: triggerSuggestion called for:", s.codigo, s.descripcion);
+    const sugIds = s.sugerenciasIds || s.SugerenciasIds || [];
+    console.log("DEBUG-SUGGESTION: sugIds for item:", JSON.stringify(sugIds));
+    if (sugIds.length > 0) {
+      console.log("DEBUG-SUGGESTION: servicesCatalog count:", this.billingFacade.servicesCatalog().length);
       const matches = this.billingFacade.servicesCatalog().filter(item => 
-        s.sugerenciasIds!.includes(item.id)
+        sugIds.includes(item.id)
       );
+      console.log("DEBUG-SUGGESTION: matches found in catalog:", JSON.stringify(matches.map(m => ({ id: m.id, codigo: m.codigo, descripcion: m.descripcion }))));
       
       // Filtrar las que ya están en el carrito (V12.5 Robustness)
+      const serviciosCargadosIds = this.serviciosCargados().map(c => c.id);
+      console.log("DEBUG-SUGGESTION: serviciosCargados ids:", JSON.stringify(serviciosCargadosIds));
       const filteredMatches = matches.filter(m => !this.serviciosCargados().some(c => c.id === m.id));
+      console.log("DEBUG-SUGGESTION: filteredMatches:", JSON.stringify(filteredMatches.map(m => ({ id: m.id, codigo: m.codigo, descripcion: m.descripcion }))));
       
       if (filteredMatches.length > 0) {
-        this.suggestionQueue = [...filteredMatches];
-        this.procesarSiguienteSugerencia();
+        this.activeSuggestions.set(filteredMatches);
+        // Seleccionar todas por defecto
+        const initialSelected: Record<string, boolean> = {};
+        filteredMatches.forEach(m => {
+          initialSelected[m.id] = true;
+        });
+        this.selectedSuggestions.set(initialSelected);
+        this.showSuggestionModal.set(true);
+        console.log("DEBUG-SUGGESTION: showSuggestionModal set to true. Active suggestions:", JSON.stringify(this.activeSuggestions()));
+      } else {
+        console.log("DEBUG-SUGGESTION: No new suggested matches to display.");
       }
-    }
-  }
-
-  private procesarSiguienteSugerencia() {
-    if (this.suggestionQueue.length > 0) {
-      this.currentSuggestion.set(this.suggestionQueue.shift()!);
-      this.showSuggestionModal.set(true);
     } else {
-      this.showSuggestionModal.set(false);
-      this.currentSuggestion.set(null);
+      console.log("DEBUG-SUGGESTION: sugIds is empty.");
     }
   }
 
-  public aceptarSugerencia() {
-    const s = this.currentSuggestion();
-    if (s) {
-      this.cargarServicio(s.id);
-      this.procesarSiguienteSugerencia();
+  public toggleSuggestionSelection(id: string) {
+    this.selectedSuggestions.update(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  }
+
+  public async aceptarSugerencias() {
+    const selectedIds = Object.entries(this.selectedSuggestions())
+      .filter(([_, selected]) => selected)
+      .map(([id, _]) => id);
+
+    this.showSuggestionModal.set(false);
+
+    if (selectedIds.length > 0) {
+      this.isLoading.set(true);
+      for (const id of selectedIds) {
+        try {
+          await this.cargarServicioAsync(id, true);
+        } catch (e) {
+          console.error("Error al cargar sugerencia:", id, e);
+        }
+      }
+      this.isLoading.set(false);
+      this.activeSuggestions.set([]);
+      this.selectedSuggestions.set({});
     }
   }
 
   public rechazarSugerencia() {
-    this.procesarSiguienteSugerencia();
+    this.showSuggestionModal.set(false);
+    this.activeSuggestions.set([]);
+    this.selectedSuggestions.set({});
   }
 
   async procesarCobro() {

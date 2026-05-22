@@ -16,6 +16,27 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "PasswordResetRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UsuarioId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Username = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FechaSolicitud = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Estado = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FechaProcesado = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ProcesadoPor = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PasswordResetRequests", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Roles",
                 columns: table => new
                 {
@@ -44,6 +65,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LegacyCajeroId = table.Column<int>(type: "int", nullable: true),
                     EsActivo = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    RequirePasswordReset = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     UserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NormalizedUserName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: true)
@@ -235,6 +257,9 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "PasswordResetRequests");
+
             migrationBuilder.DropTable(
                 name: "RoleClaims");
 

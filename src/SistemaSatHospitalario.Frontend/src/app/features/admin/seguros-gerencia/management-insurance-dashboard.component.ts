@@ -95,15 +95,6 @@ import { LucideAngularModule, BarChart3, TrendingUp, AlertCircle, ShieldCheck, D
 
         <!-- Alertas de Morosidad y Resumen de Estado -->
         <div class="space-y-6">
-            <div class="p-8 bg-indigo-500 text-white rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-indigo-500/20">
-                <lucide-icon [name]="icons.TrendingUp" class="w-32 h-32 absolute -right-8 -bottom-8 opacity-20"></lucide-icon>
-                <h3 class="text-xl font-black uppercase tracking-tighter mb-4">Meta Mensual</h3>
-                <p class="text-[10px] font-bold opacity-80 uppercase leading-relaxed mb-8">Se ha recuperado el 65% de la deuda proyectada para este período.</p>
-                <div class="h-2 w-full bg-white/20 rounded-full overflow-hidden">
-                    <div class="h-full bg-white w-[65%]"></div>
-                </div>
-            </div>
-
             <div class="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] space-y-6">
                 <h3 class="text-xs font-black text-white uppercase tracking-widest">Compromisos Vencidos</h3>
                 <div class="space-y-4">

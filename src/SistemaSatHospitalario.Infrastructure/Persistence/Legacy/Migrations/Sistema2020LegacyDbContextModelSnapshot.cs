@@ -93,9 +93,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("Visible")
-                        .HasColumnType("int");
-
                     b.HasKey("IdPersona");
 
                     b.ToTable("datospersonales", (string)null);
@@ -203,7 +200,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                 {
                     b.Property<int>("IdFacturado")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdFacturado"));
 

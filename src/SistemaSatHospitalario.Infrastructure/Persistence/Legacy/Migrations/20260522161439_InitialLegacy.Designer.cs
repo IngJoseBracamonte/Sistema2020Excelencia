@@ -12,8 +12,8 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 {
     [DbContext(typeof(Sistema2020LegacyDbContext))]
-    [Migration("20260415171253_InitialLegacyReset")]
-    partial class InitialLegacyReset
+    [Migration("20260522161439_InitialLegacy")]
+    partial class InitialLegacy
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -95,9 +95,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                     b.Property<string>("TipoCorreo")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<int>("Visible")
-                        .HasColumnType("int");
 
                     b.HasKey("IdPersona");
 
@@ -206,7 +203,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                 {
                     b.Property<int>("IdFacturado")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdFacturado"));
 

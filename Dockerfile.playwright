@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy package.json and install dependencies
 COPY src/SistemaSatHospitalario.Frontend/package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install axios --legacy-peer-deps
 
 # Copy the rest of the frontend files (where tests are usually located)
 COPY src/SistemaSatHospitalario.Frontend/ ./

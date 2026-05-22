@@ -73,6 +73,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     EspecialidadId = s.EspecialidadId,
                     SugerenciasIds = s.Sugerencias.Select(sg => sg.ServicioSugeridoId.ToString()).ToList()
                 };
+                if (item.Codigo == "S004")
+                {
+                    _logger.LogInformation("[CATALOG-DIAGNOSTIC] S004 Suggestions count: {Count}. Details: {Details}", 
+                        s.Sugerencias.Count, string.Join(",", item.SugerenciasIds));
+                }
                 item.CalculatePrices(tasa);
                 result.Add(item);
             }

@@ -15,8 +15,11 @@ test('App should be accessible and show login page', async ({ page }) => {
 });
 
 test('API Health check', async ({ request }) => {
-  const apiUrl = process.env['API_URL'] || 'http://localhost:5000';
-  const response = await request.get(`${apiUrl}/api/Tickets/report`, {
+  let url = process.env['API_URL'] || 'http://localhost:5000';
+  if (!url.endsWith('/api/Tickets/report')) {
+    url = `${url}/api/Tickets/report`;
+  }
+  const response = await request.post(url, {
     headers: { 'X-Testing-Token': 'S4T_Hosp_Testing_2026' }
   });
   
