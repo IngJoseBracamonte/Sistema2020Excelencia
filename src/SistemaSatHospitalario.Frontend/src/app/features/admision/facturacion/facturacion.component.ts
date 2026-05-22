@@ -302,13 +302,15 @@ export class FacturacionComponent {
   public nombreMedicoSeleccionado = computed(() => {
     const id = this.selectedMedicoId();
     if (!id) return '';
-    return this.medicosFiltrados().find(m => m.id === id)?.nombre || '';
+    const m = this.medicosFiltrados().find(x => (x.id || (x as any).Id) === id);
+    return m ? (m.nombre || (m as any).Nombre || '') : '';
   });
 
   public telefonoMedicoSeleccionado = computed(() => {
     const id = this.selectedMedicoId();
     if (!id) return '';
-    return this.medicosFiltrados().find(m => m.id === id)?.telefono || '';
+    const m = this.medicosFiltrados().find(x => (x.id || (x as any).Id) === id);
+    return m ? (m.telefono || (m as any).Telefono || '') : '';
   });
 
   public getHoraRango(hora: string): string {
@@ -704,8 +706,8 @@ export class FacturacionComponent {
 
     // Cargar horario de referencia (V5.1) y sincronizar agenda
     this.settingsService.getMedicosHorarios().subscribe(res => {
-      const match = res.find(x => x.medicoId === this.selectedMedicoId());
-      const schedules = match ? match.horarios : [];
+      const match = res.find(x => (x.medicoId || x.MedicoId || '').toString().toLowerCase() === this.selectedMedicoId()?.toLowerCase());
+      const schedules = match ? (match.horarios || match.Horarios || []) : [];
       this.medicoWorkingHours.set(schedules);
 
       const dayOfWeek = this.getDayFromDate(dateToSearch);
@@ -841,11 +843,13 @@ export class FacturacionComponent {
         const el = document.getElementById('seccion-medica');
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Si solo hay un médico, seleccionarlo automáticamente
         const medicos = this.medicosFiltrados();
         if (medicos.length === 1) {
-          this.selectedMedicoId.set(medicos[0].id);
-          this.actionMessage.set(`Especialidad ${match} detectada. Médico sugerido: ${medicos[0].nombre}`);
+          const m = medicos[0];
+          const mId = m.id || (m as any).Id;
+          const mNombre = m.nombre || (m as any).Nombre;
+          this.selectedMedicoId.set(mId);
+          this.actionMessage.set(`Especialidad ${match} detectada. Médico sugerido: ${mNombre}`);
         }
       }, 300); // Un poco más de tiempo para que medicosFiltrados reaccione al cambio de especialidad
     }
@@ -882,8 +886,8 @@ export class FacturacionComponent {
       finalDescripcion = `${finalDescripcion} (${esp})`;
     }
 
-    const selectedDoctor = esConsulta ? this.medicosFiltrados().find(m => m.id === this.selectedMedicoId()) : null;
-    const doctorHonorary = selectedDoctor?.honorarioBase ?? 0;
+    const selectedDoctor = esConsulta ? this.medicosFiltrados().find(m => (m.id || (m as any).Id) === this.selectedMedicoId()) : null;
+    const doctorHonorary = selectedDoctor ? (selectedDoctor.honorarioBase ?? (selectedDoctor as any).HonorarioBase ?? 0) : 0;
     const precioBase = (s.precioUsd ?? 0) - (s.honorarioUsd ?? 0);
     const finalPrecio = esConsulta ? (precioBase + doctorHonorary) : (s.precioUsd ?? 0);
     const finalHonorary = esConsulta ? doctorHonorary : (s.honorarioUsd ?? 0);

@@ -51,7 +51,7 @@
                             class="w-full bg-surface border border-white/5 rounded-2xl px-5 py-4 text-xs font-black text-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all uppercase appearance-none cursor-pointer shadow-inner disabled:opacity-30"
                             [disabled]="!selectedEsp">
                             <option value="">--- SELECCIONE MÉDICO ---</option>
-                            <option *ngFor="let m of medicosFiltrados()" [value]="m.id">{{ m.nombre | uppercase }}
+                            <option *ngFor="let m of medicosFiltrados()" [value]="m.id || m.Id">{{ (m.nombre || m.Nombre || '') | uppercase }}
                             </option>
                         </select>
                     </div>

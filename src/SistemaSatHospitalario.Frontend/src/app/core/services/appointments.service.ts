@@ -4,11 +4,16 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface Doctor {
-  id: string;
-  nombre: string;
-  especialidad: string;
+  id?: string;
+  Id?: string;
+  nombre?: string;
+  Nombre?: string;
+  especialidad?: string;
+  Especialidad?: string;
   telefono?: string;
+  Telefono?: string;
   honorarioBase?: number;
+  HonorarioBase?: number;
 }
 
 export interface ScheduleEntry {

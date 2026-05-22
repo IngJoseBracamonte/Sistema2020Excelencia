@@ -44,10 +44,18 @@ export class BillingFacadeService {
   public catalogMetodosPago = signal<any[]>([]);
 
   // --- Selectores (Computed Signals) ---
-  public serviciosCargados = computed(() => [
-    ...this.serviciosEnBackend().map((s, i) => ({ ...s, _index: i, _isBackend: true })),
-    ...this.carritoLocal().map((s, i) => ({ ...s, _index: i, _isBackend: false }))
-  ]);
+  public serviciosCargados = computed(() => {
+    const mapItem = (s: any, i: number, isBackend: boolean) => {
+      if (!s) return s;
+      const proto = Object.getPrototypeOf(s) || Object.prototype;
+      const copy = Object.create(proto);
+      return Object.assign(copy, s, { _index: i, _isBackend: isBackend });
+    };
+    return [
+      ...this.serviciosEnBackend().map((s, i) => mapItem(s, i, true)),
+      ...this.carritoLocal().map((s, i) => mapItem(s, i, false))
+    ];
+  });
   
   public totalCargadoUSD = computed(() => {
     return this.serviciosCargados().reduce((acc: number, curr: any) => {
