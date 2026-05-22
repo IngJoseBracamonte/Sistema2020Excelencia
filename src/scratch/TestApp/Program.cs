@@ -17,13 +17,15 @@ namespace SistemaSatHospitalario.Tests
 
             using var context = new SatHospitalarioDbContext(options);
             
-            Console.WriteLine("--- VERIFICANDO COLUMNA CUENTASERVICIOID1 ---");
+            Console.WriteLine("--- IMPRIMIENDO SERVICIOS CLINICOS ---");
             try {
-                // Intentamos una consulta que falle si la columna no existe
-                await context.Database.ExecuteSqlRawAsync("SELECT CuentaServicioId1 FROM DetallesServicioCuenta LIMIT 1");
-                Console.WriteLine("LA COLUMNA EXISTE.");
-            } catch (Exception) {
-                Console.WriteLine("LA COLUMNA NO EXISTE.");
+                var services = await context.ServiciosClinicos.AsNoTracking().ToListAsync();
+                foreach (var s in services)
+                {
+                    Console.WriteLine($"ID: {s.Id} | Cod: {s.Codigo} | Desc: {s.Descripcion} | Price: {s.PrecioBase} | Tipo: {s.TipoServicio} | HonorarioBase: {s.HonorarioBase} | Cat: {s.Category} | HonCat: {s.HonorariumCategory}");
+                }
+            } catch (Exception ex) {
+                Console.WriteLine("Error: " + ex.Message);
             }
         }
     }

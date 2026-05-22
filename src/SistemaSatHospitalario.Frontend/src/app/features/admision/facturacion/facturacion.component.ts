@@ -882,6 +882,12 @@ export class FacturacionComponent {
       finalDescripcion = `${finalDescripcion} (${esp})`;
     }
 
+    const selectedDoctor = esConsulta ? this.medicosFiltrados().find(m => m.id === this.selectedMedicoId()) : null;
+    const doctorHonorary = selectedDoctor?.honorarioBase ?? 0;
+    const precioBase = (s.precioUsd ?? 0) - (s.honorarioUsd ?? 0);
+    const finalPrecio = esConsulta ? (precioBase + doctorHonorary) : (s.precioUsd ?? 0);
+    const finalHonorary = esConsulta ? doctorHonorary : (s.honorarioUsd ?? 0);
+
     const pId = this.pacienteId();
 
     // Si no hay paciente, agregar al carrito local (No bloqueante)
@@ -890,6 +896,11 @@ export class FacturacionComponent {
       if (!yaEnCarrito) {
         this.carritoLocal.update(prev => [...prev, new CatalogItem({
           ...s,
+          precioUsd: finalPrecio,
+          precio: finalPrecio,
+          precioBs: finalPrecio * this.tasaCambioDia(),
+          honorarioUsd: finalHonorary,
+          honorarioBase: esConsulta ? doctorHonorary : s.honorarioBase,
           descripcion: finalDescripcion,
           medicoId: esConsulta ? this.selectedMedicoId() : undefined,
           medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
@@ -923,8 +934,8 @@ export class FacturacionComponent {
       convenioId: this.convenioId() || undefined,
       servicioId: s.id,
       descripcion: finalDescripcion,
-      precio: s.precioUsd || s.PrecioUsd || 0,
-      honorario: s.honorarioUsd || s.HonorarioUsd || 0,
+      precio: finalPrecio,
+      honorario: finalHonorary,
       cantidad: 1,
       tipoServicio: s.tipo,
       usuarioCarga: this.user()?.username || '',
@@ -949,8 +960,10 @@ export class FacturacionComponent {
           hora: this.horaCita(),
           medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
           precio: payload.precio,
-          precioBs: s.precioBs,
-          precioUsd: s.precioUsd
+          precioBs: payload.precio * this.tasaCambioDia(),
+          precioUsd: payload.precio,
+          honorarioUsd: payload.honorario,
+          honorarioBase: esConsulta ? doctorHonorary : s.honorarioBase
         })]);
         this.resetCitaSelection();
         this.actionMessage.set("Servicio cargado exitosamente.");

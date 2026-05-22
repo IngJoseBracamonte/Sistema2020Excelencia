@@ -54,6 +54,66 @@ export class BillingCartComponent {
 
   // Cálculos Derivados para UI
   public totalFacturadoBS = computed(() => this.totalFacturadoUSD() * this.tasaCambio());
+
+  public isConsultationItem(s: any): boolean {
+    if (s.isConsultation !== undefined) {
+      if (typeof s.isConsultation === 'function') {
+        return s.isConsultation();
+      }
+      return !!s.isConsultation;
+    }
+    if (s.categoryId === 1 || s.CategoryId === 1) return true;
+    const tipo = s.tipo || s.Tipo;
+    if (!tipo) return false;
+    const t = tipo.toUpperCase();
+    const prefixes = ['CONS', 'MEDI', 'MÉDI', 'OBST', 'GINE'];
+    return prefixes.some((p: string) => t.includes(p));
+  }
+
+  public getItemBasePriceUsd(s: any): number {
+    const total = s.precioUsd ?? s.PrecioUsd ?? 0;
+    if (this.isConsultationItem(s)) {
+      const honorary = s.honorarioUsd ?? s.HonorarioUsd ?? 0;
+      return total - honorary;
+    }
+    return total;
+  }
+
+  public getItemHonoraryUsd(s: any): number {
+    return s.honorarioUsd ?? s.HonorarioUsd ?? 0;
+  }
+
+  // --- Desglose de Totales para Consultas y Honorarios ---
+  public totalBaseConsultasUSD = computed(() => {
+    return this.serviciosCargados().reduce((acc: number, s: any) => {
+      if (this.isConsultationItem(s)) {
+        return acc + this.getItemBasePriceUsd(s);
+      }
+      return acc;
+    }, 0);
+  });
+
+  public totalHonorariosMedicosUSD = computed(() => {
+    return this.serviciosCargados().reduce((acc: number, s: any) => {
+      if (this.isConsultationItem(s)) {
+        return acc + this.getItemHonoraryUsd(s);
+      }
+      return acc;
+    }, 0);
+  });
+
+  public totalOtrosServiciosUSD = computed(() => {
+    return this.serviciosCargados().reduce((acc: number, s: any) => {
+      if (!this.isConsultationItem(s)) {
+        return acc + (s.precioUsd ?? s.PrecioUsd ?? 0);
+      }
+      return acc;
+    }, 0);
+  });
+
+  public totalBaseConsultasBS = computed(() => this.totalBaseConsultasUSD() * this.tasaCambio());
+  public totalHonorariosMedicosBS = computed(() => this.totalHonorariosMedicosUSD() * this.tasaCambio());
+  public totalOtrosServiciosBS = computed(() => this.totalOtrosServiciosUSD() * this.tasaCambio());
   
   public getHoraRango(hora: string): string {
     if (!hora) return '';

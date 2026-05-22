@@ -142,10 +142,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         if (Guid.TryParse(item.ServicioId, out var svcId))
                         {
                             var baseService = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == svcId, ct);
-                            if (baseService != null && baseService.PrecioBase != item.Precio)
+                            if (baseService != null)
                             {
-                                hasPriceModification = true;
-                                break;
+                                bool itemEsConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation;
+                                decimal expectedPrecio = baseService.PrecioBase;
+                                if (itemEsConsulta)
+                                {
+                                    decimal doctorHonorary = 0;
+                                    if (item.MedicoId.HasValue)
+                                    {
+                                        var medico = await _context.Medicos.AsNoTracking().FirstOrDefaultAsync(m => m.Id == item.MedicoId.Value, ct);
+                                        if (medico != null)
+                                        {
+                                            doctorHonorary = medico.HonorarioBase;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        doctorHonorary = baseService.HonorarioBase;
+                                    }
+                                    expectedPrecio = baseService.PrecioBase + doctorHonorary;
+                                }
+
+                                if (item.Precio != expectedPrecio && item.Precio != baseService.PrecioBase)
+                                {
+                                    hasPriceModification = true;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -220,22 +243,39 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         legacyId = baseService.LegacyMappingId;
                     }
 
+                    decimal doctorHonorary = 0;
+                    if (esConsulta && baseService != null)
+                    {
+                        if (item.MedicoId.HasValue)
+                        {
+                            var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == item.MedicoId.Value, ct);
+                            if (medico != null)
+                            {
+                                doctorHonorary = medico.HonorarioBase;
+                            }
+                        }
+                        else
+                        {
+                            doctorHonorary = baseService.HonorarioBase;
+                        }
+                    }
+
                     decimal finalPrecio = item.Precio;
                     decimal finalHonorario = item.Honorario;
                     if (esConsulta && baseService != null)
                     {
-                        if (item.Precio == baseService.PrecioBase && (item.Honorario == baseService.HonorarioBase || item.Honorario == 0))
+                        if (item.Precio == baseService.PrecioBase && (item.Honorario == 0 || item.Honorario == baseService.HonorarioBase))
                         {
-                            finalPrecio = baseService.PrecioBase + baseService.HonorarioBase;
+                            finalPrecio = baseService.PrecioBase + doctorHonorary;
                         }
 
                         if (item.Honorario == 0)
                         {
-                            finalHonorario = baseService.HonorarioBase;
+                            finalHonorario = doctorHonorary;
                         }
-                        else if (item.Honorario == baseService.HonorarioBase + baseService.PrecioBase)
+                        else if (item.Honorario == doctorHonorary + baseService.PrecioBase)
                         {
-                            finalHonorario = baseService.HonorarioBase;
+                            finalHonorario = doctorHonorary;
                         }
                         else
                         {
@@ -256,8 +296,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     // AUDIT LOG (Phase 9): Detect modification in price OR honorary and log it
                     if (baseService != null)
                     {
-                        decimal expectedDefaultPrecio = esConsulta ? (baseService.PrecioBase + baseService.HonorarioBase) : baseService.PrecioBase;
-                        decimal expectedDefaultHonorario = baseService.HonorarioBase;
+                        decimal expectedDefaultPrecio = esConsulta ? (baseService.PrecioBase + doctorHonorary) : baseService.PrecioBase;
+                        decimal expectedDefaultHonorario = esConsulta ? doctorHonorary : baseService.HonorarioBase;
 
                         if (expectedDefaultPrecio != finalPrecio || expectedDefaultHonorario != finalHonorario)
                         {

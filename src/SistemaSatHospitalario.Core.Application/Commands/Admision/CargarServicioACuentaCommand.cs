@@ -73,9 +73,30 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 baseService = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == svcId, cancellationToken);
             }
 
+            bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
+
             if (!request.IsPrivilegedUser && baseService != null)
             {
-                if (baseService.PrecioBase != request.Precio)
+                decimal expectedPrecio = baseService.PrecioBase;
+                if (esConsulta)
+                {
+                    decimal doctorHonorary = 0;
+                    if (request.MedicoId.HasValue)
+                    {
+                        var medico = await _context.Medicos.AsNoTracking().FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
+                        if (medico != null)
+                        {
+                            doctorHonorary = medico.HonorarioBase;
+                        }
+                    }
+                    else
+                    {
+                        doctorHonorary = baseService.HonorarioBase;
+                    }
+                    expectedPrecio = baseService.PrecioBase + doctorHonorary;
+                }
+
+                if (request.Precio != expectedPrecio && request.Precio != baseService.PrecioBase)
                 {
                     // El precio ha sido modificado, requiere Clave de Supervisor
                     var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
@@ -84,7 +105,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         throw new InvalidOperationException("La modificación de precios requiere una Clave de Supervisor válida.");
                     }
                     _logger.LogInformation("[SEC] Precio modificado por {Usuario} con Clave de Supervisor válida. Original: {Orig}, Nuevo: {New}", 
-                        request.UsuarioCarga, baseService.PrecioBase, request.Precio);
+                        request.UsuarioCarga, expectedPrecio, request.Precio);
                 }
             }
 
@@ -92,7 +113,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
 
             // 3. Procesar lógica específica de Consultas/Citas
-            bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
             if (esConsulta)
             {
                 await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
@@ -118,18 +138,32 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             decimal finalHonorario = request.Honorario;
             if (esConsulta && baseService != null)
             {
-                if (request.Precio == baseService.PrecioBase && (request.Honorario == baseService.HonorarioBase || request.Honorario == 0))
+                decimal doctorHonorary = 0;
+                if (request.MedicoId.HasValue)
                 {
-                    finalPrecio = baseService.PrecioBase + baseService.HonorarioBase;
+                    var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
+                    if (medico != null)
+                    {
+                        doctorHonorary = medico.HonorarioBase;
+                    }
+                }
+                else
+                {
+                    doctorHonorary = baseService.HonorarioBase;
+                }
+
+                if (request.Precio == baseService.PrecioBase && (request.Honorario == 0 || request.Honorario == baseService.HonorarioBase))
+                {
+                    finalPrecio = baseService.PrecioBase + doctorHonorary;
                 }
 
                 if (request.Honorario == 0)
                 {
-                    finalHonorario = baseService.HonorarioBase;
+                    finalHonorario = doctorHonorary;
                 }
-                else if (request.Honorario == baseService.HonorarioBase + baseService.PrecioBase)
+                else if (request.Honorario == doctorHonorary + baseService.PrecioBase)
                 {
-                    finalHonorario = baseService.HonorarioBase;
+                    finalHonorario = doctorHonorary;
                 }
                 else
                 {

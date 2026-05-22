@@ -8,6 +8,7 @@ export interface Doctor {
   nombre: string;
   especialidad: string;
   telefono?: string;
+  honorarioBase?: number;
 }
 
 export interface ScheduleEntry {

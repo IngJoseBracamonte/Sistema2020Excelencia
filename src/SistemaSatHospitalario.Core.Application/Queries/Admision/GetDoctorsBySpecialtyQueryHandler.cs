@@ -29,7 +29,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Id = m.Id,
                     Nombre = m.Nombre,
                     Especialidad = m.Especialidad.Nombre,
-                    Telefono = m.Telefono
+                    Telefono = m.Telefono,
+                    HonorarioBase = m.HonorarioBase
                 })
                 .ToListAsync(cancellationToken);
         }
