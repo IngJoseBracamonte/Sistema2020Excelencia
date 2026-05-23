@@ -677,7 +677,7 @@ export class FacturacionComponent {
         if (this.carritoLocal().length > 0) {
           this.billingFacade.carritoLocal.update(cart => cart.map(localItem => {
             const updated = items.find(i => i.id === localItem.id);
-            return updated ? { ...localItem, precio: updated.precio } : localItem;
+            return updated ? new CatalogItem({ ...localItem, precio: updated.precio }) : localItem;
           }));
         }
       },

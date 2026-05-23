@@ -18,6 +18,14 @@ export abstract class BasePricedItem {
   sugerenciasIds?: string[];
   SugerenciasIds?: string[];
 
+  // Datos para Citas y Sincronización
+  medicoId?: string;
+  medicoNombre?: string;
+  horaCita?: string;
+  comentario?: string;
+  detalleId?: string;
+  hora?: string;
+
   constructor(data: any) {
     this.id = data.id || data.Id;
     this.codigo = data.codigo || data.Codigo;
@@ -31,6 +39,13 @@ export abstract class BasePricedItem {
     this.activo = data.activo ?? data.Activo;
     this.honorarioBase = data.honorarioBase ?? data.HonorarioBase ?? 0;
     this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
+
+    this.medicoId = data.medicoId ?? data.MedicoId;
+    this.medicoNombre = data.medicoNombre ?? data.MedicoNombre;
+    this.horaCita = data.horaCita ?? data.HoraCita;
+    this.comentario = data.comentario ?? data.Comentario;
+    this.detalleId = data.detalleId ?? data.DetalleId;
+    this.hora = data.hora ?? data.Hora;
 
     const priceVal = this.precioUsd ?? 0;
     if (data.honorarioUsd !== undefined && data.honorarioUsd !== null) {
