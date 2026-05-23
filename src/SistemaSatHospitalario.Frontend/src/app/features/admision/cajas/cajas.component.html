@@ -58,7 +58,7 @@
     </div>
 
     <!-- VISTA PARA ASISTENTES / CAJEROS (Premium Cashier Closing Table) -->
-    <div *ngIf="!isAdministrador()" class="space-y-6">
+    <div *ngIf="!isAdministrador() || isMiCajaAbierta()" class="space-y-6">
         <div *ngIf="isMiCajaAbierta()" class="bg-surface-card rounded-[3.5rem] shadow-2xl border border-white/5 p-10 relative overflow-hidden">
             <div class="flex items-center justify-between mb-8">
                 <div>

@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public int TotalOrdenes { get; set; }
         public decimal TotalVendidoUSD { get; set; }
         public decimal TotalRecaudadoBase { get; set; } // En USD equivalentes
+        public bool IsCajaAbierta { get; set; }
         public List<PaymentMethodSummaryDto> DesgloseMetodos { get; set; } = new();
     }
 

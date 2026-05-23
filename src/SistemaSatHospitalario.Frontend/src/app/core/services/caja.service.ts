@@ -37,6 +37,7 @@ export interface DailyClosingReport {
   totalOrdenes: number;
   totalVendidoUSD: number;
   totalRecaudadoBase: number;
+  isCajaAbierta: boolean;
   desgloseMetodos: PaymentMethodSummary[];
 }
 

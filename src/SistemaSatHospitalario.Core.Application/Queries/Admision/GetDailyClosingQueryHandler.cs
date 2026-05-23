@@ -32,6 +32,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             var allPayments = recibosHoy.SelectMany(r => r.DetallesPago).ToList();
 
+            var isCajaAbierta = await _context.CajasDiarias
+                .AnyAsync(c => c.Estado == "Abierta" && c.UsuarioId == request.UserId, cancellationToken);
+
             var summary = new DailyClosingDto
             {
                 Fecha = today,
@@ -39,6 +42,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 TotalOrdenes = recibosHoy.Count,
                 TotalVendidoUSD = recibosHoy.Sum(r => r.TotalFacturadoUSD),
                 TotalRecaudadoBase = allPayments.Sum(p => p.EquivalenteAbonadoBase),
+                IsCajaAbierta = isCajaAbierta,
                 DesgloseMetodos = allPayments
                     .GroupBy(p => p.MetodoPago)
                     .Select(g => new PaymentMethodSummaryDto

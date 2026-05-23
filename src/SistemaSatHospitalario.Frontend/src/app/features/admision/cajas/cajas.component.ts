@@ -185,8 +185,7 @@ export class CajasComponent implements OnInit, OnDestroy {
     this.cajaService.getPersonalReport().subscribe({
       next: (res) => {
         this.personalReport.set(res);
-        // Si el estado de la caja de hoy está abierta (si el total de órdenes > 0 y no está cerrada)
-        this.isMiCajaAbierta.set(res.totalOrdenes > 0);
+        this.isMiCajaAbierta.set(res.isCajaAbierta);
       },
       error: (err) => console.log("Usuario sin actividad hoy todavía.")
     });
