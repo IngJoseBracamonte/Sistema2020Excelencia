@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { environment } from '../../../../environments/environment';
 import {
     LucideAngularModule,
     LayoutDashboard,
@@ -35,6 +36,7 @@ export class SidebarComponent implements OnInit {
     auth = inject(AuthService);
     public permissionService = inject(PermissionService);
     private router = inject(Router);
+    public systemVersion = environment.systemVersion;
 
     public dropdownsOpen = signal({
         caja: false,
