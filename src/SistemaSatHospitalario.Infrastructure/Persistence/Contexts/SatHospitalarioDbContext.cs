@@ -76,6 +76,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.MontoInicialDivisa).HasPrecision(18, 2);
                 entity.Property(c => c.MontoInicialBs).HasPrecision(18, 2);
+                entity.Property(c => c.TotalIngresado).HasPrecision(18, 2);
+                entity.Property(c => c.TotalCobrado).HasPrecision(18, 2);
+                entity.Property(c => c.Diferencia).HasPrecision(18, 2);
+                entity.Property(c => c.DeclaracionCierreJson).HasColumnType("longtext");
             });
 
 
@@ -105,6 +109,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(d => d.Id);
                 entity.Property(d => d.MontoAbonadoMoneda).HasPrecision(18, 2);
                 entity.Property(d => d.EquivalenteAbonadoBase).HasPrecision(18, 2);
+                entity.Property(d => d.TasaCambioAplicada).HasPrecision(18, 4);
 
                 entity.HasOne(d => d.ReciboFactura)
                       .WithMany(r => r.DetallesPago)
@@ -392,6 +397,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(c => c.Valor).IsRequired().HasMaxLength(100);
+                entity.Property(c => c.GrupoMoneda).HasDefaultValue(1);
                 entity.HasIndex(c => c.Valor).IsUnique();
             });
 

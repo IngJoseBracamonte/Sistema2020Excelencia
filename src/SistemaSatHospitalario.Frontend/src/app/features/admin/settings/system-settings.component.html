@@ -47,6 +47,12 @@
                 class="px-10 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3">
                 <lucide-icon [name]="icons.Terminal" class="w-4 h-4"></lucide-icon> Instalación
             </button>
+
+            <button (click)="activeTab = 'metodosPago'; onTabChange()" 
+                [ngClass]="activeTab === 'metodosPago' ? 'bg-purple-600 text-white shadow-xl shadow-purple-600/40 scale-105' : 'text-slate-500 hover:text-white hover:bg-white/5'"
+                class="px-10 py-4 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3">
+                <lucide-icon [name]="icons.CreditCard" class="w-4 h-4"></lucide-icon> Métodos Pago
+            </button>
         </div>
 
         <!-- System Status Indicator (Premium Touch) -->
@@ -442,6 +448,67 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB: METODOS DE PAGO -->
+            <div *ngIf="activeTab === 'metodosPago'" class="space-y-8 animate-fade-in">
+                <div class="flex justify-between items-end border-b border-white/5 pb-6">
+                    <div>
+                        <h2 class="text-xl font-black text-white uppercase tracking-tighter">Métodos de Pago</h2>
+                        <p class="text-[8px] text-purple-400 font-bold uppercase tracking-widest mt-1">Configuración y Clasificación por Grupo de Moneda</p>
+                    </div>
+                    <button (click)="openNewPaymentMethodModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-purple-600/20 transition-all flex items-center">
+                        <lucide-icon [name]="icons.Plus" class="w-4 h-4 mr-2"></lucide-icon> Nuevo Método
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div *ngFor="let pm of paymentMethods()" class="bg-white/[0.02] border border-white/5 p-6 rounded-[2.5rem] flex items-center justify-between group hover:bg-white/[0.04] transition-all">
+                        <div class="flex items-center gap-6">
+                            <div class="h-12 w-12 rounded-2xl flex items-center justify-center border transition-all"
+                                 [ngClass]="pm.grupoMoneda === 1 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'">
+                                <lucide-icon [name]="icons.CreditCard" class="w-6 h-6"></lucide-icon>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-black text-white uppercase flex items-center gap-2">
+                                    {{ pm.nombre }}
+                                    <span class="px-2 py-0.5 rounded text-[7px] font-black tracking-widest uppercase"
+                                          [ngClass]="pm.activo ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'">
+                                        {{ pm.activo ? 'Activo' : 'Inactivo' }}
+                                    </span>
+                                </h3>
+                                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                    Valor: <span class="text-slate-300 font-mono">{{ pm.valor }}</span> | Orden: {{ pm.orden }} | 
+                                    <span class="text-slate-300">{{ pm.esVuelto ? 'Vuelto/Cambio' : 'Método de Cobro' }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <div class="text-right">
+                                <p class="text-xs font-black uppercase tracking-wider"
+                                   [ngClass]="pm.grupoMoneda === 1 ? 'text-emerald-400' : 'text-blue-400'">
+                                    Grupo {{ pm.grupoMoneda }}
+                                </p>
+                                <p class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                                    {{ pm.grupoMoneda === 1 ? 'USD Base (Tasa 1.0)' : 'VES (Tasa del Día)' }}
+                                </p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button (click)="editPaymentMethod(pm)" class="p-2.5 bg-white/5 hover:bg-purple-600 text-slate-400 hover:text-white rounded-xl transition-all border border-white/5" title="Editar">
+                                    <lucide-icon [name]="icons.Edit" class="w-4 h-4"></lucide-icon>
+                                </button>
+                                <button (click)="deletePaymentMethod(pm.id)" class="p-2.5 bg-rose-500/5 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/10" title="Eliminar / Desactivar">
+                                    <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div *ngIf="paymentMethods().length === 0" class="p-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] opacity-30">
+                        <lucide-icon [name]="icons.CreditCard" class="w-12 h-12 mx-auto mb-4 text-slate-500"></lucide-icon>
+                        <p class="text-xs font-black text-slate-500 uppercase tracking-widest">No hay métodos de pago configurados</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -606,6 +673,63 @@
             <button (click)="showUserModal = false" class="px-6 py-4 bg-white/5 hover:bg-white/10 text-slate-400 font-black uppercase rounded-xl transition-all text-[10px] tracking-widest">
                 Cancelar
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nuevo/Editar Método de Pago -->
+<div *ngIf="showPaymentMethodModal" class="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[150] flex items-center justify-center p-8 animate-fade-in">
+    <div class="bg-surface-card border border-white/10 p-12 rounded-[4rem] w-full max-w-2xl space-y-8 shadow-3xl relative overflow-hidden">
+        <div class="absolute -top-20 -left-20 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px]"></div>
+        <div class="text-center">
+            <h2 class="text-3xl font-black text-white uppercase tracking-tighter">{{ editingPMId ? 'Editar' : 'Nuevo' }} Método de Pago</h2>
+            <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-4">Configure la clasificación monetaria y reglas de conversión</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-6">
+            <div class="space-y-2 col-span-2">
+                <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre Descriptivo (Visual en Facturación)</label>
+                <input type="text" [(ngModel)]="newPM.nombre" placeholder="Ej: PAGO MÓVIL (BS)" class="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-purple-500 transition-all font-black uppercase text-sm">
+            </div>
+            
+            <div class="space-y-2">
+                <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Valor Interno / Código</label>
+                <input type="text" [(ngModel)]="newPM.valor" placeholder="Ej: PagoMovil" [disabled]="!!editingPMId" class="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-purple-500 transition-all font-black text-sm disabled:opacity-50">
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Orden de Visualización</label>
+                <input type="number" [(ngModel)]="newPM.orden" class="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-purple-500 transition-all font-black text-sm">
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Grupo de Moneda</label>
+                <select [(ngModel)]="newPM.grupoMoneda" class="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-purple-500 transition-all font-black text-sm cursor-pointer uppercase appearance-none">
+                    <option [value]="1">Grupo 1: USD Dólares (Tasa 1.0)</option>
+                    <option [value]="2">Grupo 2: VES Bolívares (Tasa del Día)</option>
+                </select>
+            </div>
+
+            <div class="space-y-4 flex flex-col justify-end pb-2 pl-4">
+                <div class="flex items-center gap-4">
+                    <input type="checkbox" id="esVueltoCheck" [(ngModel)]="newPM.esVuelto" class="w-5 h-5 rounded border-white/10 bg-black/40 text-purple-500 focus:ring-0 cursor-pointer">
+                    <label for="esVueltoCheck" class="text-[10px] font-black text-slate-400 uppercase tracking-wider cursor-pointer">Es para dar Vuelto/Cambio</label>
+                </div>
+            </div>
+
+            <div class="space-y-4 flex flex-col justify-end pb-2 pl-4" *ngIf="editingPMId">
+                <div class="flex items-center gap-4">
+                    <input type="checkbox" id="activoCheck" [(ngModel)]="newPM.activo" class="w-5 h-5 rounded border-white/10 bg-black/40 text-purple-500 focus:ring-0 cursor-pointer">
+                    <label for="activoCheck" class="text-[10px] font-black text-slate-400 uppercase tracking-wider cursor-pointer">Método de Pago Activo</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-6 pt-4">
+            <button (click)="savePaymentMethod()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black uppercase py-5 rounded-3xl shadow-2xl shadow-purple-600/20 active:scale-95 transition-all text-[11px] tracking-widest">
+                {{ editingPMId ? 'Guardar Cambios' : 'Crear Método' }}
+            </button>
+            <button (click)="showPaymentMethodModal = false" class="flex-1 bg-white/5 hover:bg-white/10 text-slate-400 font-black uppercase py-5 rounded-3xl active:scale-95 transition-all text-[11px] tracking-widest border border-white/5">Cancelar</button>
         </div>
     </div>
 </div>

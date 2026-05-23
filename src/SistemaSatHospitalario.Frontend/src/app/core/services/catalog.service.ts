@@ -20,8 +20,20 @@ export class CatalogService {
     );
   }
 
-  getPaymentMethods(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/payment-methods`);
+  getPaymentMethods(soloActivos: boolean = true): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/payment-methods?soloActivos=${soloActivos}`);
+  }
+
+  createPaymentMethod(command: any): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/payment-method`, command);
+  }
+
+  updatePaymentMethod(command: any): Observable<boolean> {
+    return this.http.put<boolean>(`${this.apiUrl}/payment-method`, command);
+  }
+
+  deletePaymentMethod(id: string): Observable<boolean> {
+    return this.http.delete<boolean>(`${this.apiUrl}/payment-method/${id}`);
   }
 
   createItem(item: Partial<CatalogItem>): Observable<string> {

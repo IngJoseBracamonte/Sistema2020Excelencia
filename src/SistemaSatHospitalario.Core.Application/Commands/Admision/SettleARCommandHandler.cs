@@ -66,13 +66,50 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     reciboId = recibo.Id;
                 }
 
+                var metodosPagoCatalog = await _context.CatalogoMetodosPago
+                    .Where(m => m.Activo)
+                    .ToListAsync(cancellationToken);
+
                 decimal totalAbonadoUSD = 0;
                 foreach (var payment in request.Payments)
                 {
-                    var amountUSD = Math.Round(payment.Amount, 2);
+                    var metodoPagoEntidad = metodosPagoCatalog.FirstOrDefault(m => m.Valor == payment.Method || m.Nombre == payment.Method);
+                    decimal amountUSD = payment.Amount;
+                    decimal tasaAplicada = payment.TasaAplicada > 0 ? payment.TasaAplicada : tasaActual.Monto;
+
+                    if (metodoPagoEntidad != null)
+                    {
+                        if (metodoPagoEntidad.GrupoMoneda == 1)
+                        {
+                            tasaAplicada = 1m;
+                            amountUSD = payment.AmountMoneda;
+                        }
+                        else if (metodoPagoEntidad.GrupoMoneda == 2)
+                        {
+                            if (tasaAplicada <= 0) throw new InvalidOperationException("La tasa de cambio debe ser mayor a cero para pagos en Bolívares.");
+                            amountUSD = payment.AmountMoneda / tasaAplicada;
+                        }
+                    }
+                    else
+                    {
+                        // Fallback
+                        var lower = payment.Method.ToLower();
+                        if (lower.Contains("bs") || lower.Contains("móvil") || lower.Contains("punto"))
+                        {
+                            if (tasaAplicada <= 0) throw new InvalidOperationException("La tasa de cambio debe ser mayor a cero para pagos en Bolívares.");
+                            amountUSD = payment.AmountMoneda / tasaAplicada;
+                        }
+                        else
+                        {
+                            tasaAplicada = 1m;
+                            amountUSD = payment.AmountMoneda;
+                        }
+                    }
+
+                    amountUSD = Math.Round(amountUSD, 2);
                     totalAbonadoUSD += amountUSD;
 
-                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD, request.UsuarioCarga);
+                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD, tasaAplicada, request.UsuarioCarga);
                     _context.DetallesPago.Add(detalle);
                 }
 

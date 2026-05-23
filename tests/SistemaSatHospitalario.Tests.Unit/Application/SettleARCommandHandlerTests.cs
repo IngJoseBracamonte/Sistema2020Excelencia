@@ -113,6 +113,79 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         }
 
         [Fact]
+        public async Task Should_StoreExactExchangeRateAndEnteredAmount_When_ProcessingMulticurrencyPayment()
+        {
+            // Arrange
+            var ids = await SeedPacienteAndCuentaAsync();
+            var arId = Guid.NewGuid();
+            var ar = new ARBuilder()
+                .WithId(arId)
+                .WithPacienteId(ids.PacienteId)
+                .WithCuentaId(ids.CuentaId)
+                .WithTotal(110) // Total $110 USD
+                .Build();
+            var tasaActual = new TasaCambio(50); // Daily rate = 50 VES per USD
+
+            _context.CuentasPorCobrar.Add(ar);
+            _context.TasaCambio.Add(tasaActual);
+
+            // Seed active catalog methods for Group 1 (USD) and Group 2 (VES)
+            _context.CatalogoMetodosPago.AddRange(
+                new CatalogoMetodoPago("EFECTIVO BS", "Efectivo BS", 2, esVuelto: false, orden: 1),
+                new CatalogoMetodoPago("ZELLE USD", "Zelle", 1, esVuelto: false, orden: 2)
+            );
+            await _context.SaveChangesAsync();
+
+            var command = new SettleARCommand
+            {
+                ArId = arId,
+                UsuarioCarga = "cajero_test",
+                Payments = new List<PaymentItem>
+                {
+                    // Payment 1: Zelle (USD, Group 1) -> $10.00 USD
+                    new() { Method = "Zelle", Amount = 10, AmountMoneda = 10, TasaAplicada = 1, Reference = "REF-ZELLE" },
+                    // Payment 2: Efectivo BS (VES, Group 2) -> 5000.00 Bs
+                    new() { Method = "Efectivo BS", Amount = 100, AmountMoneda = 5000, TasaAplicada = 50, Reference = "REF-VES" }
+                },
+                Observaciones = "Multi-currency settlement test"
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().BeTrue();
+
+            var updatedAr = await _context.CuentasPorCobrar.AsNoTracking().FirstAsync(a => a.Id == arId);
+            updatedAr.Estado.Should().Be(EstadoConstants.Cobrada);
+            updatedAr.MontoPagadoBase.Should().Be(110m);
+
+            var paymentDetails = await _context.DetallesPago.OrderBy(x => x.MetodoPago).ToListAsync();
+            paymentDetails.Count.Should().Be(2);
+
+            // Payment 1: BS (starts with E)
+            var bsPayment = paymentDetails[0];
+            bsPayment.MetodoPago.Should().Be("Efectivo BS");
+            bsPayment.ReferenciaBancaria.Should().Be("REF-VES");
+            bsPayment.MontoAbonadoMoneda.Should().Be(5000m);
+            bsPayment.EquivalenteAbonadoBase.Should().Be(100m); // 5000 / 50
+            bsPayment.TasaCambioAplicada.Should().Be(50m);
+            bsPayment.UsuarioCarga.Should().Be("cajero_test");
+            bsPayment.FechaPago.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
+
+            // Payment 2: Zelle (starts with Z)
+            var zellePayment = paymentDetails[1];
+            zellePayment.MetodoPago.Should().Be("Zelle");
+            zellePayment.ReferenciaBancaria.Should().Be("REF-ZELLE");
+            zellePayment.MontoAbonadoMoneda.Should().Be(10m);
+            zellePayment.EquivalenteAbonadoBase.Should().Be(10m); // 10 USD
+            zellePayment.TasaCambioAplicada.Should().Be(1m);
+            zellePayment.UsuarioCarga.Should().Be("cajero_test");
+            zellePayment.FechaPago.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
+        }
+
+
+        [Fact]
         public async Task Should_ReturnTrue_When_Account_Already_Cobrada()
         {
             // Arrange

@@ -8,5 +8,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string ReferenciaBancaria { get; set; } = string.Empty;
         public decimal MontoAbonadoMoneda { get; set; }
         public decimal EquivalenteAbonadoBase { get; set; }
+        public decimal TasaCambioAplicada { get; set; }
     }
 }

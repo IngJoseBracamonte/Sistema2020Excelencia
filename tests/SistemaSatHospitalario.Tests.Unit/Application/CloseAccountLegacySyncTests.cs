@@ -182,6 +182,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
 
             _contextMock.Setup(x => x.RecibosFactura).Returns(new List<ReciboFactura>().AsQueryable().BuildMockDbSet().Object);
             _contextMock.Setup(x => x.CuentasPorCobrar).Returns(new List<CuentaPorCobrar>().AsQueryable().BuildMockDbSet().Object);
+            _contextMock.Setup(x => x.CatalogoMetodosPago).Returns(new List<CatalogoMetodoPago>().AsQueryable().BuildMockDbSet().Object);
         }
     }
 }

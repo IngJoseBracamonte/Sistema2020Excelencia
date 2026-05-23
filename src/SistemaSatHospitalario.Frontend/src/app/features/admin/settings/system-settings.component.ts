@@ -32,7 +32,8 @@ import {
   Eye,
   EyeOff,
   Terminal,
-  Play
+  Play,
+  CreditCard
 } from 'lucide-angular';
 import { SettingsService, SecurityConfig } from '../../../core/services/settings.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
@@ -40,6 +41,7 @@ import { AppointmentsService } from '../../../core/services/appointments.service
 import { ConfiguracionGeneral, UserDto } from '../../../core/models/settings.model';
 import { SeguroConvenio } from '../../../core/models/convenio.model';
 import { PermissionService } from '../../../core/services/permission.service';
+import { CatalogService } from '../../../core/services/catalog.service';
 
 
 @Component({
@@ -54,9 +56,16 @@ export class SystemSettingsComponent implements OnInit {
   private appointmentsService = inject(AppointmentsService);
   public permissionService = inject(PermissionService);
   private route = inject(ActivatedRoute);
+  private catalogService = inject(CatalogService);
 
-  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'instalacion' = 'general';
+  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'instalacion' | 'metodosPago' = 'general';
   public isLoading = signal<boolean>(false);
+
+  // --- METODOS DE PAGO TAB ---
+  public paymentMethods = signal<any[]>([]);
+  public showPaymentMethodModal = false;
+  public newPM: any = { id: '', nombre: '', valor: '', grupoMoneda: 1, esVuelto: false, orden: 1, activo: true };
+  public editingPMId: string | null = null;
 
   // --- GENERAL TAB ---
   public configData: ConfiguracionGeneral = {
@@ -122,7 +131,8 @@ export class SystemSettingsComponent implements OnInit {
     Eye: Eye,
     EyeOff: EyeOff,
     Terminal: Terminal,
-    Play: Play
+    Play: Play,
+    CreditCard: CreditCard
   };
 
   ngOnInit() {
@@ -157,6 +167,7 @@ export class SystemSettingsComponent implements OnInit {
     }
     if (this.activeTab === 'convenios') this.loadConvenios();
     if (this.activeTab === 'citas') this.loadAppointments();
+    if (this.activeTab === 'metodosPago') this.loadPaymentMethods();
   }
 
   loadAppointments() {
@@ -388,4 +399,82 @@ export class SystemSettingsComponent implements OnInit {
       p.perfilId.toString().includes(this.searchPerfilesQuery)
     );
   };
+
+  // --- METODOS DE PAGO LOGIC ---
+  loadPaymentMethods() {
+    this.isLoading.set(true);
+    this.catalogService.getPaymentMethods(false).subscribe({
+      next: (res: any) => {
+        this.paymentMethods.set(res);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
+
+  openNewPaymentMethodModal() {
+    this.editingPMId = null;
+    this.newPM = { nombre: '', valor: '', grupoMoneda: 1, esVuelto: false, orden: this.paymentMethods().length + 1, activo: true };
+    this.showPaymentMethodModal = true;
+  }
+
+  editPaymentMethod(pm: any) {
+    this.editingPMId = pm.id;
+    this.newPM = {
+      id: pm.id,
+      nombre: pm.nombre,
+      valor: pm.valor,
+      grupoMoneda: pm.grupoMoneda,
+      esVuelto: pm.esVuelto,
+      orden: pm.orden,
+      activo: pm.activo
+    };
+    this.showPaymentMethodModal = true;
+  }
+
+  savePaymentMethod() {
+    if (!this.newPM.nombre || !this.newPM.valor) {
+      alert('Nombre y Valor interno son requeridos.');
+      return;
+    }
+    
+    this.isLoading.set(true);
+    if (this.editingPMId) {
+      this.catalogService.updatePaymentMethod(this.newPM).subscribe({
+        next: () => {
+          this.showPaymentMethodModal = false;
+          this.loadPaymentMethods();
+        },
+        error: (err: any) => {
+          this.isLoading.set(false);
+          alert(err.error?.error || 'Error al actualizar método de pago');
+        }
+      });
+    } else {
+      this.catalogService.createPaymentMethod(this.newPM).subscribe({
+        next: () => {
+          this.showPaymentMethodModal = false;
+          this.loadPaymentMethods();
+        },
+        error: (err: any) => {
+          this.isLoading.set(false);
+          alert(err.error?.error || 'Error al crear método de pago');
+        }
+      });
+    }
+  }
+
+  deletePaymentMethod(id: string) {
+    if (!confirm('¿Está seguro de eliminar este método de pago? Si tiene transacciones asociadas, se desactivará en su lugar para mantener el historial.')) return;
+    this.isLoading.set(true);
+    this.catalogService.deletePaymentMethod(id).subscribe({
+      next: () => {
+        this.loadPaymentMethods();
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        alert(err.error?.error || 'Error al eliminar método de pago');
+      }
+    });
+  }
 }

@@ -121,13 +121,23 @@ export class BillingFacadeService {
 
   private loadPaymentCatalog() {
     this.catalogService.getPaymentMethods().subscribe(res => {
-      this.catalogMetodosPago.set(res.filter(x => !x.isVuelto));
+      const mapped = res.map(x => ({
+        id: x.id,
+        name: x.nombre,
+        value: x.valor,
+        grupoMoneda: x.grupoMoneda,
+        isUSD: x.grupoMoneda === 1,
+        isVuelto: x.esVuelto,
+        orden: x.orden,
+        activo: x.activo
+      }));
+      this.catalogMetodosPago.set(mapped.filter(x => !x.isVuelto));
     });
   }
 
   public isMethodBs(methodName: string): boolean {
     const method = this.catalogMetodosPago().find(m => m.value === methodName || m.name === methodName);
-    if (method) return !method.isUSD;
+    if (method) return method.grupoMoneda === 2;
     
     // Fallback logic for legacy strings
     const m = (methodName || '').toLowerCase();

@@ -12,17 +12,31 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public bool Activo { get; private set; }
         public int Orden { get; private set; }
 
+        public int GrupoMoneda { get; private set; }
+
         protected CatalogoMetodoPago() { }
 
-        public CatalogoMetodoPago(string nombre, string valor, bool esUSD, bool esVuelto = false, int orden = 0)
+        public CatalogoMetodoPago(string nombre, string valor, int grupoMoneda, bool esVuelto = false, int orden = 0)
         {
             Id = Guid.NewGuid();
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Valor = valor ?? throw new ArgumentNullException(nameof(valor));
-            EsUSD = esUSD;
+            GrupoMoneda = grupoMoneda;
+            EsUSD = (grupoMoneda == 1);
             EsVuelto = esVuelto;
             Activo = true;
             Orden = orden;
+        }
+
+        public void Update(string nombre, string valor, int grupoMoneda, bool esVuelto, int orden, bool activo)
+        {
+            Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+            Valor = valor ?? throw new ArgumentNullException(nameof(valor));
+            GrupoMoneda = grupoMoneda;
+            EsUSD = (grupoMoneda == 1);
+            EsVuelto = esVuelto;
+            Orden = orden;
+            Activo = activo;
         }
 
         public void SetActivo(bool activo) => Activo = activo;

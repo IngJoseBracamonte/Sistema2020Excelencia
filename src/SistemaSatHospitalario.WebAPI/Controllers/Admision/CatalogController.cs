@@ -34,9 +34,30 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("payment-methods")]
-        public async Task<ActionResult<List<PaymentMethodDto>>> GetPaymentMethods()
+        public async Task<ActionResult<List<PaymentMethodDto>>> GetPaymentMethods([FromQuery] bool soloActivos = true)
         {
-            var result = await _mediator.Send(new GetPaymentMethodsQuery());
+            var result = await _mediator.Send(new GetPaymentMethodsQuery { SoloActivos = soloActivos });
+            return Ok(result);
+        }
+
+        [HttpPost("payment-method")]
+        public async Task<ActionResult<Guid>> CreatePaymentMethod([FromBody] CreatePaymentMethodCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPut("payment-method")]
+        public async Task<ActionResult<bool>> UpdatePaymentMethod([FromBody] UpdatePaymentMethodCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpDelete("payment-method/{id}")]
+        public async Task<ActionResult<bool>> DeletePaymentMethod(Guid id)
+        {
+            var result = await _mediator.Send(new DeletePaymentMethodCommand { Id = id });
             return Ok(result);
         }
 

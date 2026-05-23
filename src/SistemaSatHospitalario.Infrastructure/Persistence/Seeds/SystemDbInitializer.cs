@@ -51,16 +51,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     catch (Exception ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
                     {
                         _logger.LogWarning("Conflicto detectado: Las tablas ya existen pero el historial de EF Core está ausente.");
-                        _logger.LogInformation("Sincronizando historial de migraciones manualmente (Baseline: InitialSystemMySql)...");
+                        _logger.LogInformation("Sincronizando historial de migraciones manualmente (Baseline: InitialApplication)...");
                         
                         // Aseguramos que la tabla de historial exista antes del insert
                         await _context.Database.ExecuteSqlRawAsync(
                             "CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (`MigrationId` varchar(150) NOT NULL, `ProductVersion` varchar(32) NOT NULL, PRIMARY KEY (`MigrationId`)) CHARACTER SET=utf8mb4;");
                         
                         await _context.Database.ExecuteSqlRawAsync(
-                            "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20260414054504_InitialSystemMySql', '9.0.2');");
+                            "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20260522161430_InitialApplication', '10.0.5');");
                         
-                        _logger.LogInformation("Sincronización de Baseline completada. El sistema puede continuar.");
+                        // Una vez insertado el baseline, reintentamos aplicar el resto de migraciones pendientes
+                        await _context.Database.MigrateAsync();
+                        _logger.LogInformation("Sincronización de Baseline completada y migraciones restantes aplicadas con éxito.");
                     }
                 }
                 else
@@ -301,20 +303,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
             var metodos = new List<CatalogoMetodoPago>
             {
-                // Métodos de Pago
-                new CatalogoMetodoPago("EFECTIVO DOLAR ($)", "Dolar Efectivo", true, false, 1),
-                new CatalogoMetodoPago("ZELLE", "Zelle", true, false, 2),
-                new CatalogoMetodoPago("USDT (BINANCE)", "USDT", true, false, 3),
-                new CatalogoMetodoPago("PUNTO DE VENTA USD", "Punto Dolares", true, false, 4),
-                new CatalogoMetodoPago("EFECTIVO (BS)", "Efectivo BS", false, false, 5),
-                new CatalogoMetodoPago("PAGO MÓVIL", "Pago Movil", false, false, 6),
-                new CatalogoMetodoPago("TRANSFERENCIA", "Transferencia", false, false, 7),
-                new CatalogoMetodoPago("PUNTO DE VENTA BS", "Punto", false, false, 8),
+                // Métodos de Pago (GrupoMoneda: 1 = USD, 2 = VES)
+                new CatalogoMetodoPago("EFECTIVO DOLAR ($)", "Dolar Efectivo", 1, false, 1),
+                new CatalogoMetodoPago("ZELLE", "Zelle", 1, false, 2),
+                new CatalogoMetodoPago("USDT (BINANCE)", "USDT", 1, false, 3),
+                new CatalogoMetodoPago("PUNTO DE VENTA USD", "Punto Dolares", 1, false, 4),
+                new CatalogoMetodoPago("EFECTIVO (BS)", "Efectivo BS", 2, false, 5),
+                new CatalogoMetodoPago("PAGO MÓVIL", "Pago Movil", 2, false, 6),
+                new CatalogoMetodoPago("TRANSFERENCIA", "Transferencia", 2, false, 7),
+                new CatalogoMetodoPago("PUNTO DE VENTA BS", "Punto", 2, false, 8),
 
                 // Métodos de Vuelto
-                new CatalogoMetodoPago("VUELTO EFECTIVO ($)", "Vuelto Efectivo USD", true, true, 1),
-                new CatalogoMetodoPago("VUELTO PAGO MÓVIL (BS)", "Vuelto Pago Movil", false, true, 2),
-                new CatalogoMetodoPago("VUELTO EFECTIVO (BS)", "Vuelto Efectivo BS", false, true, 3)
+                new CatalogoMetodoPago("VUELTO EFECTIVO ($)", "Vuelto Efectivo USD", 1, true, 1),
+                new CatalogoMetodoPago("VUELTO PAGO MÓVIL (BS)", "Vuelto Pago Movil", 2, true, 2),
+                new CatalogoMetodoPago("VUELTO EFECTIVO (BS)", "Vuelto Efectivo BS", 2, true, 3)
             };
 
             _context.CatalogoMetodosPago.AddRange(metodos);

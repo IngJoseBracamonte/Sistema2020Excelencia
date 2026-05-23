@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using MediatR;
@@ -49,18 +50,36 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         /// <summary>
-        /// Cierra la caja activa del usuario actual.
+        /// Cierra la caja activa del usuario actual con su declaración.
         /// </summary>
         [HttpPost("Cerrar")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CerrarCaja()
+        public async Task<IActionResult> CerrarCaja([FromBody] List<MetodoDeclaradoDto> declaracion)
         {
             try
             {
                 var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                var result = await _mediator.Send(new CerrarCajaCommand { UsuarioId = usuarioId });
-                return Ok(new { Message = "Caja cerrada con éxito." });
+                var result = await _mediator.Send(new CerrarCajaCommand { UsuarioId = usuarioId, Declaracion = declaracion });
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Realiza el cierre total consolidado de todas las cajas del día (Fase 2).
+        /// </summary>
+        [HttpPost("Consolidar")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
+        public async Task<IActionResult> ConsolidarCajas()
+        {
+            try
+            {
+                var result = await _mediator.Send(new ConsolidarCajasCommand());
+                return Ok(result);
             }
             catch (InvalidOperationException ex)
             {

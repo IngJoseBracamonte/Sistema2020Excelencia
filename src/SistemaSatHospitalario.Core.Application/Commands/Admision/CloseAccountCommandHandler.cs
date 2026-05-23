@@ -64,14 +64,61 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // 1. Crear el Recibo/Factura vinculado a la caja (automática o existente)
+            var metodosPagoCatalog = await _context.CatalogoMetodosPago
+                .Where(m => m.Activo)
+                .ToListAsync(cancellationToken);
+
             decimal totalCuenta = cuenta.CalcularTotal();
-            decimal totalPagado = request.Pagos.Sum(p => p.EquivalenteAbonadoBase);
+            decimal totalPagado = 0;
+
+            var listaPagosValidados = new List<(DetallePagoDto Pago, decimal Equivalente, decimal Tasa)>();
+
+            foreach (var p in request.Pagos)
+            {
+                var metodoPagoEntidad = metodosPagoCatalog.FirstOrDefault(m => m.Valor == p.MetodoPago || m.Nombre == p.MetodoPago);
+                decimal equivalenteBase = p.EquivalenteAbonadoBase;
+                decimal tasaAplicada = 1m;
+
+                if (metodoPagoEntidad != null)
+                {
+                    if (metodoPagoEntidad.GrupoMoneda == 1)
+                    {
+                        tasaAplicada = 1m;
+                        equivalenteBase = p.MontoAbonadoMoneda;
+                    }
+                    else if (metodoPagoEntidad.GrupoMoneda == 2)
+                    {
+                        tasaAplicada = request.TasaCambio;
+                        if (tasaAplicada <= 0) throw new InvalidOperationException("La tasa de cambio debe ser mayor a cero para pagos en Bolívares.");
+                        equivalenteBase = Math.Round(p.MontoAbonadoMoneda / tasaAplicada, 2);
+                    }
+                }
+                else
+                {
+                    // Fallback
+                    var lower = p.MetodoPago.ToLower();
+                    if (lower.Contains("bs") || lower.Contains("móvil") || lower.Contains("punto"))
+                    {
+                        tasaAplicada = request.TasaCambio;
+                        equivalenteBase = tasaAplicada > 0 ? Math.Round(p.MontoAbonadoMoneda / tasaAplicada, 2) : 0;
+                    }
+                    else
+                    {
+                        tasaAplicada = 1m;
+                        equivalenteBase = p.MontoAbonadoMoneda;
+                    }
+                }
+
+                totalPagado += equivalenteBase;
+                listaPagosValidados.Add((p, equivalenteBase, tasaAplicada));
+            }
+
             decimal montoVueltoUSD = Math.Max(0, totalPagado - totalCuenta);
 
             var recibo = new ReciboFactura(cuenta.Id, cuenta.PacienteId, caja.Id, request.TasaCambio, totalCuenta, montoVueltoUSD);
-            foreach (var p in request.Pagos)
+            foreach (var item in listaPagosValidados)
             {
-                recibo.AgregarDetallePago(p.MetodoPago, p.ReferenciaBancaria, p.MontoAbonadoMoneda, p.EquivalenteAbonadoBase, request.UsuarioCajero);
+                recibo.AgregarDetallePago(item.Pago.MetodoPago, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, request.UsuarioCajero);
             }
 
             // 2. Gestionar Saldo Pendiente (AR)

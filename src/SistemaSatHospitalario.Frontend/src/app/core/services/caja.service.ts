@@ -48,12 +48,23 @@ export interface CajaDetailDto {
   montoInicialDivisa: number;
   montoInicialBs: number;
   estado: string;
+  totalIngresado?: number;
+  totalCobrado?: number;
+  diferencia?: number;
+  declaracionCierreJson?: string;
 }
 
 export interface CajaSummaryDto {
   granTotalDivisa: number;
   granTotalBs: number;
   cierres: CajaDetailDto[];
+  cajasActivas?: number;
+  cierresPendientes?: number;
+  cierresRealizados?: number;
+  totalRecaudado?: number;
+  totalEsperado?: number;
+  diferenciaNeta?: number;
+  efectivoEnBoveda?: number;
 }
 
 @Injectable({
@@ -72,10 +83,14 @@ export class CajaService {
     );
   }
 
-  cerrarCaja(): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/Cerrar`, {}).pipe(
+  cerrarCaja(declaracion: any[]): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Cerrar`, declaracion).pipe(
       tap(() => this.isCajaAbierta.set(false))
     );
+  }
+
+  consolidarTodasLasCajas(): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/Consolidar`, {});
   }
 
   exportExcelCashClosing(userId?: string, date?: string, auditMode: boolean = false): Observable<Blob> {

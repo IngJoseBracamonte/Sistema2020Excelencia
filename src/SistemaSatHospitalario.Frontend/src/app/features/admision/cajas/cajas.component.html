@@ -57,225 +57,406 @@
         </div>
     </div>
 
-    <!-- VISTA PARA ASISTENTES / CAJEROS (Premium Redesign) -->
-    <div *ngIf="!isAdministrador" class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <!-- Resumen Personal del Día -->
-        <div class="md:col-span-2 space-y-6">
-            <div class="bg-surface-card rounded-[3rem] shadow-2xl border border-white/5 p-12 relative overflow-hidden group">
-                <div class="absolute top-0 left-0 w-2 h-full bg-emerald-500 opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                <div class="flex items-center justify-between mb-10">
-                    <h3 class="text-2xl font-black text-white tracking-tight uppercase">Actividad de mi Estación</h3>
-                    <lucide-icon [name]="icons.Users" class="w-8 h-8 text-slate-700"></lucide-icon>
-                </div>
-                
-                <div *ngIf="personalReport()" class="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                    <div class="bg-black/20 p-8 rounded-[2rem] border border-white/5 relative group/card overflow-hidden">
-                        <div class="absolute bottom-0 right-0 w-16 h-16 bg-white/2 rounded-tl-full -z-10 transition-transform group-hover/card:scale-150"></div>
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Facturaciones</p>
-                        <p class="text-4xl font-black text-white mt-4 font-mono">{{ personalReport()?.totalOrdenes }}</p>
-                        <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest block mt-2">Transacciones Hoy</span>
-                    </div>
-                    <div class="bg-black/20 p-8 rounded-[2rem] border border-rose-500/20 relative group/card overflow-hidden">
-                        <div class="absolute bottom-0 right-0 w-16 h-16 bg-rose-500/5 rounded-tl-full -z-10 transition-transform group-hover/card:scale-150"></div>
-                        <p class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Liquidez USD</p>
-                        <p class="text-4xl font-black text-white mt-4 font-mono tracking-tighter">${{ personalReport()?.totalVendidoUSD | number:'1.2-2' }}</p>
-                        <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest block mt-2 italic">Flujo en Divisas</span>
-                    </div>
-                    <div class="bg-black/20 p-8 rounded-[2rem] border border-emerald-500/20 relative group/card overflow-hidden">
-                        <div class="absolute bottom-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-tl-full -z-10 transition-transform group-hover/card:scale-150"></div>
-                        <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Abonado B.S.</p>
-                        <p class="text-4xl font-black text-white mt-4 font-mono tracking-tighter">{{ personalReport()?.totalRecaudadoBase | number:'1.2-2' }}</p>
-                        <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest block mt-2 italic">Equivalente Base</span>
-                    </div>
-                </div>
-
-                <div *ngIf="!personalReport()?.totalOrdenes" class="text-center py-24 opacity-40 group">
-                    <div class="h-24 w-24 bg-surface rounded-3xl flex items-center justify-center mx-auto mb-8 text-slate-600 border border-white/10 shadow-inner group-hover:scale-110 group-hover:text-rose-500 transition-all duration-700">
-                        <lucide-icon [name]="icons.DollarSign" class="h-12 w-12"></lucide-icon>
-                    </div>
-                    <p class="text-lg font-black text-white uppercase tracking-[0.3em]">Cero Movimientos</p>
-                    <p class="text-[10px] text-slate-500 mt-3 italic uppercase font-bold tracking-[0.2em]">La caja se automatiza al registrar el primer abono.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Panel de Cierre Consolidado -->
-        <div class="bg-surface-card rounded-[3rem] shadow-2xl border border-white/5 p-12 flex flex-col justify-center items-center text-center relative overflow-hidden group">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-rose-500 opacity-20"></div>
-            <div class="h-20 w-20 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-3xl flex items-center justify-center mb-10 shadow-2xl shadow-rose-500/5 transition-all duration-500 group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white">
-                <lucide-icon [name]="icons.Lock" class="h-10 w-10"></lucide-icon>
-            </div>
-            <h3 class="text-2xl font-black text-white mb-4 uppercase tracking-tight leading-tight">Cierre de <br>Jornada</h3>
-            <p class="text-slate-500 text-[11px] font-black uppercase tracking-widest mb-12 leading-relaxed italic px-4">Bloqueo Maestro de Estación & Auditoría Operativa.</p>
-            
-            <div class="flex flex-col w-full space-y-3">
-                <button (click)="cerrarMiCaja()" [disabled]="isLoading() || !isMiCajaAbierta()"
-                    class="w-full py-6 px-10 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center shadow-2xl transform active:scale-95 disabled:opacity-30 translate-y-0 hover:-translate-y-1"
-                    [ngClass]="isMiCajaAbierta() ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/30' : 'bg-slate-900 text-slate-600 cursor-not-allowed border border-white/5'">
-                    <span *ngIf="isLoading()" class="animate-spin mr-3">
-                        <lucide-icon [name]="icons.RefreshCcw" class="h-5 w-5"></lucide-icon>
-                    </span>
-                    {{ isLoading() ? 'SINCRONIZANDO...' : 'EJECUTAR CIERRE' }}
-                </button>
-                <button (click)="exportarMiCaja()" *ngIf="isMiCajaAbierta()"
-                    class="w-full py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] transition-all border border-emerald-500/20 flex items-center justify-center group">
-                    <lucide-icon [name]="icons.DollarSign" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></lucide-icon>
-                    DESCARGAR EXCEL PERSONAL
-                </button>
-            </div>
-            <p *ngIf="!isMiCajaAbierta()" class="text-[10px] text-rose-500/60 mt-8 leading-tight italic uppercase font-black tracking-widest">
-                * Sin actividad pendiente de cierre.
-            </p>
-        </div>
-    </div>
-
-    <!-- VISTA PARA ADMINISTRADORES (Dashboard de Control en Tiempo Real) -->
-    <div *ngIf="isAdministrador" class="space-y-10">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <!-- Monitor Maestro: Cajeros en Red -->
-            <div class="bg-surface-card rounded-[3.5rem] shadow-2xl border border-white/5 p-12 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 rounded-bl-full -z-10 blur-3xl"></div>
-                <div class="flex items-center justify-between mb-12 border-b border-white/5 pb-6">
-                    <div>
-                        <h3 class="text-2xl font-black text-white tracking-tight uppercase">Terminales Activas</h3>
-                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Monitoreo de Sesiones en Vivo</p>
-                    </div>
-                    <span class="px-5 py-2 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-emerald-500/30 animate-pulse flex items-center">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
-                        LIVE DATA
-                    </span>
-                </div>
-
-                <div class="space-y-4 h-[450px] overflow-y-auto pr-4 custom-scrollbar">
-                    <div *ngFor="let t of resumenCaja()?.turnos" 
-                        class="flex items-center justify-between p-7 bg-black/20 hover:bg-white/5 rounded-[2.5rem] border border-white/5 transition-all group relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1.5 h-full bg-rose-500 opacity-0 group-hover:opacity-60 transition-opacity"></div>
-                        <div class="flex items-center space-x-6">
-                            <div class="h-14 w-14 bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center rounded-[1.2rem] font-black text-sm shadow-inner group-hover:bg-rose-500 group-hover:text-white transition-all duration-500">
-                                {{ t.cajeroUserId.substring(0,2).toUpperCase() }}
-                            </div>
-                            <div>
-                                <p class="text-base font-black text-white uppercase tracking-tight group-hover:translate-x-1 transition-transform">{{ t.cajeroUserId }}</p>
-                                <p class="text-[10px] text-slate-600 font-mono tracking-widest mt-1 uppercase flex items-center">
-                                    <lucide-icon [name]="icons.RefreshCcw" class="w-2.5 h-2.5 mr-2 opacity-50"></lucide-icon>
-                                    SES: {{ t.turnoId.substring(0,8) }}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <div class="text-right mr-4">
-                                <p class="text-xl font-black text-emerald-400 font-mono tracking-tighter">${{ t.recaudadoBase | number:'1.2-2' }}</p>
-                                <span class="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 block">Recaudado</span>
-                            </div>
-                            <button (click)="exportarAuditoria(t.cajeroUserId)" class="h-12 w-12 bg-white/5 hover:bg-emerald-500 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/5">
-                                <lucide-icon [name]="icons.DollarSign" class="w-5 h-5"></lucide-icon>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div *ngIf="!resumenCaja()?.turnos?.length" class="h-full flex flex-col items-center justify-center opacity-30 group">
-                        <lucide-icon [name]="icons.Users" class="h-20 w-20 text-slate-500 mb-6 group-hover:scale-110 transition-transform duration-700"></lucide-icon>
-                        <p class="text-sm font-black text-white uppercase tracking-[0.4em]">Sin terminales operativas</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dashboard Consolidado de Ingresos -->
-            <div class="bg-[#020617] rounded-[3.5rem] p-12 text-white relative overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/5">
-                <div class="absolute top-0 right-0 -m-20 h-96 w-96 bg-rose-500/10 rounded-full blur-[100px] -z-10 animate-pulse-slow"></div>
-                
-                <h3 class="text-2xl font-black mb-12 tracking-tight uppercase border-b border-white/10 pb-6 relative z-10 flex items-center">
-                    <lucide-icon [name]="icons.LayoutDashboard" class="w-7 h-7 mr-4 text-rose-500"></lucide-icon>
-                    Panel de Auditoría
-                </h3>
-                
-                <div class="space-y-12 relative z-10">
-                    <div class="flex items-end justify-between border-b border-white/10 pb-10">
-                        <div class="space-y-4">
-                            <p class="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center">
-                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
-                                Gran Total Divisas ($)
-                            </p>
-                            <p class="text-6xl font-black font-mono tracking-tighter text-white drop-shadow-2xl translate-y-2">${{ historialAdmin()?.granTotalDivisa | number:'1.2-2' }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Eqv. Base (BS. TOTAL)</p>
-                            <p class="text-3xl font-black font-mono text-emerald-400 opacity-90 tracking-tighter">{{ historialAdmin()?.granTotalBs | number:'1.2-2' }}</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-8">
-                        <div class="bg-white/5 backdrop-blur-3xl p-7 rounded-[2.5rem] border border-white/10 shadow-2xl group/sub">
-                            <p class="text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest group-hover/sub:text-white transition-colors">Sesiones Cerradas</p>
-                            <div class="flex items-end space-x-3">
-                                <p class="text-4xl font-black text-white font-mono">{{ historialAdmin()?.cierres?.length || 0 }}</p>
-                                <lucide-icon [name]="icons.Check" class="w-6 h-6 text-emerald-500 mb-1 opacity-50"></lucide-icon>
-                            </div>
-                        </div>
-                         <div class="bg-white/5 backdrop-blur-3xl p-7 rounded-[2.5rem] border border-white/10 shadow-2xl group/sub">
-                            <p class="text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest group-hover/sub:text-white transition-colors">Integridad Global</p>
-                            <p class="text-3xl font-black text-emerald-400 group-hover/sub:scale-105 transition-transform origin-left">ESTABLE</p>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col space-y-4">
-                        <button (click)="refrescarAdmin()" class="w-full py-7 bg-white hover:bg-rose-50 border-none text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-[0_25px_50px_-12px_rgba(255,255,255,0.15)] transition-all flex justify-center items-center group active:scale-95 overflow-hidden relative">
-                            <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <lucide-icon [name]="icons.RefreshCcw" class="mr-4 h-6 w-6 group-hover:rotate-180 transition-transform duration-700 ease-in-out"></lucide-icon>
-                            SINCRONIZAR AUDITORÍA
-                        </button>
-                        <button (click)="exportarAuditoria()" class="w-full py-5 bg-rose-500 hover:bg-rose-600 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex justify-center items-center group shadow-xl shadow-rose-500/20 active:scale-95">
-                            <lucide-icon [name]="icons.DollarSign" class="mr-3 h-5 w-5 group-hover:scale-110 transition-transform"></lucide-icon>
-                            REPORTE GLOBAL EXCEL
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Historial Maestro (Tabla Premium V2.5) -->
-        <div class="bg-surface-card rounded-[3.5rem] shadow-2xl border border-white/5 overflow-hidden">
-            <div class="p-12 border-b border-white/5 flex items-center justify-between bg-white/[0.02] relative">
-                <div class="absolute left-0 top-0 h-full w-2 bg-rose-500/40"></div>
+    <!-- VISTA PARA ASISTENTES / CAJEROS (Premium Cashier Closing Table) -->
+    <div *ngIf="!isAdministrador()" class="space-y-6">
+        <div *ngIf="isMiCajaAbierta()" class="bg-surface-card rounded-[3.5rem] shadow-2xl border border-white/5 p-10 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-8">
                 <div>
-                    <h3 class="text-2xl font-black text-white tracking-tight uppercase">Logs de Sesiones Consolidadas</h3>
-                    <p class="text-slate-500 text-[11px] font-black uppercase tracking-[0.3em] mt-2 italic">Trazabilidad histórica de cierres de terminal.</p>
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tight">Cierre de Caja Diaria</h2>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Conteo físico detallado por método de pago</p>
                 </div>
-                <lucide-icon [name]="icons.Check" class="w-8 h-8 text-emerald-500/20"></lucide-icon>
+                <div class="flex items-center space-x-2 text-rose-500">
+                    <lucide-icon [name]="icons.Lock" class="w-5 h-5"></lucide-icon>
+                    <span class="text-[10px] font-black uppercase tracking-widest">FASE 1</span>
+                </div>
             </div>
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full">
-                    <thead class="bg-black/40 border-b border-white/5">
-                        <tr>
-                            <th class="px-12 py-7 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Cajero / Terminal</th>
-                            <th class="px-12 py-7 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Apertura</th>
-                            <th class="px-12 py-7 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Clausura</th>
-                            <th class="px-12 py-7 text-right text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Liquidación ($)</th>
-                            <th class="px-12 py-7 text-center text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Estatus</th>
+
+            <!-- Tabla Detallada -->
+            <div class="overflow-x-auto border border-white/5 rounded-[2rem] bg-black/25 mb-8">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5 bg-white/[0.01]">
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">DETALLADO</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">INGRESO (CONTADO)</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">VUELTOS (ENTREGADO)</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">TOTAL NETO</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
-                        <tr *ngFor="let c of historialAdmin()?.cierres" class="hover:bg-white/5 transition-all group cursor-default">
-                            <td class="px-12 py-8">
-                                <div class="flex items-center space-x-5">
-                                    <div class="h-12 w-12 bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center rounded-[1.2rem] text-[11px] font-black uppercase shadow-lg group-hover:bg-rose-500 group-hover:text-white transition-all duration-500">
-                                        {{ c.usuario.substring(0,2).toUpperCase() }}
-                                    </div>
-                                    <span class="text-base font-black text-white uppercase group-hover:text-rose-500 transition-colors tracking-tight">{{ c.usuario }}</span>
+                        <tr *ngFor="let row of tableRows()" class="hover:bg-white/[0.01] transition-all group">
+                            <!-- Metodo -->
+                            <td class="px-8 py-5 text-sm font-black text-white uppercase tracking-tight">
+                                {{ row.name }}
+                            </td>
+                            <!-- Ingreso Input -->
+                            <td class="px-8 py-4 text-center">
+                                <div class="relative w-44 mx-auto">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-black">{{ row.isUSD ? '$' : 'Bs.' }}</span>
+                                    <input type="number" 
+                                        [ngModel]="row.montoIngreso" 
+                                        (ngModelChange)="updateInputValue(row.value, 'montoIngreso', $event)"
+                                        class="w-full bg-[#162032] border border-white/10 focus:border-rose-500 rounded-xl py-3 pl-10 pr-4 text-sm font-black text-white text-center focus:outline-none transition-all shadow-inner"
+                                        placeholder="0">
                                 </div>
                             </td>
-                            <td class="px-12 py-8 text-xs font-black text-slate-500 italic">{{ c.apertura | date:'short' }}</td>
-                            <td class="px-12 py-8 text-xs font-black text-slate-500 italic">{{ (c.cierre | date:'short') || '---' }}</td>
-                            <td class="px-12 py-8 text-right font-mono font-black text-emerald-400 text-lg tracking-tighter drop-shadow-sm group-hover:scale-110 origin-right transition-transform">${{ c.montoInicialDivisa | number:'1.2-2' }}</td>
-                            <td class="px-12 py-8 text-center">
-                                <span class="px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm transition-all"
-                                    [ngClass]="c.estado === 'Abierta' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-emerald-500/10 animate-pulse' : 'bg-slate-900 text-slate-600 border-white/10 group-hover:bg-slate-800'">
-                                    {{ c.estado }}
+                            <!-- Vueltos Input -->
+                            <td class="px-8 py-4 text-center">
+                                <div class="relative w-44 mx-auto" *ngIf="row.value === 'Dolar Efectivo' || row.value === 'Efectivo BS' || row.value === 'Pago Movil'">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-black">{{ row.isUSD ? '$' : 'Bs.' }}</span>
+                                    <input type="number" 
+                                        [ngModel]="row.montoVueltos" 
+                                        (ngModelChange)="updateInputValue(row.value, 'montoVueltos', $event)"
+                                        class="w-full bg-[#162032] border border-white/10 focus:border-rose-500 rounded-xl py-3 pl-10 pr-4 text-sm font-black text-white text-center focus:outline-none transition-all shadow-inner"
+                                        placeholder="0">
+                                </div>
+                                <span *ngIf="row.value !== 'Dolar Efectivo' && row.value !== 'Efectivo BS' && row.value !== 'Pago Movil'" class="text-xs text-slate-600 font-bold uppercase tracking-widest">
+                                    N/A
                                 </span>
+                            </td>
+                            <!-- Total Neto Fila -->
+                            <td class="px-8 py-5 text-right font-mono font-black text-white text-sm">
+                                {{ row.isUSD ? '$' : 'Bs.' }} {{ row.totalDeclarado | number:'1.2-2' }}
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Totales Inferiores -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-black/20 p-8 rounded-[2rem] border border-white/5 mb-10">
+                <div class="text-center md:text-left">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">TOTAL FACTURADO (ESPERADO)</p>
+                    <p class="text-2xl font-black text-white font-mono mt-2">${{ totalCobradoUSD() | number:'1.2-2' }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">TOTAL COBRADO (INGRESADO)</p>
+                    <p class="text-2xl font-black text-white font-mono mt-2">${{ totalIngresadoUSD() | number:'1.2-2' }}</p>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">DIFERENCIA</p>
+                    <div class="flex items-center justify-center md:justify-end mt-2 space-x-2">
+                        <span class="text-2xl font-black font-mono" 
+                            [ngClass]="diferenciaUSD() < 0 ? 'text-rose-500' : (diferenciaUSD() > 0 ? 'text-emerald-500' : 'text-slate-400')">
+                            {{ diferenciaUSD() > 0 ? '+' : '' }}{{ diferenciaUSD() | number:'1.2-2' }} USD
+                        </span>
+                        <span class="px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-full border border-white/10"
+                            [ngClass]="diferenciaUSD() < 0 ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : (diferenciaUSD() > 0 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-900 text-slate-500')">
+                            {{ diferenciaUSD() < 0 ? 'Saldo Pendiente' : (diferenciaUSD() > 0 ? 'Saldo a Favor' : 'Estable') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex justify-between items-center border-t border-white/5 pt-8">
+                <button routerLink="/dashboard" 
+                    class="py-4 px-10 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95">
+                    Salir
+                </button>
+                
+                <button (click)="cerrarMiCaja()" [disabled]="isLoading()"
+                    class="py-4 px-10 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-rose-500/20 transition-all active:scale-95 flex items-center">
+                    <span *ngIf="isLoading()" class="animate-spin mr-3">
+                        <lucide-icon [name]="icons.RefreshCcw" class="h-4 w-4"></lucide-icon>
+                    </span>
+                    Realizar Cierre
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista si la caja ya está cerrada -->
+        <div *ngIf="!isMiCajaAbierta()" class="bg-surface-card rounded-[3.5rem] border border-white/5 p-12 text-center relative overflow-hidden shadow-2xl">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1.5 bg-emerald-500 opacity-20"></div>
+            <div class="h-20 w-20 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-emerald-500/5 mx-auto">
+                <lucide-icon [name]="icons.Check" class="h-10 w-10"></lucide-icon>
+            </div>
+            <h3 class="text-2xl font-black text-white uppercase tracking-tight">Estación de Caja Sincronizada</h3>
+            <p class="text-slate-500 text-xs font-black uppercase tracking-widest mt-2 px-10 leading-relaxed">
+                Su turno de caja se encuentra cerrado y en proceso de auditoría general por administración.
+            </p>
+            <div class="mt-10 flex justify-center space-x-4">
+                <button (click)="exportarMiCaja()"
+                    class="py-4 px-8 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center group shadow-md">
+                    <lucide-icon [name]="icons.FileSpreadsheet" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></lucide-icon>
+                    DESCARGAR MI EXCEL
+                </button>
+                <button routerLink="/dashboard"
+                    class="py-4 px-8 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">
+                    Volver al Inicio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA PARA ADMINISTRADORES (Dashboard de Control de Cierre de Cajas en Red) -->
+    <div *ngIf="isAdministrador()" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Panel Izquierdo (2/3): Auditoría de Cajas Activas y Cierres de Cajeros -->
+        <div class="lg:col-span-2 bg-surface-card rounded-[3rem] shadow-2xl border border-white/5 p-10 relative overflow-hidden flex flex-col h-[700px]">
+            <div class="absolute top-0 left-0 w-2 h-full bg-rose-500 opacity-20"></div>
+            
+            <div class="flex items-center justify-between mb-8 border-b border-white/5 pb-6">
+                <div>
+                    <h3 class="text-2xl font-black text-white tracking-tight uppercase">Auditoría de Cajas Activas y Cierres de Cajeros</h3>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Sincronización y balances por usuario cajero</p>
+                </div>
+                <button (click)="refrescarAdmin()" class="p-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5 rounded-xl transition-all shadow-md active:scale-95">
+                    <lucide-icon [name]="icons.RefreshCcw" class="w-4 h-4"></lucide-icon>
+                </button>
+            </div>
+
+            <!-- Lista de Cajas / Cajeros -->
+            <div class="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                <div *ngFor="let c of historialAdmin()?.cierres" 
+                    class="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-black/20 hover:bg-white/5 rounded-[2rem] border border-white/5 transition-all group relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1.5 h-full" 
+                        [ngClass]="c.estado === 'Abierta' ? 'bg-emerald-500/40' : (c.estado === 'CerradaPorAsistente' ? 'bg-purple-500/40' : 'bg-slate-700/40')"></div>
+                    
+                    <div class="flex items-center space-x-5">
+                        <!-- Iniciales / Avatar -->
+                        <div class="h-12 w-12 bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center rounded-[1rem] font-black text-xs uppercase shadow-inner group-hover:bg-rose-500 group-hover:text-white transition-all duration-500">
+                            {{ c.usuario.substring(0,2).toUpperCase() }}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-3">
+                                <p class="text-base font-black text-white uppercase tracking-tight">{{ c.usuario }}</p>
+                                <!-- Pill de Estado -->
+                                <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border"
+                                    [ngClass]="c.estado === 'Abierta' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 animate-pulse' : (c.estado === 'CerradaPorAsistente' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-slate-900 text-slate-500 border-white/10')">
+                                    {{ c.estado === 'CerradaPorAsistente' ? 'Cerrada por Asistente' : (c.estado === 'Cerrada' ? 'Consolidada' : 'Abierta') }}
+                                </span>
+                            </div>
+                            <!-- Fechas de apertura/cierre -->
+                            <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 flex items-center">
+                                AP: {{ c.apertura | date:'shortTime' }} 
+                                <span *ngIf="c.cierre">| CI: {{ c.cierre | date:'shortTime' }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Datos Financieros de Cierre -->
+                    <div class="flex items-center justify-between sm:justify-end mt-4 sm:mt-0 space-x-6">
+                        <div class="text-right font-mono" *ngIf="c.estado !== 'Abierta'">
+                            <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block">Declarado</span>
+                            <span class="text-sm font-black text-white">${{ c.totalIngresado | number:'1.2-2' }}</span>
+                        </div>
+                        <div class="text-right font-mono">
+                            <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block">Esperado</span>
+                            <span class="text-sm font-black text-white">${{ (c.estado === 'Abierta' ? c.montoInicialDivisa : c.totalCobrado) | number:'1.2-2' }}</span>
+                        </div>
+                        <div class="text-right font-mono" *ngIf="c.estado !== 'Abierta'">
+                            <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block">Diferencia</span>
+                            <span class="text-sm font-black flex items-center justify-end"
+                                [ngClass]="(c.diferencia ?? 0) < 0 ? 'text-rose-500' : ((c.diferencia ?? 0) > 0 ? 'text-emerald-500' : 'text-slate-400')">
+                                {{ (c.diferencia ?? 0) > 0 ? '+' : '' }}{{ c.diferencia | number:'1.2-2' }}
+                            </span>
+                        </div>
+
+                        <!-- Flecha/Indicador de Dirección de Diferencia -->
+                        <div class="flex items-center space-x-2">
+                            <div *ngIf="c.estado !== 'Abierta'" class="h-8 w-8 rounded-lg flex items-center justify-center"
+                                [ngClass]="(c.diferencia ?? 0) < 0 ? 'bg-rose-500/10 text-rose-500' : ((c.diferencia ?? 0) > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-900 text-slate-600')">
+                                <lucide-icon [name]="(c.diferencia ?? 0) < 0 ? icons.TrendingDown : ((c.diferencia ?? 0) > 0 ? icons.TrendingUp : icons.Check)" class="w-4 h-4"></lucide-icon>
+                            </div>
+                            
+                            <!-- Botón de Menú/Auditoría -->
+                            <button (click)="auditarCaja(c)" *ngIf="c.estado !== 'Abierta'"
+                                class="p-2 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors border border-transparent hover:border-white/5"
+                                title="Auditar Desglose Detallado">
+                                <lucide-icon [name]="icons.Eye" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="!historialAdmin()?.cierres?.length" class="h-full flex flex-col items-center justify-center opacity-30 py-24">
+                    <lucide-icon [name]="icons.Users" class="h-20 w-20 text-slate-500 mb-6"></lucide-icon>
+                    <p class="text-sm font-black text-white uppercase tracking-[0.4em]">Sin terminales operativas hoy</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Consolidación y Estadísticas -->
+        <div class="lg:col-span-1 space-y-8 flex flex-col">
+            <!-- Cierre Total Consolidado (1/3 superior) -->
+            <div class="bg-[#020617] rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/5 flex-1">
+                <div class="absolute top-0 right-0 -m-20 h-64 w-64 bg-rose-500/10 rounded-full blur-[100px] -z-10 animate-pulse-slow"></div>
+                
+                <h3 class="text-xl font-black mb-8 tracking-tight uppercase border-b border-white/10 pb-5 relative z-10 flex items-center">
+                    <lucide-icon [name]="icons.LayoutDashboard" class="w-6 h-6 mr-3 text-rose-500"></lucide-icon>
+                    Cierre Total Consolidado
+                </h3>
+                
+                <p class="text-slate-400 text-xs font-black uppercase tracking-wider leading-relaxed mb-8">
+                    Consolida los cierres de caja con su Cierre Total Consolidado.
+                </p>
+
+                <div class="space-y-6 relative z-10">
+                    <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Recaudado</span>
+                        <span class="text-xl font-mono font-black text-white">${{ (historialAdmin()?.totalRecaudado ?? 0) | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Esperado</span>
+                        <span class="text-xl font-mono font-black text-white">${{ (historialAdmin()?.totalEsperado ?? 0) | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-6">
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Diferencia Neta</span>
+                        <span class="text-xl font-mono font-black"
+                            [ngClass]="(historialAdmin()?.diferenciaNeta ?? 0) < 0 ? 'text-rose-500' : ((historialAdmin()?.diferenciaNeta ?? 0) > 0 ? 'text-emerald-500' : 'text-slate-400')">
+                            {{ (historialAdmin()?.diferenciaNeta ?? 0) > 0 ? '+' : '' }}{{ (historialAdmin()?.diferenciaNeta ?? 0) | number:'1.2-2' }}
+                        </span>
+                    </div>
+
+                    <button (click)="consolidarCajas()" [disabled]="isLoading()"
+                        class="w-full py-5 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-rose-500/30 transition-all active:scale-95 flex items-center justify-center">
+                        <span *ngIf="isLoading()" class="animate-spin mr-3">
+                            <lucide-icon [name]="icons.RefreshCcw" class="h-4 w-4"></lucide-icon>
+                        </span>
+                        Ejecutar Cierre Total Consolidado
+                    </button>
+                    
+                    <button (click)="exportarAuditoria()"
+                        class="w-full py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all border border-emerald-500/20 flex items-center justify-center group shadow-md mt-3">
+                        <lucide-icon [name]="icons.FileSpreadsheet" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></lucide-icon>
+                        REPORTE GLOBAL EXCEL
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarjetas de Estadísticas (2x2 cuadrícula) -->
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Cajas Activas -->
+                <div class="bg-surface-card rounded-[2rem] border border-white/5 p-6 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cajas Activas</span>
+                        <div class="h-6 w-6 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center">
+                            <lucide-icon [name]="icons.Users" class="w-3.5 h-3.5"></lucide-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-black text-white font-mono">{{ historialAdmin()?.cajasActivas }}</p>
+                </div>
+                <!-- Cierres Pendientes -->
+                <div class="bg-surface-card rounded-[2rem] border border-white/5 p-6 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cierres Pendientes</span>
+                        <div class="h-6 w-6 bg-purple-500/10 text-purple-500 rounded-lg flex items-center justify-center">
+                            <lucide-icon [name]="icons.Lock" class="w-3.5 h-3.5"></lucide-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-black text-white font-mono">{{ historialAdmin()?.cierresPendientes }}</p>
+                </div>
+                <!-- Cierres Realizados -->
+                <div class="bg-surface-card rounded-[2rem] border border-white/5 p-6 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cierres Realizados</span>
+                        <div class="h-6 w-6 bg-rose-500/10 text-rose-500 rounded-lg flex items-center justify-center">
+                            <lucide-icon [name]="icons.Check" class="w-3.5 h-3.5"></lucide-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-black text-white font-mono">{{ historialAdmin()?.cierresRealizados }}</p>
+                </div>
+                <!-- Efectivo en Bóveda -->
+                <div class="bg-surface-card rounded-[2rem] border border-white/5 p-6 relative overflow-hidden group col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Efectivo en Bóveda</span>
+                        <div class="h-6 w-6 bg-rose-500/10 text-rose-500 rounded-lg flex items-center justify-center">
+                            <lucide-icon [name]="icons.DollarSign" class="w-3.5 h-3.5"></lucide-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-black text-white font-mono">${{ (historialAdmin()?.efectivoEnBoveda ?? 0) | number:'1.2-2' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AUDITORÍA DETALLADA (Fase 1 Audit Inspection Dialog) -->
+    <div *ngIf="selectedCajaParaAuditar()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-fade-in p-4">
+        <div class="bg-[#0b101f] border border-white/10 rounded-[3rem] w-full max-w-4xl shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl -z-10"></div>
+            
+            <!-- Modal Header -->
+            <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+                <div>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight">Auditoría de Cierre de Caja</h3>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Cajero: {{ selectedCajaParaAuditar().usuario }} | ID: {{ selectedCajaParaAuditar().id.substring(0,8) }}</p>
+                </div>
+                <button (click)="cerrarAuditoria()" class="p-3 bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 rounded-2xl transition-all border border-white/5 active:scale-95">
+                    Cerrar
+                </button>
+            </div>
+
+            <!-- Modal Content (Table breakdown) -->
+            <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
+                <div class="overflow-x-auto border border-white/5 rounded-[2rem] bg-black/25">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-white/5 bg-white/[0.01]">
+                                <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-wider">Método de Pago</th>
+                                <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Ingreso Declarado</th>
+                                <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Vuelto Declarado</th>
+                                <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Total Declarado</th>
+                                <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Total Esperado</th>
+                                <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Diferencia</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            <tr *ngFor="let item of selectedCajaParaAuditar().desglose" class="hover:bg-white/[0.01] transition-all">
+                                <td class="px-6 py-4 text-xs font-black text-white uppercase">{{ item.Nombre }}</td>
+                                <td class="px-6 py-4 text-xs font-mono font-black text-right text-slate-300">
+                                    {{ item.EsUSD ? '$' : 'Bs.' }} {{ item.MontoIngreso | number:'1.2-2' }}
+                                </td>
+                                <td class="px-6 py-4 text-xs font-mono font-black text-right text-slate-300">
+                                    {{ item.EsUSD ? '$' : 'Bs.' }} {{ item.MontoVueltos | number:'1.2-2' }}
+                                </td>
+                                <td class="px-6 py-4 text-xs font-mono font-black text-right text-white">
+                                    {{ item.EsUSD ? '$' : 'Bs.' }} {{ item.TotalDeclarado | number:'1.2-2' }}
+                                </td>
+                                <td class="px-6 py-4 text-xs font-mono font-black text-right text-white">
+                                    {{ item.EsUSD ? '$' : 'Bs.' }} {{ item.TotalEsperado | number:'1.2-2' }}
+                                </td>
+                                <td class="px-6 py-4 text-xs font-mono font-black text-right"
+                                    [ngClass]="item.DiferenciaOriginal < 0 ? 'text-rose-500' : (item.DiferenciaOriginal > 0 ? 'text-emerald-500' : 'text-slate-500')">
+                                    {{ item.DiferenciaOriginal > 0 ? '+' : '' }}{{ item.DiferenciaOriginal | number:'1.2-2' }}
+                                    <span class="text-[9px] block text-slate-500 font-bold" *ngIf="!item.EsUSD">
+                                        Eqv. ${{ item.DiferenciaBase | number:'1.2-2' }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totales Consolidados de esta Caja -->
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 bg-black/25 p-6 rounded-[2rem] border border-white/5">
+                    <div class="text-center sm:text-left">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Declarado Caja</span>
+                        <span class="text-xl font-black text-white font-mono block mt-1">${{ selectedCajaParaAuditar().totalIngresado | number:'1.2-2' }} USD</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Esperado Sistema</span>
+                        <span class="text-xl font-black text-white font-mono block mt-1">${{ selectedCajaParaAuditar().totalCobrado | number:'1.2-2' }} USD</span>
+                    </div>
+                    <div class="text-center sm:text-right">
+                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Diferencia de Turno</span>
+                        <span class="text-xl font-black font-mono block mt-1"
+                            [ngClass]="selectedCajaParaAuditar().diferencia < 0 ? 'text-rose-500' : (selectedCajaParaAuditar().diferencia > 0 ? 'text-emerald-500' : 'text-slate-400')">
+                            {{ selectedCajaParaAuditar().diferencia > 0 ? '+' : '' }}{{ selectedCajaParaAuditar().diferencia | number:'1.2-2' }} USD
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-white/5 flex justify-between items-center bg-white/[0.01]">
+                <button (click)="exportarAuditoria(selectedCajaParaAuditar().usuario)"
+                    class="py-3 px-6 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-emerald-500/20 flex items-center group">
+                    <lucide-icon [name]="icons.FileSpreadsheet" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform"></lucide-icon>
+                    EXPORTAR EXCEL DE AUDITORÍA
+                </button>
+                <button (click)="cerrarAuditoria()" class="py-3 px-8 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">
+                    Aceptar
+                </button>
             </div>
         </div>
     </div>

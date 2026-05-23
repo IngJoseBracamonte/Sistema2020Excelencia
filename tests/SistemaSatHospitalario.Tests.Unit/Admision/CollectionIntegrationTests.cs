@@ -113,7 +113,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             var fechaPagoUtcToday = todayLocal.AddHours(23).AddHours(4); 
 
             var recibo = new ReciboFactura(_seed.CuentaId, _seed.PacienteId, _seed.CajaId, 50.00m, 10.00m);
-            recibo.AgregarDetallePago("Efectivo", "REF", 10.00m, 10.00m, "admin");
+            recibo.AgregarDetallePago("Efectivo", "REF", 10.00m, 10.00m, 1.0m, "admin");
             var detalle = recibo.DetallesPago.First();
             
             // Forzamos la fecha de pago para el test de zona horaria
