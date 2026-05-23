@@ -77,6 +77,7 @@ import {
   styleUrl: './facturacion.component.css'
 })
 export class FacturacionComponent {
+  public systemVersion = environment.systemVersion;
   readonly icons = {
     CreditCard,
     RefreshCcw,
