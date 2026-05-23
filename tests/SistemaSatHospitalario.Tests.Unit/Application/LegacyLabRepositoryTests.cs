@@ -91,7 +91,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 new AnalysisMappingDto { IDOrganizador = 1, IdAnalisis = 12 }  // Creatinina
             };
 
-            _queryServiceMock.Setup(q => q.GetAnalysesForProfilesAsync(It.IsAny<List<int>>(), It.IsAny<CancellationToken>()))
+            _queryServiceMock.Setup(q => q.GetAnalysesForProfilesAsync(It.IsAny<List<int>>(), It.IsAny<CancellationToken>(), It.IsAny<System.Data.IDbTransaction>()))
                 .ReturnsAsync(analysesMock);
 
             _queryServiceMock.Setup(q => q.GetCurrentDayOrderCountAsync(It.IsAny<CancellationToken>()))
@@ -134,7 +134,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var perfilesFacturados = new List<PerfilesFacturadosLegacy> { new PerfilesFacturadosLegacy { IdPerfil = idPerfil, PrecioPerfil = 100 } };
 
             // Simulamos respuesta vacía de análisis
-            _queryServiceMock.Setup(q => q.GetAnalysesForProfilesAsync(It.IsAny<List<int>>(), It.IsAny<CancellationToken>()))
+            _queryServiceMock.Setup(q => q.GetAnalysesForProfilesAsync(It.IsAny<List<int>>(), It.IsAny<CancellationToken>(), It.IsAny<System.Data.IDbTransaction>()))
                 .ReturnsAsync(new List<AnalysisMappingDto>());
 
             // Act

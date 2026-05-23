@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
         /// <summary>
         /// Obtiene la lista de análisis asociados a uno o más perfiles desde perfilesanalisis (Legacy).
         /// </summary>
-        Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken cancellationToken);
+        Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken cancellationToken, System.Data.IDbTransaction? transaction = null);
         
         /// <summary>
         /// Obtiene el conteo de órdenes del día para calcular NumeroDia (Legacy).

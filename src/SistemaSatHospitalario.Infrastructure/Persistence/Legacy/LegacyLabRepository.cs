@@ -135,7 +135,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
                     // 3. Resultados (Raw SQL)
                     var perfilIds = perfilesAFacturar.Select(p => p.IdPerfil).Distinct().ToList();
-                    var analysesList = (await _queryService.GetAnalysesForProfilesAsync(perfilIds, cancellationToken)).ToList();
+                    var analysesList = (await _queryService.GetAnalysesForProfilesAsync(perfilIds, cancellationToken, transaction)).ToList();
                     
                     if (analysesList.Any())
                     {

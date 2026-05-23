@@ -22,7 +22,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             _context = context;
         }
 
-        public async Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken ct)
+        public async Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken ct, System.Data.IDbTransaction? transaction = null)
         {
             if (profileIds == null || profileIds.Count == 0) return Array.Empty<AnalysisMappingDto>();
 
@@ -30,7 +30,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(ct);
 
             const string sqlAnalisis = "SELECT IDOrganizador, IdAnalisis FROM perfilesanalisis WHERE IdPerfil IN @Ids";
-            return await connection.QueryAsync<AnalysisMappingDto>(sqlAnalisis, new { Ids = profileIds });
+            return await connection.QueryAsync<AnalysisMappingDto>(sqlAnalisis, new { Ids = profileIds }, transaction);
         }
 
         public async Task<int> GetCurrentDayOrderCountAsync(CancellationToken ct)
