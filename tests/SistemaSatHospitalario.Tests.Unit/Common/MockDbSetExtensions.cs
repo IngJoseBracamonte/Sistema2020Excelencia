@@ -20,6 +20,25 @@ namespace SistemaSatHospitalario.Tests.Unit.Common
             mockSet.As<IAsyncEnumerable<T>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
                 .Returns(new TestAsyncEnumerator<T>(data.GetEnumerator()));
 
+            mockSet.Setup(m => m.FindAsync(It.IsAny<object[]>(), It.IsAny<CancellationToken>()))
+                .Returns((object[] keyValues, CancellationToken token) =>
+                {
+                    var key = keyValues?.FirstOrDefault();
+                    if (key == null) return ValueTask.FromResult<T?>(null);
+                    
+                    var item = data.AsEnumerable().FirstOrDefault(x => {
+                        var prop = x.GetType().GetProperty("Id");
+                        if (prop != null)
+                        {
+                            var val = prop.GetValue(x);
+                            return val != null && val.Equals(key);
+                        }
+                        return false;
+                    });
+                    
+                    return ValueTask.FromResult<T?>(item);
+                });
+
             return mockSet;
         }
     }

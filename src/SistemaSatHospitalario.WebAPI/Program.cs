@@ -26,13 +26,34 @@ else
         .WriteTo.Console()
         .CreateLogger();
 }
-
 try 
 {
     Log.Information("Iniciando Sistema Sat Hospitalario v1.2.49 (Cloud-Native Mode)...");
     
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
+
+    // V12.6 Dynamic App.config Connection Override Strategy
+    try
+    {
+        var connectionStrings = builder.Configuration.GetSection("ConnectionStrings");
+        foreach (var cs in connectionStrings.GetChildren())
+        {
+            var originalValue = cs.Value;
+            if (string.IsNullOrEmpty(originalValue)) continue;
+
+            var resolvedValue = SistemaSatHospitalario.Infrastructure.Common.Helpers.ConnectionStringHelper.ResolveConnectionStringWithAppConfig(originalValue);
+            if (originalValue != resolvedValue)
+            {
+                builder.Configuration[$"ConnectionStrings:{cs.Key}"] = resolvedValue;
+                Log.Information("[CONFIG] Overrode ConnectionStrings:{Key} with values from App.config", cs.Key);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Failed to resolve connection strings from App.config");
+    }
 
     // Core Services
     builder.AddServiceDefaults(); // Aspire

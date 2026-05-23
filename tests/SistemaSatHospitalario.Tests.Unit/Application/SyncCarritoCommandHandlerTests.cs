@@ -136,6 +136,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Arrange
             var pacienteId = Guid.NewGuid();
             var servicioId = Guid.NewGuid();
+            var medicoId = Guid.NewGuid();
             CuentaServicios capturedCuenta = null;
 
             var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
@@ -149,6 +150,11 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             service.HonorarioBase = 30;
             var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
             _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            var medico = new Medico("Dr. House", Guid.NewGuid(), 30);
+            typeof(Medico).GetProperty("Id")?.SetValue(medico, medicoId);
+            var medicoSet = new List<Medico> { medico }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.Medicos).Returns(medicoSet.Object);
 
             _repositoryMock.Setup(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()))
                 .Callback<CuentaServicios, CancellationToken>((c, _) => {
@@ -172,7 +178,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                         Honorario = 30, // Coincide con HonorarioBase
                         Cantidad = 1,
                         TipoServicio = "Medico",
-                        MedicoId = Guid.NewGuid(),
+                        MedicoId = medicoId,
                         HoraCita = DateTime.Today.AddHours(10)
                     }
                 }

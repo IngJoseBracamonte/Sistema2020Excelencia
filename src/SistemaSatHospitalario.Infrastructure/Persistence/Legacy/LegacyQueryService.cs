@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
 using Dapper;
+using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Infrastructure.Common.Helpers;
 
@@ -14,27 +15,39 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 {
     public class LegacyQueryService : ILegacyQueryService
     {
-        private readonly string _connectionString;
+        private readonly Sistema2020LegacyDbContext _context;
 
-        public LegacyQueryService(IConfiguration configuration)
+        public LegacyQueryService(Sistema2020LegacyDbContext context)
         {
-            var rawConnStr = configuration.GetConnectionString("LegacyConnection") ?? "";
-            _connectionString = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr);
+            _context = context;
         }
 
         public async Task<IEnumerable<AnalysisMappingDto>> GetAnalysesForProfilesAsync(List<int> profileIds, CancellationToken ct)
         {
             if (profileIds == null || profileIds.Count == 0) return Array.Empty<AnalysisMappingDto>();
 
-            using var connection = new MySqlConnection(_connectionString);
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(ct);
+
             const string sqlAnalisis = "SELECT IDOrganizador, IdAnalisis FROM perfilesanalisis WHERE IdPerfil IN @Ids";
             return await connection.QueryAsync<AnalysisMappingDto>(sqlAnalisis, new { Ids = profileIds });
         }
 
         public async Task<int> GetCurrentDayOrderCountAsync(CancellationToken ct)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            const string sqlNumeroDia = "SELECT COUNT(IdOrden) FROM ordenes WHERE DATE(Fecha) = CURRENT_DATE";
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(ct);
+
+            string sqlNumeroDia;
+            if (_context.Database.IsSqlite())
+            {
+                sqlNumeroDia = "SELECT COUNT(IdOrden) FROM ordenes WHERE date(Fecha) = date('now')";
+            }
+            else
+            {
+                sqlNumeroDia = "SELECT COUNT(IdOrden) FROM ordenes WHERE DATE(Fecha) = CURRENT_DATE";
+            }
+            
             return await connection.ExecuteScalarAsync<int>(sqlNumeroDia);
         }
     }

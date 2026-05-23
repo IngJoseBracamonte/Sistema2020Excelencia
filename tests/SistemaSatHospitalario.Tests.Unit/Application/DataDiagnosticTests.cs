@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         {
             // This test is intended to be run against the REAL development database
             // to verify metadata during research phase.
-            string connectionString = "Server=localhost;Port=3306;Database=sistemasat;Uid=root;Pwd=Labordono1818;Allow User Variables=True";
+            string connectionString = "Server=localhost;Port=3306;Database=sathospitalario;Uid=root;Pwd=Labordono1818;Allow User Variables=True";
             
             var options = new DbContextOptionsBuilder<SatHospitalarioDbContext>()
                 .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))

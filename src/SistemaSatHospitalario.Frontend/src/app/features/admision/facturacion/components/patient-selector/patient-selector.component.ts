@@ -85,7 +85,7 @@ import { PatientRecord } from '../../../../../core/services/patient.service';
                         <p class="text-[9px] font-black text-slate-400">{{ selectedPatient.cedula }}</p>
                     </div>
                 </div>
-                <button (click)="change.emit()" [disabled]="disabled"
+                <button (click)="changePatient.emit()" [disabled]="disabled"
                     class="flex items-center space-x-2 px-5 py-3 bg-white/5 hover:bg-primary/10 text-slate-400 hover:text-primary border border-white/5 hover:border-primary/20 rounded-xl transition-all">
                     <lucide-icon name="edit-3" class="w-4 h-4"></lucide-icon>
                     <span class="text-[9px] font-black uppercase">Cambiar</span>
@@ -106,7 +106,7 @@ export class PatientSelectorComponent {
 
   @Output() search = new EventEmitter<string>();
   @Output() select = new EventEmitter<PatientRecord>();
-  @Output() change = new EventEmitter<void>();
+  @Output() changePatient = new EventEmitter<void>();
   @Output() register = new EventEmitter<string>();
 
   public searchTerm = '';

@@ -184,7 +184,7 @@
                     [disabled]="!!cuentaId() || isLoading()"
                     (search)="busquedaTermino.set($event); buscarPaciente()"
                     (select)="seleccionarPaciente($event)"
-                    (change)="cambiarPaciente()"
+                    (changePatient)="cambiarPaciente()"
                     (register)="abrirRegistroPaciente()">
                 </app-patient-selector>
 

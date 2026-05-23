@@ -43,23 +43,23 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             List<ResultadosPacienteLegacy> resultados, 
             CancellationToken cancellationToken)
         {
-            // 0. Guard Clause: Verificamos configuración antes de transaccionar
-            if (string.IsNullOrEmpty(_connectionString))
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
             {
-                _logger.LogError("[LEGACY-REPO] ABORTADO: No hay cadena de conexión configurada (LegacyConnection).");
-                throw new InvalidOperationException("El sistema legacy no está configurado (Falta LegacyConnection).");
+                await connection.OpenAsync(cancellationToken);
             }
 
             // [DIAGNOSTIC] Check schema of perfilesfacturados to fix "Unknown column" error
             try {
-                using var conn = new MySqlConnection(_connectionString);
-                await conn.OpenAsync(cancellationToken);
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SHOW COLUMNS FROM perfilesfacturados";
-                using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-                var columns = new List<string>();
-                while (await reader.ReadAsync(cancellationToken)) columns.Add(reader[0].ToString());
-                _logger.LogTrace($"[SCHEMA-DIAGNOSTIC] perfilesfacturados columns: {string.Join(", ", columns)}");
+                if (_context.Database.IsMySql())
+                {
+                    using var cmd = connection.CreateCommand();
+                    cmd.CommandText = "SHOW COLUMNS FROM perfilesfacturados";
+                    using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+                    var columns = new List<string>();
+                    while (await reader.ReadAsync(cancellationToken)) columns.Add(reader[0].ToString() ?? "");
+                    _logger.LogTrace($"[SCHEMA-DIAGNOSTIC] perfilesfacturados columns: {string.Join(", ", columns)}");
+                }
             } catch (Exception ex) {
                 _logger.LogError($"[SCHEMA-DIAGNOSTIC] Failed to read schema: {ex.Message}");
             }
@@ -74,16 +74,25 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 orden.NumeroDia = count + 1;
                 _logger.LogTrace($"[LEGACY-REPO] Número de Orden asignado para el día: {orden.NumeroDia}");
 
-                using var connection = new MySqlConnection(_connectionString);
-                await connection.OpenAsync(cancellationToken);
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken);
                 try
                 {
                     // 1. Cabecera de Orden (Raw SQL)
-                    const string sqlOrden = @"
-                        INSERT INTO ordenes (IdPersona, Fecha, HoraIngreso, NumeroDia, EstadoDeOrden, IDConvenio, IDTasa, IdCierreDeCaja, Muestra, PrecioF, Usuario, VALIDADA) 
-                        VALUES (@IdPersona, @Fecha, @HoraIngreso, @NumeroDia, @EstadoDeOrden, @IDConvenio, @IDTasa, @IdCierreDeCaja, @Muestra, @PrecioF, @Usuario, @VALIDADA);
-                        SELECT LAST_INSERT_ID();";
+                    string sqlOrden;
+                    if (_context.Database.IsSqlite())
+                    {
+                        sqlOrden = @"
+                            INSERT INTO ordenes (IdPersona, Fecha, HoraIngreso, NumeroDia, EstadoDeOrden, IDConvenio, IDTasa, IdCierreDeCaja, Muestra, PrecioF, Usuario, VALIDADA) 
+                            VALUES (@IdPersona, @Fecha, @HoraIngreso, @NumeroDia, @EstadoDeOrden, @IDConvenio, @IDTasa, @IdCierreDeCaja, @Muestra, @PrecioF, @Usuario, @VALIDADA);
+                            SELECT last_insert_rowid();";
+                    }
+                    else
+                    {
+                        sqlOrden = @"
+                            INSERT INTO ordenes (IdPersona, Fecha, HoraIngreso, NumeroDia, EstadoDeOrden, IDConvenio, IDTasa, IdCierreDeCaja, Muestra, PrecioF, Usuario, VALIDADA) 
+                            VALUES (@IdPersona, @Fecha, @HoraIngreso, @NumeroDia, @EstadoDeOrden, @IDConvenio, @IDTasa, @IdCierreDeCaja, @Muestra, @PrecioF, @Usuario, @VALIDADA);
+                            SELECT LAST_INSERT_ID();";
+                    }
                     
                     var idOrden = await connection.ExecuteScalarAsync<int>(sqlOrden, new {
                         orden.IdPersona,
@@ -100,6 +109,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                         orden.VALIDADA
                     }, transaction);
 
+                    orden.IdOrden = idOrden;
                     _logger.LogTrace($"[LEGACY-REPO] 'orden' insertada via Raw SQL (ID: {idOrden})");
 
                     // 2. Perfiles Facturados (Raw SQL - Evita errores de PK IdFacturado)
@@ -111,6 +121,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                         
                         foreach (var p in perfilesAFacturar)
                         {
+                            p.IdOrden = idOrden;
                             await connection.ExecuteAsync(sqlPerfil, new {
                                 IdOrden = idOrden,
                                 p.IdPersona,
@@ -137,24 +148,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                             await connection.ExecuteAsync(sqlResultado, new {
                                 IdPaciente = orden.IdPersona,
                                 IdOrden = idOrden,
-                                a.IdAnalisis,
-                                a.IDOrganizador,
-                                orden.IDConvenio,
+                                IdAnalisis = a.IdAnalisis,
+                                IDOrganizador = a.IDOrganizador,
+                                IdConvenio = orden.IDConvenio,
                                 EstadoDeResultado = 1,
                                 FechaIngreso = DateTime.Today,
-                                orden.HoraIngreso
+                                HoraIngreso = orden.HoraIngreso
                             }, transaction);
                         }
                     }
 
                     await transaction.CommitAsync(cancellationToken);
                     return idOrden;
-                }
-                catch (MySqlException sqlEx) when (sqlEx.Number == 1049 || sqlEx.Message.Contains("Unknown database"))
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    _logger.LogError($"[LEGACY-REPO] ERROR CRÍTICO: La base de datos legacy no es accesible.", sqlEx);
-                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -173,17 +178,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<DatosPersonalesLegacy?> GetPatientByCedulaAsync(string cedula, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return null;
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
                 const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
                                      FROM datospersonales WHERE Cedula = @cedula LIMIT 1";
                 return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { cedula });
             }
             catch (global::System.Exception ex)
             {
-                // Logueamos pero no rompemos el flujo principal (visto como 500)
                 _logger.LogError($"[LEGACY ERROR] GetPatientByCedulaAsync: {ex.Message}", ex);
                 return null;
             }
@@ -191,10 +196,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<DatosPersonalesLegacy?> GetPatientByIdAsync(string legacyId, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return null;
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
                 const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
                                      FROM datospersonales WHERE IdPersona = @legacyId LIMIT 1";
                 var res = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { legacyId });
@@ -218,10 +224,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return new List<DatosPersonalesLegacy>();
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
                 const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
                                      FROM datospersonales 
                                      WHERE Cedula LIKE @term OR Nombre LIKE @term OR Apellidos LIKE @term 
@@ -238,13 +245,35 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<List<PerfilLegacy>> GetAvailableProfilesAsync(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return new List<PerfilLegacy>();
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                // El esquema real en la DB reseteada usa nombres legacy: 'NombrePerfil' y 'Activo'
-                // V12.6 Senior Alignment Fix: Usamos alias para mapear a la entidad moderna
-                const string sql = "SELECT IdPerfil, NombrePerfil AS Descripcion, Precio, PrecioDolar, Activo AS Estado FROM perfil";
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
+                bool hasNombrePerfil = false;
+                bool hasActivo = false;
+
+                if (_context.Database.IsMySql())
+                {
+                    var columns = await connection.QueryAsync<string>(
+                        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'perfil'",
+                        new { db = connection.Database });
+                    var colList = columns.Select(c => c.ToUpper()).ToList();
+                    hasNombrePerfil = colList.Contains("NOMBREPERFIL");
+                    hasActivo = colList.Contains("ACTIVO");
+                }
+                else if (_context.Database.IsSqlite())
+                {
+                    var columns = await connection.QueryAsync<dynamic>("PRAGMA table_info(perfil)");
+                    var colList = columns.Select(c => ((string)c.name).ToUpper()).ToList();
+                    hasNombrePerfil = colList.Contains("NOMBREPERFIL");
+                    hasActivo = colList.Contains("ACTIVO");
+                }
+
+                string descCol = hasNombrePerfil ? "NombrePerfil" : "Descripcion";
+                string estadoCol = hasActivo ? "Activo" : "Estado";
+
+                string sql = $"SELECT IdPerfil, {descCol} AS Descripcion, Precio, PrecioDolar, {estadoCol} AS Estado FROM perfil";
                 var result = await connection.QueryAsync<PerfilLegacy>(sql);
                 var list = result.ToList();
                 _logger.LogTrace($"[LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron {list.Count} perfiles de la base de datos.");
@@ -259,14 +288,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<int> CreatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return 0;
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                const string sql = @"
-                    INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono) 
-                    VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono);
-                    SELECT LAST_INSERT_ID();";
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
+                string sql;
+                if (_context.Database.IsSqlite())
+                {
+                    sql = @"
+                        INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono) 
+                        VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono);
+                        SELECT last_insert_rowid();";
+                }
+                else
+                {
+                    sql = @"
+                        INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono) 
+                        VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono);
+                        SELECT LAST_INSERT_ID();";
+                }
                     
                 var id = await connection.ExecuteScalarAsync<int>(sql, patient);
                 patient.IdPersona = id;
@@ -281,10 +322,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
         public async Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return new List<int>();
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
                 const string sql = "SELECT IDConvenio FROM convenios"; // Basado en el nombre estándar
                 var result = await connection.QueryAsync<int>(sql);
                 return result.ToList();
@@ -298,10 +340,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
  
         public async Task<int?> GetMuestraStatusAsync(int legacyOrderId, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return null;
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
                 const string sql = "SELECT Muestra FROM ordenes WHERE IdOrden = @legacyOrderId LIMIT 1";
                 return await connection.QueryFirstOrDefaultAsync<int?>(sql, new { legacyOrderId });
             }
