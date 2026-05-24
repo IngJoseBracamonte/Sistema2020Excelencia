@@ -24,25 +24,33 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var today = request.Fecha.Date;
             var tomorrow = today.AddDays(1);
 
-            // V11.0: Cargamos los recibos emitidos hoy para el desglose financiero real
-            var recibosHoy = await _context.RecibosFactura
+            var cajaAbierta = await _context.CajasDiarias
+                .FirstOrDefaultAsync(c => c.Estado == EstadoConstants.CajaAbierta && c.UsuarioId == request.UserId, cancellationToken);
+
+            var query = _context.RecibosFactura
                 .Include(r => r.DetallesPago)
-                .Where(r => r.FechaEmision >= today && r.FechaEmision < tomorrow && r.EstadoFiscal != EstadoConstants.Anulada)
-                .ToListAsync(cancellationToken);
+                .AsQueryable();
 
-            var allPayments = recibosHoy.SelectMany(r => r.DetallesPago).ToList();
+            if (cajaAbierta != null)
+            {
+                query = query.Where(r => r.CajaDiariaId == cajaAbierta.Id && r.EstadoFiscal != EstadoConstants.Anulada);
+            }
+            else
+            {
+                query = query.Where(r => r.FechaEmision >= today && r.FechaEmision < tomorrow && r.EstadoFiscal != EstadoConstants.Anulada);
+            }
 
-            var isCajaAbierta = await _context.CajasDiarias
-                .AnyAsync(c => c.Estado == "Abierta" && c.UsuarioId == request.UserId, cancellationToken);
+            var recibosCaja = await query.ToListAsync(cancellationToken);
+            var allPayments = recibosCaja.SelectMany(r => r.DetallesPago).ToList();
 
             var summary = new DailyClosingDto
             {
                 Fecha = today,
                 Usuario = request.UserId ?? EstadoConstants.DefaultCajero,
-                TotalOrdenes = recibosHoy.Count,
-                TotalVendidoUSD = recibosHoy.Sum(r => r.TotalFacturadoUSD),
+                TotalOrdenes = recibosCaja.Count,
+                TotalVendidoUSD = recibosCaja.Sum(r => r.TotalFacturadoUSD),
                 TotalRecaudadoBase = allPayments.Sum(p => p.EquivalenteAbonadoBase),
-                IsCajaAbierta = isCajaAbierta,
+                IsCajaAbierta = cajaAbierta != null,
                 DesgloseMetodos = allPayments
                     .GroupBy(p => p.MetodoPago)
                     .Select(g => new PaymentMethodSummaryDto

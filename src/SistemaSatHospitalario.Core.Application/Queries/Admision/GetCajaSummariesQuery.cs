@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -98,9 +99,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var tomorrow = today.AddDays(1);
             var cajasHoy = list.Where(c => c.Apertura >= today && c.Apertura < tomorrow).ToList();
 
-            var cajasActivas = cajasHoy.Count(c => c.Estado == "Abierta");
-            var cierresPendientes = cajasHoy.Count(c => c.Estado == "CerradaPorAsistente");
-            var cierresRealizados = cajasHoy.Count(c => c.Estado == "Cerrada");
+            var cajasActivas = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaAbierta);
+            var cierresPendientes = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente);
+            var cierresRealizados = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerrada);
 
             decimal totalRecaudado = cajasHoy.Sum(c => c.TotalIngresado ?? 0);
             decimal totalEsperado = cajasHoy.Sum(c => c.TotalCobrado ?? 0);

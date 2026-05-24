@@ -90,5 +90,10 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         // Estados de Procesamiento (V16.3 Monitor)
         public const string ProcesamientoPendiente = "PENDIENTE";
         public const string ProcesamientoProcesada = "PROCESADA";
+
+        // Estados de Caja Diaria (Fases de Cierre de Caja)
+        public const string CajaAbierta = "Abierta";
+        public const string CajaCerradaPorAsistente = "CerradaPorAsistente";
+        public const string CajaCerrada = "Cerrada";
     }
 }

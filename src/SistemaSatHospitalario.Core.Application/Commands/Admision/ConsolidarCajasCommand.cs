@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -44,7 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .ToListAsync(cancellationToken);
 
             // Consolidar todas las cajas que estén "CerradaPorAsistente"
-            var cajasPorConsolidar = cajasHoy.Where(c => c.Estado == "CerradaPorAsistente").ToList();
+            var cajasPorConsolidar = cajasHoy.Where(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente).ToList();
             foreach (var caja in cajasPorConsolidar)
             {
                 caja.ConsolidarCaja();
@@ -53,12 +54,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             await _context.SaveChangesAsync(cancellationToken);
 
             // Recalcular métricas para el resultado
-            var cajasActivas = cajasHoy.Count(c => c.Estado == "Abierta");
-            var cierresPendientes = cajasHoy.Count(c => c.Estado == "CerradaPorAsistente");
-            var cierresRealizados = cajasHoy.Count(c => c.Estado == "Cerrada");
+            var cajasActivas = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaAbierta);
+            var cierresPendientes = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente);
+            var cierresRealizados = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerrada);
 
-            decimal totalRecaudado = cajasHoy.Where(c => c.Estado == "Cerrada").Sum(c => c.TotalIngresado ?? 0);
-            decimal totalEsperado = cajasHoy.Where(c => c.Estado == "Cerrada").Sum(c => c.TotalCobrado ?? 0);
+            decimal totalRecaudado = cajasHoy.Where(c => c.Estado == EstadoConstants.CajaCerrada).Sum(c => c.TotalIngresado ?? 0);
+            decimal totalEsperado = cajasHoy.Where(c => c.Estado == EstadoConstants.CajaCerrada).Sum(c => c.TotalCobrado ?? 0);
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
 
             // Efectivo en Bóveda: sumar lo ingresado en Efectivo de las cajas cerradas/consolidadas

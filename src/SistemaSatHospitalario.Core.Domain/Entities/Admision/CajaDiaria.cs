@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -30,24 +31,24 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaApertura = DateTime.UtcNow;
             MontoInicialDivisa = montoInicialDivisa;
             MontoInicialBs = montoInicialBs;
-            Estado = "Abierta";
+            Estado = EstadoConstants.CajaAbierta;
             UsuarioId = usuarioId;
             NombreUsuario = nombreUsuario;
         }
 
         public void CerrarCaja()
         {
-            if (Estado == "Cerrada") throw new InvalidOperationException("La caja ya se encuentra cerrada.");
-            Estado = "Cerrada";
+            if (Estado == EstadoConstants.CajaCerrada) throw new InvalidOperationException("La caja ya se encuentra cerrada.");
+            Estado = EstadoConstants.CajaCerrada;
             FechaCierre = DateTime.UtcNow;
         }
 
         public void CerrarPorAsistente(string declaracionJson, decimal totalIngresado, decimal totalCobrado, decimal diferencia)
         {
-            if (Estado == "Cerrada" || Estado == "CerradaPorAsistente") 
+            if (Estado == EstadoConstants.CajaCerrada || Estado == EstadoConstants.CajaCerradaPorAsistente) 
                 throw new InvalidOperationException("La caja ya se encuentra cerrada o en proceso de consolidación.");
             
-            Estado = "CerradaPorAsistente";
+            Estado = EstadoConstants.CajaCerradaPorAsistente;
             FechaCierre = DateTime.UtcNow;
             DeclaracionCierreJson = declaracionJson;
             TotalIngresado = totalIngresado;
@@ -57,8 +58,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void ConsolidarCaja()
         {
-            if (Estado == "Cerrada") throw new InvalidOperationException("La caja ya se encuentra consolidada.");
-            Estado = "Cerrada";
+            if (Estado == EstadoConstants.CajaCerrada) throw new InvalidOperationException("La caja ya se encuentra consolidada.");
+            Estado = EstadoConstants.CajaCerrada;
         }
     }
 }
