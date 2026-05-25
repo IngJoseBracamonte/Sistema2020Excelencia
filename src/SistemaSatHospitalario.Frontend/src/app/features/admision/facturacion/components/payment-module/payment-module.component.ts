@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, CreditCard, Trash2 } from 'lucide-angular';
@@ -15,7 +15,7 @@ import { AtmAmountDirective } from '../../../../../shared/directives/atm-amount.
   imports: [CommonModule, FormsModule, LucideAngularModule, AtmAmountDirective],
   templateUrl: './payment-module.component.html'
 })
-export class PaymentModuleComponent {
+export class PaymentModuleComponent implements OnInit {
   public billingFacade = inject(BillingFacadeService);
 
   // --- Estado Local del Formulario de Pago ---
@@ -28,6 +28,11 @@ export class PaymentModuleComponent {
   public displayMonto = '0,00';
 
   public metodosDisponibles = this.billingFacade.catalogMetodosPago;
+
+  ngOnInit() {
+    // Asegurar que los métodos de pago estén cargados al montar este componente
+    this.billingFacade.reloadPaymentCatalogIfEmpty();
+  }
 
   // Selectores del Facade
   public pagos = this.billingFacade.pagos;

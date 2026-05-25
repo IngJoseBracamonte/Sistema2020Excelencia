@@ -256,6 +256,26 @@ export class CajasComponent implements OnInit, OnDestroy {
     });
   }
 
+  forzarCierre(caja: any) {
+    if (!confirm(`¿Está seguro de que desea FORZAR el cierre de la caja del usuario "${caja.usuario}"?`)) return;
+    
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.actionMessage.set(null);
+
+    this.cajaService.forzarCierreCaja(caja.id).subscribe({
+      next: (res: any) => {
+        this.actionMessage.set(`¡Cierre forzado exitosamente para la caja de ${caja.usuario}!`);
+        this.refrescarAdmin();
+        this.isLoading.set(false);
+      },
+      error: (err: any) => {
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al forzar el cierre de la caja.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
   auditarCaja(caja: any) {
     if (!caja.declaracionCierreJson) {
       alert("Esta caja no cuenta con una declaración detallada (es un cierre del sistema anterior o incompleto).");

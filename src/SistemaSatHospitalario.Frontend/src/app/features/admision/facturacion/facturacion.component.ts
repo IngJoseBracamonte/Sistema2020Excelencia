@@ -217,6 +217,9 @@ export class FacturacionComponent {
     // 7. Cargar Catálogo Inicial
     this.refreshCatalog();
 
+    // 7.1. Asegurar que los Métodos de Pago estén disponibles (Resilience Fix)
+    this.billingFacade.reloadPaymentCatalogIfEmpty();
+
     // 8. Reaccionar a cambios en convenio para actualizar precios (Fase 39)
     effect(() => {
       const convId = this.convenioId();
@@ -1302,6 +1305,9 @@ export class FacturacionComponent {
     this.selectedPatientData.set(null);
     this.currentStep.set(1);
     this.billingSuccess.set(false); // V12.1
+
+    // Recargar métodos de pago si se perdieron durante la sesión
+    this.billingFacade.reloadPaymentCatalogIfEmpty();
   }
 
   // --- Lógica de Gestión de Documentos Post-Facturación (V12.1) ---

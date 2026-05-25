@@ -88,6 +88,24 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         /// <summary>
+        /// Fuerza el cierre de la caja abierta de un usuario. (Acceso Administrador).
+        /// </summary>
+        [HttpPost("ForzarCierre")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
+        public async Task<IActionResult> ForzarCierre([FromBody] ForzarCierreCajaCommand command)
+        {
+            try
+            {
+                var result = await _mediator.Send(command);
+                return Ok(new { Message = "Cierre de caja forzado con éxito.", CajaId = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Obtiene el historial de cierres para administración (Totales y por Usuario).
         /// </summary>
         [HttpGet("Historial")]

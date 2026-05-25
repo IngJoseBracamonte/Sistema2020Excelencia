@@ -94,6 +94,10 @@ export class CajaService {
     return this.http.post<any>(`${this.baseUrl}/Consolidar`, {});
   }
 
+  forzarCierreCaja(cajaId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/ForzarCierre`, { cajaId });
+  }
+
   exportExcelCashClosing(userId?: string, date?: string, auditMode: boolean = false): Observable<Blob> {
     let params = new HttpParams();
     if (userId) params = params.set('userId', userId);

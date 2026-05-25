@@ -242,7 +242,7 @@
                         </div>
                         <div class="text-right font-mono">
                             <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block">Esperado</span>
-                            <span class="text-sm font-black text-white">${{ (c.estado === 'Abierta' ? c.montoInicialDivisa : c.totalCobrado) | number:'1.2-2' }}</span>
+                            <span class="text-sm font-black text-white">${{ c.totalCobrado | number:'1.2-2' }}</span>
                         </div>
                         <div class="text-right font-mono" *ngIf="c.estado !== 'Abierta'">
                             <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest block">Diferencia</span>
@@ -264,6 +264,13 @@
                                 class="p-2 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors border border-transparent hover:border-white/5"
                                 title="Auditar Desglose Detallado">
                                 <lucide-icon [name]="icons.Eye" class="w-4 h-4"></lucide-icon>
+                            </button>
+
+                            <!-- Botón de Forzar Cierre -->
+                            <button (click)="forzarCierre(c)" *ngIf="c.estado === 'Abierta'"
+                                class="p-2 hover:bg-rose-500/10 text-rose-500 hover:text-rose-400 rounded-lg transition-colors border border-transparent hover:border-white/5"
+                                title="Forzar Cierre de Caja">
+                                <lucide-icon [name]="icons.Lock" class="w-4 h-4"></lucide-icon>
                             </button>
                         </div>
                     </div>

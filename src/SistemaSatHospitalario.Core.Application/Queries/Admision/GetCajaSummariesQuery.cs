@@ -94,6 +94,26 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 DeclaracionCierreJson = c.DeclaracionCierreJson
             }).ToList();
 
+            // Calcular el acumulado en tiempo real para las cajas que siguen abiertas
+            var openCajaIds = list.Where(c => c.Estado == EstadoConstants.CajaAbierta).Select(c => c.Id).ToList();
+            if (openCajaIds.Any())
+            {
+                var openCajaTotals = await _context.RecibosFactura
+                    .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .SelectMany(r => r.DetallesPago)
+                    .GroupBy(p => p.ReciboFactura.CajaDiariaId)
+                    .Select(g => new { CajaDiariaId = g.Key!.Value, Total = g.Sum(p => p.EquivalenteAbonadoBase) })
+                    .ToDictionaryAsync(x => x.CajaDiariaId, x => x.Total, cancellationToken);
+
+                foreach (var item in list)
+                {
+                    if (item.Estado == EstadoConstants.CajaAbierta)
+                    {
+                        item.TotalCobrado = openCajaTotals.TryGetValue(item.Id, out var total) ? total : 0m;
+                    }
+                }
+            }
+
             // Calcular estadísticas del día de hoy para el panel de consolidación
             var today = DateTime.UtcNow.Date;
             var tomorrow = today.AddDays(1);
@@ -103,8 +123,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var cierresPendientes = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente);
             var cierresRealizados = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerrada);
 
-            decimal totalRecaudado = cajasHoy.Sum(c => c.TotalIngresado ?? 0);
-            decimal totalEsperado = cajasHoy.Sum(c => c.TotalCobrado ?? 0);
+            // Excluir cajas abiertas de la suma de recaudado/esperado diario para no alterar la diferencia neta diaria
+            decimal totalRecaudado = cajasHoy.Where(c => c.Estado != EstadoConstants.CajaAbierta).Sum(c => c.TotalIngresado ?? 0);
+            decimal totalEsperado = cajasHoy.Where(c => c.Estado != EstadoConstants.CajaAbierta).Sum(c => c.TotalCobrado ?? 0);
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
             decimal efectivoEnBoveda = totalRecaudado;
 

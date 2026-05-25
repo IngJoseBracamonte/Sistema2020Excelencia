@@ -60,15 +60,16 @@ namespace SistemaSatHospitalario.IntegrationTests
         }
 
         [Fact]
-        public async Task Login_WithEmergencyBypass_ReturnsOk()
+        public async Task Login_WithRequireReset_ReturnsOkAndRequireResetTrue()
         {
             // Arrange
             var client = _factory.CreateClient();
             var username = "resetuser";
-            await SeedUser(username, "SomePassword123!", true);
+            var password = "SomePassword123!";
+            await SeedUser(username, password, true);
 
-            // Any password should work due to bypass
-            var command = new LoginCommand { Username = username, Password = "AnyPassword" };
+            // Must use the correct password now
+            var command = new LoginCommand { Username = username, Password = password };
 
             // Act
             var response = await client.PostAsJsonAsync("/api/Auth/login", command);

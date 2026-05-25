@@ -422,10 +422,10 @@ export class SystemSettingsComponent implements OnInit {
     this.editingPMId = pm.id;
     this.newPM = {
       id: pm.id,
-      nombre: pm.nombre,
-      valor: pm.valor,
+      nombre: pm.nombre || pm.name,
+      valor: pm.valor || pm.value,
       grupoMoneda: pm.grupoMoneda,
-      esVuelto: pm.esVuelto,
+      esVuelto: pm.esVuelto || pm.isVuelto,
       orden: pm.orden,
       activo: pm.activo
     };

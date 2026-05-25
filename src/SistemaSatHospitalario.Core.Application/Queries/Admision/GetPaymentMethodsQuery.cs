@@ -18,6 +18,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public int GrupoMoneda { get; set; }
         public bool Activo { get; set; }
         public int Orden { get; set; }
+
+        public string Nombre { get => Name; set => Name = value; }
+        public string Valor { get => Value; set => Value = value; }
+        public bool EsUSD { get => IsUSD; set => IsUSD = value; }
+        public bool EsVuelto { get => IsVuelto; set => IsVuelto = value; }
     }
 
     public class GetPaymentMethodsQuery : IRequest<List<PaymentMethodDto>>

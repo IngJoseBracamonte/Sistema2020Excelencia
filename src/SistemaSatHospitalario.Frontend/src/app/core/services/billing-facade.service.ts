@@ -119,20 +119,35 @@ export class BillingFacadeService {
     this.loadPaymentCatalog();
   }
 
-  private loadPaymentCatalog() {
-    this.catalogService.getPaymentMethods().subscribe(res => {
-      const mapped = res.map(x => ({
-        id: x.id,
-        name: x.nombre,
-        value: x.valor,
-        grupoMoneda: x.grupoMoneda,
-        isUSD: x.grupoMoneda === 1,
-        isVuelto: x.esVuelto,
-        orden: x.orden,
-        activo: x.activo
-      }));
-      this.catalogMetodosPago.set(mapped.filter(x => !x.isVuelto));
+  public loadPaymentCatalog() {
+    this.catalogService.getPaymentMethods().subscribe({
+      next: (res) => {
+        const mapped = res.map(x => ({
+          id: x.id,
+          name: x.nombre || x.name,
+          value: x.valor || x.value,
+          grupoMoneda: x.grupoMoneda,
+          isUSD: x.grupoMoneda === 1 || x.isUSD,
+          isVuelto: x.esVuelto || x.isVuelto,
+          orden: x.orden,
+          activo: x.activo
+        }));
+        this.catalogMetodosPago.set(mapped.filter(x => !x.isVuelto));
+      },
+      error: (err) => {
+        console.error('[BillingFacade] Error al cargar métodos de pago:', err?.status, err?.message);
+      }
     });
+  }
+
+  /**
+   * Recarga el catálogo de métodos de pago si está vacío.
+   * Útil para componentes que necesitan asegurar que los métodos estén disponibles.
+   */
+  public reloadPaymentCatalogIfEmpty() {
+    if (this.catalogMetodosPago().length === 0) {
+      this.loadPaymentCatalog();
+    }
   }
 
   public isMethodBs(methodName: string): boolean {

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Domain.Constants;
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = AuthorizationConstants.AdminRoles)]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class CatalogController : ControllerBase
@@ -41,6 +41,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPost("payment-method")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<Guid>> CreatePaymentMethod([FromBody] CreatePaymentMethodCommand command)
         {
             var result = await _mediator.Send(command);
@@ -48,6 +49,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPut("payment-method")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<bool>> UpdatePaymentMethod([FromBody] UpdatePaymentMethodCommand command)
         {
             var result = await _mediator.Send(command);
@@ -55,6 +57,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpDelete("payment-method/{id}")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<bool>> DeletePaymentMethod(Guid id)
         {
             var result = await _mediator.Send(new DeletePaymentMethodCommand { Id = id });
@@ -62,6 +65,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPost]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<Guid>> Create([FromBody] CreateCatalogItemCommand command)
         {
             var result = await _mediator.Send(command);
@@ -69,6 +73,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPut]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<bool>> Update([FromBody] UpdateCatalogItemCommand command)
         {
             var result = await _mediator.Send(command);
@@ -76,6 +81,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<bool>> Delete(Guid id)
         {
             _logger.LogWarning("[CATALOG-API] ATTEMPTING TO DELETE ITEM ID: {Id}", id);
