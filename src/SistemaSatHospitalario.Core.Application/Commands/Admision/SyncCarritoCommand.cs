@@ -18,6 +18,8 @@ using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
+using SistemaSatHospitalario.Core.Application.Common.Services;
+
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class SyncCarritoCommand : IRequest<SyncCarritoResult>
@@ -55,17 +57,20 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IBillingRepository _repository;
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
+        private readonly IHonorariumMapperService _mapperService;
         private readonly ILogger<SyncCarritoCommandHandler> _logger;
 
         public SyncCarritoCommandHandler(
             IBillingRepository repository, 
             IApplicationDbContext context, 
             ILegacyLabRepository legacyRepository,
+            IHonorariumMapperService mapperService,
             ILogger<SyncCarritoCommandHandler> logger)
         {
             _repository = repository;
             _context = context;
             _legacyRepository = legacyRepository;
+            _mapperService = mapperService;
             _logger = logger;
         }
 
