@@ -29,6 +29,9 @@ export interface PendingAR {
   fechaEmision: string;
   estado: string;
   isAudited: boolean;
+  quienAutorizo?: string;
+  doctorProcedimiento?: string;
+  informacionAdicional?: string;
   conceptos: ConceptoFacturadoDto[];
   pagos: PaymentHistoryDto[];
 }

@@ -19,6 +19,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime? FechaAuditoria { get; private set; }
         public bool CompromisoGenerado { get; private set; }
         public bool GarantiaGenerada { get; private set; }
+        
+        public string? QuienAutorizo { get; private set; }
+        public string? DoctorProcedimiento { get; private set; }
+        public string? InformacionAdicional { get; private set; }
 
 
         public CuentaServicios Cuenta { get; private set; }
@@ -58,6 +62,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void MarcarGarantiaGenerada()
         {
             GarantiaGenerada = true;
+        }
+
+        public void ActualizarMetadataDocumentos(string? quienAutorizo, string? doctorProcedimiento, string? informacionAdicional)
+        {
+            QuienAutorizo = quienAutorizo;
+            DoctorProcedimiento = doctorProcedimiento;
+            InformacionAdicional = informacionAdicional;
         }
 
     }

@@ -15,25 +15,27 @@ namespace SistemaSatHospitalario.Tests
                 using var conn = new MySqlConnection(connectionString);
                 await conn.OpenAsync();
                 
-                var tables = new List<string>();
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SHOW TABLES;";
-                    using var reader = await cmd.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                    {
-                        tables.Add(reader.GetString(0));
-                    }
-                }
+                Console.WriteLine("--- ALTERANDO TABLA CUENTASPORCOBRAR PARA AGREGAR METADATA ---");
                 
-                Console.WriteLine("--- TABLE ROW COUNTS in SatHospitalario ---");
-                foreach (var table in tables)
+                var cols = new Dictionary<string, string>
                 {
-                    using (var cmd = conn.CreateCommand())
+                    { "QuienAutorizo", "VARCHAR(500) NULL" },
+                    { "DoctorProcedimiento", "VARCHAR(500) NULL" },
+                    { "InformacionAdicional", "VARCHAR(2000) NULL" }
+                };
+
+                foreach (var col in cols)
+                {
+                    try
                     {
-                        cmd.CommandText = $"SELECT COUNT(*) FROM `{table}`;";
-                        var count = await cmd.ExecuteScalarAsync();
-                        Console.WriteLine($"- {table}: {count}");
+                        using var cmd = conn.CreateCommand();
+                        cmd.CommandText = $"ALTER TABLE CuentasPorCobrar ADD COLUMN {col.Key} {col.Value};";
+                        await cmd.ExecuteNonQueryAsync();
+                        Console.WriteLine($"Columna '{col.Key}' agregada exitosamente.");
+                    }
+                    catch (Exception ex) when (ex.Message.Contains("Duplicate column name"))
+                    {
+                        Console.WriteLine($"Columna '{col.Key}' ya existe.");
                     }
                 }
             }

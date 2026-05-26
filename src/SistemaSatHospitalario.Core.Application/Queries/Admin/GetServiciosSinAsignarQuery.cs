@@ -38,7 +38,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
 
         public async Task<List<ServicioSinAsignarDto>> Handle(GetServiciosSinAsignarQuery request, CancellationToken ct)
         {
-            var excluirLista = new List<string> { "Laboratorio", "LAB", "INSUMO", "Insumo" };
+            var excluirLista = new List<string> { "Laboratorio", "LAB", "INSUMO", "Insumo", "Consulta", "CONSULTA" };
             var query = _context.DetallesServicioCuenta
                 .Include(d => d.CuentaServicio).ThenInclude(c => c.Paciente)
                 .Where(d => !excluirLista.Contains(d.TipoServicio) && d.Honorario > 0)

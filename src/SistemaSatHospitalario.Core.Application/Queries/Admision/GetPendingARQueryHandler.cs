@@ -44,6 +44,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             FechaEmision = ar.FechaCreacion,
                             Estado = ar.Estado,
                             IsAudited = ar.IsAudited,
+                            QuienAutorizo = ar.QuienAutorizo,
+                            DoctorProcedimiento = ar.DoctorProcedimiento,
+                            InformacionAdicional = ar.InformacionAdicional,
                             Conceptos = _context.DetallesServicioCuenta
                                 .Where(d => d.CuentaServicioId == ar.CuentaServicioId)
                                 .Select(d => new ConceptoFacturadoDto

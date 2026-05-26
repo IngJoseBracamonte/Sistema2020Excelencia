@@ -1427,6 +1427,20 @@ export class FacturacionComponent {
   }
 
   finalizarFlujoFacturacion() {
+    const res = this.lastBillResult();
+    const meta = this.docMetadata();
+    if (res && res.cuentaPorCobrarId) {
+      this.facturacionService.updateARMetadata({
+        cuentaPorCobrarId: res.cuentaPorCobrarId,
+        quienAutorizo: meta.quienAutorizo || null,
+        doctorProcedimiento: meta.doctorProcedimiento || null,
+        informacionAdicional: meta.informacionAdicional || null
+      }).subscribe({
+        next: () => console.log('Metadata de documentos guardada exitosamente.'),
+        error: (err) => console.error('Error al guardar metadata:', err)
+      });
+    }
+
     this.resetForm();
     this.billingSuccess.set(false);
     this.lastBillResult.set(null);

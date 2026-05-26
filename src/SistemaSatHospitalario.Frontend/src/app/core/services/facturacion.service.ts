@@ -112,6 +112,10 @@ export class FacturacionService {
     return this.http.post<any>(`${this.billingUrl}/CloseAccount`, request);
   }
 
+  updateARMetadata(request: any): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/UpdateARMetadata`, request);
+  }
+
   cargarServicio(payload: CargarServicioACuentaRequest, idempotencyKey?: string): Observable<any> {
     let headers = new HttpHeaders();
     if (idempotencyKey) {

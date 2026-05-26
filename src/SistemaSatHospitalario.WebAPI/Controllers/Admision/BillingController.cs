@@ -297,5 +297,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpPost("UpdateARMetadata")]
+        public async Task<IActionResult> UpdateARMetadata([FromBody] UpdateARMetadataCommand command)
+        {
+            try
+            {
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Metadata de documentos actualizada exitosamente." });
+                return BadRequest(new { Error = "No se pudo actualizar la metadata de documentos." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }
