@@ -43,11 +43,12 @@ export class ExpedienteService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Expediente`;
 
-  getBillingReport(startDate?: string, endDate?: string, searchTerm?: string): Observable<ExpedienteFacturacionRow[]> {
+  getBillingReport(startDate?: string, endDate?: string, searchTerm?: string, filterType?: string): Observable<ExpedienteFacturacionRow[]> {
     let url = `${this.apiUrl}/billing?`;
     if (startDate) url += `startDate=${startDate}&`;
     if (endDate) url += `endDate=${endDate}&`;
     if (searchTerm) url += `searchTerm=${searchTerm}&`;
+    if (filterType) url += `filterType=${filterType}&`;
     
     return this.http.get<ExpedienteFacturacionRow[]>(url);
   }

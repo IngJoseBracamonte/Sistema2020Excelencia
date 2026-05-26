@@ -44,8 +44,9 @@ export class ExpedienteFacturacionComponent implements OnInit {
   // Signals
   public records = signal<ExpedienteFacturacionRow[]>([]);
   public searchTerm = signal<string>('');
-  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
-  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public filterType = signal<string>('convenio');
   public isLoading = signal<boolean>(false);
 
   ngOnInit() {
@@ -54,7 +55,7 @@ export class ExpedienteFacturacionComponent implements OnInit {
 
   refresh() {
     this.isLoading.set(true);
-    this.expedienteService.getBillingReport(this.startDate(), this.endDate(), this.searchTerm()).subscribe({
+    this.expedienteService.getBillingReport(this.startDate(), this.endDate(), this.searchTerm(), this.filterType()).subscribe({
       next: (res) => {
         this.records.set(res);
         this.isLoading.set(false);

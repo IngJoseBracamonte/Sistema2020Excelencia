@@ -83,8 +83,8 @@ export class AuditingComponent implements OnInit {
     return list;
   });
 
-  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
-  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
   public expandedRows = signal<Set<string>>(new Set<string>());

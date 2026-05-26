@@ -160,8 +160,8 @@ import { LucideAngularModule, Stethoscope, Calendar, DollarSign, Activity } from
 export class AdminHonorariumsComponent implements OnInit {
   private medicoService = inject(MedicoService);
 
-  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
-  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public data = signal<DoctorHonorariumSummaryDto[]>([]);
   public isLoading = signal<boolean>(false);
   public expandedRow = signal<string | null>(null);

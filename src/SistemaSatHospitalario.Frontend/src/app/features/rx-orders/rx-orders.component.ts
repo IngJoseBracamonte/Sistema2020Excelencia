@@ -65,8 +65,8 @@ export class RxOrdersComponent implements OnInit {
   // Filtros
   public searchTerm = signal<string>('');
   public filterAudit = signal<string>('Pendiente'); // Pendiente, Procesada, Anulado
-  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
-  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
 

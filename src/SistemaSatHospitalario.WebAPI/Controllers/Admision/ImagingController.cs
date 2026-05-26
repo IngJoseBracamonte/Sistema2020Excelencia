@@ -98,6 +98,43 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var usuario = User.Identity?.Name ?? "Sistema";
             order.MarcarComoProcesado(usuario);
 
+            // ═══ Cerrar ciclo de Honorarios: Marcar DetalleServicioCuenta como Realizado ═══
+            // Buscar el detalle de facturación vinculado por CuentaId + Estudio (descripción).
+            if (order.CuentaId != Guid.Empty)
+            {
+                var detalle = await _context.DetallesServicioCuenta
+                    .FirstOrDefaultAsync(d => d.CuentaServicioId == order.CuentaId
+                                           && d.Descripcion == order.Estudio
+                                           && !d.Realizado);
+
+                if (detalle != null)
+                {
+                    // 1. Marcar como realizado (el asistente aceptó el estudio)
+                    detalle.MarcarRealizado(usuario);
+
+                    // 2. Si no tiene médico asignado, auto-asignar desde HonorarioConfig
+                    if (detalle.MedicoResponsableId == null && detalle.Honorario > 0)
+                    {
+                        var categoria = await _mapperService.MapToCategoryAsync(order.TipoServicio);
+                        if (categoria != HonorarioConstants.CategoriaOtros)
+                        {
+                            var config = await _context.HonorariosConfig
+                                .FirstOrDefaultAsync(h => h.CategoriaServicio == categoria);
+                            if (config?.MedicoDefaultId != null)
+                            {
+                                detalle.AsignarMedicoResponsable(config.MedicoDefaultId.Value, categoria);
+
+                                var medicoNombre = (await _context.Medicos.FindAsync(config.MedicoDefaultId.Value))?.Nombre;
+                                _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                                    detalle.Id, detalle.Descripcion, HonorarioConstants.AccionAsignacionDefault,
+                                    null, null, config.MedicoDefaultId.Value, medicoNombre,
+                                    usuario, "Auto-asignado al procesar orden de imagen"));
+                            }
+                        }
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync(default);
 
             // Broadcast real vía SignalR

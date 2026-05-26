@@ -44,15 +44,19 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 .Where(d => !excluirLista.Contains(d.TipoServicio) && d.Honorario > 0)
                 .AsQueryable();
 
+            // Detección dinámica de zona horaria para servidores locales vs nube
+            var serverOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalHours;
+            var hoursToAdd = serverOffset == -4 ? 0 : 4;
+
             if (request.FechaDesde.HasValue)
             {
-                var startDate = request.FechaDesde.Value.Date;
+                var startDate = request.FechaDesde.Value.Date.AddHours(hoursToAdd);
                 query = query.Where(d => d.FechaCarga >= startDate);
             }
 
             if (request.FechaHasta.HasValue)
             {
-                var endDate = request.FechaHasta.Value.Date.AddDays(1);
+                var endDate = request.FechaHasta.Value.Date.AddDays(1).AddHours(hoursToAdd);
                 query = query.Where(d => d.FechaCarga < endDate);
             }
 

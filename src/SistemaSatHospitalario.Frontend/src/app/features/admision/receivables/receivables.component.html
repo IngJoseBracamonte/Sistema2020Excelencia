@@ -188,13 +188,18 @@
                                     </button>
 
                                     <!-- [V12.7] Compromiso de Pago SOLO para Particular -->
-                                    <!-- [V12.7] Compromiso de Pago SOLO para Particular -->
                                     <button *ngIf="ar.estado === 'Pendiente' && ar.seguroNombre === 'Particular'"
                                         (click)="$event.stopPropagation(); openCompromiso(ar)"
                                         class="p-2 bg-indigo-500/10 hover:bg-indigo-500 border border-indigo-500/20 text-indigo-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 group/shield"
                                         title="Gestionar Compromiso de Pago">
                                         <lucide-icon [name]="icons.Shield" class="w-4 h-4"></lucide-icon>
                                     </button>
+
+                                    <!-- Placeholder invisible de las mismas dimensiones para asegurar alineación perfecta de botones -->
+                                    <div *ngIf="ar.estado === 'Pendiente' && ar.seguroNombre !== 'Particular'"
+                                        class="p-2 border border-transparent rounded-xl pointer-events-none select-none invisible">
+                                        <lucide-icon [name]="icons.Shield" class="w-4 h-4"></lucide-icon>
+                                    </div>
 
                                     <!-- [V12.7] Comprobante de Pago para cuentas LIQUIDADAS (Cualquier tipo) -->
                                     <button *ngIf="ar.estado === 'Cobrada'"

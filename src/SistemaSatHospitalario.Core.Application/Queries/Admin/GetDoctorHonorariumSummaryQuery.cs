@@ -28,8 +28,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
 
         public async Task<List<DoctorHonorariumSummaryDto>> Handle(GetDoctorHonorariumSummaryQuery request, CancellationToken cancellationToken)
         {
-            var start = request.StartDate.Date;
-            var end = request.EndDate.Date.AddDays(1).AddTicks(-1);
+            // Detección dinámica de zona horaria para servidores locales vs nube
+            var serverOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalHours;
+            var hoursToAdd = serverOffset == -4 ? 0 : 4;
+
+            var start = request.StartDate.Date.AddHours(hoursToAdd);
+            var end = request.EndDate.Date.AddDays(1).AddHours(hoursToAdd).AddTicks(-1);
 
             // ═══ Paso 1: Consultas Atendidas ═══
             // Fuente primaria de honorarios médicos.
@@ -44,9 +48,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 where cita.Estado == EstadoConstants.Atendida
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
-                   && (detail.MedicoResponsableId == cita.MedicoId || 
-                       (detail.MedicoResponsableId == null && 
-                        (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI"))))
+                   && (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI") || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
+                   && (detail.MedicoResponsableId == cita.MedicoId || detail.MedicoResponsableId == null)
                 select new
                 {
                     MedicoId = (Guid?)(detail.MedicoResponsableId ?? cita.MedicoId),
@@ -58,17 +61,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 }
             ).ToListAsync(cancellationToken);
 
-            // ═══ Paso 2: Servicios Técnicos Realizados (sin cita asociada) ═══
+            // ═══ Paso 2: Servicios Técnicos Realizados ═══
             // Ej: RX, Laboratorio marcados como Realizado con médico y honorario asignado.
             var fromServicios = await (
                 from detail in _context.DetallesServicioCuenta
                 join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
-                join cita in _context.CitasMedicas on cs.Id equals cita.CuentaServicioId into citaJoin
-                from cita in citaJoin.DefaultIfEmpty()
-                where cita == null
-                   && detail.Realizado
+                where detail.Realizado
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
+                   && !(detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI") || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
                    && (cs.FechaCierre ?? cs.FechaCarga) >= start
                    && (cs.FechaCierre ?? cs.FechaCarga) <= end
                 select new

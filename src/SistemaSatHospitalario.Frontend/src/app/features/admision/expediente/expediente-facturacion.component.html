@@ -1,7 +1,7 @@
 <div class="p-8 max-w-[1700px] space-y-6 animate-fade-in relative z-10">
     <!-- Header Estilo Premium -->
     <div class="px-0 pb-2 animate-fade-in relative">
-        <div class="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl gap-4 transition-all">
             <div class="flex items-center gap-6">
                 <div class="h-14 w-14 bg-indigo-500/5 border border-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-500">
                     <lucide-icon [name]="icons.FileText" class="w-7 h-7"></lucide-icon>
@@ -10,6 +10,34 @@
                     <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Expediente de Facturación</h1>
                     <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Auditoría y Control de Estudios Procesados</p>
                 </div>
+            </div>
+
+            <!-- Selector de Tipo de Paciente (Convenio, Particular, Todos) -->
+            <div class="flex bg-white/[0.02] border border-white/5 p-1 rounded-2xl gap-1">
+                <button (click)="filterType.set('convenio'); refresh()"
+                    [class.bg-indigo-500]="filterType() === 'convenio'"
+                    [class.text-white]="filterType() === 'convenio'"
+                    [class.text-slate-400]="filterType() !== 'convenio'"
+                    [class.hover:text-white]="filterType() !== 'convenio'"
+                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300">
+                    Convenios
+                </button>
+                <button (click)="filterType.set('particular'); refresh()"
+                    [class.bg-indigo-500]="filterType() === 'particular'"
+                    [class.text-white]="filterType() === 'particular'"
+                    [class.text-slate-400]="filterType() !== 'particular'"
+                    [class.hover:text-white]="filterType() !== 'particular'"
+                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300">
+                    Particulares
+                </button>
+                <button (click)="filterType.set('todo'); refresh()"
+                    [class.bg-indigo-500]="filterType() === 'todo'"
+                    [class.text-white]="filterType() === 'todo'"
+                    [class.text-slate-400]="filterType() !== 'todo'"
+                    [class.hover:text-white]="filterType() !== 'todo'"
+                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all duration-300">
+                    Todos
+                </button>
             </div>
         </div>
     </div>

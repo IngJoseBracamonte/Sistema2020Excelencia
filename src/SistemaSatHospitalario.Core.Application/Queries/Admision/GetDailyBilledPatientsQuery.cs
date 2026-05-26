@@ -39,9 +39,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // Normalización Ultra-Agresiva para depuración (V12.1)
             // Tomamos lo que sea que esté facturado en el rango amplio (±12h para TZ resilience)
             var targetDay = request.Fecha.Date;
-            // Rango de búsqueda (V12.2): Filtro exacto de 24 horas
-            var startRange = targetDay;
-            var endRange = targetDay.AddDays(1).AddTicks(-1);
+            // Detección dinámica: si el servidor es local en Venezuela (UTC-04:00), no sumamos desfase.
+            var serverOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalHours;
+            var hoursToAdd = serverOffset == -4 ? 0 : 4;
+            
+            var startRange = targetDay.AddHours(hoursToAdd);
+            var endRange = targetDay.AddDays(1).AddHours(hoursToAdd).AddTicks(-1);
 
             // Cargamos cuentas primero (Sin el JOIN para evitar exclusiones si hay huérfanos)
             var billedAccounts = await _context.CuentasServicios

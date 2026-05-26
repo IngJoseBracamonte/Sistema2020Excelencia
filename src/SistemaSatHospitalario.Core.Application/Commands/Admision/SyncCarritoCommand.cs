@@ -297,6 +297,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         item.TipoServicio, 
                         request.UsuarioCarga,
                         legacyId);
+
+                    // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
+                    if (detalle.Honorario > 0 && !esConsulta)
+                    {
+                        string? categoriaMapeada = await _mapperService.MapToCategoryAsync(item.TipoServicio, serviceGuid);
+                        if (categoriaMapeada != HonorarioConstants.CategoriaOtros)
+                        {
+                            var config = await _context.HonorariosConfig
+                                .FirstOrDefaultAsync(h => h.CategoriaServicio == categoriaMapeada, ct);
+                            if (config?.MedicoDefaultId != null)
+                            {
+                                detalle.AsignarMedicoResponsable(config.MedicoDefaultId.Value, categoriaMapeada);
+                                var medicoNombre = (await _context.Medicos.FindAsync(new object[] { config.MedicoDefaultId.Value }, ct))?.Nombre;
+                                _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                                    detalle.Id, item.Descripcion, HonorarioConstants.AccionAsignacionDefault,
+                                    null, null, config.MedicoDefaultId.Value, medicoNombre,
+                                    request.UsuarioCarga, "Auto-asignado por configuración"));
+                            }
+                        }
+                    }
                     
                     // AUDIT LOG (Phase 9): Detect modification in price OR honorary and log it
                     if (baseService != null)

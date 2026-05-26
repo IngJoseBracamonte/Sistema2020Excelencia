@@ -17,6 +17,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public string SearchTerm { get; set; }
+        public string? FilterType { get; set; }
     }
 
     public class GetExpedienteFacturacionQueryHandler : IRequestHandler<GetExpedienteFacturacionQuery, List<ExpedienteFacturacionDto>>
@@ -46,17 +47,31 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         from ar in arGroup.DefaultIfEmpty()
                         select new { d, c, p, rf, sm, ar };
 
-            // Filtros de fecha (V12.2): Límites precisos del día
+            // Detección dinámica de zona horaria para servidores locales vs nube
+            var serverOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalHours;
+            var hoursToAdd = serverOffset == -4 ? 0 : 4;
+
             if (request.StartDate.HasValue)
-                query = query.Where(x => x.d.FechaCarga >= request.StartDate.Value.Date);
+                query = query.Where(x => x.d.FechaCarga >= request.StartDate.Value.Date.AddHours(hoursToAdd));
             
             if (request.EndDate.HasValue)
-                query = query.Where(x => x.d.FechaCarga <= request.EndDate.Value.Date.AddDays(1).AddTicks(-1));
+                query = query.Where(x => x.d.FechaCarga <= request.EndDate.Value.Date.AddDays(1).AddHours(hoursToAdd).AddTicks(-1));
 
             // Filtro Laboratorio
             if (!facturarLaboratorio)
             {
                 query = query.Where(x => x.d.TipoServicio != "Laboratorio");
+            }
+
+            // Filtro por tipo de paciente (convenios, particulares, todo)
+            var filter = string.IsNullOrEmpty(request.FilterType) ? "convenio" : request.FilterType.ToLower();
+            if (filter == "convenio")
+            {
+                query = query.Where(x => x.c.ConvenioId != null);
+            }
+            else if (filter == "particular")
+            {
+                query = query.Where(x => x.c.ConvenioId == null);
             }
 
             // Filtro de búsqueda

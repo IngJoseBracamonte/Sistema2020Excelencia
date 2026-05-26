@@ -27,8 +27,8 @@ export class PatientHistoryComponent implements OnInit {
   public dailyPatients = signal<DailyBilledPatient[]>([]);
 
   // Filtros de fecha (V3.2 Date-Precision Filter)
-  public startDate = signal<string>(new Date().toISOString().split('T')[0]);
-  public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -143,7 +143,7 @@ export class PatientHistoryComponent implements OnInit {
   }
 
   volverALaBusqueda() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('sv-SE');
     this.selectedPatient.set(null);
     this.history.set([]);
     this.startDate.set(today);

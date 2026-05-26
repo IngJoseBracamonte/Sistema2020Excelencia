@@ -48,7 +48,7 @@ export class ControlCitasComponent implements OnInit {
 
   // Signals
   public records = signal<ControlCitaRow[]>([]);
-  public dateFilter = signal<string>(new Date().toISOString().split('T')[0]);
+  public dateFilter = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public searchTerm = signal<string>('');
   public isLoading = signal<boolean>(false);
   
