@@ -133,9 +133,8 @@
                             </td>
                         </tr>
 
-                        <ng-container *ngFor="let ar of receivables()">
-                            <tr (click)="toggleRow(ar.id)"
-                                class="hover:bg-white/[0.04] transition-all group/row cursor-pointer border-l-2 border-transparent"
+                        <ng-container *ngFor="let ar of displayedReceivables()">
+                            <tr class="hover:bg-white/[0.04] transition-all group/row border-l-2 border-transparent"
                                 [ngClass]="{'bg-white/[0.03] border-amber-500': isExpanded(ar.id)}">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
@@ -166,16 +165,32 @@
                                     <span class="text-sm font-black font-mono tracking-tighter text-amber-500/80">$ {{ ar.saldoPendiente | number:'1.2-2' }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <button *ngIf="!ar.isAudited" (click)="$event.stopPropagation(); procesarAuditoria(ar)"
-                                        class="inline-flex items-center gap-2 px-6 py-2 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn border border-amber-500/20 shadow-lg shadow-amber-500/5">
-                                        PROCESAR
-                                        <lucide-icon [name]="icons.Check" class="w-3 h-3 group-hover/btn:scale-125 transition-transform"></lucide-icon>
-                                    </button>
-                                    <span *ngIf="ar.isAudited"
-                                        class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                        <lucide-icon [name]="icons.Reportes" class="w-3 h-3 text-emerald-500 opacity-60"></lucide-icon>
-                                        PROCESADA
-                                    </span>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <!-- Detalles de Factura -->
+                                        <button (click)="$event.stopPropagation(); descargarFactura(ar)"
+                                            class="p-2 bg-slate-500/10 hover:bg-slate-500 border border-slate-500/20 text-slate-400 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg"
+                                            title="Ver Detalles de Factura">
+                                            <lucide-icon [name]="icons.FileText" class="w-4 h-4"></lucide-icon>
+                                        </button>
+
+                                        <!-- Detalles Técnicos -->
+                                        <button (click)="$event.stopPropagation(); toggleRow(ar.id)"
+                                            class="p-2 bg-amber-500/10 hover:bg-amber-500 border border-amber-500/20 text-amber-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg"
+                                            title="Ver Detalles Técnicos">
+                                            <lucide-icon [name]="icons.Settings" class="w-4 h-4"></lucide-icon>
+                                        </button>
+
+                                        <button *ngIf="!ar.isAudited" (click)="$event.stopPropagation(); procesarAuditoria(ar)"
+                                            class="inline-flex items-center gap-2 px-6 py-2 bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn border border-amber-500/20 shadow-lg shadow-amber-500/5">
+                                            PROCESAR
+                                            <lucide-icon [name]="icons.Check" class="w-3 h-3 group-hover/btn:scale-125 transition-transform"></lucide-icon>
+                                        </button>
+                                        <span *ngIf="ar.isAudited"
+                                            class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                            <lucide-icon [name]="icons.Reportes" class="w-3 h-3 text-emerald-500 opacity-60"></lucide-icon>
+                                            PROCESADA
+                                        </span>
+                                    </div>
                                 </td>
                             </tr>
 
@@ -228,7 +243,7 @@
                             </tr>
                         </ng-container>
 
-                        <tr *ngIf="!isLoading() && receivables().length === 0">
+                        <tr *ngIf="!isLoading() && displayedReceivables().length === 0">
                             <td colspan="6" class="px-6 py-20 text-center text-slate-500">
                                 <lucide-icon [name]="icons.Info" class="w-12 h-12 mx-auto mb-4 opacity-40"></lucide-icon>
                                 <p class="text-xs font-bold uppercase tracking-widest">No hay cuentas por auditar que coincidan con la búsqueda</p>

@@ -19,6 +19,7 @@ export interface PaymentHistoryDto {
 export interface PendingAR {
   id: string;
   cuentaId: string;
+  reciboId?: string;
   pacienteNombre: string;
   pacienteCedula: string;
   tipoIngreso: string;

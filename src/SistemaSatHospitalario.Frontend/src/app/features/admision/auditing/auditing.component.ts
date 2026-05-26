@@ -22,7 +22,8 @@ import {
   Clock,
   Plus,
   Activity,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR } from '../../../core/services/receivables.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
@@ -54,7 +55,8 @@ export class AuditingComponent implements OnInit {
     Clock,
     Plus,
     Activity,
-    FileText
+    FileText,
+    Settings
   };
 
   private arService = inject(ReceivablesService);
@@ -279,5 +281,14 @@ export class AuditingComponent implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  public descargarFactura(ar: PendingAR) {
+    if (ar.reciboId) {
+      const downloadUrl = `${environment.apiUrl}/api/ReciboFactura/${ar.reciboId}/Download`;
+      window.open(downloadUrl, '_blank');
+    } else {
+      alert('Esta cuenta aún no tiene un recibo de cobro generado.');
+    }
   }
 }

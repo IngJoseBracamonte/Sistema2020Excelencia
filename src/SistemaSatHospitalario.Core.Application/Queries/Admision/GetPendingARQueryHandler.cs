@@ -28,10 +28,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         // Ajuste de tipos Guid? a int? para el join de Convenios
                         join conv in _context.SegurosConvenios.AsNoTracking() on cta.ConvenioId equals (int?)conv.Id into convJoin
                         from conv in convJoin.DefaultIfEmpty()
+                        join rf in _context.RecibosFactura.AsNoTracking() on cta.Id equals rf.CuentaServicioId into rfJoin
+                        from rf in rfJoin.DefaultIfEmpty()
                         select new PendingARDto
                         {
                             Id = ar.Id,
                             CuentaId = ar.CuentaServicioId,
+                            ReciboId = rf != null ? (Guid?)rf.Id : null,
                             PacienteNombre = pac.NombreCorto,
                             PacienteCedula = pac.CedulaPasaporte,
                             TipoIngreso = cta.TipoIngreso,
