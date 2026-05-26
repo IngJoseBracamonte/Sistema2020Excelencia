@@ -59,7 +59,9 @@ export class LoginComponent {
     }).subscribe({
       next: (res: any) => {
         this.isLoading.set(false);
-        if (this.authService.isRxAssistant()) {
+        if (res.requirePasswordReset) {
+          this.router.navigate(['/reset-password']);
+        } else if (this.authService.isRxAssistant()) {
           this.router.navigate(['/rx-orders']);
         } else {
           this.router.navigate(['/dashboard']);
