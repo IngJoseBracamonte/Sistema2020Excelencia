@@ -112,11 +112,11 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             row.RelativeItem().Column(c => {
                                 c.Item().Row(r => {
                                     r.RelativeItem().Text("TOTAL USD:").SemiBold();
-                                    r.ConstantItem(80).AlignRight().Text($"$ {data.TotalUSD:N2}").SemiBold();
+                                    r.ConstantItem(70).AlignRight().Text($"$ {data.TotalUSD:N2}").SemiBold();
                                 });
-                                c.Item().PaddingVertical(5).BorderTop(1).BorderColor(Colors.Grey.Lighten2).Row(r => {
-                                    r.RelativeItem().Text("TOTAL Bs.:").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
-                                    r.ConstantItem(100).AlignRight().Text($"{data.TotalBS:N2}").FontSize(14).SemiBold().FontColor(Colors.Blue.Medium);
+                                c.Item().PaddingTop(10).BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(5).Row(r => {
+                                    r.RelativeItem().Text("TOTAL Bs.:").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
+                                    r.ConstantItem(80).AlignRight().Text($"{data.TotalBS:N2}").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
                                 });
                                 c.Item().AlignRight().Text($"Tasa: {data.TasaBcv:N2} Bs/$").FontSize(7).Italic().FontColor(Colors.Grey.Medium);
                             });

@@ -68,6 +68,19 @@ export class AuditingComponent implements OnInit {
   public receivables = signal<PendingAR[]>([]);
   public searchTerm = signal<string>('');
   public filterAudit = signal<string>('Pendiente'); // Pendiente (isAudited=false), Procesada (isAudited=true)
+  public filterConvenio = signal<'convenios' | 'particular' | 'todos'>('convenios');
+  
+  public displayedReceivables = computed(() => {
+    const list = this.receivables();
+    const filter = this.filterConvenio();
+    if (filter === 'convenios') {
+      return list.filter(x => x.seguroNombre && x.seguroNombre.trim() !== '' && x.seguroNombre.toUpperCase() !== 'PARTICULAR');
+    } else if (filter === 'particular') {
+      return list.filter(x => !x.seguroNombre || x.seguroNombre.trim() === '' || x.seguroNombre.toUpperCase() === 'PARTICULAR');
+    }
+    return list;
+  });
+
   public startDate = signal<string>(new Date().toISOString().split('T')[0]);
   public endDate = signal<string>(new Date().toISOString().split('T')[0]);
   public isLoading = signal<boolean>(false);
