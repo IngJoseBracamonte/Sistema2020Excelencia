@@ -42,7 +42,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         from rf in rfGroup.DefaultIfEmpty()
                         join sm in _context.SegurosConvenios on c.ConvenioId equals sm.Id into smGroup
                         from sm in smGroup.DefaultIfEmpty()
-                        select new { d, c, p, rf, sm };
+                        join ar in _context.CuentasPorCobrar on c.Id equals ar.CuentaServicioId into arGroup
+                        from ar in arGroup.DefaultIfEmpty()
+                        select new { d, c, p, rf, sm, ar };
 
             // Filtros de fecha (V12.2): Límites precisos del día
             if (request.StartDate.HasValue)
@@ -103,7 +105,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     MetodoPago = metodo,
                     MontoUSD = x.d.Precio * x.d.Cantidad,
                     FacturadoPor = facturadorInfo,
-                    Estado = x.c.Estado == EstadoConstants.Facturada ? "Facturado" : "Pendiente",
+                    Estado = (x.c.Estado == EstadoConstants.Facturada && x.ar != null && x.ar.IsAudited) ? "Facturado" : "Pendiente",
                     TipoServicio = x.d.TipoServicio
                 };
             }).ToList();
