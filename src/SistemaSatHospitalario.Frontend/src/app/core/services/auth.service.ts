@@ -152,6 +152,22 @@ export class AuthService {
     );
   }
 
+  public updateRequirePasswordReset(requireReset: boolean): void {
+    const user = this.currentUser();
+    if (user) {
+      const updatedUser = { ...user, requirePasswordReset: requireReset };
+      this.currentUser.set(updatedUser);
+      this.storage.saveAuthData(
+        updatedUser.token,
+        updatedUser.username,
+        updatedUser.role,
+        updatedUser.id,
+        updatedUser.permissions,
+        updatedUser.requirePasswordReset
+      );
+    }
+  }
+
   logout(): void {
     this.storage.clearAuthData();
     this.currentUser.set(null);

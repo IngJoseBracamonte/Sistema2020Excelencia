@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { 
   LucideAngularModule, 
@@ -62,6 +62,7 @@ export class AuditingComponent implements OnInit {
   private arService = inject(ReceivablesService);
   private conveniosService = inject(ConveniosService);
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
 
   // Tabs layout
   public currentTab = signal<'cuentas' | 'ordenes-directas'>('cuentas');
@@ -107,7 +108,14 @@ export class AuditingComponent implements OnInit {
 
   ngOnInit() {
     this.loadConvenios();
-    this.refresh();
+    this.route.queryParams.subscribe(params => {
+      const tab = params['tab'];
+      if (tab === 'ordenes-directas') {
+        this.setTab('ordenes-directas');
+      } else {
+        this.setTab('cuentas');
+      }
+    });
   }
 
   // Carga convenios generales para el dropdown de seguros

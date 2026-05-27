@@ -55,9 +55,14 @@ export class SignalrService {
       this.notificationConnection.start()
         .then(() => {
           this.addNotificationListener();
+          const roleLower = role?.toLowerCase() || '';
           // Join Admin group if role is admin
-          if (role?.toLowerCase().includes('admin')) {
+          if (roleLower.includes('admin')) {
             this.notificationConnection?.invoke('JoinGroup', 'Admin');
+          }
+          // Join AuditGroup for administrative/verification roles
+          if (roleLower.includes('admin') || roleLower.includes('supervisor') || roleLower.includes('seguro')) {
+            this.notificationConnection?.invoke('JoinGroup', 'AuditGroup');
           }
           // Todos los que ven el monitor se unen a este grupo
           this.notificationConnection?.invoke('JoinGroup', 'ProcessingOrders');

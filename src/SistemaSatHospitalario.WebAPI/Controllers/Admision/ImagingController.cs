@@ -22,12 +22,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         private readonly IApplicationDbContext _context;
         private readonly IHubContext<DashboardHub> _hubContext;
         private readonly IHonorariumMapperService _mapperService;
+        private readonly INotificationService _notificationService;
 
-        public ImagingController(IApplicationDbContext context, IHubContext<DashboardHub> hubContext, IHonorariumMapperService mapperService)
+        public ImagingController(
+            IApplicationDbContext context, 
+            IHubContext<DashboardHub> hubContext, 
+            IHonorariumMapperService mapperService,
+            INotificationService notificationService)
         {
             _context = context;
             _hubContext = hubContext;
             _mapperService = mapperService;
+            _notificationService = notificationService;
         }
 
         [HttpGet("pending")]
@@ -191,13 +197,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 PacienteNombre = request.PacienteNombre,
                 Estudio = request.Estudio,
                 TipoServicio = request.TipoServicio.ToUpper(),
-                Estado = "Procesado", // Ya procesada por el asistente
+                Estado = "Pendiente", // Comienza como Pendiente para ser procesado tras la aprobación
                 FechaCreacion = DateTime.UtcNow,
                 EsDirecta = true,
                 RequiereValidacion = true,
                 Validada = false,
-                ProcesadoPor = usuario,
-                FechaProcesado = DateTime.UtcNow,
                 MedicoSolicitanteId = request.MedicoSolicitanteId,
                 MedicoSolicitanteNombre = request.MedicoSolicitanteNombre
             };
@@ -205,7 +209,27 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             _context.OrdenesImagenes.Add(order);
             await _context.SaveChangesAsync(default);
 
-            // Broadcast SignalR update
+            // 1. Crear Notificación Persistente para Administradores, Supervisores y Asistente de Seguros
+            await _notificationService.CreatePersistentNotificationAsync(
+                $"Nueva Orden Directa de RX: {order.PacienteNombre}",
+                $"Se requiere validación del estudio de RX '{order.Estudio}' registrado por la estación.",
+                "Warning",
+                targetUserId: null,
+                targetRole: null,
+                actionUrl: "/admin/audit/cuentas?tab=ordenes-directas",
+                ct: default
+            );
+
+            // 2. Alertar al grupo en tiempo real
+            await _notificationService.SendValidationAlertAsync(
+                $"Nueva Orden Directa de RX ({order.PacienteNombre})",
+                $"Se requiere validación administrativa para el estudio de RX '{order.Estudio}' del paciente {order.PacienteNombre}.",
+                "RX",
+                new { orderId = order.Id },
+                default
+            );
+
+            // Broadcast SignalR update para actualizar la Estación de RX
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
                 status = order.Estado,
@@ -216,7 +240,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 requiereValidacion = true
             });
 
-            return Ok(new { Message = "Orden directa procesada con éxito, pendiente de validación administrativa.", OrderId = order.Id });
+            return Ok(new { Message = "Orden directa registrada con éxito, pendiente de validación administrativa.", OrderId = order.Id });
         }
 
         [HttpGet("pending-validation")]
@@ -313,8 +337,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 servicio.LegacyMappingId
             );
 
-            // Marcar el servicio como ya realizado
-            detalle.MarcarRealizado(order.ProcesadoPor ?? usuario);
+            // Sincronizar el nombre del estudio de la orden con la descripción del catálogo oficial
+            order.Estudio = servicio.Descripcion;
 
             // Asignar el médico solicitante al detalle para cálculo de honorarios
             if (order.MedicoSolicitanteId.HasValue)

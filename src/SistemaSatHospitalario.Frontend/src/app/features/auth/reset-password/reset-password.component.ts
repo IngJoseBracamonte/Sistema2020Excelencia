@@ -51,11 +51,8 @@ export class ResetPasswordComponent {
         next: () => {
           this.success.set(true);
           this.loading.set(false);
-          // Actualizar estado en el auth service para quitar restricción
-          const user = this.auth.currentUser();
-          if (user) {
-            this.auth.currentUser.set({ ...user, requirePasswordReset: false });
-          }
+          // Actualizar estado en el auth service para quitar restricción de memoria y almacenamiento
+          this.auth.updateRequirePasswordReset(false);
           setTimeout(() => this.router.navigate(['/dashboard']), 2000);
         },
         error: (err) => {
