@@ -104,6 +104,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
                 u.LockoutEnd,
                 u.AccessFailedCount,
                 u.LockoutEnabled,
+                u.RequirePasswordReset,
                 HasPasswordHash = !string.IsNullOrEmpty(u.PasswordHash)
             }).ToList();
 
