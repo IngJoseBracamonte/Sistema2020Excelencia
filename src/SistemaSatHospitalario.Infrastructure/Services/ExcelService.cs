@@ -85,7 +85,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                         worksheet.Cell(currentRow, 8).Value = item.UsuarioIngreso ?? "SISTEMA";
                         worksheet.Cell(currentRow, 9).Value = item.FechaCreacion;
                         worksheet.Cell(currentRow, 10).Value = item.UsuarioAuditoria ?? "-";
-                        worksheet.Cell(currentRow, 11).Value = item.FechaAuditoria;
+                        worksheet.Cell(currentRow, 11).Value = (DateTime?)item.FechaAuditoria;
                     }
 
                     // Formato de moneda

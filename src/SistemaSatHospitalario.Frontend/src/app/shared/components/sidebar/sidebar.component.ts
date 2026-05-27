@@ -57,7 +57,7 @@ export class SidebarComponent implements OnInit {
         if (url.includes('/medicos') || url.includes('/especialidades')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), medica: true });
         }
-        if (url.includes('/settings')) {
+        if (url.includes('/settings') || url.includes('/admin/health') || url.includes('/admin/reset-requests') || url.includes('/tickets')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), settings: true });
         }
         if (url.includes('/facturacion')) {

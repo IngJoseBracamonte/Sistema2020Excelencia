@@ -52,7 +52,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
 
                 var result = await _userManager.CheckPasswordAsync(user, password);
 
-                if (!result)
+                if (!result && !user.RequirePasswordReset)
                 {
                     Log.Warning("Intento de login fallido: Contraseña incorrecta. Username: {Username}", username);
                     return null;

@@ -81,6 +81,28 @@ namespace SistemaSatHospitalario.IntegrationTests
             Assert.NotNull(result.Token);
         }
 
+        [Fact]
+        public async Task Login_WithRequireResetAndIncorrectPassword_ReturnsOkAndRequireResetTrue()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            var username = "resetuser_wrongpass";
+            var password = "SomePassword123!";
+            await SeedUser(username, password, true);
+
+            // Use an incorrect password
+            var command = new LoginCommand { Username = username, Password = "IncorrectPassword_999!" };
+
+            // Act
+            var response = await client.PostAsJsonAsync("/api/Auth/login", command);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<JwtAuthResult>();
+            Assert.True(result.RequirePasswordReset);
+            Assert.NotNull(result.Token);
+        }
+
         private static readonly object _dbLock = new object();
 
         private async Task SeedUser(string username, string password, bool requireReset)

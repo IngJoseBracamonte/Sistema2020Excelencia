@@ -1594,3 +1594,30 @@
 [2026-05-24 21:56:41] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (main).
 [2026-05-24 22:10:54] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
 [2026-05-24 22:10:55] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (main).
+[2026-05-26 13:34:58] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-26 13:34:59] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (main).
+[2026-05-26 13:36:10] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-26 13:36:10] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 13:40:49] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-26 13:40:50] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (main).
+[2026-05-26 13:51:10] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 14:00:22] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-26 14:00:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 14:15:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 14:30:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 14:45:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 15:00:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 15:15:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 15:30:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 15:45:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 16:00:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 16:15:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 16:30:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 16:45:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 17:00:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 17:15:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 17:30:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 17:45:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 18:00:22] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (sistema2020).
+[2026-05-26 21:41:37] [TRACE] [MONITOR] Iniciando Servicio de Monitoreo Proactivo de Laboratorio.
+[2026-05-26 21:41:38] [TRACE] [MONITOR] [HEARTBEAT] OK - Conexión establecida exitosamente con el Sistema Legacy (main).

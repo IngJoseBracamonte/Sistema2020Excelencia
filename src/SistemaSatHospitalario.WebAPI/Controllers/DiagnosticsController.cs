@@ -139,6 +139,39 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
             }
         }
 
+        [HttpGet("migrations")]
+        public async Task<IActionResult> GetMigrationsStatus()
+        {
+            try
+            {
+                var applied = (await _context.Database.GetAppliedMigrationsAsync()).ToList();
+                var pending = (await _context.Database.GetPendingMigrationsAsync()).ToList();
+                var all = _context.Database.GetMigrations().ToList();
+
+                var list = all.Select(m => new
+                {
+                    Name = m,
+                    Applied = applied.Contains(m),
+                    Pending = pending.Contains(m)
+                }).ToList();
+
+                return Ok(new
+                {
+                    Success = true,
+                    AppliedCount = applied.Count,
+                    PendingCount = pending.Count,
+                    TotalCount = all.Count,
+                    Migrations = list
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting migrations status");
+                return StatusCode(500, new { Success = false, Message = ex.Message });
+            }
+        }
+
+
         private static async Task<int> GetTableCountAsync(MySqlConnector.MySqlConnection connection, string tableName)
         {
             try

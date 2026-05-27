@@ -15,6 +15,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 
 namespace SistemaSatHospitalario.Tests.Unit.Application
 {
@@ -23,6 +24,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         private readonly Mock<IBillingRepository> _repositoryMock;
         private readonly Mock<IApplicationDbContext> _contextMock;
         private readonly Mock<ILegacyLabRepository> _legacyRepositoryMock;
+        private readonly Mock<IHonorariumMapperService> _mapperServiceMock;
         private readonly Mock<ILogger<SyncCarritoCommandHandler>> _loggerMock;
         private readonly SyncCarritoCommandHandler _handler;
 
@@ -31,6 +33,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _repositoryMock = new Mock<IBillingRepository>();
             _contextMock = new Mock<IApplicationDbContext>();
             _legacyRepositoryMock = new Mock<ILegacyLabRepository>();
+            _mapperServiceMock = new Mock<IHonorariumMapperService>();
             _loggerMock = new Mock<ILogger<SyncCarritoCommandHandler>>();
 
             // Setup default empty DB sets to avoid NullReferenceExceptions
@@ -49,7 +52,21 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var emptyMedicos = new List<Medico>().AsQueryable().BuildMockDbSet().Object;
             _contextMock.Setup(c => c.Medicos).Returns(emptyMedicos);
 
-            _handler = new SyncCarritoCommandHandler(_repositoryMock.Object, _contextMock.Object, _legacyRepositoryMock.Object, _loggerMock.Object);
+            var emptyHonorariosConfig = new List<HonorarioConfig>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.HonorariosConfig).Returns(emptyHonorariosConfig);
+
+            var mockLogsAsignacion = new Mock<DbSet<LogAsignacionHonorario>>();
+            _contextMock.Setup(c => c.LogsAsignacionHonorario).Returns(mockLogsAsignacion.Object);
+
+            var emptyRules = new List<HonorariumMappingRule>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.HonorariumMappingRules).Returns(emptyRules);
+
+            _handler = new SyncCarritoCommandHandler(
+                _repositoryMock.Object, 
+                _contextMock.Object, 
+                _legacyRepositoryMock.Object, 
+                _mapperServiceMock.Object, 
+                _loggerMock.Object);
         }
 
         [Fact]

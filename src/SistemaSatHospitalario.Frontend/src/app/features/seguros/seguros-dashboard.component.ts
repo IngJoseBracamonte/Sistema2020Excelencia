@@ -196,25 +196,13 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     <input type="text" [(ngModel)]="compromisoData.direccionResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Días para Liquidar</label>
-                    <input type="number" [(ngModel)]="compromisoData.diasLiquidar" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none">
+                    <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Valor de la Garantía ($)</label>
+                    <input type="number" [(ngModel)]="compromisoData.montoGarantia" placeholder="Ej: 500" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cuotas</label>
-                    <input type="number" [(ngModel)]="compromisoData.cuotas" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none">
+                    <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Descripción del Bien en Garantía</label>
+                    <input type="text" [(ngModel)]="compromisoData.descripcionGarantia" placeholder="Ej: Motocicleta marca Suzuki" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
                 </div>
-
-                <!-- Campos específicos de Garantía -->
-                <ng-container *ngIf="isGarantia()">
-                    <div class="space-y-2">
-                        <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Valor de la Garantía ($)</label>
-                        <input type="number" [(ngModel)]="compromisoData.montoGarantia" placeholder="Ej: 500" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Descripción del Bien en Garantía</label>
-                        <input type="text" [(ngModel)]="compromisoData.descripcionGarantia" placeholder="Ej: Motocicleta marca Suzuki" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
-                    </div>
-                </ng-container>
             </div>
 
 
@@ -277,7 +265,7 @@ export class SegurosDashboardComponent implements OnInit {
   openCompromiso(paciente: any, garantia: boolean = false) {
     const today = new Date();
     const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 30); // Por defecto 30 días
+    futureDate.setDate(futureDate.getDate() + 21); // Plazo fijo a 21 días
 
     this.isGarantia.set(garantia);
     this.compromisoData = {
@@ -287,16 +275,16 @@ export class SegurosDashboardComponent implements OnInit {
       cedulaResponsable: paciente.pacienteCedula,
       direccionResponsable: 'No especificada',
       telefonoResponsable: 'No especificado',
-      conceptos: 'Servicios Médicos Hospitalarios',
+      conceptos: paciente.conceptos || 'Servicios Médicos Hospitalarios',
       nombrePaciente: paciente.pacienteNombre,
       edadPaciente: 0,
       cedulaPaciente: paciente.pacienteCedula,
       montoTotal: paciente.montoTotalBase,
       montoGarantia: 0,
       descripcionGarantia: '',
-      diasLiquidar: 30,
+      diasLiquidar: 21,
 
-      cuotas: 1,
+      cuotas: 0,
       fechaCompromiso: today.toISOString().split('T')[0],
       fechaVencimiento: futureDate.toISOString().split('T')[0]
     };

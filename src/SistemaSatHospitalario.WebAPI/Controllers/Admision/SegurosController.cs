@@ -108,6 +108,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var query = _context.CuentasPorCobrar
                 .Include(c => c.Cuenta)
                 .ThenInclude(c => c.Paciente)
+                .Include(c => c.Cuenta)
+                .ThenInclude(c => c.Detalles)
                 .Where(c => c.Cuenta.TipoIngreso == "Seguro");
 
             if (desde.HasValue)
@@ -126,7 +128,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             if (conCompromiso.HasValue)
                 query = query.Where(c => c.CompromisoGenerado == conCompromiso.Value);
 
-            var cuentas = await query
+            var cuentasData = await query
                 .OrderByDescending(c => c.FechaCreacion)
                 .Select(c => new
                 {
@@ -139,10 +141,25 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     SeguroNombre = "Convenio #" + c.Cuenta.ConvenioId,
                     c.CompromisoGenerado,
                     c.GarantiaGenerada,
-                    EsMoroso = c.FechaCreacion < DateTime.UtcNow.AddDays(-30)
-
+                    EsMoroso = c.FechaCreacion < DateTime.UtcNow.AddDays(-30),
+                    ConceptosList = c.Cuenta.Detalles.Select(d => d.Descripcion).ToList()
                 })
                 .ToListAsync();
+
+            var cuentas = cuentasData.Select(c => new
+            {
+                c.Id,
+                c.FechaCreacion,
+                c.PacienteNombre,
+                c.PacienteCedula,
+                c.PacienteId,
+                c.MontoTotalBase,
+                c.SeguroNombre,
+                c.CompromisoGenerado,
+                c.GarantiaGenerada,
+                c.EsMoroso,
+                Conceptos = string.Join(", ", c.ConceptosList)
+            }).ToList();
 
             return Ok(cuentas);
         }
