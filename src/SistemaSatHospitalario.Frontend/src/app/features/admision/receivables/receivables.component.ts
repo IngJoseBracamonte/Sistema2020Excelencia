@@ -17,7 +17,9 @@ import {
   Trash2,
   Shield,
   Download,
-  Calendar
+  Calendar,
+  FileText,
+  ShieldCheck
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR, SettleARRequest, PaymentItemDto } from '../../../core/services/receivables.service';
 import { FacturacionService } from '../../../core/services/facturacion.service';
@@ -47,7 +49,9 @@ export class ReceivablesComponent implements OnInit {
     Trash2,
     Shield,
     Download,
-    Calendar
+    Calendar,
+    FileText,
+    ShieldCheck
   };
   private arService = inject(ReceivablesService);
   private facturacionService = inject(FacturacionService);
@@ -62,6 +66,7 @@ export class ReceivablesComponent implements OnInit {
   public filterEstado = signal<string>('Pendiente');
   public startDate = signal<string>(new Date().toISOString().split('T')[0]);
   public endDate = signal<string>(new Date().toISOString().split('T')[0]);
+  public soloCompromiso = signal<boolean>(false);
   public isLoading = signal<boolean>(false);
   public isSettling = signal<boolean>(false);
 
@@ -177,7 +182,7 @@ export class ReceivablesComponent implements OnInit {
 
   refresh() {
     this.isLoading.set(true);
-    this.arService.getPending(this.searchTerm(), this.filterEstado(), this.startDate(), this.endDate()).subscribe({
+    this.arService.getPending(this.searchTerm(), this.filterEstado(), this.startDate(), this.endDate(), this.soloCompromiso()).subscribe({
       next: (res: PendingAR[]) => {
         this.receivables.set(res);
         this.isLoading.set(false);
@@ -324,7 +329,10 @@ export class ReceivablesComponent implements OnInit {
       cuotas: 1,
       esPagoCompletado: isCobrada,
       fechaCompromiso: today.toISOString().split('T')[0],
-      fechaVencimiento: futureDate.toISOString().split('T')[0]
+      fechaVencimiento: futureDate.toISOString().split('T')[0],
+      anexarGarantia: false,
+      montoGarantia: 0,
+      descripcionGarantia: ''
     };
     this.showInsuranceModal.set(true);
   }
@@ -347,9 +355,105 @@ export class ReceivablesComponent implements OnInit {
         this.isGenerating.set(false);
         this.showInsuranceModal.set(false);
         this.actionMessage.set(this.isGarantia() ? 'Garantía generada con éxito' : 'Compromiso de pago generado con éxito');
+        this.refresh();
       },
       error: () => {
         this.errorMessage.set('Error al generar el documento PDF');
+        this.isGenerating.set(false);
+      }
+    });
+  }
+
+  private calcularEdad(fechaNacimiento?: string): number {
+    if (!fechaNacimiento) return 0;
+    const today = new Date();
+    const birth = new Date(fechaNacimiento);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  reimprimirCompromiso(ar: PendingAR) {
+    this.isGenerating.set(true);
+    const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
+    const dto = {
+      cuentaPorCobrarId: ar.id,
+      nombreResponsable: ar.pacienteNombre,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: ar.pacienteCedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: ar.telefonoContact || 'No especificado',
+      conceptos: conceptosStr,
+      nombrePaciente: ar.pacienteNombre,
+      edadPaciente: this.calcularEdad(ar.fechaNacimiento),
+      cedulaPaciente: ar.pacienteCedula,
+      direccionPaciente: 'No especificada',
+      telefonoPaciente: ar.telefonoContact || 'No especificado',
+      montoTotal: ar.montoTotal,
+      diasLiquidar: 21,
+      cuotas: 1,
+      quienAutorizo: ar.quienAutorizo || 'No especificado',
+      doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
+      informacionAdicional: ar.informacionAdicional || '',
+      esPagoCompletado: ar.estado === 'Cobrada',
+      fechaCompromiso: ar.fechaEmision,
+      fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
+      anexarGarantia: false
+    };
+
+    this.facturacionService.generarCompromisoPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGenerating.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Error al generar compromiso de pago');
+        this.isGenerating.set(false);
+      }
+    });
+  }
+
+  reimprimirGarantia(ar: PendingAR) {
+    this.isGenerating.set(true);
+    const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
+    const dto = {
+      cuentaPorCobrarId: ar.id,
+      nombreResponsable: ar.pacienteNombre,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: ar.pacienteCedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: ar.telefonoContact || 'No especificado',
+      conceptos: conceptosStr,
+      nombrePaciente: ar.pacienteNombre,
+      edadPaciente: this.calcularEdad(ar.fechaNacimiento),
+      cedulaPaciente: ar.pacienteCedula,
+      direccionPaciente: 'No especificada',
+      telefonoPaciente: ar.telefonoContact || 'No especificado',
+      montoTotal: ar.montoTotal,
+      diasLiquidar: 21,
+      cuotas: 1,
+      quienAutorizo: ar.quienAutorizo || 'No especificado',
+      doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
+      informacionAdicional: ar.informacionAdicional || '',
+      esPagoCompletado: ar.estado === 'Cobrada',
+      fechaCompromiso: ar.fechaEmision,
+      fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString()
+    };
+
+    this.facturacionService.generarGarantiaPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGenerating.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Error al generar garantía de pago');
         this.isGenerating.set(false);
       }
     });

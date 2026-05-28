@@ -47,6 +47,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             QuienAutorizo = ar.QuienAutorizo,
                             DoctorProcedimiento = ar.DoctorProcedimiento,
                             InformacionAdicional = ar.InformacionAdicional,
+                            CompromisoGenerado = ar.CompromisoGenerado,
+                            GarantiaGenerada = ar.GarantiaGenerada,
+                            FechaNacimiento = pac.FechaNacimiento,
+                            TelefonoContact = pac.TelefonoContact,
                             Conceptos = _context.DetallesServicioCuenta
                                 .Where(d => d.CuentaServicioId == ar.CuentaServicioId)
                                 .Select(d => new ConceptoFacturadoDto
@@ -88,6 +92,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var end = request.EndDate?.Date.AddDays(1).AddTicks(-1) ?? DateTime.MaxValue;
                 
                 query = query.Where(ar => ar.FechaEmision >= start && ar.FechaEmision <= end);
+            }
+
+            if (request.SoloCompromiso.HasValue && request.SoloCompromiso.Value)
+            {
+                query = query.Where(ar => ar.CompromisoGenerado);
             }
 
             return await query.OrderByDescending(ar => ar.FechaEmision).ToListAsync(cancellationToken);

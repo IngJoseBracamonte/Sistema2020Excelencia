@@ -27,7 +27,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             [FromQuery] string? searchTerm, 
             [FromQuery] string? estado,
             [FromQuery] DateTime? startDate,
-            [FromQuery] DateTime? endDate)
+            [FromQuery] DateTime? endDate,
+            [FromQuery] bool? soloCompromiso)
         {
             // Senior Fix: Si el parámetro es nulo, blanco o "Todas", no filtramos por estado en el handler.
             string? filterEstado = string.IsNullOrWhiteSpace(estado) || estado.Equals("Todas", StringComparison.OrdinalIgnoreCase)
@@ -39,7 +40,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 SearchTerm = searchTerm, 
                 Estado = filterEstado,
                 StartDate = startDate,
-                EndDate = endDate
+                EndDate = endDate,
+                SoloCompromiso = soloCompromiso
             };
             var results = await _mediator.Send(query);
             return Ok(results);

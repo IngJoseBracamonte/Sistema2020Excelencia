@@ -103,4 +103,56 @@ test.describe('New Features Integrity Tests', () => {
     console.log('Unchecked "Con Compromiso" checkbox.');
     await page.waitForTimeout(1000);
   });
+
+  test('Cuentas por Cobrar: Filter by "Con Compromiso" and reprint action buttons', async ({ page }) => {
+    // 1. Navigate to Cuentas por Cobrar
+    await page.goto('/cxc');
+    await page.waitForLoadState('networkidle');
+
+    // Set start date to include seeded records
+    const desdeInput = page.locator('input[type="date"]').first();
+    await desdeInput.fill('2026-05-25');
+
+    // Click "Filtrar ahora" button
+    await page.click('button:has-text("Filtrar ahora")');
+    console.log('Filled date filter and clicked Filtrar ahora.');
+
+    // Wait for table
+    await page.waitForSelector('table');
+
+    // Verify "Con Compromiso" checkbox is visible
+    const soloCompromisoCheckbox = page.locator('input#soloCompromiso');
+    await expect(soloCompromisoCheckbox).toBeVisible();
+    console.log('"Con Compromiso" checkbox filter is visible on CxC.');
+
+    // Toggle the checkbox
+    await soloCompromisoCheckbox.check();
+    console.log('Checked "Con Compromiso" checkbox on CxC.');
+
+    // Wait for table to refresh
+    await page.waitForTimeout(2000);
+
+    // If there are records in the list, verify reprint buttons are present
+    const reprintCompromisoBtn = page.locator('button[title="Reimprimir Compromiso de Pago"]');
+    const countCompromiso = await reprintCompromisoBtn.count();
+    console.log(`Found ${countCompromiso} "Reimprimir Compromiso de Pago" buttons on CxC.`);
+
+    const reprintGarantiaBtn = page.locator('button[title="Reimprimir Garantía de Pago"]');
+    const countGarantia = await reprintGarantiaBtn.count();
+    console.log(`Found ${countGarantia} "Reimprimir Garantía de Pago" buttons on CxC.`);
+
+    if (countCompromiso > 0) {
+      await expect(reprintCompromisoBtn.first()).toBeEnabled();
+      console.log('First "Reimprimir Compromiso de Pago" button is enabled on CxC.');
+    }
+    if (countGarantia > 0) {
+      await expect(reprintGarantiaBtn.first()).toBeEnabled();
+      console.log('First "Reimprimir Garantía de Pago" button is enabled on CxC.');
+    }
+
+    // Uncheck "Con Compromiso" checkbox
+    await soloCompromisoCheckbox.uncheck();
+    console.log('Unchecked "Con Compromiso" checkbox on CxC.');
+    await page.waitForTimeout(1000);
+  });
 });

@@ -74,6 +74,16 @@
                     class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
             </div>
 
+            <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+            <div class="flex items-center gap-3 px-4">
+                <input type="checkbox" id="soloCompromiso" [ngModel]="soloCompromiso()" (ngModelChange)="soloCompromiso.set($event); refresh()"
+                       class="rounded bg-black/40 border-white/10 text-rose-500 focus:ring-rose-500/20 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                <label for="soloCompromiso" class="text-[9px] font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none">
+                    Con Compromiso
+                </label>
+            </div>
+
             <button (click)="refresh()"
                 class="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20">
                 <span *ngIf="!isLoading()">Filtrar ahora</span>
@@ -200,6 +210,19 @@
                                         class="p-2 border border-transparent rounded-xl pointer-events-none select-none invisible">
                                         <lucide-icon [name]="icons.Shield" class="w-4 h-4"></lucide-icon>
                                     </div>
+
+                                    <!-- Reimpresión de documentos generados -->
+                                    <button *ngIf="ar.compromisoGenerado" (click)="$event.stopPropagation(); reimprimirCompromiso(ar)" [disabled]="isGenerating()"
+                                        class="p-2 bg-indigo-500/10 hover:bg-indigo-500 border border-indigo-500/20 text-indigo-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg disabled:opacity-40"
+                                        title="Reimprimir Compromiso de Pago">
+                                        <lucide-icon [name]="icons.FileText" class="w-4 h-4"></lucide-icon>
+                                    </button>
+
+                                    <button *ngIf="ar.garantiaGenerada" (click)="$event.stopPropagation(); reimprimirGarantia(ar)" [disabled]="isGenerating()"
+                                        class="p-2 bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/20 text-emerald-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg disabled:opacity-40"
+                                        title="Reimprimir Garantía de Pago">
+                                        <lucide-icon [name]="icons.ShieldCheck" class="w-4 h-4"></lucide-icon>
+                                    </button>
 
                                     <!-- [V12.7] Comprobante de Pago para cuentas LIQUIDADAS (Cualquier tipo) -->
                                     <button *ngIf="ar.estado === 'Cobrada'"
@@ -580,6 +603,23 @@
                 <div class="space-y-2">
                     <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Edad del Paciente</label>
                     <input type="number" [(ngModel)]="compromisoData.edadPaciente" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Monto de Garantía ($)</label>
+                    <input type="number" [(ngModel)]="compromisoData.montoGarantia" placeholder="Ej: 500" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2 col-span-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Respaldo Físico / Descripción de Garantía</label>
+                    <input type="text" [(ngModel)]="compromisoData.descripcionGarantia" placeholder="Ej: Vehículo Suzuki" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all uppercase">
+                </div>
+
+                <!-- Opción para Anexar Garantía al Compromiso -->
+                <div *ngIf="!isGarantia()" class="flex items-center gap-3 col-span-2 py-2 border-t border-white/5">
+                    <input type="checkbox" id="anexarGarantiaModal" [(ngModel)]="compromisoData.anexarGarantia"
+                           class="rounded bg-black/40 border-white/10 text-indigo-500 focus:ring-indigo-500/20 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                    <label for="anexarGarantiaModal" class="text-[9px] font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none">
+                        Anexar Garantía al Compromiso de Pago
+                    </label>
                 </div>
             </div>
 

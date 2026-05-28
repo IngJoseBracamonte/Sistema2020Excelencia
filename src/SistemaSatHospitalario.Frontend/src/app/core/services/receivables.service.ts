@@ -32,6 +32,10 @@ export interface PendingAR {
   quienAutorizo?: string;
   doctorProcedimiento?: string;
   informacionAdicional?: string;
+  compromisoGenerado?: boolean;
+  garantiaGenerada?: boolean;
+  fechaNacimiento?: string;
+  telefonoContact?: string;
   conceptos: ConceptoFacturadoDto[];
   pagos: PaymentHistoryDto[];
 }
@@ -57,7 +61,7 @@ export class ReceivablesService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/api/Receivables`;
 
-  getPending(searchTerm?: string, estado?: string, startDate?: string, endDate?: string): Observable<PendingAR[]> {
+  getPending(searchTerm?: string, estado?: string, startDate?: string, endDate?: string, soloCompromiso?: boolean): Observable<PendingAR[]> {
     let params = new HttpParams();
     if (searchTerm) params = params.set('searchTerm', searchTerm);
     
@@ -67,6 +71,7 @@ export class ReceivablesService {
     
     if (startDate) params = params.set('startDate', startDate);
     if (endDate) params = params.set('endDate', endDate);
+    if (soloCompromiso !== undefined) params = params.set('soloCompromiso', soloCompromiso.toString());
     
     return this.http.get<PendingAR[]>(`${this.baseUrl}/Pending`, { params });
   }

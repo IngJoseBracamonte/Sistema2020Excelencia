@@ -29,6 +29,10 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string? QuienAutorizo { get; set; }
         public string? DoctorProcedimiento { get; set; }
         public string? InformacionAdicional { get; set; }
+        public bool CompromisoGenerado { get; set; }
+        public bool GarantiaGenerada { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
+        public string TelefonoContact { get; set; } = string.Empty;
         public List<ConceptoFacturadoDto> Conceptos { get; set; } = new();
         public List<PaymentHistoryDto> Pagos { get; set; } = new();
     }
