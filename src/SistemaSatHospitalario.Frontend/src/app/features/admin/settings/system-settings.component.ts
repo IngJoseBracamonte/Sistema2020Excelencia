@@ -58,7 +58,7 @@ export class SystemSettingsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private catalogService = inject(CatalogService);
 
-  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'instalacion' | 'metodosPago' = 'general';
+  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'metodosPago' = 'general';
   public isLoading = signal<boolean>(false);
 
   // --- METODOS DE PAGO TAB ---
