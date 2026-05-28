@@ -15,28 +15,13 @@ namespace SistemaSatHospitalario.Tests
                 using var conn = new MySqlConnection(connectionString);
                 await conn.OpenAsync();
                 
-                Console.WriteLine("--- ALTERANDO TABLA CUENTASPORCOBRAR PARA AGREGAR METADATA ---");
-                
-                var cols = new Dictionary<string, string>
+                Console.WriteLine("--- TABLAS EN SATHOSPITALARIO ---");
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SHOW TABLES;";
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    { "QuienAutorizo", "VARCHAR(500) NULL" },
-                    { "DoctorProcedimiento", "VARCHAR(500) NULL" },
-                    { "InformacionAdicional", "VARCHAR(2000) NULL" }
-                };
-
-                foreach (var col in cols)
-                {
-                    try
-                    {
-                        using var cmd = conn.CreateCommand();
-                        cmd.CommandText = $"ALTER TABLE CuentasPorCobrar ADD COLUMN {col.Key} {col.Value};";
-                        await cmd.ExecuteNonQueryAsync();
-                        Console.WriteLine($"Columna '{col.Key}' agregada exitosamente.");
-                    }
-                    catch (Exception ex) when (ex.Message.Contains("Duplicate column name"))
-                    {
-                        Console.WriteLine($"Columna '{col.Key}' ya existe.");
-                    }
+                    Console.WriteLine($"- {reader.GetString(0)}");
                 }
             }
             catch (Exception ex)

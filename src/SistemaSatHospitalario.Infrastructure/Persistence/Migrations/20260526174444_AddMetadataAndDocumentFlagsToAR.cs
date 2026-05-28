@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,26 +10,48 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "DoctorProcedimiento",
-                table: "CuentasPorCobrar",
-                type: "longtext",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "InformacionAdicional",
-                table: "CuentasPorCobrar",
-                type: "longtext",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "QuienAutorizo",
-                table: "CuentasPorCobrar",
-                type: "longtext",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+            migrationBuilder.Sql(@"
+                DROP PROCEDURE IF EXISTS AddMetadataColumnsIfNotExist;
+                CREATE PROCEDURE AddMetadataColumnsIfNotExist()
+                BEGIN
+                    DECLARE col_exists INT;
+                    
+                    -- Check DoctorProcedimiento
+                    SELECT COUNT(*) INTO col_exists 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                      AND TABLE_NAME = 'CuentasPorCobrar' 
+                      AND COLUMN_NAME = 'DoctorProcedimiento';
+                      
+                    IF col_exists = 0 THEN
+                        ALTER TABLE CuentasPorCobrar ADD COLUMN DoctorProcedimiento longtext NULL;
+                    END IF;
+                    
+                    -- Check InformacionAdicional
+                    SELECT COUNT(*) INTO col_exists 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                      AND TABLE_NAME = 'CuentasPorCobrar' 
+                      AND COLUMN_NAME = 'InformacionAdicional';
+                      
+                    IF col_exists = 0 THEN
+                        ALTER TABLE CuentasPorCobrar ADD COLUMN InformacionAdicional longtext NULL;
+                    END IF;
+                    
+                    -- Check QuienAutorizo
+                    SELECT COUNT(*) INTO col_exists 
+                    FROM information_schema.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                      AND TABLE_NAME = 'CuentasPorCobrar' 
+                      AND COLUMN_NAME = 'QuienAutorizo';
+                      
+                    IF col_exists = 0 THEN
+                        ALTER TABLE CuentasPorCobrar ADD COLUMN QuienAutorizo longtext NULL;
+                    END IF;
+                END;
+                CALL AddMetadataColumnsIfNotExist();
+                DROP PROCEDURE IF EXISTS AddMetadataColumnsIfNotExist;
+            ");
         }
 
         /// <inheritdoc />
