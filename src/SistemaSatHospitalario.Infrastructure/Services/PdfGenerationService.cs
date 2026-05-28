@@ -942,5 +942,101 @@ namespace SistemaSatHospitalario.Infrastructure.Services
 
             return document;
         }
+
+        public byte[] GenerarConformidadServiciosPdf(CompromisoPagoDto data, string? logoBase64)
+        {
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(2, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial).FontColor(Colors.Grey.Darken4).LineHeight(1.5f));
+
+                    page.Header().Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            if (!string.IsNullOrEmpty(logoBase64))
+                            {
+                                try
+                                {
+                                    var imageBytes = Convert.FromBase64String(logoBase64.Split(',').Last());
+                                    col.Item().Height(55).Image(imageBytes);
+                                }
+                                catch { }
+                            }
+                        });
+
+                        row.RelativeItem().AlignRight().Column(col =>
+                        {
+                            col.Item().Text("CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA, C.A.").FontSize(10).Bold().FontColor(Colors.Blue.Darken4);
+                            col.Item().Text("RIF: J-41168255-1").FontSize(8).Bold();
+                            col.Item().Text("Urb. José Antonio Páez, Casas 74 y 76, al lado de la Comandancia de la Policía, Barinas").FontSize(7).FontColor(Colors.Grey.Medium);
+                        });
+                    });
+
+                    page.Content().PaddingVertical(25).Column(column =>
+                    {
+                        column.Item().PaddingBottom(25).Column(c =>
+                        {
+                            c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
+                            c.Item().PaddingVertical(8).Text(text =>
+                            {
+                                text.AlignCenter();
+                                text.Span("CONFORMIDAD DE SERVICIOS")
+                                    .FontSize(15)
+                                    .Bold()
+                                    .FontColor(Colors.Blue.Darken4);
+                            });
+                            c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
+                        });
+
+                        column.Item().PaddingBottom(20).Text(text =>
+                        {
+                            text.Justify();
+                            text.Span("Por medio de la presente, yo ");
+                            text.Span(data.NombrePaciente ?? "______________________________________________________").Bold();
+                            text.Span(", titular de la Cédula de Identidad ");
+                            text.Span(data.CedulaPaciente ?? "_____________________").Bold();
+                            text.Span(", beneficiario del trabajador ");
+                            text.Span(data.NombreResponsable ?? "_____________________________________").Bold();
+                            text.Span(", de Cedula de Identidad ");
+                            text.Span(data.CedulaResponsable ?? "_____________________").Bold();
+                            text.Span(", declaro haber recibido de conformidad la factura original N° ");
+                            text.Span(data.NroFactura ?? "_____________________").Bold();
+                            text.Span(", en el cual se realizaron todos los servicios descritos, por un monto de ");
+                            text.Span($"$ {data.MontoTotal:N2}").Bold();
+                            text.Span(", emitida por ");
+                            text.Span("Centro Diagnóstico Clínico La Excelencia, C.A.").Bold();
+                            text.Span(".");
+                        });
+
+                        column.Item().PaddingBottom(20).Text(text =>
+                        {
+                            text.Justify();
+                            text.Span("La presente firma avala únicamente la recepción física del documento fiscal para los fines administrativos que correspondan.");
+                        });
+
+                        column.Item().PaddingBottom(35).Text(text =>
+                        {
+                            text.Justify();
+                            text.Span("Declaro expresamente que he recibido a entera satisfacción los servicios médicos, estudios y/o procedimientos descritos en el documento fiscal antes mencionado. Los nombres y números de documento de identidad aquí registrados corresponden fielmente a nuestras identidades legales, asumiendo total responsabilidad por la veracidad de esta información. Asimismo, certifico que ");
+                            text.Span("todo lo reflejado en la factura corresponde fielmente a los servicios realizados").Bold();
+                            text.Span(".");
+                        });
+
+                        column.Item().PaddingTop(50).Row(row =>
+                        {
+                            row.RelativeItem().Text("Firma: __________________________________").Bold();
+                            row.RelativeItem().AlignRight().Text("Fecha: __________________________________").Bold();
+                        });
+                    });
+                });
+            }).GeneratePdf();
+
+            return document;
+        }
     }
 }

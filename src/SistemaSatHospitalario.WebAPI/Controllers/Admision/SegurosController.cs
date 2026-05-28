@@ -73,6 +73,47 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return File(pdfBytes, "application/pdf", $"Compromiso_Pago_{dto.CedulaResponsable}.pdf");
         }
 
+        [HttpPost("conformidad-servicios")]
+        public async Task<IActionResult> GenerarConformidadServicios([FromBody] CompromisoPagoDto dto)
+        {
+            var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync();
+            var logoBase64 = config?.LogoBase64;
+
+            if (dto.CuentaPorCobrarId.HasValue)
+            {
+                var cxc = await _context.CuentasPorCobrar.FindAsync(dto.CuentaPorCobrarId.Value);
+                if (cxc != null)
+                {
+                    cxc.MarcarCompromisoGenerado();
+
+                    // Buscar recibo de factura asociado
+                    var recibo = await _context.RecibosFactura
+                        .FirstOrDefaultAsync(r => r.CuentaServicioId == cxc.CuentaServicioId);
+                    if (recibo != null && string.IsNullOrEmpty(dto.NroFactura))
+                    {
+                        dto.NroFactura = recibo.NumeroRecibo;
+                    }
+
+                    // Registrar Auditoría
+                    var log = new DocumentLog(
+                        "Conformidad de Servicios", 
+                        cxc.Id.ToString(), 
+                        "Generación", 
+                        _currentUserService.UserId?.ToString() ?? "System", 
+                        _currentUserService.UserName ?? "Sistema",
+                        $"Conformidad generada para {dto.NombrePaciente}");
+                    
+                    _context.DocumentLogs.Add(log);
+                    
+                    await _context.SaveChangesAsync(default);
+                }
+            }
+
+            var pdfBytes = _pdfService.GenerarConformidadServiciosPdf(dto, logoBase64);
+            
+            return File(pdfBytes, "application/pdf", $"Conformidad_{dto.CedulaPaciente}.pdf");
+        }
+
         [HttpPost("garantia-pago")]
         public async Task<IActionResult> GenerarGarantia([FromBody] CompromisoPagoDto dto)
         {

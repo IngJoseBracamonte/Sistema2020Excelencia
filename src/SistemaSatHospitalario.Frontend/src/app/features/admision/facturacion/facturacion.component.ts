@@ -162,6 +162,16 @@ export class FacturacionComponent {
   public selectedMedicoId = this.billingFacade.selectedMedicoId;
   public suggestedServices = signal<CatalogItem[]>([]);
   public convenios = signal<any[]>([]);
+  public selectedConvenioNombre = computed(() => {
+    const id = this.convenioId();
+    if (!id) return '';
+    const c = this.convenios().find(x => x.id === id || x.Id === id);
+    return c ? (c.nombre || c.Nombre || '') : '';
+  });
+  public isPdvsaConvenio = computed(() => {
+    const nombre = this.selectedConvenioNombre();
+    return nombre.toUpperCase().includes('PDVSA');
+  });
 
   // --- Sugerencias Dinámicas (Fase 12.5 Refactored) ---
   public showSuggestionModal = signal<boolean>(false);
@@ -1352,6 +1362,11 @@ export class FacturacionComponent {
   }
 
   imprimirCompromiso() {
+    if (this.isPdvsaConvenio()) {
+      this.imprimirConformidad();
+      return;
+    }
+
     const res = this.lastBillResult();
     const p: any = this.selectedPatientData();
     if (!res || !p) return;
@@ -1401,6 +1416,57 @@ export class FacturacionComponent {
       },
       error: () => {
         this.errorMessage.set('Error al generar compromiso de pago');
+        this.isGeneratingPdf.set(false);
+      }
+    });
+  }
+
+  imprimirConformidad() {
+    const res = this.lastBillResult();
+    const p: any = this.selectedPatientData();
+    if (!res || !p) return;
+
+    const nombre = p.nombre || p.Nombre || '';
+    const apellidos = p.apellidos || p.Apellidos || '';
+    const cedula = p.cedula || p.Cedula || '';
+    const direccion = p.direccion || p.Direccion || '';
+    const celular = p.celular || p.Celular || '';
+    const telefono = p.telefono || p.Telefono || '';
+    const fechaNacimiento = p.fechaNacimiento || p.FechaNacimiento || '';
+
+    this.isGeneratingPdf.set(true);
+    const dto = {
+      cuentaPorCobrarId: res.cuentaPorCobrarId,
+      nombreResponsable: `${nombre} ${apellidos}`.trim(),
+      relacionResponsable: 'Titular',
+      cedulaResponsable: cedula,
+      direccionResponsable: direccion || 'No especificada',
+      telefonoResponsable: celular || telefono || 'No especificado',
+      conceptos: this.serviciosCargados().map(s => s.descripcion || s.Descripcion).join(', '),
+      nombrePaciente: `${nombre} ${apellidos}`.trim(),
+      edadPaciente: this.calcularEdad(fechaNacimiento || ''),
+      cedulaPaciente: cedula,
+      direccionPaciente: direccion,
+      telefonoPaciente: celular || telefono,
+      montoTotal: this.totalCargadoUSD(),
+      diasLiquidar: this.docMetadata().diasLiquidar,
+      cuotas: this.docMetadata().cuotas,
+      quienAutorizo: this.docMetadata().quienAutorizo,
+      doctorProcedimiento: this.docMetadata().doctorProcedimiento,
+      informacionAdicional: this.docMetadata().informacionAdicional,
+      esPagoCompletado: this.lastBillResult()?.totalPagado >= this.lastBillResult()?.montoTotal,
+      fechaCompromiso: new Date().toISOString(),
+      fechaVencimiento: new Date(Date.now() + (this.docMetadata().diasLiquidar * 24 * 60 * 60 * 1000)).toISOString()
+    };
+
+    this.facturacionService.generarConformidadPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGeneratingPdf.set(false);
+      },
+      error: () => {
+        this.errorMessage.set('Error al generar conformidad de servicios');
         this.isGeneratingPdf.set(false);
       }
     });

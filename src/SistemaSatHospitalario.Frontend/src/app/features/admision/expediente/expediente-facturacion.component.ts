@@ -84,6 +84,11 @@ export class ExpedienteFacturacionComponent implements OnInit {
 
   reimprimirCompromiso(row: ExpedienteFacturacionRow) {
     if (!row.cuentaPorCobrarId) return;
+    if (row.seguroNombre?.toUpperCase().includes('PDVSA')) {
+      this.reimprimirConformidad(row);
+      return;
+    }
+
     this.isGeneratingPdf.set(true);
     this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
       next: (items) => {
@@ -135,6 +140,48 @@ export class ExpedienteFacturacionComponent implements OnInit {
         console.error(err);
         this.isGeneratingPdf.set(false);
         alert('Error al cargar ítems de garantía');
+      }
+    });
+  }
+
+  reimprimirConformidad(row: ExpedienteFacturacionRow) {
+    if (!row.cuentaPorCobrarId) return;
+    this.isGeneratingPdf.set(true);
+
+    const dto = {
+      cuentaPorCobrarId: row.cuentaPorCobrarId,
+      nombreResponsable: row.pacienteNombre,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: row.pacienteCedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: row.pacienteTelefono,
+      conceptos: row.estudio,
+      nombrePaciente: row.pacienteNombre,
+      edadPaciente: this.calcularEdad(row.fechaNacimiento),
+      cedulaPaciente: row.pacienteCedula,
+      direccionPaciente: 'No especificada',
+      telefonoPaciente: row.pacienteTelefono,
+      montoTotal: row.montoUSD,
+      diasLiquidar: 21,
+      cuotas: 1,
+      quienAutorizo: row.quienAutorizo || 'No especificado',
+      doctorProcedimiento: row.doctorProcedimiento || 'No especificado',
+      informacionAdicional: row.informacionAdicional || '',
+      esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
+      fechaCompromiso: row.fecha,
+      fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString()
+    };
+
+    this.facturacionService.generarConformidadPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGeneratingPdf.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Error al generar conformidad de servicios');
+        this.isGeneratingPdf.set(false);
       }
     });
   }

@@ -107,6 +107,10 @@ export class FacturacionService {
     return this.http.post(`${this.segurosUrl}/compromiso-pago`, dto, { responseType: 'blob' });
   }
 
+  generarConformidadPdf(dto: any): Observable<Blob> {
+    return this.http.post(`${this.segurosUrl}/conformidad-servicios`, dto, { responseType: 'blob' });
+  }
+
   getGarantiasItems(cuentaPorCobrarId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.segurosUrl}/garantias-items/${cuentaPorCobrarId}`);
   }

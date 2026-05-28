@@ -669,7 +669,7 @@
                         {{ lastBillResult()?.totalPagado >= (lastBillResult()?.montoTotal - 0.01) ? 'Imprimir Comprobante' : 'Imprimir Compromiso' }}
                     </ng-container>
                     <ng-container *ngIf="isInsuranceFlow()">
-                        {{ lastBillResult()?.totalPagado >= (lastBillResult()?.montoTotal - 0.01) ? 'Imprimir Comprobante' : 'Imprimir Órdenes de Servicio' }}
+                        {{ isPdvsaConvenio() ? 'Imprimir Conformidad de Servicios' : (lastBillResult()?.totalPagado >= (lastBillResult()?.montoTotal - 0.01) ? 'Imprimir Comprobante' : 'Imprimir Órdenes de Servicio') }}
                     </ng-container>
                 </span>
             </button>

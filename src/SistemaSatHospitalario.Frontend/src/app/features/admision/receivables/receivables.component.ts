@@ -346,7 +346,8 @@ export class ReceivablesComponent implements OnInit {
       fechaVencimiento: futureDate.toISOString().split('T')[0],
       anexarGarantia: false,
       montoGarantia: 0,
-      descripcionGarantia: ''
+      descripcionGarantia: '',
+      seguroNombre: ar.seguroNombre
     };
     // Cargar items de garantía guardados desde el backend
     this.facturacionService.getGarantiasItems(ar.id).subscribe({
@@ -373,9 +374,13 @@ export class ReceivablesComponent implements OnInit {
     this.compromisoData.montoGarantia = this.isGarantia() || this.compromisoData.anexarGarantia ? this.totalMontoGarantias() : 0;
     this.compromisoData.descripcionGarantia = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems().map(i => i.descripcion).join(', ') : '';
 
-    const request = this.isGarantia() ? 
-      this.facturacionService.generarGarantiaPdf(this.compromisoData) : 
-      this.facturacionService.generarCompromisoPdf(this.compromisoData);
+    const isPdvsa = this.compromisoData.seguroNombre?.toUpperCase().includes('PDVSA');
+
+    const request = isPdvsa ?
+      this.facturacionService.generarConformidadPdf(this.compromisoData) :
+      (this.isGarantia() ? 
+        this.facturacionService.generarGarantiaPdf(this.compromisoData) : 
+        this.facturacionService.generarCompromisoPdf(this.compromisoData));
 
     request.subscribe({
       next: (blob) => {
@@ -383,7 +388,7 @@ export class ReceivablesComponent implements OnInit {
         window.open(url, '_blank');
         this.isGenerating.set(false);
         this.showInsuranceModal.set(false);
-        this.actionMessage.set(this.isGarantia() ? 'Garantía generada con éxito' : 'Compromiso de pago generado con éxito');
+        this.actionMessage.set(isPdvsa ? 'Conformidad de servicios generada con éxito' : (this.isGarantia() ? 'Garantía generada con éxito' : 'Compromiso de pago generado con éxito'));
         this.refresh();
       },
       error: () => {
@@ -406,6 +411,11 @@ export class ReceivablesComponent implements OnInit {
   }
 
   reimprimirCompromiso(ar: PendingAR) {
+    if (ar.seguroNombre?.toUpperCase().includes('PDVSA')) {
+      this.reimprimirConformidad(ar);
+      return;
+    }
+
     this.isGenerating.set(true);
     this.facturacionService.getGarantiasItems(ar.id).subscribe({
       next: (items) => {
@@ -458,6 +468,48 @@ export class ReceivablesComponent implements OnInit {
         console.error(err);
         this.isGenerating.set(false);
         alert('Error al cargar ítems de garantía');
+      }
+    });
+  }
+
+  reimprimirConformidad(ar: PendingAR) {
+    this.isGenerating.set(true);
+    const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
+
+    const dto = {
+      cuentaPorCobrarId: ar.id,
+      nombreResponsable: ar.pacienteNombre,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: ar.pacienteCedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: ar.telefonoContact || 'No especificado',
+      conceptos: conceptosStr,
+      nombrePaciente: ar.pacienteNombre,
+      edadPaciente: this.calcularEdad(ar.fechaNacimiento),
+      cedulaPaciente: ar.pacienteCedula,
+      direccionPaciente: 'No especificada',
+      telefonoPaciente: ar.telefonoContact || 'No especificado',
+      montoTotal: ar.montoTotal,
+      diasLiquidar: 21,
+      cuotas: 1,
+      quienAutorizo: ar.quienAutorizo || 'No especificado',
+      doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
+      informacionAdicional: ar.informacionAdicional || '',
+      esPagoCompletado: ar.estado === 'Cobrada',
+      fechaCompromiso: ar.fechaEmision,
+      fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString()
+    };
+
+    this.facturacionService.generarConformidadPdf(dto).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.isGenerating.set(false);
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Error al generar conformidad de servicios');
+        this.isGenerating.set(false);
       }
     });
   }
