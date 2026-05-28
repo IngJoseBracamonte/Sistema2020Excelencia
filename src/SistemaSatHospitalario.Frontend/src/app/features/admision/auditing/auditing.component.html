@@ -167,7 +167,7 @@
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <!-- Detalles de Factura -->
-                                        <button (click)="$event.stopPropagation(); descargarFactura(ar)"
+                                        <button (click)="$event.stopPropagation(); toggleRow(ar.id)"
                                             class="p-2 bg-slate-500/10 hover:bg-slate-500 border border-slate-500/20 text-slate-400 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg"
                                             title="Ver Detalles de Factura">
                                             <lucide-icon [name]="icons.FileText" class="w-4 h-4"></lucide-icon>
@@ -198,66 +198,100 @@
                             <tr *ngIf="isExpanded(ar.id)"
                                 class="bg-[#0b1120]/50 border-x-2 border-amber-500/10 animate-fade-in">
                                 <td colspan="6" class="px-12 py-8">
-                                    <div class="max-w-4xl">
-                                        <div class="flex items-center justify-between mb-6">
-                                            <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
-                                                <lucide-icon [name]="icons.Reportes" class="w-4 h-4 text-amber-500"></lucide-icon>
-                                                Historial de Abonos Registrados
-                                            </h5>
-                                            <span class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">Auditoría Operativa</span>
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <!-- COLUMNA IZQUIERDA: CONCEPTOS FACTURADOS -->
+                                        <div>
+                                            <div class="flex items-center justify-between mb-6">
+                                                <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                                    <lucide-icon [name]="icons.FileText" class="w-4 h-4 text-amber-500"></lucide-icon>
+                                                    Conceptos Facturados
+                                                </h5>
+                                                <span class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">Detalle de Cargos</span>
+                                            </div>
+
+                                            <div class="space-y-3">
+                                                <div *ngFor="let concepto of (ar.conceptos || [])"
+                                                    class="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] transition-all">
+                                                    <div class="flex flex-col">
+                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Descripción</span>
+                                                        <span class="text-[10px] font-black text-white uppercase">{{ concepto.descripcion }}</span>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5 block">Monto</span>
+                                                        <span class="text-sm font-black text-white font-mono tracking-tighter text-amber-500/90">$ {{ concepto.montoBase | number:'1.2-2' }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div *ngIf="!ar.conceptos || ar.conceptos.length === 0"
+                                                    class="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
+                                                    <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto mb-3 text-slate-600"></lucide-icon>
+                                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">No se encontraron conceptos facturados</p>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                         <div *ngIf="ar.quienAutorizo || ar.doctorProcedimiento || ar.informacionAdicional"
-                                             class="mb-6 p-5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-4">
-                                            <div class="flex items-center gap-2 mb-2">
-                                                <lucide-icon [name]="icons.FileText" class="w-4 h-4 text-amber-500"></lucide-icon>
-                                                <h6 class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Información de Documentos (Metadata)</h6>
+                                        <!-- COLUMNA DERECHA: METADATA E HISTORIAL DE ABONOS -->
+                                        <div>
+                                            <div class="flex items-center justify-between mb-6">
+                                                <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                                    <lucide-icon [name]="icons.Reportes" class="w-4 h-4 text-amber-500"></lucide-icon>
+                                                    Historial de Abonos Registrados
+                                                </h5>
+                                                <span class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">Auditoría Operativa</span>
                                             </div>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div *ngIf="ar.quienAutorizo" class="flex flex-col">
-                                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">¿Quién Autorizó?</span>
-                                                    <span class="text-[11px] font-bold text-white uppercase">{{ ar.quienAutorizo }}</span>
-                                                </div>
-                                                <div *ngIf="ar.doctorProcedimiento" class="flex flex-col">
-                                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Doctor que realizó</span>
-                                                    <span class="text-[11px] font-bold text-white uppercase">{{ ar.doctorProcedimiento }}</span>
-                                                </div>
-                                            </div>
-                                            <div *ngIf="ar.informacionAdicional" class="flex flex-col pt-2 border-t border-white/5">
-                                                <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Información Adicional / Comentarios</span>
-                                                <p class="text-[10px] font-medium text-slate-300">{{ ar.informacionAdicional }}</p>
-                                            </div>
-                                        </div>
 
-                                        <div class="space-y-3">
-                                            <div *ngFor="let pago of (ar.pagos || [])"
-                                                class="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/payment hover:bg-white/[0.04] transition-all">
-                                                <div class="flex items-center gap-6">
-                                                    <div class="flex flex-col">
-                                                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Fecha</span>
-                                                        <span class="text-[10px] font-black text-white uppercase">{{ pago.fecha | date:'dd/MM/yyyy' }}</span>
+                                             <div *ngIf="ar.quienAutorizo || ar.doctorProcedimiento || ar.informacionAdicional"
+                                                 class="mb-6 p-5 bg-white/[0.03] border border-white/10 rounded-2xl space-y-4">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <lucide-icon [name]="icons.FileText" class="w-4 h-4 text-amber-500"></lucide-icon>
+                                                    <h6 class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Información de Documentos (Metadata)</h6>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div *ngIf="ar.quienAutorizo" class="flex flex-col">
+                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">¿Quién Autorizó?</span>
+                                                        <span class="text-[11px] font-bold text-white uppercase">{{ ar.quienAutorizo }}</span>
                                                     </div>
-                                                    <div class="h-8 w-px bg-white/5"></div>
-                                                    <div class="flex flex-col">
-                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Método</span>
-                                                        <span class="text-[10px] font-black text-white uppercase">{{ pago.metodo }}</span>
-                                                    </div>
-                                                    <div class="h-8 w-px bg-white/5"></div>
-                                                    <div class="flex flex-col">
-                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Referencia</span>
-                                                        <span class="text-[10px] font-mono text-slate-400 uppercase">{{ pago.referencia || 'SIN REF' }}</span>
+                                                    <div *ngIf="ar.doctorProcedimiento" class="flex flex-col">
+                                                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Doctor que realizó</span>
+                                                        <span class="text-[11px] font-bold text-white uppercase">{{ ar.doctorProcedimiento }}</span>
                                                     </div>
                                                 </div>
-                                                <div class="text-right">
-                                                    <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5 block">Monto Abonado</span>
-                                                    <span class="text-sm font-black text-white font-mono tracking-tighter text-amber-500/90">$ {{ pago.montoBase | number:'1.2-2' }}</span>
+                                                <div *ngIf="ar.informacionAdicional" class="flex flex-col pt-2 border-t border-white/5">
+                                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Información Adicional / Comentarios</span>
+                                                    <p class="text-[10px] font-medium text-slate-300">{{ ar.informacionAdicional }}</p>
                                                 </div>
                                             </div>
 
-                                            <div *ngIf="!ar.pagos || ar.pagos.length === 0"
-                                                class="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
-                                                <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto mb-3 text-slate-600"></lucide-icon>
-                                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">No se encontraron pagos registrados para esta cuenta</p>
+                                            <div class="space-y-3">
+                                                <div *ngFor="let pago of (ar.pagos || [])"
+                                                    class="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/payment hover:bg-white/[0.04] transition-all">
+                                                    <div class="flex items-center gap-6">
+                                                        <div class="flex flex-col">
+                                                            <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5">Fecha</span>
+                                                            <span class="text-[10px] font-black text-white uppercase">{{ pago.fecha | date:'dd/MM/yyyy' }}</span>
+                                                        </div>
+                                                        <div class="h-8 w-px bg-white/5"></div>
+                                                        <div class="flex flex-col">
+                                                            <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Método</span>
+                                                            <span class="text-[10px] font-black text-white uppercase">{{ pago.metodo }}</span>
+                                                        </div>
+                                                        <div class="h-8 w-px bg-white/5"></div>
+                                                        <div class="flex flex-col">
+                                                            <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Referencia</span>
+                                                            <span class="text-[10px] font-mono text-slate-400 uppercase">{{ pago.referencia || 'SIN REF' }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-widest mb-0.5 block">Monto Abonado</span>
+                                                        <span class="text-sm font-black text-white font-mono tracking-tighter text-amber-500/90">$ {{ pago.montoBase | number:'1.2-2' }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div *ngIf="!ar.pagos || ar.pagos.length === 0"
+                                                    class="py-12 text-center border-2 border-dashed border-white/5 rounded-3xl opacity-40">
+                                                    <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto mb-3 text-slate-600"></lucide-icon>
+                                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">No se encontraron pagos registrados para esta cuenta</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

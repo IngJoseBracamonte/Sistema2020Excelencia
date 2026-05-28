@@ -18,5 +18,12 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string FacturadoPor { get; set; } // Nombre Real, Rol
         public string Estado { get; set; } // Pendiente / Facturado
         public string TipoServicio { get; set; } // RX, Tomografia, Laboratorio
+        public Guid? CuentaPorCobrarId { get; set; }
+        public string? QuienAutorizo { get; set; }
+        public string? DoctorProcedimiento { get; set; }
+        public string? InformacionAdicional { get; set; }
+        public bool CompromisoGenerado { get; set; }
+        public bool GarantiaGenerada { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
     }
 }

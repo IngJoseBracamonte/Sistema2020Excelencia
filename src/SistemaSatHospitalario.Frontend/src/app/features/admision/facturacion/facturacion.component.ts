@@ -379,8 +379,12 @@ export class FacturacionComponent {
     doctorProcedimiento: '',
     informacionAdicional: '',
     diasLiquidar: 1,
-    cuotas: 1
+    cuotas: 1,
+    montoGarantia: 0,
+    descripcionGarantia: ''
   });
+
+  public anexarGarantia = signal<boolean>(true);
 
   private _toastEffect = effect(() => {
     const action = this.actionMessage();
@@ -1306,6 +1310,17 @@ export class FacturacionComponent {
     this.currentStep.set(1);
     this.billingSuccess.set(false); // V12.1
 
+    this.docMetadata.set({
+      quienAutorizo: '',
+      doctorProcedimiento: '',
+      informacionAdicional: '',
+      diasLiquidar: 1,
+      cuotas: 1,
+      montoGarantia: 0,
+      descripcionGarantia: ''
+    });
+    this.anexarGarantia.set(true);
+
     // Recargar métodos de pago si se perdieron durante la sesión
     this.billingFacade.reloadPaymentCatalogIfEmpty();
   }
@@ -1353,12 +1368,15 @@ export class FacturacionComponent {
       montoTotal: this.totalCargadoUSD(), // Use cart total
       diasLiquidar: this.docMetadata().diasLiquidar,
       cuotas: this.docMetadata().cuotas,
+      montoGarantia: this.tipoIngreso() === 'Particular' ? this.docMetadata().montoGarantia : 0,
+      descripcionGarantia: this.tipoIngreso() === 'Particular' ? this.docMetadata().descripcionGarantia : '',
       quienAutorizo: this.docMetadata().quienAutorizo,
       doctorProcedimiento: this.docMetadata().doctorProcedimiento,
       informacionAdicional: this.docMetadata().informacionAdicional,
       esPagoCompletado: this.lastBillResult()?.totalPagado >= this.lastBillResult()?.montoTotal,
       fechaCompromiso: new Date().toISOString(),
-      fechaVencimiento: new Date(Date.now() + (this.docMetadata().diasLiquidar * 24 * 60 * 60 * 1000)).toISOString()
+      fechaVencimiento: new Date(Date.now() + (this.docMetadata().diasLiquidar * 24 * 60 * 60 * 1000)).toISOString(),
+      anexarGarantia: this.tipoIngreso() === 'Particular' && this.anexarGarantia()
     };
 
     this.facturacionService.generarCompromisoPdf(dto).subscribe({
@@ -1405,6 +1423,8 @@ export class FacturacionComponent {
         montoTotal: this.totalCargadoUSD(),
         diasLiquidar: this.docMetadata().diasLiquidar,
         cuotas: this.docMetadata().cuotas,
+        montoGarantia: this.docMetadata().montoGarantia,
+        descripcionGarantia: this.docMetadata().descripcionGarantia,
         quienAutorizo: this.docMetadata().quienAutorizo,
         doctorProcedimiento: this.docMetadata().doctorProcedimiento,
         informacionAdicional: this.docMetadata().informacionAdicional,

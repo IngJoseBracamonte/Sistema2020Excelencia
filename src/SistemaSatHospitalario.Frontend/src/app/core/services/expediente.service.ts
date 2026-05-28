@@ -17,6 +17,13 @@ export interface ExpedienteFacturacionRow {
   facturadoPor: string;
   estado: string;
   tipoServicio: string;
+  cuentaPorCobrarId?: string;
+  quienAutorizo?: string;
+  doctorProcedimiento?: string;
+  informacionAdicional?: string;
+  compromisoGenerado?: boolean;
+  garantiaGenerada?: boolean;
+  fechaNacimiento?: string;
 }
 
 export interface ControlCitaRow {
@@ -43,12 +50,13 @@ export class ExpedienteService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Expediente`;
 
-  getBillingReport(startDate?: string, endDate?: string, searchTerm?: string, filterType?: string): Observable<ExpedienteFacturacionRow[]> {
+  getBillingReport(startDate?: string, endDate?: string, searchTerm?: string, filterType?: string, soloCompromiso?: boolean): Observable<ExpedienteFacturacionRow[]> {
     let url = `${this.apiUrl}/billing?`;
     if (startDate) url += `startDate=${startDate}&`;
     if (endDate) url += `endDate=${endDate}&`;
     if (searchTerm) url += `searchTerm=${searchTerm}&`;
     if (filterType) url += `filterType=${filterType}&`;
+    if (soloCompromiso !== undefined) url += `soloCompromiso=${soloCompromiso}&`;
     
     return this.http.get<ExpedienteFacturacionRow[]>(url);
   }

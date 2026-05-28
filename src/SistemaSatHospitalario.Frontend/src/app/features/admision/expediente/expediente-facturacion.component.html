@@ -76,6 +76,16 @@
                 </div>
             </div>
 
+            <div class="hidden md:block w-px bg-white/5 my-2"></div>
+
+            <div class="flex items-center gap-3 px-4">
+                <input type="checkbox" id="soloCompromiso" [ngModel]="soloCompromiso()" (ngModelChange)="soloCompromiso.set($event); refresh()"
+                       class="rounded bg-black/40 border-white/10 text-indigo-500 focus:ring-indigo-500/20 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                <label for="soloCompromiso" class="text-[9px] font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none">
+                    Con Compromiso
+                </label>
+            </div>
+
             <button (click)="refresh()"
                 class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">
                 <span *ngIf="!isLoading()">Filtrar ahora</span>
@@ -98,18 +108,19 @@
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Monto ($)</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Facturado Por</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     <tr *ngIf="isLoading()" class="bg-transparent">
-                        <td colspan="8" class="px-6 py-16 text-center opacity-40">
+                        <td colspan="9" class="px-6 py-16 text-center opacity-40">
                             <lucide-icon [name]="icons.RefreshCcw" class="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4"></lucide-icon>
                             <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Cargando expediente...</p>
                         </td>
                     </tr>
 
                     <tr *ngIf="!isLoading() && records().length === 0" class="bg-transparent">
-                        <td colspan="8" class="px-6 py-16 text-center opacity-40">
+                        <td colspan="9" class="px-6 py-16 text-center opacity-40">
                             <lucide-icon [name]="icons.Info" class="w-8 h-8 text-slate-500 mx-auto mb-4"></lucide-icon>
                             <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">No hay registros para este período</p>
                         </td>
@@ -169,6 +180,21 @@
                                 class="inline-flex items-center px-4 py-1 border rounded-lg text-[8px] font-black uppercase tracking-[0.2em]">
                                 {{ row.estado }}
                             </span>
+                        </td>
+                        <!-- Acciones -->
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button *ngIf="row.cuentaPorCobrarId" (click)="reimprimirCompromiso(row)" [disabled]="isGeneratingPdf()"
+                                    class="p-2 bg-indigo-500/10 hover:bg-indigo-500 border border-indigo-500/20 text-indigo-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg disabled:opacity-40"
+                                    title="Reimprimir Compromiso de Pago">
+                                    <lucide-icon [name]="icons.FileText" class="w-3.5 h-3.5"></lucide-icon>
+                                </button>
+                                <button *ngIf="row.cuentaPorCobrarId" (click)="reimprimirGarantia(row)" [disabled]="isGeneratingPdf()"
+                                    class="p-2 bg-emerald-500/10 hover:bg-emerald-500 border border-emerald-500/20 text-emerald-500 hover:text-white rounded-xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center shadow-lg disabled:opacity-40"
+                                    title="Reimprimir Garantía de Pago">
+                                    <lucide-icon [name]="icons.ShieldCheck" class="w-3.5 h-3.5"></lucide-icon>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

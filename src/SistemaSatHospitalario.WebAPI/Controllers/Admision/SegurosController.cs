@@ -41,6 +41,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 if (cxc != null)
                 {
                     cxc.MarcarCompromisoGenerado();
+                    if (dto.AnexarGarantia)
+                    {
+                        cxc.MarcarGarantiaGenerada();
+                    }
                     
                     // Registrar Auditoría
                     var log = new DocumentLog(

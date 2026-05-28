@@ -32,5 +32,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
 
         public DateTime FechaCompromiso { get; set; }
         public DateTime FechaVencimiento { get; set; }
+        public bool AnexarGarantia { get; set; }
     }
 }

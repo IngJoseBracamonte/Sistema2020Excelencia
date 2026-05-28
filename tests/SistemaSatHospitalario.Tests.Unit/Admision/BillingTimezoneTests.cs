@@ -87,6 +87,63 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             result.Select(x => x.Estudio).Should().NotContain("Consulta 3");
         }
 
+        [Fact]
+        public async Task Query_WithSoloCompromisoFilter_ShouldReturnOnlyRecordsWithCompromisoGenerado()
+        {
+            // Arrange
+            var pacienteId1 = Guid.NewGuid();
+            var paciente1 = new PacienteAdmision("V-111111", "Paciente Con Compromiso", "0412-1111111");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente1, pacienteId1);
+            _context.PacientesAdmision.Add(paciente1);
+
+            var pacienteId2 = Guid.NewGuid();
+            var paciente2 = new PacienteAdmision("V-222222", "Paciente Sin Compromiso", "0412-2222222");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente2, pacienteId2);
+            _context.PacientesAdmision.Add(paciente2);
+
+            var cuentaId1 = Guid.NewGuid();
+            var cuenta1 = new CuentaServicios(pacienteId1, "Particular", "particular");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(cuenta1, cuentaId1);
+            _context.CuentasServicios.Add(cuenta1);
+
+            var cuentaId2 = Guid.NewGuid();
+            var cuenta2 = new CuentaServicios(pacienteId2, "Particular", "particular");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(cuenta2, cuentaId2);
+            _context.CuentasServicios.Add(cuenta2);
+
+            var service1 = new DetalleServicioCuenta(cuentaId1, Guid.NewGuid(), "Consulta Con Compromiso", 50m, 15m, 1, "CONSULTA", "test-admin");
+            _context.DetallesServicioCuenta.Add(service1);
+
+            var service2 = new DetalleServicioCuenta(cuentaId2, Guid.NewGuid(), "Consulta Sin Compromiso", 50m, 15m, 1, "CONSULTA", "test-admin");
+            _context.DetallesServicioCuenta.Add(service2);
+
+            // Account Receivable (CuentaPorCobrar) with CompromisoGenerado = true
+            var cxc1 = new CuentaPorCobrar(cuentaId1, pacienteId1, 50m, 0m);
+            cxc1.MarcarCompromisoGenerado();
+            _context.CuentasPorCobrar.Add(cxc1);
+
+            // Account Receivable (CuentaPorCobrar) with CompromisoGenerado = false
+            var cxc2 = new CuentaPorCobrar(cuentaId2, pacienteId2, 50m, 0m);
+            _context.CuentasPorCobrar.Add(cxc2);
+
+            await _context.SaveChangesAsync();
+
+            var handler = new GetExpedienteFacturacionQueryHandler(_context, _identityServiceMock.Object);
+
+            // Act: Query with SoloCompromiso = true
+            var query = new GetExpedienteFacturacionQuery
+            {
+                SoloCompromiso = true,
+                FilterType = "todo"
+            };
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            result.Should().HaveCount(1);
+            result.First().Estudio.Should().Be("Consulta Con Compromiso");
+            result.First().CompromisoGenerado.Should().BeTrue();
+        }
+
         public void Dispose()
         {
             _context.Dispose();

@@ -444,6 +444,181 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                         column.Item().PaddingTop(15).Text("[   ] Se adjunta copia de la Cédula de Identidad del Deudor.").FontSize(8).FontColor(Colors.Grey.Medium);
                     });
                 });
+
+                if (data.AnexarGarantia)
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(1.5f, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial).FontColor(Colors.Grey.Darken4));
+
+                        page.Header().Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                if (!string.IsNullOrEmpty(logoBase64))
+                                {
+                                    try
+                                    {
+                                        var imageBytes = Convert.FromBase64String(logoBase64.Split(',').Last());
+                                        col.Item().Height(50).Image(imageBytes);
+                                    }
+                                    catch { }
+                                }
+                            });
+
+                            row.RelativeItem().AlignRight().Column(col =>
+                            {
+                                col.Item().Text("CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA, C.A.").FontSize(10).Bold().FontColor(Colors.Blue.Darken4);
+                                col.Item().Text("RIF: J-41168255-1").FontSize(8).Bold();
+                                col.Item().Text("Urb. José Antonio Páez, Casas 74 y 76, al lado de la Comandancia de la Policía, Barinas").FontSize(7).FontColor(Colors.Grey.Medium);
+                            });
+                        });
+
+                        page.Content().PaddingVertical(15).Column(column =>
+                        {
+                            column.Item().PaddingBottom(15).Column(c =>
+                            {
+                                c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
+                                c.Item().PaddingVertical(5).Text(text =>
+                                {
+                                    text.AlignCenter();
+                                    text.Span("GARANTÍA DE PAGO")
+                                        .FontSize(14)
+                                        .Bold()
+                                        .FontColor(Colors.Blue.Darken4);
+                                });
+                                c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
+                            });
+
+                            bool esMismoPaciente = data.NombreResponsable.Trim().Equals(data.NombrePaciente.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                            column.Item().PaddingBottom(15).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(120);
+                                    columns.RelativeColumn();
+                                    columns.ConstantColumn(120);
+                                    columns.RelativeColumn();
+                                });
+
+                                table.Cell().Element(LabelStyle).Text("Nombre Garante / Fiador:");
+                                table.Cell().Element(ValueStyle).Text(data.NombreResponsable);
+                                table.Cell().Element(LabelStyle).Text("C.I. / RIF:");
+                                table.Cell().Element(ValueStyle).Text(data.CedulaResponsable);
+
+                                table.Cell().Element(LabelStyle).Text("Teléfono:");
+                                table.Cell().Element(ValueStyle).Text(data.TelefonoResponsable);
+                                table.Cell().Element(LabelStyle).Text("Dirección Domicilio:");
+                                table.Cell().Element(ValueStyle).Text(data.DireccionResponsable);
+
+                                table.Cell().Element(LabelStyle).Text("Nombre Paciente:");
+                                table.Cell().Element(ValueStyle).Text(data.NombrePaciente);
+                                table.Cell().Element(LabelStyle).Text("C.I. Paciente:");
+                                table.Cell().Element(ValueStyle).Text(data.CedulaPaciente);
+
+                                table.Cell().Element(LabelStyle).Text("Relación con Paciente:");
+                                table.Cell().Element(ValueStyle).Text(esMismoPaciente ? "Titular (El Paciente)" : data.RelacionResponsable);
+                                table.Cell().Element(LabelStyle).Text("Edad / Teléfono Paciente:");
+                                table.Cell().Element(ValueStyle).Text($"{data.EdadPaciente} años / {data.TelefonoPaciente ?? "N/A"}");
+
+                                static IContainer LabelStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Background(Colors.Grey.Lighten4).Padding(5).DefaultTextStyle(x => x.Bold().FontSize(8));
+                                static IContainer ValueStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).DefaultTextStyle(x => x.FontSize(8));
+                            });
+
+                            var vencimiento = data.FechaCompromiso.AddDays(21);
+
+                            column.Item().PaddingBottom(12).DefaultTextStyle(x => x.FontSize(9.5f)).Text(text =>
+                            {
+                                text.Justify();
+                                text.Span("En la ciudad de Barinas, Yo ");
+                                text.Span($"{data.NombreResponsable}").Bold();
+                                text.Span(esMismoPaciente ? " (Titular)" : $" ({data.RelacionResponsable})");
+                                text.Span(", titular de la cédula de identidad ");
+                                text.Span($"{data.CedulaResponsable}").Bold();
+                                text.Span(", en mi condición de Garante, declaro mediante el presente documento que garantizo la totalidad de los gastos médicos y servicios hospitalarios realizados a ");
+                                text.Span($"{data.NombrePaciente}").Bold();
+                                text.Span(", titular de la cédula de identidad ");
+                                text.Span($"{data.CedulaPaciente}").Bold();
+                                text.Span(".");
+                            });
+
+                            column.Item().PaddingBottom(12).DefaultTextStyle(x => x.FontSize(9.5f)).Text(text =>
+                            {
+                                text.Justify();
+                                text.Span("Esta garantía respalda la cuenta del paciente por un monto referencial de ");
+                                text.Span($"${data.MontoTotal:N2}").Bold();
+                                text.Span(", comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a ");
+                                text.Span("21 días continuos").Bold();
+                                text.Span(", fijando como fecha tope el día ");
+                                text.Span($"{vencimiento:dd/MM/yyyy}").Bold();
+                                text.Span(".");
+                            });
+
+                            if (data.MontoGarantia > 0)
+                            {
+                                column.Item().PaddingBottom(12).DefaultTextStyle(x => x.FontSize(9.5f)).Background(Colors.Grey.Lighten5).Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(8).Text(text =>
+                                {
+                                    text.Justify();
+                                    text.Span("RESPALDO FÍSICO DE LA GARANTÍA: ").Bold().FontColor(Colors.Blue.Darken4);
+                                    text.Span("Como respaldo físico de esta garantía, se hace entrega/registro de: ");
+                                    text.Span($"{data.DescripcionGarantia ?? "Bien mueble/inmueble"}").Bold();
+                                    text.Span(" con un valor estimado de ");
+                                    text.Span($"${data.MontoGarantia:N2}").Bold();
+                                    text.Span(". (Regulado por el Art. 1.837 del Código Civil. El objeto se devolverá inmediatamente al saldar la deuda).");
+                                });
+                            }
+
+                            column.Item().PaddingBottom(15).DefaultTextStyle(x => x.FontSize(9.5f)).Text(text =>
+                            {
+                                text.Justify();
+                                text.Span("Acepto que este documento sirve como título ejecutivo y respaldo legal de la deuda contraída con el ");
+                                text.Span("CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA, C.A.").Bold();
+                                text.Span(".");
+                            });
+
+                            column.Item().PaddingBottom(20).Text("Sin otro particular, firmo conforme:").FontSize(9.5f);
+
+                            column.Item().PaddingTop(30).Row(row =>
+                            {
+                                row.RelativeItem().Column(c =>
+                                {
+                                    c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                                    c.Item().PaddingTop(5).AlignCenter().Text("EL GARANTE").FontSize(9).Bold();
+                                    c.Item().AlignCenter().Text($"{data.NombreResponsable}").FontSize(8);
+                                    c.Item().AlignCenter().Text($"C.I: {data.CedulaResponsable}").FontSize(8);
+
+                                    c.Item().PaddingTop(15).Row(r =>
+                                    {
+                                        r.RelativeItem().Column(b =>
+                                        {
+                                            b.Item().Width(45).Height(45).Border(0.5f).BorderColor(Colors.Grey.Darken1).Background(Colors.Grey.Lighten5);
+                                            b.Item().Width(45).AlignCenter().Text("Firma / Inicial").FontSize(6).FontColor(Colors.Grey.Medium);
+                                        });
+                                        r.RelativeItem().Column(b =>
+                                        {
+                                            b.Item().Width(45).Height(45).Border(0.5f).BorderColor(Colors.Grey.Darken1).Background(Colors.Grey.Lighten5);
+                                            b.Item().Width(45).AlignCenter().Text("Pulgar Derecho").FontSize(6).FontColor(Colors.Grey.Medium);
+                                        });
+                                    });
+                                });
+
+                                row.ConstantItem(40);
+
+                                row.RelativeItem().Column(c =>
+                                {
+                                    c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
+                                    c.Item().PaddingTop(5).AlignCenter().Text("POR LA CLÍNICA").FontSize(9).Bold();
+                                    c.Item().AlignCenter().Text("Firma Autorizada y Sello").FontSize(8);
+                                    c.Item().AlignCenter().Text("CENTRO DIAGNÓSTICO CLÍNICO LA EXCELENCIA").FontSize(8).FontColor(Colors.Grey.Medium);
+                                });
+                            });
+                        });
+                    });
+                }
             }).GeneratePdf();
 
             return document;

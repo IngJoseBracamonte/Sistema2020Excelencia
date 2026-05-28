@@ -18,6 +18,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public DateTime? EndDate { get; set; }
         public string SearchTerm { get; set; }
         public string? FilterType { get; set; }
+        public bool? SoloCompromiso { get; set; }
     }
 
     public class GetExpedienteFacturacionQueryHandler : IRequestHandler<GetExpedienteFacturacionQuery, List<ExpedienteFacturacionDto>>
@@ -80,6 +81,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 query = query.Where(x => x.p.NombreCorto.Contains(request.SearchTerm) || x.p.CedulaPasaporte.Contains(request.SearchTerm));
             }
 
+            // Filtro de Compromiso de Pago
+            if (request.SoloCompromiso.HasValue && request.SoloCompromiso.Value)
+            {
+                query = query.Where(x => x.ar != null && x.ar.CompromisoGenerado);
+            }
+
             var results = await query.OrderByDescending(x => x.d.FechaCarga).ToListAsync(cancellationToken);
 
             // Fetch users for Biller/Role logic (Joseph Bracamonte, Asistente Particular)
@@ -121,7 +128,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     MontoUSD = x.d.Precio * x.d.Cantidad,
                     FacturadoPor = facturadorInfo,
                     Estado = (x.c.Estado == EstadoConstants.Facturada && x.ar != null && x.ar.IsAudited) ? "Facturado" : "Pendiente",
-                    TipoServicio = x.d.TipoServicio
+                    TipoServicio = x.d.TipoServicio,
+                    CuentaPorCobrarId = x.ar?.Id,
+                    QuienAutorizo = x.ar?.QuienAutorizo,
+                    DoctorProcedimiento = x.ar?.DoctorProcedimiento,
+                    InformacionAdicional = x.ar?.InformacionAdicional,
+                    CompromisoGenerado = x.ar?.CompromisoGenerado ?? false,
+                    GarantiaGenerada = x.ar?.GarantiaGenerada ?? false,
+                    FechaNacimiento = x.p.FechaNacimiento
                 };
             }).ToList();
         }
