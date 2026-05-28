@@ -44,9 +44,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 .Where(d => !excluirLista.Contains(d.TipoServicio) && d.Honorario > 0)
                 .AsQueryable();
 
-            // Detección dinámica de zona horaria para servidores locales vs nube
-            var serverOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalHours;
-            var hoursToAdd = serverOffset == -4 ? 0 : 4;
+            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC (DateTime.UtcNow).
+            // Sumamos siempre 4 horas para convertir la fecha local ingresada por el usuario a UTC.
+            const int hoursToAdd = 4;
 
             if (request.FechaDesde.HasValue)
             {

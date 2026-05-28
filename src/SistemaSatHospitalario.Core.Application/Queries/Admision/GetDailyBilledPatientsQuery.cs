@@ -39,9 +39,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // Normalización Ultra-Agresiva para depuración (V12.1)
             // Tomamos lo que sea que esté facturado en el rango amplio (±12h para TZ resilience)
             var targetDay = request.Fecha.Date;
-            // Detección dinámica: si el servidor es local en Venezuela (UTC-04:00), no sumamos desfase.
-            var serverOffset = TimeZoneInfo.Local.BaseUtcOffset.TotalHours;
-            var hoursToAdd = serverOffset == -4 ? 0 : 4;
+            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC (DateTime.UtcNow).
+            // Sumamos siempre 4 horas para convertir la fecha local ingresada por el usuario a UTC.
+            const int hoursToAdd = 4;
             
             var startRange = targetDay.AddHours(hoursToAdd);
             var endRange = targetDay.AddDays(1).AddHours(hoursToAdd).AddTicks(-1);

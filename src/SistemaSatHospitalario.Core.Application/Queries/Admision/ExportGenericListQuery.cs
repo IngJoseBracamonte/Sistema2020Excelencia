@@ -115,8 +115,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         private async Task<DataTable> GetDiagnosticsReport(ExportGenericListQuery req, CancellationToken ct)
         {
-            var start = req.StartDate?.Date ?? DateTime.Today;
-            var end = req.EndDate?.Date.AddDays(1).AddTicks(-1) ?? DateTime.MaxValue;
+            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC. Sumamos siempre 4 horas para convertir a UTC.
+            const int hoursToAdd = 4;
+            var start = (req.StartDate?.Date ?? DateTime.Today).AddHours(hoursToAdd);
+            var end = req.EndDate.HasValue 
+                ? req.EndDate.Value.Date.AddDays(1).AddHours(hoursToAdd).AddTicks(-1) 
+                : DateTime.MaxValue;
 
             var list = await (from d in _context.DetallesServicioCuenta.AsNoTracking()
                               join c in _context.CuentasServicios.AsNoTracking() on d.CuentaServicioId equals c.Id
@@ -157,8 +161,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         private async Task<DataTable> GetBillingReport(ExportGenericListQuery req, CancellationToken ct)
         {
-            var start = req.StartDate?.Date ?? DateTime.Today;
-            var end = req.EndDate?.Date.AddDays(1).AddTicks(-1) ?? DateTime.MaxValue;
+            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC. Sumamos siempre 4 horas para convertir a UTC.
+            const int hoursToAdd = 4;
+            var start = (req.StartDate?.Date ?? DateTime.Today).AddHours(hoursToAdd);
+            var end = req.EndDate.HasValue 
+                ? req.EndDate.Value.Date.AddDays(1).AddHours(hoursToAdd).AddTicks(-1) 
+                : DateTime.MaxValue;
 
             var list = await (from d in _context.DetallesServicioCuenta.AsNoTracking()
                               join c in _context.CuentasServicios.AsNoTracking() on d.CuentaServicioId equals c.Id
@@ -187,8 +195,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         private async Task<DataTable> GetHonorariumsReport(ExportGenericListQuery req, CancellationToken ct)
         {
-            var start = req.StartDate?.Date ?? DateTime.Today;
-            var end = req.EndDate?.Date.AddDays(1).AddTicks(-1) ?? DateTime.MaxValue;
+            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC. Sumamos siempre 4 horas para convertir a UTC.
+            const int hoursToAdd = 4;
+            var start = (req.StartDate?.Date ?? DateTime.Today).AddHours(hoursToAdd);
+            var end = req.EndDate.HasValue 
+                ? req.EndDate.Value.Date.AddDays(1).AddHours(hoursToAdd).AddTicks(-1) 
+                : DateTime.MaxValue;
 
             var summary = await (from cita in _context.CitasMedicas
                                  join cs in _context.CuentasServicios on cita.CuentaServicioId equals cs.Id

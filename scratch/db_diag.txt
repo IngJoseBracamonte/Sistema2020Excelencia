@@ -1,0 +1,22 @@
+Total Servicios: 40
+Current server BaseUtcOffset: -4 hours
+Id: 4726f868-aff1-483f-8028-db9b80117257, FechaCarga: 2026-05-27 20:40:29 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 70.00
+Id: 1ac860d0-3617-465c-b294-483f976ea1e7, FechaCarga: 2026-05-27 20:23:30 (UTC), Desc: Consulta Medica General, Tipo: CONSULTA, Monto: 50.00
+Id: 14314bd2-8b07-4c29-bded-592ca7fb905c, FechaCarga: 2026-05-27 20:21:35 (UTC), Desc: Consulta Ginecologica, Tipo: CONSULTA, Monto: 30.00
+Id: e447bcc1-64db-4ae7-b7ea-da4754fbf2fc, FechaCarga: 2026-05-27 20:20:16 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 70.00
+Id: 930a2748-22a5-4bbf-a8ff-d26c9ae97234, FechaCarga: 2026-05-27 20:14:46 (UTC), Desc: Consulta Ginecologica, Tipo: CONSULTA, Monto: 30.00
+Id: 04f7f43a-acee-4fe3-8648-40bbc270e3fa, FechaCarga: 2026-05-27 16:43:23 (UTC), Desc: RX TORAX AP, Tipo: RX, Monto: 10.00
+Id: 71810990-bf78-41c0-a15e-e4d4f3885722, FechaCarga: 2026-05-27 16:34:41 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 70.00
+Id: e8a0cf7c-8a35-4b6c-8c1a-3f4fcbb15d8f, FechaCarga: 2026-05-27 16:18:46 (UTC), Desc: Consulta Medica General, Tipo: CONSULTA, Monto: 60.00
+Id: e2868077-a07f-4543-9d1d-be4ad97a8ff5, FechaCarga: 2026-05-27 16:12:26 (UTC), Desc: Citologia, Tipo: CITOLOGIA, Monto: 10.00
+Id: 7233ed33-65de-400e-91e6-93a61746a94c, FechaCarga: 2026-05-27 16:12:26 (UTC), Desc: Consulta Ginecologica, Tipo: CONSULTA, Monto: 30.00
+Id: a8019e3b-4cab-437e-bb02-c2347bc887d3, FechaCarga: 2026-05-27 13:37:40 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 70.00
+Id: f5fa39ba-945d-45bb-9753-fcb65834d4e7, FechaCarga: 2026-05-26 18:35:44 (UTC), Desc: Consulta Medica General, Tipo: CONSULTA, Monto: 50.00
+Id: 2dc1dbae-3120-4b9f-8048-7cdea9638e7b, FechaCarga: 2026-05-26 17:00:10 (UTC), Desc: Consulta Medica General, Tipo: CONSULTA, Monto: 60.00
+Id: a0e2dd17-4c16-409a-b2a8-9de55f2b8a47, FechaCarga: 2026-05-26 16:59:00 (UTC), Desc: Consulta Medica General, Tipo: CONSULTA, Monto: 60.00
+Id: ec790517-3bef-4095-83a5-261f3aa5f767, FechaCarga: 2026-05-25 21:02:44 (UTC), Desc: RX TORAX AP, Tipo: RX, Monto: 10.00
+Id: 66361fb1-cdd5-45d2-99d8-b1fd02245c8a, FechaCarga: 2026-05-25 21:02:44 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 60.00
+Id: 368c9acd-226b-4e29-a77c-101e99621cd2, FechaCarga: 2026-05-25 20:07:20 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 70.00
+Id: 9b49c56b-6f7c-475d-ac48-05a0f907204c, FechaCarga: 2026-05-25 15:11:05 (UTC), Desc: Consulta Medica General, Tipo: CONSULTA, Monto: 20.00
+Id: eee954b6-b512-4199-870a-cdfc6fe32f12, FechaCarga: 2026-05-25 14:00:02 (UTC), Desc: CONSULTA CARDIOLOGIA, Tipo: CONSULTA, Monto: 50.00
+Id: 530d77bd-f530-48d0-950c-ed813c853779, FechaCarga: 2026-05-25 14:00:02 (UTC), Desc: Radiografía Tórax, Tipo: RX, Monto: 45.00

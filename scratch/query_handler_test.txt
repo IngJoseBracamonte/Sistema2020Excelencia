@@ -1,0 +1,10 @@
+Target Date: 2026-05-27
+Convenio count: 2
+Particular count: 9
+Todo count: 11
+Server BaseUtcOffset: -4 hours
+- Paciente: JULIO GONZALEZ, Fecha: 2026-05-27 20:40:29, Seguro: PARTICULAR, Monto: 70.00, Estado: Pendiente
+- Paciente: JULIO GONZALEZ, Fecha: 2026-05-27 20:23:30, Seguro: PARTICULAR, Monto: 50.00, Estado: Pendiente
+- Paciente: JULIO GONZALEZ, Fecha: 2026-05-27 20:21:35, Seguro: PARTICULAR, Monto: 30.00, Estado: Pendiente
+- Paciente: JULIO GONZALEZ, Fecha: 2026-05-27 20:20:16, Seguro: PARTICULAR, Monto: 70.00, Estado: Pendiente
+- Paciente: JULIO GONZALEZ, Fecha: 2026-05-27 20:14:46, Seguro: pdvsa, Monto: 30.00, Estado: Facturado
