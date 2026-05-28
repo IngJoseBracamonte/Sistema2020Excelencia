@@ -44,10 +44,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var query = _context.AuditLogsPrecios.AsNoTracking();
 
             if (request.FechaDesde.HasValue)
-                query = query.Where(x => x.FechaModificacion >= request.FechaDesde.Value);
+            {
+                var desdeDate = request.FechaDesde.Value.Date;
+                query = query.Where(x => x.FechaModificacion >= desdeDate);
+            }
 
             if (request.FechaHasta.HasValue)
-                query = query.Where(x => x.FechaModificacion <= request.FechaHasta.Value);
+            {
+                var hastaDate = request.FechaHasta.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(x => x.FechaModificacion <= hastaDate);
+            }
 
             return await query
                 .OrderByDescending(x => x.FechaModificacion)

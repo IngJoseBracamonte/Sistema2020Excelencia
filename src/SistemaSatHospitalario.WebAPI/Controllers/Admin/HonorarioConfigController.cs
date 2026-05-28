@@ -48,8 +48,16 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public async Task<IActionResult> GetLogs([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
         {
             var query = _context.LogsAsignacionHonorario.AsQueryable();
-            if (desde.HasValue) query = query.Where(l => l.FechaAccion >= desde.Value.Date);
-            if (hasta.HasValue) query = query.Where(l => l.FechaAccion <= hasta.Value.Date.AddDays(1));
+            if (desde.HasValue)
+            {
+                var desdeDate = desde.Value.Date;
+                query = query.Where(l => l.FechaAccion >= desdeDate);
+            }
+            if (hasta.HasValue)
+            {
+                var hastaDate = hasta.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(l => l.FechaAccion <= hastaDate);
+            }
             var logs = await query.OrderByDescending(l => l.FechaAccion).Take(200).ToListAsync();
             return Ok(logs);
         }

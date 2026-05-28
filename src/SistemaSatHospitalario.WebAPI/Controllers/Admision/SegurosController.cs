@@ -190,10 +190,16 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 .Where(c => c.Cuenta.TipoIngreso == "Seguro");
 
             if (desde.HasValue)
-                query = query.Where(c => c.FechaCreacion.Date >= desde.Value.Date);
+            {
+                var desdeDate = desde.Value.Date;
+                query = query.Where(c => c.FechaCreacion >= desdeDate);
+            }
             
             if (hasta.HasValue)
-                query = query.Where(c => c.FechaCreacion.Date <= hasta.Value.Date);
+            {
+                var hastaDate = hasta.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(c => c.FechaCreacion <= hastaDate);
+            }
 
             if (!string.IsNullOrEmpty(nombre))
             {
