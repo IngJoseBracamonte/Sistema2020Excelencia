@@ -184,63 +184,89 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public async Task<IActionResult> CreateDirectOrder([FromBody] CreateDirectOrderRequest request)
         {
             if (request == null) return BadRequest(new { Message = "Datos inválidos." });
-            if (string.IsNullOrEmpty(request.PacienteNombre) || string.IsNullOrEmpty(request.Estudio) || string.IsNullOrEmpty(request.TipoServicio))
+            if (string.IsNullOrEmpty(request.PacienteNombre) || request.Estudios == null || request.Estudios.Count == 0 || string.IsNullOrEmpty(request.TipoServicio))
             {
-                return BadRequest(new { Message = "El nombre del paciente, el estudio y el tipo de servicio son obligatorios." });
+                return BadRequest(new { Message = "El nombre del paciente, al menos un estudio y el tipo de servicio son obligatorios." });
             }
 
             var usuario = User.Identity?.Name ?? "Sistema";
-            var order = new OrdenImagen
-            {
-                CuentaId = Guid.Empty, // Se asociará al validar
-                PacienteId = request.PacienteId,
-                PacienteNombre = request.PacienteNombre,
-                Estudio = request.Estudio,
-                TipoServicio = request.TipoServicio.ToUpper(),
-                Estado = "Pendiente", // Comienza como Pendiente para ser procesado tras la aprobación
-                FechaCreacion = DateTime.UtcNow,
-                EsDirecta = true,
-                RequiereValidacion = true,
-                Validada = false,
-                MedicoSolicitanteId = request.MedicoSolicitanteId,
-                MedicoSolicitanteNombre = request.MedicoSolicitanteNombre
-            };
+            var category = await _mapperService.MapToCategoryAsync(request.TipoServicio);
+            Guid? defaultMedicoId = null;
+            string? defaultMedicoNombre = null;
 
-            _context.OrdenesImagenes.Add(order);
+            if (category != HonorarioConstants.CategoriaOtros)
+            {
+                var config = await _context.HonorariosConfig
+                    .FirstOrDefaultAsync(h => h.CategoriaServicio == category);
+                if (config?.MedicoDefaultId != null)
+                {
+                    defaultMedicoId = config.MedicoDefaultId;
+                    var defaultMedico = await _context.Medicos.FindAsync(defaultMedicoId.Value);
+                    defaultMedicoNombre = defaultMedico?.Nombre;
+                }
+            }
+
+            var createdOrders = new List<OrdenImagen>();
+
+            foreach (var estudio in request.Estudios)
+            {
+                var order = new OrdenImagen
+                {
+                    CuentaId = Guid.Empty, // Se asociará al validar
+                    PacienteId = request.PacienteId,
+                    PacienteNombre = request.PacienteNombre,
+                    Estudio = estudio.Trim(),
+                    TipoServicio = request.TipoServicio.ToUpper(),
+                    Estado = "Pendiente", // Comienza como Pendiente para ser procesado tras la aprobación
+                    FechaCreacion = DateTime.UtcNow,
+                    EsDirecta = true,
+                    RequiereValidacion = true,
+                    Validada = false,
+                    MedicoSolicitanteId = defaultMedicoId,
+                    MedicoSolicitanteNombre = defaultMedicoNombre
+                };
+
+                _context.OrdenesImagenes.Add(order);
+                createdOrders.Add(order);
+            }
+
             await _context.SaveChangesAsync(default);
 
-            // 1. Crear Notificación Persistente para Administradores, Supervisores y Asistente de Seguros
-            await _notificationService.CreatePersistentNotificationAsync(
-                $"Nueva Orden Directa de RX: {order.PacienteNombre}",
-                $"Se requiere validación del estudio de RX '{order.Estudio}' registrado por la estación.",
-                "Warning",
-                targetUserId: null,
-                targetRole: null,
-                actionUrl: "/admin/audit/cuentas?tab=ordenes-directas",
-                ct: default
-            );
+            foreach (var order in createdOrders)
+            {
+                // 1. Crear Notificación Persistente para Administradores, Supervisores y Asistente de Seguros
+                await _notificationService.CreatePersistentNotificationAsync(
+                    $"Nueva Orden Directa de RX: {order.PacienteNombre}",
+                    $"Se requiere validación del estudio de RX '{order.Estudio}' registrado por la estación.",
+                    "Warning",
+                    targetUserId: null,
+                    targetRole: null,
+                    actionUrl: "/admin/audit/cuentas?tab=ordenes-directas",
+                    ct: default
+                );
 
-            // 2. Alertar al grupo en tiempo real
-            await _notificationService.SendValidationAlertAsync(
-                $"Nueva Orden Directa de RX ({order.PacienteNombre})",
-                $"Se requiere validación administrativa para el estudio de RX '{order.Estudio}' del paciente {order.PacienteNombre}.",
-                "RX",
-                new { orderId = order.Id },
-                default
-            );
+                // 2. Alertar al grupo en tiempo real
+                await _notificationService.SendValidationAlertAsync(
+                    $"Nueva Orden Directa de RX ({order.PacienteNombre})",
+                    $"Se requiere validación administrativa para el estudio de RX '{order.Estudio}' del paciente {order.PacienteNombre}.",
+                    "RX",
+                    new { orderId = order.Id },
+                    default
+                );
 
-            // Broadcast SignalR update para actualizar la Estación de RX
-            await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
-                orderId = order.Id,
-                status = order.Estado,
-                patientName = order.PacienteNombre,
-                servicioNombre = order.Estudio,
-                tipoServicio = order.TipoServicio,
-                esDirecta = true,
-                requiereValidacion = true
-            });
+                // Broadcast SignalR update para actualizar la Estación de RX
+                await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
+                    orderId = order.Id,
+                    status = order.Estado,
+                    patientName = order.PacienteNombre,
+                    servicioNombre = order.Estudio,
+                    tipoServicio = order.TipoServicio,
+                    esDirecta = true,
+                    requiereValidacion = true
+                });
+            }
 
-            return Ok(new { Message = "Orden directa registrada con éxito, pendiente de validación administrativa.", OrderId = order.Id });
+            return Ok(new { Message = "Orden directa registrada con éxito, pendiente de validación administrativa." });
         }
 
         [HttpGet("pending-validation")]
@@ -341,10 +367,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             order.Estudio = servicio.Descripcion;
 
             // Asignar el médico solicitante al detalle para cálculo de honorarios
-            if (order.MedicoSolicitanteId.HasValue)
+            var medicoId = request.MedicoSolicitanteId ?? order.MedicoSolicitanteId;
+            var medicoNombre = request.MedicoSolicitanteNombre ?? order.MedicoSolicitanteNombre;
+
+            if (medicoId.HasValue)
             {
                 var category = await _mapperService.MapToCategoryAsync(order.TipoServicio, servicio.Id);
-                detalle.AsignarMedicoResponsable(order.MedicoSolicitanteId.Value, category);
+                detalle.AsignarMedicoResponsable(medicoId.Value, category);
+
+                if (string.IsNullOrEmpty(medicoNombre))
+                {
+                    var mObj = await _context.Medicos.FindAsync(medicoId.Value);
+                    medicoNombre = mObj?.Nombre;
+                }
 
                 // Registrar en log de asignación de honorario
                 _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
@@ -352,10 +387,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     servicio.Descripcion,
                     HonorarioConstants.AccionAsignacionManual,
                     null, null,
-                    order.MedicoSolicitanteId.Value,
-                    order.MedicoSolicitanteNombre,
+                    medicoId.Value,
+                    medicoNombre,
                     usuario,
-                    "Asignado automáticamente en validación de orden directa"
+                    "Asignado en validación de orden directa por el administrador"
                 ));
             }
 
@@ -379,10 +414,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     {
         public Guid PacienteId { get; set; }
         public string PacienteNombre { get; set; } = string.Empty;
-        public string Estudio { get; set; } = string.Empty;
+        public List<string> Estudios { get; set; } = new List<string>();
         public string TipoServicio { get; set; } = string.Empty; // RX o TOMO
-        public Guid? MedicoSolicitanteId { get; set; }
-        public string? MedicoSolicitanteNombre { get; set; }
     }
 
     public class ValidateDirectOrderRequest
@@ -393,5 +426,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public decimal? Honorario { get; set; }
         public string? TipoIngreso { get; set; } // Particular, Seguro, etc.
         public int? ConvenioId { get; set; }
+        public Guid? MedicoSolicitanteId { get; set; }
+        public string? MedicoSolicitanteNombre { get; set; }
     }
 }

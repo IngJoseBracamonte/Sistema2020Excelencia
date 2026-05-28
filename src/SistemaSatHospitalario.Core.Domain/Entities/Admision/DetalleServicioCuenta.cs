@@ -52,10 +52,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             UsuarioTecnico = usuario;
         }
 
-        public void AsignarMedicoResponsable(Guid medicoId, string categoria)
+        public void AsignarMedicoResponsable(Guid medicoId, string categoria, decimal? honorario = null)
         {
             MedicoResponsableId = medicoId;
             CategoriaHonorario = categoria;
+            if (honorario.HasValue)
+            {
+                Honorario = honorario.Value;
+            }
         }
     }
 }

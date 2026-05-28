@@ -46,6 +46,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HonorarioConfig> HonorariosConfig { get; set; }
         public DbSet<LogAsignacionHonorario> LogsAsignacionHonorario { get; set; }
         public DbSet<HonorariumMappingRule> HonorariumMappingRules { get; set; }
+        public DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; set; }
 
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
@@ -436,6 +437,21 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(h => h.Category).IsRequired().HasMaxLength(50);
                 entity.HasIndex(h => h.Priority);
                 entity.HasIndex(h => h.IsActive);
+            });
+
+            builder.Entity<HonorarioMedicoServicio>(entity =>
+            {
+                entity.ToTable("HonorariosMedicosServicios");
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.MontoHonorario).HasPrecision(18, 2);
+                entity.HasOne(h => h.Servicio)
+                      .WithMany(s => s.HonorariosMedicos)
+                      .HasForeignKey(h => h.ServicioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(h => h.Medico)
+                      .WithMany()
+                      .HasForeignKey(h => h.MedicoId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
 

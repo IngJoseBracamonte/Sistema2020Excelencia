@@ -17,6 +17,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? EspecialidadId { get; set; }
         public virtual Especialidad? Especialidad { get; set; }
         public virtual ICollection<ServicioSugerencia> Sugerencias { get; private set; } = new List<ServicioSugerencia>();
+        public virtual ICollection<HonorarioMedicoServicio> HonorariosMedicos { get; private set; } = new List<HonorarioMedicoServicio>();
 
         private ServicioClinico() { }
 

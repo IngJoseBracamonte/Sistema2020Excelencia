@@ -6,7 +6,6 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { SignalrService } from '../../core/services/signalr.service';
 import { PatientService } from '../../core/services/patient.service';
-import { MedicoService } from '../../core/services/medico.service';
 import { environment } from '../../../environments/environment';
 import { 
   LucideAngularModule, 
@@ -39,7 +38,6 @@ export class RxOrdersComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private patientService = inject(PatientService);
-  private medicoService = inject(MedicoService);
 
   readonly icons = {
     Search,
@@ -78,10 +76,8 @@ export class RxOrdersComponent implements OnInit {
   public patientSearchTerm = signal<string>('');
   public patientsFound = signal<any[]>([]);
   public selectedPatient = signal<any | null>(null);
-  public directEstudio = signal<string>('');
-  public doctorSearchTerm = signal<string>('');
-  public doctors = signal<any[]>([]);
-  public selectedDoctor = signal<any | null>(null);
+  public newStudyText = signal<string>('');
+  public studiesList = signal<string[]>([]);
   public isSavingDirect = signal<boolean>(false);
 
   /**
@@ -90,12 +86,7 @@ export class RxOrdersComponent implements OnInit {
    */
   public isTomoRoute = computed(() => this.route.snapshot.url[0]?.path === 'tomo-orders');
 
-  // Médicos filtrados por búsqueda en modal
-  public doctorsFound = computed(() => {
-    const term = this.doctorSearchTerm().toLowerCase().trim();
-    if (!term) return [];
-    return this.doctors().filter(d => d.nombre.toLowerCase().includes(term));
-  });
+
 
   // Combinamos los tickets de SignalR (si el filtro es Pendiente) con los de la base de datos
   public incomingTickets = computed(() => {
@@ -153,10 +144,7 @@ export class RxOrdersComponent implements OnInit {
     // 1. Iniciar conexión SignalR
     this.signalRService.startConnection(token, role);
 
-    // 2. Cargar médicos para modal de orden directa
-    this.loadDoctors();
-
-    // 3. Cargar datos iniciales
+    // 2. Cargar datos iniciales
     this.refresh();
   }
 
@@ -193,14 +181,7 @@ export class RxOrdersComponent implements OnInit {
       });
   }
 
-  private loadDoctors(): void {
-    this.medicoService.getAll().subscribe({
-      next: (res) => {
-        this.doctors.set(res);
-      },
-      error: (err) => console.error('[IMAGING] Error cargando médicos:', err)
-    });
-  }
+
 
   private normalizeOrder(o: any): any {
     return {
@@ -299,9 +280,16 @@ export class RxOrdersComponent implements OnInit {
     this.patientsFound.set([]);
   }
 
-  public selectDoctor(d: any): void {
-    this.selectedDoctor.set(d);
-    this.doctorSearchTerm.set(d.nombre);
+  public addStudy(): void {
+    const text = this.newStudyText().trim().toUpperCase();
+    if (text) {
+      this.studiesList.update(list => [...list, text]);
+      this.newStudyText.set('');
+    }
+  }
+
+  public removeStudy(index: number): void {
+    this.studiesList.update(list => list.filter((_, i) => i !== index));
   }
 
   public openDirectOrderModal(): void {
@@ -314,8 +302,8 @@ export class RxOrdersComponent implements OnInit {
   }
 
   public submitDirectOrder(): void {
-    if (!this.selectedPatient() || !this.directEstudio().trim()) {
-      alert('Debe seleccionar un paciente y detallar el estudio clínico.');
+    if (!this.selectedPatient() || this.studiesList().length === 0) {
+      alert('Debe seleccionar un paciente y agregar al menos un estudio.');
       return;
     }
 
@@ -325,16 +313,14 @@ export class RxOrdersComponent implements OnInit {
     const payload = {
       pacienteId: this.selectedPatient().id,
       pacienteNombre: `${this.selectedPatient().nombre} ${this.selectedPatient().apellidos || ''}`.trim(),
-      estudio: this.directEstudio().trim(),
-      tipoServicio: type,
-      medicoSolicitanteId: this.selectedDoctor()?.id || null,
-      medicoSolicitanteNombre: this.selectedDoctor()?.nombre || null
+      estudios: this.studiesList(),
+      tipoServicio: type
     };
 
     this.http.post(`${environment.apiUrl}/api/Imaging/direct`, payload)
       .subscribe({
         next: () => {
-          this.actionMessage.set('Orden directa creada con éxito. Pendiente de validación administrativa.');
+          this.actionMessage.set('Ordenes directas creadas con éxito. Pendientes de validación administrativa.');
           this.showDirectModal.set(false);
           this.resetDirectForm();
           this.refresh();
@@ -351,9 +337,8 @@ export class RxOrdersComponent implements OnInit {
     this.selectedPatient.set(null);
     this.patientSearchTerm.set('');
     this.patientsFound.set([]);
-    this.directEstudio.set('');
-    this.selectedDoctor.set(null);
-    this.doctorSearchTerm.set('');
+    this.newStudyText.set('');
+    this.studiesList.set([]);
     this.isSavingDirect.set(false);
   }
 

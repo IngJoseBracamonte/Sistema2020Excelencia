@@ -17,6 +17,7 @@ export abstract class BasePricedItem {
   HonorarioBase?: number;
   sugerenciasIds?: string[];
   SugerenciasIds?: string[];
+  honorariosMedicos?: { medicoId: string; medicoNombre?: string; honorario: number }[];
 
   // Datos para Citas y Sincronización
   medicoId?: string;
@@ -39,6 +40,7 @@ export abstract class BasePricedItem {
     this.activo = data.activo ?? data.Activo;
     this.honorarioBase = data.honorarioBase ?? data.HonorarioBase ?? 0;
     this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
+    this.honorariosMedicos = data.honorariosMedicos || data.HonorariosMedicos || [];
 
     this.medicoId = data.medicoId ?? data.MedicoId;
     this.medicoNombre = data.medicoNombre ?? data.MedicoNombre;

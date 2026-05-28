@@ -44,6 +44,7 @@ export class CatalogService {
       tipo: item.tipo,
       honorarioBase: item.honorarioBase ?? 0,
       sugerenciasIds: item.sugerenciasIds ?? [],
+      honorariosMedicos: item.honorariosMedicos ?? [],
       activo: item.activo ?? true
     });
   }
@@ -57,6 +58,7 @@ export class CatalogService {
       tipo: item.tipo,
       honorarioBase: item.honorarioBase ?? 0,
       sugerenciasIds: item.sugerenciasIds ?? [],
+      honorariosMedicos: item.honorariosMedicos ?? [],
       activo: item.activo ?? true
     });
   }

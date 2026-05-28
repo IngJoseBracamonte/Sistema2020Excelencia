@@ -43,6 +43,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // V11.16 Senior Fix: Filtramos por Categoría, no por Descripción (Evita colisiones con stubs de $0.00)
             var serviciosNativos = await _context.ServiciosClinicos
                 .Include(s => s.Sugerencias)
+                .Include(s => s.HonorariosMedicos)
+                    .ThenInclude(hm => hm.Medico)
                 .Where(s => s.Activo)
                 .ToListAsync(cancellationToken);
 
@@ -71,7 +73,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     HonorarioBase = s.HonorarioBase,
                     HonorariumCategory = s.HonorariumCategory,
                     EspecialidadId = s.EspecialidadId,
-                    SugerenciasIds = s.Sugerencias.Select(sg => sg.ServicioSugeridoId.ToString()).ToList()
+                    SugerenciasIds = s.Sugerencias.Select(sg => sg.ServicioSugeridoId.ToString()).ToList(),
+                    HonorariosMedicos = s.HonorariosMedicos.Select(hm => new DoctorHonorarioDto
+                    {
+                        MedicoId = hm.MedicoId,
+                        MedicoNombre = hm.Medico?.Nombre ?? "Desconocido",
+                        Honorario = hm.MontoHonorario
+                    }).ToList()
                 };
                 if (item.Codigo == "S004")
                 {

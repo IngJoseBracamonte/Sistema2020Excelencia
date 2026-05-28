@@ -182,23 +182,39 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 legacyId);
 
             // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
-            if (detalle.Honorario > 0)
+            if (detalle.Honorario > 0 && !esConsulta)
             {
                 Guid? serviceId = Guid.TryParse(request.ServicioId, out var sid) ? sid : null;
                 string? categoriaMapeada = await _mapperService.MapToCategoryAsync(request.TipoServicio, serviceId);
-                if (categoriaMapeada != HonorarioConstants.CategoriaOtros)
+                Guid? finalMedicoId = request.MedicoId;
+                string sourceAccion = HonorarioConstants.AccionAsignacionManual;
+
+                if ((!finalMedicoId.HasValue || finalMedicoId.Value == Guid.Empty) && categoriaMapeada != HonorarioConstants.CategoriaOtros)
                 {
                     var config = await _context.HonorariosConfig
                         .FirstOrDefaultAsync(h => h.CategoriaServicio == categoriaMapeada, cancellationToken);
                     if (config?.MedicoDefaultId != null)
                     {
-                        detalle.AsignarMedicoResponsable(config.MedicoDefaultId.Value, categoriaMapeada);
-                        var medicoNombre = (await _context.Medicos.FindAsync(new object[] { config.MedicoDefaultId.Value }, cancellationToken))?.Nombre;
-                        _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
-                            detalle.Id, request.Descripcion, HonorarioConstants.AccionAsignacionDefault,
-                            null, null, config.MedicoDefaultId.Value, medicoNombre,
-                            request.UsuarioCarga, "Auto-asignado por configuración"));
+                        finalMedicoId = config.MedicoDefaultId;
+                        sourceAccion = HonorarioConstants.AccionAsignacionDefault;
                     }
+                }
+
+                if (finalMedicoId.HasValue && finalMedicoId.Value != Guid.Empty && serviceId.HasValue)
+                {
+                    // Buscar si este médico tiene un honorario específico para este servicio
+                    var customHonorarium = await _context.HonorariosMedicosServicios
+                        .FirstOrDefaultAsync(h => h.ServicioId == serviceId.Value && h.MedicoId == finalMedicoId.Value, cancellationToken);
+
+                    decimal honorarioAsignado = customHonorarium?.MontoHonorario ?? detalle.Honorario;
+
+                    detalle.AsignarMedicoResponsable(finalMedicoId.Value, categoriaMapeada ?? HonorarioConstants.CategoriaOtros, honorarioAsignado);
+                    
+                    var medicoNombre = (await _context.Medicos.FindAsync(new object[] { finalMedicoId.Value }, cancellationToken))?.Nombre;
+                    _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                        detalle.Id, request.Descripcion, sourceAccion,
+                        null, null, finalMedicoId.Value, medicoNombre,
+                        request.UsuarioCarga, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante carga directa"));
                 }
             }
 

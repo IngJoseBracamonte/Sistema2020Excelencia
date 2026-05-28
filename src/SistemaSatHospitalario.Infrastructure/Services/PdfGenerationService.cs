@@ -243,7 +243,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             text.Span($"{data.FechaCompromiso:dd/MM/yyyy}").Bold();
                             text.Span(" una deuda líquida y exigible con LA CLÍNICA por la cantidad de ");
                             text.Span($"${data.MontoTotal:N2}").Bold();
-                            text.Span(" (Dólares de los Estados Unidos de América), originada por el servicio médico/estudio realizado: ");
+                            text.Span(", originada por el servicio médico/estudio realizado: ");
                             text.Span($"{data.Conceptos}").Bold();
                             
                             if (!esMismoPaciente)
@@ -557,7 +557,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             text.Justify();
                             text.Span("Esta garantía respalda la cuenta del paciente por un monto referencial de ");
                             text.Span($"${data.MontoTotal:N2}").Bold();
-                            text.Span(" (Dólares de los Estados Unidos de América), comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a ");
+                            text.Span(", comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a ");
                             text.Span("21 días continuos").Bold();
                             text.Span(", fijando como fecha tope el día ");
                             text.Span($"{vencimiento:dd/MM/yyyy}").Bold();

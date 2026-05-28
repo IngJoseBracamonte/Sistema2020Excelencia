@@ -47,7 +47,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
 
             var tipoAccion = medicoAnteriorId.HasValue ? HonorarioConstants.AccionReasignacion : HonorarioConstants.AccionAsignacionManual;
 
-            detalle.AsignarMedicoResponsable(request.MedicoId, request.CategoriaHonorario);
+            // Buscar si este médico tiene un honorario específico para este servicio
+            var customHonorarium = await _context.HonorariosMedicosServicios
+                .FirstOrDefaultAsync(h => h.ServicioId == detalle.ServicioId && h.MedicoId == request.MedicoId, ct);
+
+            decimal honorarioAsignado = customHonorarium?.MontoHonorario ?? detalle.Honorario;
+
+            detalle.AsignarMedicoResponsable(request.MedicoId, request.CategoriaHonorario, honorarioAsignado);
 
             var log = new LogAsignacionHonorario(
                 request.DetalleServicioId, detalle.Descripcion, tipoAccion,

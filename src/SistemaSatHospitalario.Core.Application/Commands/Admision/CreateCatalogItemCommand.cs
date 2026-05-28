@@ -20,6 +20,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal HonorarioBase { get; set; }
         public string? HonorariumCategory { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
+        public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
     }
 
     public class CreateCatalogItemCommandHandler : IRequestHandler<CreateCatalogItemCommand, Guid>
@@ -50,6 +51,19 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     {
                         var sugerencia = new ServicioSugerencia(item.Id, parsedId);
                         _context.ServiciosSugerencias.Add(sugerencia);
+                    }
+                }
+            }
+
+            // Guardar honorarios específicos por médico
+            if (request.HonorariosMedicos != null && request.HonorariosMedicos.Any())
+            {
+                foreach (var h in request.HonorariosMedicos)
+                {
+                    if (h.Honorario > 0)
+                    {
+                        var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
+                        _context.HonorariosMedicosServicios.Add(newHon);
                     }
                 }
             }

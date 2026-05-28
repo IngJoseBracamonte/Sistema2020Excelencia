@@ -18,6 +18,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string? HonorariumCategory { get; set; }
         public Guid? EspecialidadId { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
+        public List<DoctorHonorarioDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioDto>();
 
         public void CalculatePrices(decimal tasa)
         {

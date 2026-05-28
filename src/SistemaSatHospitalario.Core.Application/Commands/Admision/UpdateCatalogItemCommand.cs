@@ -10,6 +10,12 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
+    public class DoctorHonorarioInputDto
+    {
+        public Guid MedicoId { get; set; }
+        public decimal Honorario { get; set; }
+    }
+
     public class UpdateCatalogItemCommand : IRequest<bool>
     {
         public Guid Id { get; set; }
@@ -21,6 +27,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal HonorarioBase { get; set; }
         public string? HonorariumCategory { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
+        public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
     }
 
     public class UpdateCatalogItemCommandHandler : IRequestHandler<UpdateCatalogItemCommand, bool>
@@ -58,6 +65,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     {
                         var sugerencia = new ServicioSugerencia(item.Id, parsedId);
                         _context.ServiciosSugerencias.Add(sugerencia);
+                    }
+                }
+            }
+
+            // Actualizar honorarios específicos por médico
+            var existingHonorarios = await _context.HonorariosMedicosServicios
+                .Where(h => h.ServicioId == item.Id)
+                .ToListAsync(cancellationToken);
+            _context.HonorariosMedicosServicios.RemoveRange(existingHonorarios);
+
+            if (request.HonorariosMedicos != null && request.HonorariosMedicos.Any())
+            {
+                foreach (var h in request.HonorariosMedicos)
+                {
+                    if (h.Honorario > 0)
+                    {
+                        var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
+                        _context.HonorariosMedicosServicios.Add(newHon);
                     }
                 }
             }

@@ -76,6 +76,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedServiciosClinicosAsync();
                 await SeedMedicosAsync();
                 await SeedServiciosSugerenciasAsync();
+                await SeedHonorariosMedicosServiciosAsync();
                 await SeedPacientesAsync();
                 await SeedCajaDiariaAsync();
                 await SeedConfiguracionAsync();
@@ -135,7 +136,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedEspecialidadesAsync()
         {
-            var names = new[] { "Diagnóstico Diferencial", "Oncología", "Cardiología", "Pediatría", "Traumatología", "Ginecología" };
+            var names = new[] { "Diagnóstico Diferencial", "Oncología", "Cardiología", "Pediatría", "Traumatología", "Ginecología", "Imagenología" };
 
             foreach (var name in names)
             {
@@ -157,7 +158,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 (Name: "Stephen Strange", Speciality: "Cardiología"),
                 (Name: "Patch Adams", Speciality: "Pediatría"),
                 (Name: "John Watson", Speciality: "Traumatología"),
-                (Name: "Lisa Cuddy", Speciality: "Ginecología")
+                (Name: "Lisa Cuddy", Speciality: "Ginecología"),
+                (Name: "José Bracamonte", Speciality: "Imagenología"),
+                (Name: "María Gutiérrez", Speciality: "Imagenología")
             };
 
             foreach (var m in medicDefaults)
@@ -180,6 +183,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             var consultaGine = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S004");
             var citologia = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S005");
             var ecoGine = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S006");
+            var rxTorax = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S002");
+            var informeMedico = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S003");
 
             if (consultaGine != null && citologia != null)
             {
@@ -199,7 +204,46 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 }
             }
 
+            if (rxTorax != null && informeMedico != null)
+            {
+                var exists = await _context.ServiciosSugerencias.AnyAsync(ss => ss.ServicioOrigenId == rxTorax.Id && ss.ServicioSugeridoId == informeMedico.Id);
+                if (!exists)
+                {
+                    _context.ServiciosSugerencias.Add(new ServicioSugerencia(rxTorax.Id, informeMedico.Id));
+                }
+            }
+
             if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
+        }
+
+        private async Task SeedHonorariosMedicosServiciosAsync()
+        {
+            var jose = await _context.Medicos.FirstOrDefaultAsync(m => m.Nombre == "José Bracamonte");
+            var maria = await _context.Medicos.FirstOrDefaultAsync(m => m.Nombre == "María Gutiérrez");
+            var informe = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "S003");
+
+            if (informe != null)
+            {
+                if (jose != null)
+                {
+                    var exists = await _context.HonorariosMedicosServicios.AnyAsync(h => h.ServicioId == informe.Id && h.MedicoId == jose.Id);
+                    if (!exists)
+                    {
+                        _context.HonorariosMedicosServicios.Add(new HonorarioMedicoServicio(informe.Id, jose.Id, 10.00m, "System"));
+                    }
+                }
+
+                if (maria != null)
+                {
+                    var exists = await _context.HonorariosMedicosServicios.AnyAsync(h => h.ServicioId == informe.Id && h.MedicoId == maria.Id);
+                    if (!exists)
+                    {
+                        _context.HonorariosMedicosServicios.Add(new HonorarioMedicoServicio(informe.Id, maria.Id, 8.00m, "System"));
+                    }
+                }
+
+                if (_context.ChangeTracker.HasChanges()) await _context.SaveChangesAsync();
+            }
         }
 
         private async Task SeedPacientesAsync()

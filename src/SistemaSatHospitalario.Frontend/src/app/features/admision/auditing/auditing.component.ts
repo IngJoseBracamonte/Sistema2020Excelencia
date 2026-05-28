@@ -27,6 +27,7 @@ import {
 } from 'lucide-angular';
 import { ReceivablesService, PendingAR } from '../../../core/services/receivables.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
+import { MedicoService } from '../../../core/services/medico.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -61,6 +62,7 @@ export class AuditingComponent implements OnInit {
 
   private arService = inject(ReceivablesService);
   private conveniosService = inject(ConveniosService);
+  private medicoService = inject(MedicoService);
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
 
@@ -106,8 +108,22 @@ export class AuditingComponent implements OnInit {
   public convenioIdVal = signal<number | null>(null);
   public convenios = signal<any[]>([]);
 
+  // Señales de médico para validación administrativa
+  public doctors = signal<any[]>([]);
+  public doctorSearchTerm = signal<string>('');
+  public selectedDoctor = signal<any | null>(null);
+  public doctorsFound = computed(() => {
+    const term = this.doctorSearchTerm().toLowerCase().trim();
+    if (!term) return [];
+    return this.doctors().filter(d => d.nombre.toLowerCase().includes(term));
+  });
+
   ngOnInit() {
     this.loadConvenios();
+    this.medicoService.getAll().subscribe({
+      next: (res) => this.doctors.set(res),
+      error: (err) => console.error('[AUDITING] Error al cargar médicos:', err)
+    });
     this.route.queryParams.subscribe(params => {
       const tab = params['tab'];
       if (tab === 'ordenes-directas') {
@@ -231,6 +247,10 @@ export class AuditingComponent implements OnInit {
     this.tipoIngresoVal.set('Particular');
     this.convenioIdVal.set(null);
     
+    // Inicializar médico asignado si viene de la orden
+    this.selectedDoctor.set(order.medicoSolicitanteId ? { id: order.medicoSolicitanteId, nombre: order.medicoSolicitanteNombre } : null);
+    this.doctorSearchTerm.set(order.medicoSolicitanteNombre || '');
+    
     // Cargar servicios clínicos del catálogo correspondientes al tipo de orden (RX / TOMO)
     this.http.get<any[]>(`${environment.apiUrl}/api/Imaging/services?type=${order.tipoServicio}`)
       .subscribe({
@@ -256,6 +276,11 @@ export class AuditingComponent implements OnInit {
     this.overrideHonorario.set(service.honorarioBase);
   }
 
+  public selectDoctor(d: any) {
+    this.selectedDoctor.set(d);
+    this.doctorSearchTerm.set(d.nombre);
+  }
+
   public validateDirectOrder() {
     if (!this.selectedDirectOrder() || !this.selectedService()) {
       alert('Debe mapear la orden a un servicio clínico del catálogo.');
@@ -269,6 +294,11 @@ export class AuditingComponent implements OnInit {
       honorario: this.overrideHonorario(),
       tipoIngreso: this.tipoIngresoVal()
     };
+
+    if (this.selectedDoctor()) {
+      payload.medicoSolicitanteId = this.selectedDoctor().id;
+      payload.medicoSolicitanteNombre = this.selectedDoctor().nombre;
+    }
 
     if (this.tipoIngresoVal() === 'Seguro' && this.convenioIdVal()) {
       payload.convenioId = this.convenioIdVal();

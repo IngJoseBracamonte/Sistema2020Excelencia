@@ -1,9 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
 import { BillingFacadeService } from '../../../core/services/billing-facade.service';
 import { ActivatedRoute } from '@angular/router';
+import { MedicoService, Medico } from '../../../core/services/medico.service';
 import { 
     LucideAngularModule, 
     Package, 
@@ -29,6 +30,7 @@ export class CatalogManagementComponent implements OnInit {
   private catalogService = inject(CatalogService);
   private billingFacade = inject(BillingFacadeService);
   private route = inject(ActivatedRoute);
+  private medicoService = inject(MedicoService);
 
   public tasaCambioDia = this.billingFacade.tasaCambioDia;
 
@@ -43,6 +45,41 @@ export class CatalogManagementComponent implements OnInit {
   public showModal = signal<boolean>(false);
   public isEditing = signal<boolean>(false);
   public searchQuery = signal<string>('');
+  
+  // Médicos y honorarios específicos
+  public medicos = signal<Medico[]>([]);
+  public doctorSearchQuery = signal<string>('');
+  public honorariosLocales = signal<Record<string, number>>({});
+
+  public filteredDoctors = computed(() => {
+    const query = this.doctorSearchQuery().toLowerCase().trim();
+    const list = this.medicos().filter(m => m.activo);
+    if (query) {
+      return list.filter(m => 
+        m.nombre.toLowerCase().includes(query) || 
+        (m.especialidad || '').toLowerCase().includes(query)
+      );
+    }
+    return list;
+  });
+
+  public activeDoctorHonorariosCount = computed(() => {
+    return Object.values(this.honorariosLocales()).filter(val => val > 0).length;
+  });
+
+  public getDoctorHonorario(medicoId: string | undefined): number {
+    if (!medicoId) return 0;
+    return this.honorariosLocales()[medicoId] || 0;
+  }
+
+  public setDoctorHonorario(medicoId: string | undefined, value: number) {
+    if (!medicoId) return;
+    this.honorariosLocales.update(prev => ({
+      ...prev,
+      [medicoId]: isNaN(value) ? 0 : value
+    }));
+  }
+
   public currentItem = signal<Partial<CatalogItem>>({
     codigo: '',
     descripcion: '',
@@ -76,6 +113,14 @@ export class CatalogManagementComponent implements OnInit {
         this.activeTab.set(params['tab']);
       }
       this.refreshCatalog();
+      this.loadMedicos();
+    });
+  }
+
+  loadMedicos() {
+    this.medicoService.getAll().subscribe({
+      next: (res) => this.medicos.set(res),
+      error: () => console.error("Error al cargar médicos")
     });
   }
 
@@ -152,12 +197,22 @@ export class CatalogManagementComponent implements OnInit {
       activo: true,
       sugerenciasIds: []
     });
+    this.honorariosLocales.set({});
+    this.doctorSearchQuery.set('');
     this.showModal.set(true);
   }
 
   openEdit(item: CatalogItem) {
     this.isEditing.set(true);
     this.currentItem.set({ ...item });
+    const localHons: Record<string, number> = {};
+    if (item.honorariosMedicos) {
+      item.honorariosMedicos.forEach(h => {
+        localHons[h.medicoId] = h.honorario;
+      });
+    }
+    this.honorariosLocales.set(localHons);
+    this.doctorSearchQuery.set('');
     this.showModal.set(true);
   }
 
@@ -168,6 +223,15 @@ export class CatalogManagementComponent implements OnInit {
     if (item.tipo === 'CONSULTA') {
       item.honorarioBase = 0;
     }
+
+    // Mapear honorarios locales a formato DTO
+    const localHons = this.honorariosLocales();
+    item.honorariosMedicos = Object.entries(localHons)
+      .filter(([_, value]) => value > 0)
+      .map(([medicoId, honorario]) => ({
+        medicoId,
+        honorario
+      }));
 
     if (this.isEditing() && item.id) {
       this.catalogService.updateItem(item as CatalogItem).subscribe(() => {
