@@ -59,11 +59,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var targetDate = request.Fecha?.Date ?? DateTime.Today;
             var nextDate = targetDate.AddDays(1);
 
-            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena FechaCarga en UTC.
-            // Sumamos siempre 4 horas para convertir la fecha local ingresada por el usuario a UTC.
-            const int hoursToAdd = 4;
-            var targetDateUtc = targetDate.AddHours(hoursToAdd);
-            var nextDateUtc = targetDateUtc.AddDays(1);
+
 
             // 1. Filtrar Citas (Para Asistente Particular o Seguros)
             if (request.Role.Contains("Particular", StringComparison.OrdinalIgnoreCase) || 
@@ -98,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                      join s in _context.ServiciosClinicos on d.ServicioId equals s.Id
                                      join c in _context.CuentasServicios on d.CuentaServicioId equals c.Id
                                      where s.Category == ServiceCategory.Radiology 
-                                        && d.FechaCarga >= targetDateUtc && d.FechaCarga < nextDateUtc
+                                        && d.FechaCarga >= targetDate && d.FechaCarga < nextDate
                                      select new ServiceValidationDto
                                      {
                                          Id = d.Id,
@@ -116,7 +112,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                      join s in _context.ServiciosClinicos on d.ServicioId equals s.Id
                                      join c in _context.CuentasServicios on d.CuentaServicioId equals c.Id
                                      where s.Category == ServiceCategory.Tomography
-                                        && d.FechaCarga >= targetDateUtc && d.FechaCarga < nextDateUtc
+                                        && d.FechaCarga >= targetDate && d.FechaCarga < nextDate
                                      select new ServiceValidationDto
                                      {
                                          Id = d.Id,

@@ -44,20 +44,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 .Where(d => !excluirLista.Contains(d.TipoServicio) && d.Honorario > 0)
                 .AsQueryable();
 
-            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC (DateTime.UtcNow).
-            // Sumamos siempre 4 horas para convertir la fecha local ingresada por el usuario a UTC.
-            const int hoursToAdd = 4;
-
             if (request.FechaDesde.HasValue)
             {
-                var startDate = request.FechaDesde.Value.Date.AddHours(hoursToAdd);
+                var startDate = request.FechaDesde.Value.Date;
                 query = query.Where(d => d.FechaCarga >= startDate);
             }
 
             if (request.FechaHasta.HasValue)
             {
-                var endDate = request.FechaHasta.Value.Date.AddDays(1).AddHours(hoursToAdd);
-                query = query.Where(d => d.FechaCarga < endDate);
+                var endDate = request.FechaHasta.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(d => d.FechaCarga <= endDate);
             }
 
             if (request.EstadoFiltro == "PENDIENTE")

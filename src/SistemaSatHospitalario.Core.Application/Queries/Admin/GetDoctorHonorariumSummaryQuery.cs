@@ -28,12 +28,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
 
         public async Task<List<DoctorHonorariumSummaryDto>> Handle(GetDoctorHonorariumSummaryQuery request, CancellationToken cancellationToken)
         {
-            // El hospital opera en Venezuela (UTC-4) y la base de datos almacena en UTC (DateTime.UtcNow).
-            // Sumamos siempre 4 horas para convertir la fecha local ingresada por el usuario a UTC.
-            const int hoursToAdd = 4;
-
-            var start = request.StartDate.Date.AddHours(hoursToAdd);
-            var end = request.EndDate.Date.AddDays(1).AddHours(hoursToAdd).AddTicks(-1);
+            var start = request.StartDate.Date;
+            var end = request.EndDate.Date.AddDays(1).AddTicks(-1);
 
             // ═══ Paso 1: Consultas Atendidas ═══
             // Fuente primaria de honorarios médicos.

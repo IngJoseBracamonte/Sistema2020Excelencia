@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
 
             var handler = new GetExpedienteFacturacionQueryHandler(_context, _identityServiceMock.Object);
 
-            // Act: Query for local date May 27th
+            // Act: Query for date May 27th
             var query = new GetExpedienteFacturacionQuery
             {
                 StartDate = new DateTime(2026, 5, 27),
@@ -81,9 +81,10 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             };
             var result = await handler.Handle(query, CancellationToken.None);
 
-            // Assert: Should contain Consulta 1 and Consulta 2, but NOT Consulta 3
-            result.Should().HaveCount(2);
-            result.Select(x => x.Estudio).Should().Contain(new[] { "Consulta 1", "Consulta 2" });
+            // Assert: Should contain only Consulta 1 (since timezone shift is removed)
+            result.Should().HaveCount(1);
+            result.Select(x => x.Estudio).Should().Contain("Consulta 1");
+            result.Select(x => x.Estudio).Should().NotContain("Consulta 2");
             result.Select(x => x.Estudio).Should().NotContain("Consulta 3");
         }
 
