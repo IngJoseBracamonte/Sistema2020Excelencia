@@ -80,6 +80,16 @@ export class RxOrdersComponent implements OnInit {
   public studiesList = signal<string[]>([]);
   public isSavingDirect = signal<boolean>(false);
 
+  // Catalog and Autocomplete for Direct Orders
+  public servicesCatalog = signal<any[]>([]);
+  public filteredServices = signal<any[]>([]);
+
+  // Processing modal / Doctor Assignment
+  public showProcessModal = signal<boolean>(false);
+  public medicosImagenologos = signal<any[]>([]);
+  public selectedMedicoIdForProcess = signal<string>('');
+  public orderIdBeingProcessed = signal<number | null>(null);
+
   /**
    * Senior Imaging Strategy (V16.2):
    * Differentiates station identity based on the current URL path.
@@ -146,6 +156,15 @@ export class RxOrdersComponent implements OnInit {
 
     // 2. Cargar datos iniciales
     this.refresh();
+
+    // 3. Cargar médicos especialista de Imagenología
+    this.http.get<any[]>(`${environment.apiUrl}/api/Medicos`).subscribe({
+      next: (medicos) => {
+        const filtered = medicos.filter(m => m.activo && m.especialidad?.toUpperCase().includes('IMAGEN'));
+        this.medicosImagenologos.set(filtered);
+      },
+      error: (err) => console.error('[IMAGING] Error loading medicos:', err)
+    });
   }
 
   public refresh(): void {
@@ -220,25 +239,40 @@ export class RxOrdersComponent implements OnInit {
     this.refresh();
   }
 
-  confirmarProceso(id: number): void {
-    if (confirm('¿Está seguro de que desea marcar este estudio como procesado?')) {
-      this.isLoading.set(true);
-      this.http.post(`${environment.apiUrl}/api/Imaging/${id}/complete`, {})
-        .subscribe({
-          next: () => {
-            this.actionMessage.set('Estudio procesado correctamente.');
-            // Remover localmente para feedback inmediato
-            this.localTickets.update(tickets => tickets.filter(t => t.orderId !== id));
-            this.signalRService.incomingTickets.update(tickets => tickets.filter(t => t.orderId !== id));
-            this.refresh();
-            setTimeout(() => this.actionMessage.set(null), 5000);
-          },
-          error: (err) => {
-            alert('Error al procesar la orden: ' + err.message);
-            this.isLoading.set(false);
-          }
-        });
-    }
+  public openProcessModal(id: number): void {
+    this.orderIdBeingProcessed.set(id);
+    this.selectedMedicoIdForProcess.set('');
+    this.showProcessModal.set(true);
+  }
+
+  public closeProcessModal(): void {
+    this.showProcessModal.set(false);
+    this.orderIdBeingProcessed.set(null);
+  }
+
+  public submitProceso(): void {
+    const id = this.orderIdBeingProcessed();
+    if (!id) return;
+
+    this.isLoading.set(true);
+    const medicoId = this.selectedMedicoIdForProcess();
+    const url = `${environment.apiUrl}/api/Imaging/${id}/complete` + (medicoId ? `?medicoId=${medicoId}` : '');
+
+    this.http.post(url, {})
+      .subscribe({
+        next: () => {
+          this.actionMessage.set('Estudio procesado e Imagenólogo asignado correctamente.');
+          this.localTickets.update(tickets => tickets.filter(t => t.orderId !== id));
+          this.signalRService.incomingTickets.update(tickets => tickets.filter(t => t.orderId !== id));
+          this.closeProcessModal();
+          this.refresh();
+          setTimeout(() => this.actionMessage.set(null), 5000);
+        },
+        error: (err) => {
+          alert('Error al procesar la orden: ' + err.message);
+          this.isLoading.set(false);
+        }
+      });
   }
 
   anularOrden(id: number): void {
@@ -295,10 +329,40 @@ export class RxOrdersComponent implements OnInit {
   public openDirectOrderModal(): void {
     this.resetDirectForm();
     this.showDirectModal.set(true);
+
+    const type = this.isTomoRoute() ? 'TOMO' : 'RX';
+    this.http.get<any[]>(`${environment.apiUrl}/api/Imaging/services?type=${type}`).subscribe({
+      next: (services) => this.servicesCatalog.set(services),
+      error: (err) => console.error('[IMAGING] Error loading services:', err)
+    });
   }
 
   public closeDirectOrderModal(): void {
     this.showDirectModal.set(false);
+    this.filteredServices.set([]);
+  }
+
+  public onStudyTextChange(val: string): void {
+    this.newStudyText.set(val);
+    const term = val.trim().toLowerCase();
+    if (term.length >= 1) {
+      const filtered = this.servicesCatalog().filter(s => 
+        s.descripcion.toLowerCase().includes(term) || 
+        s.codigo.toLowerCase().includes(term)
+      );
+      this.filteredServices.set(filtered);
+    } else {
+      this.filteredServices.set([]);
+    }
+  }
+
+  public selectCatalogService(service: any): void {
+    const text = service.descripcion.toUpperCase();
+    if (!this.studiesList().includes(text)) {
+      this.studiesList.update(list => [...list, text]);
+    }
+    this.newStudyText.set('');
+    this.filteredServices.set([]);
   }
 
   public submitDirectOrder(): void {

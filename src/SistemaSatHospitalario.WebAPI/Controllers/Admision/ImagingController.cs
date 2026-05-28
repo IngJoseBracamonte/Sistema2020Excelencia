@@ -96,7 +96,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPost("{id}/complete")]
-        public async Task<IActionResult> CompleteOrder(int id)
+        public async Task<IActionResult> CompleteOrder(int id, [FromQuery] Guid? medicoId = null)
         {
             var order = await _context.OrdenesImagenes.FindAsync(id);
             if (order == null) return NotFound(new { Message = "Orden no encontrada." });
@@ -118,10 +118,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     // 1. Marcar como realizado (el asistente aceptó el estudio)
                     detalle.MarcarRealizado(usuario);
 
-                    // 2. Si no tiene médico asignado, auto-asignar desde HonorarioConfig
-                    if (detalle.MedicoResponsableId == null && detalle.Honorario > 0)
+                    var categoria = await _mapperService.MapToCategoryAsync(order.TipoServicio);
+
+                    // 2. Asignar médico responsable si se especifica
+                    if (medicoId.HasValue)
                     {
-                        var categoria = await _mapperService.MapToCategoryAsync(order.TipoServicio);
+                        detalle.AsignarMedicoResponsable(medicoId.Value, categoria);
+                        var medicoNombre = (await _context.Medicos.FindAsync(medicoId.Value))?.Nombre;
+                        _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                            detalle.Id, detalle.Descripcion, HonorarioConstants.AccionAsignacionManual,
+                            null, null, medicoId.Value, medicoNombre,
+                            usuario, "Asignado manualmente al procesar orden de imagen"));
+                    }
+                    // 3. Fallback: Si no tiene médico asignado y tiene honorario, auto-asignar desde HonorarioConfig
+                    else if (detalle.MedicoResponsableId == null && detalle.Honorario > 0)
+                    {
                         if (categoria != HonorarioConstants.CategoriaOtros)
                         {
                             var config = await _context.HonorariosConfig
