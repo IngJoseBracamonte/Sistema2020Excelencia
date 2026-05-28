@@ -385,6 +385,19 @@ export class FacturacionComponent {
   });
 
   public anexarGarantia = signal<boolean>(true);
+  public garantiasItems = signal<{descripcion: string, valorEstimado: number}[]>([]);
+
+  public totalMontoGarantias = computed(() => {
+    return this.garantiasItems().reduce((acc, item) => acc + (item.valorEstimado || 0), 0);
+  });
+
+  public addGarantiaItem(): void {
+    this.garantiasItems.update(items => [...items, { descripcion: '', valorEstimado: 0 }]);
+  }
+
+  public removeGarantiaItem(index: number): void {
+    this.garantiasItems.update(items => items.filter((_, i) => i !== index));
+  }
 
   private _toastEffect = effect(() => {
     const action = this.actionMessage();
@@ -1368,8 +1381,9 @@ export class FacturacionComponent {
       montoTotal: this.totalCargadoUSD(), // Use cart total
       diasLiquidar: this.docMetadata().diasLiquidar,
       cuotas: this.docMetadata().cuotas,
-      montoGarantia: this.tipoIngreso() === 'Particular' ? this.docMetadata().montoGarantia : 0,
-      descripcionGarantia: this.tipoIngreso() === 'Particular' ? this.docMetadata().descripcionGarantia : '',
+      montoGarantia: this.tipoIngreso() === 'Particular' ? this.totalMontoGarantias() : 0,
+      descripcionGarantia: this.tipoIngreso() === 'Particular' ? this.garantiasItems().map(i => i.descripcion).join(', ') : '',
+      garantiasItems: this.tipoIngreso() === 'Particular' ? this.garantiasItems() : [],
       quienAutorizo: this.docMetadata().quienAutorizo,
       doctorProcedimiento: this.docMetadata().doctorProcedimiento,
       informacionAdicional: this.docMetadata().informacionAdicional,
@@ -1423,8 +1437,9 @@ export class FacturacionComponent {
         montoTotal: this.totalCargadoUSD(),
         diasLiquidar: this.docMetadata().diasLiquidar,
         cuotas: this.docMetadata().cuotas,
-        montoGarantia: this.docMetadata().montoGarantia,
-        descripcionGarantia: this.docMetadata().descripcionGarantia,
+        montoGarantia: this.totalMontoGarantias(),
+        descripcionGarantia: this.garantiasItems().map(i => i.descripcion).join(', '),
+        garantiasItems: this.garantiasItems(),
         quienAutorizo: this.docMetadata().quienAutorizo,
         doctorProcedimiento: this.docMetadata().doctorProcedimiento,
         informacionAdicional: this.docMetadata().informacionAdicional,

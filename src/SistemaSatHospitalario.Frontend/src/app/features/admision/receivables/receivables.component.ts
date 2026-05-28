@@ -79,6 +79,20 @@ export class ReceivablesComponent implements OnInit {
   public isGenerating = signal(false);
   public compromisoData: any = {};
 
+  public garantiasItems = signal<{descripcion: string, valorEstimado: number}[]>([]);
+
+  public totalMontoGarantias = computed(() => {
+    return this.garantiasItems().reduce((acc, item) => acc + (item.valorEstimado || 0), 0);
+  });
+
+  public addGarantiaItem(): void {
+    this.garantiasItems.update(items => [...items, { descripcion: '', valorEstimado: 0 }]);
+  }
+
+  public removeGarantiaItem(index: number): void {
+    this.garantiasItems.update(items => items.filter((_, i) => i !== index));
+  }
+
   // Accordion Logic (Angular-Pro Patterns)
   public expandedRows = signal<Set<string>>(new Set<string>());
 
@@ -334,7 +348,17 @@ export class ReceivablesComponent implements OnInit {
       montoGarantia: 0,
       descripcionGarantia: ''
     };
-    this.showInsuranceModal.set(true);
+    // Cargar items de garantía guardados desde el backend
+    this.facturacionService.getGarantiasItems(ar.id).subscribe({
+      next: (items) => {
+        this.garantiasItems.set(items || []);
+        this.showInsuranceModal.set(true);
+      },
+      error: () => {
+        this.garantiasItems.set([]);
+        this.showInsuranceModal.set(true);
+      }
+    });
   }
 
   generarPdfSeguro() {
@@ -343,6 +367,11 @@ export class ReceivablesComponent implements OnInit {
     const futureDate = new Date(this.compromisoData.fechaCompromiso);
     futureDate.setDate(futureDate.getDate() + this.compromisoData.diasLiquidar);
     this.compromisoData.fechaVencimiento = futureDate.toISOString();
+
+    // Map list inputs
+    this.compromisoData.garantiasItems = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems() : [];
+    this.compromisoData.montoGarantia = this.isGarantia() || this.compromisoData.anexarGarantia ? this.totalMontoGarantias() : 0;
+    this.compromisoData.descripcionGarantia = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems().map(i => i.descripcion).join(', ') : '';
 
     const request = this.isGarantia() ? 
       this.facturacionService.generarGarantiaPdf(this.compromisoData) : 
@@ -378,83 +407,113 @@ export class ReceivablesComponent implements OnInit {
 
   reimprimirCompromiso(ar: PendingAR) {
     this.isGenerating.set(true);
-    const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
-    const dto = {
-      cuentaPorCobrarId: ar.id,
-      nombreResponsable: ar.pacienteNombre,
-      relacionResponsable: 'Titular',
-      cedulaResponsable: ar.pacienteCedula,
-      direccionResponsable: 'No especificada',
-      telefonoResponsable: ar.telefonoContact || 'No especificado',
-      conceptos: conceptosStr,
-      nombrePaciente: ar.pacienteNombre,
-      edadPaciente: this.calcularEdad(ar.fechaNacimiento),
-      cedulaPaciente: ar.pacienteCedula,
-      direccionPaciente: 'No especificada',
-      telefonoPaciente: ar.telefonoContact || 'No especificado',
-      montoTotal: ar.montoTotal,
-      diasLiquidar: 21,
-      cuotas: 1,
-      quienAutorizo: ar.quienAutorizo || 'No especificado',
-      doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
-      informacionAdicional: ar.informacionAdicional || '',
-      esPagoCompletado: ar.estado === 'Cobrada',
-      fechaCompromiso: ar.fechaEmision,
-      fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
-      anexarGarantia: false
-    };
+    this.facturacionService.getGarantiasItems(ar.id).subscribe({
+      next: (items) => {
+        const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
+        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
 
-    this.facturacionService.generarCompromisoPdf(dto).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        this.isGenerating.set(false);
+        const dto = {
+          cuentaPorCobrarId: ar.id,
+          nombreResponsable: ar.pacienteNombre,
+          relacionResponsable: 'Titular',
+          cedulaResponsable: ar.pacienteCedula,
+          direccionResponsable: 'No especificada',
+          telefonoResponsable: ar.telefonoContact || 'No especificado',
+          conceptos: conceptosStr,
+          nombrePaciente: ar.pacienteNombre,
+          edadPaciente: this.calcularEdad(ar.fechaNacimiento),
+          cedulaPaciente: ar.pacienteCedula,
+          direccionPaciente: 'No especificada',
+          telefonoPaciente: ar.telefonoContact || 'No especificado',
+          montoTotal: ar.montoTotal,
+          diasLiquidar: 21,
+          cuotas: 1,
+          quienAutorizo: ar.quienAutorizo || 'No especificado',
+          doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
+          informacionAdicional: ar.informacionAdicional || '',
+          esPagoCompletado: ar.estado === 'Cobrada',
+          fechaCompromiso: ar.fechaEmision,
+          fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
+          anexarGarantia: items && items.length > 0,
+          garantiasItems: items || [],
+          montoGarantia: totalItemsVal,
+          descripcionGarantia: descItemsVal
+        };
+
+        this.facturacionService.generarCompromisoPdf(dto).subscribe({
+          next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            this.isGenerating.set(false);
+          },
+          error: (err) => {
+            console.error(err);
+            alert('Error al generar compromiso de pago');
+            this.isGenerating.set(false);
+          }
+        });
       },
       error: (err) => {
         console.error(err);
-        alert('Error al generar compromiso de pago');
         this.isGenerating.set(false);
+        alert('Error al cargar ítems de garantía');
       }
     });
   }
 
   reimprimirGarantia(ar: PendingAR) {
     this.isGenerating.set(true);
-    const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
-    const dto = {
-      cuentaPorCobrarId: ar.id,
-      nombreResponsable: ar.pacienteNombre,
-      relacionResponsable: 'Titular',
-      cedulaResponsable: ar.pacienteCedula,
-      direccionResponsable: 'No especificada',
-      telefonoResponsable: ar.telefonoContact || 'No especificado',
-      conceptos: conceptosStr,
-      nombrePaciente: ar.pacienteNombre,
-      edadPaciente: this.calcularEdad(ar.fechaNacimiento),
-      cedulaPaciente: ar.pacienteCedula,
-      direccionPaciente: 'No especificada',
-      telefonoPaciente: ar.telefonoContact || 'No especificado',
-      montoTotal: ar.montoTotal,
-      diasLiquidar: 21,
-      cuotas: 1,
-      quienAutorizo: ar.quienAutorizo || 'No especificado',
-      doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
-      informacionAdicional: ar.informacionAdicional || '',
-      esPagoCompletado: ar.estado === 'Cobrada',
-      fechaCompromiso: ar.fechaEmision,
-      fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString()
-    };
+    this.facturacionService.getGarantiasItems(ar.id).subscribe({
+      next: (items) => {
+        const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
+        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
 
-    this.facturacionService.generarGarantiaPdf(dto).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        this.isGenerating.set(false);
+        const dto = {
+          cuentaPorCobrarId: ar.id,
+          nombreResponsable: ar.pacienteNombre,
+          relacionResponsable: 'Titular',
+          cedulaResponsable: ar.pacienteCedula,
+          direccionResponsable: 'No especificada',
+          telefonoResponsable: ar.telefonoContact || 'No especificado',
+          conceptos: conceptosStr,
+          nombrePaciente: ar.pacienteNombre,
+          edadPaciente: this.calcularEdad(ar.fechaNacimiento),
+          cedulaPaciente: ar.pacienteCedula,
+          direccionPaciente: 'No especificada',
+          telefonoPaciente: ar.telefonoContact || 'No especificado',
+          montoTotal: ar.montoTotal,
+          diasLiquidar: 21,
+          cuotas: 1,
+          quienAutorizo: ar.quienAutorizo || 'No especificado',
+          doctorProcedimiento: ar.doctorProcedimiento || 'No especificado',
+          informacionAdicional: ar.informacionAdicional || '',
+          esPagoCompletado: ar.estado === 'Cobrada',
+          fechaCompromiso: ar.fechaEmision,
+          fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
+          garantiasItems: items || [],
+          montoGarantia: totalItemsVal,
+          descripcionGarantia: descItemsVal
+        };
+
+        this.facturacionService.generarGarantiaPdf(dto).subscribe({
+          next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            this.isGenerating.set(false);
+          },
+          error: (err) => {
+            console.error(err);
+            alert('Error al generar garantía de pago');
+            this.isGenerating.set(false);
+          }
+        });
       },
       error: (err) => {
         console.error(err);
-        alert('Error al generar garantía de pago');
         this.isGenerating.set(false);
+        alert('Error al cargar ítems de garantía');
       }
     });
   }

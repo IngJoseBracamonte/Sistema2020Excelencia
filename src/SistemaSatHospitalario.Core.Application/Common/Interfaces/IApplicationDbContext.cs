@@ -45,6 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<LogAsignacionHonorario> LogsAsignacionHonorario { get; }
         DbSet<HonorariumMappingRule> HonorariumMappingRules { get; }
         DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; }
+        DbSet<GarantiaItem> GarantiasItems { get; }
 
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);

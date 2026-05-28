@@ -607,14 +607,42 @@
             </div>
 
             <!-- Datos de Garantía de Pago (Solo para Particular) -->
-            <div *ngIf="tipoIngreso() === 'Particular'" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-white/5 text-left">
-                <div class="space-y-1">
-                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto de Garantía ($)</label>
-                    <input type="number" [(ngModel)]="docMetadata().montoGarantia" placeholder="Ej: 500" class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary">
+            <div *ngIf="tipoIngreso() === 'Particular'" class="col-span-2 space-y-3 pt-2 border-t border-white/5 text-left">
+                <div class="flex items-center justify-between">
+                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Objetos / Bienes en Garantía</label>
+                    <button type="button" (click)="addGarantiaItem()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/20 text-[9px] font-black text-indigo-400 uppercase tracking-wider transition-all duration-300">
+                        <lucide-icon [name]="icons.Plus" class="w-3.5 h-3.5"></lucide-icon>
+                        Agregar Garantía
+                    </button>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Respaldo Físico / Descripción</label>
-                    <input type="text" [(ngModel)]="docMetadata().descripcionGarantia" placeholder="Ej: Motocicleta Suzuki" class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+
+                <!-- Lista de Ítems -->
+                <div *ngIf="garantiasItems().length > 0" class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                    <div *ngFor="let item of garantiasItems(); let idx = index" class="flex gap-3 items-center bg-white/[0.02] border border-white/5 p-2 rounded-xl transition-all hover:bg-white/[0.04]">
+                        <span class="text-[9px] font-bold text-slate-500 w-5 text-center">{{ idx + 1 }}</span>
+                        
+                        <div class="flex-1">
+                            <input type="text" [(ngModel)]="item.descripcion" placeholder="Descripción del bien (Ej: Motocicleta Suzuki)" class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-lg text-[10px] font-black text-white outline-none focus:border-indigo-500 uppercase">
+                        </div>
+                        
+                        <div class="w-32">
+                            <input type="number" [(ngModel)]="item.valorEstimado" placeholder="Valor ($)" class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-lg text-[10px] font-black text-white outline-none focus:border-indigo-500">
+                        </div>
+
+                        <button type="button" (click)="removeGarantiaItem(idx)" class="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/30 text-red-400 border border-red-500/10 hover:border-red-500/20 transition-all duration-200">
+                            <lucide-icon [name]="icons.Trash2" class="w-3.5 h-3.5"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Totalizador -->
+                <div *ngIf="garantiasItems().length > 0" class="flex justify-between items-center bg-indigo-500/5 border border-indigo-500/10 px-4 py-3 rounded-xl">
+                    <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Total Garantía Prendaria</span>
+                    <span class="text-xs font-black text-white">$ {{ totalMontoGarantias() | number:'1.2-2' }}</span>
+                </div>
+
+                <div *ngIf="garantiasItems().length === 0" class="flex flex-col items-center justify-center py-4 border border-dashed border-white/10 rounded-xl bg-black/20 text-center">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">No se han registrado objetos en garantía.</p>
                 </div>
             </div>
 

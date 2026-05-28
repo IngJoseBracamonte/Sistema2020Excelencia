@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using System.Linq;
+using System.Collections.Generic;
 
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
@@ -45,6 +46,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     {
                         cxc.MarcarGarantiaGenerada();
                     }
+
+                    // [V12.8] Persistir ítems de garantía prendaria
+                    await PersistirGarantiasItemsAsync(dto.CuentaPorCobrarId.Value, dto.GarantiasItems);
                     
                     // Registrar Auditoría
                     var log = new DocumentLog(
@@ -61,6 +65,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 }
             }
 
+            // [V12.8] Si hay ítems, calcular MontoGarantia agregado para el PDF
+            SincronizarMontoGarantiaDesdeItems(dto);
 
             var pdfBytes = _pdfService.GenerarCompromisoPagoPdf(dto, logoBase64);
             
@@ -81,6 +87,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 {
                     cxc.MarcarGarantiaGenerada();
                 }
+
+                // [V12.8] Persistir ítems de garantía prendaria
+                await PersistirGarantiasItemsAsync(dto.CuentaPorCobrarId.Value, dto.GarantiasItems);
             }
 
             // Registrar Auditoría
@@ -96,9 +105,32 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             _context.DocumentLogs.Add(log);
             await _context.SaveChangesAsync(default);
 
+            // [V12.8] Sincronizar monto total desde ítems
+            SincronizarMontoGarantiaDesdeItems(dto);
+
             var pdfBytes = _pdfService.GenerarGarantiaPdf(dto, logoBase64);
             
             return File(pdfBytes, "application/pdf", $"Garantia_{dto.CedulaResponsable}.pdf");
+        }
+
+        /// <summary>
+        /// [V12.8] Obtener ítems de garantía guardados para una CuentaPorCobrar (para reimpresión fiel).
+        /// </summary>
+        [HttpGet("garantias-items/{cuentaPorCobrarId}")]
+        public async Task<IActionResult> GetGarantiasItems(Guid cuentaPorCobrarId)
+        {
+            var items = await _context.GarantiasItems
+                .AsNoTracking()
+                .Where(g => g.CuentaPorCobrarId == cuentaPorCobrarId)
+                .OrderBy(g => g.FechaRegistro)
+                .Select(g => new GarantiaItemDto
+                {
+                    Descripcion = g.Descripcion,
+                    ValorEstimado = g.ValorEstimado
+                })
+                .ToListAsync();
+
+            return Ok(items);
         }
 
 
@@ -190,6 +222,46 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             return Ok(consolidado);
         }
+
+        #region [V12.8] Helpers de Garantía Prendaria
+
+        /// <summary>
+        /// Persiste los ítems de garantía en la base de datos, reemplazando los existentes (idempotente para reimpresión).
+        /// </summary>
+        private async Task PersistirGarantiasItemsAsync(Guid cuentaPorCobrarId, List<GarantiaItemDto> items)
+        {
+            if (items == null || items.Count == 0) return;
+
+            // Eliminar ítems previos para esta CxC (soporte de reimpresión/actualización)
+            var existentes = await _context.GarantiasItems
+                .Where(g => g.CuentaPorCobrarId == cuentaPorCobrarId)
+                .ToListAsync();
+
+            if (existentes.Any())
+            {
+                _context.GarantiasItems.RemoveRange(existentes);
+            }
+
+            // Crear nuevos ítems
+            foreach (var item in items)
+            {
+                var entity = new GarantiaItem(cuentaPorCobrarId, item.Descripcion, item.ValorEstimado);
+                _context.GarantiasItems.Add(entity);
+            }
+        }
+
+        /// <summary>
+        /// Si hay ítems individuales, calcula MontoGarantia y DescripcionGarantia agregados para retrocompatibilidad del PDF.
+        /// </summary>
+        private static void SincronizarMontoGarantiaDesdeItems(CompromisoPagoDto dto)
+        {
+            if (dto.GarantiasItems != null && dto.GarantiasItems.Count > 0)
+            {
+                dto.MontoGarantia = dto.GarantiasItems.Sum(i => i.ValorEstimado);
+                dto.DescripcionGarantia = string.Join(", ", dto.GarantiasItems.Select(i => i.Descripcion));
+            }
+        }
+
+        #endregion
     }
 }
-

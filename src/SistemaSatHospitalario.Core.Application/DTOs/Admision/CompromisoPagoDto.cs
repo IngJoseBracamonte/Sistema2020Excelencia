@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
 {
@@ -22,8 +23,11 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal MontoTotal { get; set; }
         public int DiasLiquidar { get; set; }
         public int Cuotas { get; set; }
+        // [V12.8] Campos legacy – se mantienen por retrocompatibilidad
         public decimal MontoGarantia { get; set; }
         public string? DescripcionGarantia { get; set; }
+        // [V12.8] Lista de ítems de garantía prendaria (reemplaza los campos legacy)
+        public List<GarantiaItemDto> GarantiasItems { get; set; } = new();
         
         public string? QuienAutorizo { get; set; }
         public string? DoctorProcedimiento { get; set; }

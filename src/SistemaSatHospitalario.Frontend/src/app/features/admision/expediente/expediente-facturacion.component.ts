@@ -83,82 +83,114 @@ export class ExpedienteFacturacionComponent implements OnInit {
   }
 
   reimprimirCompromiso(row: ExpedienteFacturacionRow) {
+    if (!row.cuentaPorCobrarId) return;
     this.isGeneratingPdf.set(true);
-    const dto = {
-      cuentaPorCobrarId: row.cuentaPorCobrarId,
-      nombreResponsable: row.pacienteNombre,
-      relacionResponsable: 'Titular',
-      cedulaResponsable: row.pacienteCedula,
-      direccionResponsable: 'No especificada',
-      telefonoResponsable: row.pacienteTelefono,
-      conceptos: row.estudio,
-      nombrePaciente: row.pacienteNombre,
-      edadPaciente: this.calcularEdad(row.fechaNacimiento),
-      cedulaPaciente: row.pacienteCedula,
-      direccionPaciente: 'No especificada',
-      telefonoPaciente: row.pacienteTelefono,
-      montoTotal: row.montoUSD,
-      diasLiquidar: 21,
-      cuotas: 1,
-      quienAutorizo: row.quienAutorizo || 'No especificado',
-      doctorProcedimiento: row.doctorProcedimiento || 'No especificado',
-      informacionAdicional: row.informacionAdicional || '',
-      esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
-      fechaCompromiso: row.fecha,
-      fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
-      anexarGarantia: false
-    };
+    this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
+      next: (items) => {
+        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
 
-    this.facturacionService.generarCompromisoPdf(dto).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        this.isGeneratingPdf.set(false);
+        const dto = {
+          cuentaPorCobrarId: row.cuentaPorCobrarId,
+          nombreResponsable: row.pacienteNombre,
+          relacionResponsable: 'Titular',
+          cedulaResponsable: row.pacienteCedula,
+          direccionResponsable: 'No especificada',
+          telefonoResponsable: row.pacienteTelefono,
+          conceptos: row.estudio,
+          nombrePaciente: row.pacienteNombre,
+          edadPaciente: this.calcularEdad(row.fechaNacimiento),
+          cedulaPaciente: row.pacienteCedula,
+          direccionPaciente: 'No especificada',
+          telefonoPaciente: row.pacienteTelefono,
+          montoTotal: row.montoUSD,
+          diasLiquidar: 21,
+          cuotas: 1,
+          quienAutorizo: row.quienAutorizo || 'No especificado',
+          doctorProcedimiento: row.doctorProcedimiento || 'No especificado',
+          informacionAdicional: row.informacionAdicional || '',
+          esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
+          fechaCompromiso: row.fecha,
+          fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
+          anexarGarantia: items && items.length > 0,
+          garantiasItems: items || [],
+          montoGarantia: totalItemsVal,
+          descripcionGarantia: descItemsVal
+        };
+
+        this.facturacionService.generarCompromisoPdf(dto).subscribe({
+          next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            this.isGeneratingPdf.set(false);
+          },
+          error: (err) => {
+            console.error(err);
+            alert('Error al generar compromiso de pago');
+            this.isGeneratingPdf.set(false);
+          }
+        });
       },
       error: (err) => {
         console.error(err);
-        alert('Error al generar compromiso de pago');
         this.isGeneratingPdf.set(false);
+        alert('Error al cargar ítems de garantía');
       }
     });
   }
 
   reimprimirGarantia(row: ExpedienteFacturacionRow) {
+    if (!row.cuentaPorCobrarId) return;
     this.isGeneratingPdf.set(true);
-    const dto = {
-      cuentaPorCobrarId: row.cuentaPorCobrarId,
-      nombreResponsable: row.pacienteNombre,
-      relacionResponsable: 'Titular',
-      cedulaResponsable: row.pacienteCedula,
-      direccionResponsable: 'No especificada',
-      telefonoResponsable: row.pacienteTelefono,
-      conceptos: row.estudio,
-      nombrePaciente: row.pacienteNombre,
-      edadPaciente: this.calcularEdad(row.fechaNacimiento),
-      cedulaPaciente: row.pacienteCedula,
-      direccionPaciente: 'No especificada',
-      telefonoPaciente: row.pacienteTelefono,
-      montoTotal: row.montoUSD,
-      diasLiquidar: 21,
-      cuotas: 1,
-      quienAutorizo: row.quienAutorizo || 'No especificado',
-      doctorProcedimiento: row.doctorProcedimiento || 'No especificado',
-      informacionAdicional: row.informacionAdicional || '',
-      esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
-      fechaCompromiso: row.fecha,
-      fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString()
-    };
+    this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
+      next: (items) => {
+        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
 
-    this.facturacionService.generarGarantiaPdf(dto).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        this.isGeneratingPdf.set(false);
+        const dto = {
+          cuentaPorCobrarId: row.cuentaPorCobrarId,
+          nombreResponsable: row.pacienteNombre,
+          relacionResponsable: 'Titular',
+          cedulaResponsable: row.pacienteCedula,
+          direccionResponsable: 'No especificada',
+          telefonoResponsable: row.pacienteTelefono,
+          conceptos: row.estudio,
+          nombrePaciente: row.pacienteNombre,
+          edadPaciente: this.calcularEdad(row.fechaNacimiento),
+          cedulaPaciente: row.pacienteCedula,
+          direccionPaciente: 'No especificada',
+          telefonoPaciente: row.pacienteTelefono,
+          montoTotal: row.montoUSD,
+          diasLiquidar: 21,
+          cuotas: 1,
+          quienAutorizo: row.quienAutorizo || 'No especificado',
+          doctorProcedimiento: row.doctorProcedimiento || 'No especificado',
+          informacionAdicional: row.informacionAdicional || '',
+          esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
+          fechaCompromiso: row.fecha,
+          fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
+          garantiasItems: items || [],
+          montoGarantia: totalItemsVal,
+          descripcionGarantia: descItemsVal
+        };
+
+        this.facturacionService.generarGarantiaPdf(dto).subscribe({
+          next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            this.isGeneratingPdf.set(false);
+          },
+          error: (err) => {
+            console.error(err);
+            alert('Error al generar garantía de pago');
+            this.isGeneratingPdf.set(false);
+          }
+        });
       },
       error: (err) => {
         console.error(err);
-        alert('Error al generar garantía de pago');
         this.isGeneratingPdf.set(false);
+        alert('Error al cargar ítems de garantía');
       }
     });
   }

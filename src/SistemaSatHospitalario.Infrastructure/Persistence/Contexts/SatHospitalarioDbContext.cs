@@ -47,6 +47,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<LogAsignacionHonorario> LogsAsignacionHonorario { get; set; }
         public DbSet<HonorariumMappingRule> HonorariumMappingRules { get; set; }
         public DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; set; }
+        public DbSet<GarantiaItem> GarantiasItems { get; set; }
 
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
@@ -311,6 +312,22 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasOne(c => c.Cuenta)
                       .WithMany()
                       .HasForeignKey(c => c.CuentaServicioId);
+
+                // [V12.8] Relación 1:N con ítems de garantía prendaria
+                entity.HasMany(c => c.GarantiasItems)
+                      .WithOne(g => g.CuentaPorCobrar)
+                      .HasForeignKey(g => g.CuentaPorCobrarId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // [V12.8] Tabla de ítems de garantía prendaria
+            builder.Entity<GarantiaItem>(entity =>
+            {
+                entity.ToTable("GarantiasItems");
+                entity.HasKey(g => g.Id);
+                entity.Property(g => g.Descripcion).IsRequired().HasMaxLength(500);
+                entity.Property(g => g.ValorEstimado).HasPrecision(18, 2);
+                entity.HasIndex(g => g.CuentaPorCobrarId);
             });
 
             builder.Entity<TasaCambio>(entity =>

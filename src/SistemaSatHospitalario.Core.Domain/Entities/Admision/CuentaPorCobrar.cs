@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -24,6 +25,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? DoctorProcedimiento { get; private set; }
         public string? InformacionAdicional { get; private set; }
 
+        // [V12.8] Colección de ítems de garantía prendaria (1:N)
+        public ICollection<GarantiaItem> GarantiasItems { get; private set; } = new List<GarantiaItem>();
 
         public CuentaServicios Cuenta { get; private set; }
 
