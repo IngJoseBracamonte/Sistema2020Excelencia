@@ -398,6 +398,29 @@ export class ReceivablesComponent implements OnInit {
     });
   }
 
+  guardarGarantias() {
+    if (!this.compromisoData.cuentaPorCobrarId) return;
+
+    this.isGenerating.set(true);
+    const items = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems() : [];
+
+    this.facturacionService.guardarGarantiasItems(this.compromisoData.cuentaPorCobrarId, items).subscribe({
+      next: () => {
+        this.isGenerating.set(false);
+        this.showInsuranceModal.set(false);
+        this.actionMessage.set('Garantías guardadas exitosamente.');
+        setTimeout(() => this.actionMessage.set(null), 5000);
+        this.refresh();
+      },
+      error: (err) => {
+        const serverError = err.error?.Error || err.error?.error || 'Error al guardar las garantías';
+        this.errorMessage.set(serverError);
+        setTimeout(() => this.errorMessage.set(null), 5000);
+        this.isGenerating.set(false);
+      }
+    });
+  }
+
   private calcularEdad(fechaNacimiento?: string): number {
     if (!fechaNacimiento) return 0;
     const today = new Date();

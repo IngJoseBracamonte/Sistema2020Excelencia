@@ -409,6 +409,29 @@ export class FacturacionComponent {
     this.garantiasItems.update(items => items.filter((_, i) => i !== index));
   }
 
+  public pendingCheckoutAction = signal<'comprobante' | 'compromiso' | 'omitir' | null>(null);
+  public showARWarningModal = signal<boolean>(false);
+  public saldoPendiente = computed(() => Math.max(0, this.totalCargadoUSD() - this.billingFacade.totalFacturadoUSD()));
+
+  public confirmarCheckoutAction() {
+    const action = this.pendingCheckoutAction();
+    this.showARWarningModal.set(false);
+    this.pendingCheckoutAction.set(null);
+    
+    if (action === 'comprobante') {
+      this.ejecutarProcesarCobro();
+    } else if (action === 'compromiso') {
+      this.ejecutarOmitirComprobante(true);
+    } else if (action === 'omitir') {
+      this.ejecutarOmitirComprobante(false);
+    }
+  }
+
+  public cancelarCheckoutAction() {
+    this.showARWarningModal.set(false);
+    this.pendingCheckoutAction.set(null);
+  }
+
   private _toastEffect = effect(() => {
     const action = this.actionMessage();
     const error = this.errorMessage();
@@ -1112,6 +1135,20 @@ export class FacturacionComponent {
       return;
     }
 
+    if (this.saldoPendiente() > 0.01) {
+      this.pendingCheckoutAction.set('comprobante');
+      this.showARWarningModal.set(true);
+    } else {
+      await this.ejecutarProcesarCobro();
+    }
+  }
+
+  async ejecutarProcesarCobro() {
+    if (!this.pacienteSeleccionado()) {
+      this.errorMessage.set("Debe identificar y seleccionar un beneficiario antes de emitir.");
+      return;
+    }
+
     // Validación de Último Recurso (Fase 11): Verificar que todas las consultas tengan médico
     const inconsistente = this.serviciosCargados().find(s => s.isConsultation && (!s.medicoId && !s.MedicoId));
     if (inconsistente) {
@@ -1176,6 +1213,26 @@ export class FacturacionComponent {
    * [Fase 12.1 Refinement]
    */
   async omitirComprobante(autoPrintCompromiso: boolean = false) {
+    // Si ya fue exitoso y el usuario hace clic otra vez en "Compromiso de Pago", simplemente re-imprimir (V12.6 Fix: Particular Flow)
+    if (this.billingSuccess() && autoPrintCompromiso) {
+       this.imprimirCompromiso();
+       return;
+    }
+
+    if (!this.pacienteSeleccionado()) {
+      this.errorMessage.set("⚠️ Debe seleccionar un paciente en el Paso 3 antes de cerrar la cuenta.");
+      return;
+    }
+
+    if (this.saldoPendiente() > 0.01) {
+      this.pendingCheckoutAction.set(autoPrintCompromiso ? 'compromiso' : 'omitir');
+      this.showARWarningModal.set(true);
+    } else {
+      await this.ejecutarOmitirComprobante(autoPrintCompromiso);
+    }
+  }
+
+  async ejecutarOmitirComprobante(autoPrintCompromiso: boolean = false) {
     // Si ya fue exitoso y el usuario hace clic otra vez en "Compromiso de Pago", simplemente re-imprimir (V12.6 Fix: Particular Flow)
     if (this.billingSuccess() && autoPrintCompromiso) {
        this.imprimirCompromiso();
@@ -1535,7 +1592,8 @@ export class FacturacionComponent {
         cuentaPorCobrarId: res.cuentaPorCobrarId,
         quienAutorizo: meta.quienAutorizo || null,
         doctorProcedimiento: meta.doctorProcedimiento || null,
-        informacionAdicional: meta.informacionAdicional || null
+        informacionAdicional: meta.informacionAdicional || null,
+        garantiasItems: this.tipoIngreso() === 'Particular' && this.anexarGarantia() ? this.garantiasItems() : []
       }).subscribe({
         next: () => console.log('Metadata de documentos guardada exitosamente.'),
         error: (err) => console.error('Error al guardar metadata:', err)

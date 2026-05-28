@@ -664,6 +664,9 @@
                 </div>
                 <div class="flex gap-3">
                     <button (click)="showInsuranceModal.set(false)" class="px-6 py-4 rounded-xl border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5 transition-all">Cancelar</button>
+                    <button *ngIf="(isGarantia() || compromisoData.anexarGarantia) && !compromisoData.seguroNombre?.toUpperCase().includes('PDVSA')" (click)="guardarGarantias()" class="px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest transition-all flex items-center shadow-lg shadow-indigo-500/20 active:scale-95" [disabled]="isGenerating()">
+                        <lucide-icon [name]="icons.Check" class="w-4 h-4 mr-2"></lucide-icon> Guardar Garantías
+                    </button>
                     <button (click)="generarPdfSeguro()" [class]="compromisoData.seguroNombre?.toUpperCase().includes('PDVSA') ? 'bg-indigo-600' : (isGarantia() ? 'bg-indigo-600' : 'bg-emerald-600')" class="px-6 py-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all flex items-center shadow-lg shadow-indigo-500/20 active:scale-95" [disabled]="isGenerating()">
                         <lucide-icon [name]="icons.Download" class="w-4 h-4 mr-2"></lucide-icon> {{ isGenerating() ? 'Generando...' : (compromisoData.esPagoCompletado ? 'Descargar Comprobante' : (compromisoData.seguroNombre?.toUpperCase().includes('PDVSA') ? 'Descargar Conformidad' : (isGarantia() ? 'Descargar Garantía' : 'Descargar Compromiso'))) }}
                     </button>

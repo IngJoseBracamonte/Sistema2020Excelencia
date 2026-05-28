@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -25,6 +27,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 return false;
 
             ar.ActualizarMetadataDocumentos(request.QuienAutorizo, request.DoctorProcedimiento, request.InformacionAdicional);
+
+            if (request.GarantiasItems != null && request.GarantiasItems.Any())
+            {
+                var existentes = await _context.GarantiasItems
+                    .Where(g => g.CuentaPorCobrarId == request.CuentaPorCobrarId)
+                    .ToListAsync(cancellationToken);
+
+                if (existentes.Any())
+                {
+                    _context.GarantiasItems.RemoveRange(existentes);
+                }
+
+                foreach (var item in request.GarantiasItems)
+                {
+                    var entity = new GarantiaItem(request.CuentaPorCobrarId, item.Descripcion, item.ValorEstimado);
+                    _context.GarantiasItems.Add(entity);
+                }
+
+                ar.MarcarGarantiaGenerada();
+            }
             
             await _context.SaveChangesAsync(cancellationToken);
             return true;

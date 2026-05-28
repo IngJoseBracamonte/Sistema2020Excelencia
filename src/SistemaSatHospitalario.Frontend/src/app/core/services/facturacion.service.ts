@@ -115,6 +115,10 @@ export class FacturacionService {
     return this.http.get<any[]>(`${this.segurosUrl}/garantias-items/${cuentaPorCobrarId}`);
   }
 
+  guardarGarantiasItems(cuentaPorCobrarId: string, items: any[]): Observable<any> {
+    return this.http.post<any>(`${this.segurosUrl}/garantias-items/${cuentaPorCobrarId}`, items);
+  }
+
   closeAccount(request: any): Observable<any> {
     // Al cerrar cuenta, se espera cuentaId (Guid)
     return this.http.post<any>(`${this.billingUrl}/CloseAccount`, request);

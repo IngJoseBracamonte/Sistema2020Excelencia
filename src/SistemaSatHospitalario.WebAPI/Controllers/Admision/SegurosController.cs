@@ -174,6 +174,31 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(items);
         }
 
+        [HttpPost("garantias-items/{cuentaPorCobrarId}")]
+        public async Task<IActionResult> GuardarGarantiasItems(Guid cuentaPorCobrarId, [FromBody] List<GarantiaItemDto> items)
+        {
+            var cxc = await _context.CuentasPorCobrar.FindAsync(cuentaPorCobrarId);
+            if (cxc != null)
+            {
+                cxc.MarcarGarantiaGenerada();
+                await PersistirGarantiasItemsAsync(cuentaPorCobrarId, items);
+
+                var log = new DocumentLog(
+                    "Garantía de Pago (Guardar)", 
+                    cuentaPorCobrarId.ToString(), 
+                    "Actualización", 
+                    _currentUserService.UserId?.ToString() ?? "System", 
+                    _currentUserService.UserName ?? "Sistema",
+                    $"Guardada lista de garantías para CuentaPorCobrar {cuentaPorCobrarId}");
+                
+                _context.DocumentLogs.Add(log);
+                await _context.SaveChangesAsync(default);
+
+                return Ok(new { Message = "Garantías guardadas exitosamente." });
+            }
+            return NotFound(new { Error = "Cuenta por cobrar no encontrada." });
+        }
+
 
         [HttpGet("ingresados")]
         public async Task<IActionResult> GetPacientesIngresados(
