@@ -20,6 +20,14 @@ test.describe('New Features Integrity Tests', () => {
     await page.goto('/admin/audit/cuentas');
     await page.waitForLoadState('networkidle');
 
+    // Set the start date filter back to include seeded records
+    const desdeInput = page.locator('input[type="date"]').first();
+    await desdeInput.fill('2026-05-25');
+    
+    // Click the FILTRAR button
+    await page.click('button:has-text("FILTRAR")');
+    console.log('Filled date filter and clicked FILTRAR.');
+
     // Wait for the table/loading to finish
     await page.waitForSelector('table');
 
@@ -49,6 +57,14 @@ test.describe('New Features Integrity Tests', () => {
     await page.goto('/expediente-facturacion');
     await page.waitForLoadState('networkidle');
 
+    // Set start date to include seeded records
+    const desdeInput = page.locator('input[type="date"]').first();
+    await desdeInput.fill('2026-05-25');
+
+    // Click "Filtrar ahora" button
+    await page.click('button:has-text("Filtrar ahora")');
+    console.log('Filled date filter and clicked Filtrar ahora.');
+
     // Wait for table
     await page.waitForSelector('table');
 
@@ -61,7 +77,7 @@ test.describe('New Features Integrity Tests', () => {
     await soloCompromisoCheckbox.check();
     console.log('Checked "Con Compromiso" checkbox.');
 
-    // Wait for table to refresh (either show results or show "no hay registros")
+    // Wait for table to refresh
     await page.waitForTimeout(2000);
 
     // If there are records in the list, verify reprint buttons are present
