@@ -588,6 +588,27 @@
                     <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Dirección Responsable</label>
                     <input type="text" [(ngModel)]="compromisoData.direccionResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
                 </div>
+
+                <!-- Datos del Fiador (Opcional) -->
+                <div class="col-span-2 pt-2 border-t border-white/5">
+                    <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Fiador / Garante Personal (Opcional)</h3>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nombre del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.nombreFiador" placeholder="Ej: Juan Pérez" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cédula del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.cedulaFiador" placeholder="Ej: V-12345678" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Teléfono del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.telefonoFiador" placeholder="Ej: 0414-1234567" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Dirección del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.direccionFiador" placeholder="Ej: Urb. Centro, Calle 5" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all">
+                </div>
                 <div class="space-y-2 col-span-2">
                     <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Conceptos (Servicios Facturados)</label>
                     <textarea [(ngModel)]="compromisoData.conceptos" rows="2" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-all resize-none"></textarea>

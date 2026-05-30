@@ -92,8 +92,9 @@ export class ExpedienteFacturacionComponent implements OnInit {
     this.isGeneratingPdf.set(true);
     this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
       next: (items) => {
-        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
-        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
+        const filteredItems = (items || []).filter(i => i.descripcion && i.descripcion.trim() !== '');
+        const totalItemsVal = filteredItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = filteredItems.map(i => i.descripcion).join(', ') || '';
 
         const dto = {
           cuentaPorCobrarId: row.cuentaPorCobrarId,
@@ -117,10 +118,14 @@ export class ExpedienteFacturacionComponent implements OnInit {
           esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
           fechaCompromiso: row.fecha,
           fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
-          anexarGarantia: items && items.length > 0,
-          garantiasItems: items || [],
+          anexarGarantia: filteredItems.length > 0,
+          garantiasItems: filteredItems,
           montoGarantia: totalItemsVal,
-          descripcionGarantia: descItemsVal
+          descripcionGarantia: descItemsVal,
+          nombreFiador: '',
+          cedulaFiador: '',
+          telefonoFiador: '',
+          direccionFiador: ''
         };
 
         this.facturacionService.generarCompromisoPdf(dto).subscribe({
@@ -191,8 +196,9 @@ export class ExpedienteFacturacionComponent implements OnInit {
     this.isGeneratingPdf.set(true);
     this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
       next: (items) => {
-        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
-        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
+        const filteredItems = (items || []).filter(i => i.descripcion && i.descripcion.trim() !== '');
+        const totalItemsVal = filteredItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = filteredItems.map(i => i.descripcion).join(', ') || '';
 
         const dto = {
           cuentaPorCobrarId: row.cuentaPorCobrarId,
@@ -216,9 +222,13 @@ export class ExpedienteFacturacionComponent implements OnInit {
           esPagoCompletado: row.metodoPago !== 'CRÉDITO' && row.metodoPago !== 'CREDITO',
           fechaCompromiso: row.fecha,
           fechaVencimiento: new Date(new Date(row.fecha).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
-          garantiasItems: items || [],
+          garantiasItems: filteredItems,
           montoGarantia: totalItemsVal,
-          descripcionGarantia: descItemsVal
+          descripcionGarantia: descItemsVal,
+          nombreFiador: '',
+          cedulaFiador: '',
+          telefonoFiador: '',
+          direccionFiador: ''
         };
 
         this.facturacionService.generarGarantiaPdf(dto).subscribe({

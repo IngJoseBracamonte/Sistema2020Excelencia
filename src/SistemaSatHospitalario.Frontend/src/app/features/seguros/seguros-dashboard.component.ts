@@ -20,8 +20,8 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     <lucide-icon [name]="icons.Shield" class="w-7 h-7"></lucide-icon>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Gestión de Seguros</h1>
-                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Pacientes Ingresados y Compromisos de Pago</p>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Garantías Ingresadas</h1>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Registro e Historial de Garantías Prendarias y Fiadores</p>
                 </div>
             </div>
         </div>
@@ -70,9 +70,9 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
             <div class="relative flex-1">
                 <select [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event); loadPacientes()"
                     class="w-full h-full pl-6 pr-10 bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white outline-none appearance-none cursor-pointer focus:ring-0">
-                    <option value="Todos">TODOS LOS INGRESADOS</option>
-                    <option value="Pendiente">SIN COMPROMISO DE PAGO</option>
-                    <option value="Generado">CON COMPROMISO DE PAGO</option>
+                    <option value="Todos">TODAS LAS GARANTÍAS</option>
+                    <option value="CuentasPorCobrar">CUENTAS POR COBRAR</option>
+                    <option value="Pagada">CUENTAS PAGADAS</option>
                 </select>
                 <lucide-icon [name]="icons.ChevronRight"
                     class="w-3 h-3 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
@@ -94,7 +94,7 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     <tr class="border-b border-white/5">
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha Ingreso</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
-                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado Compromiso</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado Cuenta</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Monto ($)</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acción</th>
                     </tr>
@@ -117,14 +117,11 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                         </td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex flex-col gap-1 items-center">
-                                <span *ngIf="p.compromisoGenerado" class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                    COMPROMISO: SI
+                                <span *ngIf="p.estado === 'Cobrada' || p.estado === 'Pagada'" class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    PAGADA
                                 </span>
-                                <span *ngIf="p.garantiaGenerada" class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/5 border border-indigo-500/10 text-indigo-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                    GARANTÍA: SI
-                                </span>
-                                <span *ngIf="!p.compromisoGenerado && !p.garantiaGenerada" class="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/5 border border-rose-500/10 text-rose-500/60 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                    PENDIENTE
+                                <span *ngIf="p.estado !== 'Cobrada' && p.estado !== 'Pagada'" class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    CUENTAS POR COBRAR
                                 </span>
                             </div>
 
@@ -195,6 +192,27 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Dirección Responsable</label>
                     <input type="text" [(ngModel)]="compromisoData.direccionResponsable" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none">
                 </div>
+                
+                <!-- Datos del Fiador (Opcional) -->
+                <div class="col-span-2 pt-2 border-t border-white/5">
+                    <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-1">Fiador / Garante Personal (Opcional)</h3>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nombre del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.nombreFiador" placeholder="Ej: Juan Pérez" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cédula del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.cedulaFiador" placeholder="Ej: V-12345678" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Teléfono del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.telefonoFiador" placeholder="Ej: 0414-1234567" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Dirección del Fiador</label>
+                    <input type="text" [(ngModel)]="compromisoData.direccionFiador" placeholder="Ej: Urb. Centro, Calle 5" class="w-full bg-black/40 border border-white/5 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
+                </div>
                 <div class="space-y-2">
                     <label class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Valor de la Garantía ($)</label>
                     <input type="number" [(ngModel)]="compromisoData.montoGarantia" placeholder="Ej: 500" class="w-full bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500 transition-colors">
@@ -228,7 +246,7 @@ export class SegurosDashboardComponent implements OnInit {
   public fechaDesde = signal<string>(new Date().toISOString().split('T')[0]);
   public fechaHasta = signal<string>(new Date().toISOString().split('T')[0]);
   public nombreFiltro = signal<string>('');
-  public estadoFiltro = signal<string>('Todos'); // Todos, Pendiente, Generado
+  public estadoFiltro = signal<string>('Todos'); // Todos, CuentasPorCobrar, Pagada
   
   public showModal = signal(false);
   public isGarantia = signal(false);
@@ -247,10 +265,8 @@ export class SegurosDashboardComponent implements OnInit {
       url += `&nombre=${this.nombreFiltro()}`;
     }
     
-    if (this.estadoFiltro() === 'Pendiente') {
-      url += `&conCompromiso=false`;
-    } else if (this.estadoFiltro() === 'Generado') {
-      url += `&conCompromiso=true`;
+    if (this.estadoFiltro()) {
+      url += `&estado=${this.estadoFiltro()}`;
     }
 
     this.http.get<any[]>(url).subscribe({
@@ -283,10 +299,13 @@ export class SegurosDashboardComponent implements OnInit {
       montoGarantia: 0,
       descripcionGarantia: '',
       diasLiquidar: 21,
-
       cuotas: 0,
       fechaCompromiso: today.toISOString().split('T')[0],
-      fechaVencimiento: futureDate.toISOString().split('T')[0]
+      fechaVencimiento: futureDate.toISOString().split('T')[0],
+      nombreFiador: '',
+      cedulaFiador: '',
+      telefonoFiador: '',
+      direccionFiador: ''
     };
     this.showModal.set(true);
   }

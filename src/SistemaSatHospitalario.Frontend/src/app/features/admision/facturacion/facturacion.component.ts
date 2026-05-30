@@ -1436,6 +1436,11 @@ export class FacturacionComponent {
     const telefono = p.telefono || p.Telefono || '';
     const fechaNacimiento = p.fechaNacimiento || p.FechaNacimiento || '';
 
+    const validItems = (this.tipoIngreso() === 'Particular' ? this.garantiasItems() : [])
+      .filter(i => i.descripcion && i.descripcion.trim() !== '');
+    const validMontoGarantia = validItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0);
+    const validDescripcionGarantia = validItems.map(i => i.descripcion).join(', ');
+
     this.isGeneratingPdf.set(true);
     const dto = {
       cuentaPorCobrarId: res.cuentaPorCobrarId,
@@ -1453,9 +1458,9 @@ export class FacturacionComponent {
       montoTotal: this.totalCargadoUSD(), // Use cart total
       diasLiquidar: this.docMetadata().diasLiquidar,
       cuotas: this.docMetadata().cuotas,
-      montoGarantia: this.tipoIngreso() === 'Particular' ? this.totalMontoGarantias() : 0,
-      descripcionGarantia: this.tipoIngreso() === 'Particular' ? this.garantiasItems().map(i => i.descripcion).join(', ') : '',
-      garantiasItems: this.tipoIngreso() === 'Particular' ? this.garantiasItems() : [],
+      montoGarantia: validMontoGarantia,
+      descripcionGarantia: validDescripcionGarantia,
+      garantiasItems: validItems,
       quienAutorizo: this.docMetadata().quienAutorizo,
       doctorProcedimiento: this.docMetadata().doctorProcedimiento,
       informacionAdicional: this.docMetadata().informacionAdicional,
@@ -1543,6 +1548,10 @@ export class FacturacionComponent {
       const telefono = p.telefono || p.Telefono || '';
       const fechaNacimiento = p.fechaNacimiento || p.FechaNacimiento || '';
   
+      const validItems = this.garantiasItems().filter(i => i.descripcion && i.descripcion.trim() !== '');
+      const validMontoGarantia = validItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0);
+      const validDescripcionGarantia = validItems.map(i => i.descripcion).join(', ');
+  
       this.isGeneratingPdf.set(true);
       const dto = {
         cuentaPorCobrarId: res.cuentaPorCobrarId,
@@ -1560,9 +1569,9 @@ export class FacturacionComponent {
         montoTotal: this.totalCargadoUSD(),
         diasLiquidar: this.docMetadata().diasLiquidar,
         cuotas: this.docMetadata().cuotas,
-        montoGarantia: this.totalMontoGarantias(),
-        descripcionGarantia: this.garantiasItems().map(i => i.descripcion).join(', '),
-        garantiasItems: this.garantiasItems(),
+        montoGarantia: validMontoGarantia,
+        descripcionGarantia: validDescripcionGarantia,
+        garantiasItems: validItems,
         quienAutorizo: this.docMetadata().quienAutorizo,
         doctorProcedimiento: this.docMetadata().doctorProcedimiento,
         informacionAdicional: this.docMetadata().informacionAdicional,
@@ -1588,12 +1597,14 @@ export class FacturacionComponent {
     const res = this.lastBillResult();
     const meta = this.docMetadata();
     if (res && res.cuentaPorCobrarId) {
+      const validItems = (this.tipoIngreso() === 'Particular' && this.anexarGarantia() ? this.garantiasItems() : [])
+        .filter(i => i.descripcion && i.descripcion.trim() !== '');
       this.facturacionService.updateARMetadata({
         cuentaPorCobrarId: res.cuentaPorCobrarId,
         quienAutorizo: meta.quienAutorizo || null,
         doctorProcedimiento: meta.doctorProcedimiento || null,
         informacionAdicional: meta.informacionAdicional || null,
-        garantiasItems: this.tipoIngreso() === 'Particular' && this.anexarGarantia() ? this.garantiasItems() : []
+        garantiasItems: validItems
       }).subscribe({
         next: () => console.log('Metadata de documentos guardada exitosamente.'),
         error: (err) => console.error('Error al guardar metadata:', err)

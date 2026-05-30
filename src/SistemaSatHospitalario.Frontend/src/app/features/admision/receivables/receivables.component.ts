@@ -347,7 +347,11 @@ export class ReceivablesComponent implements OnInit {
       anexarGarantia: false,
       montoGarantia: 0,
       descripcionGarantia: '',
-      seguroNombre: ar.seguroNombre
+      seguroNombre: ar.seguroNombre,
+      nombreFiador: '',
+      cedulaFiador: '',
+      telefonoFiador: '',
+      direccionFiador: ''
     };
     // Cargar items de garantía guardados desde el backend
     this.facturacionService.getGarantiasItems(ar.id).subscribe({
@@ -370,9 +374,12 @@ export class ReceivablesComponent implements OnInit {
     this.compromisoData.fechaVencimiento = futureDate.toISOString();
 
     // Map list inputs
-    this.compromisoData.garantiasItems = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems() : [];
-    this.compromisoData.montoGarantia = this.isGarantia() || this.compromisoData.anexarGarantia ? this.totalMontoGarantias() : 0;
-    this.compromisoData.descripcionGarantia = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems().map(i => i.descripcion).join(', ') : '';
+    const validItems = (this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems() : [])
+      .filter(i => i.descripcion && i.descripcion.trim() !== '');
+
+    this.compromisoData.garantiasItems = validItems;
+    this.compromisoData.montoGarantia = validItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0);
+    this.compromisoData.descripcionGarantia = validItems.map(i => i.descripcion).join(', ');
 
     const isPdvsa = this.compromisoData.seguroNombre?.toUpperCase().includes('PDVSA');
 
@@ -402,7 +409,8 @@ export class ReceivablesComponent implements OnInit {
     if (!this.compromisoData.cuentaPorCobrarId) return;
 
     this.isGenerating.set(true);
-    const items = this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems() : [];
+    const items = (this.isGarantia() || this.compromisoData.anexarGarantia ? this.garantiasItems() : [])
+      .filter(i => i.descripcion && i.descripcion.trim() !== '');
 
     this.facturacionService.guardarGarantiasItems(this.compromisoData.cuentaPorCobrarId, items).subscribe({
       next: () => {
@@ -471,7 +479,11 @@ export class ReceivablesComponent implements OnInit {
           anexarGarantia: items && items.length > 0,
           garantiasItems: items || [],
           montoGarantia: totalItemsVal,
-          descripcionGarantia: descItemsVal
+          descripcionGarantia: descItemsVal,
+          nombreFiador: '',
+          cedulaFiador: '',
+          telefonoFiador: '',
+          direccionFiador: ''
         };
 
         this.facturacionService.generarCompromisoPdf(dto).subscribe({
@@ -542,8 +554,9 @@ export class ReceivablesComponent implements OnInit {
     this.facturacionService.getGarantiasItems(ar.id).subscribe({
       next: (items) => {
         const conceptosStr = ar.conceptos?.map(c => c.descripcion).join(', ') || 'Servicios Médicos Hospitalarios';
-        const totalItemsVal = items?.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
-        const descItemsVal = items?.map(i => i.descripcion).join(', ') || '';
+        const filteredItems = (items || []).filter(i => i.descripcion && i.descripcion.trim() !== '');
+        const totalItemsVal = filteredItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = filteredItems.map(i => i.descripcion).join(', ') || '';
 
         const dto = {
           cuentaPorCobrarId: ar.id,
@@ -567,9 +580,13 @@ export class ReceivablesComponent implements OnInit {
           esPagoCompletado: ar.estado === 'Cobrada',
           fechaCompromiso: ar.fechaEmision,
           fechaVencimiento: new Date(new Date(ar.fechaEmision).getTime() + (21 * 24 * 60 * 60 * 1000)).toISOString(),
-          garantiasItems: items || [],
+          garantiasItems: filteredItems,
           montoGarantia: totalItemsVal,
-          descripcionGarantia: descItemsVal
+          descripcionGarantia: descItemsVal,
+          nombreFiador: '',
+          cedulaFiador: '',
+          telefonoFiador: '',
+          direccionFiador: ''
         };
 
         this.facturacionService.generarGarantiaPdf(dto).subscribe({

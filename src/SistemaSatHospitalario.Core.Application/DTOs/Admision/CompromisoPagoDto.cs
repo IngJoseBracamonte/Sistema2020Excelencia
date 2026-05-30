@@ -38,5 +38,10 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public DateTime FechaVencimiento { get; set; }
         public bool AnexarGarantia { get; set; }
         public string? NroFactura { get; set; }
+
+        public string? NombreFiador { get; set; }
+        public string? CedulaFiador { get; set; }
+        public string? TelefonoFiador { get; set; }
+        public string? DireccionFiador { get; set; }
     }
 }

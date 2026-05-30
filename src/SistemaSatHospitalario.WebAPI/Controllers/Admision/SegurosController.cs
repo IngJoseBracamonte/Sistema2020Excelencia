@@ -205,14 +205,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             [FromQuery] DateTime? desde, 
             [FromQuery] DateTime? hasta, 
             [FromQuery] string? nombre,
-            [FromQuery] bool? conCompromiso)
+            [FromQuery] string? estado)
         {
             var query = _context.CuentasPorCobrar
                 .Include(c => c.Cuenta)
                 .ThenInclude(c => c.Paciente)
                 .Include(c => c.Cuenta)
                 .ThenInclude(c => c.Detalles)
-                .Where(c => c.Cuenta.TipoIngreso == "Seguro");
+                .Where(c => c.GarantiaGenerada == true);
 
             if (desde.HasValue)
             {
@@ -233,8 +233,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                          c.Cuenta.Paciente.CedulaPasaporte.Contains(nombre));
             }
 
-            if (conCompromiso.HasValue)
-                query = query.Where(c => c.CompromisoGenerado == conCompromiso.Value);
+            if (!string.IsNullOrEmpty(estado) && !estado.Equals("Todos", StringComparison.OrdinalIgnoreCase))
+            {
+                if (estado.Equals("CuentasPorCobrar", StringComparison.OrdinalIgnoreCase) || estado.Equals("Cuentas por Cobrar", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(c => c.Estado != EstadoConstants.Cobrada && c.Estado != EstadoConstants.Pagada);
+                }
+                else if (estado.Equals("Pagada", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(c => c.Estado == EstadoConstants.Cobrada || c.Estado == EstadoConstants.Pagada);
+                }
+            }
 
             var cuentasData = await query
                 .OrderByDescending(c => c.FechaCreacion)
@@ -249,6 +258,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     SeguroNombre = "Convenio #" + c.Cuenta.ConvenioId,
                     c.CompromisoGenerado,
                     c.GarantiaGenerada,
+                    c.Estado,
                     EsMoroso = c.FechaCreacion < DateTime.UtcNow.AddDays(-30),
                     ConceptosList = c.Cuenta.Detalles.Select(d => d.Descripcion).ToList()
                 })
@@ -265,6 +275,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 c.SeguroNombre,
                 c.CompromisoGenerado,
                 c.GarantiaGenerada,
+                c.Estado,
                 c.EsMoroso,
                 Conceptos = string.Join(", ", c.ConceptosList)
             }).ToList();

@@ -299,8 +299,9 @@ namespace SistemaSatHospitalario.Infrastructure.Services
 
                         column.Item().PaddingLeft(15).PaddingBottom(8).Column(g =>
                         {
-                            bool hasPrendaria = (data.GarantiasItems != null && data.GarantiasItems.Count > 0) || (data.MontoGarantia > 0 && !string.IsNullOrEmpty(data.DescripcionGarantia));
-                            bool hasFiador = !esMismoPaciente;
+                            var validItems = data.GarantiasItems?.Where(i => !string.IsNullOrWhiteSpace(i.Descripcion)).ToList() ?? new List<GarantiaItemDto>();
+                            bool hasPrendaria = validItems.Count > 0 || (data.MontoGarantia > 0 && !string.IsNullOrEmpty(data.DescripcionGarantia));
+                            bool hasFiador = !string.IsNullOrWhiteSpace(data.NombreFiador) || !esMismoPaciente;
                             bool noGarantia = !hasPrendaria && !hasFiador;
 
                             g.Item().PaddingVertical(2).Row(r =>
@@ -312,85 +313,91 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                 });
                             });
 
-                            g.Item().PaddingVertical(2).Row(r =>
+                            if (hasPrendaria)
                             {
-                                r.ConstantItem(25).Text(hasPrendaria ? "[ X ]" : "[   ]").Bold().FontColor(hasPrendaria ? Colors.Blue.Darken4 : Colors.Grey.Darken1);
-                                r.RelativeItem().Column(pc =>
+                                g.Item().PaddingVertical(2).Row(r =>
                                 {
-                                    pc.Item().DefaultTextStyle(x => x.FontSize(9)).Text(t =>
+                                    r.ConstantItem(25).Text("[ X ]").Bold().FontColor(Colors.Blue.Darken4);
+                                    r.RelativeItem().Column(pc =>
                                     {
-                                        t.Span("GARANTÍA PRENDARIA: ").Bold();
-                                        t.Span("Entrega en resguardo el/los bienes detallados a continuación. ");
-                                        t.Span("(Regulado por el Art. 1.837 del Código Civil. El objeto se devolverá inmediatamente al saldar la deuda).");
+                                        pc.Item().DefaultTextStyle(x => x.FontSize(9)).Text(t =>
+                                        {
+                                            t.Span("GARANTÍA PRENDARIA: ").Bold();
+                                            t.Span("Entrega en resguardo el/los bienes detallados a continuación. ");
+                                            t.Span("(Regulado por el Art. 1.837 del Código Civil. El objeto se devolverá inmediatamente al saldar la deuda).");
+                                        });
+
+                                        if (validItems.Count > 0)
+                                        {
+                                            pc.Item().PaddingTop(5).Table(table =>
+                                            {
+                                                table.ColumnsDefinition(columns =>
+                                                {
+                                                    columns.ConstantColumn(30);
+                                                    columns.RelativeColumn();
+                                                    columns.ConstantColumn(100);
+                                                });
+
+                                                table.Header(header =>
+                                                {
+                                                    header.Cell().Element(HeaderStyle).AlignCenter().Text("Nº");
+                                                    header.Cell().Element(HeaderStyle).Text("Descripción del Bien");
+                                                    header.Cell().Element(HeaderStyle).AlignRight().Text("Valor Estimado");
+
+                                                    static IContainer HeaderStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Medium).Background(Colors.Grey.Lighten3).Padding(3).DefaultTextStyle(x => x.Bold().FontSize(8));
+                                                });
+
+                                                int idx = 1;
+                                                foreach (var item in validItems)
+                                                {
+                                                    table.Cell().Element(CellStyle).AlignCenter().Text(idx++.ToString());
+                                                    table.Cell().Element(CellStyle).Text(item.Descripcion);
+                                                    table.Cell().Element(CellStyle).AlignRight().Text($"$ {item.ValorEstimado:N2}");
+
+                                                    static IContainer CellStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
+                                                }
+
+                                                // Total Row
+                                                table.Cell().Element(CellStyleTotal).Text("");
+                                                table.Cell().Element(CellStyleTotal).AlignRight().Text("TOTAL:").Bold();
+                                                table.Cell().Element(CellStyleTotal).AlignRight().Text($"$ {validItems.Sum(i => i.ValorEstimado):N2}").Bold();
+
+                                                static IContainer CellStyleTotal(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
+                                            });
+                                        }
+                                        else if (data.MontoGarantia > 0 && !string.IsNullOrEmpty(data.DescripcionGarantia))
+                                        {
+                                            pc.Item().PaddingTop(2).DefaultTextStyle(x => x.FontSize(9)).Text(t =>
+                                            {
+                                                t.Span("Bien: ").Bold();
+                                                t.Span(data.DescripcionGarantia).Bold();
+                                                t.Span(" con un valor estimado de ");
+                                                t.Span($"${data.MontoGarantia:N2}").Bold();
+                                                t.Span(".");
+                                            });
+                                        }
                                     });
-
-                                    if (data.GarantiasItems != null && data.GarantiasItems.Count > 0)
-                                    {
-                                        pc.Item().PaddingTop(5).Table(table =>
-                                        {
-                                            table.ColumnsDefinition(columns =>
-                                            {
-                                                columns.ConstantColumn(30);
-                                                columns.RelativeColumn();
-                                                columns.ConstantColumn(100);
-                                            });
-
-                                            table.Header(header =>
-                                            {
-                                                header.Cell().Element(HeaderStyle).AlignCenter().Text("Nº");
-                                                header.Cell().Element(HeaderStyle).Text("Descripción del Bien");
-                                                header.Cell().Element(HeaderStyle).AlignRight().Text("Valor Estimado");
-
-                                                static IContainer HeaderStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Medium).Background(Colors.Grey.Lighten3).Padding(3).DefaultTextStyle(x => x.Bold().FontSize(8));
-                                            });
-
-                                            int idx = 1;
-                                            foreach (var item in data.GarantiasItems)
-                                            {
-                                                table.Cell().Element(CellStyle).AlignCenter().Text(idx++.ToString());
-                                                table.Cell().Element(CellStyle).Text(item.Descripcion);
-                                                table.Cell().Element(CellStyle).AlignRight().Text($"$ {item.ValorEstimado:N2}");
-
-                                                static IContainer CellStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
-                                            }
-
-                                            // Total Row
-                                            table.Cell().Element(CellStyleTotal).Text("");
-                                            table.Cell().Element(CellStyleTotal).AlignRight().Text("TOTAL:").Bold();
-                                            table.Cell().Element(CellStyleTotal).AlignRight().Text($"$ {data.GarantiasItems.Sum(i => i.ValorEstimado):N2}").Bold();
-
-                                            static IContainer CellStyleTotal(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
-                                        });
-                                    }
-                                    else if (data.MontoGarantia > 0 && !string.IsNullOrEmpty(data.DescripcionGarantia))
-                                    {
-                                        pc.Item().PaddingTop(2).DefaultTextStyle(x => x.FontSize(9)).Text(t =>
-                                        {
-                                            t.Span("Bien: ").Bold();
-                                            t.Span(data.DescripcionGarantia).Bold();
-                                            t.Span(" con un valor estimado de ");
-                                            t.Span($"${data.MontoGarantia:N2}").Bold();
-                                            t.Span(".");
-                                        });
-                                    }
                                 });
-                            });
+                            }
 
-                            g.Item().PaddingVertical(2).Row(r =>
+                            if (hasFiador)
                             {
-                                r.ConstantItem(25).Text(hasFiador ? "[ X ]" : "[   ]").Bold().FontColor(hasFiador ? Colors.Blue.Darken4 : Colors.Grey.Darken1);
-                                r.RelativeItem().DefaultTextStyle(x => x.FontSize(9)).Text(t =>
+                                g.Item().PaddingVertical(2).Row(r =>
                                 {
-                                    t.Span("FIADOR / GARANTE PERSONAL: ").Bold();
-                                    t.Span("Nombre: ");
-                                    t.Span(hasFiador ? data.NombreResponsable : "__________________________").Bold();
-                                    t.Span(", C.I.: ");
-                                    t.Span(hasFiador ? data.CedulaResponsable : "__________________________").Bold();
-                                    t.Span(", Telf: ");
-                                    t.Span(hasFiador ? data.TelefonoResponsable : "__________________________").Bold();
-                                    t.Span(".");
+                                    r.ConstantItem(25).Text("[ X ]").Bold().FontColor(Colors.Blue.Darken4);
+                                    r.RelativeItem().DefaultTextStyle(x => x.FontSize(9)).Text(t =>
+                                    {
+                                        t.Span("FIADOR / GARANTE PERSONAL: ").Bold();
+                                        t.Span("Nombre: ");
+                                        t.Span(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable).Bold();
+                                        t.Span(", C.I.: ");
+                                        t.Span(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable).Bold();
+                                        t.Span(", Telf: ");
+                                        t.Span(!string.IsNullOrWhiteSpace(data.TelefonoFiador) ? data.TelefonoFiador : data.TelefonoResponsable).Bold();
+                                        t.Span(".");
+                                    });
                                 });
-                            });
+                            }
                         });
 
                         column.Item().PaddingBottom(12).DefaultTextStyle(x => x.FontSize(9.5f)).Text(text =>
@@ -553,14 +560,14 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                 });
 
                                 table.Cell().Element(LabelStyle).Text("Nombre Garante / Fiador:");
-                                table.Cell().Element(ValueStyle).Text(data.NombreResponsable);
+                                table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable);
                                 table.Cell().Element(LabelStyle).Text("C.I. / RIF:");
-                                table.Cell().Element(ValueStyle).Text(data.CedulaResponsable);
+                                table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable);
 
                                 table.Cell().Element(LabelStyle).Text("Teléfono:");
-                                table.Cell().Element(ValueStyle).Text(data.TelefonoResponsable);
+                                table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.TelefonoFiador) ? data.TelefonoFiador : data.TelefonoResponsable);
                                 table.Cell().Element(LabelStyle).Text("Dirección Domicilio:");
-                                table.Cell().Element(ValueStyle).Text(data.DireccionResponsable);
+                                table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.DireccionFiador) ? data.DireccionFiador : data.DireccionResponsable);
 
                                 table.Cell().Element(LabelStyle).Text("Nombre Paciente:");
                                 table.Cell().Element(ValueStyle).Text(data.NombrePaciente);
@@ -582,10 +589,10 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             {
                                 text.Justify();
                                 text.Span("En la ciudad de Barinas, Yo ");
-                                text.Span($"{data.NombreResponsable}").Bold();
-                                text.Span(esMismoPaciente ? " (Titular)" : $" ({data.RelacionResponsable})");
+                                text.Span($"{(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable)}").Bold();
+                                text.Span(!string.IsNullOrWhiteSpace(data.NombreFiador) ? " (Fiador)" : (esMismoPaciente ? " (Titular)" : $" ({data.RelacionResponsable})"));
                                 text.Span(", titular de la cédula de identidad ");
-                                text.Span($"{data.CedulaResponsable}").Bold();
+                                text.Span($"{(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable)}").Bold();
                                 text.Span(", en mi condición de Garante, declaro mediante el presente documento que garantizo la totalidad de los gastos médicos y servicios hospitalarios realizados a ");
                                 text.Span($"{data.NombrePaciente}").Bold();
                                 text.Span(", titular de la cédula de identidad ");
@@ -597,7 +604,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             {
                                 text.Justify();
                                 text.Span("Esta garantía respalda la cuenta del paciente por un monto referencial de ");
-                                text.Span($"${data.MontoTotal:N2}").Bold();
+text.Span($"${data.MontoTotal:N2}").Bold();
                                 text.Span(", comprometiéndome a cubrir cualquier excedente o diferencia no amparada por la empresa aseguradora o convenio en un lapso no mayor a ");
                                 text.Span("21 días continuos").Bold();
                                 text.Span(", fijando como fecha tope el día ");
@@ -605,14 +612,15 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                 text.Span(".");
                             });
 
-                            if ((data.GarantiasItems != null && data.GarantiasItems.Count > 0) || data.MontoGarantia > 0)
+                            var validItems = data.GarantiasItems?.Where(i => !string.IsNullOrWhiteSpace(i.Descripcion)).ToList() ?? new List<GarantiaItemDto>();
+                            if (validItems.Count > 0 || data.MontoGarantia > 0)
                             {
                                 column.Item().PaddingBottom(12).Column(pc =>
                                 {
                                     pc.Item().PaddingBottom(5).DefaultTextStyle(x => x.FontSize(9.5f).Bold().FontColor(Colors.Blue.Darken4)).Text("RESPALDO FÍSICO DE LA GARANTÍA:");
                                     pc.Item().PaddingBottom(5).DefaultTextStyle(x => x.FontSize(9)).Text("Como respaldo físico de esta garantía, se hace entrega/registro de los bienes detallados a continuación (Regulado por el Art. 1.837 del Código Civil. El/los objetos se devolverán inmediatamente al saldar la deuda):");
 
-                                    if (data.GarantiasItems != null && data.GarantiasItems.Count > 0)
+                                    if (validItems.Count > 0)
                                     {
                                         pc.Item().Table(table =>
                                         {
@@ -633,7 +641,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                             });
 
                                             int idx = 1;
-                                            foreach (var item in data.GarantiasItems)
+                                            foreach (var item in validItems)
                                             {
                                                 table.Cell().Element(CellStyle).AlignCenter().Text(idx++.ToString());
                                                 table.Cell().Element(CellStyle).Text(item.Descripcion);
@@ -642,10 +650,9 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                                 static IContainer CellStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
                                             }
 
-                                            // Total Row
                                             table.Cell().Element(CellStyleTotal).Text("");
                                             table.Cell().Element(CellStyleTotal).AlignRight().Text("TOTAL:").Bold();
-                                            table.Cell().Element(CellStyleTotal).AlignRight().Text($"$ {data.GarantiasItems.Sum(i => i.ValorEstimado):N2}").Bold();
+                                            table.Cell().Element(CellStyleTotal).AlignRight().Text($"$ {validItems.Sum(i => i.ValorEstimado):N2}").Bold();
 
                                             static IContainer CellStyleTotal(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
                                         });
@@ -681,8 +688,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                 {
                                     c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                                     c.Item().PaddingTop(5).AlignCenter().Text("EL GARANTE").FontSize(9).Bold();
-                                    c.Item().AlignCenter().Text($"{data.NombreResponsable}").FontSize(8);
-                                    c.Item().AlignCenter().Text($"C.I: {data.CedulaResponsable}").FontSize(8);
+                                    c.Item().AlignCenter().Text($"{(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable)}").FontSize(8);
+                                    c.Item().AlignCenter().Text($"C.I: {(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable)}").FontSize(8);
 
                                     c.Item().PaddingTop(15).Row(r =>
                                     {
@@ -780,14 +787,14 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             });
 
                             table.Cell().Element(LabelStyle).Text("Nombre Garante / Fiador:");
-                            table.Cell().Element(ValueStyle).Text(data.NombreResponsable);
+                            table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable);
                             table.Cell().Element(LabelStyle).Text("C.I. / RIF:");
-                            table.Cell().Element(ValueStyle).Text(data.CedulaResponsable);
+                            table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable);
 
                             table.Cell().Element(LabelStyle).Text("Teléfono:");
-                            table.Cell().Element(ValueStyle).Text(data.TelefonoResponsable);
+                            table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.TelefonoFiador) ? data.TelefonoFiador : data.TelefonoResponsable);
                             table.Cell().Element(LabelStyle).Text("Dirección Domicilio:");
-                            table.Cell().Element(ValueStyle).Text(data.DireccionResponsable);
+                            table.Cell().Element(ValueStyle).Text(!string.IsNullOrWhiteSpace(data.DireccionFiador) ? data.DireccionFiador : data.DireccionResponsable);
 
                             table.Cell().Element(LabelStyle).Text("Nombre Paciente:");
                             table.Cell().Element(ValueStyle).Text(data.NombrePaciente);
@@ -809,10 +816,10 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                         {
                             text.Justify();
                             text.Span("En la ciudad de Barinas, Yo ");
-                            text.Span($"{data.NombreResponsable}").Bold();
-                            text.Span(esMismoPaciente ? " (Titular)" : $" ({data.RelacionResponsable})");
+                            text.Span($"{(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable)}").Bold();
+                            text.Span(!string.IsNullOrWhiteSpace(data.NombreFiador) ? " (Fiador)" : (esMismoPaciente ? " (Titular)" : $" ({data.RelacionResponsable})"));
                             text.Span(", titular de la cédula de identidad ");
-                            text.Span($"{data.CedulaResponsable}").Bold();
+                            text.Span($"{(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable)}").Bold();
                             text.Span(", en mi condición de Garante, declaro mediante el presente documento que garantizo la totalidad de los gastos médicos y servicios hospitalarios realizados a ");
                             text.Span($"{data.NombrePaciente}").Bold();
                             text.Span(", titular de la cédula de identidad ");
@@ -832,65 +839,66 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             text.Span(".");
                         });
 
-                        if ((data.GarantiasItems != null && data.GarantiasItems.Count > 0) || data.MontoGarantia > 0)
-                        {
-                            column.Item().PaddingBottom(12).Column(pc =>
-                            {
-                                pc.Item().PaddingBottom(5).DefaultTextStyle(x => x.FontSize(9.5f).Bold().FontColor(Colors.Blue.Darken4)).Text("RESPALDO FÍSICO DE LA GARANTÍA:");
-                                pc.Item().PaddingBottom(5).DefaultTextStyle(x => x.FontSize(9)).Text("Como respaldo físico de esta garantía, se hace entrega/registro de los bienes detallados a continuación (Regulado por el Art. 1.837 del Código Civil. El/los objetos se devolverán inmediatamente al saldar la deuda):");
+                         var validItems = data.GarantiasItems?.Where(i => !string.IsNullOrWhiteSpace(i.Descripcion)).ToList() ?? new List<GarantiaItemDto>();
+                         if (validItems.Count > 0 || data.MontoGarantia > 0)
+                         {
+                             column.Item().PaddingBottom(12).Column(pc =>
+                             {
+                                 pc.Item().PaddingBottom(5).DefaultTextStyle(x => x.FontSize(9.5f).Bold().FontColor(Colors.Blue.Darken4)).Text("RESPALDO FÍSICO DE LA GARANTÍA:");
+                                 pc.Item().PaddingBottom(5).DefaultTextStyle(x => x.FontSize(9)).Text("Como respaldo físico de esta garantía, se hace entrega/registro de los bienes detallados a continuación (Regulado por el Art. 1.837 del Código Civil. El/los objetos se devolverán inmediatamente al saldar la deuda):");
 
-                                if (data.GarantiasItems != null && data.GarantiasItems.Count > 0)
-                                {
-                                    pc.Item().Table(table =>
-                                    {
-                                        table.ColumnsDefinition(columns =>
-                                        {
-                                            columns.ConstantColumn(30);
-                                            columns.RelativeColumn();
-                                            columns.ConstantColumn(100);
-                                        });
+                                 if (validItems.Count > 0)
+                                 {
+                                     pc.Item().Table(table =>
+                                     {
+                                         table.ColumnsDefinition(columns =>
+                                         {
+                                             columns.ConstantColumn(30);
+                                             columns.RelativeColumn();
+                                             columns.ConstantColumn(100);
+                                         });
 
-                                        table.Header(header =>
-                                        {
-                                            header.Cell().Element(HeaderStyle).AlignCenter().Text("Nº");
-                                            header.Cell().Element(HeaderStyle).Text("Descripción del Bien");
-                                            header.Cell().Element(HeaderStyle).AlignRight().Text("Valor Estimado");
+                                         table.Header(header =>
+                                         {
+                                             header.Cell().Element(HeaderStyle).AlignCenter().Text("Nº");
+                                             header.Cell().Element(HeaderStyle).Text("Descripción del Bien");
+                                             header.Cell().Element(HeaderStyle).AlignRight().Text("Valor Estimado");
 
-                                            static IContainer HeaderStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Medium).Background(Colors.Grey.Lighten3).Padding(3).DefaultTextStyle(x => x.Bold().FontSize(8));
-                                        });
+                                             static IContainer HeaderStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Medium).Background(Colors.Grey.Lighten3).Padding(3).DefaultTextStyle(x => x.Bold().FontSize(8));
+                                         });
 
-                                        int idx = 1;
-                                        foreach (var item in data.GarantiasItems)
-                                        {
-                                            table.Cell().Element(CellStyle).AlignCenter().Text(idx++.ToString());
-                                            table.Cell().Element(CellStyle).Text(item.Descripcion);
-                                            table.Cell().Element(CellStyle).AlignRight().Text($"$ {item.ValorEstimado:N2}");
+                                         int idx = 1;
+                                         foreach (var item in validItems)
+                                         {
+                                             table.Cell().Element(CellStyle).AlignCenter().Text(idx++.ToString());
+                                             table.Cell().Element(CellStyle).Text(item.Descripcion);
+                                             table.Cell().Element(CellStyle).AlignRight().Text($"$ {item.ValorEstimado:N2}");
 
-                                            static IContainer CellStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
-                                        }
+                                             static IContainer CellStyle(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
+                                         }
 
-                                        // Total Row
-                                        table.Cell().Element(CellStyleTotal).Text("");
-                                        table.Cell().Element(CellStyleTotal).AlignRight().Text("TOTAL:").Bold();
-                                        table.Cell().Element(CellStyleTotal).AlignRight().Text($"$ {data.GarantiasItems.Sum(i => i.ValorEstimado):N2}").Bold();
+                                         // Total Row
+                                         table.Cell().Element(CellStyleTotal).Text("");
+                                         table.Cell().Element(CellStyleTotal).AlignRight().Text("TOTAL:").Bold();
+                                         table.Cell().Element(CellStyleTotal).AlignRight().Text($"$ {validItems.Sum(i => i.ValorEstimado):N2}").Bold();
 
-                                        static IContainer CellStyleTotal(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
-                                    });
-                                }
-                                else
-                                {
-                                    pc.Item().Background(Colors.Grey.Lighten5).Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(8).Text(text =>
-                                    {
-                                        text.Justify();
-                                        text.Span("Bien: ").Bold();
-                                        text.Span($"{data.DescripcionGarantia ?? "Bien mueble/inmueble"}").Bold();
-                                        text.Span(" con un valor estimado de ");
-                                        text.Span($"${data.MontoGarantia:N2}").Bold();
-                                        text.Span(".");
-                                    });
-                                }
-                            });
-                        }
+                                         static IContainer CellStyleTotal(IContainer container) => container.Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(3).DefaultTextStyle(x => x.FontSize(8));
+                                     });
+                                 }
+                                 else
+                                 {
+                                     pc.Item().Background(Colors.Grey.Lighten5).Border(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(8).Text(text =>
+                                     {
+                                         text.Justify();
+                                         text.Span("Bien: ").Bold();
+                                         text.Span($"{data.DescripcionGarantia ?? "Bien mueble/inmueble"}").Bold();
+                                         text.Span(" con un valor estimado de ");
+                                         text.Span($"${data.MontoGarantia:N2}").Bold();
+                                         text.Span(".");
+                                     });
+                                 }
+                             });
+                         }
 
                         column.Item().PaddingBottom(15).DefaultTextStyle(x => x.FontSize(9.5f)).Text(text =>
                         {
@@ -908,8 +916,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             {
                                 c.Item().LineHorizontal(1).LineColor(Colors.Grey.Darken1);
                                 c.Item().PaddingTop(5).AlignCenter().Text("EL GARANTE").FontSize(9).Bold();
-                                c.Item().AlignCenter().Text($"{data.NombreResponsable}").FontSize(8);
-                                c.Item().AlignCenter().Text($"C.I: {data.CedulaResponsable}").FontSize(8);
+                                c.Item().AlignCenter().Text($"{(!string.IsNullOrWhiteSpace(data.NombreFiador) ? data.NombreFiador : data.NombreResponsable)}").FontSize(8);
+                                c.Item().AlignCenter().Text($"C.I: {(!string.IsNullOrWhiteSpace(data.CedulaFiador) ? data.CedulaFiador : data.CedulaResponsable)}").FontSize(8);
 
                                 c.Item().PaddingTop(15).Row(r =>
                                 {
