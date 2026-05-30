@@ -381,9 +381,9 @@ export class ReceivablesComponent implements OnInit {
     this.compromisoData.montoGarantia = validItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0);
     this.compromisoData.descripcionGarantia = validItems.map(i => i.descripcion).join(', ');
 
-    const isPdvsa = this.compromisoData.seguroNombre?.toUpperCase().includes('PDVSA');
+    const isInsurance = this.compromisoData.tipoIngreso === 'Seguro' || (this.compromisoData.seguroNombre && this.compromisoData.seguroNombre !== 'Particular');
 
-    const request = isPdvsa ?
+    const request = isInsurance ?
       this.facturacionService.generarConformidadPdf(this.compromisoData) :
       (this.isGarantia() ? 
         this.facturacionService.generarGarantiaPdf(this.compromisoData) : 
@@ -395,7 +395,7 @@ export class ReceivablesComponent implements OnInit {
         window.open(url, '_blank');
         this.isGenerating.set(false);
         this.showInsuranceModal.set(false);
-        this.actionMessage.set(isPdvsa ? 'Conformidad de servicios generada con éxito' : (this.isGarantia() ? 'Garantía generada con éxito' : 'Compromiso de pago generado con éxito'));
+        this.actionMessage.set(isInsurance ? 'Conformidad de servicios generada con éxito' : (this.isGarantia() ? 'Garantía generada con éxito' : 'Compromiso de pago generado con éxito'));
         this.refresh();
       },
       error: () => {
@@ -442,7 +442,7 @@ export class ReceivablesComponent implements OnInit {
   }
 
   reimprimirCompromiso(ar: PendingAR) {
-    if (ar.seguroNombre?.toUpperCase().includes('PDVSA')) {
+    if (ar.tipoIngreso === 'Seguro' || (ar.seguroNombre && ar.seguroNombre !== 'Particular')) {
       this.reimprimirConformidad(ar);
       return;
     }

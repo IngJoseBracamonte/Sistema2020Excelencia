@@ -1000,22 +1000,47 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                             });
                             c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
                         });
-
                         column.Item().PaddingBottom(20).Text(text =>
                         {
                             text.Justify();
                             text.Span("Por medio de la presente, yo ");
-                            text.Span(data.NombrePaciente ?? "______________________________________________________").Bold();
+                            text.Span(!string.IsNullOrWhiteSpace(data.NombrePaciente) ? data.NombrePaciente : "______________________________________________________").Bold();
                             text.Span(", titular de la Cédula de Identidad ");
-                            text.Span(data.CedulaPaciente ?? "_____________________").Bold();
-                            text.Span(", beneficiario del trabajador ");
-                            text.Span(data.NombreResponsable ?? "_____________________________________").Bold();
-                            text.Span(", de Cedula de Identidad ");
-                            text.Span(data.CedulaResponsable ?? "_____________________").Bold();
+                            text.Span(!string.IsNullOrWhiteSpace(data.CedulaPaciente) ? data.CedulaPaciente : "_____________________").Bold();
+
+                            bool esMismoPaciente = false;
+                            if (!string.IsNullOrWhiteSpace(data.NombreResponsable))
+                            {
+                                esMismoPaciente = string.Equals(data.NombrePaciente?.Trim(), data.NombreResponsable?.Trim(), StringComparison.OrdinalIgnoreCase) 
+                                               || string.Equals(data.CedulaPaciente?.Trim(), data.CedulaResponsable?.Trim(), StringComparison.OrdinalIgnoreCase)
+                                               || string.Equals(data.NombreResponsable?.Trim(), "Particular", StringComparison.OrdinalIgnoreCase);
+                            }
+                            else
+                            {
+                                esMismoPaciente = string.Equals(data.RelacionResponsable?.Trim(), "Titular", StringComparison.OrdinalIgnoreCase);
+                            }
+
+                            if (!esMismoPaciente)
+                            {
+                                text.Span(", beneficiario del trabajador ");
+                                text.Span(!string.IsNullOrWhiteSpace(data.NombreResponsable) ? data.NombreResponsable : "_____________________________________").Bold();
+                                text.Span(" de Cedula de Identidad ");
+                                text.Span(!string.IsNullOrWhiteSpace(data.CedulaResponsable) ? data.CedulaResponsable : "_____________________").Bold();
+                            }
+
                             text.Span(", declaro haber recibido de conformidad la factura original N° ");
-                            text.Span(data.NroFactura ?? "_____________________").Bold();
+                            text.Span(!string.IsNullOrWhiteSpace(data.NroFactura) ? data.NroFactura : "_____________________").Bold();
                             text.Span(", en el cual se realizaron todos los servicios descritos, por un monto de ");
-                            text.Span($"$ {data.MontoTotal:N2}").Bold();
+                            
+                            if (data.MontoTotal > 0)
+                            {
+                                text.Span($"$ {data.MontoTotal:N2}").Bold();
+                            }
+                            else
+                            {
+                                text.Span("____________________").Bold();
+                            }
+                            
                             text.Span(", emitida por ");
                             text.Span("Centro Diagnóstico Clínico La Excelencia, C.A.").Bold();
                             text.Span(".");
@@ -1037,8 +1062,16 @@ text.Span($"${data.MontoTotal:N2}").Bold();
 
                         column.Item().PaddingTop(50).Row(row =>
                         {
-                            row.RelativeItem().Text("Firma: __________________________________").Bold();
-                            row.RelativeItem().AlignRight().Text("Fecha: __________________________________").Bold();
+                            row.RelativeItem().Text(t =>
+                            {
+                                t.Span("Firma: ").Bold();
+                                t.Span("__________________________________");
+                            });
+                            row.RelativeItem().AlignRight().Text(t =>
+                            {
+                                t.Span("Fecha: ").Bold();
+                                t.Span("__________________________________");
+                            });
                         });
                     });
                 });

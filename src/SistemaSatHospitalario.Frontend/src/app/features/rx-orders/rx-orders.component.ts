@@ -60,6 +60,9 @@ export class RxOrdersComponent implements OnInit {
   // Buffer local para manejar persistencia + live updates
   private localTickets = signal<any[]>([]);
 
+  // Estado de guardado de informes
+  public isSavingInforme: { [key: number]: boolean } = {};
+
   // Filtros
   public searchTerm = signal<string>('');
   public filterAudit = signal<string>('Pendiente'); // Pendiente, Procesada, Anulado
@@ -219,7 +222,9 @@ export class RxOrdersComponent implements OnInit {
       fechaValidacion: o.fechaValidacion ?? o.fechaValidacion,
       medicoSolicitanteId: o.medicoSolicitanteId,
       medicoSolicitanteNombre: o.medicoSolicitanteNombre,
-      pacienteId: o.pacienteId
+      pacienteId: o.pacienteId,
+      informe: o.informe,
+      tempInforme: o.informe || ''
     };
   }
 
@@ -404,6 +409,25 @@ export class RxOrdersComponent implements OnInit {
     this.newStudyText.set('');
     this.studiesList.set([]);
     this.isSavingDirect.set(false);
+  }
+
+  public guardarInforme(order: any): void {
+    const id = order.orderId;
+    this.isSavingInforme[id] = true;
+    this.http.post(`${environment.apiUrl}/api/Imaging/${id}/informe`, { informe: order.tempInforme })
+      .subscribe({
+        next: () => {
+          order.informe = order.tempInforme;
+          this.actionMessage.set('Informe guardado correctamente.');
+          this.isSavingInforme[id] = false;
+          this.refresh();
+          setTimeout(() => this.actionMessage.set(null), 5000);
+        },
+        error: (err) => {
+          alert('Error al guardar el informe: ' + (err.error?.Message || err.message));
+          this.isSavingInforme[id] = false;
+        }
+      });
   }
 
   logout(): void {

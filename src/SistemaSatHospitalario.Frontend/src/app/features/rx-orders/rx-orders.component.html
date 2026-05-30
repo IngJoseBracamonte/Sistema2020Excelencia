@@ -116,13 +116,14 @@
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estudio Clinico</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Tipo</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Informe</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acción</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     <!-- Loading State -->
                     <tr *ngIf="isLoading()" class="bg-transparent">
-                        <td colspan="7" class="px-6 py-16 text-center opacity-40">
+                        <td colspan="8" class="px-6 py-16 text-center opacity-40 font-bold">
                             <lucide-icon [name]="icons.RefreshCcw"
                                          [ngClass]="isTomoRoute() ? 'text-sky-500' : 'text-rose-500'"
                                          class="w-8 h-8 animate-spin mx-auto mb-4"></lucide-icon>
@@ -193,6 +194,18 @@
                                 </span>
                             </td>
 
+                            <!-- Informe Badge -->
+                            <td class="px-6 py-4 text-center">
+                                <span *ngIf="order.informe"
+                                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    CON INFORME
+                                </span>
+                                <span *ngIf="!order.informe"
+                                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 border border-white/10 text-slate-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                    SIN INFORME
+                                </span>
+                            </td>
+
                             <!-- Accion -->
                             <td class="px-6 py-4 text-center">
                                 <ng-container *ngIf="order.status === 'Pendiente'">
@@ -219,13 +232,11 @@
                                     INACTIVO
                                 </span>
                             </td>
-                        </tr>
-
-                        <!-- Accordion Detail -->
+                                               <!-- Accordion Detail -->
                         <tr *ngIf="isExpanded(order.orderId)"
                             class="bg-[#0b1120]/50 border-x-2 animate-fade-in"
                             [ngClass]="isTomoRoute() ? 'border-sky-500/20' : 'border-rose-500/20'">
-                            <td colspan="7" class="px-12 py-8">
+                            <td colspan="8" class="px-12 py-8">
                                 <div class="max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div class="space-y-4">
                                         <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
@@ -252,16 +263,16 @@
                                             </div>
                                         </div>
                                     </div>
-
+ 
                                     <div class="space-y-4 flex flex-col justify-between">
                                         <div class="space-y-4">
                                             <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
                                                 <lucide-icon [name]="icons.User"
-                                                             [ngClass]="isTomoRoute() ? 'text-sky-500' : 'text-rose-500'"
-                                                             class="w-4 h-4"></lucide-icon>
+                                                              [ngClass]="isTomoRoute() ? 'text-sky-500' : 'text-rose-500'"
+                                                              class="w-4 h-4"></lucide-icon>
                                                 ESTADO E HISTORIAL DE PROCESO
                                             </h5>
-
+ 
                                             <div class="space-y-2 bg-white/[0.01] border border-white/5 rounded-2xl p-4 text-xs">
                                                 <div *ngIf="order.procesadoPor" class="flex justify-between">
                                                     <span class="text-slate-500 font-bold">Procesado Por:</span>
@@ -281,7 +292,7 @@
                                                 </div>
                                             </div>
                                         </div>
-
+ 
                                         <!-- Botones de Acción Interna -->
                                         <div class="flex items-center gap-4 justify-end mt-4">
                                             <a [routerLink]="['/expedientes']" [queryParams]="{search: order.patientName}"
@@ -298,6 +309,30 @@
                                             </button>
                                         </div>
                                     </div>
+
+                                    <!-- Informe Médico -->
+                                    <div class="col-span-1 md:col-span-2 space-y-4 border-t border-white/5 pt-6 mt-4">
+                                        <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                                            <lucide-icon [name]="icons.FileText"
+                                                         [ngClass]="isTomoRoute() ? 'text-sky-500' : 'text-rose-500'"
+                                                         class="w-4 h-4"></lucide-icon>
+                                            INFORME MÉDICO DEL ESTUDIO
+                                        </h5>
+                                        <div class="space-y-3">
+                                            <textarea [(ngModel)]="order.tempInforme" 
+                                                      placeholder="Escriba aquí el informe detallado del estudio de imagen..."
+                                                      rows="4"
+                                                      class="w-full bg-[#152035]/50 border border-white/10 rounded-2xl p-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-white/20 transition-all uppercase"></textarea>
+                                            <div class="flex justify-end">
+                                                <button (click)="$event.stopPropagation(); guardarInforme(order)"
+                                                        [disabled]="isSavingInforme[order.orderId]"
+                                                        [ngClass]="isTomoRoute() ? 'bg-sky-600 hover:bg-sky-500 shadow-sky-500/20' : 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/20'"
+                                                        class="px-6 py-2.5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg disabled:opacity-50 flex items-center gap-2 border border-transparent">
+                                                    <span>{{ isSavingInforme[order.orderId] ? 'GUARDANDO...' : 'GUARDAR INFORME' }}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -305,7 +340,7 @@
 
                     <!-- Empty State -->
                     <tr *ngIf="!isLoading() && incomingTickets().length === 0">
-                        <td colspan="7" class="px-6 py-20 text-center">
+                        <td colspan="8" class="px-6 py-20 text-center">
                             <div class="max-w-md mx-auto space-y-4 opacity-50">
                                 <lucide-icon [name]="icons.Info"
                                              [ngClass]="isTomoRoute() ? 'text-sky-500' : 'text-rose-500'"

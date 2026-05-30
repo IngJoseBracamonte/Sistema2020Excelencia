@@ -49,7 +49,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             ar.MontoTotalBase,
                             ar.MontoPagadoBase,
                             ar.Estado,
-                            ar.IsAudited,
+                            IsAudited = ar.IsAudited || cta.ConvenioId == null,
                             ar.UsuarioAuditoria,
                             ar.FechaAuditoria,
                             PacienteNombre = pac.NombreCorto,

@@ -26,6 +26,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime? FechaValidacion { get; set; }
         public Guid? MedicoSolicitanteId { get; set; }
         public string? MedicoSolicitanteNombre { get; set; }
+        public string? Informe { get; set; }
 
         public OrdenImagen() { }
 

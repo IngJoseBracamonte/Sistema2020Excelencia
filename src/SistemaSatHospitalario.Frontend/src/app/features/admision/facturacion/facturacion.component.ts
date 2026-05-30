@@ -391,7 +391,11 @@ export class FacturacionComponent {
     diasLiquidar: 1,
     cuotas: 1,
     montoGarantia: 0,
-    descripcionGarantia: ''
+    descripcionGarantia: '',
+    esBeneficiario: false,
+    nombreResponsable: '',
+    cedulaResponsable: '',
+    relacionResponsable: 'Hijo(a)'
   });
 
   public anexarGarantia = signal<boolean>(true);
@@ -1397,7 +1401,11 @@ export class FacturacionComponent {
       diasLiquidar: 1,
       cuotas: 1,
       montoGarantia: 0,
-      descripcionGarantia: ''
+      descripcionGarantia: '',
+      esBeneficiario: false,
+      nombreResponsable: '',
+      cedulaResponsable: '',
+      relacionResponsable: 'Hijo(a)'
     });
     this.anexarGarantia.set(true);
 
@@ -1419,7 +1427,7 @@ export class FacturacionComponent {
   }
 
   imprimirCompromiso() {
-    if (this.isPdvsaConvenio()) {
+    if (this.isInsuranceFlow() || this.tipoIngreso() === 'Seguro' || this.isPdvsaConvenio()) {
       this.imprimirConformidad();
       return;
     }
@@ -1497,11 +1505,16 @@ export class FacturacionComponent {
     const fechaNacimiento = p.fechaNacimiento || p.FechaNacimiento || '';
 
     this.isGeneratingPdf.set(true);
+    const meta = this.docMetadata();
+    const nombreResp = meta.esBeneficiario && meta.nombreResponsable ? meta.nombreResponsable.trim() : `${nombre} ${apellidos}`.trim();
+    const cedulaResp = meta.esBeneficiario && meta.cedulaResponsable ? meta.cedulaResponsable.trim() : cedula;
+    const relacionResp = meta.esBeneficiario ? meta.relacionResponsable : 'Titular';
+
     const dto = {
       cuentaPorCobrarId: res.cuentaPorCobrarId,
-      nombreResponsable: `${nombre} ${apellidos}`.trim(),
-      relacionResponsable: 'Titular',
-      cedulaResponsable: cedula,
+      nombreResponsable: nombreResp,
+      relacionResponsable: relacionResp,
+      cedulaResponsable: cedulaResp,
       direccionResponsable: direccion || 'No especificada',
       telefonoResponsable: celular || telefono || 'No especificado',
       conceptos: this.serviciosCargados().map(s => s.descripcion || s.Descripcion).join(', '),
@@ -1511,14 +1524,14 @@ export class FacturacionComponent {
       direccionPaciente: direccion,
       telefonoPaciente: celular || telefono,
       montoTotal: this.totalCargadoUSD(),
-      diasLiquidar: this.docMetadata().diasLiquidar,
-      cuotas: this.docMetadata().cuotas,
-      quienAutorizo: this.docMetadata().quienAutorizo,
-      doctorProcedimiento: this.docMetadata().doctorProcedimiento,
-      informacionAdicional: this.docMetadata().informacionAdicional,
+      diasLiquidar: meta.diasLiquidar,
+      cuotas: meta.cuotas,
+      quienAutorizo: meta.quienAutorizo,
+      doctorProcedimiento: meta.doctorProcedimiento,
+      informacionAdicional: meta.informacionAdicional,
       esPagoCompletado: this.lastBillResult()?.totalPagado >= this.lastBillResult()?.montoTotal,
       fechaCompromiso: new Date().toISOString(),
-      fechaVencimiento: new Date(Date.now() + (this.docMetadata().diasLiquidar * 24 * 60 * 60 * 1000)).toISOString()
+      fechaVencimiento: new Date(Date.now() + (meta.diasLiquidar * 24 * 60 * 60 * 1000)).toISOString()
     };
 
     this.facturacionService.generarConformidadPdf(dto).subscribe({

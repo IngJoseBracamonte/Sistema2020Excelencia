@@ -160,7 +160,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 status = order.Estado,
                 patientName = order.PacienteNombre,
                 servicioNombre = order.Estudio,
-                tipoServicio = order.TipoServicio
+                tipoServicio = order.TipoServicio,
+                informe = order.Informe
             });
 
             return Ok(new { Message = "Orden marcada como procesada." });
@@ -185,7 +186,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 status = order.Estado,
                 patientName = order.PacienteNombre,
                 servicioNombre = order.Estudio,
-                tipoServicio = order.TipoServicio
+                tipoServicio = order.TipoServicio,
+                informe = order.Informe
             });
 
             return Ok(new { Message = "Orden marcada como anulada." });
@@ -273,7 +275,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     servicioNombre = order.Estudio,
                     tipoServicio = order.TipoServicio,
                     esDirecta = true,
-                    requiereValidacion = true
+                    requiereValidacion = true,
+                    informe = order.Informe
                 });
             }
 
@@ -419,6 +422,31 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 DetalleId = detalle.Id
             });
         }
+
+        [HttpPost("{id}/informe")]
+        public async Task<IActionResult> GuardarInforme(int id, [FromBody] UpdateInformeRequest request)
+        {
+            if (request == null) return BadRequest(new { Message = "Datos inválidos." });
+
+            var order = await _context.OrdenesImagenes.FindAsync(id);
+            if (order == null) return NotFound(new { Message = "Orden no encontrada." });
+
+            order.Informe = request.Informe;
+
+            await _context.SaveChangesAsync(default);
+
+            // Broadcast real vía SignalR
+            await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
+                orderId = order.Id,
+                status = order.Estado,
+                patientName = order.PacienteNombre,
+                servicioNombre = order.Estudio,
+                tipoServicio = order.TipoServicio,
+                informe = order.Informe
+            });
+
+            return Ok(new { Message = "Informe guardado con éxito." });
+        }
     }
 
     public class CreateDirectOrderRequest
@@ -439,5 +467,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public int? ConvenioId { get; set; }
         public Guid? MedicoSolicitanteId { get; set; }
         public string? MedicoSolicitanteNombre { get; set; }
+    }
+
+    public class UpdateInformeRequest
+    {
+        public string? Informe { get; set; }
     }
 }

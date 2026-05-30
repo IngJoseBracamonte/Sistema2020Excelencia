@@ -129,7 +129,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     MetodoPago = metodo,
                     MontoUSD = x.d.Precio * x.d.Cantidad,
                     FacturadoPor = facturadorInfo,
-                    Estado = (x.c.Estado == EstadoConstants.Facturada && x.ar != null && x.ar.IsAudited) ? "Facturado" : "Pendiente",
+                    Estado = (x.c.Estado == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente",
                     TipoServicio = x.d.TipoServicio,
                     CuentaPorCobrarId = x.ar?.Id,
                     QuienAutorizo = x.ar?.QuienAutorizo,

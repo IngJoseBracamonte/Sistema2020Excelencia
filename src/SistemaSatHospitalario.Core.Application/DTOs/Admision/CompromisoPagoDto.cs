@@ -11,6 +11,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string DireccionResponsable { get; set; }
         public string TelefonoResponsable { get; set; }
         public Guid? CuentaPorCobrarId { get; set; }
+        public List<Guid>? CuentasPorCobrarIds { get; set; }
         
         public string Conceptos { get; set; } // Ej: HC, Rx Torax
         

@@ -127,6 +127,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 // Pago parcial: Generar Deuda (Cuentas por Cobrar)
                 var deuda = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
+                if (cuenta.ConvenioId == null)
+                {
+                    deuda.MarcarComoAuditada("Sistema");
+                }
                 await _context.CuentasPorCobrar.AddAsync(deuda, cancellationToken);
             }
 

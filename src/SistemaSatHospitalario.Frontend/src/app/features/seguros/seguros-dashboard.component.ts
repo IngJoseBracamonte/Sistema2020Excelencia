@@ -86,12 +86,48 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
         </div>
     </div>
 
+    <!-- Barra Consolidadora Flotante / Alerta de Selección Masiva -->
+    <div *ngIf="selectedPacientes().length > 0" class="px-0 animate-fade-in">
+        <div class="flex flex-col md:flex-row items-center justify-between p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl transition-all gap-4">
+            <div class="flex items-center gap-4">
+                <div class="h-10 w-10 bg-emerald-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400">
+                    <lucide-icon [name]="icons.Shield" class="w-5 h-5"></lucide-icon>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-white uppercase tracking-wider">Acción Consolidada</h3>
+                    <p class="text-[9px] text-emerald-400 font-bold uppercase tracking-wide">
+                        {{ selectedPacientes().length }} servicios seleccionados. Total Acumulado: 
+                        <span class="font-mono text-white text-xs font-black">$ {{ getSelectedTotal() | number:'1.2-2' }}</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button (click)="clearSelection()"
+                        class="bg-white/5 hover:bg-white/10 text-white/70 border border-white/5 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
+                    Limpiar
+                </button>
+                <button (click)="emitirCompromisoSeleccionados(true)"
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-600/15 flex items-center gap-1.5">
+                    Emitir Garantía Única
+                    <lucide-icon [name]="icons.Shield" class="w-3.5 h-3.5"></lucide-icon>
+                </button>
+                <button (click)="emitirCompromisoSeleccionados(false)"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-600/15 flex items-center gap-1.5">
+                    Generar Compromiso Único
+                    <lucide-icon [name]="icons.Download" class="w-3.5 h-3.5"></lucide-icon>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Listado: Vista de Tabla Premium -->
     <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade-in-up">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="border-b border-white/5">
+                        <th class="px-4 py-4 w-12 text-center"></th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha Ingreso</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado Cuenta</th>
@@ -100,7 +136,15 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
-                    <tr *ngFor="let p of pacientes()" class="hover:bg-white/[0.04] transition-all group/row border-l-2 border-transparent">
+                    <tr *ngFor="let p of pacientes()" 
+                        [ngClass]="{'bg-white/[0.06] border-emerald-500/30': isSelected(p)}"
+                        class="hover:bg-white/[0.04] transition-all group/row border-l-2 border-transparent">
+                        <td class="px-4 py-4 text-center">
+                            <input type="checkbox" 
+                                   [checked]="isSelected(p)" 
+                                   (change)="toggleSelect(p)"
+                                   class="rounded border-white/10 bg-black/40 text-emerald-500 focus:ring-0 cursor-pointer w-4 h-4">
+                        </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <span class="text-[10px] font-black text-white uppercase tracking-tighter">{{ p.fechaCreacion | date:'dd/MM/yyyy' }}</span>
@@ -146,7 +190,6 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                                 </button>
                                 
                                 <button (click)="openCompromiso(p, false)" 
-
                                     [class]="p.compromisoGenerado ? 'bg-emerald-500 text-white' : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'"
                                     class="inline-flex items-center gap-2 px-4 py-2 border border-emerald-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn shadow-lg shadow-emerald-500/5">
                                     {{ p.compromisoGenerado ? 'Re-emitir Compromiso' : 'Generar Compromiso' }}
@@ -156,7 +199,7 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                         </td>
                     </tr>
                     <tr *ngIf="pacientes().length === 0">
-                        <td colspan="5" class="px-6 py-16 text-center opacity-40">
+                        <td colspan="6" class="px-6 py-16 text-center opacity-40">
                             <lucide-icon [name]="icons.Shield" class="w-8 h-8 text-slate-500 mx-auto mb-4"></lucide-icon>
                             <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">No hay registros bajo este filtro</p>
                         </td>
@@ -223,7 +266,6 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                 </div>
             </div>
 
-
             <div class="flex justify-end gap-4">
                 <button (click)="showModal.set(false)" class="px-6 py-4 rounded-xl border border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/5 transition-all">Cancelar</button>
                 <button (click)="generarPdf()" [class]="isGarantia() ? 'bg-indigo-500' : 'bg-emerald-500'" class="px-6 py-4 rounded-xl text-white font-black text-[10px] uppercase tracking-widest transition-all flex items-center shadow-lg shadow-emerald-500/20" [disabled]="isGenerating()">
@@ -253,6 +295,9 @@ export class SegurosDashboardComponent implements OnInit {
   public isGenerating = signal(false);
   public compromisoData: any = {};
 
+  // Mass selection signal
+  public selectedPacientes = signal<any[]>([]);
+
   ngOnInit() {
     this.loadPacientes();
   }
@@ -273,9 +318,36 @@ export class SegurosDashboardComponent implements OnInit {
       next: (data) => {
         this.pacientes.set(data);
         this.isLoading.set(false);
+        this.clearSelection();
       },
-      error: () => this.isLoading.set(false)
+      error: () => {
+        this.isLoading.set(false);
+        this.clearSelection();
+      }
     });
+  }
+
+  public toggleSelect(paciente: any): void {
+    this.selectedPacientes.update(list => {
+      const index = list.findIndex(p => p.id === paciente.id);
+      if (index > -1) {
+        return list.filter((_, i) => i !== index);
+      } else {
+        return [...list, paciente];
+      }
+    });
+  }
+
+  public isSelected(paciente: any): boolean {
+    return this.selectedPacientes().some(p => p.id === paciente.id);
+  }
+
+  public clearSelection(): void {
+    this.selectedPacientes.set([]);
+  }
+
+  public getSelectedTotal(): number {
+    return this.selectedPacientes().reduce((sum, p) => sum + (p.montoTotalBase || 0), 0);
   }
 
   openCompromiso(paciente: any, garantia: boolean = false) {
@@ -310,6 +382,54 @@ export class SegurosDashboardComponent implements OnInit {
     this.showModal.set(true);
   }
 
+  public emitirCompromisoSeleccionados(garantia: boolean = false): void {
+    const selected = this.selectedPacientes();
+    if (selected.length === 0) return;
+
+    // Validar que todos pertenezcan al mismo paciente
+    const patientIds = new Set(selected.map(p => p.pacienteId));
+    if (patientIds.size > 1) {
+      alert("Error: Todos los servicios seleccionados deben pertenecer al mismo paciente para poder emitir un solo compromiso de pago.");
+      return;
+    }
+
+    const first = selected[0];
+    const totalMonto = selected.reduce((sum, p) => sum + (p.montoTotalBase || 0), 0);
+    const allConceptos = selected.map(p => p.conceptos).filter(Boolean);
+    const uniqueConceptos = Array.from(new Set(allConceptos.flatMap(c => c.split(',').map((s: string) => s.trim())))).join(', ');
+
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 21);
+
+    this.isGarantia.set(garantia);
+    this.compromisoData = {
+      cuentaPorCobrarId: first.id, // Fallback principal
+      cuentasPorCobrarIds: selected.map(p => p.id), // Lista de todos los IDs
+      nombreResponsable: first.pacienteNombre,
+      relacionResponsable: 'Titular',
+      cedulaResponsable: first.pacienteCedula,
+      direccionResponsable: 'No especificada',
+      telefonoResponsable: 'No especificado',
+      conceptos: uniqueConceptos || 'Servicios Médicos Hospitalarios',
+      nombrePaciente: first.pacienteNombre,
+      edadPaciente: 0,
+      cedulaPaciente: first.pacienteCedula,
+      montoTotal: totalMonto,
+      montoGarantia: 0,
+      descripcionGarantia: '',
+      diasLiquidar: 21,
+      cuotas: 0,
+      fechaCompromiso: today.toISOString().split('T')[0],
+      fechaVencimiento: futureDate.toISOString().split('T')[0],
+      nombreFiador: '',
+      cedulaFiador: '',
+      telefonoFiador: '',
+      direccionFiador: ''
+    };
+    this.showModal.set(true);
+  }
+
   generarPdf() {
     this.isGenerating.set(true);
     
@@ -326,6 +446,7 @@ export class SegurosDashboardComponent implements OnInit {
         window.open(url, '_blank');
         this.isGenerating.set(false);
         this.showModal.set(false);
+        this.clearSelection();
         this.loadPacientes(); // Refresh list to update status if needed
       },
       error: () => {

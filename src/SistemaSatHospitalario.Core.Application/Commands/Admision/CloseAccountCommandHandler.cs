@@ -142,6 +142,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (totalPagado < totalCuenta)
                 {
                     ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
+                    if (cuenta.ConvenioId == null)
+                    {
+                        ar.MarcarComoAuditada("Sistema");
+                    }
                     _context.CuentasPorCobrar.Add(ar);
                 }
 

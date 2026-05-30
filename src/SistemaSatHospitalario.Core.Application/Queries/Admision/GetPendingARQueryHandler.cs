@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             SaldoPendiente = ar.MontoTotalBase - ar.MontoPagadoBase,
                             FechaEmision = ar.FechaCreacion,
                             Estado = ar.Estado,
-                            IsAudited = ar.IsAudited,
+                            IsAudited = ar.IsAudited || cta.ConvenioId == null,
                             QuienAutorizo = ar.QuienAutorizo,
                             DoctorProcedimiento = ar.DoctorProcedimiento,
                             InformacionAdicional = ar.InformacionAdicional,

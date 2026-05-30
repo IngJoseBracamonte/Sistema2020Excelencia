@@ -37,7 +37,8 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
                 status = orden.Estado,
                 patientName = orden.PacienteNombre,
                 servicioNombre = orden.Estudio,
-                tipoServicio = orden.TipoServicio
+                tipoServicio = orden.TipoServicio,
+                informe = orden.Informe
             }, cancellationToken);
         }
 
@@ -55,7 +56,8 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
                 status = orden.Estado,
                 patientName = orden.PacienteNombre,
                 servicioNombre = orden.Estudio,
-                tipoServicio = orden.TipoServicio
+                tipoServicio = orden.TipoServicio,
+                informe = orden.Informe
             }, cancellationToken);
         }
 

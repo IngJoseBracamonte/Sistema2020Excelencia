@@ -36,9 +36,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync();
             var logoBase64 = config?.LogoBase64;
 
-            if (dto.CuentaPorCobrarId.HasValue)
+            var cxcIds = dto.CuentasPorCobrarIds ?? new List<Guid>();
+            if (dto.CuentaPorCobrarId.HasValue && !cxcIds.Contains(dto.CuentaPorCobrarId.Value))
             {
-                var cxc = await _context.CuentasPorCobrar.FindAsync(dto.CuentaPorCobrarId.Value);
+                cxcIds.Add(dto.CuentaPorCobrarId.Value);
+            }
+
+            foreach (var id in cxcIds)
+            {
+                var cxc = await _context.CuentasPorCobrar.FindAsync(id);
                 if (cxc != null)
                 {
                     cxc.MarcarCompromisoGenerado();
@@ -48,7 +54,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     }
 
                     // [V12.8] Persistir ítems de garantía prendaria
-                    await PersistirGarantiasItemsAsync(dto.CuentaPorCobrarId.Value, dto.GarantiasItems);
+                    await PersistirGarantiasItemsAsync(id, dto.GarantiasItems);
                     
                     // Registrar Auditoría
                     var log = new DocumentLog(
@@ -60,9 +66,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                         $"Generado para {dto.NombrePaciente}");
                     
                     _context.DocumentLogs.Add(log);
-                    
-                    await _context.SaveChangesAsync(default);
                 }
+            }
+
+            if (cxcIds.Count > 0)
+            {
+                await _context.SaveChangesAsync(default);
             }
 
             // [V12.8] Si hay ítems, calcular MontoGarantia agregado para el PDF
@@ -79,9 +88,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync();
             var logoBase64 = config?.LogoBase64;
 
-            if (dto.CuentaPorCobrarId.HasValue)
+            var cxcIds = dto.CuentasPorCobrarIds ?? new List<Guid>();
+            if (dto.CuentaPorCobrarId.HasValue && !cxcIds.Contains(dto.CuentaPorCobrarId.Value))
             {
-                var cxc = await _context.CuentasPorCobrar.FindAsync(dto.CuentaPorCobrarId.Value);
+                cxcIds.Add(dto.CuentaPorCobrarId.Value);
+            }
+
+            foreach (var id in cxcIds)
+            {
+                var cxc = await _context.CuentasPorCobrar.FindAsync(id);
                 if (cxc != null)
                 {
                     cxc.MarcarCompromisoGenerado();
@@ -104,9 +119,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                         $"Conformidad generada para {dto.NombrePaciente}");
                     
                     _context.DocumentLogs.Add(log);
-                    
-                    await _context.SaveChangesAsync(default);
                 }
+            }
+
+            if (cxcIds.Count > 0)
+            {
+                await _context.SaveChangesAsync(default);
             }
 
             var pdfBytes = _pdfService.GenerarConformidadServiciosPdf(dto, logoBase64);
@@ -120,31 +138,37 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync();
             var logoBase64 = config?.LogoBase64;
 
-            // Actualizar estado en DB si el ID está presente
-            if (dto.CuentaPorCobrarId.HasValue)
+            var cxcIds = dto.CuentasPorCobrarIds ?? new List<Guid>();
+            if (dto.CuentaPorCobrarId.HasValue && !cxcIds.Contains(dto.CuentaPorCobrarId.Value))
             {
-                var cxc = await _context.CuentasPorCobrar.FindAsync(dto.CuentaPorCobrarId.Value);
+                cxcIds.Add(dto.CuentaPorCobrarId.Value);
+            }
+
+            foreach (var id in cxcIds)
+            {
+                var cxc = await _context.CuentasPorCobrar.FindAsync(id);
                 if (cxc != null)
                 {
                     cxc.MarcarGarantiaGenerada();
-                }
+                    // [V12.8] Persistir ítems de garantía prendaria
+                    await PersistirGarantiasItemsAsync(id, dto.GarantiasItems);
 
-                // [V12.8] Persistir ítems de garantía prendaria
-                await PersistirGarantiasItemsAsync(dto.CuentaPorCobrarId.Value, dto.GarantiasItems);
+                    var log = new DocumentLog(
+                        "Garantía de Pago", 
+                        id.ToString(), 
+                        "Generación", 
+                        _currentUserService.UserId?.ToString() ?? "System", 
+                        _currentUserService.UserName ?? "Sistema",
+                        $"Garantía para {dto.NombrePaciente}");
+                    
+                    _context.DocumentLogs.Add(log);
+                }
             }
 
-            // Registrar Auditoría
-
-            var log = new DocumentLog(
-                "Garantía de Pago", 
-                dto.CuentaPorCobrarId?.ToString() ?? "N/A", 
-                "Generación", 
-                _currentUserService.UserId?.ToString() ?? "System", 
-                _currentUserService.UserName ?? "Sistema",
-                $"Garantía para {dto.NombrePaciente}");
-            
-            _context.DocumentLogs.Add(log);
-            await _context.SaveChangesAsync(default);
+            if (cxcIds.Count > 0)
+            {
+                await _context.SaveChangesAsync(default);
+            }
 
             // [V12.8] Sincronizar monto total desde ítems
             SincronizarMontoGarantiaDesdeItems(dto);
@@ -230,7 +254,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 var upperNombre = nombre.ToUpper();
                 query = query.Where(c => c.Cuenta.Paciente.NombreCorto.ToUpper().Contains(upperNombre) || 
-                                         c.Cuenta.Paciente.CedulaPasaporte.Contains(nombre));
+                                         c.Cuenta.Paciente.CedulaPasaporte.ToUpper().Contains(upperNombre));
             }
 
             if (!string.IsNullOrEmpty(estado) && !estado.Equals("Todos", StringComparison.OrdinalIgnoreCase))
