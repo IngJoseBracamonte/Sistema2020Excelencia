@@ -445,14 +445,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             else
             {
-                // Buscar cuenta abierta del paciente
-                cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
-                    .FirstOrDefaultAsync(c => c.PacienteId == order.PacienteId && c.Estado == EstadoConstants.Abierta);
+                // Solo reutilizar cuenta si es de tipo acumulativo (Hospitalizacion/Emergencia) y coincide con el Tipo de Ingreso solicitado
+                var targetTipo = request.TipoIngreso ?? EstadoConstants.Particular;
+                if (targetTipo == EstadoConstants.Hospitalizacion || targetTipo == EstadoConstants.Emergencia)
+                {
+                    cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
+                        .FirstOrDefaultAsync(c => c.PacienteId == order.PacienteId 
+                                               && c.Estado == EstadoConstants.Abierta 
+                                               && c.TipoIngreso == targetTipo);
+                }
 
                 if (cuenta == null)
                 {
-                    // Crear nueva cuenta si no hay una abierta
-                    cuenta = new CuentaServicios(order.PacienteId, usuario, request.TipoIngreso ?? EstadoConstants.Particular, request.ConvenioId);
+                    // Crear nueva cuenta si no hay una reutilizable
+                    cuenta = new CuentaServicios(order.PacienteId, usuario, targetTipo, request.ConvenioId);
                     _context.CuentasServicios.Add(cuenta);
                 }
             }

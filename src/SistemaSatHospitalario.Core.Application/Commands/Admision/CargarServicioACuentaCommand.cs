@@ -181,6 +181,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.UsuarioCarga,
                 legacyId);
 
+            if (_context.DetallesServicioCuenta != null)
+            {
+                _context.DetallesServicioCuenta.Add(detalle);
+            }
+
             // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
             if (detalle.Honorario > 0 && !esConsulta)
             {

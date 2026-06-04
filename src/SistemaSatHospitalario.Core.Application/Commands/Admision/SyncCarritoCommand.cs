@@ -25,6 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class SyncCarritoCommand : IRequest<SyncCarritoResult>
     {
         public Guid PacienteId { get; set; }
+        public Guid? CuentaId { get; set; }
         public int? IdPacienteLegacy { get; set; } // V11.6: Soporte para Onboarding dinámico
         public string UsuarioCarga { get; set; } = string.Empty;
         public string TipoIngreso { get; set; } = "Particular";
@@ -132,11 +133,28 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     throw new InvalidOperationException($"No se pudo resolver la identidad del paciente. Verifique que exista en el sistema Legacy o registro nativo.");
                 }
 
-                // 2. CREACIÓN OBLIGATORIA DE CUENTA (Ingreso Nuevo por Wizard - V11.5)
-                // Se abandona la búsqueda de cuentas abiertas para garantizar atomicidad por Ingreso.
-                _logger.LogInformation("[SYNC] Creando NUEVO INGRESO para el paciente {PacienteId}", paciente.Id);
-                var cuenta = new CuentaServicios(paciente.Id, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
-                await _repository.AgregarCuentaAsync(cuenta, ct);
+                // 2. OBTENCIÓN O CREACIÓN DE CUENTA (Soporte Acumulativo V12.0)
+                CuentaServicios? cuenta = null;
+                if (request.CuentaId.HasValue && request.CuentaId.Value != Guid.Empty)
+                {
+                    cuenta = await _repository.ObtenerCuentaPorIdAsync(request.CuentaId.Value, ct);
+                }
+
+                if (cuenta == null && (request.TipoIngreso == EstadoConstants.Hospitalizacion || request.TipoIngreso == EstadoConstants.Emergencia))
+                {
+                    cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(paciente.Id, ct);
+                }
+
+                if (cuenta == null)
+                {
+                    _logger.LogInformation("[SYNC] Creando NUEVO INGRESO para el paciente {PacienteId}", paciente.Id);
+                    cuenta = new CuentaServicios(paciente.Id, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
+                    await _repository.AgregarCuentaAsync(cuenta, ct);
+                }
+                else
+                {
+                    _logger.LogInformation("[SYNC] Reutilizando cuenta abierta {CuentaId} para el paciente {PacienteId}", cuenta.Id, paciente.Id);
+                }
 
                 // 2b. Validación de Seguridad de Precios en Lote (Fase 1 - Matrix)
                 if (!request.IsPrivilegedUser)
@@ -297,6 +315,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         item.TipoServicio, 
                         request.UsuarioCarga,
                         legacyId);
+
+                    if (_context.DetallesServicioCuenta != null)
+                    {
+                        _context.DetallesServicioCuenta.Add(detalle);
+                    }
 
                     // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
                     if (detalle.Honorario > 0 && !esConsulta)

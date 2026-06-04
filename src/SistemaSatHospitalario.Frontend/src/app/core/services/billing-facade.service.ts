@@ -207,6 +207,44 @@ export class BillingFacadeService {
     this.currentSupervisorKey.set(null);
   }
 
+  public loadOpenAccountForPatient(pacienteId: string, tipoIngreso: string): Observable<any> {
+    return this.facturacionService.getOpenAccount(pacienteId, tipoIngreso).pipe(
+      tap((cuenta: any) => {
+        if (cuenta) {
+          this.cuentaId.set(cuenta.id);
+          const mappedItems = (cuenta.detalles || []).map((d: any) => {
+            return new CatalogItem({
+              id: d.servicioId,
+              codigo: '',
+              descripcion: d.descripcion,
+              precio: d.precio,
+              precioUsd: d.precio,
+              precioBs: d.precio * this.tasaCambioDia(),
+              honorarioUsd: d.honorario,
+              honorarioBase: d.honorario,
+              tipo: d.tipoServicio,
+              medicoId: d.medicoResponsableId || undefined,
+              medicoNombre: d.medicoNombre || undefined,
+              detalleId: d.id,
+              hora: d.fechaCarga,
+              esLegacy: false
+            });
+          });
+          this.serviciosEnBackend.set(mappedItems);
+        } else {
+          this.cuentaId.set(null);
+          this.serviciosEnBackend.set([]);
+        }
+      }),
+      catchError(err => {
+        console.error('[BillingFacade] Error loading open account:', err);
+        this.cuentaId.set(null);
+        this.serviciosEnBackend.set([]);
+        throw err;
+      })
+    );
+  }
+
   public resetCart() {
     this.clearAll();
     this.searchTermServicio.set('');
@@ -225,6 +263,7 @@ export class BillingFacadeService {
 
     const payload: SyncCarritoMasivoRequest = {
       pacienteId,
+      cuentaId: this.cuentaId() || undefined,
       idPacienteLegacy,
       tipoIngreso,
       usuarioCarga: user,

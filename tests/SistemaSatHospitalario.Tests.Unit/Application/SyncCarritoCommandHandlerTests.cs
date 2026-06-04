@@ -213,6 +213,65 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             capturedCuenta.Detalles.First().Honorario.Should().Be(30);
             capturedCuenta.Detalles.First().Precio.Should().Be(180);
         }
+
+        [Fact]
+        public async Task Handle_WithCumulativeTipoIngreso_ShouldReuseOpenAccount()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            var cuentaId = Guid.NewGuid();
+            
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("S001", "Servicio Test", 50, "Otros");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            service.Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Other;
+            service.HonorarioBase = 0;
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            var cuentaExistente = new CuentaServicios(pacienteId, "TestUser", "Hospitalizacion");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(cuentaExistente, cuentaId);
+            
+            // Simular repositorio para retornar la cuenta abierta
+            _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(cuentaExistente);
+
+            var command = new SyncCarritoCommand
+            {
+                PacienteId = pacienteId,
+                UsuarioCarga = "TestUser",
+                TipoIngreso = "Hospitalizacion",
+                Items = new List<ServicioCarritoDto>
+                {
+                    new()
+                    {
+                        ServicioId = servicioId.ToString(),
+                        Descripcion = "Servicio Test",
+                        Precio = 50,
+                        Honorario = 0,
+                        Cantidad = 1,
+                        TipoServicio = "Otros"
+                    }
+                }
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.CuentaId.Should().Be(cuentaId);
+            result.Detalles.Should().HaveCount(1);
+
+            // Verificar que NO se haya agregado una nueva cuenta
+            _repositoryMock.Verify(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()), Times.Never);
+            _repositoryMock.Verify(r => r.GuardarCambiosAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }
 

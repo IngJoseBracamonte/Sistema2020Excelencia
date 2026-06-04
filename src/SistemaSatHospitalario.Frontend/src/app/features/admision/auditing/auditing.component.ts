@@ -104,9 +104,12 @@ export class AuditingComponent implements OnInit {
   public selectedService = signal<any | null>(null);
   public overridePrecio = signal<number | null>(null);
   public overrideHonorario = signal<number | null>(null);
-  public tipoIngresoVal = signal<string>('Particular'); // Particular, Seguro
+  public tipoIngresoVal = signal<string>('Particular'); // Particular, Seguro, Hospitalizacion, Emergencia
+  public modalidadIngresoVal = signal<'Particular' | 'Convenio'>('Particular');
   public convenioIdVal = signal<number | null>(null);
   public convenios = signal<any[]>([]);
+  public activeOpenAccount = signal<any | null>(null);
+  public cargarACuentaAbierta = signal<boolean>(false);
 
   // Señales de médico para validación administrativa
   public doctors = signal<any[]>([]);
@@ -245,11 +248,29 @@ export class AuditingComponent implements OnInit {
     this.overridePrecio.set(null);
     this.overrideHonorario.set(null);
     this.tipoIngresoVal.set('Particular');
+    this.modalidadIngresoVal.set('Particular');
     this.convenioIdVal.set(null);
+    this.activeOpenAccount.set(null);
+    this.cargarACuentaAbierta.set(false);
     
     // Inicializar médico asignado si viene de la orden
     this.selectedDoctor.set(order.medicoSolicitanteId ? { id: order.medicoSolicitanteId, nombre: order.medicoSolicitanteNombre } : null);
     this.doctorSearchTerm.set(order.medicoSolicitanteNombre || '');
+    
+    // Consultar cuenta abierta activa para el paciente (V12.1 Flow Integration)
+    if (order.pacienteId) {
+      this.http.get<any>(`${environment.apiUrl}/api/Billing/OpenAccount/${order.pacienteId}`).subscribe({
+        next: (res) => {
+          if (res) {
+            this.activeOpenAccount.set(res);
+            this.cargarACuentaAbierta.set(true); // Pre-seleccionar por defecto si existe cuenta abierta
+          }
+        },
+        error: (err) => {
+          console.error('[AUDITING] Error al consultar cuenta abierta del paciente:', err);
+        }
+      });
+    }
     
     // Cargar servicios clínicos del catálogo correspondientes al tipo de orden (RX / TOMO)
     this.http.get<any[]>(`${environment.apiUrl}/api/Imaging/services?type=${order.tipoServicio}`)
@@ -291,8 +312,7 @@ export class AuditingComponent implements OnInit {
     const payload: any = {
       servicioId: this.selectedService().id,
       precio: this.overridePrecio(),
-      honorario: this.overrideHonorario(),
-      tipoIngreso: this.tipoIngresoVal()
+      honorario: this.overrideHonorario()
     };
 
     if (this.selectedDoctor()) {
@@ -300,8 +320,23 @@ export class AuditingComponent implements OnInit {
       payload.medicoSolicitanteNombre = this.selectedDoctor().nombre;
     }
 
-    if (this.tipoIngresoVal() === 'Seguro' && this.convenioIdVal()) {
-      payload.convenioId = this.convenioIdVal();
+    if (this.activeOpenAccount() && this.cargarACuentaAbierta()) {
+      payload.cuentaId = this.activeOpenAccount().id;
+      payload.tipoIngreso = null;
+      payload.convenioId = null;
+    } else {
+      payload.cuentaId = null;
+      payload.tipoIngreso = this.tipoIngresoVal();
+      
+      const isSeguro = this.tipoIngresoVal() === 'Seguro';
+      const isCumulative = this.tipoIngresoVal() === 'Hospitalizacion' || this.tipoIngresoVal() === 'Emergencia';
+      const hasConvenio = isSeguro || (isCumulative && this.modalidadIngresoVal() === 'Convenio');
+      
+      if (hasConvenio && this.convenioIdVal()) {
+        payload.convenioId = this.convenioIdVal();
+      } else {
+        payload.convenioId = null;
+      }
     }
 
     this.isLoading.set(true);

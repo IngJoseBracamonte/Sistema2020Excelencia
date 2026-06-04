@@ -132,7 +132,10 @@ export class FacturacionComponent {
 
   // --- Estados del Wizard (SSoT) ---
   public currentStep = signal<number>(1);
-  public maxSteps = computed(() => this.tipoIngreso() === 'Particular' ? 2 : 3);
+  public isAssistantOnly = computed(() => 
+    (this.isHospitalAssistant() || this.isEmergencyAssistant()) && !this.permissionService.can('Permissions.Facturacion.Particular')
+  );
+  public maxSteps = computed(() => (this.tipoIngreso() === 'Particular' || this.isAssistantOnly()) ? 2 : 3);
 
   // --- Estados de Cuenta y Carrito (Delegados al Facade V11.1 Guid) ---
   public pacienteId = signal<string | null>(null);
@@ -149,6 +152,7 @@ export class FacturacionComponent {
 
   public tipoIngreso = signal<string>('Particular');
   public convenioId = signal<number | null>(null);
+  public modalidadIngreso = signal<'Particular' | 'Convenio'>('Particular');
   public tasaCambioDia = this.billingFacade.tasaCambioDia;
   public editandoTasa = signal<boolean>(false);
   public tasaEditValue = signal<number>(0);
@@ -195,7 +199,11 @@ export class FacturacionComponent {
       const typeParam = params['type'];
       const oldType = this.tipoIngreso();
       
-      if (typeParam) {
+      if (this.isHospitalAssistant() && !this.isAdmin()) {
+        this.tipoIngreso.set('Hospitalizacion');
+      } else if (this.isEmergencyAssistant() && !this.isAdmin()) {
+        this.tipoIngreso.set('Emergencia');
+      } else if (typeParam) {
         this.tipoIngreso.set(typeParam);
       } else if (this.isInsuranceAssistant()) {
         this.tipoIngreso.set('Seguro');
@@ -234,6 +242,41 @@ export class FacturacionComponent {
     effect(() => {
       const convId = this.convenioId();
       this.refreshCatalog(convId);
+    });
+
+    // 8.5 Reaccionar a cambios en modalidadIngreso para limpiar convenioId
+    effect(() => {
+      const mod = this.modalidadIngreso();
+      if (mod === 'Particular') {
+        this.convenioId.set(null);
+      }
+    });
+
+    // 9. Reaccionar a cambios en paciente o tipo de ingreso para cargar cuenta abierta de hospitalización/emergencia (V12.0)
+    effect(() => {
+      const pId = this.pacienteId();
+      const tipo = this.tipoIngreso();
+      if (pId && (tipo === 'Hospitalizacion' || tipo === 'Emergencia')) {
+        setTimeout(() => {
+          this.billingFacade.loadOpenAccountForPatient(pId, tipo).subscribe({
+            next: (cuenta) => {
+              if (cuenta) {
+                this.actionMessage.set(`Cuenta de ${tipo} abierta recuperada y enlazada.`);
+                if (cuenta.convenioId) {
+                  this.convenioId.set(cuenta.convenioId);
+                  this.modalidadIngreso.set('Convenio');
+                } else {
+                  this.convenioId.set(null);
+                  this.modalidadIngreso.set('Particular');
+                }
+              }
+            },
+            error: () => {
+              this.errorMessage.set(`Error al intentar recuperar la cuenta de ${tipo} del paciente.`);
+            }
+          });
+        });
+      }
     });
   }
 
@@ -297,9 +340,10 @@ export class FacturacionComponent {
     }
   });
 
-  // Efecto para Resetear Convenio si no es Seguro (Consistency V2.5)
+  // Efecto para Resetear Convenio si no es Seguro, Hospitalización o Emergencia (Consistency V2.5)
   private _convenioResetEffect = effect(() => {
-    if (this.tipoIngreso() !== 'Seguro') {
+    const tipo = this.tipoIngreso();
+    if (tipo !== 'Seguro' && tipo !== 'Hospitalizacion' && tipo !== 'Emergencia') {
       this.convenioId.set(null);
     }
   });
@@ -626,7 +670,7 @@ export class FacturacionComponent {
   /**
    * Sincroniza los items del carrito local con el backend (Facade Delegation V10.2)
    */
-  private async sincronizarCarrito(): Promise<boolean> {
+  public async sincronizarCarrito(): Promise<boolean> {
     const pId = this.pacienteId();
     if (!pId) return false;
 
@@ -970,7 +1014,8 @@ export class FacturacionComponent {
 
     // Si no hay paciente, agregar al carrito local (No bloqueante)
     if (pId === null) {
-      const yaEnCarrito = this.carritoLocal().some(x => x.id === s.id);
+      const esAcumulativo = this.tipoIngreso() === 'Hospitalizacion' || this.tipoIngreso() === 'Emergencia';
+      const yaEnCarrito = !esAcumulativo && this.carritoLocal().some(x => x.id === s.id);
       if (!yaEnCarrito) {
         this.carritoLocal.update(prev => [...prev, new CatalogItem({
           ...s,
@@ -1282,7 +1327,7 @@ export class FacturacionComponent {
         
         // V12.1 Integration: Capturar resultado para panel de éxito
         this.lastBillResult.set(res);
-        this.isInsuranceFlow.set(this.tipoIngreso() === 'Seguro');
+        this.isInsuranceFlow.set(this.tipoIngreso() === 'Seguro' || !!this.convenioId());
         this.billingSuccess.set(true);
 
         if (autoPrintCompromiso) {

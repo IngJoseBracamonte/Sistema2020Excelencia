@@ -562,21 +562,65 @@
                 </div>
             </div>
 
+            <!-- Cuenta Abierta Detectada (Alerta / Selector) -->
+            <div *ngIf="activeOpenAccount()" class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-3 animate-fade-in">
+                <div class="flex items-center gap-3">
+                    <lucide-icon [name]="icons.Info" class="w-4 h-4 text-amber-500 animate-pulse"></lucide-icon>
+                    <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Cuenta Abierta Detectada</span>
+                </div>
+                <p class="text-[11px] text-slate-300">
+                    El paciente posee una cuenta abierta activa de tipo <strong class="text-white uppercase">{{ activeOpenAccount().tipoIngreso }}</strong>
+                    <span *ngIf="activeOpenAccount().seguroNombre"> con el convenio <strong class="text-white uppercase">{{ activeOpenAccount().seguroNombre }}</strong></span>.
+                </p>
+                
+                <div class="flex gap-6 pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" [value]="true" [(ngModel)]="cargarACuentaAbierta" name="cargarACuentaAbiertaRadio"
+                               class="accent-amber-500 w-4 h-4 bg-white/5 border border-white/10">
+                        <span class="text-xs font-bold text-white">Cargar a esta cuenta</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" [value]="false" [(ngModel)]="cargarACuentaAbierta" name="cargarACuentaAbiertaRadio"
+                               class="accent-amber-500 w-4 h-4 bg-white/5 border border-white/10">
+                        <span class="text-xs font-bold text-white">Facturar por separado</span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Parámetros de Facturación y Cuenta -->
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Tipo de Ingreso</label>
-                    <div class="relative">
-                        <select [(ngModel)]="tipoIngresoVal"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white outline-none appearance-none cursor-pointer">
-                            <option value="Particular">PARTICULAR</option>
-                            <option value="Seguro">ASEGURADORA</option>
-                        </select>
-                        <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+            <div *ngIf="!cargarACuentaAbierta()" class="space-y-4 animate-fade-in">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Tipo de Ingreso</label>
+                        <div class="relative">
+                            <select [(ngModel)]="tipoIngresoVal"
+                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white outline-none appearance-none cursor-pointer">
+                                <option value="Particular">PARTICULAR</option>
+                                <option value="Seguro">ASEGURADORA</option>
+                                <option value="Hospitalizacion">HOSPITALIZACIÓN</option>
+                                <option value="Emergencia">EMERGENCIA</option>
+                            </select>
+                            <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                        </div>
+                    </div>
+
+                    <!-- Modality Selector for Hospitalizacion / Emergencia -->
+                    <div *ngIf="tipoIngresoVal() === 'Hospitalizacion' || tipoIngresoVal() === 'Emergencia'" class="space-y-1 animate-fade-in">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Modalidad de Cobertura</label>
+                        <div class="relative">
+                            <select [(ngModel)]="modalidadIngresoVal"
+                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-xs text-white outline-none appearance-none cursor-pointer">
+                                <option value="Particular">PARTICULAR</option>
+                                <option value="Convenio">ASEGURADORA / CONVENIO</option>
+                            </select>
+                            <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                        </div>
                     </div>
                 </div>
-                
-                <div *ngIf="tipoIngresoVal() === 'Seguro'" class="space-y-1 animate-fade-in">
+
+                <!-- Convenio Selector -->
+                <div *ngIf="tipoIngresoVal() === 'Seguro' || ((tipoIngresoVal() === 'Hospitalizacion' || tipoIngresoVal() === 'Emergencia') && modalidadIngresoVal() === 'Convenio')"
+                     class="space-y-1 animate-fade-in">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Convenio de Seguros</label>
                     <div class="relative">
                         <select [(ngModel)]="convenioIdVal"

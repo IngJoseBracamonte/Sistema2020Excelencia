@@ -29,6 +29,7 @@ export class BillingCartComponent {
   @Input() currentStep = 1;
   @Input() isLoading = false;
   @Input() isInsuranceFlow = false;
+  @Input() isAssistantOnly = false;
 
   // --- Outputs de Acción ---
   @Output() verCitas = new EventEmitter<void>();
@@ -37,6 +38,7 @@ export class BillingCartComponent {
   @Output() quitar = new EventEmitter<{ index: number, isBackend: boolean }>();
   @Output() editarPrecio = new EventEmitter<{ index: number, isBackend: boolean }>();
   @Output() precioCambiado = new EventEmitter<{ index: number, isBackend: boolean, newPrice: number, newHonorary: number }>();
+  @Output() guardarCargos = new EventEmitter<void>();
 
   // Selectores del Facade
   public serviciosCargados = this.billingFacade.serviciosCargados;

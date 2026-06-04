@@ -312,5 +312,25 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpGet("OpenAccount/{pacienteId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetOpenAccount(Guid pacienteId, [FromQuery] string? tipoIngreso)
+        {
+            try
+            {
+                var query = new GetOpenAccountQuery { PacienteId = pacienteId, TipoIngreso = tipoIngreso };
+                var result = await _mediator.Send(query);
+                if (result == null) return NoContent();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener cuenta abierta para Paciente: {PacienteId}", pacienteId);
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }

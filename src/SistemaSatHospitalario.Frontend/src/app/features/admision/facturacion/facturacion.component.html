@@ -151,11 +151,34 @@
                             </select>
                         </div>
 
-                        <div *ngIf="tipoIngreso() === 'Seguro'" class="animate-scale-in space-y-4">
+                        <!-- Pregunta explícita para ingresos acumulativos (Hospitalización / Emergencia) -->
+                        <div *ngIf="tipoIngreso() === 'Hospitalizacion' || tipoIngreso() === 'Emergencia'" class="col-span-1 space-y-4">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">¿El ingreso es Particular o por Convenio?</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <button type="button" 
+                                    (click)="modalidadIngreso.set('Particular')" 
+                                    [disabled]="!!cuentaId()"
+                                    [class]="modalidadIngreso() === 'Particular' ? 'bg-primary/20 border-primary text-white font-black' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'"
+                                    class="flex items-center justify-center py-4 rounded-xl border transition-all text-[11px] font-black uppercase tracking-wider cursor-pointer active:scale-95 disabled:opacity-50 min-h-[56px]">
+                                    👥 Particular
+                                </button>
+                                <button type="button" 
+                                    (click)="modalidadIngreso.set('Convenio')" 
+                                    [disabled]="!!cuentaId()"
+                                    [class]="modalidadIngreso() === 'Convenio' ? 'bg-indigo-500/20 border-indigo-500 text-white font-black' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'"
+                                    class="flex items-center justify-center py-4 rounded-xl border transition-all text-[11px] font-black uppercase tracking-wider cursor-pointer active:scale-95 disabled:opacity-50 min-h-[56px]">
+                                    🛡️ Convenio
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Selector de Convenio, mostrado si es Seguro, o si es Hospitalización/Emergencia bajo Convenio -->
+                        <div *ngIf="tipoIngreso() === 'Seguro' || ((tipoIngreso() === 'Hospitalizacion' || tipoIngreso() === 'Emergencia') && modalidadIngreso() === 'Convenio')" 
+                             class="animate-scale-in col-span-2 space-y-4">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Institución / Aseguradora</label>
                             <select [ngModel]="convenioId()" (ngModelChange)="convenioId.set($event)" [disabled]="!!cuentaId()"
                                 class="w-full px-6 py-5 bg-primary/5 border border-primary/10 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-black text-primary shadow-sm appearance-none cursor-pointer min-h-[70px]">
-                                <option [value]="null">--- Seleccione ---</option>
+                                <option [value]="null">--- Seleccione la Aseguradora / Convenio ---</option>
                                 <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre }}</option>
                             </select>
                         </div>
@@ -189,10 +212,10 @@
                 </app-patient-selector>
 
                 <!-- Gestión de Abonos (SOLID SRP Component V7.0) -->
-                <app-payment-module></app-payment-module>
+                <app-payment-module *ngIf="!isAssistantOnly()"></app-payment-module>
 
                 <!-- Formulario de Metadatos para Documentos (Relocated to Step 3) -->
-                <div class="glass-panel border border-white/10 rounded-[2rem] p-6 space-y-4 animate-fade-in-up mt-4">
+                <div *ngIf="!isAssistantOnly()" class="glass-panel border border-white/10 rounded-[2rem] p-6 space-y-4 animate-fade-in-up mt-4">
                     <div class="flex items-center space-x-3 mb-2">
                         <lucide-icon [name]="icons.Edit3" class="w-4 h-4 text-primary"></lucide-icon>
                         <h4 class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Información para Documentos (Opcional)</h4>
@@ -311,13 +334,15 @@
                 [patientData]="selectedPatientData()"
                 [currentStep]="currentStep()"
                 [isLoading]="isLoading()"
-                [isInsuranceFlow]="tipoIngreso() === 'Seguro'"
+                [isInsuranceFlow]="tipoIngreso() === 'Seguro' || !!convenioId()"
+                [isAssistantOnly]="isAssistantOnly()"
                 (verCitas)="verCitasActivas()"
                 (quitar)="quitarServicio($event)"
                 (editarPrecio)="handleEditarPrecio($event)"
                 (precioCambiado)="onPrecioCambiado($event)"
                 (procesar)="procesarCobro()"
-                (omitir)="omitirComprobante($event)">
+                (omitir)="omitirComprobante($event)"
+                (guardarCargos)="sincronizarCarrito()">
             </app-billing-cart>
             
             <!-- [V12.7] Eliminado Compromiso de Pago Preventivo para Seguros según requerimiento -->

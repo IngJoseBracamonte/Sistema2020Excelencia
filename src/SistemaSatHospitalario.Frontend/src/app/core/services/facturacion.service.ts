@@ -49,6 +49,7 @@ export interface BloquearHorarioRequest {
 
 export interface SyncCarritoMasivoRequest {
   pacienteId: string; // Identidad Nativa GUID (V11.1)
+  cuentaId?: string;
   idPacienteLegacy?: number; // V11.8 Support
   tipoIngreso: string;
   convenioId?: number;
@@ -117,6 +118,14 @@ export class FacturacionService {
 
   guardarGarantiasItems(cuentaPorCobrarId: string, items: any[]): Observable<any> {
     return this.http.post<any>(`${this.segurosUrl}/garantias-items/${cuentaPorCobrarId}`, items);
+  }
+
+  getOpenAccount(pacienteId: string, tipoIngreso?: string): Observable<any> {
+    let url = `${this.billingUrl}/OpenAccount/${pacienteId}`;
+    if (tipoIngreso) {
+      url += `?tipoIngreso=${tipoIngreso}`;
+    }
+    return this.http.get<any>(url);
   }
 
   closeAccount(request: any): Observable<any> {
