@@ -37,6 +37,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(result);
         }
 
+        [HttpPut]
+        public async Task<ActionResult<bool>> Update([FromBody] UpdatePatientCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
         [HttpGet("{id}/history")]
         public async Task<ActionResult<List<PatientHistoryDto>>> GetHistory(Guid id)
         {

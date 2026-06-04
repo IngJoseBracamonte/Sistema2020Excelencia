@@ -29,6 +29,7 @@ export interface ImagingOrder {
   cuentaId: string;
   pacienteId: string;
   pacienteNombre: string;
+  pacienteCedula?: string;
   estudio: string;
   tipoServicio: string; // RX o TOMO
   estado: string; // Pendiente, Procesado, Anulado

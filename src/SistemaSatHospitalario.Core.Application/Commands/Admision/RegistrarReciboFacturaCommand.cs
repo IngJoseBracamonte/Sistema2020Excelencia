@@ -107,7 +107,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             decimal montoVueltoUSD = Math.Max(0, totalPagado - totalCuenta);
 
-            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, totalCuenta, montoVueltoUSD, EstadoConstants.Borrador);
+            var numeroComprobante = await GenerarSiguienteNumeroComprobanteAsync(cancellationToken);
+            var recibo = new ReciboFactura(request.CuentaServicioId, cuenta.PacienteId, cajaAbierta.Id, request.TasaCambioDia, totalCuenta, montoVueltoUSD, EstadoConstants.Borrador, numeroComprobante);
 
             foreach (var item in listaPagosValidados)
             {
@@ -140,6 +141,15 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             await _billingRepository.GuardarCambiosAsync(cancellationToken);
 
             return recibo.Id;
+        }
+
+        private async Task<string> GenerarSiguienteNumeroComprobanteAsync(CancellationToken cancellationToken)
+        {
+            var prefix = DateTime.Now.ToString("ddMMyy");
+            var count = await _context.RecibosFactura
+                .Where(r => r.NumeroComprobante != null && r.NumeroComprobante.StartsWith(prefix + "-"))
+                .CountAsync(cancellationToken);
+            return $"{prefix}-{(count + 1):D2}";
         }
     }
 }

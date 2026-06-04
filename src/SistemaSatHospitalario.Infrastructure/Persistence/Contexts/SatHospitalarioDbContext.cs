@@ -91,6 +91,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("RecibosFacturas");
                 entity.HasKey(r => r.Id);
                 entity.Property(r => r.TasaCambioDia).HasPrecision(18, 4);
+                entity.Property(r => r.NumeroComprobante).HasMaxLength(50);
                 
                 entity.HasOne(r => r.CajaDiaria)
                       .WithMany()

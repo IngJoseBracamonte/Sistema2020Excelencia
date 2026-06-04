@@ -42,6 +42,7 @@ import { ConfiguracionGeneral, UserDto } from '../../../core/models/settings.mod
 import { SeguroConvenio } from '../../../core/models/convenio.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { PatientService, PatientRecord } from '../../../core/services/patient.service';
 
 
 @Component({
@@ -57,8 +58,9 @@ export class SystemSettingsComponent implements OnInit {
   public permissionService = inject(PermissionService);
   private route = inject(ActivatedRoute);
   private catalogService = inject(CatalogService);
+  private patientService = inject(PatientService);
 
-  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'metodosPago' = 'general';
+  public activeTab: 'general' | 'convenios' | 'usuarios' | 'citas' | 'metodosPago' | 'pacientes' = 'general';
   public isLoading = signal<boolean>(false);
 
   // --- METODOS DE PAGO TAB ---
@@ -117,6 +119,12 @@ export class SystemSettingsComponent implements OnInit {
   // --- MONITOR TAB ---
   public activeAppointments = signal<any[]>([]);
 
+  // --- PACIENTES TAB ---
+  public searchPatientQuery = signal<string>('');
+  public patientsList = signal<PatientRecord[]>([]);
+  public showPatientEditModal = false;
+  public editingPatient: PatientRecord = { id: '', cedula: '', nombre: '', apellidos: '', celular: '', sexo: 'ND', correo: '' };
+
 
 
 
@@ -168,6 +176,7 @@ export class SystemSettingsComponent implements OnInit {
     if (this.activeTab === 'convenios') this.loadConvenios();
     if (this.activeTab === 'citas') this.loadAppointments();
     if (this.activeTab === 'metodosPago') this.loadPaymentMethods();
+    if (this.activeTab === 'pacientes') this.searchPatients();
   }
 
   loadAppointments() {
@@ -474,6 +483,59 @@ export class SystemSettingsComponent implements OnInit {
       error: (err: any) => {
         this.isLoading.set(false);
         alert(err.error?.error || 'Error al eliminar método de pago');
+      }
+    });
+  }
+
+  // --- PACIENTES LOGIC ---
+  searchPatients() {
+    const term = this.searchPatientQuery().trim();
+    if (!term) {
+      this.patientsList.set([]);
+      return;
+    }
+    this.isLoading.set(true);
+    this.patientService.searchPatients(term).subscribe({
+      next: (res) => {
+        this.patientsList.set(res);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.patientsList.set([]);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  editPatient(patient: PatientRecord) {
+    this.editingPatient = { 
+      id: patient.id,
+      idPacienteLegacy: patient.idPacienteLegacy,
+      cedula: patient.cedula,
+      nombre: patient.nombre || '',
+      apellidos: patient.apellidos || '',
+      celular: patient.celular || '',
+      sexo: patient.sexo || 'ND',
+      correo: patient.correo || ''
+    };
+    this.showPatientEditModal = true;
+  }
+
+  savePatient() {
+    if (!this.editingPatient.cedula || !this.editingPatient.nombre) {
+      alert('La Cédula y el Nombre son obligatorios.');
+      return;
+    }
+    this.isLoading.set(true);
+    this.patientService.updatePatient(this.editingPatient).subscribe({
+      next: () => {
+        this.showPatientEditModal = false;
+        alert('Datos del paciente actualizados correctamente.');
+        this.searchPatients();
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        alert(err.error?.error || 'Error al actualizar paciente.');
       }
     });
   }

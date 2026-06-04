@@ -320,6 +320,38 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
         }
 
+        public async Task<bool> UpdatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
+                const string sql = @"
+                    UPDATE datospersonales 
+                    SET Cedula = @Cedula,
+                        Nombre = @Nombre, 
+                        Apellidos = @Apellidos, 
+                        Celular = @Celular, 
+                        Telefono = @Telefono, 
+                        Sexo = @Sexo, 
+                        Fecha = @Fecha, 
+                        Correo = @Correo, 
+                        TipoCorreo = @TipoCorreo, 
+                        CodigoCelular = @CodigoCelular, 
+                        CodigoTelefono = @CodigoTelefono
+                    WHERE IdPersona = @IdPersona";
+
+                var rows = await connection.ExecuteAsync(sql, patient);
+                return rows > 0;
+            }
+            catch (global::System.Exception ex)
+            {
+                _logger.LogError($"[LEGACY ERROR] UpdatePatientLegacyAsync: {ex.Message}", ex);
+                return false;
+            }
+        }
+
         public async Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken)
         {
             try

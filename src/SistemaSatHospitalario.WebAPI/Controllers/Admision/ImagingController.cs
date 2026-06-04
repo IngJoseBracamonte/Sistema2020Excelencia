@@ -40,8 +40,35 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public async Task<IActionResult> GetPendingOrders([FromQuery] string type)
         {
             // type debe ser RX o TOMO
-            var orders = await _context.OrdenesImagenes
-                .Where(o => o.TipoServicio == type && o.Estado == "Pendiente")
+            var query = _context.OrdenesImagenes
+                .Where(o => o.TipoServicio == type && o.Estado == "Pendiente");
+
+            var orders = await (from o in query
+                                join p in _context.PacientesAdmision on o.PacienteId equals p.Id into op
+                                from p in op.DefaultIfEmpty()
+                                select new
+                                {
+                                    Id = o.Id,
+                                    OrderId = o.Id,
+                                    CuentaId = o.CuentaId,
+                                    PacienteId = o.PacienteId,
+                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
+                                    Estudio = o.Estudio,
+                                    TipoServicio = o.TipoServicio,
+                                    Estado = o.Estado,
+                                    FechaCreacion = o.FechaCreacion,
+                                    ProcesadoPor = o.ProcesadoPor,
+                                    FechaProcesado = o.FechaProcesado,
+                                    EsDirecta = o.EsDirecta,
+                                    RequiereValidacion = o.RequiereValidacion,
+                                    Validada = o.Validada,
+                                    ValidadorPor = o.ValidadorPor,
+                                    FechaValidacion = o.FechaValidacion,
+                                    MedicoSolicitanteId = o.MedicoSolicitanteId,
+                                    MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
+                                    Informe = o.Informe
+                                })
                 .OrderByDescending(o => o.FechaCreacion)
                 .ToListAsync();
 
@@ -88,7 +115,32 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                          pacIds.Contains(o.PacienteId));
             }
 
-            var orders = await query
+            var orders = await (from o in query
+                                join p in _context.PacientesAdmision on o.PacienteId equals p.Id into op
+                                from p in op.DefaultIfEmpty()
+                                select new
+                                {
+                                    Id = o.Id,
+                                    OrderId = o.Id,
+                                    CuentaId = o.CuentaId,
+                                    PacienteId = o.PacienteId,
+                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
+                                    Estudio = o.Estudio,
+                                    TipoServicio = o.TipoServicio,
+                                    Estado = o.Estado,
+                                    FechaCreacion = o.FechaCreacion,
+                                    ProcesadoPor = o.ProcesadoPor,
+                                    FechaProcesado = o.FechaProcesado,
+                                    EsDirecta = o.EsDirecta,
+                                    RequiereValidacion = o.RequiereValidacion,
+                                    Validada = o.Validada,
+                                    ValidadorPor = o.ValidadorPor,
+                                    FechaValidacion = o.FechaValidacion,
+                                    MedicoSolicitanteId = o.MedicoSolicitanteId,
+                                    MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
+                                    Informe = o.Informe
+                                })
                 .OrderByDescending(o => o.FechaCreacion)
                 .ToListAsync();
 
@@ -155,10 +207,16 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             await _context.SaveChangesAsync(default);
 
             // Broadcast real vía SignalR
+            var patientCedula = (await _context.PacientesAdmision.AsNoTracking()
+                .Where(p => p.Id == order.PacienteId)
+                .Select(p => p.CedulaPasaporte)
+                .FirstOrDefaultAsync()) ?? "N/A";
+
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
                 status = order.Estado,
                 patientName = order.PacienteNombre,
+                patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
                 tipoServicio = order.TipoServicio,
                 informe = order.Informe
@@ -181,10 +239,16 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             await _context.SaveChangesAsync(default);
 
             // Broadcast real vía SignalR
+            var patientCedula = (await _context.PacientesAdmision.AsNoTracking()
+                .Where(p => p.Id == order.PacienteId)
+                .Select(p => p.CedulaPasaporte)
+                .FirstOrDefaultAsync()) ?? "N/A";
+
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
                 status = order.Estado,
                 patientName = order.PacienteNombre,
+                patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
                 tipoServicio = order.TipoServicio,
                 informe = order.Informe
@@ -245,6 +309,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             await _context.SaveChangesAsync(default);
 
+            var patientCedula = (await _context.PacientesAdmision.AsNoTracking()
+                .Where(p => p.Id == request.PacienteId)
+                .Select(p => p.CedulaPasaporte)
+                .FirstOrDefaultAsync()) ?? "N/A";
+
             foreach (var order in createdOrders)
             {
                 // 1. Crear Notificación Persistente para Administradores, Supervisores y Asistente de Seguros
@@ -272,6 +341,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     orderId = order.Id,
                     status = order.Estado,
                     patientName = order.PacienteNombre,
+                    patientCedula = patientCedula,
                     servicioNombre = order.Estudio,
                     tipoServicio = order.TipoServicio,
                     esDirecta = true,
@@ -295,7 +365,32 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 query = query.Where(o => o.TipoServicio == type);
             }
 
-            var orders = await query
+            var orders = await (from o in query
+                                join p in _context.PacientesAdmision on o.PacienteId equals p.Id into op
+                                from p in op.DefaultIfEmpty()
+                                select new
+                                {
+                                    Id = o.Id,
+                                    OrderId = o.Id,
+                                    CuentaId = o.CuentaId,
+                                    PacienteId = o.PacienteId,
+                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
+                                    Estudio = o.Estudio,
+                                    TipoServicio = o.TipoServicio,
+                                    Estado = o.Estado,
+                                    FechaCreacion = o.FechaCreacion,
+                                    ProcesadoPor = o.ProcesadoPor,
+                                    FechaProcesado = o.FechaProcesado,
+                                    EsDirecta = o.EsDirecta,
+                                    RequiereValidacion = o.RequiereValidacion,
+                                    Validada = o.Validada,
+                                    ValidadorPor = o.ValidadorPor,
+                                    FechaValidacion = o.FechaValidacion,
+                                    MedicoSolicitanteId = o.MedicoSolicitanteId,
+                                    MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
+                                    Informe = o.Informe
+                                })
                 .OrderByDescending(o => o.FechaCreacion)
                 .ToListAsync();
 
@@ -436,10 +531,16 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             await _context.SaveChangesAsync(default);
 
             // Broadcast real vía SignalR
+            var patientCedula = (await _context.PacientesAdmision.AsNoTracking()
+                .Where(p => p.Id == order.PacienteId)
+                .Select(p => p.CedulaPasaporte)
+                .FirstOrDefaultAsync()) ?? "N/A";
+
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
                 status = order.Estado,
                 patientName = order.PacienteNombre,
+                patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
                 tipoServicio = order.TipoServicio,
                 informe = order.Informe

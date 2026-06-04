@@ -77,7 +77,7 @@ export class PrintService {
           <tr>
             <th>Descripción</th>
             <th>Cant</th>
-            <th class="text-right">Precio unit ($)</th>
+            <th class="text-right">Precio Unidad ($)</th>
             <th class="text-right">Subtotal ($)</th>
           </tr>
         </thead>

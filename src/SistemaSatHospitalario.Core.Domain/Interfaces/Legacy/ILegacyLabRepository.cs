@@ -18,6 +18,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
         Task<DatosPersonalesLegacy?> GetPatientByCedulaAsync(string cedula, CancellationToken cancellationToken);
         Task<DatosPersonalesLegacy?> GetPatientByIdAsync(string legacyId, CancellationToken cancellationToken);
         Task<int> CreatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken);
+        Task<bool> UpdatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken);
         
         // Búsqueda aproximada limitada para autocompletado
         Task<List<DatosPersonalesLegacy>> SearchPatientsLimitedAsync(string term, CancellationToken cancellationToken);

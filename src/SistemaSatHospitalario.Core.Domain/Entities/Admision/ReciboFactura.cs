@@ -15,6 +15,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string EstadoFiscal { get; protected set; } // Borrador, Emitida, Anulada
         public Guid PacienteId { get; protected set; }
         public string NumeroRecibo { get; protected set; }
+        public string? NumeroComprobante { get; protected set; }
         public decimal TotalFacturadoUSD { get; protected set; }
         public decimal MontoVueltoUSD { get; protected set; } // Pachón Pro V11.2 Change Support
         public decimal TasaBcvUsada => TasaCambioDia;
@@ -30,7 +31,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected ReciboFactura() { }
 
-        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, decimal totalFacturadoUSD, decimal montoVueltoUSD = 0, string estadoFiscal = EstadoConstants.Borrador)
+        public ReciboFactura(Guid cuentaServicioId, Guid pacienteId, Guid? cajaDiariaId, decimal tasaCambioDia, decimal totalFacturadoUSD, decimal montoVueltoUSD = 0, string estadoFiscal = EstadoConstants.Borrador, string? numeroComprobante = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -42,6 +43,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             EstadoFiscal = estadoFiscal;
             FechaEmision = DateTime.UtcNow;
             NumeroRecibo = $"REC-{DateTime.Now:yyyyMMdd}-{Id.ToString().Substring(0, 8)}";
+            NumeroComprobante = numeroComprobante;
         }
 
         public void Emitir(string nroControlFiscal, string usuarioEmision)

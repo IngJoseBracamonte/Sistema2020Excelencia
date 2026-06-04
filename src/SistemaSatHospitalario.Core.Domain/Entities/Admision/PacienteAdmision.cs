@@ -39,11 +39,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             IdPacienteLegacy = legacyId;
         }
 
-        public void ActualizarDatos(string nombreCorto, string telefonoContact, DateTime? fechaNacimiento = null)
+        public void ActualizarDatos(string nombreCorto, string telefonoContact, DateTime? fechaNacimiento = null, string? cedulaPasaporte = null)
         {
             NombreCorto = nombreCorto;
             TelefonoContact = telefonoContact;
             FechaNacimiento = fechaNacimiento;
+            if (!string.IsNullOrEmpty(cedulaPasaporte))
+            {
+                CedulaPasaporte = cedulaPasaporte;
+            }
         }
     }
 }

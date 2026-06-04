@@ -89,6 +89,19 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             return id;
         }
 
+        public async Task<bool> UpdatePatientLegacyAsync(DatosPersonalesLegacy patient, CancellationToken cancellationToken)
+        {
+            var success = await _innerRepository.UpdatePatientLegacyAsync(patient, cancellationToken);
+            if (success)
+            {
+                var cacheKey = $"Patient_{patient.Cedula}";
+                _cache.Remove(cacheKey);
+                var cacheKeyId = $"PatientId_{patient.IdPersona}";
+                _cache.Remove(cacheKeyId);
+            }
+            return success;
+        }
+
         public async Task<List<int>> GetLegacyAgreementsIdsAsync(CancellationToken cancellationToken)
         {
             const string cacheKey = "LegacyAgreementIds";

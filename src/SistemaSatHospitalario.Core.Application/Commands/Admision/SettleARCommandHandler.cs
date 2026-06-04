@@ -57,7 +57,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 Guid reciboId;
                 if (recibo == null)
                 {
-                    var nuevoRecibo = new ReciboFactura(ar.CuentaServicioId, ar.PacienteId, null, tasaActual.Monto, ar.MontoTotalBase);
+                    var numeroComprobante = await GenerarSiguienteNumeroComprobanteAsync(cancellationToken);
+                    var nuevoRecibo = new ReciboFactura(ar.CuentaServicioId, ar.PacienteId, null, tasaActual.Monto, ar.MontoTotalBase, 0, EstadoConstants.Borrador, numeroComprobante);
                     _context.RecibosFactura.Add(nuevoRecibo);
                     reciboId = nuevoRecibo.Id;
                 }
@@ -160,5 +161,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
         }
 
+        private async Task<string> GenerarSiguienteNumeroComprobanteAsync(CancellationToken cancellationToken)
+        {
+            var prefix = DateTime.Now.ToString("ddMMyy");
+            var count = await _context.RecibosFactura
+                .Where(r => r.NumeroComprobante != null && r.NumeroComprobante.StartsWith(prefix + "-"))
+                .CountAsync(cancellationToken);
+            return $"{prefix}-{(count + 1):D2}";
+        }
     }
 }

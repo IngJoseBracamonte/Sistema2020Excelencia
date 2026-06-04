@@ -81,7 +81,7 @@
             
             <!-- Buscador Superior de Paciente / Estudio -->
             <div class="relative flex-[1.5] min-w-[250px] flex items-center">
-                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()" placeholder="Buscar Paciente o Estudio..."
+                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="refresh()" placeholder="Buscar por Paciente, Cédula, Estudio u ID..."
                     class="w-full pl-14 pr-4 py-3 bg-transparent border-none focus:ring-0 font-bold text-sm tracking-tight text-white placeholder:text-slate-600 uppercase">
                 <lucide-icon [name]="icons.Search"
                     class="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-rose-500 transition-colors"></lucide-icon>
@@ -175,6 +175,7 @@
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Servicio</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha Ingreso</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Paciente</th>
+                        <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Cédula</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Estudio Solicitado</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Estado</th>
                         <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Acciones</th>
@@ -183,7 +184,7 @@
                 <tbody class="divide-y divide-white/5">
                     <!-- Loading State -->
                     <tr *ngIf="isLoading()" class="bg-transparent">
-                        <td colspan="6" class="px-6 py-16 text-center opacity-40">
+                        <td colspan="7" class="px-6 py-16 text-center opacity-40">
                             <lucide-icon [name]="icons.RefreshCcw" class="w-8 h-8 animate-spin text-rose-500 mx-auto mb-4"></lucide-icon>
                             <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cargando bitácora de estudios...</p>
                         </td>
@@ -191,7 +192,7 @@
 
                     <!-- Empty State -->
                     <tr *ngIf="orders().length === 0 && !isLoading()" class="bg-transparent">
-                        <td colspan="6" class="px-6 py-20 text-center opacity-40">
+                        <td colspan="7" class="px-6 py-20 text-center opacity-40">
                             <lucide-icon [name]="icons.Camera" class="w-10 h-10 text-slate-500 mx-auto mb-4"></lucide-icon>
                             <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">No se encontraron registros de estudios de imagenología</p>
                         </td>
@@ -230,6 +231,11 @@
                                         {{ order.pacienteNombre }}
                                     </h4>
                                 </div>
+                            </td>
+
+                            <!-- Cédula -->
+                            <td class="px-6 py-4 font-mono text-slate-400 text-xs font-bold">
+                                {{ order.pacienteCedula || 'N/A' }}
                             </td>
 
                             <!-- Nombre del Estudio -->
@@ -273,7 +279,7 @@
                         <!-- Accordion Detail Row: Auditoría de Imagenología -->
                         <tr *ngIf="isExpanded(order.id)"
                             class="bg-[#0b1120]/40 border-x-2 border-rose-500/10 animate-fade-in">
-                            <td colspan="6" class="px-12 py-6">
+                            <td colspan="7" class="px-12 py-6">
                                 <div class="max-w-4xl space-y-4">
                                     <div class="flex items-center justify-between pb-2 border-b border-white/5">
                                         <h5 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">

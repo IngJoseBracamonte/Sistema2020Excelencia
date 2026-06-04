@@ -6,6 +6,7 @@ export interface TicketUpdate {
   orderId: number;
   status: string;
   patientName: string;
+  patientCedula?: string;
   servicioNombre: string;
   pacienteId?: number;
   tipoServicio: string; // RX o TOMO

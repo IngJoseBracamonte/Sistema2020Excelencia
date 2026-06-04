@@ -34,7 +34,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                         row.RelativeItem().Column(col =>
                         {
                             col.Item().Text("COMPROBANTE DE FACTURACIÓN").FontSize(20).SemiBold().FontColor(Colors.Blue.Medium);
-                            col.Item().Text($"{data.NumeroRecibo}").FontSize(14);
+                            col.Item().Text($"{data.NumeroComprobante ?? data.NumeroRecibo}").FontSize(14);
                         });
 
                         row.RelativeItem().AlignRight().Column(col =>
@@ -68,15 +68,15 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             {
                                 columns.ConstantColumn(40);
                                 columns.RelativeColumn();
-                                columns.ConstantColumn(80);
-                                columns.ConstantColumn(80);
+                                columns.ConstantColumn(100);
+                                columns.ConstantColumn(100);
                             });
 
                             table.Header(header =>
                             {
                                 header.Cell().Element(CellStyle).Text("CANT");
                                 header.Cell().Element(CellStyle).Text("DESCRIPCIÓN");
-                                header.Cell().Element(CellStyle).AlignRight().Text("PRECIO UNIT");
+                                header.Cell().Element(CellStyle).AlignRight().Text("UNIDAD");
                                 header.Cell().Element(CellStyle).AlignRight().Text("SUBTOTAL");
 
                                 static IContainer CellStyle(IContainer container) => container.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
@@ -112,11 +112,11 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             row.RelativeItem().Column(c => {
                                 c.Item().Row(r => {
                                     r.RelativeItem().Text("TOTAL USD:").SemiBold();
-                                    r.ConstantItem(70).AlignRight().Text($"$ {data.TotalUSD:N2}").SemiBold();
+                                    r.ConstantItem(90).AlignRight().Text($"$ {data.TotalUSD:N2}").SemiBold();
                                 });
                                 c.Item().PaddingTop(10).BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(5).Row(r => {
                                     r.RelativeItem().Text("TOTAL Bs.:").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
-                                    r.ConstantItem(80).AlignRight().Text($"{data.TotalBS:N2}").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
+                                    r.ConstantItem(100).AlignRight().Text($"{data.TotalBS:N2}").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
                                 });
                                 c.Item().AlignRight().Text($"Tasa: {data.TasaBcv:N2} Bs/$").FontSize(7).Italic().FontColor(Colors.Grey.Medium);
                             });

@@ -133,6 +133,7 @@ export class RxOrdersComponent implements OnInit {
     if (term) {
       filtered = filtered.filter(t => 
         t.patientName.toLowerCase().includes(term) || 
+        (t.patientCedula && t.patientCedula.toLowerCase().includes(term)) ||
         t.servicioNombre.toLowerCase().includes(term) || 
         t.orderId.toString().includes(term)
       );
@@ -210,6 +211,7 @@ export class RxOrdersComponent implements OnInit {
       orderId: o.orderId ?? o.id,
       status: o.status ?? o.estado,
       patientName: o.patientName ?? o.pacienteNombre,
+      patientCedula: o.patientCedula ?? o.pacienteCedula,
       servicioNombre: o.servicioNombre ?? o.estudio,
       tipoServicio: o.tipoServicio ?? o.tipoServicio,
       fechaCreacion: o.fechaCreacion,

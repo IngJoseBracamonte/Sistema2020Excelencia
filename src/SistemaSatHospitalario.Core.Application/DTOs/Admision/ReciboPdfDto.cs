@@ -7,6 +7,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
     {
         public Guid Id { get; set; }
         public string NumeroRecibo { get; set; }
+        public string? NumeroComprobante { get; set; }
         public DateTime FechaEmision { get; set; }
         public string PacienteNombre { get; set; }
         public string PacienteCedula { get; set; }

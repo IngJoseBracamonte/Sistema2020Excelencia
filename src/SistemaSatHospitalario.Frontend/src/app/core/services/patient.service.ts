@@ -61,4 +61,8 @@ export class PatientService {
   getHistory(patientId: string): Observable<PatientHistory[]> {
     return this.http.get<PatientHistory[]>(`${this.apiUrl}/${patientId}/history`);
   }
+
+  updatePatient(patient: PatientRecord): Observable<boolean> {
+    return this.http.put<boolean>(this.apiUrl, patient);
+  }
 }

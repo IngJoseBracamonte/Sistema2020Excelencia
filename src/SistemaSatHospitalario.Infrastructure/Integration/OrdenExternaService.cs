@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
@@ -31,11 +33,17 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
             _context.OrdenesImagenes.Add(orden);
             await _context.SaveChangesAsync(cancellationToken);
 
+            var patientCedula = (await _context.PacientesAdmision.AsNoTracking()
+                .Where(p => p.Id == pacienteId)
+                .Select(p => p.CedulaPasaporte)
+                .FirstOrDefaultAsync(cancellationToken)) ?? "N/A";
+
             // Broadcast real vía SignalR con ID real de DB
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = orden.Id,
                 status = orden.Estado,
                 patientName = orden.PacienteNombre,
+                patientCedula = patientCedula,
                 servicioNombre = orden.Estudio,
                 tipoServicio = orden.TipoServicio,
                 informe = orden.Informe
@@ -50,11 +58,17 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
             _context.OrdenesImagenes.Add(orden);
             await _context.SaveChangesAsync(cancellationToken);
 
+            var patientCedula = (await _context.PacientesAdmision.AsNoTracking()
+                .Where(p => p.Id == pacienteId)
+                .Select(p => p.CedulaPasaporte)
+                .FirstOrDefaultAsync(cancellationToken)) ?? "N/A";
+
             // Broadcast real vía SignalR con ID real de DB
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = orden.Id,
                 status = orden.Estado,
                 patientName = orden.PacienteNombre,
+                patientCedula = patientCedula,
                 servicioNombre = orden.Estudio,
                 tipoServicio = orden.TipoServicio,
                 informe = orden.Informe

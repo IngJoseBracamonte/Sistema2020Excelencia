@@ -44,6 +44,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 Id = recibo.Id,
                 NumeroRecibo = recibo.NumeroRecibo,
+                NumeroComprobante = recibo.NumeroComprobante,
                 FechaEmision = recibo.FechaEmision,
                 PacienteNombre = recibo.PacienteId == Guid.Empty ? EstadoConstants.Particular : (paciente?.NombreCorto ?? EstadoConstants.Desconocido),
                 PacienteCedula = paciente?.CedulaPasaporte ?? EstadoConstants.Desconocido,
