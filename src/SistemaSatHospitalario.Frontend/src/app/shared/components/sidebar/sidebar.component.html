@@ -16,8 +16,8 @@
             <span class="font-bold">Panel de Control</span>
         </a>
 
-        <!-- Facturación Dropdown (Para Administrativos) -->
-        <div *ngIf="isAdministrativeGroup() && permissionService.can('Permissions.Facturacion.View')" class="space-y-1">
+        <!-- Facturación Dropdown (Para Administrativos y Asistentes de Área) -->
+        <div *ngIf="(isAdministrativeGroup() && permissionService.can('Permissions.Facturacion.View')) || auth.isHospitalAssistant() || auth.isEmergencyAssistant()" class="space-y-1">
             <button (click)="toggleDropdown('facturacion')" 
                 class="w-full flex items-center justify-between nav-item group"
                 [ngClass]="{ 'bg-white/5': dropdownsOpen().facturacion }">
