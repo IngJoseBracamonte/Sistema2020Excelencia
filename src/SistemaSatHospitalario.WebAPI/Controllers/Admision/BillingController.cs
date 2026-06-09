@@ -332,5 +332,54 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpGet("cuentas-administrativas")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor")]
+        public async Task<IActionResult> GetCuentasAdministrativas([FromQuery] string? searchTerm, [FromQuery] string? tipoIngreso, [FromQuery] string? estado)
+        {
+            try
+            {
+                var query = new GetCuentasAdministrativasQuery { SearchTerm = searchTerm, TipoIngreso = tipoIngreso, Estado = estado };
+                var result = await _mediator.Send(query);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("update-cuenta-administrativa")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor")]
+        public async Task<IActionResult> UpdateCuentaAdministrativa([FromBody] UpdateCuentaAdministrativaCommand command)
+        {
+            try
+            {
+                command.UsuarioModificacion = User.GetUserName();
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Cuenta modificada administrativamente con éxito." });
+                return BadRequest(new { Error = "No se pudo realizar la modificación de la cuenta." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpGet("cuenta-historial/{cuentaId}")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor")]
+        public async Task<IActionResult> GetHistorialModificaciones(Guid cuentaId)
+        {
+            try
+            {
+                var query = new GetHistorialModificacionesQuery { CuentaServicioId = cuentaId };
+                var result = await _mediator.Send(query);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }

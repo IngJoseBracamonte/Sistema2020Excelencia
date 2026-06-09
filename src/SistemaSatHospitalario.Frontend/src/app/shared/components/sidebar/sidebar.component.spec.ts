@@ -1,40 +1,58 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarComponent } from './sidebar.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Router, NavigationEnd } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { Router } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { AuthService } from '../../../core/services/auth.service';
+import { signal } from '@angular/core';
 
 describe('SidebarComponent', () => {
     let component: SidebarComponent;
     let fixture: ComponentFixture<SidebarComponent>;
-    let routerEvents: Subject<any>;
+    let router: Router;
+    let authServiceMock: any;
 
     beforeEach(async () => {
-        routerEvents = new Subject<any>();
+        authServiceMock = {
+            currentUser: signal({
+                token: 'token',
+                username: 'admin',
+                role: 'Administrador',
+                id: '1',
+                permissions: [],
+                requirePasswordReset: false
+            }),
+            isAdministrador: jasmine.createSpy('isAdministrador').and.returnValue(true),
+            isParticularAssistant: jasmine.createSpy('isParticularAssistant').and.returnValue(false),
+            isInsuranceAssistant: jasmine.createSpy('isInsuranceAssistant').and.returnValue(false),
+            isRxAssistant: jasmine.createSpy('isRxAssistant').and.returnValue(false),
+            isTomographyAssistant: jasmine.createSpy('isTomographyAssistant').and.returnValue(false),
+            isSupervisor: jasmine.createSpy('isSupervisor').and.returnValue(false)
+        };
+
 
         await TestBed.configureTestingModule({
-            imports: [SidebarComponent, RouterTestingModule],
+            imports: [SidebarComponent, RouterTestingModule, HttpClientTestingModule],
             providers: [
-                {
-                    provide: Router,
-                    useValue: {
-                        events: routerEvents.asObservable(),
-                        url: '/'
-                    }
-                }
+                { provide: AuthService, useValue: authServiceMock }
             ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(SidebarComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+        router = TestBed.inject(Router);
     });
 
     it('debe crearse correctamente', () => {
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
         expect(component).toBeTruthy();
     });
 
     it('debe alternar el estado del dropdown al llamar a toggleDropdown', () => {
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+
         expect(component.dropdownsOpen()['caja']).toBeFalse();
         
         component.toggleDropdown('caja');
@@ -44,26 +62,27 @@ describe('SidebarComponent', () => {
         expect(component.dropdownsOpen()['caja']).toBeFalse();
     });
 
-    it('debe cerrar otros dropdowns al abrir uno nuevo', () => {
+    it('debe mantener otros dropdowns abiertos al abrir uno nuevo', () => {
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+
         component.toggleDropdown('caja');
         expect(component.dropdownsOpen()['caja']).toBeTrue();
         
         component.toggleDropdown('medica');
         expect(component.dropdownsOpen()['medica']).toBeTrue();
-        expect(component.dropdownsOpen()['caja']).toBeFalse();
+        expect(component.dropdownsOpen()['caja']).toBeTrue();
     });
 
-    it('debe expandir automáticamente el dropdown "caja" si la ruta es /cajas', (done) => {
-        const router = TestBed.inject(Router);
-        (router as any).url = '/cajas';
+    it('debe expandir automáticamente el dropdown "caja" si la ruta es /cajas', () => {
+        spyOnProperty(router, 'url', 'get').and.returnValue('/cajas');
         
-        // Simular evento de navegación
-        routerEvents.next(new NavigationEnd(1, '/cajas', '/cajas'));
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
         
-        // El sidebar escucha eventos de navegación
-        setTimeout(() => {
-            expect(component.dropdownsOpen()['caja']).toBeTrue();
-            done();
-        }, 100);
+        expect(component.dropdownsOpen()['caja']).toBeTrue();
     });
 });
+

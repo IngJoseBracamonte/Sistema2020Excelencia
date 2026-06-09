@@ -36,7 +36,7 @@ describe('CajaService', () => {
     it('debe actualizar la señal al cerrar caja', () => {
         service.isCajaAbierta.set(true);
 
-        service.cerrarCaja().subscribe();
+        service.cerrarCaja([]).subscribe();
 
         const req = httpMock.expectOne(`${environment.apiUrl}/api/Caja/Cerrar`);
         expect(req.request.method).toBe('POST');

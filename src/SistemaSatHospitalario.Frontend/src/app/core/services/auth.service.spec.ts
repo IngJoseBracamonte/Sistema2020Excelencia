@@ -39,7 +39,8 @@ describe('AuthService', () => {
             token: 'mock-jwt-token',
             username: 'admin',
             role: 'Administrador',
-            userId: 'user-123'
+            userId: 'user-123',
+            id: 'user-123'
         };
 
         const credentials: LoginRequest = { username: 'admin', password: 'password' };
@@ -50,7 +51,7 @@ describe('AuthService', () => {
             expect(service.currentUser()?.username).toBe('admin');
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/api/Auth/Login`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Auth/login`);
         expect(req.request.method).toBe('POST');
         req.flush(mockResponse);
 
@@ -69,13 +70,13 @@ describe('AuthService', () => {
             }
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/api/Auth/Login`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Auth/login`);
         req.error(new ErrorEvent('Unauthorized'), { status: 401 });
     });
 
     it('debe limpiar LocalStorage al cerrar sesión', () => {
         localStorage.setItem('jwt_token', 'token');
-        service.currentUser.set({ token: 'token', username: 'u', role: 'r', id: '1' });
+        service.currentUser.set({ token: 'token', username: 'u', role: 'r', id: '1', permissions: [], requirePasswordReset: false });
 
         service.logout();
 

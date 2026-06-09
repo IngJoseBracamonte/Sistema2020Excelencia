@@ -48,6 +48,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HonorariumMappingRule> HonorariumMappingRules { get; set; }
         public DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; set; }
         public DbSet<GarantiaItem> GarantiasItems { get; set; }
+        public DbSet<HistorialModificacionCuenta> HistorialModificacionCuentas { get; set; }
 
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
@@ -470,6 +471,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(h => h.MedicoId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<HistorialModificacionCuenta>(entity =>
+            {
+                entity.ToTable("HistorialModificacionCuentas");
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.TotalAnteriorUSD).HasPrecision(18, 2);
+                entity.Property(h => h.TotalNuevoUSD).HasPrecision(18, 2);
+                entity.Property(h => h.ReciboTotalAnteriorUSD).HasPrecision(18, 2);
+                entity.Property(h => h.ReciboTotalNuevoUSD).HasPrecision(18, 2);
+                entity.Property(h => h.ReciboVueltoAnteriorUSD).HasPrecision(18, 2);
+                entity.Property(h => h.ReciboVueltoNuevoUSD).HasPrecision(18, 2);
+                entity.Property(h => h.ReciboPagadoUSD).HasPrecision(18, 2);
+                entity.Property(h => h.CxCSaldoAnteriorUSD).HasPrecision(18, 2);
+                entity.Property(h => h.CxCSaldoNuevoUSD).HasPrecision(18, 2);
+                entity.Property(h => h.DetalleServiciosCambiosJson).HasColumnType("longtext");
+                entity.Property(h => h.Usuario).IsRequired().HasMaxLength(100);
+
+                entity.HasIndex(h => h.CuentaServicioId);
+                entity.HasIndex(h => h.FechaModificacion);
             });
         }
 

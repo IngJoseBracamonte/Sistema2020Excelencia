@@ -123,5 +123,28 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             ProcesamientoEstado = nuevoEstado;
         }
+
+        public void CambiarTipoIngresoAdministrativo(string tipoIngreso, int? convenioId)
+        {
+            if (tipoIngreso != EstadoConstants.Particular &&
+                tipoIngreso != EstadoConstants.Seguro &&
+                tipoIngreso != EstadoConstants.Hospitalizacion &&
+                tipoIngreso != EstadoConstants.Emergencia)
+            {
+                throw new ArgumentException($"Tipo de ingreso inválido: {tipoIngreso}");
+            }
+
+            TipoIngreso = tipoIngreso;
+            ConvenioId = convenioId;
+        }
+
+        public void CambiarPacienteAdministrativo(Guid nuevoPacienteId)
+        {
+            if (nuevoPacienteId == Guid.Empty)
+            {
+                throw new ArgumentException("El ID del paciente no puede estar vacío.");
+            }
+            PacienteId = nuevoPacienteId;
+        }
     }
 }

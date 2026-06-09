@@ -23,11 +23,12 @@ describe('FacturacionService', () => {
 
     it('debe enviar la carga de servicio correctamente', () => {
         const payload: CargarServicioACuentaRequest = {
-            pacienteId: 1,
+            pacienteId: '1',
             tipoIngreso: 'Particular',
             servicioId: 'id-serv',
             descripcion: 'Consulta',
             precio: 50,
+            honorario: 10,
             cantidad: 1,
             tipoServicio: 'CONSULTA',
             usuarioCarga: 'admin'
@@ -46,7 +47,7 @@ describe('FacturacionService', () => {
     it('debe registrar el pago multidivisa', () => {
         const payload: RegistrarReciboFacturaRequest = {
             cuentaServicioId: 'guid-cuenta',
-            pacienteId: 1,
+            pacienteId: '1',
             cajeroUserId: 'admin',
             tasaCambioDia: 45.5,
             pagosMultidivisa: []

@@ -1,0 +1,406 @@
+<div class="p-8 max-w-[1600px] space-y-6 animate-fade-in relative z-10">
+    <!-- Header Estilo Administración -->
+    <div class="px-0 pb-2 animate-fade-in relative">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all gap-4">
+            <div class="flex items-center gap-6">
+                <div class="h-14 w-14 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+                    <lucide-icon [name]="icons.Settings" class="w-7 h-7"></lucide-icon>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Corrección Administrativa de Ingresos</h1>
+                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2 italic">Corrección de Precios, Convenios e Historial de Cuentas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Center -->
+    <div *ngIf="actionMessage()"
+        class="bg-emerald-500/10 backdrop-blur-md p-4 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ actionMessage() }}</span>
+        </div>
+    </div>
+
+    <div *ngIf="errorMessage()"
+        class="bg-rose-500/10 backdrop-blur-md p-4 rounded-xl border border-rose-500/20 text-rose-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <lucide-icon [name]="icons.AlertCircle" class="w-4 h-4"></lucide-icon>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ errorMessage() }}</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- COLUMNA 1: BÚSQUEDA Y LISTA DE CUENTAS (Ancho 1/3) -->
+        <div class="space-y-6">
+            <div class="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-4">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Buscador de Cuentas</h3>
+                
+                <div class="flex flex-col gap-3">
+                    <div class="relative">
+                        <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" (keyup.enter)="searchAccounts()"
+                            placeholder="Buscar por Nombre o Cédula..."
+                            class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl focus:border-amber-500 focus:ring-0 font-bold text-sm text-white placeholder:text-slate-600 uppercase transition-all">
+                        <lucide-icon [name]="icons.Search"
+                            class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></lucide-icon>
+                    </div>
+                    
+                    <button (click)="searchAccounts()" [disabled]="isLoading()"
+                        class="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                        <span *ngIf="!isLoading()">BUSCAR CUENTAS</span>
+                        <lucide-icon *ngIf="isLoading()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultados de la Búsqueda -->
+            <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                <div class="p-6 border-b border-white/5">
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Resultados</h3>
+                </div>
+                <div class="max-h-[500px] overflow-y-auto divide-y divide-white/5">
+                    <div *ngFor="let acc of accounts()" (click)="selectAccount(acc)"
+                        [ngClass]="selectedAccount()?.cuentaId === acc.cuentaId ? 'bg-amber-500/10 border-amber-500' : 'border-transparent'"
+                        class="p-5 hover:bg-white/[0.04] cursor-pointer transition-all space-y-2 border-l-2">
+                        
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="text-[11px] font-black text-white uppercase tracking-tight leading-tight">
+                                    {{ acc.pacienteNombre }}
+                                </h4>
+                                <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mt-1">{{ acc.pacienteCedula }}</p>
+                            </div>
+                            <span [ngClass]="acc.estado === 'Abierta' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'"
+                                class="px-2 py-0.5 border rounded-lg text-[8px] font-black uppercase tracking-wider">
+                                {{ acc.estado }}
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                            <span class="uppercase tracking-tight">{{ acc.tipoIngreso }} | {{ acc.seguroNombre || 'PARTICULAR' }}</span>
+                            <span class="font-black text-white font-mono">$ {{ acc.total | number:'1.2-2' }}</span>
+                        </div>
+                    </div>
+
+                    <div *ngIf="accounts().length === 0" class="p-8 text-center text-slate-500">
+                        <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto mb-2 opacity-40"></lucide-icon>
+                        <p class="text-[9px] font-black uppercase tracking-widest">Realice una búsqueda para ver cuentas disponibles</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA 2 & 3: FORMULARIO DE CORRECCIÓN (Ancho 2/3) -->
+        <div class="lg:col-span-2">
+            <div *ngIf="selectedAccount() as account; else noSelection" class="bg-white/[0.02] border border-white/5 rounded-3xl p-8 space-y-8 animate-fade-in-up">
+                
+                <!-- Info de la Cuenta Seleccionada -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 pb-6 gap-4">
+                    <div>
+                        <span class="text-[7px] font-black text-amber-500 uppercase tracking-[0.2em]">Cuenta de Admisión</span>
+                        <h2 class="text-lg font-black text-white uppercase tracking-tight mt-1">{{ account.pacienteNombre }}</h2>
+                        <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mt-1">Cédula: {{ account.pacienteCedula }} | Fecha: {{ account.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] block">Total Actual</span>
+                        <span class="text-xl font-black text-amber-500 font-mono tracking-tighter">$ {{ account.total | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN A: REASIGNACIÓN DE PACIENTE ("CAMBIAR DE SITIO") -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <lucide-icon [name]="icons.User" class="w-4 h-4 text-amber-500"></lucide-icon>
+                        <h4 class="text-xs font-black text-slate-300 uppercase tracking-widest">Reasignar Paciente (Cambiar de Sitio)</h4>
+                    </div>
+
+                    <div class="bg-white/[0.01] border border-white/5 rounded-2xl p-6 space-y-4">
+                        <div class="flex items-center justify-between text-[10px] text-slate-400">
+                            <span>Paciente Actual: <strong class="text-white">{{ account.pacienteNombre }} ({{ account.pacienteCedula }})</strong></span>
+                            <span *ngIf="selectedTargetPatient() as target" class="text-amber-500 font-bold uppercase animate-pulse">
+                                Reasignar a: {{ target.nombre }} ({{ target.cedula }})
+                            </span>
+                        </div>
+
+                        <!-- Buscador de paciente destino -->
+                        <div class="relative">
+                            <input type="text" [ngModel]="patientSearchTerm()" (ngModelChange)="patientSearchTerm.set($event); searchTargetPatients()"
+                                placeholder="Buscar paciente destino por nombre o cédula..."
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 transition-all uppercase">
+                            
+                            <!-- Clear target button -->
+                            <button *ngIf="selectedTargetPatient()" (click)="clearTargetPatient()"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-all">
+                                <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+                            </button>
+                        </div>
+
+                        <!-- Dropdown de Pacientes Encontrados -->
+                        <div *ngIf="foundPatients().length > 0" 
+                            class="absolute z-50 w-[400px] mt-1 bg-[#152035] border border-white/10 rounded-2xl shadow-2xl max-h-48 overflow-y-auto divide-y divide-white/5">
+                            <div *ngFor="let p of foundPatients()" (click)="selectTargetPatient(p)"
+                                class="p-4 hover:bg-white/5 cursor-pointer text-xs text-white uppercase font-bold flex justify-between items-center transition-all">
+                                <span>{{ p.nombre }}</span>
+                                <span class="text-[9px] text-slate-400 font-mono">{{ p.cedula }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN B: TIPO DE INGRESO Y CONVENIO -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <lucide-icon [name]="icons.FileText" class="w-4 h-4 text-amber-500"></lucide-icon>
+                        <h4 class="text-xs font-black text-slate-300 uppercase tracking-widest">Tipo de Ingreso & Seguro/Convenio</h4>
+                    </div>
+
+                    <div class="bg-white/[0.01] border border-white/5 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Tipo de Ingreso</label>
+                            <div class="relative">
+                                <select [ngModel]="modTipoIngreso()" (ngModelChange)="modTipoIngreso.set($event)"
+                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white outline-none focus:border-amber-500 transition-all appearance-none cursor-pointer">
+                                    <option value="Particular">PARTICULAR</option>
+                                    <option value="Seguro">CONVENIO / SEGURO</option>
+                                    <option value="Hospitalizacion">HOSPITALIZACION</option>
+                                    <option value="Emergencia">EMERGENCIA</option>
+                                </select>
+                                <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown de Seguro (solo si tipo es Seguro, Hospitalizacion o Emergencia) -->
+                        <div class="space-y-2" *ngIf="modTipoIngreso() !== 'Particular'">
+                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Seleccionar Convenio</label>
+                            <div class="relative">
+                                <select [ngModel]="modConvenioId()" (ngModelChange)="modConvenioId.set($event)"
+                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white outline-none focus:border-amber-500 transition-all appearance-none cursor-pointer">
+                                    <option [ngValue]="null">SELECCIONE CONVENIO...</option>
+                                    <option *ngFor="let conv of convenios()" [ngValue]="conv.id">
+                                        {{ conv.nombre }}
+                                    </option>
+                                </select>
+                                <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 rotate-90 pointer-events-none"></lucide-icon>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN C: MODIFICACIÓN DE PRECIOS -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <lucide-icon [name]="icons.DollarSign" class="w-4 h-4 text-amber-500"></lucide-icon>
+                        <h4 class="text-xs font-black text-slate-300 uppercase tracking-widest">Edición de Precios y Honorarios</h4>
+                    </div>
+
+                    <!-- Warning Callout -->
+                    <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[11px] text-slate-300 flex gap-3">
+                        <lucide-icon [name]="icons.Info" class="w-4 h-4 text-amber-500 shrink-0"></lucide-icon>
+                        <p>
+                            Al cambiar los precios de los servicios se recalculará el total de la cuenta. 
+                            Las facturas y saldos de cuentas por cobrar locales se actualizarán para coincidir con la sumatoria corregida.
+                        </p>
+                    </div>
+
+                    <div class="bg-white/[0.02] border border-white/5 rounded-3xl overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-white/5 bg-white/[0.01]">
+                                    <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Servicio</th>
+                                    <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-center w-24">Cantidad</th>
+                                    <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right w-40">Precio Clínico ($)</th>
+                                    <th class="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right w-40">Honorario ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5 text-xs text-slate-300">
+                                <tr *ngFor="let det of account.detalles" class="hover:bg-white/[0.01] transition-all">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-white uppercase">{{ det.descripcion }}</div>
+                                        <div class="text-[9px] text-slate-500 uppercase tracking-widest mt-0.5">{{ det.tipoServicio }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-white">
+                                        {{ det.cantidad }}
+                                    </td>
+                                    <!-- Editar Precio -->
+                                    <td class="px-6 py-3">
+                                        <div class="relative flex items-center">
+                                            <span class="absolute left-3 text-slate-600 font-bold">$</span>
+                                            <input type="number" [ngModel]="editedPrices()[det.id]?.precio"
+                                                (ngModelChange)="updatePriceEdit(det.id, 'precio', $event)"
+                                                class="w-full pl-8 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl text-right text-white font-mono font-bold focus:border-amber-500 focus:ring-0">
+                                        </div>
+                                    </td>
+                                    <!-- Editar Honorario -->
+                                    <td class="px-6 py-3">
+                                        <div class="relative flex items-center">
+                                            <span class="absolute left-3 text-slate-600 font-bold">$</span>
+                                            <input type="number" [ngModel]="editedPrices()[det.id]?.honorario"
+                                                (ngModelChange)="updatePriceEdit(det.id, 'honorario', $event)"
+                                                class="w-full pl-8 pr-3 py-2 bg-white/5 border border-white/10 rounded-xl text-right text-white font-mono font-bold focus:border-amber-500 focus:ring-0">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Footer Acciones de Guardado -->
+                <div class="flex items-center justify-between border-t border-white/5 pt-6">
+                    <div class="text-left">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] block">Nuevo Total Estimado</span>
+                        <span class="text-xl font-black text-emerald-400 font-mono tracking-tighter">$ {{ computedNewTotal() | number:'1.2-2' }}</span>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button (click)="selectedAccount.set(null)"
+                            class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95">
+                            CANCELAR
+                        </button>
+                        <button (click)="saveModifications()" [disabled]="isSaving()"
+                            class="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                            <span *ngIf="!isSaving()">GUARDAR CAMBIOS</span>
+                            <lucide-icon *ngIf="isSaving()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Historial de Modificaciones Administrativas (Audit Log) -->
+                <div class="border-t border-white/5 pt-8 mt-8 space-y-6">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-500">
+                            <lucide-icon [name]="icons.History" class="w-5 h-5"></lucide-icon>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-black text-slate-300 uppercase tracking-widest leading-none">Historial de Cambios de Auditoría</h4>
+                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1.5 block">Registro inmutable de correcciones administrativas</span>
+                        </div>
+                    </div>
+
+                    <div *ngIf="modificationHistory().length > 0; else noHistory" class="space-y-4">
+                        <div *ngFor="let log of modificationHistory()" class="bg-white/[0.01] border border-white/5 rounded-2xl p-6 space-y-4 transition-all hover:bg-white/[0.02]">
+                            <!-- Cabecera del Log (Usuario, Fecha, etc.) -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-slate-400 gap-2 border-b border-white/5 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[8px] font-black uppercase">Modificado por {{ log.usuario }}</span>
+                                    <span class="font-mono">{{ log.fechaModificacion | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                                </div>
+                                <div class="font-mono text-[9px] uppercase tracking-wider text-slate-500">Log ID: {{ log.id.substring(0, 8) }}</div>
+                            </div>
+
+                            <!-- Desglose de Cambios de Paciente / Convenio -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                <!-- Paciente Change -->
+                                <div *ngIf="log.pacienteNuevoId" class="p-3 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Transferencia de Paciente</span>
+                                    <div class="flex items-center justify-between font-bold text-white uppercase text-[10px]">
+                                        <span class="text-rose-400 line-through">{{ log.pacienteAnteriorNombre }}</span>
+                                        <lucide-icon [name]="icons.ChevronRight" class="w-3 h-3 text-slate-500"></lucide-icon>
+                                        <span class="text-emerald-400">{{ log.pacienteNuevoNombre }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Convenio/Ingreso Change -->
+                                <div *ngIf="log.tipoIngresoAnterior !== log.tipoIngresoNuevo || log.convenioAnteriorId !== log.convenioNuevoId" class="p-3 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Cambio de Tipo / Convenio</span>
+                                    <div class="flex items-center justify-between font-bold text-white uppercase text-[10px]">
+                                        <span class="text-rose-400">
+                                            {{ log.tipoIngresoAnterior }} ({{ log.convenioAnteriorNombre || 'Particular' }})
+                                        </span>
+                                        <lucide-icon [name]="icons.ChevronRight" class="w-3 h-3 text-slate-500"></lucide-icon>
+                                        <span class="text-emerald-400">
+                                            {{ log.tipoIngresoNuevo }} ({{ log.convenioNuevoNombre || 'Particular' }})
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabla/Resumen de Cambios en Totales Financieros -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
+                                <div class="space-y-1">
+                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest block">Total Cuenta</span>
+                                    <div class="font-mono font-bold text-[11px] text-white flex items-center gap-1.5">
+                                        <span class="text-rose-400 line-through font-normal text-[9px]">$ {{ log.totalAnteriorUSD | number:'1.2-2' }}</span>
+                                        <span class="text-emerald-400">$ {{ log.totalNuevoUSD | number:'1.2-2' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest block">Monto Ingresado</span>
+                                    <div class="font-mono font-bold text-[11px] text-white">
+                                        $ {{ log.reciboPagadoUSD | number:'1.2-2' }}
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest block">Vuelto Recibo</span>
+                                    <div class="font-mono font-bold text-[11px] text-white flex items-center gap-1.5">
+                                        <span class="text-rose-400 line-through font-normal text-[9px]" *ngIf="log.reciboVueltoAnteriorUSD !== log.reciboVueltoNuevoUSD">$ {{ log.reciboVueltoAnteriorUSD | number:'1.2-2' }}</span>
+                                        <span class="text-emerald-400">$ {{ log.reciboVueltoNuevoUSD | number:'1.2-2' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <span class="text-[7px] font-black text-slate-500 uppercase tracking-widest block">Saldo CxC</span>
+                                    <div class="font-mono font-bold text-[11px] text-white flex items-center gap-1.5">
+                                        <span class="text-rose-400 line-through font-normal text-[9px]" *ngIf="log.cxcSaldoAnteriorUSD !== log.cxcSaldoNuevoUSD">$ {{ log.cxcSaldoAnteriorUSD | number:'1.2-2' }}</span>
+                                        <span class="text-emerald-400">$ {{ log.cxcSaldoNuevoUSD | number:'1.2-2' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cambios Específicos de Servicios (Precios) -->
+                            <div *ngIf="parseServiceChanges(log.detalleServiciosCambiosJson) as itemsChanges" class="space-y-2">
+                                <div *ngIf="itemsChanges.length > 0" class="space-y-2">
+                                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block font-bold">Modificaciones de Precios de Servicios</span>
+                                    <div class="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden text-[10px]">
+                                        <table class="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr class="bg-white/5 border-b border-white/5">
+                                                    <th class="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest">Servicio</th>
+                                                    <th class="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest text-right w-36">Precio (Original → Nuevo)</th>
+                                                    <th class="px-4 py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest text-right w-36">Honorario (Original → Nuevo)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-white/5">
+                                                <tr *ngFor="let item of itemsChanges" class="text-slate-300">
+                                                    <td class="px-4 py-2 font-bold uppercase">{{ item.Descripcion }}</td>
+                                                    <td class="px-4 py-2 text-right font-mono">
+                                                        <span class="text-rose-400 line-through pr-1.5">$ {{ item.PrecioAnterior | number:'1.2-2' }}</span>
+                                                        <span class="text-emerald-400 font-bold">$ {{ item.PrecioNuevo | number:'1.2-2' }}</span>
+                                                    </td>
+                                                    <td class="px-4 py-2 text-right font-mono">
+                                                        <span class="text-rose-400 line-through pr-1.5">$ {{ item.HonorarioAnterior | number:'1.2-2' }}</span>
+                                                        <span class="text-emerald-400 font-bold">$ {{ item.HonorarioNuevo | number:'1.2-2' }}</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ng-template #noHistory>
+                        <div class="bg-white/[0.01] border border-white/5 rounded-2xl p-8 text-center text-slate-500 flex flex-col items-center justify-center">
+                            <lucide-icon [name]="icons.Clock" class="w-8 h-8 opacity-25 mb-2"></lucide-icon>
+                            <p class="text-[9px] font-black uppercase tracking-widest">Esta cuenta no registra modificaciones previas</p>
+                        </div>
+                    </ng-template>
+                </div>
+            </div>
+
+            <ng-template #noSelection>
+                <div class="bg-white/[0.02] border border-white/5 rounded-3xl p-16 text-center text-slate-500 h-full flex flex-col items-center justify-center min-h-[400px]">
+                    <lucide-icon [name]="icons.Info" class="w-16 h-16 opacity-30 mb-4 text-slate-600 animate-pulse"></lucide-icon>
+                    <h3 class="text-sm font-black uppercase tracking-widest text-slate-400">Sin Selección</h3>
+                    <p class="text-xs text-slate-600 max-w-sm mt-2">
+                        Busque y seleccione una cuenta desde la columna de la izquierda para comenzar a realizar correcciones.
+                    </p>
+                </div>
+            </ng-template>
+        </div>
+    </div>
+</div>

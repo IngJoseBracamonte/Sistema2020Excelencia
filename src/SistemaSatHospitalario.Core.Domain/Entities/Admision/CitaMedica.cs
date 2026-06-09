@@ -41,5 +41,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             Estado = EstadoConstants.Atendida;
         }
+
+        public void CambiarPacienteAdministrativo(Guid nuevoPacienteId)
+        {
+            if (nuevoPacienteId == Guid.Empty) throw new ArgumentException("El PacienteId no puede ser vacío.");
+            PacienteId = nuevoPacienteId;
+        }
     }
 }

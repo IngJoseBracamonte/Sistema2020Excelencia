@@ -66,5 +66,17 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         }
 
         public decimal ObtenerTotalPagadoBase() => _detallesPago.Sum(p => p.EquivalenteAbonadoBase);
+
+        public void CambiarPacienteAdministrativo(Guid nuevoPacienteId)
+        {
+            if (nuevoPacienteId == Guid.Empty) throw new ArgumentException("El PacienteId no puede ser vacío.");
+            PacienteId = nuevoPacienteId;
+        }
+
+        public void ActualizarTotalesAdministrativos(decimal nuevoTotalFacturado, decimal nuevoMontoVuelto)
+        {
+            TotalFacturadoUSD = nuevoTotalFacturado;
+            MontoVueltoUSD = nuevoMontoVuelto;
+        }
     }
 }

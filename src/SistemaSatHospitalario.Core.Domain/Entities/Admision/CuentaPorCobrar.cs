@@ -74,5 +74,27 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             InformacionAdicional = informacionAdicional;
         }
 
+        public void CambiarPacienteAdministrativo(Guid nuevoPacienteId)
+        {
+            if (nuevoPacienteId == Guid.Empty) throw new ArgumentException("El PacienteId no puede ser vacío.");
+            PacienteId = nuevoPacienteId;
+        }
+
+        public void ActualizarMontoTotalAdministrativo(decimal nuevoTotal)
+        {
+            MontoTotalBase = nuevoTotal;
+            if (MontoPagadoBase >= MontoTotalBase)
+            {
+                Estado = EstadoConstants.Cobrada;
+            }
+            else if (MontoPagadoBase > 0)
+            {
+                Estado = EstadoConstants.Parcial;
+            }
+            else
+            {
+                Estado = EstadoConstants.Pendiente;
+            }
+        }
     }
 }

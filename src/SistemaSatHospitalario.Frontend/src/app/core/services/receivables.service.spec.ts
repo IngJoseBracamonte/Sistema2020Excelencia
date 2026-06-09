@@ -23,7 +23,7 @@ describe('ReceivablesService', () => {
 
     it('debe obtener las cuentas por cobrar pendientes con filtros', () => {
         const mockARs: PendingAR[] = [
-            { id: '1', cuentaId: 'C-01', pacienteNombre: 'JUAN PEREZ', pacienteCedula: '123', tipoIngreso: 'Seguro', seguroNombre: 'SEGUROS CARACAS', montoTotal: 100, saldoPendiente: 100, fechaEmision: '2026-01-01', estado: 'Pendiente' }
+            { id: '1', cuentaId: 'C-01', pacienteNombre: 'JUAN PEREZ', pacienteCedula: '123', tipoIngreso: 'Seguro', seguroNombre: 'SEGUROS CARACAS', montoTotal: 100, saldoPendiente: 100, fechaEmision: '2026-01-01', estado: 'Pendiente', isAudited: false, conceptos: [], pagos: [] }
         ];
 
         service.getPending('JUAN', 'Pendiente').subscribe(ars => {
@@ -39,7 +39,7 @@ describe('ReceivablesService', () => {
     it('debe enviar la liquidación de una cuenta correctamente', () => {
         const payload: SettleARRequest = {
             arId: 'ar-123',
-            referenciaPago: 'REF-001',
+            payments: [{ method: 'Efectivo', amount: 100, amountMoneda: 100, tasaAplicada: 1.0, reference: 'REF-001' }],
             observaciones: 'Pago total'
         };
 

@@ -31,7 +31,8 @@
             <div *ngIf="dropdownsOpen().facturacion" class="pl-8 space-y-1 animate-fade-in">
                 <a *ngIf="permissionService.can('Permissions.Facturacion.Particular')" routerLink="/facturacion" [queryParams]="{type: 'Particular'}" routerLinkActive="active-sublink" class="nav-subitem italic">Facturación Particular</a>
                 <a *ngIf="permissionService.can('Permissions.Facturacion.Convenio')" routerLink="/facturacion" [queryParams]="{type: 'Seguro'}" routerLinkActive="active-sublink" class="nav-subitem">Facturación de Seguros</a>
-                <!-- Hospitalización y Emergencia omitidos por solicitud (Not Ready) -->
+                <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant() || auth.isHospitalAssistant()" routerLink="/cierre-cuenta/Hospitalizacion" routerLinkActive="active-sublink" class="nav-subitem">🏥 Hospitalización</a>
+                <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant() || auth.isEmergencyAssistant()" routerLink="/cierre-cuenta/Emergencia" routerLinkActive="active-sublink" class="nav-subitem">🚨 Emergencia</a>
             </div>
         </div>
 
@@ -96,6 +97,7 @@
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewCxC')" routerLink="/cxc" routerLinkActive="active-sublink" class="nav-subitem">Cuentas por Cobrar</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewExpediente')" routerLink="/expediente-facturacion" routerLinkActive="active-sublink" class="nav-subitem">Expediente de Facturación</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewAudit')" routerLink="/admin/audit/cuentas" routerLinkActive="active-sublink" class="nav-subitem">Cuentas por Auditar</a>
+                <a *ngIf="isAdmin() || isSupervisor()" routerLink="/admin/audit/modificar-cuenta" routerLinkActive="active-sublink" class="nav-subitem text-amber-500 font-black italic">Modificación de Ingresos</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewOrders')" routerLink="/rx-orders" routerLinkActive="active-sublink" class="nav-subitem">Órdenes RX</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewOrders')" routerLink="/tomo-orders" routerLinkActive="active-sublink" class="nav-subitem">Órdenes Tomografía</a>
                 <a *ngIf="permissionService.can('Permissions.Reportes.ViewExpediente')" routerLink="/expedientes" routerLinkActive="active-sublink" class="nav-subitem">Expedientes</a>
