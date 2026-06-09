@@ -17,7 +17,7 @@ using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
-    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.AsistenteParticular + "," + AuthorizationConstants.AsistenteSeguro + "," + AuthorizationConstants.AsistenteDeSeguros + "," + AuthorizationConstants.AsistenteRX + "," + AuthorizationConstants.Medico + "," + AuthorizationConstants.Cajero)]
+    [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.AsistenteParticular + "," + AuthorizationConstants.AsistenteSeguro + "," + AuthorizationConstants.AsistenteDeSeguros + "," + AuthorizationConstants.AsistenteRX + "," + AuthorizationConstants.Medico + "," + AuthorizationConstants.Cajero + "," + AuthorizationConstants.AsistenteHospitalario + "," + AuthorizationConstants.AsistenteEmergencia)]
     [ApiController]
     [Route("api/[controller]")]
     public class BillingController : ControllerBase
@@ -334,7 +334,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("cuentas-administrativas")]
-        [Authorize(Roles = "Admin,Administrador,Supervisor")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor,Asistente Particular,Asistente Seguro,Asistente de Seguros,Asistente Hospitalario,Asistente de Emergencia")]
         public async Task<IActionResult> GetCuentasAdministrativas([FromQuery] string? searchTerm, [FromQuery] string? tipoIngreso, [FromQuery] string? estado)
         {
             try

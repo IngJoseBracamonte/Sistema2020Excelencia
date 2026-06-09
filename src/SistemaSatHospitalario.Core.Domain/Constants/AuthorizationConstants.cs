@@ -22,6 +22,8 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const string AsistenteRX = "Asistente RX";
         public const string AsistenteTomografia = "Asistente de Tomografía";
         public const string Farmacia = "Farmacia";
+        public const string AsistenteHospitalario = "Asistente Hospitalario";
+        public const string AsistenteEmergencia = "Asistente de Emergencia";
 
         // Grupos Lógicos (Para [Authorize(Roles = ...)])
         public const string AdminRoles = Admin + "," + Administrador;
@@ -36,7 +38,9 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
             IsAdmin(role) || 
             string.Equals(role, Cajero, StringComparison.OrdinalIgnoreCase) ||
             string.Equals(role, AsistenteParticular, StringComparison.OrdinalIgnoreCase) || 
-            string.Equals(role, AsistenteSeguro, StringComparison.OrdinalIgnoreCase);
+            string.Equals(role, AsistenteSeguro, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(role, AsistenteEmergencia, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(role, AsistenteHospitalario, StringComparison.OrdinalIgnoreCase);
 
         public static bool IsLaboratorio(string? role) => 
             IsAdmin(role) || 
