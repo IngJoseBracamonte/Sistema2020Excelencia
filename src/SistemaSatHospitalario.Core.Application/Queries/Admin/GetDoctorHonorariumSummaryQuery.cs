@@ -37,11 +37,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             // Se restringe la unión de detalles para evitar asignación errónea de otros servicios en la misma cuenta.
             var fromCitas = await (
                 from cita in _context.CitasMedicas
+                join cs in _context.CuentasServicios on cita.CuentaServicioId equals cs.Id
                 join detail in _context.DetallesServicioCuenta
                     on cita.CuentaServicioId equals detail.CuentaServicioId
                 join medico in _context.Medicos
                     on cita.MedicoId equals medico.Id
                 where cita.Estado == EstadoConstants.Atendida
+                   && cs.Estado != EstadoConstants.Anulada
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
                    && (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI") || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
@@ -63,11 +65,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 from detail in _context.DetallesServicioCuenta
                 join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
                 where detail.Realizado
+                   && cs.Estado != EstadoConstants.Anulada
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
                    && !(detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI") || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
-                   && (cs.FechaCierre ?? cs.FechaCarga) >= start
-                   && (cs.FechaCierre ?? cs.FechaCarga) <= end
+                   && (detail.FechaRealizacion ?? detail.FechaCarga) >= start
+                   && (detail.FechaRealizacion ?? detail.FechaCarga) <= end
                 select new
                 {
                     MedicoId = (Guid?)detail.MedicoResponsableId,

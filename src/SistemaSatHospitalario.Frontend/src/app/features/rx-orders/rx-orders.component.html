@@ -222,7 +222,7 @@
                                     </div>
                                     <!-- Botón Procesar habilitado si ya está validada o si es regular -->
                                     <button *ngIf="!order.requiereValidacion || order.validada" 
-                                            (click)="$event.stopPropagation(); openProcessModal(order.orderId)"
+                                            (click)="$event.stopPropagation(); onProcesarClick(order)"
                                             [ngClass]="isTomoRoute() ? 'bg-sky-500/10 hover:bg-sky-500 text-sky-400 border-sky-500/20 shadow-sky-500/5' : 'bg-rose-500/10 hover:bg-rose-500 text-rose-400 border-rose-500/20 shadow-rose-500/5'"
                                             class="inline-flex items-center gap-2 px-5 py-2 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group/btn border">
                                         PROCESAR

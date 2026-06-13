@@ -93,6 +93,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PacienteEdad = edad,
                     Especialidad = cita.Medico.Especialidad.Nombre,
                     Medico = cita.Medico.Nombre,
+                    MedicoTelefono = cita.Medico.Telefono,
                     FormaPago = formaPago,
                     MontoUSD = monto,
                     Estado = cita.Estado,

@@ -46,7 +46,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         from sm in smGroup.DefaultIfEmpty()
                         join ar in _context.CuentasPorCobrar on c.Id equals ar.CuentaServicioId into arGroup
                         from ar in arGroup.DefaultIfEmpty()
-                        select new { d, c, p, rf, sm, ar };
+                        join cita in _context.CitasMedicas on c.Id equals cita.CuentaServicioId into citaGroup
+                        from cita in citaGroup.DefaultIfEmpty()
+                        select new { d, c, p, rf, sm, ar, CitaEstado = cita != null ? cita.Estado : null };
 
             if (request.StartDate.HasValue)
             {
@@ -129,7 +131,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     MetodoPago = metodo,
                     MontoUSD = x.d.Precio * x.d.Cantidad,
                     FacturadoPor = facturadorInfo,
-                    Estado = (x.c.Estado == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente",
+                    Estado = (x.CitaEstado == EstadoConstants.Cancelado || x.CitaEstado == EstadoConstants.Cancelada) 
+                        ? "No Efectuado" 
+                        : ((x.c.Estado == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente"),
                     TipoServicio = x.d.TipoServicio,
                     CuentaPorCobrarId = x.ar?.Id,
                     QuienAutorizo = x.ar?.QuienAutorizo,

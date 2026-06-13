@@ -176,7 +176,11 @@
                         </td>
                         <!-- Estado -->
                         <td class="px-6 py-4 text-center">
-                            <span [ngClass]="row.estado === 'Facturado' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'"
+                            <span [ngClass]="{
+                                    'bg-emerald-500/10 text-emerald-500 border-emerald-500/20': row.estado === 'Facturado',
+                                    'bg-rose-500/10 text-rose-500 border-rose-500/20': row.estado === 'No Efectuado',
+                                    'bg-amber-500/10 text-amber-500 border-amber-500/20': row.estado !== 'Facturado' && row.estado !== 'No Efectuado'
+                                }"
                                 class="inline-flex items-center px-4 py-1 border rounded-lg text-[8px] font-black uppercase tracking-[0.2em]">
                                 {{ row.estado }}
                             </span>

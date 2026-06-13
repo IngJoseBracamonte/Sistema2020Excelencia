@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   LayoutGrid,
   List,
-  Eye
+  Eye,
+  MessageSquare
 } from 'lucide-angular';
 import { ExpedienteService, ControlCitaRow } from '../../../core/services/expediente.service';
 
@@ -40,7 +41,8 @@ export class ControlCitasComponent implements OnInit {
     ShieldCheck,
     LayoutGrid,
     List,
-    Eye
+    Eye,
+    MessageSquare
   };
 
   private expedienteService = inject(ExpedienteService);
@@ -108,6 +110,38 @@ export class ControlCitasComponent implements OnInit {
 
   verFacturacion(cedula: string) {
     this.router.navigate(['/expediente-facturacion'], { queryParams: { searchTerm: cedula } });
+  }
+
+  enviarWhatsapp(doc: { name: string, citas: ControlCitaRow[] }) {
+    if (!doc.citas || doc.citas.length === 0) return;
+    
+    let medicoTel = doc.citas.find(c => c.medicoTelefono)?.medicoTelefono || '';
+    
+    const inputTel = prompt(
+      `Confirme o ingrese el teléfono de WhatsApp para el doctor ${doc.name} (incluya el código de país, ej: +584121234567):`,
+      medicoTel
+    );
+    
+    if (inputTel === null) return;
+    const telefonoFormateado = inputTel.replace(/\D/g, '');
+    if (!telefonoFormateado) {
+      alert('Debe ingresar un número de teléfono válido.');
+      return;
+    }
+
+    const citasActivas = doc.citas.filter(c => c.estado !== 'Cancelada' && c.estado !== 'Cancelado');
+    if (citasActivas.length === 0) {
+      alert('No hay pacientes activos hoy para enviar en la lista.');
+      return;
+    }
+
+    let mensaje = `Saludos Cordiales, este mensaje es para dejar constancia de los pacientes de hoy,\n`;
+    citasActivas.forEach((c, idx) => {
+      mensaje += `${idx + 1}. ${c.pacienteNombre}\n`;
+    });
+
+    const url = `https://web.whatsapp.com/send/?phone=${telefonoFormateado}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
   }
 
   get filteredRecords() {

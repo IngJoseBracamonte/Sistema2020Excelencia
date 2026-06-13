@@ -157,6 +157,7 @@ import { LucideAngularModule, Shield, Download, Calendar, Search, RefreshCcw, Ch
                                 </h4>
                                 <p class="text-[9px] font-mono text-slate-600 uppercase tracking-widest mt-1">{{ p.pacienteCedula }}</p>
                                 <span class="text-[8px] text-slate-500 font-bold uppercase mt-1">{{ p.seguroNombre }}</span>
+                                <span *ngIf="p.garantiaDescripcion" class="text-[8px] text-indigo-400 font-black uppercase mt-1">Garantía: {{ p.garantiaDescripcion }}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center">

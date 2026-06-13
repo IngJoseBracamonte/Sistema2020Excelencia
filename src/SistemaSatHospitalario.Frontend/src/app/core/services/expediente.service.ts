@@ -35,6 +35,7 @@ export interface ControlCitaRow {
   pacienteEdad?: number;
   especialidad: string;
   medico: string;
+  medicoTelefono?: string;
   formaPago: string;
   montoUSD: number;
   estado: string;

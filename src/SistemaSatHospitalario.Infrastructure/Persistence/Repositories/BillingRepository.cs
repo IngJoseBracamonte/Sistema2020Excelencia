@@ -83,7 +83,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             
             if (cita != null)
             {
-                _context.CitasMedicas.Remove(cita);
+                cita.Cancelar();
             }
         }
 
@@ -92,7 +92,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             var cita = await _context.CitasMedicas.FindAsync(new object[] { citaId }, cancellationToken);
             if (cita != null)
             {
-                _context.CitasMedicas.Remove(cita);
+                cita.Cancelar();
             }
         }
 

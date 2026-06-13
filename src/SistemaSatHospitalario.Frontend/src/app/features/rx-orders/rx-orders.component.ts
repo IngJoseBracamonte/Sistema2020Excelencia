@@ -246,6 +246,33 @@ export class RxOrdersComponent implements OnInit {
     this.refresh();
   }
 
+  public onProcesarClick(order: any): void {
+    if (!order.informe || !order.informe.trim()) {
+      this.procesarOrdenDirectamente(order.orderId);
+    } else {
+      this.openProcessModal(order.orderId);
+    }
+  }
+
+  public procesarOrdenDirectamente(id: number): void {
+    this.isLoading.set(true);
+    const url = `${environment.apiUrl}/api/Imaging/${id}/complete`;
+    this.http.post(url, {})
+      .subscribe({
+        next: () => {
+          this.actionMessage.set('Estudio procesado correctamente sin Imagenólogo.');
+          this.localTickets.update(tickets => tickets.filter(t => t.orderId !== id));
+          this.signalRService.incomingTickets.update(tickets => tickets.filter(t => t.orderId !== id));
+          this.refresh();
+          setTimeout(() => this.actionMessage.set(null), 5000);
+        },
+        error: (err) => {
+          alert('Error al procesar la orden: ' + err.message);
+          this.isLoading.set(false);
+        }
+      });
+  }
+
   public openProcessModal(id: number): void {
     this.orderIdBeingProcessed.set(id);
     this.selectedMedicoIdForProcess.set('');

@@ -81,7 +81,14 @@
                             </div>
                             <h3 class="text-lg font-black text-white uppercase tracking-tight">{{ doc.name }}</h3>
                         </div>
-                        <span class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">{{ doc.citas.length }} Pacientes Agendados</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-[8px] font-black text-amber-500/50 uppercase tracking-widest italic">{{ doc.citas.length }} Pacientes Agendados</span>
+                            <button (click)="enviarWhatsapp(doc)" 
+                                class="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/5 cursor-pointer">
+                                <lucide-icon [name]="icons.MessageSquare" class="w-3.5 h-3.5"></lucide-icon>
+                                WhatsApp
+                            </button>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -142,7 +149,7 @@
                     <td class="px-6 py-4 text-center">
                         <span [ngClass]="{
                             'bg-emerald-500/10 text-emerald-500 border-emerald-500/20': row.estado === 'Atendida',
-                            'bg-rose-500/10 text-rose-500 border-rose-500/20': row.estado === 'Cancelada',
+                            'bg-rose-500/10 text-rose-500 border-rose-500/20': row.estado === 'Cancelada' || row.estado === 'Cancelado',
                             'bg-amber-500/10 text-amber-500 border-amber-500/20': row.estado === 'Pendiente'
                         }" class="inline-flex items-center px-4 py-1 border rounded-lg text-[8px] font-black uppercase tracking-[0.2em]">
                             {{ row.estado }}

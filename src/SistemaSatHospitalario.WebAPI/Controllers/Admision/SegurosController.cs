@@ -284,7 +284,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     c.GarantiaGenerada,
                     c.Estado,
                     EsMoroso = c.FechaCreacion < DateTime.UtcNow.AddDays(-30),
-                    ConceptosList = c.Cuenta.Detalles.Select(d => d.Descripcion).ToList()
+                    ConceptosList = c.Cuenta.Detalles.Select(d => d.Descripcion).ToList(),
+                    GarantiaItemsList = c.GarantiasItems.Select(gi => gi.Descripcion).ToList()
                 })
                 .ToListAsync();
 
@@ -301,7 +302,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 c.GarantiaGenerada,
                 c.Estado,
                 c.EsMoroso,
-                Conceptos = string.Join(", ", c.ConceptosList)
+                Conceptos = string.Join(", ", c.ConceptosList),
+                GarantiaDescripcion = string.Join(", ", c.GarantiaItemsList)
             }).ToList();
 
             return Ok(cuentas);

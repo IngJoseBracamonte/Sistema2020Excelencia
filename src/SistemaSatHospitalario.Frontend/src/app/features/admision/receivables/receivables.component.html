@@ -519,7 +519,8 @@
                                 REGISTRAR VUELTO
                             </button>
                         </div>
-                            <!-- BOTÓN FINAL DE LIQUIDACIÓN -->
+                    </div>
+                    <!-- BOTÓN FINAL DE LIQUIDACIÓN -->
                     <div class="pt-4">
                         <button (click)="liquidar()"
                             [disabled]="isSettling() || payments().length === 0 || requiresChange()"
