@@ -1029,7 +1029,7 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                             }
 
                             text.Span(", declaro haber recibido de conformidad la factura original N° ");
-                            text.Span(!string.IsNullOrWhiteSpace(data.NroFactura) ? data.NroFactura : "_____________________").Bold();
+                            text.Span("_____________________").Bold();
                             text.Span(", en el cual se realizaron todos los servicios descritos, por un monto de ");
                             
                             if (data.MontoTotal > 0)
