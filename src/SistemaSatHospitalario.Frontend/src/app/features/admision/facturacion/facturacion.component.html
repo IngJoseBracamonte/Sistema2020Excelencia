@@ -275,6 +275,45 @@
                         </div>
                     </div>
 
+                    <!-- Datos de Responsable / Garante Tercero (Particular y cuando hay saldo pendiente) -->
+                    <div *ngIf="tipoIngreso() === 'Particular' && saldoPendiente() > 0.01" class="pt-2 border-t border-white/5 space-y-4 text-left">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="esResponsableParticular" [(ngModel)]="docMetadata().esResponsableParticular"
+                                class="w-4 h-4 rounded border-white/10 bg-black/40 text-primary focus:ring-primary/20">
+                            <label for="esResponsableParticular" class="text-[10px] font-black text-slate-300 uppercase tracking-wider cursor-pointer">
+                                ¿El compromiso de pago estará a cargo de un responsable / garante?
+                            </label>
+                        </div>
+                        
+                        <div *ngIf="docMetadata().esResponsableParticular" class="grid grid-cols-1 md:grid-cols-3 gap-4 animate-scale-in">
+                            <div class="space-y-1">
+                                <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre del Responsable</label>
+                                <input type="text" [(ngModel)]="docMetadata().nombreResponsable" placeholder="NOMBRE COMPLETO"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Cédula del Responsable</label>
+                                <input type="text" [(ngModel)]="docMetadata().cedulaResponsable" placeholder="CÉDULA DE IDENTIDAD"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Relación / Parentesco</label>
+                                <input type="text" [(ngModel)]="docMetadata().relacionResponsable" placeholder="EJ: PADRE, HERMANO, AMIGO"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Teléfono del Responsable</label>
+                                <input type="text" [(ngModel)]="docMetadata().telefonoResponsable" placeholder="TELÉFONO DE CONTACTO"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+                            </div>
+                            <div class="space-y-1 md:col-span-2">
+                                <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección del Responsable</label>
+                                <input type="text" [(ngModel)]="docMetadata().direccionResponsable" placeholder="DIRECCIÓN DE DOMICILIO"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Datos de Garantía de Pago (Solo para Particular y cuando hay saldo pendiente) -->
                     <div *ngIf="tipoIngreso() === 'Particular' && saldoPendiente() > 0.01" class="col-span-2 space-y-3 pt-2 border-t border-white/5 text-left">
                         <div class="flex items-center justify-between">
@@ -294,7 +333,7 @@
                                     <input type="text" [(ngModel)]="item.descripcion" placeholder="Descripción del bien (Ej: Motocicleta Suzuki)" class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-lg text-[10px] font-black text-white outline-none focus:border-indigo-500 uppercase">
                                 </div>
                                 
-                                <div class="w-32">
+                                <div class="w-32 shrink-0">
                                     <input type="number" [(ngModel)]="item.valorEstimado" placeholder="Valor ($)" class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-lg text-[10px] font-black text-white outline-none focus:border-indigo-500">
                                 </div>
 

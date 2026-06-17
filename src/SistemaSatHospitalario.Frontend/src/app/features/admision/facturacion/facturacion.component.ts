@@ -437,9 +437,12 @@ export class FacturacionComponent {
     montoGarantia: 0,
     descripcionGarantia: '',
     esBeneficiario: false,
+    esResponsableParticular: false,
     nombreResponsable: '',
     cedulaResponsable: '',
-    relacionResponsable: 'Hijo(a)'
+    relacionResponsable: 'Hijo(a)',
+    telefonoResponsable: '',
+    direccionResponsable: ''
   });
 
   public anexarGarantia = signal<boolean>(true);
@@ -1521,9 +1524,12 @@ export class FacturacionComponent {
       montoGarantia: 0,
       descripcionGarantia: '',
       esBeneficiario: false,
+      esResponsableParticular: false,
       nombreResponsable: '',
       cedulaResponsable: '',
-      relacionResponsable: 'Hijo(a)'
+      relacionResponsable: 'Hijo(a)',
+      telefonoResponsable: '',
+      direccionResponsable: ''
     });
     this.anexarGarantia.set(true);
 
@@ -1568,20 +1574,29 @@ export class FacturacionComponent {
     const validDescripcionGarantia = validItems.map(i => i.descripcion).join(', ');
 
     this.isGeneratingPdf.set(true);
+    const meta = this.docMetadata();
+    const isParticularResp = this.tipoIngreso() === 'Particular' && meta.esResponsableParticular;
+
+    const nombreResp = isParticularResp && meta.nombreResponsable ? meta.nombreResponsable.trim() : `${nombre} ${apellidos}`.trim();
+    const cedulaResp = isParticularResp && meta.cedulaResponsable ? meta.cedulaResponsable.trim() : cedula;
+    const relacionResp = isParticularResp ? meta.relacionResponsable : 'Titular';
+    const direccionResp = isParticularResp && meta.direccionResponsable ? meta.direccionResponsable.trim() : (direccion || 'No especificada');
+    const telefonoResp = isParticularResp && meta.telefonoResponsable ? meta.telefonoResponsable.trim() : (celular || telefono || 'No especificado');
+
     const dto = {
       cuentaPorCobrarId: res.cuentaPorCobrarId,
-      nombreResponsable: `${nombre} ${apellidos}`.trim(),
-      relacionResponsable: 'Titular',
-      cedulaResponsable: cedula,
-      direccionResponsable: direccion || 'No especificada',
-      telefonoResponsable: celular || telefono || 'No especificado', // Fix: Use celular as primary
+      nombreResponsable: nombreResp,
+      relacionResponsable: relacionResp,
+      cedulaResponsable: cedulaResp,
+      direccionResponsable: direccionResp,
+      telefonoResponsable: telefonoResp,
       conceptos: this.serviciosCargados().map(s => s.descripcion || s.Descripcion).join(', '),
       nombrePaciente: `${nombre} ${apellidos}`.trim(),
       edadPaciente: this.calcularEdad(fechaNacimiento || ''),
       cedulaPaciente: cedula,
       direccionPaciente: direccion,
       telefonoPaciente: celular || telefono,
-      montoTotal: this.totalCargadoUSD(), // Use cart total
+      montoTotal: this.totalCargadoUSD(),
       diasLiquidar: this.docMetadata().diasLiquidar,
       cuotas: this.docMetadata().cuotas,
       montoGarantia: validMontoGarantia,
@@ -1666,11 +1681,10 @@ export class FacturacionComponent {
   }
 
   imprimirGarantia() {
-      // Similar a compromiso pero llamando a generarGarantiaPdf
       const res = this.lastBillResult();
       const p: any = this.selectedPatientData();
       if (!res || !p) return;
-
+  
       const nombre = p.nombre || p.Nombre || '';
       const apellidos = p.apellidos || p.Apellidos || '';
       const cedula = p.cedula || p.Cedula || '';
@@ -1684,13 +1698,22 @@ export class FacturacionComponent {
       const validDescripcionGarantia = validItems.map(i => i.descripcion).join(', ');
   
       this.isGeneratingPdf.set(true);
+      const meta = this.docMetadata();
+      const isParticularResp = this.tipoIngreso() === 'Particular' && meta.esResponsableParticular;
+
+      const nombreResp = isParticularResp && meta.nombreResponsable ? meta.nombreResponsable.trim() : `${nombre} ${apellidos}`.trim();
+      const cedulaResp = isParticularResp && meta.cedulaResponsable ? meta.cedulaResponsable.trim() : cedula;
+      const relacionResp = isParticularResp ? meta.relacionResponsable : 'Titular';
+      const direccionResp = isParticularResp && meta.direccionResponsable ? meta.direccionResponsable.trim() : (direccion || 'No especificada');
+      const telefonoResp = isParticularResp && meta.telefonoResponsable ? meta.telefonoResponsable.trim() : (celular || telefono || 'No especificado');
+
       const dto = {
         cuentaPorCobrarId: res.cuentaPorCobrarId,
-        nombreResponsable: `${nombre} ${apellidos}`.trim(),
-        relacionResponsable: 'Titular',
-        cedulaResponsable: cedula,
-        direccionResponsable: direccion || 'No especificada',
-        telefonoResponsable: celular || telefono || 'No especificado',
+        nombreResponsable: nombreResp,
+        relacionResponsable: relacionResp,
+        cedulaResponsable: cedulaResp,
+        direccionResponsable: direccionResp,
+        telefonoResponsable: telefonoResp,
         conceptos: this.serviciosCargados().map(s => s.descripcion || s.Descripcion).join(', '),
         nombrePaciente: `${nombre} ${apellidos}`.trim(),
         edadPaciente: this.calcularEdad(fechaNacimiento || ''),

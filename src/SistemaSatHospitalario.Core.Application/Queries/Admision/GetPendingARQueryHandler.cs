@@ -96,7 +96,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (request.SoloCompromiso.HasValue && request.SoloCompromiso.Value)
             {
-                query = query.Where(ar => ar.CompromisoGenerado);
+                query = query.Where(ar => ar.CompromisoGenerado && ar.SeguroNombre == EstadoConstants.Particular);
             }
 
             return await query.OrderByDescending(ar => ar.FechaEmision).ToListAsync(cancellationToken);
