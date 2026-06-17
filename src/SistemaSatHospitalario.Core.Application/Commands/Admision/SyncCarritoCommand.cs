@@ -107,7 +107,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         var fullName = $"{legacyPatient.Nombre} {legacyPatient.Apellidos}".Trim();
                         var mainPhone = !string.IsNullOrEmpty(legacyPatient.Celular) ? legacyPatient.Celular : legacyPatient.Telefono;
                         
-                        paciente = new PacienteAdmision(legacyPatient.Cedula, fullName, mainPhone ?? "", legacyPatient.IdPersona);
+                        DateTime? dob = null;
+                        if (DateTime.TryParse(legacyPatient.Fecha, out var parsedDob)) dob = parsedDob;
+
+                        paciente = new PacienteAdmision(legacyPatient.Cedula, fullName, mainPhone ?? "", legacyPatient.IdPersona, dob, legacyPatient.Direccion);
                         try 
                         {
                             await _context.PacientesAdmision.AddAsync(paciente, ct);

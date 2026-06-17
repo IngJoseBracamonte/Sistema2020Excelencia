@@ -15,7 +15,13 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string Apellidos { get; set; }
         public string Sexo { get; set; }
         public string Correo { get; set; }
+        public string TipoCorreo { get; set; }
         public string Celular { get; set; }
+        public string CodigoCelular { get; set; }
+        public string Telefono { get; set; }
+        public string CodigoTelefono { get; set; }
+        public string FechaNacimiento { get; set; }
+        public string Direccion { get; set; }
         public bool EsLegacy { get; set; }
         public string Source { get; set; } // "Nativo" o "Legacy"
     }

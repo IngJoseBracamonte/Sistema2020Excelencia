@@ -38,8 +38,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands
                 {
                     var fullName = $"{legacyResult.Nombre} {legacyResult.Apellidos}".Trim();
                     var mainPhone = !string.IsNullOrEmpty(legacyResult.Celular) ? legacyResult.Celular : legacyResult.Telefono;
-                    
-                    paciente = new PacienteAdmision(legacyResult.Cedula, fullName, mainPhone ?? "", legacyResult.IdPersona);
+                    DateTime? dob = null;
+                    if (DateTime.TryParse(legacyResult.Fecha, out var parsedDob)) dob = parsedDob;
+
+                    paciente = new PacienteAdmision(legacyResult.Cedula, fullName, mainPhone ?? "", legacyResult.IdPersona, dob, legacyResult.Direccion);
                     _context.PacientesAdmision.Add(paciente);
                     // No persistimos aún para permitir atomicidad con la Cita
                 }

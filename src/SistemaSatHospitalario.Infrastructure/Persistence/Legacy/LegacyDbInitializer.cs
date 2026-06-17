@@ -63,6 +63,62 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
 
                 // await _context.Database.MigrateAsync();
                 
+                // Self-healing: Ensure Direccion column exists in datospersonales table
+                try
+                {
+                    bool hasDireccionLegacy = false;
+                    var legacyConn = _context.Database.GetDbConnection();
+                    bool closeLegacyConn = false;
+                    if (legacyConn.State != System.Data.ConnectionState.Open)
+                    {
+                        await legacyConn.OpenAsync();
+                        closeLegacyConn = true;
+                    }
+                    using (var cmd = legacyConn.CreateCommand())
+                    {
+                        if (_context.Database.IsSqlite())
+                        {
+                            cmd.CommandText = "PRAGMA table_info(datospersonales);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    if (reader["name"].ToString().Equals("Direccion", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasDireccionLegacy = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `datospersonales` LIKE 'Direccion';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    hasDireccionLegacy = true;
+                                }
+                            }
+                        }
+                    }
+                    if (closeLegacyConn)
+                    {
+                        await legacyConn.CloseAsync();
+                    }
+
+                    if (!hasDireccionLegacy)
+                    {
+                        _logger.LogInformation("La columna 'Direccion' no existe en la tabla legacy 'datospersonales'. Ejecutando ALTER TABLE...");
+                        await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `datospersonales` ADD COLUMN `Direccion` VARCHAR(500) NULL;");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'Direccion' en la tabla legacy 'datospersonales'.");
+                }
+
                 _logger.LogInformation("✅ Legacy Database '{Database}' Inicializada y Migrada Correctamente.", builder.Database);
             }
             catch (Exception ex)

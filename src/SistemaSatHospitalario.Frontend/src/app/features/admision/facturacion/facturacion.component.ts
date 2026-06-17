@@ -521,6 +521,8 @@ export class FacturacionComponent {
   public tiposCorreo = ['@gmail.com', '@hotmail.com', '@outlook.com', '@yahoo.com'];
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
   public codigosTelefono = ['0273', '0251', '0212', '0281', '0241'];
+  public codigosTelefonoCombinados = ['0274', '0273', '0251', '0212', '0281', '0241', '0416', '0426', '0414', '0424', '0412', '0422'];
+  public isEditingPatient = signal<boolean>(false);
 
   // --- Gestión de Seguridad de Precios (Fase 1) ---
   private pendingEditInfo: { index: number, isBackend: boolean } | null = null;
@@ -741,32 +743,103 @@ export class FacturacionComponent {
       celular: '',
       codigoCelular: '0414',
       telefono: '',
-      codigoTelefono: '0212'
+      codigoTelefono: '0212',
+      direccion: ''
     };
+    this.isEditingPatient.set(false);
     this.showRegisterModal.set(true);
     this.showResultadosBusqueda.set(false);
     this.noResultsFound.set(false);
   }
 
+  abrirEditarPaciente(patient: PatientRecord) {
+    if (!patient) return;
+    
+    // Safely parse fechaNacimiento. If it has time component, split it.
+    let formattedDob = '';
+    if (patient.fechaNacimiento) {
+      formattedDob = patient.fechaNacimiento.split('T')[0];
+    }
+
+    this.newPatientData = {
+      id: patient.id,
+      idPacienteLegacy: patient.idPacienteLegacy,
+      cedula: patient.cedula,
+      nombre: patient.nombre,
+      apellidos: patient.apellidos || '',
+      sexo: patient.sexo || 'ND',
+      fechaNacimiento: formattedDob,
+      celular: patient.celular || '',
+      codigoCelular: patient.codigoCelular || '0414',
+      telefono: patient.telefono || '',
+      codigoTelefono: patient.codigoTelefono || '0274',
+      direccion: patient.direccion || ''
+    };
+    
+    this.isEditingPatient.set(true);
+    this.showRegisterModal.set(true);
+  }
+
   guardarNuevoPaciente() {
-    if (!this.newPatientData.cedula || !this.newPatientData.nombre) {
-      this.errorMessage.set("Cédula y Nombre son obligatorios.");
+    if (!this.newPatientData.cedula || 
+        !this.newPatientData.nombre || 
+        !this.newPatientData.apellidos || 
+        !this.newPatientData.fechaNacimiento || 
+        !this.newPatientData.celular || 
+        !this.newPatientData.direccion) {
+      this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento, Celular y Dirección.");
       return;
     }
 
     this.isLoading.set(true);
-    this.patientService.createPatient(this.newPatientData).subscribe({
-      next: (p: PatientRecord) => {
-        this.isLoading.set(false);
-        this.showRegisterModal.set(false);
-        this.seleccionarPaciente(p);
-        this.actionMessage.set("Paciente registrado exitosamente en ambos sistemas.");
-      },
-      error: (err: any) => {
-        this.isLoading.set(false);
-        this.errorMessage.set(err.error?.message || "Error al registrar paciente.");
-      }
-    });
+
+    if (this.isEditingPatient()) {
+      this.patientService.updatePatient(this.newPatientData).subscribe({
+        next: (success: boolean) => {
+          this.isLoading.set(false);
+          if (success) {
+            this.showRegisterModal.set(false);
+            
+            const updatedPatient: PatientRecord = {
+              ...this.selectedPatientData(),
+              id: this.newPatientData.id,
+              idPacienteLegacy: this.newPatientData.idPacienteLegacy,
+              cedula: this.newPatientData.cedula,
+              nombre: this.newPatientData.nombre,
+              apellidos: this.newPatientData.apellidos,
+              sexo: this.newPatientData.sexo,
+              fechaNacimiento: this.newPatientData.fechaNacimiento,
+              celular: this.newPatientData.celular,
+              codigoCelular: this.newPatientData.codigoCelular,
+              telefono: this.newPatientData.telefono,
+              codigoTelefono: this.newPatientData.codigoTelefono,
+              direccion: this.newPatientData.direccion
+            };
+            this.selectedPatientData.set(updatedPatient);
+            this.actionMessage.set("Datos del paciente actualizados exitosamente.");
+          } else {
+            this.errorMessage.set("No se pudieron actualizar los datos del paciente.");
+          }
+        },
+        error: (err: any) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || err.error?.error || "Error al actualizar paciente.");
+        }
+      });
+    } else {
+      this.patientService.createPatient(this.newPatientData).subscribe({
+        next: (p: PatientRecord) => {
+          this.isLoading.set(false);
+          this.showRegisterModal.set(false);
+          this.seleccionarPaciente(p);
+          this.actionMessage.set("Paciente registrado exitosamente en ambos sistemas.");
+        },
+        error: (err: any) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || err.error?.error || "Error al registrar paciente.");
+        }
+      });
+    }
   }
 
   public refreshCatalog(convenioId?: number | null) {

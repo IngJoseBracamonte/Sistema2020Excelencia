@@ -45,7 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 DateTime? dob = null;
                 if (DateTime.TryParse(existingLegacy.Fecha, out var parsedDob)) dob = parsedDob;
 
-                nativePatient = new PacienteAdmision(existingLegacy.Cedula, fullName, mainPhone ?? "", unifiedId, dob);
+                nativePatient = new PacienteAdmision(existingLegacy.Cedula, fullName, mainPhone ?? "", unifiedId, dob, existingLegacy.Direccion);
                 await _context.PacientesAdmision.AddAsync(nativePatient, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
             }
@@ -64,7 +64,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     Celular = request.Celular ?? "",
                     CodigoCelular = request.CodigoCelular ?? "",
                     Telefono = request.Telefono ?? "",
-                    CodigoTelefono = request.CodigoTelefono ?? ""
+                    CodigoTelefono = request.CodigoTelefono ?? "",
+                    Direccion = request.Direccion ?? ""
                 };
 
                 unifiedId = await _legacyRepository.CreatePatientLegacyAsync(legacyPatient, cancellationToken);
@@ -76,7 +77,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 DateTime? dob = null;
                 if (DateTime.TryParse(request.FechaNacimiento, out var parsedDob)) dob = parsedDob;
 
-                nativePatient = new PacienteAdmision(request.Cedula, fullName, mainPhone ?? "", unifiedId, dob);
+                nativePatient = new PacienteAdmision(request.Cedula, fullName, mainPhone ?? "", unifiedId, dob, request.Direccion);
                 await _context.PacientesAdmision.AddAsync(nativePatient, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
             }
@@ -85,9 +86,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 Id = nativePatient.Id,
                 IdPacienteLegacy = unifiedId,
-                Cedula = request.Cedula,
-                Nombre = request.Nombre,
-                Apellidos = request.Apellidos ?? "",
+                Cedula = nativePatient.CedulaPasaporte,
+                Nombre = existingLegacy != null ? existingLegacy.Nombre : request.Nombre,
+                Apellidos = existingLegacy != null ? (existingLegacy.Apellidos ?? "") : (request.Apellidos ?? ""),
+                Sexo = existingLegacy != null ? (existingLegacy.Sexo ?? "ND") : (request.Sexo ?? "ND"),
+                Correo = existingLegacy != null ? (existingLegacy.Correo ?? "") : (request.Correo ?? ""),
+                TipoCorreo = existingLegacy != null ? (existingLegacy.TipoCorreo ?? "") : (request.TipoCorreo ?? ""),
+                Celular = existingLegacy != null ? (existingLegacy.Celular ?? "") : (request.Celular ?? ""),
+                CodigoCelular = existingLegacy != null ? (existingLegacy.CodigoCelular ?? "") : (request.CodigoCelular ?? ""),
+                Telefono = existingLegacy != null ? (existingLegacy.Telefono ?? "") : (request.Telefono ?? ""),
+                CodigoTelefono = existingLegacy != null ? (existingLegacy.CodigoTelefono ?? "") : (request.CodigoTelefono ?? ""),
+                FechaNacimiento = existingLegacy != null ? (existingLegacy.Fecha ?? "") : (request.FechaNacimiento ?? ""),
+                Direccion = nativePatient.Direccion ?? "",
                 Source = "Legacy",
                 EsLegacy = true
             };

@@ -85,11 +85,18 @@ import { PatientRecord } from '../../../../../core/services/patient.service';
                         <p class="text-[9px] font-black text-slate-400">{{ selectedPatient.cedula }}</p>
                     </div>
                 </div>
-                <button (click)="changePatient.emit()" [disabled]="disabled"
-                    class="flex items-center space-x-2 px-5 py-3 bg-white/5 hover:bg-primary/10 text-slate-400 hover:text-primary border border-white/5 hover:border-primary/20 rounded-xl transition-all">
-                    <lucide-icon name="edit-3" class="w-4 h-4"></lucide-icon>
-                    <span class="text-[9px] font-black uppercase">Cambiar</span>
-                </button>
+                <div class="flex items-center space-x-2">
+                    <button (click)="modifyPatient.emit()" [disabled]="disabled"
+                        class="flex items-center space-x-2 px-5 py-3 bg-primary/15 hover:bg-primary/25 text-primary border border-primary/20 rounded-xl transition-all">
+                        <lucide-icon name="edit-3" class="w-4 h-4"></lucide-icon>
+                        <span class="text-[9px] font-black uppercase">Modificar Datos</span>
+                    </button>
+                    <button (click)="changePatient.emit()" [disabled]="disabled"
+                        class="flex items-center space-x-2 px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-400 border border-white/5 rounded-xl transition-all">
+                        <lucide-icon name="user" class="w-4 h-4"></lucide-icon>
+                        <span class="text-[9px] font-black uppercase">Cambiar</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -107,6 +114,7 @@ export class PatientSelectorComponent {
   @Output() search = new EventEmitter<string>();
   @Output() select = new EventEmitter<PatientRecord>();
   @Output() changePatient = new EventEmitter<void>();
+  @Output() modifyPatient = new EventEmitter<void>();
   @Output() register = new EventEmitter<string>();
 
   public searchTerm = '';

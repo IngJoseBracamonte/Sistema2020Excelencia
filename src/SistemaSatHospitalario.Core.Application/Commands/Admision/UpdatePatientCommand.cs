@@ -17,8 +17,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Apellidos { get; set; } = string.Empty;
         public string Sexo { get; set; } = string.Empty;
         public string Correo { get; set; } = string.Empty;
+        public string TipoCorreo { get; set; } = string.Empty;
         public string Celular { get; set; } = string.Empty;
+        public string CodigoCelular { get; set; } = string.Empty;
+        public string Telefono { get; set; } = string.Empty;
+        public string CodigoTelefono { get; set; } = string.Empty;
         public DateTime? FechaNacimiento { get; set; }
+        public string Direccion { get; set; } = string.Empty;
     }
 
     public class UpdatePatientCommandHandler : IRequestHandler<UpdatePatientCommand, bool>
@@ -56,7 +61,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 3. Actualizar localmente
             var fullName = $"{request.Nombre} {request.Apellidos}".Trim();
-            patient.ActualizarDatos(fullName, request.Celular, request.FechaNacimiento ?? patient.FechaNacimiento, request.Cedula);
+            var mainPhone = !string.IsNullOrEmpty(request.Celular) 
+                ? (request.CodigoCelular + request.Celular) 
+                : (!string.IsNullOrEmpty(request.Telefono) ? (request.CodigoTelefono + request.Telefono) : "");
+
+            patient.ActualizarDatos(fullName, mainPhone, request.FechaNacimiento ?? patient.FechaNacimiento, request.Cedula, request.Direccion);
             
             // 4. Si tiene vinculación legacy, actualizar en MySQL
             if (patient.IdPacienteLegacy.HasValue)
@@ -75,28 +84,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         legacyPatient.Fecha = request.FechaNacimiento.Value.ToString("yyyy-MM-dd");
                     }
 
-                    // Email split
-                    string email = request.Correo ?? "";
-                    string emailDomain = "";
-                    int atIndex = email.IndexOf('@');
-                    if (atIndex >= 0)
-                    {
-                        emailDomain = email.Substring(atIndex);
-                        email = email.Substring(0, atIndex);
-                    }
-                    legacyPatient.Correo = email;
-                    legacyPatient.TipoCorreo = emailDomain;
-
-                    // Phone split
-                    string phone = request.Celular ?? "";
-                    string phonePrefix = "";
-                    if (phone.Length >= 4)
-                    {
-                        phonePrefix = phone.Substring(0, 4);
-                        phone = phone.Substring(4);
-                    }
-                    legacyPatient.Celular = phone;
-                    legacyPatient.CodigoCelular = phonePrefix;
+                    legacyPatient.Correo = request.Correo ?? "";
+                    legacyPatient.TipoCorreo = request.TipoCorreo ?? "";
+                    legacyPatient.Celular = request.Celular ?? "";
+                    legacyPatient.CodigoCelular = request.CodigoCelular ?? "";
+                    legacyPatient.Telefono = request.Telefono ?? "";
+                    legacyPatient.CodigoTelefono = request.CodigoTelefono ?? "";
+                    legacyPatient.Direccion = request.Direccion ?? "";
 
                     await _legacyRepository.UpdatePatientLegacyAsync(legacyPatient, cancellationToken);
                 }

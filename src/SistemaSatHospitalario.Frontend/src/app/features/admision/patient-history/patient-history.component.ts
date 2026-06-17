@@ -1,15 +1,16 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { PatientService, PatientHistory, PatientRecord } from '../../../core/services/patient.service';
 import { FacturacionService, DailyBilledPatient } from '../../../core/services/facturacion.service';
 import { PrintService } from '../../../core/services/print.service';
+import { LucideAngularModule, UserPlus, X, Check, Edit3, User } from 'lucide-angular';
 
 @Component({
   selector: 'app-patient-history',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './patient-history.component.html'
 })
 export class PatientHistoryComponent implements OnInit {
@@ -17,6 +18,8 @@ export class PatientHistoryComponent implements OnInit {
   private facturacionService = inject(FacturacionService);
   private printService = inject(PrintService);
   private route = inject(ActivatedRoute);
+
+  readonly icons = { UserPlus, X, Check, Edit3, User };
 
   public searchTerm = signal<string>('');
   public patients = signal<PatientRecord[]>([]);
@@ -29,6 +32,43 @@ export class PatientHistoryComponent implements OnInit {
   // Filtros de fecha (V3.2 Date-Precision Filter)
   public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+
+  // Standalone Patient Editing (Phase 4)
+  public showRegisterModal = signal<boolean>(false);
+  public isEditingPatient = signal<boolean>(true);
+  public actionMessage = signal<string | null>(null);
+  public errorMessage = signal<string | null>(null);
+
+  public newPatientData: any = {
+    id: '',
+    cedula: '',
+    nombre: '',
+    apellidos: '',
+    sexo: 'M',
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    celular: '',
+    codigoCelular: '0414',
+    telefono: '',
+    codigoTelefono: '0274',
+    direccion: ''
+  };
+
+  public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
+  public codigosTelefonoCombinados = ['0274', '0273', '0251', '0212', '0281', '0241', '0416', '0426', '0414', '0424', '0412', '0422'];
+
+  constructor() {
+    effect(() => {
+      const action = this.actionMessage();
+      const error = this.errorMessage();
+
+      if (action || error) {
+        setTimeout(() => {
+          this.actionMessage.set(null);
+          this.errorMessage.set(null);
+        }, 5000);
+      }
+    });
+  }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -148,5 +188,77 @@ export class PatientHistoryComponent implements OnInit {
     this.history.set([]);
     this.startDate.set(today);
     this.endDate.set(today);
+  }
+
+  editarPaciente(patient: PatientRecord) {
+    if (!patient) return;
+
+    let formattedDob = '';
+    if (patient.fechaNacimiento) {
+      formattedDob = patient.fechaNacimiento.split('T')[0];
+    }
+
+    this.newPatientData = {
+      id: patient.id,
+      idPacienteLegacy: patient.idPacienteLegacy,
+      cedula: patient.cedula,
+      nombre: patient.nombre,
+      apellidos: patient.apellidos || '',
+      sexo: patient.sexo || 'ND',
+      fechaNacimiento: formattedDob,
+      celular: patient.celular || '',
+      codigoCelular: patient.codigoCelular || '0414',
+      telefono: patient.telefono || '',
+      codigoTelefono: patient.codigoTelefono || '0274',
+      direccion: patient.direccion || ''
+    };
+
+    this.showRegisterModal.set(true);
+  }
+
+  guardarEdicion() {
+    if (!this.newPatientData.cedula || 
+        !this.newPatientData.nombre || 
+        !this.newPatientData.apellidos || 
+        !this.newPatientData.fechaNacimiento || 
+        !this.newPatientData.celular || 
+        !this.newPatientData.direccion) {
+      this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento, Celular y Dirección.");
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.patientService.updatePatient(this.newPatientData).subscribe({
+      next: (success: boolean) => {
+        this.isLoading.set(false);
+        if (success) {
+          this.showRegisterModal.set(false);
+          this.actionMessage.set("Datos del paciente actualizados exitosamente.");
+
+          const currentSelected = this.selectedPatient();
+          if (currentSelected && currentSelected.id === this.newPatientData.id) {
+            this.selectedPatient.set({
+              ...currentSelected,
+              ...this.newPatientData
+            });
+          }
+
+          this.patients.update(list => list.map(p => p.id === this.newPatientData.id ? { ...p, ...this.newPatientData } : p));
+          
+          this.dailyPatients.update(list => list.map(p => p.pacienteId === this.newPatientData.id ? { 
+            ...p, 
+            nombre: this.newPatientData.nombre, 
+            apellidos: this.newPatientData.apellidos,
+            cedula: this.newPatientData.cedula
+          } : p));
+        } else {
+          this.errorMessage.set("No se pudieron actualizar los datos del paciente.");
+        }
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || err.error?.error || "Error al actualizar paciente.");
+      }
+    });
   }
 }

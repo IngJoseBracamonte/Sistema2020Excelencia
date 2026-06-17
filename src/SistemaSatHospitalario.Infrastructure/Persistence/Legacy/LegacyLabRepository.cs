@@ -183,7 +183,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 var connection = _context.Database.GetDbConnection();
                 if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
 
-                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Direccion
                                      FROM datospersonales WHERE Cedula = @cedula LIMIT 1";
                 return await connection.QueryFirstOrDefaultAsync<DatosPersonalesLegacy>(sql, new { cedula });
             }
@@ -201,7 +201,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 var connection = _context.Database.GetDbConnection();
                 if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
 
-                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Direccion
                                      FROM datospersonales WHERE IdPersona = @legacyId LIMIT 1";
                 var res = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { legacyId });
                 if (res == null) return null;
@@ -212,7 +212,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                     Nombre = (string)res.Nombre,
                     Apellidos = (string)res.Apellidos,
                     Sexo = (string)res.Sexo,
-                    Fecha = (string)res.Fecha
+                    Fecha = (string)res.Fecha,
+                    Correo = (string)res.Correo,
+                    TipoCorreo = (string)res.TipoCorreo,
+                    Celular = (string)res.Celular,
+                    Telefono = (string)res.Telefono,
+                    CodigoCelular = (string)res.CodigoCelular,
+                    CodigoTelefono = (string)res.CodigoTelefono,
+                    Direccion = (string)res.Direccion
                 };
             }
             catch (global::System.Exception ex)
@@ -229,7 +236,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 var connection = _context.Database.GetDbConnection();
                 if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
 
-                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono
+                const string sql = @"SELECT IdPersona, Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Direccion
                                      FROM datospersonales 
                                      WHERE Cedula LIKE @term OR Nombre LIKE @term OR Apellidos LIKE @term 
                                      LIMIT 20";
@@ -297,15 +304,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 if (_context.Database.IsSqlite())
                 {
                     sql = @"
-                        INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono) 
-                        VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono);
+                        INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Direccion) 
+                        VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono, @Direccion);
                         SELECT last_insert_rowid();";
                 }
                 else
                 {
                     sql = @"
-                        INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono) 
-                        VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono);
+                        INSERT INTO datospersonales (Cedula, Nombre, Apellidos, Sexo, Fecha, Correo, TipoCorreo, Celular, Telefono, CodigoCelular, CodigoTelefono, Direccion) 
+                        VALUES (@Cedula, @Nombre, @Apellidos, @Sexo, @Fecha, @Correo, @TipoCorreo, @Celular, @Telefono, @CodigoCelular, @CodigoTelefono, @Direccion);
                         SELECT LAST_INSERT_ID();";
                 }
                     
@@ -339,7 +346,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                         Correo = @Correo, 
                         TipoCorreo = @TipoCorreo, 
                         CodigoCelular = @CodigoCelular, 
-                        CodigoTelefono = @CodigoTelefono
+                        CodigoTelefono = @CodigoTelefono,
+                        Direccion = @Direccion
                     WHERE IdPersona = @IdPersona";
 
                 var rows = await connection.ExecuteAsync(sql, patient);

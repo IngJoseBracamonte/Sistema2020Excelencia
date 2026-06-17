@@ -11,7 +11,7 @@
                     {{ selectedAccount() ? 'Cierre de Cuenta' : ('Pacientes Activos - ' + type()) }}
                 </h1>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">
-                    {{ selectedAccount() ? 'Revisión final y facturación de episodio de atención' : 'Seleccione un registro para gestionar el cierre de cuenta' }}
+                    {{ selectedAccount() ? 'Revisión final y emisión de orden de egreso de episodio de atención' : 'Seleccione un registro para gestionar el cierre de cuenta' }}
                 </p>
             </div>
         </div>
@@ -124,7 +124,7 @@
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones de Caja</span>
                         <lucide-icon [name]="icons.CreditCard" class="w-4 h-4 text-indigo-400"></lucide-icon>
                     </div>
-                    <h4 class="text-sm font-black text-white uppercase tracking-tight mt-2">Gestión de Facturación</h4>
+                    <h4 class="text-sm font-black text-white uppercase tracking-tight mt-2">Gestión de Órdenes</h4>
                 </div>
 
                 <div class="mt-4 flex gap-2">
@@ -319,11 +319,11 @@
                 </div>
             </div>
 
-            <!-- Métodos de Facturación -->
+            <!-- Métodos de Cierre -->
             <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
                 <div class="flex items-center space-x-3 mb-2">
                     <lucide-icon [name]="icons.CreditCard" class="w-5 h-5 text-primary"></lucide-icon>
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Método de Facturación</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Método de Cierre / Órdenes</h3>
                 </div>
 
                 <div class="space-y-3">

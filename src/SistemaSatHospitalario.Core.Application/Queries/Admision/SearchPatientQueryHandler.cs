@@ -63,7 +63,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         var fullName = $"{p.Nombre} {p.Apellidos}".Trim();
                         var mainPhone = !string.IsNullOrEmpty(p.Celular) ? p.Celular : p.Telefono;
                         
-                        var newNativePatient = new PacienteAdmision(p.Cedula, fullName, mainPhone ?? "", p.IdPersona);
+                        DateTime? dob = null;
+                        if (DateTime.TryParse(p.Fecha, out var parsedDob)) dob = parsedDob;
+
+                        var newNativePatient = new PacienteAdmision(p.Cedula, fullName, mainPhone ?? "", p.IdPersona, dob, p.Direccion);
                         await _context.PacientesAdmision.AddAsync(newNativePatient, cancellationToken);
                         nativeId = newNativePatient.Id;
                         changes = true;
@@ -77,8 +80,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Nombre = p.Nombre,
                         Apellidos = p.Apellidos,
                         Sexo = p.Sexo,
-                        Correo = (p.Correo ?? "") + (p.TipoCorreo ?? ""),
-                        Celular = (p.CodigoCelular ?? "") + (p.Celular ?? ""),
+                        Correo = p.Correo ?? "",
+                        TipoCorreo = p.TipoCorreo ?? "",
+                        Celular = p.Celular ?? "",
+                        CodigoCelular = p.CodigoCelular ?? "",
+                        Telefono = p.Telefono ?? "",
+                        CodigoTelefono = p.CodigoTelefono ?? "",
+                        FechaNacimiento = p.Fecha ?? "",
+                        Direccion = p.Direccion ?? "",
                         Source = "Legacy",
                         EsLegacy = true
                     });

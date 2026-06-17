@@ -1,4 +1,37 @@
 <div class="p-8 max-w-[1700px] space-y-2 animate-fade-in relative z-10">
+    <!-- Sistema de Notificaciones Emergentes (Toasts V2.5 Premium) -->
+    <div class="fixed top-8 right-8 z-[110] space-y-4 max-w-sm pointer-events-none">
+        <!-- Notificación de Éxito -->
+        <div *ngIf="actionMessage()" 
+             class="pointer-events-auto bg-[#0a0f1d]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-emerald-500/30 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)] animate-toast-in flex items-center gap-4 group">
+            <div class="h-10 w-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-60">Operación Exitosa</p>
+                <p class="text-sm font-black text-white leading-tight mt-0.5">{{ actionMessage() }}</p>
+            </div>
+            <button (click)="actionMessage.set(null)" class="text-slate-500 hover:text-white transition-colors">
+                <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+            </button>
+        </div>
+
+        <!-- Notificación de Error -->
+        <div *ngIf="errorMessage()" 
+             class="pointer-events-auto bg-[#1a0f16]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-rose-500/30 shadow-[0_20px_60px_-15px_rgba(225,29,72,0.3)] animate-toast-in flex items-center gap-4 group">
+            <div class="h-10 w-10 bg-rose-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-rose-500/20 group-hover:scale-110 transition-transform">
+                <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-rose-500 uppercase tracking-widest opacity-60">Atención / Error</p>
+                <p class="text-sm font-black text-white leading-tight mt-0.5">{{ errorMessage() }}</p>
+            </div>
+            <button (click)="errorMessage.set(null)" class="text-slate-500 hover:text-white transition-colors">
+                <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+            </button>
+        </div>
+    </div>
+
     <!-- Encabezado Estilo "Estación" Premium -->
     <div class="px-0 pb-2 animate-fade-in relative">
         <div
@@ -16,8 +49,7 @@
                 </div>
 
                 <div>
-                    <h1 class="text-3xl font-black text-white tracking-[0.1em] uppercase leading-none">Expediente de
-                        Facturación</h1>
+                    <h1 class="text-3xl font-black text-white tracking-[0.1em] uppercase leading-none">Gestión de Pacientes</h1>
                     <div class="flex items-center gap-4 mt-3">
                         <span
                             class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
@@ -25,8 +57,7 @@
                             <span class="text-[9px] font-black text-primary uppercase tracking-widest">Monitor
                                 Live</span>
                         </span>
-                        <span class="text-slate-500 text-[9px] font-black uppercase tracking-widest opacity-60">Reportes
-                            de Facturación Activos</span>
+                        <span class="text-slate-500 text-[9px] font-black uppercase tracking-widest opacity-60">Historiales de Pacientes Registrados</span>
                     </div>
                 </div>
             </div>
@@ -118,13 +149,19 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-between pt-6 border-t border-white/5">
+                    <button (click)="editarPaciente(p); $event.stopPropagation()"
+                        class="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-400 border border-white/5 rounded-xl transition-all text-[9px] font-black uppercase">
+                        <lucide-icon name="edit-3" class="w-3.5 h-3.5"></lucide-icon>
+                        Editar
+                    </button>
                     <span
-                        class="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-primary/60 transition-colors">Historial
-                        Completo</span>
-                    <svg class="w-4 h-4 text-slate-600 group-hover:translate-x-1 transition-transform" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 5l7 7-7 7"></path>
-                    </svg>
+                        class="text-[9px] font-black uppercase tracking-widest text-slate-600 group-hover:text-primary/60 transition-colors cursor-pointer flex items-center gap-1.5">
+                        Historial Completo
+                        <svg class="w-4 h-4 text-slate-600 group-hover:translate-x-1 transition-transform inline-block" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </span>
                 </div>
             </div>
         </div>
@@ -237,12 +274,17 @@
                     </div>
                 </div>
             </div>
-            <div class="mt-4 md:mt-0 flex items-center gap-8 relative">
+            <div class="mt-4 md:mt-0 flex items-center gap-6 relative">
                 <div class="text-right">
                     <p class="text-[7px] font-black text-slate-500 uppercase tracking-[0.4em] mb-0.5">Cuentas
                         Registradas</p>
                     <div class="text-3xl font-black text-white/90 tracking-tighter">{{ history().length }}</div>
                 </div>
+                <button (click)="editarPaciente(selectedPatient()!)"
+                    class="bg-white/5 hover:bg-white/10 text-slate-300 px-5 py-2.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border border-white/5">
+                    <lucide-icon name="edit-3" class="w-4 h-4 text-primary"></lucide-icon>
+                    <span>Editar Datos</span>
+                </button>
                 <button (click)="imprimirTodo()" [disabled]="isLoading() || history().length === 0"
                     class="bg-primary hover:bg-primary-glow text-white px-5 py-2.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,6 +366,135 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Paciente (Premium Redesign V2.0) -->
+    <div *ngIf="showRegisterModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showRegisterModal.set(false)"></div>
+        <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
+            
+            <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
+                <div class="flex items-center space-x-4">
+                    <div class="h-12 w-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+                        <lucide-icon [name]="icons.UserPlus" class="w-6 h-6"></lucide-icon>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Modificar Paciente</h3>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Compleción Obligatoria para Tabla 'datospersonales'</p>
+                    </div>
+                </div>
+                <button (click)="showRegisterModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
+                    <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                
+                <!-- Sección 1: Datos Personales -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="h-1.5 w-1.5 bg-primary rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Identidad y Demografía</h4>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.cedula"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main uppercase">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.nombre"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.apellidos"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sexo</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button *ngFor="let s of ['M', 'F', 'ND']" (click)="newPatientData.sexo = s"
+                                    [class]="newPatientData.sexo === s ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-surface text-slate-400 border-glass-border hover:bg-white/5'"
+                                    class="py-3.5 rounded-xl border font-black text-xs transition-all uppercase tracking-widest">
+                                    {{ s === 'ND' ? 'Otro' : (s === 'M' ? 'Masculino' : 'Femenino') }}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha de Nacimiento <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="date" [(ngModel)]="newPatientData.fechaNacimiento"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-xs font-black text-main uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Contacto y Localización -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Medios de Contacto</h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Celular -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular Principal <span class="text-rose-500 font-bold">*</span></label>
+                            <div class="flex space-x-2">
+                                <select [(ngModel)]="newPatientData.codigoCelular" 
+                                    class="w-24 bg-surface border border-glass-border rounded-xl px-2 py-3.5 text-[10px] font-black text-white outline-none">
+                                    <option *ngFor="let c of codigosCelular" [value]="c">{{ c }}</option>
+                                </select>
+                                <input type="text" [(ngModel)]="newPatientData.celular" placeholder="0000000"
+                                    class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main">
+                            </div>
+                        </div>
+                        <!-- Teléfono Local (Otro Teléfono) -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Otro Teléfono (Opcional)</label>
+                            <div class="flex space-x-2">
+                                <select [(ngModel)]="newPatientData.codigoTelefono" 
+                                    class="w-24 bg-surface border border-glass-border rounded-xl px-2 py-3.5 text-[10px] font-black text-white outline-none">
+                                    <option *ngFor="let c of codigosTelefonoCombinados" [value]="c">{{ c }}</option>
+                                </select>
+                                <input type="text" [(ngModel)]="newPatientData.telefono" placeholder="0000000"
+                                    class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Dirección -->
+                        <div class="col-span-1 md:col-span-2 space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.direccion" placeholder="Ej: Av. Las Américas, Edif. X"
+                                class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col space-y-4 pt-4">
+                    <button (click)="guardarEdicion()" [disabled]="isLoading()"
+                        class="w-full py-6 bg-primary hover:bg-rose-600 text-white rounded-[1.5rem] font-black shadow-2xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 uppercase text-xs tracking-[0.3em] flex items-center justify-center group">
+                        <span *ngIf="!isLoading()" class="flex items-center">
+                             <lucide-icon [name]="icons.Check" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></lucide-icon>
+                             GUARDAR CAMBIOS
+                        </span>
+                        <span *ngIf="isLoading()" class="flex items-center">
+                            <svg class="animate-spin h-6 w-6 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
+                            GUARDANDO CAMBIOS...
+                        </span>
+                    </button>
+                    <button (click)="showRegisterModal.set(false)" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-[0.4em] py-2 transition-all opacity-50 hover:opacity-100">CANCELAR</button>
+                </div>
+                
             </div>
         </div>
     </div>

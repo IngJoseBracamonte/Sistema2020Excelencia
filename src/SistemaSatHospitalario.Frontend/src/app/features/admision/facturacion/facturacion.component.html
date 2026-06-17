@@ -7,7 +7,7 @@
                 <lucide-icon [name]="icons.CreditCard" class="w-6 h-6"></lucide-icon>
             </div>
             <div>
-                <h1 class="text-xl font-black text-white tracking-tighter uppercase">Facturación</h1>
+                <h1 class="text-xl font-black text-white tracking-tighter uppercase">Emisión de Órdenes</h1>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">Gestión de Emisión y Abonos</p>
             </div>
         </div>
@@ -208,6 +208,7 @@
                     (search)="busquedaTermino.set($event); buscarPaciente()"
                     (select)="seleccionarPaciente($event)"
                     (changePatient)="cambiarPaciente()"
+                    (modifyPatient)="abrirEditarPaciente(selectedPatientData()!)"
                     (register)="abrirRegistroPaciente()">
                 </app-patient-selector>
 
@@ -485,7 +486,7 @@
                         <lucide-icon [name]="icons.UserPlus" class="w-6 h-6"></lucide-icon>
                     </div>
                     <div>
-                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Registro de Paciente Legacy</h3>
+                        <h3 class="text-xl font-black text-white tracking-tight uppercase">{{ isEditingPatient() ? 'Modificar Paciente' : 'Registro de Paciente Legacy' }}</h3>
                         <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Compleción Obligatoria para Tabla 'datospersonales'</p>
                     </div>
                 </div>
@@ -505,17 +506,17 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte</label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.cedula"
                                 class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main uppercase">
                         </div>
                         <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres</label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.nombre"
                                 class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
                         </div>
                         <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos</label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.apellidos"
                                 class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
                         </div>
@@ -533,7 +534,7 @@
                             </div>
                         </div>
                         <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha de Nacimiento</label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha de Nacimiento <span class="text-rose-500 font-bold">*</span></label>
                             <input type="date" [(ngModel)]="newPatientData.fechaNacimiento"
                                 class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-xs font-black text-main uppercase">
                         </div>
@@ -550,7 +551,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Celular -->
                         <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular Principal</label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular Principal <span class="text-rose-500 font-bold">*</span></label>
                             <div class="flex space-x-2">
                                 <select [(ngModel)]="newPatientData.codigoCelular" 
                                     class="w-24 bg-surface border border-glass-border rounded-xl px-2 py-3.5 text-[10px] font-black text-white outline-none">
@@ -562,11 +563,11 @@
                         </div>
                         <!-- Teléfono Local -->
                         <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Teléfono Local</label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Otro Teléfono (Opcional)</label>
                             <div class="flex space-x-2">
                                 <select [(ngModel)]="newPatientData.codigoTelefono" 
                                     class="w-24 bg-surface border border-glass-border rounded-xl px-2 py-3.5 text-[10px] font-black text-white outline-none">
-                                    <option *ngFor="let c of codigosTelefono" [value]="c">{{ c }}</option>
+                                    <option *ngFor="let c of codigosTelefonoCombinados" [value]="c">{{ c }}</option>
                                 </select>
                                 <input type="text" [(ngModel)]="newPatientData.telefono" placeholder="0000000"
                                     class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all font-mono text-sm text-main">
@@ -575,21 +576,9 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Correo Electrónico</label>
-                            <div class="flex space-x-2">
-                                <input type="text" [(ngModel)]="newPatientData.correo" placeholder="usuario"
-                                    class="flex-1 px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main">
-                                <select [(ngModel)]="newPatientData.tipoCorreo" 
-                                    class="w-40 bg-surface border border-glass-border rounded-xl px-4 py-3.5 text-[10px] font-black text-white outline-none">
-                                    <option *ngFor="let t of tiposCorreo" [value]="t">{{ t }}</option>
-                                </select>
-                            </div>
-                        </div>
-
                         <!-- Dirección (V12.1 Requirement) -->
-                        <div class="space-y-1.5">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación</label>
+                        <div class="col-span-1 md:col-span-2 space-y-1.5">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.direccion" placeholder="Ej: Av. Las Américas, Edif. X"
                                 class="w-full px-5 py-3.5 bg-surface border border-glass-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-sm text-main uppercase">
                         </div>
@@ -601,11 +590,11 @@
                         class="w-full py-6 bg-primary hover:bg-rose-600 text-white rounded-[1.5rem] font-black shadow-2xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 uppercase text-xs tracking-[0.3em] flex items-center justify-center group">
                         <span *ngIf="!isLoading()" class="flex items-center">
                              <lucide-icon [name]="icons.Check" class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform"></lucide-icon>
-                             PROCEDER AL REGISTRO LEGACY
+                             {{ isEditingPatient() ? 'GUARDAR CAMBIOS' : 'PROCEDER AL REGISTRO LEGACY' }}
                         </span>
                         <span *ngIf="isLoading()" class="flex items-center">
                             <svg class="animate-spin h-6 w-6 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4"></path></svg>
-                            GUARDANDO EN LEGACY...
+                            {{ isEditingPatient() ? 'GUARDANDO CAMBIOS...' : 'GUARDANDO EN LEGACY...' }}
                         </span>
                     </button>
                     <button (click)="showRegisterModal.set(false)" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-[0.4em] py-2 transition-all opacity-50 hover:opacity-100">CANCELAR ADMISIÓN</button>

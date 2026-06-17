@@ -16,5 +16,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string CodigoCelular { get; set; } = string.Empty;
         public string Telefono { get; set; } = string.Empty;
         public string CodigoTelefono { get; set; } = string.Empty;
+        public string Direccion { get; set; } = string.Empty;
     }
 }

@@ -19,5 +19,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Legacy
         public string TipoCorreo { get; set; } // @gmail.com, etc.
         public string CodigoCelular { get; set; }
         public string CodigoTelefono { get; set; }
+        public string Direccion { get; set; }
     }
 }

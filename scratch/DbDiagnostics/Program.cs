@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
-using SistemaSatHospitalario.Infrastructure.Identity.Models;
+using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
+using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure;
 
 namespace DbDiagnostics
@@ -15,7 +15,7 @@ namespace DbDiagnostics
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("=== Identity DB Diagnostics ===");
+            Console.WriteLine("=== Database Table Columns Diagnostics ===");
 
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
@@ -34,31 +34,51 @@ namespace DbDiagnostics
             var serviceProvider = services.BuildServiceProvider();
 
             using var scope = serviceProvider.CreateScope();
-            var identityDbContext = scope.ServiceProvider.GetRequiredService<SatHospitalarioIdentityDbContext>();
-
-            Console.WriteLine("Fetching all users from SatHospitalarioIdentity...");
-            var users = await identityDbContext.Users.ToListAsync();
-            Console.WriteLine($"Total users found: {users.Count}");
-
-            foreach (var user in users)
+            
+            // Check Legacy Table Columns
+            try
             {
-                Console.WriteLine($"- ID: {user.Id}, UserName: {user.UserName}, EsActivo: {user.EsActivo}, RequirePasswordReset: {user.RequirePasswordReset}");
-            }
-
-            var rxUser = users.FirstOrDefault(u => u.UserName?.ToLower() == "user_rx");
-            if (rxUser != null)
-            {
-                Console.WriteLine("\n[user_rx found]");
-                if (args.Contains("--set-reset"))
+                var legacyDbContext = scope.ServiceProvider.GetRequiredService<Sistema2020LegacyDbContext>();
+                var connection = legacyDbContext.Database.GetDbConnection();
+                await connection.OpenAsync();
+                
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SHOW COLUMNS FROM datospersonales";
+                using var reader = await cmd.ExecuteReaderAsync();
+                
+                Console.WriteLine("\nColumns in sistema2020.datospersonales:");
+                while (await reader.ReadAsync())
                 {
-                    rxUser.RequirePasswordReset = true;
-                    await identityDbContext.SaveChangesAsync();
-                    Console.WriteLine("Successfully set RequirePasswordReset = true for user_rx!");
+                    Console.WriteLine($"- {reader.GetString(0)} ({reader.GetString(1)})");
                 }
+                connection.Close();
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("\n[WARNING] user_rx was NOT found in the database!");
+                Console.WriteLine($"Error querying legacy table datospersonales: {ex.Message}");
+            }
+
+            // Check Native Table Columns
+            try
+            {
+                var nativeDbContext = scope.ServiceProvider.GetRequiredService<SatHospitalarioDbContext>();
+                var connection = nativeDbContext.Database.GetDbConnection();
+                await connection.OpenAsync();
+                
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SHOW COLUMNS FROM PacientesAdmision";
+                using var reader = await cmd.ExecuteReaderAsync();
+                
+                Console.WriteLine("\nColumns in SatHospitalario.PacientesAdmision:");
+                while (await reader.ReadAsync())
+                {
+                    Console.WriteLine($"- {reader.GetString(0)} ({reader.GetString(1)})");
+                }
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error querying native table PacientesAdmision: {ex.Message}");
             }
         }
     }

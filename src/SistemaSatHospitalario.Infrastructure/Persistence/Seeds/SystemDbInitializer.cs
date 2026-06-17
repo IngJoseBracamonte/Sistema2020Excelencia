@@ -70,6 +70,62 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogInformation("System Database ya está actualizada. No se requieren migraciones.");
                 }
 
+                // Self-healing: Ensure Direccion column exists in PacientesAdmision table (V12.1 Requirement)
+                try
+                {
+                    bool hasDireccion = false;
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConnection = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConnection = true;
+                    }
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (_context.Database.IsSqlite())
+                        {
+                            cmd.CommandText = "PRAGMA table_info(PacientesAdmision);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    if (reader["name"].ToString().Equals("Direccion", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasDireccion = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `PacientesAdmision` LIKE 'Direccion';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    hasDireccion = true;
+                                }
+                            }
+                        }
+                    }
+                    if (closeConnection)
+                    {
+                        await conn.CloseAsync();
+                    }
+
+                    if (!hasDireccion)
+                    {
+                        _logger.LogInformation("La columna 'Direccion' no existe en PacientesAdmision. Ejecutando ALTER TABLE...");
+                        await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `PacientesAdmision` ADD COLUMN `Direccion` VARCHAR(500) NULL;");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'Direccion' en PacientesAdmision.");
+                }
+
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 
                 await SeedEspecialidadesAsync();
