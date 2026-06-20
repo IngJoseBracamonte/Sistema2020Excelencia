@@ -78,6 +78,7 @@ export class SidebarComponent implements OnInit {
         Catalog: Package,
         Doctor: Stethoscope,
         RX: Activity,
+        Enfermeria: Activity,
         Category: Bookmark,
         ChevronDown: ChevronDown,
         Audit: ShieldCheck,

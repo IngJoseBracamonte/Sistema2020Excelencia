@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; private set; }
+        public Guid? CuentaPrincipalId { get; private set; }
         public string UsuarioCarga { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public DateTime? FechaCierre { get; private set; }
@@ -21,6 +22,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
  
         public virtual PacienteAdmision Paciente { get; private set; }
         public virtual SeguroConvenio Convenio { get; private set; }
+        public virtual CuentaServicios? CuentaPrincipal { get; private set; }
+
+        public virtual ICollection<TriageEnfermeria> Triages { get; private set; } = new List<TriageEnfermeria>();
+        public virtual ICollection<ValoracionFisica> Valoraciones { get; private set; } = new List<ValoracionFisica>();
 
         
         // --- AUDIT & VALIDATION (Senior Traceability V15.0) ---
@@ -45,7 +50,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             ConvenioId = convenioId;
         }
 
-        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, int cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
+        public void VincularCuentaPrincipal(Guid cuentaPrincipalId)
+        {
+            if (cuentaPrincipalId == Guid.Empty)
+                throw new ArgumentException("El ID de la cuenta principal no puede estar vacío.");
+            CuentaPrincipalId = cuentaPrincipalId;
+        }
+
+        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null)
         {
             if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");

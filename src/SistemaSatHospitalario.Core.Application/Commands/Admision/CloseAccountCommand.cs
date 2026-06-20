@@ -12,5 +12,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public List<DetallePagoDto> Pagos { get; set; } = new();
         public string UsuarioCajero { get; set; }
         public string UsuarioId { get; set; }
+        public bool Consolidar { get; set; }
     }
 }

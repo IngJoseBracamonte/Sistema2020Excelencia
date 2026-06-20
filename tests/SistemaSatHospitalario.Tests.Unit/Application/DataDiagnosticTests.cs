@@ -20,7 +20,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _output = output;
         }
 
-        [Fact]
+        [Fact(Skip = "Diagnostic test requiring local MySQL database")]
         public async Task Diagnostic_CheckMappeoData()
         {
             // This test is intended to be run against the REAL development database

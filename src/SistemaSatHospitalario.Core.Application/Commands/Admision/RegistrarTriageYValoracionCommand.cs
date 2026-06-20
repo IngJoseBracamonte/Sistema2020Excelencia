@@ -1,0 +1,39 @@
+using System;
+using MediatR;
+using SistemaSatHospitalario.Core.Application.DTOs.Admision;
+
+namespace SistemaSatHospitalario.Core.Application.Commands.Admision
+{
+    public class RegistrarTriageYValoracionCommand : IRequest<TriageYValoracionDto>
+    {
+        public Guid CuentaServicioId { get; set; }
+        
+        // Signos Vitales
+        public string MotivoConsulta { get; set; } = string.Empty;
+        public string TensionArterial { get; set; } = string.Empty;
+        public int FrecuenciaCardiaca { get; set; }
+        public int FrecuenciaRespiratoria { get; set; }
+        public decimal Temperatura { get; set; }
+        public int SaturacionO2 { get; set; }
+        public int? GlicemiaCapilar { get; set; }
+        
+        // Valoración Física
+        public string EstadoConciencia { get; set; } = string.Empty;
+        public int GlasgowOcular { get; set; }
+        public int GlasgowVerbal { get; set; }
+        public int GlasgowMotor { get; set; }
+        public int GlasgowTotal { get; set; }
+        public string ViaAerea { get; set; } = string.Empty;
+        public string Ventilacion { get; set; } = string.Empty;
+        public string Pulso { get; set; } = string.Empty;
+        public string PielMucosas { get; set; } = string.Empty;
+        public string LlenadoCapilar { get; set; } = string.Empty;
+        public string Pupilas { get; set; } = string.Empty;
+        public string Alergias { get; set; } = string.Empty;
+        public string AccesosVenosos { get; set; } = string.Empty;
+        public string Pertenencias { get; set; } = string.Empty;
+        public string AntecedentesMedicos { get; set; } = string.Empty;
+        
+        public string UsuarioRegistro { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,638 @@
+<div class="p-4 md:p-8 max-w-[1750px] space-y-6 animate-fade-in relative z-10 text-slate-100">
+    
+    <!-- HEADER -->
+    <div class="px-0 pb-2 animate-fade-in relative">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl gap-4">
+            <div class="flex items-center gap-6">
+                <div class="h-14 w-14 bg-rose-500/5 border border-rose-500/20 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.05)] rounded-xl flex items-center justify-center">
+                    <lucide-icon [name]="icons.Activity" class="w-7 h-7 animate-pulse"></lucide-icon>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-white/90 tracking-tight uppercase leading-none">Módulo de Enfermería</h1>
+                    <div class="flex items-center space-x-3 mt-2">
+                        <span class="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border bg-rose-500/20 text-rose-400 border-rose-500/30">
+                            Tablet Active View
+                        </span>
+                        <p class="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Triage, Dosificación e Historial</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <button (click)="refreshAccounts()"
+                        class="bg-white/5 hover:bg-white/10 text-white/70 border border-white/5 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+                    <lucide-icon [name]="icons.RefreshCcw" [class.animate-spin]="isLoading()" class="w-3.5 h-3.5"></lucide-icon>
+                    REFRESCAR PACIENTES
+                </button>
+                <button (click)="logout()"
+                        class="bg-white/5 hover:bg-white/10 text-white/70 border border-white/5 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95">
+                    CERRAR SESIÓN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BANNER DE NOTIFICACIÓN DE ACCIONES -->
+    <div *ngIf="actionMessage()"
+         class="bg-emerald-500/10 backdrop-blur-md p-4 rounded-xl border border-emerald-500/20 text-emerald-400 font-bold text-sm flex items-center justify-between shadow-sm animate-fade-in">
+        <div class="flex items-center space-x-3">
+            <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+            <span class="uppercase tracking-widest text-[11px] font-black">{{ actionMessage() }}</span>
+        </div>
+    </div>
+
+    <!-- MAIN GRID CONTAINER -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- COLUMNA IZQUIERDA: LISTADO DE PACIENTES ACTIVOS -->
+        <div class="lg:col-span-4 space-y-4">
+            <div class="bg-white/[0.02] border border-white/5 rounded-3xl p-5 space-y-4">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <lucide-icon [name]="icons.User" class="w-4 h-4 text-rose-500"></lucide-icon>
+                    Pacientes Activos ({{ filteredAccounts().length }})
+                </h3>
+
+                <!-- Buscador de pacientes -->
+                <div class="relative">
+                    <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+                           placeholder="Buscar por paciente, cedula o area..."
+                           class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs tracking-tight text-white placeholder:text-slate-500 uppercase outline-none focus:border-rose-500/30 transition-all">
+                    <lucide-icon [name]="icons.Search"
+                                 class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></lucide-icon>
+                </div>
+
+                <!-- Lista de pacientes -->
+                <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                    <div *ngFor="let acc of filteredAccounts()"
+                         (click)="selectAccount(acc)"
+                         [ngClass]="selectedAccount()?.cuentaId === acc.cuentaId ? 'bg-rose-500/5 border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.05)]' : 'bg-white/[0.01] hover:bg-white/[0.03] border-white/5'"
+                         class="p-4 border rounded-2xl cursor-pointer transition-all active:scale-98 flex justify-between items-center group relative overflow-hidden">
+                        
+                        <div class="space-y-2 relative z-10">
+                            <div>
+                                <h4 class="text-xs font-black uppercase text-white tracking-tight leading-none group-hover:text-rose-400 transition-colors">
+                                    {{ acc.pacienteNombre }}
+                                </h4>
+                                <p class="text-[10px] text-slate-400 font-mono mt-1">{{ acc.pacienteCedula }}</p>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-[8px] font-black uppercase tracking-widest">
+                                    {{ acc.tipoIngreso }}
+                                </span>
+                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                                    {{ acc.seguroNombre }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="text-right relative z-10">
+                            <span class="text-xs font-black text-white font-mono block">
+                                ${{ acc.total | number:'1.2-2' }}
+                            </span>
+                            <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest mt-1 block">
+                                TOTAL CARGADO
+                            </span>
+                        </div>
+
+                        <!-- Decorador visual lateral para la seleccion -->
+                        <div *ngIf="selectedAccount()?.cuentaId === acc.cuentaId"
+                             class="absolute left-0 top-0 bottom-0 w-1 bg-rose-500"></div>
+                    </div>
+
+                    <!-- Estado Vacío -->
+                    <div *ngIf="filteredAccounts().length === 0" class="text-center py-12 opacity-50 space-y-2">
+                        <lucide-icon [name]="icons.Info" class="w-8 h-8 text-rose-500 mx-auto"></lucide-icon>
+                        <h4 class="text-xs font-black uppercase tracking-widest text-slate-300">No hay pacientes</h4>
+                        <p class="text-[10px] text-slate-500">No se encontraron cuentas activas correspondientes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: PANELES E INTERFACES DE TRABAJO -->
+        <div class="lg:col-span-8 space-y-6">
+            
+            <!-- SIN PACIENTE SELECCIONADO -->
+            <div *ngIf="!selectedAccount()" 
+                 class="bg-white/[0.02] border border-white/5 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <lucide-icon [name]="icons.Clipboard" class="w-16 h-16 text-slate-600 animate-pulse"></lucide-icon>
+                <h3 class="text-md font-black uppercase tracking-wider text-slate-400">Seleccione un Paciente</h3>
+                <p class="text-xs text-slate-500 max-w-sm">
+                    Seleccione un paciente de la lista izquierda para registrar tomas de constantes vitales, cargar insumos o realizar traslados.
+                </p>
+            </div>
+
+            <!-- PACIENTE SELECCIONADO -->
+            <div *ngIf="selectedAccount()" class="space-y-6">
+                
+                <!-- Tarjeta Resumen Paciente Seleccionado -->
+                <div class="bg-gradient-to-r from-rose-500/5 to-transparent border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                            <lucide-icon [name]="icons.User" class="w-6 h-6"></lucide-icon>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-black text-white uppercase tracking-tight leading-none">
+                                {{ selectedAccount().pacienteNombre }}
+                            </h2>
+                            <div class="flex items-center gap-3 mt-2 text-xs">
+                                <span class="text-slate-400 font-mono font-bold">{{ selectedAccount().pacienteCedula }}</span>
+                                <span class="text-slate-600">•</span>
+                                <span class="text-slate-400 font-bold uppercase">{{ selectedAccount().tipoIngreso }}</span>
+                                <span class="text-slate-600">•</span>
+                                <span class="text-rose-400 font-black uppercase tracking-wider">{{ selectedAccount().seguroNombre }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/5 border border-white/5 rounded-2xl px-5 py-3 text-right">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Acumulado</span>
+                        <span class="text-md font-black text-white font-mono">${{ selectedAccount().total | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <!-- TABS DE NAVEGACIÓN -->
+                <div class="flex bg-white/5 border border-white/5 rounded-2xl p-1 gap-1">
+                    <button (click)="activeTab.set('triage')"
+                            [ngClass]="activeTab() === 'triage' ? 'bg-rose-600 text-white font-black' : 'text-slate-400 hover:text-white font-bold'"
+                            class="flex-1 py-3 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 border border-transparent">
+                        <lucide-icon [name]="icons.Heart" class="w-4 h-4"></lucide-icon>
+                        TRIAGE Y SIGNOS VITALES
+                    </button>
+                    <button (click)="activeTab.set('fast-charge')"
+                            [ngClass]="activeTab() === 'fast-charge' ? 'bg-rose-600 text-white font-black' : 'text-slate-400 hover:text-white font-bold'"
+                            class="flex-1 py-3 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 border border-transparent">
+                        <lucide-icon [name]="icons.Droplet" class="w-4 h-4"></lucide-icon>
+                        CARGA DE INSUMOS
+                    </button>
+                    <button (click)="activeTab.set('transfer')"
+                            [ngClass]="activeTab() === 'transfer' ? 'bg-rose-600 text-white font-black' : 'text-slate-400 hover:text-white font-bold'"
+                            class="flex-1 py-3 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 border border-transparent">
+                        <lucide-icon [name]="icons.Shuffle" class="w-4 h-4"></lucide-icon>
+                        TRASLADO / EGRESO
+                    </button>
+                </div>
+
+                <!-- CONTENIDOS DE TABS -->
+
+                <!-- TAB 1: FORMULARIO TRIAGE Y HISTORIAL DE TOMAS -->
+                <div *ngIf="activeTab() === 'triage'" class="space-y-6">
+                    
+                    <!-- Formulario de toma -->
+                    <div id="nursingForm" class="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+                        <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                            <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <lucide-icon [name]="icons.Clipboard" class="w-4 h-4 text-rose-500"></lucide-icon>
+                                {{ isEditingTriage ? 'Corregir Registro de Constantes' : 'Nueva Toma de Constantes Vitales' }}
+                            </h3>
+                            <button *ngIf="isEditingTriage" (click)="resetTriageForm()"
+                                    class="text-[9px] font-black text-rose-400 hover:text-rose-300 uppercase tracking-widest">
+                                CANCELAR EDICIÓN
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            
+                            <!-- Signos Físicos -->
+                            <div class="space-y-4">
+                                <h4 class="text-[9px] font-black text-rose-400 uppercase tracking-widest">1. Signos Físicos Básicos</h4>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Motivo de Consulta</label>
+                                        <input type="text" [(ngModel)]="motivoConsulta" placeholder="Ej. Dolor abdominal agudo..."
+                                               class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white uppercase focus:outline-none focus:border-rose-500/30">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tensión Arterial</label>
+                                        <input type="text" [(ngModel)]="tensionArterial" placeholder="Ej. 120/80 mmHg"
+                                               class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white uppercase focus:outline-none focus:border-rose-500/30">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Frecuencia Cardiaca (LPM)</label>
+                                        <input type="number" [(ngModel)]="frecuenciaCardiaca" placeholder="Ej. 80"
+                                               class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500/30">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Constantes Clínicas -->
+                            <div class="space-y-4">
+                                <h4 class="text-[9px] font-black text-rose-400 uppercase tracking-widest">2. Constantes Vitales</h4>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Frecuencia Respiratoria (RPM)</label>
+                                        <input type="number" [(ngModel)]="frecuenciaRespiratoria" placeholder="Ej. 18"
+                                               class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500/30">
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Temperatura (°C)</label>
+                                        <input type="number" [(ngModel)]="temperatura" step="0.1" placeholder="Ej. 36.5"
+                                               class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500/30">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Sat O2 (%)</label>
+                                            <input type="number" [(ngModel)]="saturacionO2" placeholder="Ej. 98"
+                                                   class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500/30">
+                                        </div>
+                                        <div>
+                                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Glicemia (mg/dL)</label>
+                                            <input type="number" [(ngModel)]="glicemiaCapilar" placeholder="Opcional"
+                                                   class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500/30">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Escala neurológica Glasgow & Estado de Conciencia -->
+                            <div class="space-y-4">
+                                <h4 class="text-[9px] font-black text-rose-400 uppercase tracking-widest">3. Estado Neurológico</h4>
+                                
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Estado de Conciencia</label>
+                                        <select [(ngModel)]="estadoConciencia"
+                                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none">
+                                            <option value="Alerta">ALERTA</option>
+                                            <option value="Somnoliento">SOMNOLIENTO</option>
+                                            <option value="Estuporoso">ESTUPOROSO</option>
+                                            <option value="Inconsciente">INCONSCIENTE</option>
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <div>
+                                            <label class="text-[7px] font-black text-slate-500 uppercase tracking-widest block mb-1">Glasgow Oc.</label>
+                                            <select [(ngModel)]="glasgowOcular" (change)="updateGlasgowTotal()"
+                                                    class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                                <option [value]="4">4 - Espontáneo</option>
+                                                <option [value]="3">3 - Al Hablar</option>
+                                                <option [value]="2">2 - Al Dolor</option>
+                                                <option [value]="1">1 - Ninguno</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[7px] font-black text-slate-500 uppercase tracking-widest block mb-1">Glasgow Verb.</label>
+                                            <select [(ngModel)]="glasgowVerbal" (change)="updateGlasgowTotal()"
+                                                    class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                                <option [value]="5">5 - Orientado</option>
+                                                <option [value]="4">4 - Confuso</option>
+                                                <option [value]="3">3 - Inapropiado</option>
+                                                <option [value]="2">2 - Incomprensible</option>
+                                                <option [value]="1">1 - Ninguno</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[7px] font-black text-slate-500 uppercase tracking-widest block mb-1">Glasgow Mot.</label>
+                                            <select [(ngModel)]="glasgowMotor" (change)="updateGlasgowTotal()"
+                                                    class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                                <option [value]="6">6 - Obedece</option>
+                                                <option [value]="5">5 - Localiza</option>
+                                                <option [value]="4">4 - Retira</option>
+                                                <option [value]="3">3 - Flexión Anómala</option>
+                                                <option [value]="2">2 - Extensión Anómala</option>
+                                                <option [value]="1">1 - Ninguno</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white/5 p-2 rounded-xl flex justify-between items-center">
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Puntaje Glasgow Total:</span>
+                                        <span class="text-xs font-black text-rose-500 font-mono">{{ glasgowTotal }}/15</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluación Física Ampliada -->
+                        <div class="border-t border-white/5 pt-4 space-y-4">
+                            <h4 class="text-[9px] font-black text-rose-400 uppercase tracking-widest">4. Valoración Física General</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Vía Aérea</label>
+                                    <select [(ngModel)]="viaAerea" class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                        <option value="Permeable">PERMEABLE</option>
+                                        <option value="Obstruida">OBSTRUIDA</option>
+                                        <option value="Apoyo Mecánico">APOYO MECÁNICO</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Ventilación</label>
+                                    <select [(ngModel)]="ventilacion" class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                        <option value="Normal">NORMAL</option>
+                                        <option value="Taquipnea">TAQUIPNEA</option>
+                                        <option value="Disnea">DISNEA</option>
+                                        <option value="Apnea">APNEA</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Pulso</label>
+                                    <select [(ngModel)]="pulso" class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                        <option value="Rítmico">RÍTMICO</option>
+                                        <option value="Arrítmico">ARRÍTMICO</option>
+                                        <option value="Débil">DÉBIL</option>
+                                        <option value="Fuerte">FUERTE</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Pupilas</label>
+                                    <select [(ngModel)]="pupilas" class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white">
+                                        <option value="Isocóricas">ISOCÓRICAS</option>
+                                        <option value="Anisocóricas">ANISO CÓRICAS</option>
+                                        <option value="Mióticas">MIÓTICAS</option>
+                                        <option value="Midriáticas">MIDRIÁTICAS</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Piel y Mucosas</label>
+                                    <input type="text" [(ngModel)]="pielMucosas" placeholder="Normocoloreada, hidratada, cianótica, etc."
+                                           class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white uppercase focus:outline-none focus:border-rose-500/30">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Alergias Conocidas</label>
+                                    <input type="text" [(ngModel)]="alergias" placeholder="Ninguna, penicilina, alimentos, etc."
+                                           class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white uppercase focus:outline-none focus:border-rose-500/30">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Accesos Venosos</label>
+                                    <input type="text" [(ngModel)]="accesosVenosos" placeholder="Vía periférica MSD, yelco 20, etc."
+                                           class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white uppercase focus:outline-none focus:border-rose-500/30">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Antecedentes Médicos Relevantes</label>
+                                    <input type="text" [(ngModel)]="antecedentesMedicos" placeholder="Hipertensión, diabetes, etc."
+                                           class="w-full bg-white/5 border border-white/10 rounded-xl p-2 text-xs text-white uppercase focus:outline-none focus:border-rose-500/30">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acciones Guardado Form -->
+                        <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+                            <button type="button" (click)="resetTriageForm()"
+                                    class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                                LIMPIAR FORMULARIO
+                            </button>
+                            <button type="button" (click)="saveTriage()"
+                                    class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/10">
+                                {{ isEditingTriage ? 'GUARDAR CORRECCIÓN' : 'REGISTRAR CONSTANTES VITALES' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Historial de mediciones anteriores -->
+                    <div class="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-4">
+                        <h3 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                            <lucide-icon [name]="icons.Activity" class="w-4 h-4 text-rose-500"></lucide-icon>
+                            Historial de Mediciones del Paciente
+                        </h3>
+
+                        <div class="space-y-3">
+                            <div *ngFor="let item of nursingHistory()"
+                                 class="bg-[#0b1120]/50 border border-white/5 rounded-2xl p-4 space-y-3 relative group/history">
+                                
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-white/5 pb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-black text-rose-400 font-mono">
+                                            TOMA: {{ item.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}
+                                        </span>
+                                        <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest italic">
+                                            REGISTRADO POR: {{ item.usuarioRegistro }}
+                                        </span>
+                                    </div>
+                                    <button (click)="onEditTriageClick(item)"
+                                            class="opacity-100 md:opacity-0 md:group-hover/history:opacity-100 flex items-center gap-1 text-[9px] font-black text-rose-400 hover:text-white uppercase tracking-widest transition-all">
+                                        <lucide-icon [name]="icons.Edit" class="w-3.5 h-3.5"></lucide-icon>
+                                        CORREGIR TOMA
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-2 md:grid-cols-6 gap-4 text-xs font-bold">
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block uppercase tracking-widest mb-0.5">Tensión</span>
+                                        <span class="text-white">{{ item.tensionArterial || 'N/A' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block uppercase tracking-widest mb-0.5">Frec. Cardiaca</span>
+                                        <span class="text-white font-mono">{{ item.frecuenciaCardiaca }} LPM</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block uppercase tracking-widest mb-0.5">Frec. Resp.</span>
+                                        <span class="text-white font-mono">{{ item.frecuenciaRespiratoria }} RPM</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block uppercase tracking-widest mb-0.5">Temp.</span>
+                                        <span class="text-white font-mono">{{ item.temperatura }} °C</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block uppercase tracking-widest mb-0.5">Sat. O2</span>
+                                        <span class="text-white font-mono">{{ item.saturacionO2 }} %</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block uppercase tracking-widest mb-0.5">Glasgow</span>
+                                        <span class="text-rose-500 font-mono">{{ item.glasgowTotal }}/15</span>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mt-2 border-t border-white/[0.03] pt-2">
+                                    <div>
+                                        <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest block mb-0.5">Motivo Consulta / Diagnostico</span>
+                                        <p class="text-slate-300 uppercase text-[10px]">{{ item.motivoConsulta || 'No especificado' }}</p>
+                                    </div>
+                                    <div *ngIf="item.alergias || item.accesosVenosos">
+                                        <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest block mb-0.5">Notas de Triage</span>
+                                        <p class="text-slate-300 uppercase text-[10px]">
+                                            Alergias: {{ item.alergias || 'Ninguna' }} | Accesos: {{ item.accesosVenosos || 'N/A' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Estado Vacío -->
+                            <div *ngIf="nursingHistory().length === 0" class="text-center py-10 opacity-40">
+                                <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Sin historial registrado en esta cuenta.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: CARGA RÁPIDA DE INSUMOS -->
+                <div *ngIf="activeTab() === 'fast-charge'" class="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                            <lucide-icon [name]="icons.Droplet" class="w-6 h-6"></lucide-icon>
+                        </div>
+                        <div>
+                            <h3 class="text-md font-black text-white uppercase tracking-tight">Carga Rápida de Insumos y Medicamentos</h3>
+                            <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Añade consumos directos a la cuenta del paciente</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        
+                        <!-- Buscador de Servicios / Insumos -->
+                        <div class="relative space-y-2">
+                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Seleccionar Medicamento o Insumo</label>
+                            <div class="relative">
+                                <input type="text" 
+                                       [ngModel]="fastChargeSearchTerm()" 
+                                       (ngModelChange)="onFastChargeSearchChange($event)"
+                                       placeholder="Escriba código o nombre del insumo (ej: Morfina, Jeringas...)"
+                                       class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-500/30 transition-all uppercase">
+                                
+                                <!-- Indicador de seleccion -->
+                                <lucide-icon *ngIf="selectedService()" [name]="icons.Check" class="w-4 h-4 text-emerald-500 absolute right-4 top-1/2 -translate-y-1/2"></lucide-icon>
+                            </div>
+
+                            <!-- Listado autocompletado catalog -->
+                            <div *ngIf="filteredServices().length > 0" 
+                                 class="absolute z-30 w-full mt-1 bg-[#152035] border border-white/10 rounded-2xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-white/5">
+                                <div *ngFor="let s of filteredServices()" 
+                                     (click)="selectCatalogService(s)"
+                                     class="p-4 hover:bg-white/5 cursor-pointer text-xs text-white uppercase font-bold flex justify-between items-center transition-all">
+                                    <div class="flex flex-col">
+                                        <span>{{ s.descripcion }}</span>
+                                        <span class="text-[8px] text-slate-500 mt-0.5">COD: {{ s.codigo }} | TIPO: {{ s.tipo }}</span>
+                                    </div>
+                                    <span class="text-xs font-mono text-rose-400">${{ s.precioUsd }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parámetros de Carga -->
+                        <div *ngIf="selectedService()" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-[#0b1120]/50 border border-white/5 rounded-2xl animate-fade-in">
+                            <div>
+                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Insumo Seleccionado</label>
+                                <span class="text-xs font-black text-white uppercase tracking-tight block">{{ selectedService().descripcion }}</span>
+                                <span class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-1 block">
+                                    Precio Base: ${{ selectedService().precioUsd }} USD
+                                </span>
+                            </div>
+
+                            <!-- Input simple numérico nativo -->
+                            <div>
+                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                                    Cantidad a Cargar (Unidad: {{ selectedService().unidadMedida || 'Unidad(es)' }})
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" 
+                                           [(ngModel)]="fastChargeQuantity" 
+                                           [step]="selectedService().permiteFraccionamiento ? '0.01' : '1'"
+                                           min="0.01" 
+                                           class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500/30 font-mono">
+                                    <span class="text-xs text-slate-400 font-black uppercase tracking-wider">
+                                        {{ selectedService().unidadMedida || 'UD' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones fast charge -->
+                    <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+                        <button type="button" (click)="selectedService.set(null); fastChargeSearchTerm.set('');"
+                                class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                            CANCELAR
+                        </button>
+                        <button type="button" (click)="submitFastCharge()"
+                                [disabled]="isSavingFastCharge() || !selectedService()"
+                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/10 disabled:opacity-50">
+                            <span *ngIf="!isSavingFastCharge()">CARGAR A LA CUENTA</span>
+                            <lucide-icon *ngIf="isSavingFastCharge()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 3: TRASLADO / EGRESO -->
+                <div *ngIf="activeTab() === 'transfer'" class="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                            <lucide-icon [name]="icons.Shuffle" class="w-6 h-6"></lucide-icon>
+                        </div>
+                        <div>
+                            <h3 class="text-md font-black text-white uppercase tracking-tight">Movilización del Paciente / Alta</h3>
+                            <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Cierra la ubicación actual y traslada a otra área</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        
+                        <!-- Toggle Traslado vs Egreso -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <button type="button" (click)="esEgreso = false"
+                                    [ngClass]="!esEgreso ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
+                                    class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
+                                TRASLADO INTERNO
+                            </button>
+                            <button type="button" (click)="esEgreso = true"
+                                    [ngClass]="esEgreso ? 'bg-yellow-500/15 border-yellow-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
+                                    class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
+                                EGRESO / DADO DE ALTA
+                            </button>
+                        </div>
+
+                        <!-- Formulario de Traslado Interno -->
+                        <div *ngIf="!esEgreso" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-[#0b1120]/50 border border-white/5 rounded-2xl animate-fade-in">
+                            <div>
+                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nueva Área / Ubicación</label>
+                                <select [(ngModel)]="nuevoTipoIngreso"
+                                        class="w-full bg-[#152035] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none">
+                                    <option value="Emergencia">EMERGENCIA</option>
+                                    <option value="UCI">UNIDAD DE CUIDADOS INTENSIVOS (UCI)</option>
+                                    <option value="Hospitalizacion">HOSPITALIZACIÓN</option>
+                                    <option value="Particular">PARTICULAR / CONSULTA</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Convenio / Seguro Destino</label>
+                                <select [(ngModel)]="nuevoConvenioId"
+                                        class="w-full bg-[#152035] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none">
+                                    <option [value]="null">-- PARTICULAR --</option>
+                                    <option *ngFor="let conv of convenios()" [value]="conv.id">
+                                        {{ conv.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Advertencia de Egreso -->
+                        <div *ngIf="esEgreso" class="p-5 bg-yellow-500/5 border border-yellow-500/20 text-yellow-400 rounded-2xl text-xs space-y-2 animate-fade-in">
+                            <h4 class="font-black uppercase tracking-widest flex items-center gap-1">
+                                <lucide-icon [name]="icons.AlertCircle" class="w-4 h-4"></lucide-icon>
+                                Confirmación de Alta Médica
+                            </h4>
+                            <p class="font-bold">
+                                Esta acción cerrará permanentemente la cuenta activa del paciente, marcándola como lista para auditoría y facturación final.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Acciones traslado -->
+                    <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
+                        <button type="button" (click)="activeTab.set('triage')"
+                                class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                            VOLVER
+                        </button>
+                        <button type="button" (click)="submitTransfer()"
+                                [disabled]="isSavingTransfer()"
+                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/10 disabled:opacity-50">
+                            <span *ngIf="!isSavingTransfer()">
+                                {{ esEgreso ? 'CONFIRMAR EGRESO / ALTA' : 'EJECUTAR TRASLADO' }}
+                            </span>
+                            <lucide-icon *ngIf="isSavingTransfer()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>

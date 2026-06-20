@@ -14,6 +14,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public ServiceCategory Category { get; set; } 
         public string? HonorariumCategory { get; set; } // Nuevo: Clasificación explícita para honorarios
         public bool Activo { get; set; }
+        public string? UnidadMedida { get; set; }
+        public bool PermiteFraccionamiento { get; set; }
         public Guid? EspecialidadId { get; set; }
         public virtual Especialidad? Especialidad { get; set; }
         public virtual ICollection<ServicioSugerencia> Sugerencias { get; private set; } = new List<ServicioSugerencia>();

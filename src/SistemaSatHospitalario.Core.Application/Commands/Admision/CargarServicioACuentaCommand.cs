@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
         public decimal Honorario { get; set; }
-        public int Cantidad { get; set; }
+        public decimal Cantidad { get; set; }
         public string TipoServicio { get; set; } = string.Empty; // Medico, RX, Laboratorio, Insumo
         public string UsuarioCarga { get; set; } = string.Empty;
         public string? SupervisorKey { get; set; } // V1.0 Security Matrix

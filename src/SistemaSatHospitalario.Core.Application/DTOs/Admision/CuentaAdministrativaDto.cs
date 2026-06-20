@@ -29,7 +29,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string Descripcion { get; set; } = string.Empty;
         public decimal Precio { get; set; }
         public decimal Honorario { get; set; }
-        public int Cantidad { get; set; }
+        public decimal Cantidad { get; set; }
         public string TipoServicio { get; set; } = string.Empty;
         public DateTime FechaCarga { get; set; }
         public string? LegacyMappingId { get; set; }

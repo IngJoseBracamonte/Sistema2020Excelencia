@@ -8,5 +8,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         public Guid PacienteId { get; set; }
         public string? TipoIngreso { get; set; }
+        public bool Consolidar { get; set; }
     }
 }

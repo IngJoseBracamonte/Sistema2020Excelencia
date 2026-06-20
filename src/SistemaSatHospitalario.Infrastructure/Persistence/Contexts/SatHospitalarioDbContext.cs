@@ -49,6 +49,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; set; }
         public DbSet<GarantiaItem> GarantiasItems { get; set; }
         public DbSet<HistorialModificacionCuenta> HistorialModificacionCuentas { get; set; }
+        public DbSet<TriageEnfermeria> TriagesEnfermeria { get; set; }
+        public DbSet<ValoracionFisica> ValoracionesFisicas { get; set; }
 
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
@@ -213,6 +215,21 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(c => c.PacienteId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.CuentaPrincipal)
+                      .WithMany()
+                      .HasForeignKey(c => c.CuentaPrincipalId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(c => c.Triages)
+                      .WithOne(t => t.CuentaServicio)
+                      .HasForeignKey(t => t.CuentaServicioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(c => c.Valoraciones)
+                      .WithOne(v => v.CuentaServicio)
+                      .HasForeignKey(v => v.CuentaServicioId)
+                      .OnDelete(DeleteBehavior.Cascade);
                 
                 // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.FechaCarga);
@@ -223,6 +240,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("DetallesServicioCuenta");
                 entity.HasKey(d => d.Id);
                 entity.Property(d => d.Precio).HasPrecision(18, 2);
+                entity.Property(d => d.Cantidad).HasPrecision(18, 4);
             });
 
             builder.Entity<CitaMedica>(entity =>
@@ -259,6 +277,33 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Property(s => s.HonorariumCategory).HasMaxLength(50);
+                entity.Property(s => s.UnidadMedida).HasMaxLength(50);
+            });
+
+            builder.Entity<TriageEnfermeria>(entity =>
+            {
+                entity.ToTable("TriagesEnfermeria");
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.TensionArterial).HasMaxLength(20).IsRequired();
+                entity.Property(t => t.MotivoConsulta).HasMaxLength(500).IsRequired();
+                entity.Property(t => t.Temperatura).HasPrecision(4, 2);
+                entity.Property(t => t.UsuarioRegistro).HasMaxLength(100).IsRequired();
+                entity.HasIndex(t => t.FechaRegistro);
+            });
+
+            builder.Entity<ValoracionFisica>(entity =>
+            {
+                entity.ToTable("ValoracionesFisicas");
+                entity.HasKey(v => v.Id);
+                entity.Property(v => v.EstadoConciencia).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.ViaAerea).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.Ventilacion).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.Pulso).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.PielMucosas).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.LlenadoCapilar).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.Pupilas).HasMaxLength(50).IsRequired();
+                entity.Property(v => v.UsuarioRegistro).HasMaxLength(100).IsRequired();
+                entity.HasIndex(v => v.FechaRegistro);
             });
 
             builder.Entity<HorarioAtencionMedico>(entity =>

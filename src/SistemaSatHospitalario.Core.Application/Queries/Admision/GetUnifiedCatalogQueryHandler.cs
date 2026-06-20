@@ -79,7 +79,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         MedicoId = hm.MedicoId,
                         MedicoNombre = hm.Medico?.Nombre ?? "Desconocido",
                         Honorario = hm.MontoHonorario
-                    }).ToList()
+                    }).ToList(),
+                    UnidadMedida = s.UnidadMedida,
+                    PermiteFraccionamiento = s.PermiteFraccionamiento
                 };
                 if (item.Codigo == "S004")
                 {

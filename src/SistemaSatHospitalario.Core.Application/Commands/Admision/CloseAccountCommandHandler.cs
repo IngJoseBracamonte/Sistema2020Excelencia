@@ -53,6 +53,35 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (cuenta == null) throw new Exception("Cuenta no encontrada.");
             if (cuenta.Estado != EstadoConstants.Abierta) throw new Exception("La cuenta ya ha sido procesada.");
 
+            // Resolver consolidación si aplica
+            List<CuentaServicios> accountsToBill;
+            if (request.Consolidar)
+            {
+                var rootId = cuenta.CuentaPrincipalId ?? cuenta.Id;
+                var allChainAccounts = await _context.CuentasServicios
+                    .Include(c => c.Detalles)
+                    .Where(c => c.Id == rootId || c.CuentaPrincipalId == rootId)
+                    .ToListAsync(cancellationToken);
+
+                var billedAccountIds = await _context.RecibosFactura
+                    .Where(rf => rf.CuentaServicioId != request.CuentaId)
+                    .Select(rf => rf.CuentaServicioId)
+                    .ToListAsync(cancellationToken);
+
+                var arAccountIds = await _context.CuentasPorCobrar
+                    .Where(ar => ar.CuentaServicioId != request.CuentaId)
+                    .Select(ar => ar.CuentaServicioId)
+                    .ToListAsync(cancellationToken);
+
+                accountsToBill = allChainAccounts
+                    .Where(c => !billedAccountIds.Contains(c.Id) && !arAccountIds.Contains(c.Id))
+                    .ToList();
+            }
+            else
+            {
+                accountsToBill = new List<CuentaServicios> { cuenta };
+            }
+
             // 0. Gestión Automática de Caja (Micro-Ciclo 28)
             // Si el usuario no tiene una caja abierta, la abrimos automáticamente
             var caja = await _cajaRepository.ObtenerCajaAbiertaPorUsuarioAsync(request.UsuarioId, cancellationToken);
@@ -68,7 +97,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .Where(m => m.Activo)
                 .ToListAsync(cancellationToken);
 
-            decimal totalCuenta = cuenta.CalcularTotal();
+            decimal totalCuenta = accountsToBill.Sum(c => c.CalcularTotal());
             decimal totalPagado = 0;
 
             var listaPagosValidados = new List<(DetallePagoDto Pago, decimal Equivalente, decimal Tasa)>();
@@ -151,11 +180,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 // Extraemos items para pasarlos después
-                var itemsLab = cuenta.Detalles.Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio)).ToList();
+                var itemsLab = accountsToBill.SelectMany(c => c.Detalles).Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio)).ToList();
 
                 // 4.3 EJECUCIÓN NUCLEAR: Actualización Directa en DB vía Repositorio
                 // Previene DbUpdateConcurrencyException (V10.9 SQL Direct)
-                await _billingRepository.ForzarCierreCuentaAsync(request.CuentaId, DateTime.UtcNow, cancellationToken);
+                foreach (var acc in accountsToBill)
+                {
+                    await _billingRepository.ForzarCierreCuentaAsync(acc.Id, DateTime.UtcNow, cancellationToken);
+                }
 
                 // 4.4 Persistimos los demás objetos locales (Recibo, AR)
                 _context.RecibosFactura.Add(recibo);
@@ -165,7 +197,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (itemsLab.Any())
                 {
                     _logger.LogTrace($"[CLOSE-ACCOUNT] Procesando {itemsLab.Count} ítems de Laboratorio para Legado.");
-                    var legacyOrderId = await ProcessLegacyOrder(cuenta, cancellationToken);
+                    var legacyOrderId = await ProcessLegacyOrder(cuenta, itemsLab, cancellationToken);
                     if (legacyOrderId > 0)
                     {
                         cuenta.AsignarLegacyOrder(legacyOrderId);
@@ -175,7 +207,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 // 4.6 EJECUCIÓN IMÁGENES (RX/TOMO) - Fase 16.2
-                await ProcessImagingOrders(cuenta, cancellationToken);
+                var itemsImaging = accountsToBill.SelectMany(c => c.Detalles).ToList();
+                await ProcessImagingOrders(cuenta.PacienteId, itemsImaging, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
                 _logger.LogTrace($"[CLOSE-ACCOUNT] Cuenta cerrada exitosamente: {cuenta.Id}");
@@ -203,7 +236,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             };
         }
 
-        private async Task<int> ProcessLegacyOrder(CuentaServicios cuenta, CancellationToken ct)
+        private async Task<int> ProcessLegacyOrder(CuentaServicios cuenta, List<DetalleServicioCuenta> labItems, CancellationToken ct)
         {
             _logger.LogTrace($"[LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: {cuenta.Id} ===");
             
@@ -266,12 +299,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             int legacyId = paciente.IdPacienteLegacy!.Value;
             _logger.LogTrace($"[LEGACY-SYNC] LegacyId resuelto: {legacyId}");
 
-            var labItems = cuenta.Detalles
-                .Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio))
-                .ToList();
-
-            _logger.LogTrace($"[LEGACY-SYNC] Total detalles en cuenta: {cuenta.Detalles.Count}");
-            foreach (var d in cuenta.Detalles)
+            _logger.LogTrace($"[LEGACY-SYNC] Total detalles en cuenta: {labItems.Count}");
+            foreach (var d in labItems)
             {
                 _logger.LogTrace($"[LEGACY-SYNC]   -> Detalle: '{d.Descripcion}' | TipoServicio: '{d.TipoServicio}' | EsLab: {EstadoConstants.EsLaboratorio(d.TipoServicio)} | LegacyMappingId: '{d.LegacyMappingId}'");
             }
@@ -306,7 +335,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         IdOrden = 0,
                         IdPersona = legacyId,
                         IdPerfil = idPerfil, 
-                        PrecioPerfil = item.Precio * item.Cantidad 
+                        PrecioPerfil = item.Precio * item.Cantidad
                     });
                     _logger.LogTrace($"[LEGACY-SYNC] Perfil agregado: IdPerfil={idPerfil}, Precio={item.Precio * item.Cantidad}");
                 }
@@ -337,23 +366,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             return idOrden;
         }
 
-        private async Task ProcessImagingOrders(CuentaServicios cuenta, CancellationToken ct)
+        private async Task ProcessImagingOrders(Guid patientId, List<DetalleServicioCuenta> detalles, CancellationToken ct)
         {
-            var items = cuenta.Detalles.Where(d => d.TipoServicio == EstadoConstants.RX || d.TipoServicio == EstadoConstants.TOMO).ToList();
+            var items = detalles.Where(d => d.TipoServicio == EstadoConstants.RX || d.TipoServicio == EstadoConstants.TOMO).ToList();
             if (!items.Any()) return;
 
-            var paciente = await _context.PacientesAdmision.AsNoTracking().FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, ct);
+            var paciente = await _context.PacientesAdmision.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId, ct);
             string nombrePaciente = paciente?.NombreCompleto ?? "Paciente Desconocido";
 
             foreach (var item in items)
             {
                 if (item.TipoServicio == EstadoConstants.RX)
                 {
-                    await _ordenExternaService.EnviarOrdenRXAsync(cuenta.Id, cuenta.PacienteId, item.Descripcion, nombrePaciente, ct);
+                    await _ordenExternaService.EnviarOrdenRXAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct);
                 }
                 else if (item.TipoServicio == EstadoConstants.TOMO)
                 {
-                    await _ordenExternaService.EnviarOrdenTomoAsync(cuenta.Id, cuenta.PacienteId, item.Descripcion, nombrePaciente, ct);
+                    await _ordenExternaService.EnviarOrdenTomoAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct);
                 }
             }
         }

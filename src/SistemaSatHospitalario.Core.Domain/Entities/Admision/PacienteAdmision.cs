@@ -33,7 +33,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             TelefonoContact = telefonoContact;
             IdPacienteLegacy = idLegacy;
             FechaNacimiento = fechaNacimiento;
-            Direccion = direccion;
+            Direccion = direccion ?? string.Empty;
         }
 
         public void VincularLegacy(int legacyId)
