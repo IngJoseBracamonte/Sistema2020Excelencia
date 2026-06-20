@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Commands.System;
 using System.Security.Claims;
@@ -26,8 +27,6 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
             var scrubbedMessage = ScrubPii(exception.Message);
             var scrubbedStack = ScrubPii(exception.StackTrace ?? string.Empty);
 
-            var mediator = httpContext.RequestServices.GetRequiredService<IMediator>();
-            
             var command = new CreateErrorTicketCommand
             {
                 RequestPath = httpContext.Request.Path,
@@ -37,9 +36,13 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
                 UsuarioAsociado = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Anonymous"
             };
 
-            // Ejecutamos el guardado de forma segura, si falla la BD no queremos ocultar el log original
+            // CRITICAL: Create a new DI scope so the ErrorTicket is persisted with a FRESH DbContext.
+            // The original request's DbContext may have dirty/failed tracked entities (e.g. from
+            // DbUpdateConcurrencyException), which would cause SaveChangesAsync to fail again if reused.
             try
             {
+                using var scope = httpContext.RequestServices.CreateScope();
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                 var ticketId = await mediator.Send(command, cancellationToken);
                 _logger.LogInformation("Generated Error Ticket {TicketId}", ticketId);
             }

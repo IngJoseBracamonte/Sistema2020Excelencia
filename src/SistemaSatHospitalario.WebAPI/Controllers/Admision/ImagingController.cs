@@ -515,7 +515,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             order.FechaValidacion = DateTime.UtcNow;
             order.CuentaId = cuenta.Id; // Vincular la orden a la cuenta procesada
 
-            await _context.SaveChangesAsync(default);
+            try
+            {
+                await _context.SaveChangesAsync(default);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // La orden fue modificada o procesada por otro usuario entre la lectura y la escritura.
+                return Conflict(new { Message = "Esta orden ya fue modificada por otro usuario. Recargue la lista e intente nuevamente." });
+            }
 
             return Ok(new { 
                 Message = "Orden directa validada y cargada a cuenta con éxito.",
