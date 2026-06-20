@@ -59,7 +59,9 @@
                 <p class="text-sm font-black text-white leading-tight mt-0.5">{{ errorMessage() }}</p>
             </div>
         </div>
-        <!-- Modal de Ingreso/Admisión de Paciente (Estilo Premium) -->
+    </div>
+
+    <!-- Modal de Ingreso/Admisión de Paciente (Estilo Premium) -->
     <div *ngIf="showIngresoModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showIngresoModal.set(false)"></div>
         <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
@@ -252,7 +254,6 @@
 
             </div>
         </div>
-    </div>
     </div>
     <!-- ================= VISTA 1: ANTESALA DE CIERRE (DASHBOARD DE GESTIÓN CLÍNICA / PACIENTES ACTIVOS) ================= -->
     <div *ngIf="!selectedAccount()" class="space-y-6">
