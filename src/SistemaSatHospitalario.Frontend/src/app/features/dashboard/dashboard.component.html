@@ -241,6 +241,98 @@
         </div>
     </ng-container>
 
+    <!-- ============================================ -->
+    <!-- 4. DASHBOARD ASISTENTE DE EMERGENCIA         -->
+    <!-- ============================================ -->
+    <ng-container *ngIf="isEmergencyAssistant() && !isAdmin() && !isParticularAssistant()">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8 animate-fade-in-up">
+                <!-- Emergency Master Stats -->
+                <div class="bg-rose-500/10 rounded-[3rem] p-10 text-white shadow-2xl border border-rose-500/20 flex flex-col md:flex-row items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-black mb-2 uppercase tracking-tighter">ÁREA DE EMERGENCIAS</h2>
+                        <p class="text-rose-100 font-bold italic">Panel de ingreso y control de cuentas clínicas</p>
+                        <div class="mt-8 grid grid-cols-2 gap-8">
+                            <div>
+                                <p class="text-[10px] font-black text-rose-200 uppercase tracking-widest">Pacientes Activos</p>
+                                <p class="text-5xl font-black">{{ insights()?.pacientesAtendidosHoy || 0 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-rose-200 uppercase tracking-widest">Citas Registradas</p>
+                                <p class="text-5xl font-black text-emerald-300">{{ insights()?.turnosPautadosHoy || 0 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-10 md:mt-0 flex flex-col gap-3">
+                        <a routerLink="/cierre-cuenta/Emergencia"
+                           class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-4 rounded-2xl text-xs font-black transition-all shadow-xl shadow-rose-600/20 flex items-center justify-center group active:scale-95 border-b-4 border-rose-800">
+                            🚨 IR A EMERGENCIAS
+                        </a>
+                        <a routerLink="/enfermeria"
+                           class="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center group active:scale-95">
+                            🩺 MÓDULO ENFERMERÍA
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-surface-card rounded-[2.5rem] border border-glass-border p-8 shadow-sm">
+                    <h3 class="text-sm font-black text-main uppercase tracking-widest mb-6">Atención Médica Directa</h3>
+                    <p class="text-xs text-slate-400 font-bold leading-relaxed mb-4">
+                        Como Asistente de Emergencia, puede registrar admisiones de pacientes (existentes o nuevos), abrir cuentas clínicas acumulativas de servicios, y hacer seguimiento de constantes vitales en enfermería.
+                    </p>
+                    <div class="flex gap-4">
+                        <a routerLink="/cierre-cuenta/Emergencia" class="flex-1 py-4 bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-600/20 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all">
+                            Admitir / Ingresar Paciente
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-1">
+                 <ng-container *ngTemplateOutlet="ticketsMonitor"></ng-container>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- ============================================ -->
+    <!-- 5. DASHBOARD ASISTENTE HOSPITALARIO          -->
+    <!-- ============================================ -->
+    <ng-container *ngIf="isHospitalAssistant() && !isAdmin() && !isParticularAssistant() && !isEmergencyAssistant()">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8 animate-fade-in-up">
+                <!-- Hospitalization Master Stats -->
+                <div class="bg-indigo-500/10 rounded-[3rem] p-10 text-white shadow-2xl border border-indigo-500/20 flex flex-col md:flex-row items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-black mb-2 uppercase tracking-tighter">ÁREA HOSPITALARIA</h2>
+                        <p class="text-indigo-100 font-bold italic">Panel de ingreso y control hospitalario</p>
+                        <div class="mt-8 grid grid-cols-2 gap-8">
+                            <div>
+                                <p class="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Pacientes Activos</p>
+                                <p class="text-5xl font-black">{{ insights()?.pacientesAtendidosHoy || 0 }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Citas Registradas</p>
+                                <p class="text-5xl font-black text-emerald-300">{{ insights()?.turnosPautadosHoy || 0 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-10 md:mt-0 flex flex-col gap-3">
+                        <a routerLink="/cierre-cuenta/Hospitalizacion"
+                           class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl text-xs font-black transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center group active:scale-95 border-b-4 border-indigo-800">
+                            🏥 IR A HOSPITALARIA
+                        </a>
+                        <a routerLink="/enfermeria"
+                           class="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-2xl text-xs font-black transition-all flex items-center justify-center group active:scale-95">
+                            🩺 MÓDULO ENFERMERÍA
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-1">
+                 <ng-container *ngTemplateOutlet="ticketsMonitor"></ng-container>
+            </div>
+        </div>
+    </ng-container>
+
     <!-- Template Reutilizable: Ticket Monitor -->
     <ng-template #ticketsMonitor>
         <div class="bg-surface-card rounded-[2.5rem] shadow-lg border border-glass-border flex flex-col h-full overflow-hidden">

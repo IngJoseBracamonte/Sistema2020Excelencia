@@ -63,6 +63,10 @@ export class LoginComponent {
           this.router.navigate(['/reset-password']);
         } else if (this.authService.isRxAssistant()) {
           this.router.navigate(['/rx-orders']);
+        } else if (this.authService.isEmergencyAssistant()) {
+          this.router.navigate(['/cierre-cuenta/Emergencia']);
+        } else if (this.authService.isHospitalAssistant()) {
+          this.router.navigate(['/cierre-cuenta/Hospitalizacion']);
         } else {
           this.router.navigate(['/dashboard']);
         }

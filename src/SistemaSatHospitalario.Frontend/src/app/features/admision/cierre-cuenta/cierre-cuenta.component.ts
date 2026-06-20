@@ -29,7 +29,8 @@ import {
   CreditCard,
   ArrowLeft,
   Activity,
-  FileText
+  FileText,
+  UserPlus
 } from 'lucide-angular';
 
 @Component({
@@ -68,7 +69,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     CreditCard,
     ArrowLeft,
     Activity,
-    FileText
+    FileText,
+    UserPlus
   };
 
   // State Signals
@@ -79,6 +81,31 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
+
+  // Ingresar Paciente Modal State
+  public showIngresoModal = signal<boolean>(false);
+  public searchIngresoTerm = signal<string>('');
+  public patientsEncontrados = signal<PatientRecord[]>([]);
+  public isSearchingPatient = signal<boolean>(false);
+  public selectedPatientForIngreso = signal<PatientRecord | null>(null);
+  public convenioIngresoId = signal<number | null>(null);
+  public showNewPatientForm = signal<boolean>(false);
+
+  public newPatientData: any = {
+    cedula: '',
+    nombre: '',
+    apellidos: '',
+    sexo: 'M',
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    celular: '',
+    codigoCelular: '0414',
+    telefono: '',
+    codigoTelefono: '0274',
+    direccion: ''
+  };
+
+  public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
+  public codigosTelefonoCombinados = ['0274', '0273', '0251', '0212', '0281', '0241', '0416', '0426', '0414', '0424', '0412', '0422'];
 
   // Selected Account State
   public selectedAccount = signal<CuentaAdministrativaDto | null>(null);
@@ -491,6 +518,108 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         console.error('[CIERRE-CUENTA] Error al cerrar cuenta:', err);
         this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al procesar el cierre de la cuenta.');
         this.isLoading.set(false);
+      }
+    });
+  }
+
+  // --- Ingresar Paciente / Abrir Cuenta Clinica Flow ---
+  public abrirModalIngreso() {
+    this.searchIngresoTerm.set('');
+    this.patientsEncontrados.set([]);
+    this.selectedPatientForIngreso.set(null);
+    this.convenioIngresoId.set(null);
+    this.showNewPatientForm.set(false);
+    this.newPatientData = {
+      cedula: '',
+      nombre: '',
+      apellidos: '',
+      sexo: 'M',
+      fechaNacimiento: new Date().toISOString().split('T')[0],
+      celular: '',
+      codigoCelular: '0414',
+      telefono: '',
+      codigoTelefono: '0274',
+      direccion: ''
+    };
+    this.errorMessage.set(null);
+    this.showIngresoModal.set(true);
+  }
+
+  public buscarPacienteIngreso() {
+    const term = this.searchIngresoTerm().trim();
+    if (term.length >= 3) {
+      this.isSearchingPatient.set(true);
+      this.patientService.searchPatients(term).subscribe({
+        next: (res) => {
+          this.patientsEncontrados.set(res);
+          this.isSearchingPatient.set(false);
+        },
+        error: () => {
+          this.isSearchingPatient.set(false);
+        }
+      });
+    }
+  }
+
+  public seleccionarPacienteIngreso(p: PatientRecord) {
+    this.selectedPatientForIngreso.set(p);
+    this.patientsEncontrados.set([]);
+  }
+
+  public deseleccionarPacienteIngreso() {
+    this.selectedPatientForIngreso.set(null);
+  }
+
+  public procesarIngreso() {
+    this.errorMessage.set(null);
+
+    if (this.showNewPatientForm()) {
+      // Registrar nuevo paciente primero
+      if (!this.newPatientData.cedula || 
+          !this.newPatientData.nombre || 
+          !this.newPatientData.apellidos || 
+          !this.newPatientData.fechaNacimiento || 
+          !this.newPatientData.celular || 
+          !this.newPatientData.direccion) {
+        this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento, Celular y Dirección.");
+        return;
+      }
+
+      this.isLoading.set(true);
+      this.patientService.createPatient(this.newPatientData).subscribe({
+        next: (p: PatientRecord) => {
+          this.abrirCuentaParaPaciente(p.id);
+        },
+        error: (err: any) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || err.error?.error || "Error al registrar nuevo paciente.");
+        }
+      });
+    } else {
+      // Usar paciente existente
+      const patient = this.selectedPatientForIngreso();
+      if (!patient) {
+        this.errorMessage.set("Por favor busque y seleccione un paciente o complete el formulario de nuevo registro.");
+        return;
+      }
+
+      this.isLoading.set(true);
+      this.abrirCuentaParaPaciente(patient.id);
+    }
+  }
+
+  private abrirCuentaParaPaciente(pacienteId: string) {
+    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId()).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.showIngresoModal.set(false);
+        this.actionMessage.set(`Paciente ingresado exitosamente a la sección de ${this.type()}.`);
+        setTimeout(() => this.actionMessage.set(null), 5000);
+        this.loadOpenAccounts(); // Refrescar lista de activos
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.Error || err.error?.message || "Error al abrir la cuenta clínica.");
       }
     });
   }

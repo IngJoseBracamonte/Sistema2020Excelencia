@@ -66,6 +66,26 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Error = "Ha ocurrido un error inesperado al procesar el servicio." });
             }
         }
+
+        [HttpPost("AbrirCuenta")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> AbrirCuenta([FromBody] AbrirCuentaClinicaCommand command)
+        {
+            try
+            {
+                command.UsuarioCarga = User.GetUserName();
+                var accountId = await _mediator.Send(command);
+                return Ok(new { 
+                    Message = "Cuenta clínica abierta exitosamente.", 
+                    CuentaId = accountId
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
         
         [HttpPost("SincronizarCarrito")]
         [Idempotent]

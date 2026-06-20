@@ -59,6 +59,200 @@
                 <p class="text-sm font-black text-white leading-tight mt-0.5">{{ errorMessage() }}</p>
             </div>
         </div>
+        <!-- Modal de Ingreso/Admisión de Paciente (Estilo Premium) -->
+    <div *ngIf="showIngresoModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showIngresoModal.set(false)"></div>
+        <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
+            
+            <!-- Encabezado Modal -->
+            <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
+                <div class="flex items-center space-x-4">
+                    <div class="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg shadow-rose-500/5">
+                        <lucide-icon [name]="icons.UserPlus" class="w-6 h-6"></lucide-icon>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Ingresar Paciente a {{ type() }}</h3>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Registrar admisión y abrir cuenta de atención</p>
+                    </div>
+                </div>
+                <button (click)="showIngresoModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
+                    <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                
+                <!-- Toggle: Buscar Existente vs Registrar Nuevo -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="button" (click)="showNewPatientForm.set(false)"
+                            [ngClass]="!showNewPatientForm() ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
+                            class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
+                        BUSCAR PACIENTE EXISTENTE
+                    </button>
+                    <button type="button" (click)="showNewPatientForm.set(true)"
+                            [ngClass]="showNewPatientForm() ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
+                            class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
+                        REGISTRAR NUEVO PACIENTE
+                    </button>
+                </div>
+
+                <!-- FORMULARIO 1: BUSCAR PACIENTE -->
+                <div *ngIf="!showNewPatientForm()" class="space-y-4 animate-fade-in">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Buscador por Cédula o Nombre</h4>
+                    </div>
+
+                    <!-- Buscador e input -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
+                            </span>
+                            <input type="text" [ngModel]="searchIngresoTerm()" (ngModelChange)="searchIngresoTerm.set($event)" (keyup.enter)="buscarPacienteIngreso()"
+                                placeholder="Escriba cédula o nombre (mínimo 3 caracteres)..."
+                                class="w-full pl-11 pr-5 py-3.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder:text-slate-600 outline-none focus:border-rose-500/50 focus:ring-4 focus:ring-rose-500/10 transition-all font-bold uppercase">
+                        </div>
+                        <button type="button" (click)="buscarPacienteIngreso()"
+                                class="bg-rose-600 hover:bg-rose-500 text-white px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95">
+                            BUSCAR
+                        </button>
+                    </div>
+
+                    <!-- Lista de resultados encontrados -->
+                    <div *ngIf="patientsEncontrados().length > 0" class="border border-white/5 rounded-2xl divide-y divide-white/5 max-h-48 overflow-y-auto">
+                        <div *ngFor="let p of patientsEncontrados()" (click)="seleccionarPacienteIngreso(p)"
+                             class="p-4 hover:bg-white/5 cursor-pointer flex justify-between items-center transition-all">
+                            <div>
+                                <span class="text-xs font-black text-white uppercase">{{ p.nombre }} {{ p.apellidos }}</span>
+                                <span class="text-[9px] text-slate-500 font-mono block mt-1">CÉDULA: {{ p.cedula }}</span>
+                            </div>
+                            <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest text-right">SELECCIONAR</span>
+                        </div>
+                    </div>
+
+                    <!-- Detalle del Paciente Seleccionado -->
+                    <div *ngIf="selectedPatientForIngreso()" class="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl flex justify-between items-center animate-scale-in">
+                        <div>
+                            <span class="text-[8px] font-black text-rose-400 uppercase tracking-widest block">Paciente Seleccionado:</span>
+                            <span class="text-xs font-black text-white uppercase mt-1 block">
+                                {{ selectedPatientForIngreso()?.nombre }} {{ selectedPatientForIngreso()?.apellidos }}
+                            </span>
+                            <span class="text-[9px] text-slate-400 font-mono block mt-0.5">Cédula: {{ selectedPatientForIngreso()?.cedula }}</span>
+                        </div>
+                        <button type="button" (click)="deseleccionarPacienteIngreso()" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest">
+                            CAMBIAR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO 2: REGISTRO DE NUEVO PACIENTE -->
+                <div *ngIf="showNewPatientForm()" class="space-y-4 animate-fade-in">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Datos del Nuevo Paciente</h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.cedula"
+                                class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase font-mono">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.nombre"
+                                class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.apellidos"
+                                class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sexo</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button *ngFor="let s of ['M', 'F', 'ND']" (click)="newPatientData.sexo = s"
+                                    [class]="newPatientData.sexo === s ? 'bg-rose-600 text-white border-rose-600' : 'bg-black/40 text-slate-400 border-white/10 hover:bg-white/5'"
+                                    class="py-3 border rounded-xl font-black text-[10px] transition-all uppercase tracking-widest">
+                                    {{ s === 'ND' ? 'Otro' : (s === 'M' ? 'Masc' : 'Fem') }}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha de Nacimiento <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="date" [(ngModel)]="newPatientData.fechaNacimiento"
+                                class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs font-black text-white uppercase">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular Principal <span class="text-rose-500 font-bold">*</span></label>
+                            <div class="flex space-x-2">
+                                <select [(ngModel)]="newPatientData.codigoCelular" 
+                                    class="w-24 bg-black/40 border border-white/10 rounded-xl px-2 py-3 text-[10px] font-black text-white outline-none">
+                                    <option *ngFor="let c of codigosCelular" [value]="c">{{ c }}</option>
+                                </select>
+                                <input type="text" [(ngModel)]="newPatientData.celular" placeholder="0000000"
+                                    class="flex-1 px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white font-mono">
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación <span class="text-rose-500 font-bold">*</span></label>
+                            <input type="text" [(ngModel)]="newPatientData.direccion" placeholder="Ej: Calle Principal..."
+                                class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PARAMETROS COMUNES DE INGRESO (CONVENIO / SEGURO) -->
+                <div class="pt-6 border-t border-white/5 space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Parámetros de Cobertura Administrativa</h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Aseguradora / Convenio de Ingreso</label>
+                            <select [ngModel]="convenioIngresoId()" (ngModelChange)="convenioIngresoId.set($event)"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
+                                <option [value]="null">--- PARTICULAR (SIN SEGURO) ---</option>
+                                <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre | uppercase }}</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col justify-end">
+                            <p class="text-[9px] text-slate-500 font-bold leading-relaxed">
+                                El paciente será ingresado al área de **{{ type() | uppercase }}**. Al procesar, el sistema creará un expediente clínico activo para comenzar a cargar signos vitales, medicamentos e insumos médicos.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensaje de Error Interno Modal -->
+                <div *ngIf="errorMessage()" class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-xl">
+                    {{ errorMessage() }}
+                </div>
+
+                <!-- Botones Accion Modal -->
+                <div class="flex justify-end gap-3 pt-6 border-t border-white/5">
+                    <button type="button" (click)="showIngresoModal.set(false)"
+                            class="bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                        CANCELAR
+                    </button>
+                    <button type="button" (click)="procesarIngreso()" [disabled]="isLoading()"
+                            class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
+                        {{ isLoading() ? 'PROCESANDO INGRESO...' : 'PROCESAR INGRESO CLÍNICO' }}
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
     </div>
     <!-- ================= VISTA 1: ANTESALA DE CIERRE (DASHBOARD DE GESTIÓN CLÍNICA / PACIENTES ACTIVOS) ================= -->
     <div *ngIf="!selectedAccount()" class="space-y-6">
@@ -152,10 +346,16 @@
                                 {{ enrichedAccounts().length }} Monitoreados
                             </span>
                         </div>
-                        <button (click)="loadOpenAccounts()" class="h-9 px-4 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 flex items-center gap-2 font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all cursor-pointer">
-                            <lucide-icon [name]="icons.RefreshCcw" class="w-3.5 h-3.5"></lucide-icon>
-                            Sincronizar
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button (click)="abrirModalIngreso()" class="h-9 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center gap-2 font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all cursor-pointer shadow-lg shadow-rose-500/10">
+                                <lucide-icon [name]="icons.Plus" class="w-3.5 h-3.5"></lucide-icon>
+                                Ingresar Paciente
+                            </button>
+                            <button (click)="loadOpenAccounts()" class="h-9 px-4 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 flex items-center gap-2 font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all cursor-pointer">
+                                <lucide-icon [name]="icons.RefreshCcw" class="w-3.5 h-3.5"></lucide-icon>
+                                Sincronizar
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Search Bar Inside -->
