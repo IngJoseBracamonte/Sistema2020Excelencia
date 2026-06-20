@@ -137,6 +137,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedCajaDiariaAsync();
                 await SeedConfiguracionAsync();
                 await SeedTasaCambioAsync();
+                await SeedConveniosAsync();
                 
                 // Senior Maintenance Pattern: Asegurar integridad de fechas de recaudación
                 await FixOrphanPaymentDatesAsync();
@@ -150,6 +151,24 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 _logger.LogError(ex, "Ocurrió un error inicializando System Database.");
                 throw;
             }
+        }
+
+        private async Task SeedConveniosAsync()
+        {
+            if (await _context.SegurosConvenios.AnyAsync()) return;
+
+            _logger.LogInformation("Sembrando convenios de seguros por defecto...");
+
+            var convenios = new List<SeguroConvenio>
+            {
+                new SeguroConvenio("PDVSA", "RTN-5", "Av. Principal PDVSA", "0212-1234567", "pdvsa@test.com"),
+                new SeguroConvenio("Seguros Caracas", "RTN-CARACAS", "Centro Seguros Caracas", "0212-7654321", "caracas@test.com"),
+                new SeguroConvenio("Mercantil Seguros", "RTN-MERCANTIL", "Torre Mercantil Seguros", "0212-9999999", "mercantil@test.com"),
+                new SeguroConvenio("Sanitas", "RTN-SANITAS", "Las Mercedes", "0212-8888888", "sanitas@test.com")
+            };
+
+            _context.SegurosConvenios.AddRange(convenios);
+            await _context.SaveChangesAsync();
         }
 
         private async Task SeedServiciosClinicosAsync()
