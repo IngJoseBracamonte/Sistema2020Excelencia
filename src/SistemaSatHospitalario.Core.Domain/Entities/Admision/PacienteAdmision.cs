@@ -14,9 +14,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         
         public string CedulaPasaporte { get; protected set; }
         public string NombreCorto { get; protected set; }
-        public string TelefonoContact { get; protected set; }
+        public string? TelefonoContact { get; protected set; }
         public DateTime? FechaNacimiento { get; protected set; }
-        public string Direccion { get; protected set; }
+        public string? Direccion { get; protected set; }
         public string NombreCompleto => NombreCorto; // Alias para compatibilidad con reportes avanzados
 
         // Historial de ordenes
@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected PacienteAdmision() { }
 
-        public PacienteAdmision(string cedulaPasaporte, string nombreCorto, string telefonoContact, int? idLegacy = null, DateTime? fechaNacimiento = null, string direccion = null)
+        public PacienteAdmision(string cedulaPasaporte, string nombreCorto, string? telefonoContact, int? idLegacy = null, DateTime? fechaNacimiento = null, string? direccion = null)
         {
             Id = Guid.NewGuid();
             CedulaPasaporte = cedulaPasaporte ?? throw new ArgumentNullException(nameof(cedulaPasaporte));
@@ -33,7 +33,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             TelefonoContact = telefonoContact;
             IdPacienteLegacy = idLegacy;
             FechaNacimiento = fechaNacimiento;
-            Direccion = direccion ?? string.Empty;
+            Direccion = direccion;
         }
 
         public void VincularLegacy(int legacyId)
@@ -41,7 +41,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             IdPacienteLegacy = legacyId;
         }
 
-        public void ActualizarDatos(string nombreCorto, string telefonoContact, DateTime? fechaNacimiento = null, string? cedulaPasaporte = null, string direccion = null)
+        public void ActualizarDatos(string nombreCorto, string? telefonoContact, DateTime? fechaNacimiento = null, string? cedulaPasaporte = null, string? direccion = null)
         {
             NombreCorto = nombreCorto;
             TelefonoContact = telefonoContact;

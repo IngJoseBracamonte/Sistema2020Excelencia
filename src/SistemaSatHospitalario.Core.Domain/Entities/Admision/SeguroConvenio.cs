@@ -6,15 +6,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     {
         public int Id { get; protected set; }
         public string Nombre { get; protected set; }
-        public string Rtn { get; protected set; }
-        public string Direccion { get; protected set; }
-        public string Telefono { get; protected set; }
-        public string Email { get; protected set; }
+        public string? Rtn { get; protected set; }
+        public string? Direccion { get; protected set; }
+        public string? Telefono { get; protected set; }
+        public string? Email { get; protected set; }
         public bool Activo { get; protected set; }
 
         protected SeguroConvenio() { }
 
-        public SeguroConvenio(string nombre, string rtn, string direccion, string telefono, string email)
+        public SeguroConvenio(string nombre, string? rtn, string? direccion, string? telefono, string? email)
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Rtn = rtn;
@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Activo = true;
         }
 
-        public void Actualizar(string nombre, string rtn, string direccion, string telefono, string email)
+        public void Actualizar(string nombre, string? rtn, string? direccion, string? telefono, string? email)
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             Rtn = rtn;

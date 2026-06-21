@@ -7,17 +7,17 @@
                 <lucide-icon [name]="selectedAccount() ? icons.Activity : icons.FileText" class="w-6 h-6"></lucide-icon>
             </div>
             <div>
-                <h1 class="text-2xl font-black text-white tracking-tighter uppercase">
+                <h1 class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase">
                     {{ selectedAccount() ? 'Cierre de Cuenta' : ('Pacientes Activos - ' + type()) }}
                 </h1>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">
-                    {{ selectedAccount() ? 'Revisión final y emisión de orden de egreso de episodio de atención' : 'Seleccione un registro para gestionar el cierre de cuenta' }}
+                    {{ selectedAccount() ? 'Revisión final y emisión de orden de egreso de episodio de atención' : (type() === 'Emergencia' ? 'Monitoreo y administración clínica de pacientes en urgencias' : 'Seleccione un registro para gestionar el cierre de cuenta') }}
                 </p>
             </div>
         </div>
 
-        <!-- Tasa de Cambio Section -->
-        <div class="flex items-center space-x-4 mt-6 md:mt-0 bg-black/30 p-4 rounded-[2rem] border border-white/5 backdrop-blur-xl">
+        <!-- Tasa de Cambio Section (Solo visible si no es Emergencia) -->
+        <div *ngIf="type() !== 'Emergencia'" class="flex items-center space-x-4 mt-6 md:mt-0 bg-black/30 p-4 rounded-[2rem] border border-white/5 backdrop-blur-xl">
              <div class="text-right">
                 <p *ngIf="!editandoTasa()" class="text-xl font-black text-primary font-mono tracking-tighter">Bs. {{ tasaCambioDia() | number:'1.2-2' }}</p>
                 <div *ngIf="editandoTasa()" class="flex items-center space-x-2 mt-1">
@@ -240,14 +240,14 @@
                     {{ errorMessage() }}
                 </div>
 
-                <!-- Botones Accion Modal -->
-                <div class="flex justify-end gap-3 pt-6 border-t border-white/5">
+                <!-- Botones Accion Modal (Responsive Wrap) -->
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-white/5">
                     <button type="button" (click)="showIngresoModal.set(false)"
-                            class="bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                            class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all min-h-[44px]">
                         CANCELAR
                     </button>
                     <button type="button" (click)="procesarIngreso()" [disabled]="isLoading()"
-                            class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
+                            class="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
                         {{ isLoading() ? 'PROCESANDO INGRESO...' : 'PROCESAR INGRESO CLÍNICO' }}
                     </button>
                 </div>
@@ -259,7 +259,7 @@
     <div *ngIf="!selectedAccount()" class="space-y-6">
         
         <!-- KPI METRICS GRID ROW -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 gap-6" [ngClass]="type() === 'Emergencia' ? 'md:grid-cols-2' : 'md:grid-cols-3'">
             <!-- 1. Estado del Sistema / Capacidad (Scanline/Holographic background style) -->
             <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
                 <!-- Glowing effect -->
@@ -311,7 +311,7 @@
             </div>
 
             <!-- 3. Despachar Recurso / Nueva Admisión (Blue-grey slate style theme) -->
-            <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
+            <div *ngIf="type() !== 'Emergencia'" class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
                 <div class="absolute -right-12 -top-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all"></div>
                 
                 <div>
@@ -373,7 +373,7 @@
                 <!-- Patient Cards List -->
                 <div *ngIf="!isLoading() && enrichedAccounts().length > 0" class="space-y-4">
                     <div *ngFor="let acc of enrichedAccounts()" (click)="selectAccount(acc)"
-                        class="premium-card p-5 border border-white/5 hover:border-primary/30 cursor-pointer flex items-center justify-between group relative overflow-hidden transition-all shadow-xl">
+                        class="premium-card p-5 border border-white/5 hover:border-primary/30 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group relative overflow-hidden transition-all shadow-xl">
                         
                         <!-- Left vertical border status indicator -->
                         <div class="absolute left-0 inset-y-0 w-1 bg-transparent group-hover:bg-primary transition-colors"></div>
@@ -396,22 +396,24 @@
                             </div>
                         </div>
 
-                        <!-- Right details/status -->
-                        <div class="flex items-center space-x-4">
-                            <div class="text-right">
+                        <!-- Right details/status (Responsive stack on mobile, row on tablet/desktop) -->
+                        <div class="flex items-center justify-between sm:justify-end space-x-4 w-full sm:w-auto pt-3 sm:pt-0 border-t border-white/5 sm:border-0">
+                            <div class="text-left sm:text-right">
                                 <span class="text-[10px] font-black text-slate-300 block">{{ acc.room }}</span>
                                 <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 block">
                                     {{ acc.seguroNombre || 'Particular' }}
                                 </span>
                             </div>
 
-                            <!-- Alert Badge -->
-                            <span class="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider min-w-[80px] text-center font-mono"
-                                [ngClass]="acc.statusClass">
-                                {{ acc.status }}
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                <!-- Alert Badge -->
+                                <span class="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-wider min-w-[80px] text-center font-mono"
+                                    [ngClass]="acc.statusClass">
+                                    {{ acc.status }}
+                                </span>
 
-                            <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors"></lucide-icon>
+                                <lucide-icon [name]="icons.ChevronRight" class="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors hidden sm:block"></lucide-icon>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -521,7 +523,7 @@
             </div>
 
             <!-- Métodos de Cierre -->
-            <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
+            <div *ngIf="type() !== 'Emergencia'" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
                 <div class="flex items-center space-x-3 mb-2">
                     <lucide-icon [name]="icons.CreditCard" class="w-5 h-5 text-primary"></lucide-icon>
                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Método de Cierre / Órdenes</h3>
@@ -602,7 +604,7 @@
             </div>
 
             <!-- Panel Registro Pagos Multidivisa (Si no es Seguro 100%) -->
-            <div *ngIf="nuevoPagoMetodo() !== 'Seguro Médico (Convenio)' || totalAPagarPaciente() > 0" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
+            <div *ngIf="type() !== 'Emergencia' && (nuevoPagoMetodo() !== 'Seguro Médico (Convenio)' || totalAPagarPaciente() > 0)" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
                 <div class="flex items-center space-x-3 mb-2">
                     <lucide-icon [name]="icons.CreditCard" class="w-5 h-5 text-emerald-400"></lucide-icon>
                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Abonos / Pagos de Diferencia</h3>
@@ -649,7 +651,7 @@
             </div>
 
             <!-- Desglose Final y Botón Cierre -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div class="grid grid-cols-1 gap-6 items-stretch" [ngClass]="type() === 'Emergencia' ? '' : 'md:grid-cols-2'">
                 <!-- Desglose Card -->
                 <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4 flex flex-col justify-between">
                     <div class="flex items-center space-x-3 pb-3 border-b border-white/5">
@@ -679,7 +681,7 @@
                 </div>
 
                 <!-- Cierre Accion Card -->
-                <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex flex-col justify-between items-stretch">
+                <div *ngIf="type() !== 'Emergencia'" class="glass-panel p-6 rounded-[2rem] border border-white/5 flex flex-col justify-between items-stretch">
                     <div class="space-y-4">
                         <h3 class="text-sm font-black text-white uppercase tracking-wider">Finalizar Episodio</h3>
                         <p class="text-[10px] text-slate-500 font-bold leading-relaxed">

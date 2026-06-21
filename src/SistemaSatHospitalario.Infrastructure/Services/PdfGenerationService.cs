@@ -186,7 +186,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
                         });
 
-                        bool esMismoPaciente = data.NombreResponsable.Trim().Equals(data.NombrePaciente.Trim(), StringComparison.OrdinalIgnoreCase);
+                        bool esMismoPaciente = (data.NombreResponsable ?? "").Trim().Equals((data.NombrePaciente ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
 
                         column.Item().PaddingBottom(15).Table(table =>
                         {
@@ -774,7 +774,7 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                             c.Item().LineHorizontal(1).LineColor(Colors.Blue.Darken4);
                         });
 
-                        bool esMismoPaciente = data.NombreResponsable.Trim().Equals(data.NombrePaciente.Trim(), StringComparison.OrdinalIgnoreCase);
+                        bool esMismoPaciente = (data.NombreResponsable ?? "").Trim().Equals((data.NombrePaciente ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
 
                         column.Item().PaddingBottom(15).Table(table =>
                         {
