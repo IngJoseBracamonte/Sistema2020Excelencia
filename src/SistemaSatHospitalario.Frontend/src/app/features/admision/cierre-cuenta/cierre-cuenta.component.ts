@@ -11,6 +11,8 @@ import { ConveniosService } from '../../../core/services/convenios.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { environment } from '../../../../environments/environment';
 import { Subscription } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { MedicoService, Medico } from '../../../core/services/medico.service';
 import {
   LucideAngularModule,
   Search,
@@ -51,6 +53,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   private printService = inject(PrintService);
   private conveniosService = inject(ConveniosService);
   private settingsService = inject(SettingsService);
+  private http = inject(HttpClient);
+  private medicoService = inject(MedicoService);
 
   readonly icons = {
     Search,
@@ -91,6 +95,42 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public convenioIngresoId = signal<number | null>(null);
   public showNewPatientForm = signal<boolean>(false);
 
+  // Step admission & Triage Signals
+  public ingresoStep = signal<number>(1);
+  public triageSelectedPatientId = signal<string | null>(null);
+
+  // Triage & Assessment Inputs
+  public triageMotivoConsulta = signal<string>('');
+  public triageTensionArterial = signal<string>('');
+  public triageFrecuenciaCardiaca = signal<number>(80);
+  public triageFrecuenciaRespiratoria = signal<number>(18);
+  public triageTemperatura = signal<number>(37.0);
+  public triageSaturacionO2 = signal<number>(98);
+  public triageGlicemiaCapilar = signal<number | null>(null);
+  public triageClasificacion = signal<string>('Nivel III (Amarillo)');
+  
+  public triageEstadoConciencia = signal<string>('Alerta');
+  public triageGlasgowOcular = signal<number>(4);
+  public triageGlasgowVerbal = signal<number>(5);
+  public triageGlasgowMotor = signal<number>(6);
+  public triageGlasgowTotal = computed(() => Number(this.triageGlasgowOcular()) + Number(this.triageGlasgowVerbal()) + Number(this.triageGlasgowMotor()));
+  
+  public triageViaAerea = signal<string>('Permeable');
+  public triageVentilacion = signal<string>('Normal');
+  public triagePulso = signal<string>('Rítmico');
+  public triagePielMucosas = signal<string>('Normocoloreada');
+  public triageLlenadoCapilar = signal<string>('< 2 segundos');
+  public triagePupilas = signal<string>('Isocóricas');
+  
+  public triageAlergiasNinguna = signal<boolean>(true);
+  public triageAlergiasEspecificar = signal<string>('');
+  public triageAccesosVenososTrae = signal<boolean>(false);
+  public triageAccesosVenososLugar = signal<string>('');
+  public triagePertenencias = signal<string>('Entregadas a familiar');
+  public triageAntecedenteHTA = signal<boolean>(false);
+  public triageAntecedenteDiabetes = signal<boolean>(false);
+  public triageAntecedenteCardiopatia = signal<boolean>(false);
+
   public newPatientData: any = {
     cedula: '',
     nombre: '',
@@ -112,6 +152,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public fechaEgreso = signal<string>(new Date().toISOString().split('T')[0]);
   public horaEgreso = signal<string>(new Date().toTimeString().substring(0, 5));
   public diagnostico = signal<string>('Diagnóstico General / Control Médico');
+  public destinoPaciente = signal<string>('Alta Médica');
 
   // Billing Fields
   public tasaCambioDia = signal<number>(36.5);
@@ -135,6 +176,27 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public convenios = signal<any[]>([]);
   public convenioSeleccionadoId = signal<number | null>(null);
   public seguroCoberturaPorcentaje = signal<number>(80); // Default 80% coverage
+
+  // Roles Helpers for Template (V17.0 Standards)
+  public canCollectAndClose = computed(() => {
+    return this.authService.isCajero() || this.authService.isAdmin();
+  });
+
+  public isEmergencyNurse = computed(() => {
+    return this.authService.isEmergencyAssistant() && !this.authService.isCajero();
+  });
+
+  // Clinical Item Loading (Emergency Nurse Fast Charge)
+  public servicesCatalog = signal<any[]>([]);
+  public fastChargeSearchTerm = signal<string>('');
+  public filteredServices = signal<any[]>([]);
+  public selectedService = signal<any | null>(null);
+  public fastChargeQuantity = signal<number>(1);
+  public isSavingFastCharge = signal<boolean>(false);
+  public triageHistoryMap = signal<Record<string, any[]>>({});
+  // Medicos Catalog
+  public medicos = signal<Medico[]>([]);
+  public medicoTratanteId = signal<string | null>(null);
 
   private paramSub!: Subscription;
 
@@ -206,53 +268,125 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   public recentActivities = computed(() => {
     const list = this.accounts();
+    const triageMap = this.triageHistoryMap();
     const activities: any[] = [];
-    const times = ['10:42:15 AM', '10:35:00 AM', '10:15:22 AM', '09:50:05 AM', '08:30:00 AM'];
-    
-    list.forEach((acc, idx) => {
-      if (idx >= times.length) return;
-      const time = times[idx];
+
+    list.forEach(acc => {
       const name = acc.pacienteNombre;
       const cedula = acc.pacienteCedula;
-      
-      if (idx === 0) {
+      const cId = acc.cuentaId;
+
+      // 1. Evento de Admisión
+      if (acc.fechaCarga) {
+        const date = new Date(acc.fechaCarga);
         activities.push({
-          time,
+          timestamp: date,
+          time: this.formatTime(date),
           source: 'SISTEMA',
-          message: `ALERTA: Frecuencia cardíaca fuera de rango para paciente ${name} (ID: ${cedula}).`,
-          badge: 'Alerta',
-          badgeClass: 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
-        });
-      } else if (idx === 1) {
-        activities.push({
-          time,
-          source: 'ENFERMERÍA',
-          message: `Servicios de atención clínica y medicamentos administrados a ${name}.`,
-          badge: 'Servicios',
-          badgeClass: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-        });
-      } else if (idx === 2) {
-        activities.push({
-          time,
-          source: 'CAJA',
-          message: `Abono inicial registrado a la cuenta de ${name} (Cédula: ${cedula}).`,
-          badge: 'Abono',
-          badgeClass: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-        });
-      } else {
-        activities.push({
-          time,
-          source: 'LABORATORIO',
-          message: `Resultados del panel de analítica listos para ${name}.`,
-          badge: 'Analítica',
-          badgeClass: 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+          message: `Paciente ${name} (Cédula: ${cedula}) ingresado a la sección de ${acc.tipoIngreso}.`,
+          badge: 'Ingreso',
+          badgeClass: 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
         });
       }
+
+      // 2. Eventos de Servicios/Medicamentos Cargados
+      if (acc.detalles && acc.detalles.length > 0) {
+        acc.detalles.forEach(item => {
+          const date = item.fechaCarga ? new Date(item.fechaCarga) : new Date();
+          activities.push({
+            timestamp: date,
+            time: this.formatTime(date),
+            source: 'ENFERMERÍA',
+            message: `Servicio de ${item.descripcion} (Cantidad: ${item.cantidad}) cargado a la cuenta de ${name}.`,
+            badge: 'Servicio',
+            badgeClass: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+          });
+        });
+      }
+
+      // 3. Eventos de Triage e Historial Clínico Real
+      const triages = triageMap[cId] || [];
+      triages.forEach(tr => {
+        const rawDate = tr.fechaRegistro || tr.FechaRegistro || acc.fechaCarga;
+        const date = new Date(rawDate);
+        const user = tr.usuarioRegistro || tr.UsuarioRegistro || 'sistema';
+        
+        // Registro de Triage Genuino
+        activities.push({
+          timestamp: date,
+          time: this.formatTime(date),
+          source: 'ENFERMERÍA',
+          message: `Valoración física y triage inicial registrados por ${user} para ${name}.`,
+          badge: 'Triage',
+          badgeClass: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+        });
+
+        // Alerta de Frecuencia Cardiaca
+        const fc = tr.frecuenciaCardiaca !== undefined ? tr.frecuenciaCardiaca : tr.FrecuenciaCardiaca;
+        if (fc !== undefined && fc > 0) {
+          if (fc > 100 || fc < 60) {
+            activities.push({
+              timestamp: new Date(date.getTime() + 1000), // Desfasado para ordenación
+              time: this.formatTime(date),
+              source: 'SISTEMA',
+              message: `ALERTA: Frecuencia cardíaca fuera de rango (${fc} lpm) para paciente ${name} (ID: ${cedula}).`,
+              badge: 'Alerta',
+              badgeClass: 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+            });
+          }
+        }
+
+        // Alerta de Temperatura
+        const temp = tr.temperatura !== undefined ? tr.temperatura : tr.Temperatura;
+        if (temp !== undefined && temp > 0) {
+          if (temp > 37.8 || temp < 35.5) {
+            activities.push({
+              timestamp: new Date(date.getTime() + 2000),
+              time: this.formatTime(date),
+              source: 'SISTEMA',
+              message: `ALERTA: Temperatura corporal fuera de rango (${temp} °C) para paciente ${name} (ID: ${cedula}).`,
+              badge: 'Alerta',
+              badgeClass: 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+            });
+          }
+        }
+
+        // Alerta de Saturación de Oxígeno
+        const sat = tr.saturacionO2 !== undefined ? tr.saturacionO2 : tr.SaturacionO2;
+        if (sat !== undefined && sat > 0 && sat < 95) {
+          activities.push({
+            timestamp: new Date(date.getTime() + 3000),
+            time: this.formatTime(date),
+            source: 'SISTEMA',
+            message: `ALERTA: Saturación de O2 baja (${sat}%) para paciente ${name} (ID: ${cedula}).`,
+            badge: 'Alerta',
+            badgeClass: 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+          });
+        }
+
+        // Alerta de Escala de Glasgow
+        const glasgow = tr.glasgowTotal !== undefined ? tr.glasgowTotal : tr.GlasgowTotal;
+        if (glasgow !== undefined && glasgow > 0 && glasgow < 15) {
+          activities.push({
+            timestamp: new Date(date.getTime() + 4000),
+            time: this.formatTime(date),
+            source: 'SISTEMA',
+            message: `ALERTA: Compromiso neurológico detectado (Glasgow: ${glasgow}/15) para paciente ${name} (ID: ${cedula}).`,
+            badge: 'Alerta',
+            badgeClass: 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+          });
+        }
+      });
     });
 
+    // Ordenar por fecha decreciente
+    activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    // Si está vacío, mostrar mensaje de información por defecto
     if (activities.length === 0) {
       activities.push({
-        time: '08:30:00 AM',
+        timestamp: new Date(),
+        time: this.formatTime(new Date()),
         source: 'SISTEMA',
         message: `No hay pacientes activos en la sección de ${this.type()} en este momento.`,
         badge: 'Info',
@@ -262,6 +396,10 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
     return activities;
   });
+
+  private formatTime(date: Date): string {
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
 
   // Calculations
   public subtotalServicios = computed(() => {
@@ -327,6 +465,21 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       this.selectedAccount.set(null); // Resetear selección al cambiar de área
       this.loadOpenAccounts();
     });
+
+    // 4. Cargar catálogo unificado de servicios/medicamentos
+    this.http.get<any[]>(`${environment.apiUrl}/api/Catalog/unified`)
+      .subscribe({
+        next: (res) => {
+          this.servicesCatalog.set(res);
+        },
+        error: (err) => console.error('[CIERRE-CUENTA] Error al cargar catálogo unificado:', err)
+      });
+
+    // 5. Cargar catálogo de médicos activos
+    this.medicoService.getAll().subscribe({
+      next: (res) => this.medicos.set(res.filter(m => m.activo)),
+      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar médicos:', err)
+    });
   }
 
   ngOnDestroy() {
@@ -342,7 +495,19 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.accounts.set(res);
         this.isLoading.set(false);
-        // Cargar detalles de pacientes en paralelo para mostrar edad/celular en tarjetas
+
+        // Auto re-seleccionar la cuenta activa actual para ver cambios (como nuevos items cargados)
+        const currentSel = this.selectedAccount();
+        if (currentSel) {
+          const updated = res.find(acc => acc.cuentaId === currentSel.cuentaId);
+          if (updated) {
+            this.selectedAccount.set(updated);
+          } else {
+            this.selectedAccount.set(null); // Si ya se cerró/no está, deseleccionar
+          }
+        }
+
+        // Cargar detalles de pacientes y triage en paralelo
         res.forEach(acc => {
           this.patientService.searchPatients(acc.pacienteCedula).subscribe({
             next: (patients) => {
@@ -354,6 +519,17 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
                 });
               }
             }
+          });
+
+          // Cargar triage del backend para alertas reales
+          this.http.get<any[]>(`${environment.apiUrl}/api/Enfermeria/TriageHistorial/${acc.cuentaId}`).subscribe({
+            next: (history) => {
+              this.triageHistoryMap.update(map => {
+                map[acc.cuentaId] = history;
+                return { ...map };
+              });
+            },
+            error: (err) => console.error(`[CIERRE-CUENTA] Error al cargar triage de cuenta ${acc.cuentaId}:`, err)
           });
         });
       },
@@ -372,6 +548,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.horaEgreso.set(new Date().toTimeString().substring(0, 5));
     this.pagos.set([]); // Limpiar pagos temporales
     this.diagnostico.set('Diagnóstico General / Control Médico');
+    this.destinoPaciente.set('Alta Médica');
+    this.medicoTratanteId.set(null); // Resetear selección de médico
     
     // Si la cuenta ya tiene convenio pre-configurado
     if (acc.convenioId) {
@@ -478,10 +656,10 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Si queda saldo pendiente por pagar por el paciente, alertamos o permitimos cerrarlo como Cuenta por Cobrar
+    // Si queda saldo pendiente por pagar por el paciente, alertamos o permitimos cerrarlo como Cuenta por Cobrar (solo para Hospitalización)
     const pendiente = this.totalGeneral() - finalPayments.reduce((acc, p) => acc + p.equivalenteAbonadoBase, 0);
 
-    if (pendiente > 0.01) {
+    if (this.type() !== 'Emergencia' && pendiente > 0.01) {
       const confirmAR = confirm(`Queda un saldo pendiente de $${pendiente.toFixed(2)} USD. La cuenta se cerrará y la diferencia se registrará en Cuentas por Cobrar (CxC). ¿Desea continuar?`);
       if (!confirmAR) return;
     }
@@ -499,7 +677,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
     this.facturacionService.closeAccount(request).subscribe({
       next: (res: any) => {
-        this.actionMessage.set(`¡Cuenta de ${acc.pacienteNombre} cerrada y facturada con éxito!`);
+        const dest = this.type() === 'Emergencia' ? ` con destino a ${this.destinoPaciente().toUpperCase()}` : '';
+        this.actionMessage.set(`¡Cuenta de ${acc.pacienteNombre} cerrada y facturada con éxito${dest}!`);
         this.isLoading.set(false);
         
         // Descarga/Impresión del recibo generado
@@ -542,6 +721,37 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       direccion: ''
     };
     this.errorMessage.set(null);
+    
+    // Reset triage signals
+    this.ingresoStep.set(1);
+    this.triageSelectedPatientId.set(null);
+    this.triageMotivoConsulta.set('');
+    this.triageTensionArterial.set('');
+    this.triageFrecuenciaCardiaca.set(80);
+    this.triageFrecuenciaRespiratoria.set(18);
+    this.triageTemperatura.set(37.0);
+    this.triageSaturacionO2.set(98);
+    this.triageGlicemiaCapilar.set(null);
+    this.triageClasificacion.set('Nivel III (Amarillo)');
+    this.triageEstadoConciencia.set('Alerta');
+    this.triageGlasgowOcular.set(4);
+    this.triageGlasgowVerbal.set(5);
+    this.triageGlasgowMotor.set(6);
+    this.triageViaAerea.set('Permeable');
+    this.triageVentilacion.set('Normal');
+    this.triagePulso.set('Rítmico');
+    this.triagePielMucosas.set('Normocoloreada');
+    this.triageLlenadoCapilar.set('< 2 segundos');
+    this.triagePupilas.set('Isocóricas');
+    this.triageAlergiasNinguna.set(true);
+    this.triageAlergiasEspecificar.set('');
+    this.triageAccesosVenososTrae.set(false);
+    this.triageAccesosVenososLugar.set('');
+    this.triagePertenencias.set('Entregadas a familiar');
+    this.triageAntecedenteHTA.set(false);
+    this.triageAntecedenteDiabetes.set(false);
+    this.triageAntecedenteCardiopatia.set(false);
+
     this.showIngresoModal.set(true);
   }
 
@@ -588,7 +798,13 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       this.isLoading.set(true);
       this.patientService.createPatient(this.newPatientData).subscribe({
         next: (p: PatientRecord) => {
-          this.abrirCuentaParaPaciente(p.id);
+          if (this.type() === 'Emergencia') {
+            this.isLoading.set(false);
+            this.triageSelectedPatientId.set(p.id);
+            this.ingresoStep.set(2);
+          } else {
+            this.abrirCuentaParaPaciente(p.id);
+          }
         },
         error: (err: any) => {
           this.isLoading.set(false);
@@ -603,8 +819,13 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         return;
       }
 
-      this.isLoading.set(true);
-      this.abrirCuentaParaPaciente(patient.id);
+      if (this.type() === 'Emergencia') {
+        this.triageSelectedPatientId.set(patient.id);
+        this.ingresoStep.set(2);
+      } else {
+        this.isLoading.set(true);
+        this.abrirCuentaParaPaciente(patient.id);
+      }
     }
   }
 
@@ -622,5 +843,169 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         this.errorMessage.set(err.error?.Error || err.error?.message || "Error al abrir la cuenta clínica.");
       }
     });
+  }
+
+  public procesarIngresoEmergenciaCompleto() {
+    const pacienteId = this.triageSelectedPatientId();
+    if (!pacienteId) {
+      this.errorMessage.set("Error: No se ha seleccionado un paciente válido.");
+      return;
+    }
+
+    if (!this.triageMotivoConsulta().trim()) {
+      this.errorMessage.set("El Motivo de Consulta es obligatorio para el triage de Emergencia.");
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    // 1. Abrir la cuenta clínica
+    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId()).subscribe({
+      next: (res: any) => {
+        const cuentaId = res.cuentaId || res.id;
+        if (!cuentaId) {
+          this.isLoading.set(false);
+          this.errorMessage.set("Error: No se pudo obtener el ID de la cuenta creada.");
+          return;
+        }
+
+        // 2. Preparar el payload del triage
+        const antecedenteParts: string[] = [];
+        if (this.triageAntecedenteHTA()) antecedenteParts.push('HTA');
+        if (this.triageAntecedenteDiabetes()) antecedenteParts.push('Diabetes');
+        if (this.triageAntecedenteCardiopatia()) antecedenteParts.push('Cardiopatía');
+        const antecedentes = antecedenteParts.join(', ') || 'Ninguno';
+
+        const rawMotivo = this.triageMotivoConsulta().trim();
+        const clasificacion = this.triageClasificacion();
+        const motivoConTriaje = `[CLASIFICACIÓN TRIAJE: ${clasificacion.toUpperCase()}] ${rawMotivo}`;
+
+        const currentUser = this.authService.currentUser();
+
+        const triagePayload = {
+          cuentaServicioId: cuentaId,
+          motivoConsulta: motivoConTriaje,
+          tensionArterial: this.triageTensionArterial().trim() || 'N/A',
+          frecuenciaCardiaca: Number(this.triageFrecuenciaCardiaca()) || 0,
+          frecuenciaRespiratoria: Number(this.triageFrecuenciaRespiratoria()) || 0,
+          temperatura: Number(this.triageTemperatura()) || 37.0,
+          saturacionO2: Number(this.triageSaturacionO2()) || 98,
+          glicemiaCapilar: this.triageGlicemiaCapilar() ? Number(this.triageGlicemiaCapilar()) : null,
+          estadoConciencia: this.triageEstadoConciencia(),
+          glasgowOcular: Number(this.triageGlasgowOcular()) || 4,
+          glasgowVerbal: Number(this.triageGlasgowVerbal()) || 5,
+          glasgowMotor: Number(this.triageGlasgowMotor()) || 6,
+          glasgowTotal: Number(this.triageGlasgowTotal()) || 15,
+          viaAerea: this.triageViaAerea(),
+          ventilacion: this.triageVentilacion(),
+          pulso: this.triagePulso(),
+          pielMucosas: this.triagePielMucosas().trim() || 'Normocoloreada',
+          llenadoCapilar: this.triageLlenadoCapilar(),
+          pupilas: this.triagePupilas(),
+          alergias: this.triageAlergiasNinguna() ? 'Ninguna' : (this.triageAlergiasEspecificar().trim() || 'Ninguna'),
+          accesosVenosos: this.triageAccesosVenososTrae() ? `Sí (${this.triageAccesosVenososLugar().trim() || 'No especificado'})` : 'No',
+          pertenencias: this.triagePertenencias(),
+          antecedentesMedicos: antecedentes,
+          usuarioRegistro: currentUser?.username || 'admin'
+        };
+
+        // 3. Registrar el Triage y Valoración Física
+        this.http.post(`${environment.apiUrl}/api/Enfermeria/Triage`, triagePayload).subscribe({
+          next: () => {
+            this.isLoading.set(false);
+            this.showIngresoModal.set(false);
+            this.actionMessage.set(`Paciente ingresado y triage registrado exitosamente en Emergencia.`);
+            setTimeout(() => this.actionMessage.set(null), 5000);
+            this.loadOpenAccounts(); // Refrescar lista de activos
+          },
+          error: (err: any) => {
+            this.isLoading.set(false);
+            // Mostramos éxito del ingreso pero advertimos sobre el triage
+            this.showIngresoModal.set(false);
+            this.actionMessage.set(`Paciente ingresado, pero hubo un error al registrar el triage: ${err.error?.Error || err.message}`);
+            setTimeout(() => this.actionMessage.set(null), 8000);
+            this.loadOpenAccounts();
+          }
+        });
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.Error || err.error?.message || "Error al abrir la cuenta clínica.");
+      }
+    });
+  }
+
+  // --- Fast Charge / Add Service & Medicine Methods ---
+  public onFastChargeSearchChange(val: string): void {
+    this.fastChargeSearchTerm.set(val);
+    const term = val.trim().toLowerCase();
+    if (term.length >= 1) {
+      const filtered = this.servicesCatalog().filter(s => 
+        s.descripcion.toLowerCase().includes(term) || 
+        (s.codigo && s.codigo.toLowerCase().includes(term))
+      );
+      this.filteredServices.set(filtered.slice(0, 10)); // Limit to top 10 results
+    } else {
+      this.filteredServices.set([]);
+    }
+  }
+
+  public selectCatalogService(service: any): void {
+    this.selectedService.set(service);
+    this.fastChargeSearchTerm.set(service.descripcion);
+    this.filteredServices.set([]);
+    this.fastChargeQuantity.set(1);
+  }
+
+  public clearSelectedService(): void {
+    this.selectedService.set(null);
+    this.fastChargeSearchTerm.set('');
+    this.filteredServices.set([]);
+    this.fastChargeQuantity.set(1);
+  }
+
+  public submitFastCharge(): void {
+    const active = this.selectedAccount();
+    const service = this.selectedService();
+    if (!active || !service) {
+      this.errorMessage.set('Por favor, seleccione un servicio o insumo válido.');
+      return;
+    }
+
+    if (this.fastChargeQuantity() <= 0) {
+      this.errorMessage.set('La cantidad debe ser mayor a cero.');
+      return;
+    }
+
+    this.isSavingFastCharge.set(true);
+    this.errorMessage.set(null);
+
+    const payload = {
+      pacienteId: active.pacienteId,
+      tipoIngreso: active.tipoIngreso,
+      convenioId: active.convenioId,
+      servicioId: service.id,
+      descripcion: service.descripcion,
+      precio: service.precioUsd,
+      honorario: service.honorarioBase,
+      cantidad: Number(this.fastChargeQuantity()),
+      tipoServicio: service.tipo,
+      usuarioCarga: this.authService.currentUser()?.username || 'admin'
+    };
+
+    this.http.post(`${environment.apiUrl}/api/Billing/CargarServicio`, payload)
+      .subscribe({
+        next: () => {
+          this.actionMessage.set(`Se cargó exitosamente ${this.fastChargeQuantity()} unidad(es) de ${service.descripcion} a la cuenta.`);
+          this.clearSelectedService();
+          this.isSavingFastCharge.set(false);
+          this.loadOpenAccounts(); // Auto-refresh selected account's details
+          setTimeout(() => this.actionMessage.set(null), 3000);
+        },
+        error: (err) => {
+          this.errorMessage.set('Error al cargar insumo: ' + (err.error?.Error || err.error?.message || err.message));
+          this.isSavingFastCharge.set(false);
+        }
+      });
   }
 }
