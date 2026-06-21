@@ -34,8 +34,8 @@ LABEL maintainer="SistemaSatHospitalario" \
 
 WORKDIR /app
 
-# Instalar curl (healthcheck) y configurar timezone Venezuela
-RUN apt-get update && apt-get install -y --no-install-recommends curl tzdata \
+# Instalar curl (healthcheck), configurar timezone Venezuela y añadir libfontconfig1 para QuestPDF (SkiaSharp)
+RUN apt-get update && apt-get install -y --no-install-recommends curl tzdata libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=America/Caracas
