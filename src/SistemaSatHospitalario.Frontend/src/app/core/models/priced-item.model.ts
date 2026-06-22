@@ -101,6 +101,7 @@ export abstract class BasePricedItem {
     if (this.categoryId === 1) return true; // ServiceCategory.Consultation
     if (!this.tipo) return false;
     const t = this.tipo.toUpperCase();
+    if (t.includes('MEDICINA') || t.includes('MEDICAMENTO') || t.includes('INSUMO')) return false;
     const prefixes = ['CONS', 'MEDI', 'MÉDI', 'OBST', 'GINE'];
     return prefixes.some(p => t.includes(p));
   }

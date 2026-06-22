@@ -46,7 +46,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                    && cs.Estado != EstadoConstants.Anulada
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
-                   && (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI") || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
+                   && (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO"))) || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
                    && (detail.MedicoResponsableId == cita.MedicoId || detail.MedicoResponsableId == null)
                 select new
                 {
@@ -68,7 +68,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                    && cs.Estado != EstadoConstants.Anulada
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
-                   && !(detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || detail.TipoServicio.Contains("CONS") || detail.TipoServicio.Contains("MEDI") || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
+                   && !(detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO"))) || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
                    && (detail.FechaRealizacion ?? detail.FechaCarga) >= start
                    && (detail.FechaRealizacion ?? detail.FechaCarga) <= end
                 select new

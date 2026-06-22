@@ -170,9 +170,9 @@ namespace SistemaSatHospitalario.UnitTests.Application
                 where c.Estado == EstadoConstants.Atendida
                    && c.HoraPautada >= start
                    && c.HoraPautada <= end
-                   && (d.MedicoResponsableId == c.MedicoId || 
-                       (d.MedicoResponsableId == null && 
-                        (d.TipoServicio == "MEDICO" || d.TipoServicio == "Medico" || d.TipoServicio.Contains("CONS") || d.TipoServicio.Contains("MEDI"))))
+                    && (d.MedicoResponsableId == c.MedicoId || 
+                        (d.MedicoResponsableId == null && 
+                         (d.TipoServicio == "MEDICO" || d.TipoServicio == "Medico" || (d.TipoServicio.Contains("CONS") || (d.TipoServicio.Contains("MEDI") && !d.TipoServicio.Contains("MEDICINA") && !d.TipoServicio.Contains("MEDICAMENTO"))))))
                 select new
                 {
                     MedicoId = (Guid?)(d.MedicoResponsableId ?? c.MedicoId),

@@ -66,8 +66,11 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public static bool EsConsulta(string tipo)
         {
             if (string.IsNullOrWhiteSpace(tipo)) return false;
-            var t = tipo.ToUpper();
-            // Senior Logic: Match by first 4 characters or presence of prefix
+            var t = tipo.ToUpperInvariant();
+            
+            // Si es medicina, medicamento o insumo, no se clasifica como consulta médica
+            if (t.Contains("MEDICINA") || t.Contains("MEDICAMENTO") || t.Contains("INSUMO")) return false;
+            
             foreach (var prefix in ConsultaPrefixes)
             {
                 if (t.Contains(prefix)) return true;

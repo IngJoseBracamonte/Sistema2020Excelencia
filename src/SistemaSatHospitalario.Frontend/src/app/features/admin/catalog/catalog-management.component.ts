@@ -90,7 +90,7 @@ export class CatalogManagementComponent implements OnInit {
     sugerenciasIds: []
   });
 
-  public tipos = ['CONSULTA', 'LABORATORIO', 'RX', 'PROCEDIMIENTO', 'MEDICINA', 'SERVICIO'];
+  public tipos = ['CONSULTA', 'LABORATORIO', 'RX', 'PROCEDIMIENTO', 'MEDICINA', 'SERVICIO', 'MEDICAMENTO'];
 
   readonly icons = {
     Package,
@@ -277,6 +277,8 @@ export class CatalogManagementComponent implements OnInit {
       case 'CONSULTA': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
       case 'LABORATORIO': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'RX': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+      case 'MEDICINA':
+      case 'MEDICAMENTO': return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
       default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
     }
   }
