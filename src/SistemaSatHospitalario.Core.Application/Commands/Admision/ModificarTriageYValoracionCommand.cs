@@ -17,6 +17,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal Temperatura { get; set; }
         public int SaturacionO2 { get; set; }
         public int? GlicemiaCapilar { get; set; }
+
+        // Triage State Descriptions
+        public string? DescripcionRapida { get; set; }
+        public string? DescripcionDetallada { get; set; }
+
+        // Modular update selectors
+        public bool RegistrarConstantesVitales { get; set; } = true;
+        public bool RegistrarValoracionFisica { get; set; } = true;
+        public bool RegistrarAntecedentes { get; set; } = true;
+        public bool RegistrarEstadoActual { get; set; } = true;
         
         // Valoración Física
         public string EstadoConciencia { get; set; } = string.Empty;

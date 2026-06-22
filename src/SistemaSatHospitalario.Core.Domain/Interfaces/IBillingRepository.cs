@@ -16,7 +16,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces
         Task ActualizarCuentaAsync(CuentaServicios cuenta, CancellationToken cancellationToken);
         
         // V11.0: Bypass de concurrencia para cierre atómico (V10.9 SQL Direct)
-        Task ForzarCierreCuentaAsync(Guid cuentaId, DateTime fechaCierre, CancellationToken cancellationToken);
+        Task ForzarCierreCuentaAsync(Guid cuentaId, DateTime fechaCierre, string? destinoPaciente, string? personalRelevo, CancellationToken cancellationToken);
         
         Task AgregarCitaMedicaAsync(CitaMedica cita, CancellationToken cancellationToken);
         Task<bool> ExisteCitaSimultaneaAsync(Guid medicoId, DateTime hora, CancellationToken cancellationToken);

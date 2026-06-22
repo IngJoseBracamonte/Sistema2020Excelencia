@@ -33,6 +33,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime? FechaValidacion { get; private set; }
         public string? UsuarioAuditoria { get; private set; }
         public DateTime? FechaAuditoria { get; private set; }
+        public string? DestinoPaciente { get; private set; }
+        public string? PersonalRelevo { get; private set; }
 
         private readonly List<DetalleServicioCuenta> _detalles = new();
         public IReadOnlyCollection<DetalleServicioCuenta> Detalles => _detalles.AsReadOnly();
@@ -92,6 +94,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         }
 
         public decimal CalcularTotal() => _detalles.Sum(d => d.Precio * d.Cantidad);
+
+        public void RegistrarDestinoEgreso(string? destino, string? personalRelevo)
+        {
+            DestinoPaciente = destino;
+            PersonalRelevo = personalRelevo;
+        }
 
         public void Facturar()
         {

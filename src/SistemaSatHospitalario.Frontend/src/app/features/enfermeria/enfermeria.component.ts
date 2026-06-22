@@ -79,6 +79,16 @@ export class EnfermeriaComponent implements OnInit {
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
 
+  // Modular update selectors
+  public registrarConstantesVitales = true;
+  public registrarValoracionFisica = true;
+  public registrarAntecedentes = true;
+  public registrarEstadoActual = true;
+
+  // Descriptions
+  public descripcionRapida = '';
+  public descripcionDetallada = '';
+
   // Vital Signs Form
   public motivoConsulta = '';
   public tensionArterial = '';
@@ -135,6 +145,13 @@ export class EnfermeriaComponent implements OnInit {
     );
   });
 
+  public estadoActualPaciente = computed(() => {
+    const history = this.nursingHistory();
+    if (!history || history.length === 0) return null;
+    const latestWithState = history.find(h => h.descripcionRapida || h.descripcionDetallada);
+    return latestWithState || history[0];
+  });
+
   ngOnInit(): void {
     this.refreshAccounts();
     this.loadCatalogAndConvenios();
@@ -168,9 +185,8 @@ export class EnfermeriaComponent implements OnInit {
     this.http.get<any[]>(`${environment.apiUrl}/api/Catalog/unified`)
       .subscribe({
         next: (res) => {
-          // Filtramos para medicamentos, insumos o servicios que no sean consultas médicas
-          const filtered = res.filter(s => s.tipo !== 'MEDICO');
-          this.servicesCatalog.set(filtered);
+          // Allow all items in the catalog for charging
+          this.servicesCatalog.set(res);
         },
         error: (err) => console.error('[ENFERMERIA] Error loading catalog:', err)
       });
@@ -234,6 +250,13 @@ export class EnfermeriaComponent implements OnInit {
     this.pertenencias = '';
     this.antecedentesMedicos = '';
 
+    this.registrarConstantesVitales = true;
+    this.registrarValoracionFisica = true;
+    this.registrarAntecedentes = true;
+    this.registrarEstadoActual = true;
+    this.descripcionRapida = '';
+    this.descripcionDetallada = '';
+
     this.isEditingTriage = false;
     this.editingTriageId = null;
     this.editingValoracionId = null;
@@ -271,7 +294,13 @@ export class EnfermeriaComponent implements OnInit {
         alergias: this.alergias,
         accesosVenosos: this.accesosVenosos,
         pertenencias: this.pertenencias,
-        antecedentesMedicos: this.antecedentesMedicos
+        antecedentesMedicos: this.antecedentesMedicos,
+        registrarConstantesVitales: this.registrarConstantesVitales,
+        registrarValoracionFisica: this.registrarValoracionFisica,
+        registrarAntecedentes: this.registrarAntecedentes,
+        registrarEstadoActual: this.registrarEstadoActual,
+        descripcionRapida: this.descripcionRapida,
+        descripcionDetallada: this.descripcionDetallada
       };
 
       this.http.put(`${environment.apiUrl}/api/Enfermeria/Triage`, payload)
@@ -312,7 +341,13 @@ export class EnfermeriaComponent implements OnInit {
         alergias: this.alergias,
         accesosVenosos: this.accesosVenosos,
         pertenencias: this.pertenencias,
-        antecedentesMedicos: this.antecedentesMedicos
+        antecedentesMedicos: this.antecedentesMedicos,
+        registrarConstantesVitales: this.registrarConstantesVitales,
+        registrarValoracionFisica: this.registrarValoracionFisica,
+        registrarAntecedentes: this.registrarAntecedentes,
+        registrarEstadoActual: this.registrarEstadoActual,
+        descripcionRapida: this.descripcionRapida,
+        descripcionDetallada: this.descripcionDetallada
       };
 
       this.http.post(`${environment.apiUrl}/api/Enfermeria/Triage`, payload)
@@ -356,6 +391,13 @@ export class EnfermeriaComponent implements OnInit {
     this.accesosVenosos = item.accesosVenosos;
     this.pertenencias = item.pertenencias;
     this.antecedentesMedicos = item.antecedentesMedicos;
+
+    this.registrarConstantesVitales = true;
+    this.registrarValoracionFisica = true;
+    this.registrarAntecedentes = true;
+    this.registrarEstadoActual = true;
+    this.descripcionRapida = item.descripcionRapida || '';
+    this.descripcionDetallada = item.descripcionDetallada || '';
 
     this.isEditingTriage = true;
     this.editingTriageId = item.triageId;

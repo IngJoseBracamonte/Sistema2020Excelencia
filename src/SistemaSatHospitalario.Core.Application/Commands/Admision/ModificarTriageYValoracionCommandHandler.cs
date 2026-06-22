@@ -44,7 +44,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Temperatura,
                 request.SaturacionO2,
                 request.GlicemiaCapilar,
-                request.UsuarioRegistro
+                request.UsuarioRegistro,
+                request.DescripcionRapida,
+                request.DescripcionDetallada
             );
 
             // Actualizar datos de Valoración Física
@@ -99,7 +101,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 Pertenencias = valoracion.Pertenencias,
                 AntecedentesMedicos = valoracion.AntecedentesMedicos,
                 FechaRegistro = triage.FechaRegistro,
-                UsuarioRegistro = triage.UsuarioRegistro
+                UsuarioRegistro = triage.UsuarioRegistro,
+                DescripcionRapida = triage.DescripcionRapida,
+                DescripcionDetallada = triage.DescripcionDetallada
             };
         }
     }

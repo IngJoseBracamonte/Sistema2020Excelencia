@@ -15,12 +15,25 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int? GlicemiaCapilar { get; private set; }
         public DateTime FechaRegistro { get; private set; }
         public string UsuarioRegistro { get; private set; }
+        public string? DescripcionRapida { get; private set; }
+        public string? DescripcionDetallada { get; private set; }
 
         public virtual CuentaServicios CuentaServicio { get; private set; }
 
         protected TriageEnfermeria() { }
 
-        public TriageEnfermeria(Guid cuentaServicioId, string motivoConsulta, string tensionArterial, int frecuenciaCardiaca, int frecuenciaRespiratoria, decimal temperatura, int saturacionO2, int? glicemiaCapilar, string usuarioRegistro)
+        public TriageEnfermeria(
+            Guid cuentaServicioId, 
+            string motivoConsulta, 
+            string tensionArterial, 
+            int frecuenciaCardiaca, 
+            int frecuenciaRespiratoria, 
+            decimal temperatura, 
+            int saturacionO2, 
+            int? glicemiaCapilar, 
+            string usuarioRegistro,
+            string? descripcionRapida = null,
+            string? descripcionDetallada = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -33,9 +46,21 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             GlicemiaCapilar = glicemiaCapilar;
             FechaRegistro = DateTime.UtcNow;
             UsuarioRegistro = usuarioRegistro ?? throw new ArgumentNullException(nameof(usuarioRegistro));
+            DescripcionRapida = descripcionRapida;
+            DescripcionDetallada = descripcionDetallada;
         }
 
-        public void ActualizarDatos(string motivoConsulta, string tensionArterial, int frecuenciaCardiaca, int frecuenciaRespiratoria, decimal temperatura, int saturacionO2, int? glicemiaCapilar, string usuarioRegistro)
+        public void ActualizarDatos(
+            string motivoConsulta, 
+            string tensionArterial, 
+            int frecuenciaCardiaca, 
+            int frecuenciaRespiratoria, 
+            decimal temperatura, 
+            int saturacionO2, 
+            int? glicemiaCapilar, 
+            string usuarioRegistro,
+            string? descripcionRapida = null,
+            string? descripcionDetallada = null)
         {
             MotivoConsulta = motivoConsulta ?? throw new ArgumentNullException(nameof(motivoConsulta));
             TensionArterial = tensionArterial ?? throw new ArgumentNullException(nameof(tensionArterial));
@@ -45,6 +70,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SaturacionO2 = saturacionO2;
             GlicemiaCapilar = glicemiaCapilar;
             UsuarioRegistro = usuarioRegistro ?? throw new ArgumentNullException(nameof(usuarioRegistro));
+            DescripcionRapida = descripcionRapida;
+            DescripcionDetallada = descripcionDetallada;
+        }
+
+        public void AsignarDescripcionEstado(string? rapida, string? detallada)
+        {
+            DescripcionRapida = rapida;
+            DescripcionDetallada = detallada;
         }
     }
 }

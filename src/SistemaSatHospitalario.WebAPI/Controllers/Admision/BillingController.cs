@@ -224,6 +224,29 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
         }
 
+        [HttpGet("nurse-audit-report")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetNurseAuditReport([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? nurseUsername)
+        {
+            try
+            {
+                var query = new GetNurseAuditReportQuery 
+                { 
+                    StartDate = startDate, 
+                    EndDate = endDate, 
+                    NurseUsername = nurseUsername 
+                };
+                var results = await _mediator.Send(query);
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener reporte de auditoria de enfermeras");
+                return BadRequest(new { Error = "Error al procesar el reporte de auditoria de enfermeras: " + ex.Message });
+            }
+        }
+
         [HttpPost("ReservarTurno")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

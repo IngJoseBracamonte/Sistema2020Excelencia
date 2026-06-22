@@ -36,5 +36,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         
         public DateTime FechaRegistro { get; set; }
         public string UsuarioRegistro { get; set; } = string.Empty;
+        public string? DescripcionRapida { get; set; }
+        public string? DescripcionDetallada { get; set; }
     }
 }

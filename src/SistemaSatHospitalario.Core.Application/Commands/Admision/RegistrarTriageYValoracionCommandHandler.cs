@@ -28,37 +28,82 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException($"La cuenta con ID {request.CuentaServicioId} no existe.");
             }
 
+            // Obtener últimos registros para fusionar/llevar datos si se desactivaron secciones
+            var lastTriage = await _context.TriagesEnfermeria
+                .Where(t => t.CuentaServicioId == request.CuentaServicioId)
+                .OrderByDescending(t => t.FechaRegistro)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var lastValoracion = await _context.ValoracionesFisicas
+                .Where(v => v.CuentaServicioId == request.CuentaServicioId)
+                .OrderByDescending(v => v.FechaRegistro)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            // Determinar valores de Constantes Vitales
+            string motivoConsulta = request.RegistrarConstantesVitales ? request.MotivoConsulta : (lastTriage?.MotivoConsulta ?? request.MotivoConsulta ?? "INGRESO");
+            string tensionArterial = request.RegistrarConstantesVitales ? request.TensionArterial : (lastTriage?.TensionArterial ?? request.TensionArterial ?? "N/A");
+            int frecuenciaCardiaca = request.RegistrarConstantesVitales ? request.FrecuenciaCardiaca : (lastTriage?.FrecuenciaCardiaca ?? request.FrecuenciaCardiaca);
+            int frecuenciaRespiratoria = request.RegistrarConstantesVitales ? request.FrecuenciaRespiratoria : (lastTriage?.FrecuenciaRespiratoria ?? request.FrecuenciaRespiratoria);
+            decimal temperatura = request.RegistrarConstantesVitales ? request.Temperatura : (lastTriage?.Temperatura ?? request.Temperatura);
+            int saturacionO2 = request.RegistrarConstantesVitales ? request.SaturacionO2 : (lastTriage?.SaturacionO2 ?? request.SaturacionO2);
+            int? glicemiaCapilar = request.RegistrarConstantesVitales ? request.GlicemiaCapilar : (lastTriage?.GlicemiaCapilar ?? request.GlicemiaCapilar);
+
+            // Determinar descripción de estado del paciente
+            string? descripcionRapida = request.RegistrarEstadoActual ? request.DescripcionRapida : (lastTriage?.DescripcionRapida ?? request.DescripcionRapida);
+            string? descripcionDetallada = request.RegistrarEstadoActual ? request.DescripcionDetallada : (lastTriage?.DescripcionDetallada ?? request.DescripcionDetallada);
+
             // Registrar Triage
             var triage = new TriageEnfermeria(
                 request.CuentaServicioId,
-                request.MotivoConsulta,
-                request.TensionArterial,
-                request.FrecuenciaCardiaca,
-                request.FrecuenciaRespiratoria,
-                request.Temperatura,
-                request.SaturacionO2,
-                request.GlicemiaCapilar,
-                request.UsuarioRegistro
+                motivoConsulta,
+                tensionArterial,
+                frecuenciaCardiaca,
+                frecuenciaRespiratoria,
+                temperatura,
+                saturacionO2,
+                glicemiaCapilar,
+                request.UsuarioRegistro,
+                descripcionRapida,
+                descripcionDetallada
             );
+
+            // Determinar valores de Valoración Física
+            string estadoConciencia = request.RegistrarValoracionFisica ? request.EstadoConciencia : (lastValoracion?.EstadoConciencia ?? request.EstadoConciencia ?? "Alerta");
+            int glasgowOcular = request.RegistrarValoracionFisica ? request.GlasgowOcular : (lastValoracion?.GlasgowOcular ?? request.GlasgowOcular);
+            int glasgowVerbal = request.RegistrarValoracionFisica ? request.GlasgowVerbal : (lastValoracion?.GlasgowVerbal ?? request.GlasgowVerbal);
+            int glasgowMotor = request.RegistrarValoracionFisica ? request.GlasgowMotor : (lastValoracion?.GlasgowMotor ?? request.GlasgowMotor);
+            int glasgowTotal = request.RegistrarValoracionFisica ? request.GlasgowTotal : (lastValoracion?.GlasgowTotal ?? request.GlasgowTotal);
+            string viaAerea = request.RegistrarValoracionFisica ? request.ViaAerea : (lastValoracion?.ViaAerea ?? request.ViaAerea ?? "Permeable");
+            string ventilacion = request.RegistrarValoracionFisica ? request.Ventilacion : (lastValoracion?.Ventilacion ?? request.Ventilacion ?? "Normal");
+            string pulso = request.RegistrarValoracionFisica ? request.Pulso : (lastValoracion?.Pulso ?? request.Pulso ?? "Rítmico");
+            string pielMucosas = request.RegistrarValoracionFisica ? request.PielMucosas : (lastValoracion?.PielMucosas ?? request.PielMucosas ?? "Normocoloreada");
+            string llenadoCapilar = request.RegistrarValoracionFisica ? request.LlenadoCapilar : (lastValoracion?.LlenadoCapilar ?? request.LlenadoCapilar ?? "< 2 segundos");
+            string pupilas = request.RegistrarValoracionFisica ? request.Pupilas : (lastValoracion?.Pupilas ?? request.Pupilas ?? "Isocóricas");
+            string accesosVenosos = request.RegistrarValoracionFisica ? request.AccesosVenosos : (lastValoracion?.AccesosVenosos ?? request.AccesosVenosos ?? "No");
+            string pertenencias = request.RegistrarValoracionFisica ? request.Pertenencias : (lastValoracion?.Pertenencias ?? request.Pertenencias ?? "Entregadas a familiar");
+
+            // Determinar valores de Antecedentes Médicos
+            string alergias = request.RegistrarAntecedentes ? request.Alergias : (lastValoracion?.Alergias ?? request.Alergias ?? "Ninguna");
+            string antecedentesMedicos = request.RegistrarAntecedentes ? request.AntecedentesMedicos : (lastValoracion?.AntecedentesMedicos ?? request.AntecedentesMedicos ?? "Ninguno");
 
             // Registrar Valoración Física
             var valoracion = new ValoracionFisica(
                 request.CuentaServicioId,
-                request.EstadoConciencia,
-                request.GlasgowOcular,
-                request.GlasgowVerbal,
-                request.GlasgowMotor,
-                request.GlasgowTotal,
-                request.ViaAerea,
-                request.Ventilacion,
-                request.Pulso,
-                request.PielMucosas,
-                request.LlenadoCapilar,
-                request.Pupilas,
-                request.Alergias,
-                request.AccesosVenosos,
-                request.Pertenencias,
-                request.AntecedentesMedicos,
+                estadoConciencia,
+                glasgowOcular,
+                glasgowVerbal,
+                glasgowMotor,
+                glasgowTotal,
+                viaAerea,
+                ventilacion,
+                pulso,
+                pielMucosas,
+                llenadoCapilar,
+                pupilas,
+                alergias,
+                accesosVenosos,
+                pertenencias,
+                antecedentesMedicos,
                 request.UsuarioRegistro
             );
 
@@ -94,7 +139,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 Pertenencias = valoracion.Pertenencias,
                 AntecedentesMedicos = valoracion.AntecedentesMedicos,
                 FechaRegistro = triage.FechaRegistro,
-                UsuarioRegistro = triage.UsuarioRegistro
+                UsuarioRegistro = triage.UsuarioRegistro,
+                DescripcionRapida = triage.DescripcionRapida,
+                DescripcionDetallada = triage.DescripcionDetallada
             };
         }
     }

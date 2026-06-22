@@ -186,7 +186,28 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // Previene DbUpdateConcurrencyException (V10.9 SQL Direct)
                 foreach (var acc in accountsToBill)
                 {
-                    await _billingRepository.ForzarCierreCuentaAsync(acc.Id, DateTime.UtcNow, cancellationToken);
+                    string? dest = acc.Id == request.CuentaId ? request.DestinoPaciente : null;
+                    string? relevo = acc.Id == request.CuentaId ? request.PersonalRelevo : null;
+                    await _billingRepository.ForzarCierreCuentaAsync(acc.Id, DateTime.UtcNow, dest, relevo, cancellationToken);
+                }
+
+                // Si es un traslado clínico interno, creamos automáticamente una nueva cuenta (hija) en la ubicación destino
+                bool esTrasladoClinico = request.DestinoPaciente == "Hospitalización (Piso)" || 
+                                         request.DestinoPaciente == "Quirófano" || 
+                                         request.DestinoPaciente == "UCI";
+
+                if (esTrasladoClinico)
+                {
+                    Guid parentCuentaId = cuenta.CuentaPrincipalId ?? cuenta.Id;
+                    var nuevaCuenta = new CuentaServicios(
+                        cuenta.PacienteId,
+                        request.UsuarioCajero ?? "cajero",
+                        EstadoConstants.Hospitalizacion, // "Hospitalizacion"
+                        cuenta.ConvenioId
+                    );
+                    
+                    nuevaCuenta.VincularCuentaPrincipal(parentCuentaId);
+                    await _context.CuentasServicios.AddAsync(nuevaCuenta, cancellationToken);
                 }
 
                 // 4.4 Persistimos los demás objetos locales (Recibo, AR)

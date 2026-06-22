@@ -13,5 +13,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string UsuarioCajero { get; set; }
         public string UsuarioId { get; set; }
         public bool Consolidar { get; set; }
+        public string? DestinoPaciente { get; set; }
+        public string? PersonalRelevo { get; set; }
     }
 }

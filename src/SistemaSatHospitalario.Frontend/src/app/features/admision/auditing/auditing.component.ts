@@ -67,7 +67,13 @@ export class AuditingComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   // Tabs layout
-  public currentTab = signal<'cuentas' | 'ordenes-directas'>('cuentas');
+  public currentTab = signal<'cuentas' | 'ordenes-directas' | 'cargas-enfermeria'>('cuentas');
+
+  // --- TAB 3: CARGAS DE ENFERMERÍA ---
+  public nurseAuditData = signal<any[]>([]);
+  public nurseAuditStartDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public nurseAuditEndDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
+  public nurseAuditSearch = signal<string>('');
 
   // --- TAB 1: CUENTAS POR AUDITAR ---
   public receivables = signal<PendingAR[]>([]);
@@ -145,15 +151,17 @@ export class AuditingComponent implements OnInit {
     });
   }
 
-  public setTab(tab: 'cuentas' | 'ordenes-directas') {
+  public setTab(tab: 'cuentas' | 'ordenes-directas' | 'cargas-enfermeria') {
     this.currentTab.set(tab);
     this.expandedRows.set(new Set());
     this.expandedDirectRows.set(new Set());
     
     if (tab === 'cuentas') {
       this.refresh();
-    } else {
+    } else if (tab === 'ordenes-directas') {
       this.loadPendingDirectOrders();
+    } else if (tab === 'cargas-enfermeria') {
+      this.loadNurseAuditReport();
     }
   }
 
@@ -363,5 +371,32 @@ export class AuditingComponent implements OnInit {
     } else {
       alert('Esta cuenta aún no tiene un recibo de cobro generado.');
     }
+  }
+
+  // --- Lógica de Cargas de Enfermería ---
+  public loadNurseAuditReport() {
+    this.isLoading.set(true);
+    const start = this.nurseAuditStartDate();
+    const end = this.nurseAuditEndDate();
+    this.http.get<any[]>(`${environment.apiUrl}/api/Billing/nurse-audit-report?startDate=${start}&endDate=${end}`)
+      .subscribe({
+        next: (res) => {
+          const search = this.nurseAuditSearch().toLowerCase().trim();
+          if (search) {
+            this.nurseAuditData.set(res.filter(r =>
+              (r.nurseName || '').toLowerCase().includes(search) ||
+              (r.patientName || '').toLowerCase().includes(search) ||
+              (r.description || '').toLowerCase().includes(search)
+            ));
+          } else {
+            this.nurseAuditData.set(res);
+          }
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          console.error('[AUDITING] Error al cargar reporte de enfermería:', err);
+          this.isLoading.set(false);
+        }
+      });
   }
 }

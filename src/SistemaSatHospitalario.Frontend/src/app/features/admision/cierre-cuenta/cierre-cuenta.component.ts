@@ -697,6 +697,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       usuarioCajero: currentUser?.username || 'admin',
       usuarioId: currentUser?.id || '',
       tasaCambio: this.tasaCambioDia(),
+      destinoPaciente: this.destinoPaciente(),
+      personalRelevo: this.personalRelevo(),
       pagos: finalPayments
     };
 
@@ -931,7 +933,13 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
           accesosVenosos: this.triageAccesosVenososTrae() ? `Sí (${this.triageAccesosVenososLugar().trim() || 'No especificado'})` : 'No',
           pertenencias: this.triagePertenencias(),
           antecedentesMedicos: antecedentes,
-          usuarioRegistro: currentUser?.username || 'admin'
+          usuarioRegistro: currentUser?.username || 'admin',
+          registrarConstantesVitales: true,
+          registrarValoracionFisica: true,
+          registrarAntecedentes: true,
+          registrarEstadoActual: true,
+          descripcionRapida: rawMotivo,
+          descripcionDetallada: `Ingreso inicial por: ${rawMotivo}. Clasificación: ${clasificacion}`
         };
 
         // 3. Registrar el Triage y Valoración Física

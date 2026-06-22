@@ -74,7 +74,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Pertenencias = valoracion.Pertenencias,
                         AntecedentesMedicos = valoracion.AntecedentesMedicos,
                         FechaRegistro = triage.FechaRegistro,
-                        UsuarioRegistro = triage.UsuarioRegistro
+                        UsuarioRegistro = triage.UsuarioRegistro,
+                        DescripcionRapida = triage.DescripcionRapida,
+                        DescripcionDetallada = triage.DescripcionDetallada
                     });
                 }
             }
