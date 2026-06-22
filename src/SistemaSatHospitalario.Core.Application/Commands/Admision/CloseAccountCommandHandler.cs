@@ -186,6 +186,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // Previene DbUpdateConcurrencyException (V10.9 SQL Direct)
                 foreach (var acc in accountsToBill)
                 {
+                    acc.Facturar();
+                    if (acc.Id == request.CuentaId)
+                    {
+                        acc.RegistrarDestinoEgreso(request.DestinoPaciente, request.PersonalRelevo);
+                    }
                     string? dest = acc.Id == request.CuentaId ? request.DestinoPaciente : null;
                     string? relevo = acc.Id == request.CuentaId ? request.PersonalRelevo : null;
                     await _billingRepository.ForzarCierreCuentaAsync(acc.Id, DateTime.UtcNow, dest, relevo, cancellationToken);

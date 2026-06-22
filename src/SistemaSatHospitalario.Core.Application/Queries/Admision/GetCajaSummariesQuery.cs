@@ -9,6 +9,7 @@ using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -98,18 +99,74 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var openCajaIds = list.Where(c => c.Estado == EstadoConstants.CajaAbierta).Select(c => c.Id).ToList();
             if (openCajaIds.Any())
             {
-                var openCajaTotals = await _context.RecibosFactura
+                var catalogoMetodos = await _context.CatalogoMetodosPago
+                    .Where(m => m.Activo)
+                    .OrderBy(m => m.Orden)
+                    .ToListAsync(cancellationToken);
+
+                var openCajaRecibos = await _context.RecibosFactura
+                    .Include(r => r.DetallesPago)
                     .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
-                    .SelectMany(r => r.DetallesPago)
-                    .GroupBy(p => p.ReciboFactura.CajaDiariaId)
-                    .Select(g => new { CajaDiariaId = g.Key!.Value, Total = g.Sum(p => p.EquivalenteAbonadoBase) })
-                    .ToDictionaryAsync(x => x.CajaDiariaId, x => x.Total, cancellationToken);
+                    .ToListAsync(cancellationToken);
+
+                var receiptsByCaja = openCajaRecibos.GroupBy(r => r.CajaDiariaId!.Value).ToDictionary(g => g.Key, g => g.ToList());
 
                 foreach (var item in list)
                 {
                     if (item.Estado == EstadoConstants.CajaAbierta)
                     {
-                        item.TotalCobrado = openCajaTotals.TryGetValue(item.Id, out var total) ? total : 0m;
+                        var recibos = receiptsByCaja.TryGetValue(item.Id, out var rList) ? rList : new List<ReciboFactura>();
+                        var allPayments = recibos.SelectMany(r => r.DetallesPago).ToList();
+
+                        var listMetodosDesglose = new List<object>();
+                        decimal totalCobradoBaseUSD = 0;
+
+                        var metodosPrincipales = catalogoMetodos.Where(m => !m.EsVuelto).ToList();
+                        foreach (var metodo in metodosPrincipales)
+                        {
+                            string vueltoMetodoValor = string.Empty;
+                            if (metodo.Valor == "Dolar Efectivo") vueltoMetodoValor = "Vuelto Efectivo USD";
+                            else if (metodo.Valor == "Efectivo BS") vueltoMetodoValor = "Vuelto Efectivo BS";
+                            else if (metodo.Valor == "Pago Movil") vueltoMetodoValor = "Vuelto Pago Movil";
+
+                            var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
+                            decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
+                            decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
+
+                            decimal esperadoVueltosOriginal = 0;
+                            decimal esperadoVueltosBase = 0;
+                            if (!string.IsNullOrEmpty(vueltoMetodoValor))
+                            {
+                                var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
+                                esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
+                                esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
+                            }
+
+                            decimal esperadoNetoOriginal = esperadoIngresoOriginal - esperadoVueltosOriginal;
+                            decimal esperadoNetoBase = esperadoIngresoBase - esperadoVueltosBase;
+
+                            totalCobradoBaseUSD += esperadoNetoBase;
+
+                            listMetodosDesglose.Add(new
+                            {
+                                MetodoPago = metodo.Valor,
+                                Nombre = metodo.Nombre,
+                                EsUSD = metodo.EsUSD,
+                                MontoIngreso = esperadoIngresoOriginal,
+                                MontoVueltos = esperadoVueltosOriginal,
+                                TotalDeclarado = esperadoNetoOriginal,
+                                MontoEsperadoIngreso = esperadoIngresoOriginal,
+                                MontoEsperadoVueltos = esperadoVueltosOriginal,
+                                TotalEsperado = esperadoNetoOriginal,
+                                DiferenciaOriginal = 0m,
+                                DiferenciaBase = 0m
+                            });
+                        }
+
+                        item.TotalCobrado = totalCobradoBaseUSD;
+                        item.TotalIngresado = totalCobradoBaseUSD;
+                        item.Diferencia = 0m;
+                        item.DeclaracionCierreJson = JsonSerializer.Serialize(listMetodosDesglose);
                     }
                 }
             }

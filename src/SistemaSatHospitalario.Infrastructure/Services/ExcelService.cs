@@ -125,5 +125,166 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                 }
             }
         }
+
+        public byte[] GenerateDetailedCashierReport(IEnumerable<CajeroReportDto> data, decimal grandTotalEsperado, decimal grandTotalRecaudado)
+        {
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Cierres de Caja");
+                
+                int currentRow = 2;
+
+                foreach (var cajero in data)
+                {
+                    // Título del Cajero
+                    worksheet.Cell(currentRow, 1).Value = $"CAJERO: {cajero.FullName.ToUpper()} ({cajero.Username.ToUpper()})";
+                    worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
+                    worksheet.Cell(currentRow, 1).Style.Font.FontSize = 14;
+                    worksheet.Cell(currentRow, 1).Style.Font.FontColor = XLColor.FromHtml("#1e293b"); // Slate 800
+                    currentRow++;
+
+                    worksheet.Cell(currentRow, 1).Value = $"Estado de Caja: {cajero.EstadoCaja} | Total Cobrado: {cajero.TotalCobrado} USD | Total Declarado: {cajero.TotalIngresado} USD";
+                    worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
+                    worksheet.Cell(currentRow, 1).Style.Font.FontSize = 10;
+                    worksheet.Cell(currentRow, 1).Style.Font.FontColor = XLColor.FromHtml("#64748b"); // Slate 500
+                    currentRow += 2;
+
+                    // Encabezados de Pagos
+                    worksheet.Cell(currentRow, 1).Value = "FECHA/HORA";
+                    worksheet.Cell(currentRow, 2).Value = "PACIENTE";
+                    worksheet.Cell(currentRow, 3).Value = "CEDULA";
+                    worksheet.Cell(currentRow, 4).Value = "CONCEPTO";
+                    worksheet.Cell(currentRow, 5).Value = "METODO PAGO";
+                    worksheet.Cell(currentRow, 6).Value = "MONTO ORIG.";
+                    worksheet.Cell(currentRow, 7).Value = "EQV. USD";
+
+                    var headerRange = worksheet.Range(currentRow, 1, currentRow, 7);
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#475569"); // Slate 600
+                    headerRange.Style.Font.FontColor = XLColor.White;
+                    headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    currentRow++;
+
+                    // Listar Pagos de este Cajero
+                    if (cajero.Pagos != null && cajero.Pagos.Any())
+                    {
+                        foreach (var pago in cajero.Pagos)
+                        {
+                            worksheet.Cell(currentRow, 1).Value = pago.Fecha.ToString("HH:mm");
+                            worksheet.Cell(currentRow, 2).Value = pago.PacienteNombre;
+                            worksheet.Cell(currentRow, 3).Value = pago.PacienteCedula;
+                            worksheet.Cell(currentRow, 4).Value = pago.Concepto;
+                            worksheet.Cell(currentRow, 5).Value = pago.MetodoPago;
+                            
+                            // Formato de Monto Original
+                            worksheet.Cell(currentRow, 6).Value = pago.MontoMonedaOriginal;
+                            worksheet.Cell(currentRow, 6).Style.NumberFormat.Format = pago.Moneda == "$" ? "$ #,##0.00" : "Bs. #,##0.00";
+                            
+                            // Formato de Equivalente USD
+                            worksheet.Cell(currentRow, 7).Value = pago.EquivalenteUSD;
+                            worksheet.Cell(currentRow, 7).Style.NumberFormat.Format = "$ #,##0.00";
+
+                            // Alineaciones
+                            worksheet.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                            worksheet.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                            worksheet.Cell(currentRow, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                            worksheet.Cell(currentRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                            currentRow++;
+                        }
+                    }
+                    else
+                    {
+                        worksheet.Cell(currentRow, 1).Value = "Sin transacciones de cobro registradas hoy.";
+                        worksheet.Range(currentRow, 1, currentRow, 7).Merge();
+                        worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
+                        worksheet.Cell(currentRow, 1).Style.Font.FontColor = XLColor.Gray;
+                        currentRow++;
+                    }
+
+                    currentRow++;
+
+                    // Tabla de Arqueo / Cierre por Método de Pago
+                    worksheet.Cell(currentRow, 2).Value = "RESUMEN DE ARQUEO / CIERRE";
+                    worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+                    worksheet.Cell(currentRow, 2).Style.Font.FontSize = 10;
+                    worksheet.Cell(currentRow, 2).Style.Font.FontColor = XLColor.FromHtml("#0f172a"); // Slate 900
+                    currentRow++;
+
+                    worksheet.Cell(currentRow, 2).Value = "METODO";
+                    worksheet.Cell(currentRow, 3).Value = "ESPERADO";
+                    worksheet.Cell(currentRow, 4).Value = "DECLARADO";
+                    worksheet.Cell(currentRow, 5).Value = "DIFERENCIA";
+
+                    var arqueoHeaderRange = worksheet.Range(currentRow, 2, currentRow, 5);
+                    arqueoHeaderRange.Style.Font.Bold = true;
+                    arqueoHeaderRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#cbd5e1"); // Slate 300
+                    arqueoHeaderRange.Style.Font.FontColor = XLColor.FromHtml("#0f172a");
+                    arqueoHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    currentRow++;
+
+                    if (cajero.Desglose != null && cajero.Desglose.Any())
+                    {
+                        foreach (var d in cajero.Desglose)
+                        {
+                            worksheet.Cell(currentRow, 2).Value = d.Nombre;
+                            
+                            worksheet.Cell(currentRow, 3).Value = d.Esperado;
+                            worksheet.Cell(currentRow, 3).Style.NumberFormat.Format = d.EsUSD ? "$ #,##0.00" : "Bs. #,##0.00";
+                            
+                            worksheet.Cell(currentRow, 4).Value = d.Declarado;
+                            worksheet.Cell(currentRow, 4).Style.NumberFormat.Format = d.EsUSD ? "$ #,##0.00" : "Bs. #,##0.00";
+                            
+                            worksheet.Cell(currentRow, 5).Value = d.Diferencia;
+                            worksheet.Cell(currentRow, 5).Style.NumberFormat.Format = d.EsUSD ? "$ #,##0.00" : "Bs. #,##0.00";
+                            if (d.Diferencia < 0) worksheet.Cell(currentRow, 5).Style.Font.FontColor = XLColor.Red;
+                            else if (d.Diferencia > 0) worksheet.Cell(currentRow, 5).Style.Font.FontColor = XLColor.Green;
+
+                            currentRow++;
+                        }
+                    }
+
+                    // Fila de separación
+                    currentRow += 3;
+                }
+
+                // Gran Total Diario Consolidado
+                worksheet.Cell(currentRow, 1).Value = "====================================================================================";
+                currentRow++;
+                worksheet.Cell(currentRow, 1).Value = "TOTAL DIARIO CONSOLIDADO GENERAL";
+                worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
+                worksheet.Cell(currentRow, 1).Style.Font.FontSize = 14;
+                worksheet.Cell(currentRow, 1).Style.Font.FontColor = XLColor.FromHtml("#9f1239"); // Rose 800
+                currentRow++;
+
+                worksheet.Cell(currentRow, 1).Value = "TOTAL ESPERADO GLOBAL:";
+                worksheet.Cell(currentRow, 2).Value = grandTotalEsperado;
+                worksheet.Cell(currentRow, 2).Style.NumberFormat.Format = "$ #,##0.00";
+                worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+                currentRow++;
+
+                worksheet.Cell(currentRow, 1).Value = "TOTAL RECAUDADO GLOBAL:";
+                worksheet.Cell(currentRow, 2).Value = grandTotalRecaudado;
+                worksheet.Cell(currentRow, 2).Style.NumberFormat.Format = "$ #,##0.00";
+                worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+                currentRow++;
+
+                decimal diffGlobal = grandTotalRecaudado - grandTotalEsperado;
+                worksheet.Cell(currentRow, 1).Value = "DIFERENCIA NETA GLOBAL:";
+                worksheet.Cell(currentRow, 2).Value = diffGlobal;
+                worksheet.Cell(currentRow, 2).Style.NumberFormat.Format = "$ #,##0.00";
+                worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+                if (diffGlobal < 0) worksheet.Cell(currentRow, 2).Style.Font.FontColor = XLColor.Red;
+                else if (diffGlobal > 0) worksheet.Cell(currentRow, 2).Style.Font.FontColor = XLColor.Green;
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
+        }
     }
 }

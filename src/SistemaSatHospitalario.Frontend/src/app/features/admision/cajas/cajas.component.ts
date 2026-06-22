@@ -76,7 +76,8 @@ export class CajasComponent implements OnInit, OnDestroy {
 
   // Estados de Declaración (Fase 1)
   public paymentMethods = signal<any[]>([]);
-  public declaracionInputs = signal<{[key: string]: {montoIngreso: number, montoVueltos: number}}>({});
+  public filterState = signal<string>('TODAS');
+  public selectedCajaId = signal<string | null>(null);
 
   // Cierre de caja en progreso (modal/auditoría)
   public selectedCajaParaAuditar = signal<any | null>(null);
@@ -84,13 +85,10 @@ export class CajasComponent implements OnInit, OnDestroy {
   // Cómputo de la tabla de cierre (En caliente)
   public tableRows = computed(() => {
     const methods = this.paymentMethods();
-    const inputs = this.declaracionInputs();
     const report = this.personalReport();
     const tasa = this.tasaCambio();
 
     return methods.map(m => {
-      const input = inputs[m.value] || { montoIngreso: 0, montoVueltos: 0 };
-      
       // Encontrar el esperado en el reporte personal
       const esperadoIngreso = report?.desgloseMetodos?.find(d => d.metodo === m.value)?.montoMonedaOriginal || 0;
       
@@ -103,23 +101,32 @@ export class CajasComponent implements OnInit, OnDestroy {
       const esperadoVuelto = report?.desgloseMetodos?.find(d => d.metodo === vueltoMetodo)?.montoMonedaOriginal || 0;
       const esperadoVueltoAbs = Math.abs(esperadoVuelto);
 
-      const totalDeclarado = input.montoIngreso - input.montoVueltos;
       const totalEsperado = esperadoIngreso - esperadoVueltoAbs;
-      const diferencia = totalDeclarado - totalEsperado;
 
       return {
         value: m.value,
         name: m.name,
         isUSD: m.isUSD,
-        montoIngreso: input.montoIngreso,
-        montoVueltos: input.montoVueltos,
-        totalDeclarado,
+        montoIngreso: esperadoIngreso,
+        montoVueltos: esperadoVueltoAbs,
+        totalDeclarado: totalEsperado,
         esperadoIngreso,
         esperadoVuelto: esperadoVueltoAbs,
         totalEsperado,
-        diferencia
+        diferencia: 0
       };
     });
+  });
+
+  // Filtro de cierres reactivo
+  public cierresFiltrados = computed(() => {
+    const list = this.historialAdmin()?.cierres || [];
+    const filter = this.filterState();
+    if (filter === 'TODAS') return list;
+    if (filter === 'ABIERTAS') return list.filter(c => c.estado === 'Abierta');
+    if (filter === 'PENDIENTES') return list.filter(c => c.estado === 'CerradaPorAsistente');
+    if (filter === 'CONSOLIDADAS') return list.filter(c => c.estado === 'Cerrada');
+    return list;
   });
 
   public totalIngresadoUSD = computed(() => {
@@ -168,17 +175,8 @@ export class CajasComponent implements OnInit, OnDestroy {
       next: (res) => {
         const methods = res.filter(x => !x.isVuelto);
         this.paymentMethods.set(methods);
-        this.initInputs(methods);
       }
     });
-  }
-
-  initInputs(methods: any[]) {
-    const inputs: any = {};
-    methods.forEach(m => {
-      inputs[m.value] = { montoIngreso: 0, montoVueltos: 0 };
-    });
-    this.declaracionInputs.set(inputs);
   }
 
   checkStatus() {
@@ -189,15 +187,6 @@ export class CajasComponent implements OnInit, OnDestroy {
       },
       error: (err) => console.log("Usuario sin actividad hoy todavía.")
     });
-  }
-
-  updateInputValue(methodValue: string, field: 'montoIngreso' | 'montoVueltos', value: number) {
-    const current = { ...this.declaracionInputs() };
-    if (!current[methodValue]) {
-      current[methodValue] = { montoIngreso: 0, montoVueltos: 0 };
-    }
-    current[methodValue][field] = value || 0;
-    this.declaracionInputs.set(current);
   }
 
   cerrarMiCaja() {
@@ -340,5 +329,22 @@ export class CajasComponent implements OnInit, OnDestroy {
         this.errorMessage.set("Error al exportar su reporte de caja");
       }
     });
+  }
+
+  toggleCajaDetalle(cajaId: string) {
+    if (this.selectedCajaId() === cajaId) {
+      this.selectedCajaId.set(null);
+    } else {
+      this.selectedCajaId.set(cajaId);
+    }
+  }
+
+  obtenerDesglose(caja: any): any[] {
+    if (!caja.declaracionCierreJson) return [];
+    try {
+      return JSON.parse(caja.declaracionCierreJson);
+    } catch {
+      return [];
+    }
   }
 }
