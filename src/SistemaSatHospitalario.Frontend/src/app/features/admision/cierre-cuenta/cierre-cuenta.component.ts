@@ -1041,4 +1041,10 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         }
       });
   }
+
+  public obtenerNombreMedico(id: string | null): string {
+    if (!id) return '--- SIN ASIGNAR ---';
+    const medico = this.medicos().find(m => m.id === id);
+    return medico ? medico.nombre : '--- SIN ASIGNAR ---';
+  }
 }

@@ -806,11 +806,13 @@
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-white/[0.02] items-center">
                         <span class="text-slate-500">Fecha de Egreso</span>
-                        <input type="date" [(ngModel)]="fechaEgreso" class="bg-black/30 border border-white/10 px-2 py-1 rounded text-white text-[11px] font-bold outline-none focus:border-primary">
+                        <input *ngIf="canCollectAndClose()" type="date" [(ngModel)]="fechaEgreso" class="bg-black/30 border border-white/10 px-2 py-1 rounded text-white text-[11px] font-bold outline-none focus:border-primary">
+                        <span *ngIf="!canCollectAndClose()" class="text-white font-mono text-[11px] font-bold">{{ fechaEgreso() }}</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-white/[0.02] items-center">
                         <span class="text-slate-500">Hora de Egreso</span>
-                        <input type="time" [(ngModel)]="horaEgreso" class="bg-black/30 border border-white/10 px-2 py-1 rounded text-white text-[11px] font-bold outline-none focus:border-primary">
+                        <input *ngIf="canCollectAndClose()" type="time" [(ngModel)]="horaEgreso" class="bg-black/30 border border-white/10 px-2 py-1 rounded text-white text-[11px] font-bold outline-none focus:border-primary">
+                        <span *ngIf="!canCollectAndClose()" class="text-white font-mono text-[11px] font-bold">{{ horaEgreso() }}</span>
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-white/[0.02]">
                         <span class="text-slate-500">Días de Estancia</span>
@@ -818,15 +820,17 @@
                     </div>
                     <div class="flex justify-between py-1.5 border-b border-white/[0.02] items-center">
                         <span class="text-slate-500">Médico Tratante</span>
-                        <select [ngModel]="medicoTratanteId()" (ngModelChange)="medicoTratanteId.set($event)"
+                        <select *ngIf="canCollectAndClose()" [ngModel]="medicoTratanteId()" (ngModelChange)="medicoTratanteId.set($event)"
                             class="bg-black/30 border border-white/10 px-2 py-1 rounded text-white text-[11px] font-bold outline-none focus:border-primary max-w-[150px] truncate">
                             <option [value]="null">--- Seleccionar ---</option>
                             <option *ngFor="let m of medicos()" [value]="m.id">{{ m.nombre | uppercase }}</option>
                         </select>
+                        <span *ngIf="!canCollectAndClose()" class="text-white text-[11px] font-bold uppercase truncate max-w-[150px]">{{ obtenerNombreMedico(medicoTratanteId()) }}</span>
                     </div>
                     <div class="flex flex-col gap-1.5 pt-2">
                         <span class="text-slate-500">Diagnóstico Principal</span>
-                        <textarea [(ngModel)]="diagnostico" class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary h-20 uppercase"></textarea>
+                        <textarea *ngIf="canCollectAndClose()" [(ngModel)]="diagnostico" class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary h-20 uppercase"></textarea>
+                        <p *ngIf="!canCollectAndClose()" class="text-white text-[11px] font-bold uppercase bg-black/25 border border-white/5 px-3 py-2 rounded-xl min-h-[40px]">{{ diagnostico() }}</p>
                     </div>
 
                     <!-- Condición y Destino Final de Egreso de Urgencias -->
@@ -942,8 +946,8 @@
                 </div>
             </div>
 
-            <!-- Panel Clínico: Cargar Servicio, Consulta o Medicamento (Solo para Emergencia y accesible por todos los autorizados) -->
-            <div *ngIf="type() === 'Emergencia'" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6 relative overflow-hidden">
+            <!-- Panel Clínico: Cargar Servicio, Consulta o Medicamento (Solo para Emergencia y accesible por Cajeros/Administrativos) -->
+            <div *ngIf="type() === 'Emergencia' && canCollectAndClose()" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
                 <div class="flex items-center justify-between pb-3 border-b border-white/5">
                     <div class="flex items-center space-x-3">
@@ -1115,22 +1119,31 @@
                 </div>
             </div>
 
-            <!-- Panel informativo para personal de enfermería / clínico (Oculta botones de cobro/cierre) -->
-            <div *ngIf="!canCollectAndClose()" class="glass-panel p-6 rounded-[2rem] border border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 bg-rose-500/5">
-                <div class="flex items-center space-x-4">
-                    <div class="h-10 w-10 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl flex items-center justify-center shadow-lg">
-                        <lucide-icon [name]="icons.Info" class="w-5 h-5"></lucide-icon>
+            <!-- Panel informativo para personal de enfermería / clínico (Oculta botones de cobro/cierre, pero permite procesar egreso/traslado) -->
+            <div *ngIf="!canCollectAndClose()" class="glass-panel p-6 rounded-[2rem] border border-white/5 flex flex-col gap-6 bg-rose-500/5">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="h-10 w-10 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl flex items-center justify-center shadow-lg">
+                            <lucide-icon [name]="icons.Info" class="w-5 h-5"></lucide-icon>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-black text-white uppercase tracking-wider">Módulo de Carga Clínica (Emergencia)</h4>
+                            <p class="text-[9px] text-slate-400 font-bold leading-normal mt-1 max-w-lg">
+                                Los servicios y medicamentos registrados se acumularán en la cuenta del paciente. El cobro final y la facturación de egreso serán procesados en ventanilla por el personal administrativo.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="text-xs font-black text-white uppercase tracking-wider">Módulo de Carga Clínica (Emergencia)</h4>
-                        <p class="text-[9px] text-slate-400 font-bold leading-normal mt-1 max-w-lg">
-                            Los servicios y medicamentos registrados se acumularán en la cuenta del paciente. El cobro final y la facturación de egreso serán procesados en ventanilla por el personal administrativo.
-                        </p>
+                    <div class="text-right">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Subtotal Acumulado</span>
+                        <span class="text-xl font-black text-white font-mono">$ {{ totalGeneral() | number:'1.2-2' }}</span>
                     </div>
                 </div>
-                <div class="text-right">
-                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Subtotal Acumulado</span>
-                    <span class="text-xl font-black text-white font-mono">$ {{ totalGeneral() | number:'1.2-2' }}</span>
+
+                <div *ngIf="type() === 'Emergencia'" class="border-t border-white/5 pt-4 flex justify-end">
+                    <button (click)="procesarCierre()" [disabled]="isLoading()"
+                        class="w-full md:w-auto px-8 py-4 bg-primary hover:bg-rose-600 text-white rounded-[1.2rem] font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 min-h-[48px]">
+                        {{ isLoading() ? 'Procesando...' : 'Procesar Traslado y Egreso' }}
+                    </button>
                 </div>
             </div>
 

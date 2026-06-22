@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+import { MedicoService, Medico } from '../../core/services/medico.service';
 import { 
   LucideAngularModule, 
   Search, 
@@ -39,6 +40,7 @@ import {
 export class EnfermeriaComponent implements OnInit {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private medicoService = inject(MedicoService);
 
   readonly icons = {
     Search,
@@ -68,6 +70,7 @@ export class EnfermeriaComponent implements OnInit {
   public activeAccounts = signal<any[]>([]);
   public convenios = signal<any[]>([]);
   public servicesCatalog = signal<any[]>([]);
+  public medicos = signal<Medico[]>([]);
   
   // Selected Patient / Timeline
   public selectedAccount = signal<any | null>(null);
@@ -124,6 +127,7 @@ export class EnfermeriaComponent implements OnInit {
   public fastChargeSearchTerm = signal<string>('');
   public filteredServices = signal<any[]>([]);
   public selectedService = signal<any | null>(null);
+  public selectedMedicoId = signal<string | null>(null);
   public fastChargeQuantity = 1;
   public isSavingFastCharge = signal<boolean>(false);
 
@@ -197,6 +201,12 @@ export class EnfermeriaComponent implements OnInit {
         next: (res) => this.convenios.set(res),
         error: (err) => console.error('[ENFERMERIA] Error loading convenios:', err)
       });
+
+    // Cargar médicos activos
+    this.medicoService.getAll().subscribe({
+      next: (res) => this.medicos.set(res.filter(m => m.activo)),
+      error: (err) => console.error('[ENFERMERIA] Error loading medicos:', err)
+    });
   }
 
   public selectAccount(account: any): void {
@@ -430,6 +440,7 @@ export class EnfermeriaComponent implements OnInit {
     this.fastChargeSearchTerm.set(service.descripcion);
     this.filteredServices.set([]);
     this.fastChargeQuantity = 1;
+    this.selectedMedicoId.set(null);
   }
 
   public submitFastCharge(): void {
@@ -437,9 +448,15 @@ export class EnfermeriaComponent implements OnInit {
     const service = this.selectedService();
     if (!active || !service) return;
 
+    const requiresMedico = service.honorarioBase > 0 || service.categoryId === 1 || service.categoryId === 3 || service.categoryId === 6;
+    if (requiresMedico && !this.selectedMedicoId()) {
+      alert('Por favor, seleccione el médico tratante para este servicio/consulta.');
+      return;
+    }
+
     this.isSavingFastCharge.set(true);
 
-    const payload = {
+    const payload: any = {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
@@ -452,6 +469,11 @@ export class EnfermeriaComponent implements OnInit {
       usuarioCarga: '' // Se sobreescribe en Backend
     };
 
+    if (this.selectedMedicoId()) {
+      payload.medicoId = this.selectedMedicoId();
+      payload.horaCita = new Date().toISOString(); // Default current time for instant service/consultation
+    }
+
     this.http.post(`${environment.apiUrl}/api/Billing/CargarServicio`, payload)
       .subscribe({
         next: () => {
@@ -459,6 +481,7 @@ export class EnfermeriaComponent implements OnInit {
           this.selectedService.set(null);
           this.fastChargeSearchTerm.set('');
           this.fastChargeQuantity = 1;
+          this.selectedMedicoId.set(null);
           this.isSavingFastCharge.set(false);
           this.refreshAccounts(); // Refresh to see total updates
         },
