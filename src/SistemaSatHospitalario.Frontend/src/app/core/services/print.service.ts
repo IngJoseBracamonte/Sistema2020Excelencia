@@ -177,4 +177,166 @@ export class PrintService {
       </div>
     `;
   }
+
+  generateDischargeReportHtml(patient: any, account: any, triages: any[], destino: string, personalRelevo: string, enfermeroEntrega: string): string {
+    const triageEvents = (triages || []).map((t: any) => ({
+      time: new Date(t.fechaRegistro || t.FechaRegistro),
+      type: 'triage',
+      data: t
+    }));
+    
+    const serviceEvents = (account.detalles || []).map((d: any) => ({
+      time: new Date(d.fechaCarga || d.FechaCarga),
+      type: 'service',
+      data: d
+    }));
+    
+    const timeline = [...triageEvents, ...serviceEvents].sort((a, b) => a.time.getTime() - b.time.getTime());
+    
+    const formatTime = (date: Date) => {
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      return `${hh}:${mm}`;
+    };
+
+    const destinations = ['Alta Médica', 'Hospitalización (Piso)', 'Quirófano', 'UCI', 'Traslado Externo', 'Alta Voluntaria'];
+
+    return `
+      <div style="border: 2px solid #0f172a; padding: 25px; border-radius: 12px; font-family: 'Inter', sans-serif; color: #0f172a; max-width: 800px; margin: 0 auto; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #0f172a; padding-bottom: 12px; margin-bottom: 20px;">
+          <div>
+            <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;">SAT HOSPITALARIO</div>
+            <div style="font-size: 8px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px;">Dirección de Atención Médica de Emergencia</div>
+          </div>
+          <div style="text-align: right;">
+            <h1 style="font-size: 15px; font-weight: 900; margin: 0; color: #e11d48; text-transform: uppercase; letter-spacing: 0.5px;">Reporte de Egreso de Urgencias</h1>
+            <p style="font-size: 9px; font-weight: 700; color: #64748b; margin: 3px 0 0; text-transform: uppercase;">Cuenta: ${account.cuentaId.substring(0, 8).toUpperCase()}</p>
+          </div>
+        </div>
+
+        <!-- Ficha de Admisión -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 11px; margin-bottom: 20px; font-weight: 500;">
+          <div><label style="display: block; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Paciente</label><span style="font-weight: 700; font-size: 12px;">${account.pacienteNombre}</span></div>
+          <div><label style="display: block; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Cédula / ID</label><span style="font-weight: 700; font-family: monospace; font-size: 12px;">${account.pacienteCedula}</span></div>
+          <div><label style="display: block; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Convenio / Seguro</label><span style="font-weight: 700; font-size: 11px; color: #2563eb;">${account.seguroNombre || 'PARTICULAR'}</span></div>
+          
+          <div><label style="display: block; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Diagnóstico de Egreso</label><span style="font-weight: 700; text-transform: uppercase; font-size: 11px;">${patient.diagnostico || 'CONTROL MÉDICO / EVALUACION'}</span></div>
+          <div><label style="display: block; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Fecha/Hora Ingreso</label><span>${new Date(account.fechaCarga).toLocaleString()}</span></div>
+          <div><label style="display: block; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Fecha/Hora Egreso</label><span>${new Date().toLocaleString()}</span></div>
+        </div>
+
+        <!-- Sección 4: Procedimientos y Evolución -->
+        <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-bottom: 12px; margin-top: 25px; letter-spacing: 0.5px;">
+          4. PROCEDIMIENTOS, ADMINISTRACIÓN DE TRATAMIENTOS Y EVOLUCIÓN CRONOLÓGICA
+        </h3>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px; border: 1px solid #cbd5e1;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 10px 8px; text-align: left; width: 10%; border: 1px solid #cbd5e1; font-weight: 900; text-transform: uppercase; font-size: 9px;">Hora</th>
+              <th style="padding: 10px 8px; text-align: left; width: 25%; border: 1px solid #cbd5e1; font-weight: 900; text-transform: uppercase; font-size: 9px;">S. Vitales</th>
+              <th style="padding: 10px 8px; text-align: left; width: 50%; border: 1px solid #cbd5e1; font-weight: 900; text-transform: uppercase; font-size: 9px;">Notas de Enfermería, Procedimientos y Medicamentos Aplicados</th>
+              <th style="padding: 10px 8px; text-align: center; width: 15%; border: 1px solid #cbd5e1; font-weight: 900; text-transform: uppercase; font-size: 9px;">Firma / Sello</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${timeline.length === 0 ? `
+              <tr>
+                <td colspan="4" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; border: 1px solid #e2e8f0; font-size: 11px;">
+                  No se registran procedimientos ni valoraciones de triage para esta cuenta.
+                </td>
+              </tr>
+            ` : timeline.map(event => {
+              if (event.type === 'triage') {
+                const t = event.data;
+                const vitals = [];
+                if (t.tensionArterial || t.TensionArterial) vitals.push(`TA: ${t.tensionArterial || t.TensionArterial}`);
+                if (t.frecuenciaCardiaca || t.FrecuenciaCardiaca) vitals.push(`FC: ${t.frecuenciaCardiaca || t.FrecuenciaCardiaca} lpm`);
+                if (t.frecuenciaRespiratoria || t.FrecuenciaRespiratoria) vitals.push(`FR: ${t.frecuenciaRespiratoria || t.FrecuenciaRespiratoria} rpm`);
+                if (t.temperatura || t.Temperatura) vitals.push(`T°: ${t.temperatura || t.Temperatura} °C`);
+                if (t.saturacionO2 || t.SaturacionO2) vitals.push(`Sat: ${t.saturacionO2 || t.SaturacionO2} %`);
+                if (t.glicemiaCapilar || t.GlicemiaCapilar) vitals.push(`Glic: ${t.glicemiaCapilar || t.GlicemiaCapilar} mg/dL`);
+                
+                const notes = [];
+                if (t.motivoConsulta || t.MotivoConsulta) notes.push(`<strong>Motivo de Consulta:</strong> ${t.motivoConsulta || t.MotivoConsulta}`);
+                
+                const physical = [];
+                if (t.estadoConciencia || t.EstadoConciencia) physical.push(`Conciencia: ${t.estadoConciencia || t.EstadoConciencia}`);
+                if (t.viaAerea || t.ViaAerea) physical.push(`Vía Aérea: ${t.viaAerea || t.ViaAerea}`);
+                if (t.ventilacion || t.Ventilacion) physical.push(`Ventilación: ${t.ventilacion || t.Ventilacion}`);
+                if (t.pulso || t.Pulso) physical.push(`Pulso: ${t.pulso || t.Pulso}`);
+                if (t.pielMucosas || t.PielMucosas) physical.push(`Piel: ${t.pielMucosas || t.PielMucosas}`);
+                if (t.llenadoCapilar || t.LlenadoCapilar) physical.push(`Llenado Capilar: ${t.llenadoCapilar || t.LlenadoCapilar}`);
+                if (t.pupilas || t.Pupilas) physical.push(`Pupilas: ${t.pupilas || t.Pupilas}`);
+                
+                if (physical.length > 0) {
+                  notes.push(`<strong>Valoración Física:</strong> ${physical.join(', ')}`);
+                }
+                
+                if (t.alergias || t.Alergias) notes.push(`<strong>Alergias:</strong> ${t.alergias || t.Alergias}`);
+                if (t.antecedentesMedicos || t.AntecedentesMedicos) notes.push(`<strong>Antecedentes Médicos:</strong> ${t.antecedentesMedicos || t.AntecedentesMedicos}`);
+
+                return `
+                  <tr style="border-bottom: 1px solid #cbd5e1;">
+                    <td style="padding: 8px 6px; font-weight: 700; border: 1px solid #cbd5e1; text-align: center; vertical-align: top;">${formatTime(event.time)}</td>
+                    <td style="padding: 8px 6px; font-family: monospace; line-height: 1.4; border: 1px solid #cbd5e1; vertical-align: top; font-size: 9px;">
+                      ${vitals.join('<br>')}
+                    </td>
+                    <td style="padding: 8px 6px; border: 1px solid #cbd5e1; line-height: 1.5; vertical-align: top; font-size: 10px;">
+                      <div style="font-weight: 900; color: #2563eb; font-size: 8px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">[VALORACIÓN CLÍNICA Y TRIAGE]</div>
+                      ${notes.join('<br>')}
+                    </td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: bottom; text-align: center; font-size: 8px; color: #94a3b8; padding-bottom: 4px;">Firma de Guardia</td>
+                  </tr>
+                `;
+              } else {
+                const s = event.data;
+                return `
+                  <tr style="border-bottom: 1px solid #cbd5e1;">
+                    <td style="padding: 8px 6px; font-weight: 700; border: 1px solid #cbd5e1; text-align: center; vertical-align: top;">${formatTime(event.time)}</td>
+                    <td style="padding: 8px 6px; text-align: center; color: #94a3b8; font-style: italic; border: 1px solid #cbd5e1; vertical-align: top; font-size: 9px;">--</td>
+                    <td style="padding: 8px 6px; border: 1px solid #cbd5e1; line-height: 1.5; vertical-align: top; font-size: 10px;">
+                      <div style="font-weight: 900; color: #e11d48; font-size: 8px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">[PROCEDIMIENTO / TRATAMIENTO APLICADO]</div>
+                      <strong style="font-size: 11px;">${s.descripcion}</strong><br>
+                      Cantidad: ${s.cantidad} unidades | Registrado por: ${s.usuarioCarga || 'Clínico'}
+                    </td>
+                    <td style="border: 1px solid #cbd5e1; vertical-align: bottom; text-align: center; font-size: 8px; color: #94a3b8; padding-bottom: 4px;">Firma de Guardia</td>
+                  </tr>
+                `;
+              }
+            }).join('')}
+          </tbody>
+        </table>
+
+        <!-- Sección 5: Condición y Destino Final -->
+        <h3 style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-bottom: 12px; margin-top: 30px; letter-spacing: 0.5px;">
+          5. CONDICIÓN Y DESTINO FINAL DE EGRESO DE URGENCIAS
+        </h3>
+        
+        <div style="font-size: 11px; margin-bottom: 25px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px;">
+          <strong style="text-transform: uppercase; font-size: 9px; color: #64748b;">Destino del Paciente:</strong>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; font-weight: 700;">
+            ${destinations.map(d => {
+              const checked = d.toLowerCase() === destino.toLowerCase() ? '&#9746;' : '&#9744;';
+              return `<div><span style="font-size: 14px; margin-right: 5px;">${checked}</span> ${d.toUpperCase()}</div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; font-size: 11px;">
+          <div style="border-top: 1px solid #0f172a; padding-top: 12px; text-align: center;">
+            <strong style="text-transform: uppercase; font-size: 9px; color: #64748b;">Enfermero(a) que Entrega/Egresa:</strong><br>
+            <span style="font-size: 12px; font-weight: 900; color: #2563eb; text-transform: uppercase; display: inline-block; margin-top: 4px;">${enfermeroEntrega}</span><br>
+            <span style="font-size: 9px; color: #94a3b8; display: inline-block; margin-top: 2px;">Firma y Sello</span>
+          </div>
+          <div style="border-top: 1px solid #0f172a; padding-top: 12px; text-align: center;">
+            <strong style="text-transform: uppercase; font-size: 9px; color: #64748b;">Personal de Relevo / Piso que Recibe:</strong><br>
+            <span style="font-size: 12px; font-weight: 900; color: #0f172a; text-transform: uppercase; display: inline-block; margin-top: 4px;">${personalRelevo || '___________________________'}</span><br>
+            <span style="font-size: 9px; color: #94a3b8; display: inline-block; margin-top: 2px;">Firma y Sello</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
+

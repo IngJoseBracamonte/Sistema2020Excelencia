@@ -153,6 +153,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public horaEgreso = signal<string>(new Date().toTimeString().substring(0, 5));
   public diagnostico = signal<string>('Diagnóstico General / Control Médico');
   public destinoPaciente = signal<string>('Alta Médica');
+  public personalRelevo = signal<string>('');
 
   // Billing Fields
   public tasaCambioDia = signal<number>(36.5);
@@ -549,6 +550,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.pagos.set([]); // Limpiar pagos temporales
     this.diagnostico.set('Diagnóstico General / Control Médico');
     this.destinoPaciente.set('Alta Médica');
+    this.personalRelevo.set('');
     this.medicoTratanteId.set(null); // Resetear selección de médico
     
     // Si la cuenta ya tiene convenio pre-configurado
@@ -635,6 +637,29 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   public eliminarPago(index: number) {
     this.pagos.update(list => list.filter((_, i) => i !== index));
+  }
+
+  // Print Emergency Release Report
+  public imprimirReporteEgreso() {
+    const acc = this.selectedAccount();
+    if (!acc) return;
+
+    const triages = this.triageHistoryMap()[acc.cuentaId] || [];
+    const patientData = {
+      diagnostico: this.diagnostico()
+    };
+    const loggedInUser = this.authService.currentUser()?.username || 'user_emergencia';
+
+    const content = this.printService.generateDischargeReportHtml(
+      patientData,
+      acc,
+      triages,
+      this.destinoPaciente(),
+      this.personalRelevo(),
+      loggedInUser
+    );
+
+    this.printService.print(content, `Reporte_Egreso_${acc.pacienteCedula}`);
   }
 
   // Close Account Execution
