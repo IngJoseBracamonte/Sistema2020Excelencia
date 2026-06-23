@@ -30,48 +30,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         {
             try
             {
-                var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
-                
-                if (pendingMigrations.Any())
-                {
-                    _logger.LogInformation("Detectadas {Count} migraciones pendientes. Aplicando a System Database...", pendingMigrations.Count());
-                    
-                    // Senior Robust Fix: Abrir conexión manualmente para asegurar que el SET SESSION 
-                    // persista durante toda la operación de MigrateAsync.
-                    var connection = _context.Database.GetDbConnection();
-                    if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
-                    
-                    await _context.Database.ExecuteSqlRawAsync("SET SESSION sql_require_primary_key = 0;");
-                    
-                    try 
-                    {
-                        await _context.Database.MigrateAsync();
-                        _logger.LogInformation("Migraciones aplicadas con éxito.");
-                    }
-                    catch (Exception ex) when (
-                        ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
-                        ex.Message.Contains("ya existe", StringComparison.OrdinalIgnoreCase) ||
-                        (ex.InnerException is MySqlConnector.MySqlException mysqlEx && mysqlEx.Number == 1050))
-                    {
-                        _logger.LogWarning("Conflicto detectado: Las tablas ya existen pero el historial de EF Core está ausente.");
-                        _logger.LogInformation("Sincronizando historial de migraciones manualmente (Baseline: InitialApplication)...");
-                        
-                        // Aseguramos que la tabla de historial exista antes del insert
-                        await _context.Database.ExecuteSqlRawAsync(
-                            "CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (`MigrationId` varchar(150) NOT NULL, `ProductVersion` varchar(32) NOT NULL, PRIMARY KEY (`MigrationId`)) CHARACTER SET=utf8mb4;");
-                        
-                        await _context.Database.ExecuteSqlRawAsync(
-                            "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20260522161430_InitialApplication', '10.0.5');");
-                        
-                        // Una vez insertado el baseline, reintentamos aplicar el resto de migraciones pendientes
-                        await _context.Database.MigrateAsync();
-                        _logger.LogInformation("Sincronización de Baseline completada y migraciones restantes aplicadas con éxito.");
-                    }
-                }
-                else
-                {
-                    _logger.LogInformation("System Database ya está actualizada. No se requieren migraciones.");
-                }
+                _logger.LogInformation("Ignorando aplicación de migraciones para System Database (inicialización manual de DB).");
 
                 // Self-healing: Ensure Direccion column exists in PacientesAdmision table (V12.1 Requirement)
                 try
