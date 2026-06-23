@@ -67,6 +67,7 @@ services:
       # --- Deployment ---
       - DeploymentSettings__Mode=Docker
       - DeploymentSettings__ApplyAggressiveRepair=false
+      - DeploymentSettings__SkipMigrations=false # Cambiar a true para evitar que la API intente correr migraciones automaticamente en el arranque
 
       # --- Email (Opcional) ---
       - EmailSettings__SmtpHost=${SMTP_HOST:-}

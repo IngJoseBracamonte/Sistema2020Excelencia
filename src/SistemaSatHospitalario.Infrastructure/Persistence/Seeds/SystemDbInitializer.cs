@@ -48,7 +48,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                         await _context.Database.MigrateAsync();
                         _logger.LogInformation("Migraciones aplicadas con éxito.");
                     }
-                    catch (Exception ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                    catch (Exception ex) when (
+                        ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
+                        ex.Message.Contains("ya existe", StringComparison.OrdinalIgnoreCase) ||
+                        (ex.InnerException is MySqlConnector.MySqlException mysqlEx && mysqlEx.Number == 1050))
                     {
                         _logger.LogWarning("Conflicto detectado: Las tablas ya existen pero el historial de EF Core está ausente.");
                         _logger.LogInformation("Sincronizando historial de migraciones manualmente (Baseline: InitialApplication)...");

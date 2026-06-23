@@ -113,7 +113,15 @@ try
     // Database Initialization (Robust Loop)
     if (!app.Environment.IsEnvironment("Testing"))
     {
-        await app.UseDatabaseInitializationAsync();
+        var skipMigrations = app.Configuration.GetValue<bool>("DeploymentSettings:SkipMigrations");
+        if (skipMigrations)
+        {
+            Log.Information("[DEPLOYMENT] Se omitió la inicialización y migración automática de la base de datos por configuración.");
+        }
+        else
+        {
+            await app.UseDatabaseInitializationAsync();
+        }
     }
 
     app.UseRouting();
