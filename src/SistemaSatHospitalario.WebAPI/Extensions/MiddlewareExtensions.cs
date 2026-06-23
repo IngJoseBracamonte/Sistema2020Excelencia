@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
+using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Seeds;
 using SistemaSatHospitalario.Infrastructure.Hubs;
 using System.Diagnostics;
@@ -91,6 +92,15 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                     if (!canConnect) throw new Exception("No se pudo alcanzar el servidor de base de datos.");
 
                     logger.LogInformation("Iniciando secuencia de inicialización de esquemas...");
+
+                    // 1. Ejecutar migraciones primero para asegurar consistencia
+                    var identityContext = services.GetRequiredService<SatHospitalarioIdentityDbContext>();
+                    await ApplyMigrationsWithFallbackAsync(identityContext, logger, "Identity", "20260414054517_InitialIdentityMySql", "9.0.2");
+
+                    var systemContext = services.GetRequiredService<SatHospitalarioDbContext>();
+                    await ApplyMigrationsWithFallbackAsync(systemContext, logger, "System", "20260522161430_InitialApplication", "10.0.5");
+
+                    // 2. Ejecutar inicializadores (Seeding y auto-recuperación de columnas)
                     var initializers = services.GetServices<IDatabaseInitializer>();
                     
                     foreach (var initializer in initializers)
@@ -105,6 +115,77 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                 {
                     logger.LogCritical(ex, "ERROR CRÍTICO durante la inicialización de bases de datos. La aplicación iniciará en modo degradado.");
                 }
+            }
+        }
+
+        private static async Task ApplyMigrationsWithFallbackAsync(
+            DbContext context, 
+            ILogger logger, 
+            string dbName, 
+            string baselineMigrationId, 
+            string productVersion)
+        {
+            try
+            {
+                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    logger.LogInformation("Detectadas {Count} migraciones pendientes. Aplicando a {DbName} Database...", pendingMigrations.Count(), dbName);
+                    
+                    var connection = context.Database.GetDbConnection();
+                    if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+                    
+                    try
+                    {
+                        // Desactivar temporalmente restricción de clave primaria para entornos que lo requieran
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = "SET SESSION sql_require_primary_key = 0;";
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning("No se pudo ejecutar SET SESSION sql_require_primary_key = 0: {Message}", ex.Message);
+                    }
+                    
+                    try 
+                    {
+                        await context.Database.MigrateAsync();
+                        logger.LogInformation("Migraciones aplicadas con éxito a {DbName} Database.", dbName);
+                    }
+                    catch (Exception ex) when (
+                        ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
+                        ex.Message.Contains("ya existe", StringComparison.OrdinalIgnoreCase) ||
+                        (ex.InnerException is MySqlConnector.MySqlException mysqlEx && mysqlEx.Number == 1050))
+                    {
+                        logger.LogWarning("Conflicto detectado en {DbName} Database: Las tablas ya existen pero el historial de EF Core está ausente.", dbName);
+                        logger.LogInformation("Sincronizando historial de migraciones manualmente para {DbName} (Baseline: {Baseline})...", dbName, baselineMigrationId);
+                        
+                        // Aseguramos que la tabla de historial exista antes del insert
+                        using (var cmd = connection.CreateCommand())
+                        {
+                            cmd.CommandText = "CREATE TABLE IF NOT EXISTS `__EFMigrationsHistory` (`MigrationId` varchar(150) NOT NULL, `ProductVersion` varchar(32) NOT NULL, PRIMARY KEY (`MigrationId`)) CHARACTER SET=utf8mb4;";
+                            await cmd.ExecuteNonQueryAsync();
+
+                            cmd.CommandText = $"INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('{baselineMigrationId}', '{productVersion}');";
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                        
+                        // Reintentar aplicar el resto de migraciones pendientes
+                        await context.Database.MigrateAsync();
+                        logger.LogInformation("Sincronización de Baseline completada y migraciones restantes aplicadas con éxito a {DbName} Database.", dbName);
+                    }
+                }
+                else
+                {
+                    logger.LogInformation("{DbName} Database ya está actualizada. No se requieren migraciones.", dbName);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error aplicando migraciones en {DbName} Database.", dbName);
+                throw;
             }
         }
 

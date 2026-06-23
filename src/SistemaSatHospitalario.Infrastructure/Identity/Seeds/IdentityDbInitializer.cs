@@ -67,7 +67,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Seeds
                         await _context.Database.ExecuteSqlRawAsync(
                             "INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VALUES ('20260414054517_InitialIdentityMySql', '9.0.2');");
                         
-                        _logger.LogInformation("Sincronización de Baseline completada. El sistema puede continuar.");
+                        await _context.Database.MigrateAsync();
+                        _logger.LogInformation("Sincronización de Baseline completada y migraciones restantes aplicadas con éxito.");
                     }
                 }
                 else
