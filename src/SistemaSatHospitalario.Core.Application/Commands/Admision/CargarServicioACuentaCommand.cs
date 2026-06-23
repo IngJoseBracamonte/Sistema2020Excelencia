@@ -44,14 +44,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IOrdenExternaService _externaService;
         private readonly IApplicationDbContext _context;
         private readonly IHonorariumMapperService _mapperService;
+        private readonly IInventoryService _inventoryService;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
 
-        public CargarServicioACuentaCommandHandler(IBillingRepository repository, IOrdenExternaService externaService, IApplicationDbContext context, IHonorariumMapperService mapperService, ILogger<CargarServicioACuentaCommandHandler> logger)
+        public CargarServicioACuentaCommandHandler(
+            IBillingRepository repository, 
+            IOrdenExternaService externaService, 
+            IApplicationDbContext context, 
+            IHonorariumMapperService mapperService, 
+            IInventoryService inventoryService,
+            ILogger<CargarServicioACuentaCommandHandler> logger)
         {
             _repository = repository;
             _externaService = externaService;
             _context = context;
             _mapperService = mapperService;
+            _inventoryService = inventoryService;
             _logger = logger;
         }
 
@@ -225,6 +233,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
+
+            // Deduct stock for inventory items associated with this service
+            await _inventoryService.DeductInventoryForServiceDetailAsync(
+                detalle.Id,
+                detalle.ServicioId,
+                baseService?.Codigo ?? string.Empty,
+                detalle.Descripcion,
+                detalle.Cantidad,
+                request.UsuarioCarga,
+                cuenta.Id,
+                cancellationToken
+            );
 
             await _repository.GuardarCambiosAsync(cancellationToken);
 

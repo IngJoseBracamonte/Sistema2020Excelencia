@@ -147,8 +147,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                     worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
                     worksheet.Cell(currentRow, 1).Style.Font.FontSize = 10;
                     worksheet.Cell(currentRow, 1).Style.Font.FontColor = XLColor.FromHtml("#64748b"); // Slate 500
-                    currentRow += 2;
-
+                    currentRow++;
+                    
                     // Encabezados de Pagos
                     worksheet.Cell(currentRow, 1).Value = "FECHA/HORA";
                     worksheet.Cell(currentRow, 2).Value = "PACIENTE";
@@ -157,8 +157,13 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                     worksheet.Cell(currentRow, 5).Value = "METODO PAGO";
                     worksheet.Cell(currentRow, 6).Value = "MONTO ORIG.";
                     worksheet.Cell(currentRow, 7).Value = "EQV. USD";
+                    worksheet.Cell(currentRow, 8).Value = "INGRESADO POR";
+                    worksheet.Cell(currentRow, 9).Value = "VUELTO DADO POR";
+                    worksheet.Cell(currentRow, 10).Value = "MONTO VUELTO";
+                    worksheet.Cell(currentRow, 11).Value = "TOTAL CUENTA";
+                    worksheet.Cell(currentRow, 12).Value = "PENDIENTE CUENTA";
 
-                    var headerRange = worksheet.Range(currentRow, 1, currentRow, 7);
+                    var headerRange = worksheet.Range(currentRow, 1, currentRow, 12);
                     headerRange.Style.Font.Bold = true;
                     headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#475569"); // Slate 600
                     headerRange.Style.Font.FontColor = XLColor.White;
@@ -184,11 +189,26 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             worksheet.Cell(currentRow, 7).Value = pago.EquivalenteUSD;
                             worksheet.Cell(currentRow, 7).Style.NumberFormat.Format = "$ #,##0.00";
 
+                            // Nuevos campos detallados
+                            worksheet.Cell(currentRow, 8).Value = pago.IngresadoPor;
+                            worksheet.Cell(currentRow, 9).Value = pago.VueltoDadoPor;
+
+                            worksheet.Cell(currentRow, 10).Value = pago.VueltoUSD;
+                            worksheet.Cell(currentRow, 10).Style.NumberFormat.Format = "$ #,##0.00";
+
+                            worksheet.Cell(currentRow, 11).Value = pago.TotalCuentaUSD;
+                            worksheet.Cell(currentRow, 11).Style.NumberFormat.Format = "$ #,##0.00";
+
+                            worksheet.Cell(currentRow, 12).Value = pago.PendienteCuentaUSD;
+                            worksheet.Cell(currentRow, 12).Style.NumberFormat.Format = "$ #,##0.00";
+
                             // Alineaciones
                             worksheet.Cell(currentRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                             worksheet.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                             worksheet.Cell(currentRow, 4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                             worksheet.Cell(currentRow, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                            worksheet.Cell(currentRow, 8).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                            worksheet.Cell(currentRow, 9).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                             currentRow++;
                         }
@@ -196,7 +216,7 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                     else
                     {
                         worksheet.Cell(currentRow, 1).Value = "Sin transacciones de cobro registradas hoy.";
-                        worksheet.Range(currentRow, 1, currentRow, 7).Merge();
+                        worksheet.Range(currentRow, 1, currentRow, 12).Merge();
                         worksheet.Cell(currentRow, 1).Style.Font.Italic = true;
                         worksheet.Cell(currentRow, 1).Style.Font.FontColor = XLColor.Gray;
                         currentRow++;

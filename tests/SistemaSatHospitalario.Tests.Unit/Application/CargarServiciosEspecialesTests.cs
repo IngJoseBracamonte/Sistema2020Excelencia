@@ -41,11 +41,14 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _mapperServiceMock.Setup(m => m.MapToCategoryAsync(It.IsAny<string>(), It.IsAny<Guid?>()))
                 .ReturnsAsync((string type, Guid? id) => type);
 
+            var mockInventory = new Mock<IInventoryService>();
+
             _handler = new CargarServicioACuentaCommandHandler(
                 _repository,
                 _externaServiceMock.Object,
                 _context,
                 _mapperServiceMock.Object,
+                mockInventory.Object,
                 NullLogger<CargarServicioACuentaCommandHandler>.Instance
             );
         }

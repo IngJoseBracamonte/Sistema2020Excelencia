@@ -51,11 +51,13 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
         {
             var context = new SatHospitalarioDbContext(_options);
             var repository = new BillingRepository(context);
+            var mockInventory = new Mock<IInventoryService>();
             var handler = new SyncCarritoCommandHandler(
                 repository,
                 context,
                 _legacyLabRepoMock.Object,
                 _mapperServiceMock.Object,
+                mockInventory.Object,
                 _loggerMock.Object
             );
             return (context, handler);

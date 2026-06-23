@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { FacturacionService, CargarServicioACuentaRequest, DetallePagoDto, SyncCarritoMasivoRequest } from './facturacion.service';
 import { CatalogItem } from '../models/priced-item.model';
+import { CurrencyIds } from '../models/currency.model';
 import { SpecialtyService } from './specialty.service';
 import { AppointmentsService, Doctor } from './appointments.service';
 import { AuthService } from './auth.service';
@@ -105,8 +106,8 @@ export class BillingFacadeService {
   });
 
   private getSearchKey(esp: string): string {
-    const map: any = { 'Ginecologia': 'GINE', 'Cardiologia': 'CARD', 'Traumatologia': 'TRAU' };
-    return (map[esp] || esp.toUpperCase().substring(0, 4));
+    const cleanEsp = esp.trim().toUpperCase();
+    return cleanEsp.length > 5 ? cleanEsp.substring(0, cleanEsp.length - 5) : cleanEsp;
   }
 
   public saldoPendienteUSD = computed(() => 
@@ -127,7 +128,7 @@ export class BillingFacadeService {
           name: x.nombre || x.name,
           value: x.valor || x.value,
           grupoMoneda: x.grupoMoneda,
-          isUSD: x.grupoMoneda === 1 || x.isUSD,
+          isUSD: x.grupoMoneda === CurrencyIds.USD || x.isUSD,
           isVuelto: x.esVuelto || x.isVuelto,
           orden: x.orden,
           activo: x.activo
@@ -152,7 +153,7 @@ export class BillingFacadeService {
 
   public isMethodBs(methodName: string): boolean {
     const method = this.catalogMetodosPago().find(m => m.value === methodName || m.name === methodName);
-    if (method) return method.grupoMoneda === 2;
+    if (method) return method.grupoMoneda === CurrencyIds.VES;
     
     // Fallback logic for legacy strings
     const m = (methodName || '').toLowerCase();

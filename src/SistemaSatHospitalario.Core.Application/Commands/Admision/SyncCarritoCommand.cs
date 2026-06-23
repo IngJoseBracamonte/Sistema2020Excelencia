@@ -59,6 +59,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly IHonorariumMapperService _mapperService;
+        private readonly IInventoryService _inventoryService;
         private readonly ILogger<SyncCarritoCommandHandler> _logger;
 
         public SyncCarritoCommandHandler(
@@ -66,12 +67,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             IApplicationDbContext context, 
             ILegacyLabRepository legacyRepository,
             IHonorariumMapperService mapperService,
+            IInventoryService inventoryService,
             ILogger<SyncCarritoCommandHandler> logger)
         {
             _repository = repository;
             _context = context;
             _legacyRepository = legacyRepository;
             _mapperService = mapperService;
+            _inventoryService = inventoryService;
             _logger = logger;
         }
 
@@ -323,6 +326,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     {
                         _context.DetallesServicioCuenta.Add(detalle);
                     }
+
+                    // Deduct stock for inventory items associated with this synced service
+                    await _inventoryService.DeductInventoryForServiceDetailAsync(
+                        detalle.Id,
+                        detalle.ServicioId,
+                        baseService?.Codigo ?? string.Empty,
+                        detalle.Descripcion,
+                        detalle.Cantidad,
+                        request.UsuarioCarga,
+                        cuenta.Id,
+                        ct
+                    );
 
                     // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
                     if (detalle.Honorario > 0 && !esConsulta)

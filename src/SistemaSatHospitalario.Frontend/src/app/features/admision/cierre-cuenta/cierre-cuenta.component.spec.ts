@@ -10,6 +10,7 @@ import { ConveniosService } from '../../../core/services/convenios.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('CierreCuentaComponent', () => {
   let component: CierreCuentaComponent;
@@ -91,7 +92,7 @@ describe('CierreCuentaComponent', () => {
     mockSettingsService.getTasa.and.returnValue(of({ monto: 36.5 }));
 
     await TestBed.configureTestingModule({
-      imports: [CierreCuentaComponent],
+      imports: [CierreCuentaComponent, HttpClientTestingModule],
       providers: [
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: Router, useValue: mockRouter },

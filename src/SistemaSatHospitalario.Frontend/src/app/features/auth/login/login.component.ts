@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { LoginRedirectService } from '../../../core/services/login-redirect.service';
 import { CommonModule } from '@angular/common';
 import {
   LucideAngularModule,
@@ -33,6 +34,7 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private redirectService = inject(LoginRedirectService);
 
   loginForm = this.fb.group({
     username: ['', [Validators.required]],
@@ -59,17 +61,8 @@ export class LoginComponent {
     }).subscribe({
       next: (res: any) => {
         this.isLoading.set(false);
-        if (res.requirePasswordReset) {
-          this.router.navigate(['/reset-password']);
-        } else if (this.authService.isRxAssistant()) {
-          this.router.navigate(['/rx-orders']);
-        } else if (this.authService.isEmergencyAssistant()) {
-          this.router.navigate(['/cierre-cuenta/Emergencia']);
-        } else if (this.authService.isHospitalAssistant()) {
-          this.router.navigate(['/cierre-cuenta/Hospitalizacion']);
-        } else {
-          this.router.navigate(['/dashboard']);
-        }
+        const targetRoute = this.redirectService.redirectRoute(res.requirePasswordReset);
+        this.router.navigate(targetRoute);
       },
       error: (err: any) => {
         this.isLoading.set(false);

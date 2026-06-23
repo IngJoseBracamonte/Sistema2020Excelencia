@@ -51,11 +51,14 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var emptyMedicos = new List<Medico>().AsQueryable().BuildMockDbSet().Object;
             _contextMock.Setup(c => c.Medicos).Returns(emptyMedicos);
 
+            var mockInventory = new Mock<IInventoryService>();
+
             _handler = new CargarServicioACuentaCommandHandler(
                 _repositoryMock.Object, 
                 _externaServiceMock.Object, 
                 _contextMock.Object, 
                 _mapperServiceMock.Object, 
+                mockInventory.Object,
                 NullLogger<CargarServicioACuentaCommandHandler>.Instance);
         }
 

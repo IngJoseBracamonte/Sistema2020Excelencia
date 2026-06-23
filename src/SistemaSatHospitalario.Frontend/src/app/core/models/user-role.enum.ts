@@ -20,7 +20,9 @@ export const RoleKeywords = {
   Farmacia: 'farmacia',
   Hospitalario: 'hospitalario',
   Emergencia: 'emergencia',
-  AsistenteRX: 'asistente rx'
+  AsistenteRX: 'asistente rx',
+  Tomografia: 'tomografia',
+  TomografiaAccented: 'tomografía'
 };
 
 export const RoleGroups = {

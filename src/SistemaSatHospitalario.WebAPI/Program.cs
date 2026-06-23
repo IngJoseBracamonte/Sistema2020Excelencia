@@ -58,7 +58,11 @@ try
     // Core Services
     builder.AddServiceDefaults(); // Aspire
     builder.Services.AddOpenApi();
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        });
 
     // Business & Data Layers
     builder.Services.AddApplicationServices();

@@ -66,6 +66,11 @@ export class AuthService {
     this.hasRole(UserRole.Supervisor) || this.isAdmin()
   );
 
+  public isInventorySupervisor = computed(() => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role.includes('inventario') || role.includes('supervisor') || this.isAdmin();
+  });
+
   public isCajero = computed(() => 
     this.isParticularAssistant() || this.isInsuranceAssistant() || this.isAdmin()
   );
@@ -89,7 +94,7 @@ export class AuthService {
 
   public isTomographyAssistant = computed(() => {
     const role = this.currentUser()?.role?.toLowerCase() || '';
-    return role.includes('tomografía') || role.includes('tomografia') || this.isAdmin();
+    return role.includes(RoleKeywords.TomografiaAccented) || role.includes(RoleKeywords.Tomografia) || this.isAdmin();
   });
 
   public isFarmacia = computed(() => {

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 
@@ -11,9 +12,11 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SatHospitalarioDbContext))]
-    partial class SatHospitalarioDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260623185754_AddMonedaTableAndRelationship")]
+    partial class AddMonedaTableAndRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,63 +147,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.ToTable("CatalogoMetodosPago", (string)null);
                 });
 
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CierreInventario", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("FechaCierre")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Observaciones")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
-
-                    b.Property<string>("Usuario")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CierresInventario", (string)null);
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CierreInventarioDetalle", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("CierreInventarioId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<decimal>("CostoBaseUSD")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<Guid>("InsumoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<decimal>("StockRealBase")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("StockTeoricoBase")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CierreInventarioId");
-
-                    b.HasIndex("InsumoId");
-
-                    b.ToTable("CierresInventarioDetalles", (string)null);
-                });
-
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CitaMedica", b =>
                 {
                     b.Property<Guid>("Id")
@@ -277,38 +223,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ConfiguracionGeneral", (string)null);
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ConsumoServicioRealizado", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<decimal>("CantidadConsumidaBase")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("CostoTotalUSD")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<Guid>("DetalleServicioCuentaId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("FechaConsumo")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("InsumoId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DetalleServicioCuentaId");
-
-                    b.HasIndex("InsumoId");
-
-                    b.ToTable("ConsumosServiciosRealizados", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ConvenioPerfilPrecio", b =>
@@ -902,43 +816,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.ToTable("HorariosAtencionMedicos", (string)null);
                 });
 
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.Insumo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<decimal>("CostoUnitarioBaseUSD")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<decimal>("StockActual")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("UnidadMedidaBase")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Codigo")
-                        .IsUnique();
-
-                    b.ToTable("Insumos", (string)null);
-                });
-
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.LogAsignacionHonorario", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1135,53 +1012,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                             Nombre = "Peso Argentino",
                             Simbolo = "ARS$"
                         });
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.MovimientoInsumo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<decimal>("CantidadBase")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("CantidadOriginal")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<DateTime>("Fecha")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("InsumoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Motivo")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<string>("TipoMovimiento")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("UnidadMedidaOriginal")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Usuario")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InsumoId");
-
-                    b.ToTable("MovimientosInsumo", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenImagen", b =>
@@ -1493,41 +1323,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.HasIndex("EspecialidadId");
 
                     b.ToTable("ServiciosClinicos", (string)null);
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ServicioInsumoReceta", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<decimal>("Cantidad")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<Guid>("InsumoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("ServicioClinicoId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("ServicioCodigo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("UnidadMedidaConsumo")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InsumoId");
-
-                    b.HasIndex("ServicioClinicoId");
-
-                    b.ToTable("ServiciosInsumoRecetas", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ServicioSugerencia", b =>
@@ -1982,25 +1777,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Navigation("Moneda");
                 });
 
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CierreInventarioDetalle", b =>
-                {
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.CierreInventario", "CierreInventario")
-                        .WithMany("Detalles")
-                        .HasForeignKey("CierreInventarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.Insumo", "Insumo")
-                        .WithMany()
-                        .HasForeignKey("InsumoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CierreInventario");
-
-                    b.Navigation("Insumo");
-                });
-
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CitaMedica", b =>
                 {
                     b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.CuentaServicios", "CuentaServicio")
@@ -2018,25 +1794,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Navigation("CuentaServicio");
 
                     b.Navigation("Medico");
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ConsumoServicioRealizado", b =>
-                {
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.DetalleServicioCuenta", "DetalleServicioCuenta")
-                        .WithMany()
-                        .HasForeignKey("DetalleServicioCuentaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.Insumo", "Insumo")
-                        .WithMany()
-                        .HasForeignKey("InsumoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("DetalleServicioCuenta");
-
-                    b.Navigation("Insumo");
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ConvenioPerfilPrecio", b =>
@@ -2172,17 +1929,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Navigation("Especialidad");
                 });
 
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.MovimientoInsumo", b =>
-                {
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.Insumo", "Insumo")
-                        .WithMany()
-                        .HasForeignKey("InsumoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Insumo");
-                });
-
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.PrecioServicioConvenio", b =>
                 {
                     b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.SeguroConvenio", "Convenio")
@@ -2228,25 +1974,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Especialidad");
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ServicioInsumoReceta", b =>
-                {
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.Insumo", "Insumo")
-                        .WithMany()
-                        .HasForeignKey("InsumoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.ServicioClinico", "ServicioClinico")
-                        .WithMany()
-                        .HasForeignKey("ServicioClinicoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Insumo");
-
-                    b.Navigation("ServicioClinico");
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.ServicioSugerencia", b =>
@@ -2297,11 +2024,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .HasForeignKey("PacienteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CierreInventario", b =>
-                {
-                    b.Navigation("Detalles");
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.CuentaPorCobrar", b =>

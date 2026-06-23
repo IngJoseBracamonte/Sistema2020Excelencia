@@ -24,6 +24,7 @@ namespace SistemaSatHospitalario.Core.Application
             // Core Mapping Services (V18.5 Dynamic Rules)
             services.AddMemoryCache();
             services.AddScoped<Common.Services.IHonorariumMapperService, Common.Services.HonorariumMapperService>();
+            services.AddScoped<Common.Services.IInventoryService, Common.Services.InventoryService>();
 
             return services;
         }

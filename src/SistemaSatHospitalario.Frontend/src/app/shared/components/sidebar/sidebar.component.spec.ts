@@ -6,6 +6,14 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { AuthService } from '../../../core/services/auth.service';
 import { signal } from '@angular/core';
 
+const IS_ADMINISTRADOR = 'isAdministrador';
+const IS_PARTICULAR_ASSISTANT = 'isParticularAssistant';
+const IS_INSURANCE_ASSISTANT = 'isInsuranceAssistant';
+const IS_RX_ASSISTANT = 'isRxAssistant';
+const IS_TOMOGRAPHY_ASSISTANT = 'isTomographyAssistant';
+const IS_SUPERVISOR = 'isSupervisor';
+const IS_INVENTORY_SUPERVISOR = 'isInventorySupervisor';
+
 describe('SidebarComponent', () => {
     let component: SidebarComponent;
     let fixture: ComponentFixture<SidebarComponent>;
@@ -22,12 +30,13 @@ describe('SidebarComponent', () => {
                 permissions: [],
                 requirePasswordReset: false
             }),
-            isAdministrador: jasmine.createSpy('isAdministrador').and.returnValue(true),
-            isParticularAssistant: jasmine.createSpy('isParticularAssistant').and.returnValue(false),
-            isInsuranceAssistant: jasmine.createSpy('isInsuranceAssistant').and.returnValue(false),
-            isRxAssistant: jasmine.createSpy('isRxAssistant').and.returnValue(false),
-            isTomographyAssistant: jasmine.createSpy('isTomographyAssistant').and.returnValue(false),
-            isSupervisor: jasmine.createSpy('isSupervisor').and.returnValue(false)
+            isAdministrador: jasmine.createSpy(IS_ADMINISTRADOR).and.returnValue(true),
+            isParticularAssistant: jasmine.createSpy(IS_PARTICULAR_ASSISTANT).and.returnValue(false),
+            isInsuranceAssistant: jasmine.createSpy(IS_INSURANCE_ASSISTANT).and.returnValue(false),
+            isRxAssistant: jasmine.createSpy(IS_RX_ASSISTANT).and.returnValue(false),
+            isTomographyAssistant: jasmine.createSpy(IS_TOMOGRAPHY_ASSISTANT).and.returnValue(false),
+            isSupervisor: jasmine.createSpy(IS_SUPERVISOR).and.returnValue(false),
+            isInventorySupervisor: jasmine.createSpy(IS_INVENTORY_SUPERVISOR).and.returnValue(false)
         };
 
 

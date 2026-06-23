@@ -41,6 +41,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; set; }
         public DbSet<OrdenImagen> OrdenesImagenes { get; set; }
         public DbSet<CatalogoMetodoPago> CatalogoMetodosPago { get; set; }
+        public DbSet<Moneda> Monedas { get; set; }
         public DbSet<DocumentLog> DocumentLogs { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<HonorarioConfig> HonorariosConfig { get; set; }
@@ -51,10 +52,38 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HistorialModificacionCuenta> HistorialModificacionCuentas { get; set; }
         public DbSet<TriageEnfermeria> TriagesEnfermeria { get; set; }
         public DbSet<ValoracionFisica> ValoracionesFisicas { get; set; }
-
+        public DbSet<Insumo> Insumos { get; set; }
+        public DbSet<ServicioInsumoReceta> ServiciosInsumoRecetas { get; set; }
+        public DbSet<ConsumoServicioRealizado> ConsumosServiciosRealizados { get; set; }
+        public DbSet<MovimientoInsumo> MovimientosInsumo { get; set; }
+        public DbSet<CierreInventario> CierresInventario { get; set; }
+        public DbSet<CierreInventarioDetalle> CierresInventarioDetalles { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
+
+        public override int SaveChanges()
+        {
+            EnforceMovimientoInsumoImmutability();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            EnforceMovimientoInsumoImmutability();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void EnforceMovimientoInsumoImmutability()
+        {
+            foreach (var entry in ChangeTracker.Entries<MovimientoInsumo>())
+            {
+                if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified || entry.State == Microsoft.EntityFrameworkCore.EntityState.Deleted)
+                {
+                    throw new InvalidOperationException("Los movimientos de insumos de inventario son inmutables y no se pueden modificar ni eliminar.");
+                }
+            }
+        }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -456,6 +485,24 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(o => o.TipoServicio);
             });
 
+            builder.Entity<Moneda>(entity =>
+            {
+                entity.ToTable("Monedas");
+                entity.HasKey(m => m.Id);
+                entity.Property(m => m.Id).ValueGeneratedNever();
+                entity.Property(m => m.Codigo).IsRequired().HasMaxLength(10);
+                entity.Property(m => m.Nombre).IsRequired().HasMaxLength(100);
+                entity.Property(m => m.Simbolo).IsRequired().HasMaxLength(10);
+
+                entity.HasData(
+                    new Moneda(1, "USD", "Dólar", "$", true),
+                    new Moneda(2, "VES", "Bolívar", "Bs.", false),
+                    new Moneda(3, "EUR", "Euro", "€", false),
+                    new Moneda(4, "COP", "Peso Colombiano", "COP$", false),
+                    new Moneda(5, "ARS", "Peso Argentino", "ARS$", false)
+                );
+            });
+
             builder.Entity<CatalogoMetodoPago>(entity =>
             {
                 entity.ToTable("CatalogoMetodosPago");
@@ -464,6 +511,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(c => c.Valor).IsRequired().HasMaxLength(100);
                 entity.Property(c => c.GrupoMoneda).HasDefaultValue(1);
                 entity.HasIndex(c => c.Valor).IsUnique();
+
+                entity.HasOne(c => c.Moneda)
+                      .WithMany()
+                      .HasForeignKey(c => c.GrupoMoneda)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<DocumentLog>(entity =>
@@ -536,6 +588,99 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.HasIndex(h => h.CuentaServicioId);
                 entity.HasIndex(h => h.FechaModificacion);
+            });
+
+            builder.Entity<Insumo>(entity =>
+            {
+                entity.ToTable("Insumos");
+                entity.HasKey(i => i.Id);
+                entity.Property(i => i.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(i => i.Nombre).IsRequired().HasMaxLength(200);
+                entity.Property(i => i.StockActual).HasPrecision(18, 4);
+                entity.Property(i => i.UnidadMedidaBase).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
+                entity.HasIndex(i => i.Codigo).IsUnique();
+            });
+
+            builder.Entity<ServicioInsumoReceta>(entity =>
+            {
+                entity.ToTable("ServiciosInsumoRecetas");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.ServicioCodigo).IsRequired().HasMaxLength(50);
+                entity.Property(r => r.UnidadMedidaConsumo).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(r => r.Cantidad).HasPrecision(18, 4);
+
+                entity.HasOne(r => r.ServicioClinico)
+                      .WithMany()
+                      .HasForeignKey(r => r.ServicioClinicoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(r => r.Insumo)
+                      .WithMany()
+                      .HasForeignKey(r => r.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<ConsumoServicioRealizado>(entity =>
+            {
+                entity.ToTable("ConsumosServiciosRealizados");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.CantidadConsumidaBase).HasPrecision(18, 4);
+                entity.Property(c => c.CostoTotalUSD).HasPrecision(18, 4);
+
+                entity.HasOne(c => c.DetalleServicioCuenta)
+                      .WithMany()
+                      .HasForeignKey(c => c.DetalleServicioCuentaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Insumo)
+                      .WithMany()
+                      .HasForeignKey(c => c.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<MovimientoInsumo>(entity =>
+            {
+                entity.ToTable("MovimientosInsumo");
+                entity.HasKey(m => m.Id);
+                entity.Property(m => m.TipoMovimiento).IsRequired().HasMaxLength(50);
+                entity.Property(m => m.CantidadBase).HasPrecision(18, 4);
+                entity.Property(m => m.UnidadMedidaOriginal).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Property(m => m.CantidadOriginal).HasPrecision(18, 4);
+                entity.Property(m => m.Usuario).IsRequired().HasMaxLength(100);
+                entity.Property(m => m.Motivo).HasMaxLength(500);
+
+                entity.HasOne(m => m.Insumo)
+                      .WithMany()
+                      .HasForeignKey(m => m.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<CierreInventario>(entity =>
+            {
+                entity.ToTable("CierresInventario");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Usuario).IsRequired().HasMaxLength(100);
+                entity.Property(c => c.Observaciones).HasMaxLength(1000);
+            });
+
+            builder.Entity<CierreInventarioDetalle>(entity =>
+            {
+                entity.ToTable("CierresInventarioDetalles");
+                entity.HasKey(d => d.Id);
+                entity.Property(d => d.StockTeoricoBase).HasPrecision(18, 4);
+                entity.Property(d => d.StockRealBase).HasPrecision(18, 4);
+                entity.Property(d => d.CostoBaseUSD).HasPrecision(18, 4);
+
+                entity.HasOne(d => d.CierreInventario)
+                      .WithMany(c => c.Detalles)
+                      .HasForeignKey(d => d.CierreInventarioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Insumo)
+                      .WithMany()
+                      .HasForeignKey(d => d.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
 

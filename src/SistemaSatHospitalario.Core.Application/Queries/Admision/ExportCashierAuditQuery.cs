@@ -47,7 +47,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrEmpty(request.UserId))
             {
-                cajasQuery = cajasQuery.Where(c => c.UsuarioId == request.UserId);
+                cajasQuery = cajasQuery.Where(c => c.UsuarioId == request.UserId || c.NombreUsuario == request.UserId);
             }
 
             var cajas = await cajasQuery.ToListAsync(cancellationToken);
@@ -79,10 +79,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var pagosDetallados = new List<PagoDetalladoDto>();
                 foreach (var r in userRecibos)
                 {
+                    decimal totalPagadoRecibo = r.DetallesPago.Sum(dp => dp.EquivalenteAbonadoBase);
+                    decimal vueltoRecibo = r.MontoVueltoUSD;
+                    decimal pendienteRecibo = Math.Max(0, r.TotalFacturadoUSD - totalPagadoRecibo);
+
                     foreach (var p in r.DetallesPago.Where(x => x.MontoAbonadoMoneda > 0))
                     {
                         var metodoCatalogObj = catalogoMetodos.FirstOrDefault(m => m.Valor == p.MetodoPago);
                         bool isUSD = metodoCatalogObj?.EsUSD ?? (p.MetodoPago == "Dolar Efectivo" || p.MetodoPago == "Zelle");
+                        string vueltoDadoPor = vueltoRecibo > 0 ? (r.UsuarioEmision ?? caja.NombreUsuario ?? "System") : "-";
 
                         pagosDetallados.Add(new PagoDetalladoDto
                         {
@@ -93,7 +98,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             MetodoPago = p.MetodoPago,
                             Moneda = isUSD ? "$" : "Bs.",
                             MontoMonedaOriginal = p.MontoAbonadoMoneda,
-                            EquivalenteUSD = p.EquivalenteAbonadoBase
+                            EquivalenteUSD = p.EquivalenteAbonadoBase,
+                            IngresadoPor = p.UsuarioCarga,
+                            VueltoDadoPor = vueltoDadoPor,
+                            TotalCuentaUSD = r.TotalFacturadoUSD,
+                            PendienteCuentaUSD = pendienteRecibo,
+                            VueltoUSD = vueltoRecibo
                         });
                     }
                 }

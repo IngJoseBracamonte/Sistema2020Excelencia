@@ -13,6 +13,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int Orden { get; private set; }
 
         public int GrupoMoneda { get; private set; }
+        public virtual Moneda Moneda { get; private set; }
 
         protected CatalogoMetodoPago() { }
 

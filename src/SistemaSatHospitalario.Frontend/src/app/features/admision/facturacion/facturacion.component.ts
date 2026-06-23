@@ -288,10 +288,11 @@ export class FacturacionComponent {
     }
   }
 
-  // Motor de Búsqueda Dinámica: Stemming de 4 caracteres (Pachón Pro V5.0)
+  // Motor de Búsqueda Dinámica: Especialidades recortando las últimas 5 letras
   private getSearchKey(text: string | null | undefined): string {
     if (!text) return '';
-    return text.toUpperCase().substring(0, 4);
+    const cleanText = text.trim().toUpperCase();
+    return cleanText.length > 5 ? cleanText.substring(0, cleanText.length - 5) : cleanText;
   }
 
 

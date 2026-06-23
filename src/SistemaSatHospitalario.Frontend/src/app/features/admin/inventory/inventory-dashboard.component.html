@@ -1,0 +1,548 @@
+<div class="p-6 space-y-6 animate-fade-in text-main">
+    <!-- Header Area -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div>
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/5">
+                    <lucide-icon [name]="icons.Package" class="w-6 h-6 text-primary"></lucide-icon>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight uppercase">Supervisor de Inventario</h1>
+                    <p class="text-xs text-muted font-bold uppercase tracking-wider">Gestión centralizada de insumos médicos y recetas de consumo</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button *ngIf="activeTab() === 'stock'" (click)="openCreateInsumo()"
+                class="px-4 py-2 bg-primary hover:bg-primary-glow text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/25 flex items-center">
+                <lucide-icon [name]="icons.Plus" class="w-4 h-4 mr-2"></lucide-icon>
+                Nuevo Insumo
+            </button>
+            <button (click)="loadAllData()" [disabled]="isLoading()"
+                class="p-2.5 bg-surface-card border border-glass-border hover:bg-white/5 rounded-xl transition-all">
+                <lucide-icon [name]="icons.X" class="w-4 h-4 text-muted" [class.animate-spin]="isLoading()"></lucide-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Overview Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1: Total USD Value -->
+        <div class="glass-card p-6 flex items-center justify-between border border-glass-border relative overflow-hidden">
+            <div class="space-y-1">
+                <p class="text-[10px] font-black text-muted uppercase tracking-widest">Valor Total del Inventario</p>
+                <h3 class="text-3xl font-black tracking-tight text-emerald-400">
+                    {{ totalInventoryValue() | currency:'USD':'symbol':'1.2-2' }}
+                </h3>
+            </div>
+            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.DollarSign" class="w-6 h-6 text-emerald-400"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Card 2: Total Items -->
+        <div class="glass-card p-6 flex items-center justify-between border border-glass-border relative overflow-hidden">
+            <div class="space-y-1">
+                <p class="text-[10px] font-black text-muted uppercase tracking-widest">Insumos Registrados</p>
+                <h3 class="text-3xl font-black tracking-tight text-primary-glow">
+                    {{ insumos().length }}
+                </h3>
+            </div>
+            <div class="w-12 h-12 bg-primary/10 rounded-2xl border border-primary/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.Package" class="w-6 h-6 text-primary"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Card 3: Out of Stock Alerts -->
+        <div class="glass-card p-6 flex items-center justify-between border border-glass-border relative overflow-hidden">
+            <div class="space-y-1">
+                <p class="text-[10px] font-black text-muted uppercase tracking-widest">Stock Negativo / Alertas</p>
+                <h3 class="text-3xl font-black tracking-tight" [class.text-rose-500]="insumos().length > 0" [class.text-muted]="insumos().length === 0">
+                    {{ insumos().length }}
+                </h3>
+            </div>
+            <div class="w-12 h-12 bg-rose-500/10 rounded-2xl border border-rose-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.AlertCircle" class="w-6 h-6 text-rose-500"></lucide-icon>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-glass-border space-x-6 overflow-x-auto pb-px">
+        <button (click)="setTab('stock')" [class.border-primary]="activeTab() === 'stock'"
+            class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
+            [class.text-primary]="activeTab() === 'stock'" [class.text-muted]="activeTab() !== 'stock'">
+            Dashboard de Stock
+        </button>
+        <button (click)="setTab('movement')" [class.border-primary]="activeTab() === 'movement'"
+            class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
+            [class.text-primary]="activeTab() === 'movement'" [class.text-muted]="activeTab() !== 'movement'">
+            Registrar Movimientos
+        </button>
+        <button (click)="setTab('closing')" [class.border-primary]="activeTab() === 'closing'"
+            class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
+            [class.text-primary]="activeTab() === 'closing'" [class.text-muted]="activeTab() !== 'closing'">
+            Cierre Físico
+        </button>
+        <button (click)="setTab('recipes')" [class.border-primary]="activeTab() === 'recipes'"
+            class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
+            [class.text-primary]="activeTab() === 'recipes'" [class.text-muted]="activeTab() !== 'recipes'">
+            Recetas de Consumo
+        </button>
+        <button (click)="setTab('audit')" [class.border-primary]="activeTab() === 'audit'"
+            class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
+            [class.text-primary]="activeTab() === 'audit'" [class.text-muted]="activeTab() !== 'audit'">
+            Ledger de Auditoría
+        </button>
+    </div>
+
+    <!-- Tab Contents -->
+
+    <!-- TAB 1: Stock Dashboard -->
+    <div *ngIf="activeTab() === 'stock'" class="space-y-4">
+        <!-- Search bar -->
+        <div class="relative max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
+                <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
+            </span>
+            <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+                placeholder="Buscar por código o nombre del insumo..."
+                class="w-full pl-10 pr-4 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold placeholder-muted focus:outline-none focus:border-primary/50 text-main transition-all">
+        </div>
+
+        <!-- Stock Table -->
+        <div class="glass-card border border-glass-border overflow-hidden rounded-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface/50 border-b border-glass-border text-[10px] font-black text-muted uppercase tracking-widest">
+                            <th class="p-4">Código</th>
+                            <th class="p-4">Descripción</th>
+                            <th class="p-4 text-center">Unidad Base</th>
+                            <th class="p-4 text-right">Stock Actual</th>
+                            <th class="p-4 text-right">Costo Unitario Base</th>
+                            <th class="p-4 text-right">Valor Total USD</th>
+                            <th class="p-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glass-border text-xs font-bold">
+                        <tr *ngFor="let item of filteredInsumos()" class="hover:bg-white/5 transition-all">
+                            <td class="p-4 font-mono text-primary-glow">{{ item.codigo }}</td>
+                            <td class="p-4 text-main">{{ item.nombre }}</td>
+                            <td class="p-4 text-center">
+                                <span class="px-2 py-0.5 bg-surface-card border border-glass-border rounded-md text-[10px] font-black text-muted tracking-wider uppercase">
+                                    {{ item.unidadMedidaBase }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                <span class="px-2.5 py-1 rounded-full text-[11px] font-black tracking-wide"
+                                    [ngClass]="{
+                                        'bg-rose-500/10 text-rose-500 border border-rose-500/20': item.stockActual < 0,
+                                        'bg-amber-500/10 text-amber-500 border border-amber-500/20': item.stockActual >= 0 && item.stockActual < 5,
+                                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': item.stockActual >= 5
+                                    }">
+                                    {{ item.stockActual | number:'1.2-4' }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right text-muted">{{ item.costoUnitarioBaseUSD | currency:'USD' }}</td>
+                            <td class="p-4 text-right text-main font-black">{{ (item.stockActual * item.costoUnitarioBaseUSD) | currency:'USD' }}</td>
+                            <td class="p-4 text-center">
+                                <button (click)="openEditInsumo(item)" class="p-1.5 text-muted hover:text-primary transition-all">
+                                    <lucide-icon [name]="icons.Edit" class="w-4 h-4"></lucide-icon>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr *ngIf="filteredInsumos().length === 0">
+                            <td colspan="7" class="p-8 text-center text-muted font-bold italic">No se encontraron insumos de inventario.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Record Movements -->
+    <div *ngIf="activeTab() === 'movement'" class="max-w-2xl mx-auto">
+        <div class="glass-card p-6 border border-glass-border rounded-2xl space-y-6">
+            <div>
+                <h3 class="text-sm font-black uppercase tracking-widest text-primary-glow">Registrar Ingreso o Descarte</h3>
+                <p class="text-[10px] text-muted font-bold uppercase tracking-wider">Añada stock al inventario o descarte insumos dañados/vencidos</p>
+            </div>
+
+            <form (ngSubmit)="saveMovement()" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Seleccionar Insumo *</label>
+                        <select [ngModel]="movementForm().insumoId" (ngModelChange)="movementForm().insumoId = $event" name="insumoId" required
+                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                            <option value="" disabled>Seleccione un insumo...</option>
+                            <option *ngFor="let item of insumos()" [value]="item.id">
+                                {{ item.nombre }} ({{ item.codigo }}) - Actual: {{ item.stockActual }} {{ item.unidadMedidaBase }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Tipo de Movimiento *</label>
+                        <select [ngModel]="movementForm().tipoMovimiento" (ngModelChange)="movementForm().tipoMovimiento = $event" name="tipoMovimiento" required
+                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                            <option value="Ingreso">Ingreso (Entrada/Compra)</option>
+                            <option value="Descarte">Descarte (Vencimiento/Dañado)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Cantidad *</label>
+                        <input type="number" step="any" [ngModel]="movementForm().cantidadOriginal" (ngModelChange)="movementForm().cantidadOriginal = $event" name="cantidadOriginal" required
+                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Unidad de Medida Original *</label>
+                        <select [ngModel]="movementForm().unidadMedidaOriginal" (ngModelChange)="movementForm().unidadMedidaOriginal = $event" name="unidadMedidaOriginal" required
+                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                            <option *ngFor="let u of unidadesMedida" [value]="u">{{ u }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-muted tracking-wider">Motivo / Justificación *</label>
+                    <textarea [ngModel]="movementForm().motivo" (ngModelChange)="movementForm().motivo = $event" name="motivo" required rows="3"
+                        placeholder="Describa el motivo del descarte o el número de factura/proveedor del ingreso..."
+                        class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main"></textarea>
+                </div>
+
+                <div class="flex justify-end pt-4">
+                    <button type="submit" [disabled]="isSubmitting()"
+                        class="px-6 py-2.5 bg-primary hover:bg-primary-glow text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20">
+                        {{ isSubmitting() ? 'Registrando...' : 'Registrar Movimiento' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB 3: Physical Closing -->
+    <div *ngIf="activeTab() === 'closing'" class="space-y-6">
+        <div class="glass-card p-6 border border-glass-border rounded-2xl flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div>
+                <h3 class="text-sm font-black uppercase tracking-widest text-primary-glow">Cierre Físico de Inventario</h3>
+                <p class="text-[10px] text-muted font-bold uppercase tracking-wider">Ingrese el conteo real físico actual. El sistema ajustará la diferencia de manera automática y creará un snapshot para auditorías.</p>
+            </div>
+        </div>
+
+        <div class="glass-card border border-glass-border overflow-hidden rounded-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface/50 border-b border-glass-border text-[10px] font-black text-muted uppercase tracking-widest">
+                            <th class="p-4">Insumo</th>
+                            <th class="p-4 text-center">Unidad Base</th>
+                            <th class="p-4 text-right">Stock Teórico</th>
+                            <th class="p-4 text-center w-48">Stock Real (Físico)</th>
+                            <th class="p-4 text-right">Discrepancia</th>
+                            <th class="p-4 text-right">Costo Ajuste USD</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glass-border text-xs font-bold">
+                        <tr *ngFor="let item of insumos()" class="hover:bg-white/5 transition-all">
+                            <td class="p-4">
+                                <div class="font-bold text-main">{{ item.nombre }}</div>
+                                <div class="font-mono text-[10px] text-muted">{{ item.codigo }}</div>
+                            </td>
+                            <td class="p-4 text-center">
+                                <span class="px-2 py-0.5 bg-surface-card border border-glass-border rounded-md text-[10px] font-black text-muted uppercase">
+                                    {{ item.unidadMedidaBase }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right text-muted">{{ item.stockActual | number:'1.2-4' }}</td>
+                            <td class="p-4 text-center">
+                                <input type="number" step="any" [value]="physicalCounts()[item.id]"
+                                    (input)="setPhysicalCount(item.id, $event)"
+                                    class="w-full text-center px-2 py-1.5 bg-surface-card border border-glass-border rounded-lg text-xs font-bold text-main focus:outline-none focus:border-primary">
+                            </td>
+                            <td class="p-4 text-right">
+                                <span [ngClass]="{
+                                    'text-rose-500': getDiscrepancy(item) < 0,
+                                    'text-emerald-400': getDiscrepancy(item) > 0,
+                                    'text-muted': getDiscrepancy(item) === 0
+                                }">
+                                    {{ getDiscrepancy(item) > 0 ? '+' : '' }}{{ getDiscrepancy(item) | number:'1.2-4' }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right font-black">
+                                <span [ngClass]="{
+                                    'text-rose-500': getDiscrepancyCost(item) < 0,
+                                    'text-emerald-400': getDiscrepancyCost(item) > 0,
+                                    'text-muted': getDiscrepancyCost(item) === 0
+                                }">
+                                    {{ getDiscrepancyCost(item) | currency:'USD' }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 border border-glass-border rounded-2xl space-y-4">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-muted tracking-wider font-bold">Observaciones del Cierre</label>
+                <textarea [ngModel]="closingObservations()" (ngModelChange)="closingObservations.set($event)" rows="3"
+                    placeholder="Escriba los comentarios o aclaraciones de las discrepancias halladas..."
+                    class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main"></textarea>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button (click)="submitClosing()" [disabled]="isSubmitting()"
+                    class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/20">
+                    {{ isSubmitting() ? 'Procesando...' : 'Realizar Cierre de Inventario' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Recipes Mapping (BOM) -->
+    <div *ngIf="activeTab() === 'recipes'" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Side: Config Form -->
+            <div class="glass-card p-6 border border-glass-border rounded-2xl space-y-4 h-fit">
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-widest text-primary-glow">Vincular Consumo a Servicio</h3>
+                    <p class="text-[10px] text-muted font-bold uppercase tracking-wider">Configure qué insumos se consumen automáticamente al vender o cargar un servicio clínico</p>
+                </div>
+
+                <form (ngSubmit)="saveRecipe()" class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Servicio Clínico *</label>
+                        <select [ngModel]="recipeForm().servicioClinicoId" (ngModelChange)="recipeForm().servicioClinicoId = $event" name="servicioClinicoId" required
+                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                            <option value="" disabled>Seleccione un servicio...</option>
+                            <option *ngFor="let s of services()" [value]="s.id">
+                                [{{ s.codigo }}] {{ s.descripcion }} ({{ s.tipo }})
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Insumo Médico a Consumir *</label>
+                        <select [ngModel]="recipeForm().insumoId" (ngModelChange)="recipeForm().insumoId = $event" name="insumoId" required
+                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                            <option value="" disabled>Seleccione un insumo...</option>
+                            <option *ngFor="let i of insumos()" [value]="i.id">
+                                {{ i.nombre }} ({{ i.codigo }})
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-muted tracking-wider">Cantidad *</label>
+                            <input type="number" step="any" [ngModel]="recipeForm().cantidad" (ngModelChange)="recipeForm().cantidad = $event" name="cantidad" required
+                                class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-muted tracking-wider">Unidad Consumo *</label>
+                            <select [ngModel]="recipeForm().unidadMedidaConsumo" (ngModelChange)="recipeForm().unidadMedidaConsumo = $event" name="unidadMedidaConsumo" required
+                                class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                                <option *ngFor="let u of unidadesMedida" [value]="u">{{ u }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" [disabled]="isSubmitting()"
+                            class="w-full px-4 py-2.5 bg-primary hover:bg-primary-glow text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20">
+                            {{ isSubmitting() ? 'Guardando...' : 'Asignar / Actualizar Receta' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Recipes List -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="relative max-w-md">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
+                        <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
+                    </span>
+                    <input type="text" [ngModel]="recipeSearchQuery()" (ngModelChange)="recipeSearchQuery.set($event)"
+                        placeholder="Buscar recetas por servicio o insumo..."
+                        class="w-full pl-10 pr-4 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold placeholder-muted focus:outline-none focus:border-primary/50 text-main transition-all">
+                </div>
+
+                <div class="glass-card border border-glass-border overflow-hidden rounded-2xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-surface/50 border-b border-glass-border text-[10px] font-black text-muted uppercase tracking-widest">
+                                    <th class="p-4">Servicio Clínico</th>
+                                    <th class="p-4">Insumo Consumido</th>
+                                    <th class="p-4 text-center">Cantidad Consumo</th>
+                                    <th class="p-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-glass-border text-xs font-bold">
+                                <tr *ngFor="let r of filteredRecipes()" class="hover:bg-white/5 transition-all">
+                                    <td class="p-4">
+                                        <div class="font-bold text-main">{{ r.servicioClinico?.descripcion || 'Servicio Externo' }}</div>
+                                        <div class="font-mono text-[10px] text-muted">{{ r.servicioCodigo }}</div>
+                                    </td>
+                                    <td class="p-4 text-main">
+                                        {{ r.insumo?.nombre }} ({{ r.insumo?.codigo }})
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <span class="px-2 py-0.5 bg-surface border border-glass-border rounded text-[11px] font-bold text-primary-glow">
+                                            {{ r.cantidad | number:'1.2-4' }} {{ r.unidadMedidaConsumo }}
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <button (click)="deleteRecipe(r.id)" class="p-1.5 text-muted hover:text-rose-500 transition-all">
+                                            <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="filteredRecipes().length === 0">
+                                    <td colspan="4" class="p-8 text-center text-muted font-bold italic">No hay recetas de consumo configuradas.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Audit Log Ledger -->
+    <div *ngIf="activeTab() === 'audit'" class="space-y-4">
+        <!-- Search bar -->
+        <div class="relative max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
+                <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
+            </span>
+            <input type="text" [ngModel]="movementSearchQuery()" (ngModelChange)="movementSearchQuery.set($event)"
+                placeholder="Buscar por insumo, tipo, operador o motivo..."
+                class="w-full pl-10 pr-4 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold placeholder-muted focus:outline-none focus:border-primary/50 text-main transition-all">
+        </div>
+
+        <!-- Audit Table -->
+        <div class="glass-card border border-glass-border overflow-hidden rounded-2xl">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface/50 border-b border-glass-border text-[10px] font-black text-muted uppercase tracking-widest">
+                            <th class="p-4">Fecha / Hora</th>
+                            <th class="p-4">Insumo</th>
+                            <th class="p-4">Tipo Movimiento</th>
+                            <th class="p-4 text-right">Cantidad Base</th>
+                            <th class="p-4 text-right">Cantidad / Unidad Original</th>
+                            <th class="p-4">Operador</th>
+                            <th class="p-4">Motivo / Justificación</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-glass-border text-xs font-bold">
+                        <tr *ngFor="let m of filteredMovements()" class="hover:bg-white/5 transition-all">
+                            <td class="p-4 font-mono text-[10px] text-muted">{{ m.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                            <td class="p-4">
+                                <div class="text-main">{{ m.insumo?.nombre }}</div>
+                                <div class="text-[9px] font-mono text-muted">{{ m.insumo?.codigo }}</div>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"
+                                    [ngClass]="{
+                                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': m.tipoMovimiento === 'Ingreso',
+                                        'bg-rose-500/10 text-rose-500 border border-rose-500/20': m.tipoMovimiento === 'Descarte',
+                                        'bg-blue-500/10 text-blue-400 border border-blue-500/20': m.tipoMovimiento === 'Consumo',
+                                        'bg-amber-500/10 text-amber-500 border border-amber-500/20': m.tipoMovimiento === 'AjusteCierre'
+                                    }">
+                                    {{ m.tipoMovimiento }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right" [class.text-rose-500]="m.cantidadBase < 0" [class.text-emerald-400]="m.cantidadBase > 0">
+                                {{ m.cantidadBase > 0 ? '+' : '' }}{{ m.cantidadBase | number:'1.2-4' }}
+                            </td>
+                            <td class="p-4 text-right text-muted">
+                                {{ m.cantidadOriginal | number:'1.2-4' }} {{ m.unidadMedidaOriginal }}
+                            </td>
+                            <td class="p-4 text-main font-bold">{{ m.usuario }}</td>
+                            <td class="p-4 text-muted italic max-w-xs truncate" [title]="m.motivo">{{ m.motivo }}</td>
+                        </tr>
+                        <tr *ngIf="filteredMovements().length === 0">
+                            <td colspan="7" class="p-8 text-center text-muted font-bold italic">No se registran movimientos.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Create / Edit Insumo -->
+<div *ngIf="showInsumoModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div class="glass-card max-w-md w-full border border-glass-border rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-6 border-b border-glass-border flex justify-between items-center bg-surface/50">
+            <h3 class="text-sm font-black uppercase tracking-widest text-primary-glow">
+                {{ isEditingInsumo() ? 'Modificar Insumo' : 'Crear Nuevo Insumo' }}
+            </h3>
+            <button (click)="showInsumoModal.set(false)" class="text-muted hover:text-primary transition-all">
+                <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+            </button>
+        </div>
+
+        <form (ngSubmit)="saveInsumo()" class="p-6 space-y-4">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-muted tracking-wider">Código del Insumo *</label>
+                <input type="text" [disabled]="isEditingInsumo()" [ngModel]="insumoForm().codigo" (ngModelChange)="insumoForm().codigo = $event" name="codigo" required
+                    placeholder="Ej: INS-001, AGU-05"
+                    class="w-full px-3 py-2 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-muted tracking-wider">Nombre del Insumo *</label>
+                <input type="text" [ngModel]="insumoForm().nombre" (ngModelChange)="insumoForm().nombre = $event" name="nombre" required
+                    placeholder="Ej: Jeringa 5cc, Alcohol Antiséptico"
+                    class="w-full px-3 py-2 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2" *ngIf="!isEditingInsumo()">
+                    <label class="text-[10px] font-black uppercase text-muted tracking-wider">Stock Inicial</label>
+                    <input type="number" step="any" [ngModel]="insumoForm().stockInicial" (ngModelChange)="insumoForm().stockInicial = $event" name="stockInicial"
+                        class="w-full px-3 py-2 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                </div>
+
+                <div class="space-y-2" *ngIf="!isEditingInsumo()">
+                    <label class="text-[10px] font-black uppercase text-muted tracking-wider">Unidad Medida Base *</label>
+                    <select [ngModel]="insumoForm().unidadMedidaBase" (ngModelChange)="insumoForm().unidadMedidaBase = $event" name="unidadMedidaBase" required
+                        class="w-full px-3 py-2 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+                        <option value="UNIDAD">UNIDAD (Count)</option>
+                        <option value="ML">ML (Volume)</option>
+                        <option value="G">G (Mass)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-muted tracking-wider">Costo Unitario Base USD *</label>
+                <input type="number" step="any" [ngModel]="insumoForm().costoUnitarioBaseUSD" (ngModelChange)="insumoForm().costoUnitarioBaseUSD = $event" name="costoUnitarioBaseUSD" required
+                    placeholder="Costo por Unidad Base en USD"
+                    class="w-full px-3 py-2 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-glass-border">
+                <button type="button" (click)="showInsumoModal.set(false)"
+                    class="px-4 py-2 bg-surface hover:bg-white/5 border border-glass-border text-xs font-black uppercase tracking-widest rounded-xl transition-all">
+                    Cancelar
+                </button>
+                <button type="submit" [disabled]="isSubmitting()"
+                    class="px-6 py-2 bg-primary hover:bg-primary-glow text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20">
+                    {{ isSubmitting() ? 'Guardando...' : 'Guardar' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

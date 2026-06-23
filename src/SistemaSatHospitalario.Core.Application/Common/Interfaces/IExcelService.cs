@@ -45,6 +45,11 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         public string Moneda { get; set; } = string.Empty;
         public decimal MontoMonedaOriginal { get; set; }
         public decimal EquivalenteUSD { get; set; }
+        public string IngresadoPor { get; set; } = string.Empty;
+        public string VueltoDadoPor { get; set; } = string.Empty;
+        public decimal TotalCuentaUSD { get; set; }
+        public decimal PendienteCuentaUSD { get; set; }
+        public decimal VueltoUSD { get; set; }
     }
 
     public class DesgloseMetodoDto

@@ -49,7 +49,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<HistorialModificacionCuenta> HistorialModificacionCuentas { get; }
         DbSet<TriageEnfermeria> TriagesEnfermeria { get; }
         DbSet<ValoracionFisica> ValoracionesFisicas { get; }
-
+        DbSet<Insumo> Insumos { get; }
+        DbSet<ServicioInsumoReceta> ServiciosInsumoRecetas { get; }
+        DbSet<ConsumoServicioRealizado> ConsumosServiciosRealizados { get; }
+        DbSet<MovimientoInsumo> MovimientosInsumo { get; }
+        DbSet<CierreInventario> CierresInventario { get; }
+        DbSet<CierreInventarioDetalle> CierresInventarioDetalles { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
         Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }

@@ -61,11 +61,14 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var emptyRules = new List<HonorariumMappingRule>().AsQueryable().BuildMockDbSet().Object;
             _contextMock.Setup(c => c.HonorariumMappingRules).Returns(emptyRules);
 
+            var mockInventory = new Mock<IInventoryService>();
+
             _handler = new SyncCarritoCommandHandler(
                 _repositoryMock.Object, 
                 _contextMock.Object, 
                 _legacyRepositoryMock.Object, 
                 _mapperServiceMock.Object, 
+                mockInventory.Object,
                 _loggerMock.Object);
         }
 

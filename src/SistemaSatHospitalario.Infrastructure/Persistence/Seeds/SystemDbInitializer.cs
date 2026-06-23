@@ -144,6 +144,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 
                 // Senior Maintenance Pattern: Asegurar integridad de fechas de recaudación
                 await FixOrphanPaymentDatesAsync();
+                await SeedMonedasAsync();
                 await SeedMetodosPagoAsync();
                 await SeedHonorarioConfigAsync();
 
@@ -442,6 +443,24 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             };
 
             _context.CatalogoMetodosPago.AddRange(metodos);
+            await _context.SaveChangesAsync();
+        }
+        private async Task SeedMonedasAsync()
+        {
+            if (await _context.Monedas.AnyAsync()) return;
+
+            _logger.LogInformation("Sembrando monedas en la base de datos...");
+
+            var monedas = new List<Moneda>
+            {
+                new Moneda(1, "USD", "Dólar", "$", true),
+                new Moneda(2, "VES", "Bolívar", "Bs.", false),
+                new Moneda(3, "EUR", "Euro", "€", false),
+                new Moneda(4, "COP", "Peso Colombiano", "COP$", false),
+                new Moneda(5, "ARS", "Peso Argentino", "ARS$", false)
+            };
+
+            _context.Monedas.AddRange(monedas);
             await _context.SaveChangesAsync();
         }
 
