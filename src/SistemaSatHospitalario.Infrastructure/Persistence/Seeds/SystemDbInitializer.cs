@@ -129,6 +129,81 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'Direccion' en PacientesAdmision.");
                 }
 
+                // Self-healing: Ensure PermiteFraccionamiento and UnidadMedida columns exist in ServiciosClinicos table
+                try
+                {
+                    bool hasFraccionamiento = false;
+                    bool hasUnidadMedida = false;
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConnection = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConnection = true;
+                    }
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (_context.Database.IsSqlite())
+                        {
+                            cmd.CommandText = "PRAGMA table_info(ServiciosClinicos);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var colName = reader["name"].ToString();
+                                    if (colName.Equals("PermiteFraccionamiento", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasFraccionamiento = true;
+                                    }
+                                    else if (colName.Equals("UnidadMedida", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasUnidadMedida = true;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `ServiciosClinicos`;";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var field = reader["Field"].ToString();
+                                    if (field.Equals("PermiteFraccionamiento", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasFraccionamiento = true;
+                                    }
+                                    else if (field.Equals("UnidadMedida", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasUnidadMedida = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (closeConnection)
+                    {
+                        await conn.CloseAsync();
+                    }
+
+                    if (!hasFraccionamiento)
+                    {
+                        _logger.LogInformation("La columna 'PermiteFraccionamiento' no existe en ServiciosClinicos. Ejecutando ALTER TABLE...");
+                        await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `ServiciosClinicos` ADD COLUMN `PermiteFraccionamiento` TINYINT(1) NOT NULL DEFAULT 0;");
+                    }
+
+                    if (!hasUnidadMedida)
+                    {
+                        _logger.LogInformation("La columna 'UnidadMedida' no existe en ServiciosClinicos. Ejecutando ALTER TABLE...");
+                        await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `ServiciosClinicos` ADD COLUMN `UnidadMedida` VARCHAR(50) NULL;");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear las columnas 'PermiteFraccionamiento' y 'UnidadMedida' en ServiciosClinicos.");
+                }
+
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 
                 await SeedEspecialidadesAsync();
