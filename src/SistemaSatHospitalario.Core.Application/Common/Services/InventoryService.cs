@@ -30,9 +30,18 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             decimal cantidadServicio,
             string usuarioCarga,
             Guid cuentaId,
+            Guid? sedeId,
             CancellationToken cancellationToken)
         {
             if (cantidadServicio <= 0) return;
+
+            // [PHASE-6] Check if the service requires inventory deduction
+            var baseService = await _context.ServiciosClinicos
+                .FirstOrDefaultAsync(s => s.Id == serviceId || s.Codigo == serviceCodigo, cancellationToken);
+            if (baseService != null && !baseService.RequiereInventario)
+            {
+                return; // Omit inventory deduction as requested
+            }
 
             // 1. Fetch recipes matching this service (by ID or Code)
             var recipes = await _context.ServiciosInsumoRecetas
@@ -46,6 +55,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 return; // No recipe mapping for this service, skip inventory deduction
             }
 
+            var targetSedeId = sedeId ?? (await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, cancellationToken))?.Id ?? Guid.Empty;
+
             foreach (var recipe in recipes)
             {
                 if (recipe.Insumo == null) continue;
@@ -54,14 +65,23 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
                 decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
 
-                // 3. Deduct stock (allowing negative values per user requirements)
-                recipe.Insumo.RegistrarMovimientoStock(-qtyBaseNeeded);
+                // 3. Find or create StockSede for target Sede
+                var stockSede = await _context.StocksSedes
+                    .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == targetSedeId, cancellationToken);
+                if (stockSede == null)
+                {
+                    stockSede = new StockSede(recipe.InsumoId, targetSedeId, 0);
+                    _context.StocksSedes.Add(stockSede);
+                }
+
+                // Deduct stock (allowing negative values per user requirements)
+                stockSede.RegistrarMovimientoStock(-qtyBaseNeeded, recipe.Insumo.PermiteFraccionamiento);
 
                 // 4. Warning check
-                if (recipe.Insumo.StockActual < 0)
+                if (stockSede.StockActual < 0)
                 {
-                    _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}).",
-                        recipe.Insumo.Nombre, recipe.Insumo.Codigo, recipe.Insumo.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId);
+                    _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}) en Sede {SedeId}.",
+                        recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId, targetSedeId);
                 }
 
                 // 5. Add ConsumoServicioRealizado
@@ -77,6 +97,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 // 6. Add MovimientoInsumo (Immutable Audit Ledger)
                 var movimiento = new MovimientoInsumo(
                     recipe.InsumoId,
+                    targetSedeId,
                     "Consumo",
                     -qtyBaseNeeded,
                     recipe.UnidadMedidaConsumo,
@@ -90,6 +111,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
         public async Task RecordMovementAsync(
             Guid insumoId,
+            Guid sedeId,
             string tipoMovimiento,
             decimal cantidadOriginal,
             UnidadMedida unidadMedidaOriginal,
@@ -111,16 +133,26 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 qtyBase = -qtyBase;
             }
 
-            insumo.RegistrarMovimientoStock(qtyBase);
-
-            if (insumo.StockActual < 0)
+            // Find or create StockSede JIT
+            var stockSede = await _context.StocksSedes
+                .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == sedeId, cancellationToken);
+            if (stockSede == null)
             {
-                _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras registrar un movimiento de tipo '{TipoMovimiento}' de {Consumido} {UnidadOriginal}.",
-                    insumo.Nombre, insumo.Codigo, insumo.StockActual, insumo.UnidadMedidaBase, tipoMovimiento, cantidadOriginal, unidadMedidaOriginal);
+                stockSede = new StockSede(insumoId, sedeId, 0);
+                _context.StocksSedes.Add(stockSede);
+            }
+
+            stockSede.RegistrarMovimientoStock(qtyBase, insumo.PermiteFraccionamiento);
+
+            if (stockSede.StockActual < 0)
+            {
+                _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras registrar un movimiento de tipo '{TipoMovimiento}' de {Consumido} {UnidadOriginal} en Sede {SedeId}.",
+                    insumo.Nombre, insumo.Codigo, stockSede.StockActual, insumo.UnidadMedidaBase, tipoMovimiento, cantidadOriginal, unidadMedidaOriginal, sedeId);
             }
 
             var movimiento = new MovimientoInsumo(
                 insumoId,
+                sedeId,
                 tipoMovimiento,
                 qtyBase,
                 unidadMedidaOriginal,
@@ -135,12 +167,13 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         }
 
         public async Task PerformClosingAsync(
+            Guid sedeId,
             string usuario,
             string observaciones,
             List<CierreDetalleInputDto> detalles,
             CancellationToken cancellationToken)
         {
-            var closure = new CierreInventario(usuario, observaciones);
+            var closure = new CierreInventario(sedeId, usuario, observaciones);
             _context.CierresInventario.Add(closure);
 
             foreach (var item in detalles)
@@ -148,11 +181,20 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == item.InsumoId, cancellationToken);
                 if (insumo == null) continue;
 
-                decimal stockTeorico = insumo.StockActual;
+                // Find or create StockSede JIT
+                var stockSede = await _context.StocksSedes
+                    .FirstOrDefaultAsync(s => s.InsumoId == item.InsumoId && s.SedeId == sedeId, cancellationToken);
+                if (stockSede == null)
+                {
+                    stockSede = new StockSede(item.InsumoId, sedeId, 0);
+                    _context.StocksSedes.Add(stockSede);
+                }
+
+                decimal stockTeorico = stockSede.StockActual;
                 decimal stockReal = item.StockReal;
                 decimal variance = stockReal - stockTeorico;
 
-                insumo.EstablecerStockCierre(stockReal);
+                stockSede.EstablecerStockCierre(stockReal);
 
                 var detail = new CierreInventarioDetalle(
                     closure.Id,
@@ -165,16 +207,135 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
                 var adjustmentMov = new MovimientoInsumo(
                     insumo.Id,
+                    sedeId,
                     "AjusteCierre",
                     variance,
                     insumo.UnidadMedidaBase,
                     variance,
                     usuario,
-                    $"Ajuste automático por cierre de inventario. Diferencia (Fisico - Teorico) = {variance} {insumo.UnidadMedidaBase}."
+                    $"Ajuste automático por cierre de inventario en Sede {sedeId}. Diferencia (Fisico - Teorico) = {variance} {insumo.UnidadMedidaBase}."
                 );
                 _context.MovimientosInsumo.Add(adjustmentMov);
             }
 
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task DispatchPedidoAsync(
+            Guid pedidoId,
+            string usuario,
+            CancellationToken cancellationToken)
+        {
+            var pedido = await _context.PedidosInterSede
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Insumo)
+                .FirstOrDefaultAsync(p => p.Id == pedidoId, cancellationToken);
+
+            if (pedido == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el pedido inter-sede con ID {pedidoId}");
+            }
+
+            if (pedido.Estado != EstadoPedidoInterSede.Solicitado)
+            {
+                throw new InvalidOperationException("El pedido no está en un estado que permita despacho.");
+            }
+
+            // Validar stock disponible en la sede proveedora y descontar stock
+            foreach (var detalle in pedido.Detalles)
+            {
+                var stockSede = await _context.StocksSedes
+                    .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeProveedoraId, cancellationToken);
+
+                var stockActual = stockSede?.StockActual ?? 0;
+                if (stockActual < detalle.CantidadSolicitada)
+                {
+                    throw new InvalidOperationException($"Stock insuficiente de '{detalle.Insumo.Nombre}' en la sede proveedora. Solicitado: {detalle.CantidadSolicitada}, Disponible: {stockActual}");
+                }
+
+                // Descuenta stock
+                stockSede.RegistrarMovimientoStock(-detalle.CantidadSolicitada, detalle.Insumo.PermiteFraccionamiento);
+                detalle.SetDespachado(detalle.CantidadSolicitada);
+
+                // Registrar movimiento de salida
+                var movimiento = new MovimientoInsumo(
+                    detalle.InsumoId,
+                    pedido.SedeProveedoraId,
+                    "TransferenciaSalida",
+                    -detalle.CantidadSolicitada,
+                    detalle.Insumo.UnidadMedidaBase,
+                    detalle.CantidadSolicitada,
+                    usuario,
+                    $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante"
+                );
+                _context.MovimientosInsumo.Add(movimiento);
+            }
+
+            pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task ReceivePedidoAsync(
+            Guid pedidoId,
+            string usuario,
+            Dictionary<Guid, decimal> discrepancias,
+            CancellationToken cancellationToken)
+        {
+            var pedido = await _context.PedidosInterSede
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Insumo)
+                .FirstOrDefaultAsync(p => p.Id == pedidoId, cancellationToken);
+
+            if (pedido == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el pedido inter-sede con ID {pedidoId}");
+            }
+
+            if (pedido.Estado != EstadoPedidoInterSede.Despachado)
+            {
+                throw new InvalidOperationException("El pedido no está en un estado que permita recepción.");
+            }
+
+            foreach (var detalle in pedido.Detalles)
+            {
+                // Determinar la cantidad realmente recibida (se permite discrepancia/recepción parcial)
+                decimal cantidadRecibida = detalle.CantidadDespachada;
+                if (discrepancias != null && discrepancias.TryGetValue(detalle.InsumoId, out decimal cantDiscrepancia))
+                {
+                    cantidadRecibida = cantDiscrepancia;
+                }
+
+                // Incrementa stock en la sede solicitante (destino)
+                var stockSede = await _context.StocksSedes
+                    .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeSolicitanteId, cancellationToken);
+                
+                if (stockSede == null)
+                {
+                    stockSede = new StockSede(detalle.InsumoId, pedido.SedeSolicitanteId, 0);
+                    _context.StocksSedes.Add(stockSede);
+                }
+
+                stockSede.RegistrarMovimientoStock(cantidadRecibida, detalle.Insumo.PermiteFraccionamiento);
+                detalle.SetRecibido(cantidadRecibida);
+
+                // Registrar movimiento de entrada
+                var movimiento = new MovimientoInsumo(
+                    detalle.InsumoId,
+                    pedido.SedeSolicitanteId,
+                    "TransferenciaEntrada",
+                    cantidadRecibida,
+                    detalle.Insumo.UnidadMedidaBase,
+                    cantidadRecibida,
+                    usuario,
+                    $"Recepción de pedido inter-sede {pedido.Correlativo}"
+                );
+                _context.MovimientosInsumo.Add(movimiento);
+
+                // Si hay discrepancia, se podría devolver el stock no entregado/perdido al proveedor o registrar merma/ajuste
+                // De acuerdo a las especificaciones, solo se anota la discrepancia en la cantidad recibida
+            }
+
+            pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
             await _context.SaveChangesAsync(cancellationToken);
         }
 

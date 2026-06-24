@@ -16,6 +16,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public bool Activo { get; set; }
         public string? UnidadMedida { get; set; }
         public bool PermiteFraccionamiento { get; set; }
+        public bool RequiereInventario { get; set; } = true;
         public Guid? EspecialidadId { get; set; }
         public virtual Especialidad? Especialidad { get; set; }
         public virtual ICollection<ServicioSugerencia> Sugerencias { get; private set; } = new List<ServicioSugerencia>();

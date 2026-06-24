@@ -71,10 +71,16 @@
         <div *ngIf="!isRxAssistant() || isAdmin()" class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
         
         <!-- Supervisor de Inventario -->
-        <a *ngIf="auth.isInventorySupervisor()" routerLink="/admin/inventory" routerLinkActive="active-link" class="nav-item flex items-center">
-            <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3 text-indigo-400"></lucide-icon>
-            <span class="font-bold">Supervisor Inventario</span>
-        </a>
+        <div *ngIf="auth.isInventorySupervisor() || isAdmin()" class="space-y-1">
+            <a routerLink="/admin/inventory" routerLinkActive="active-link" class="nav-item flex items-center">
+                <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3 text-indigo-400"></lucide-icon>
+                <span class="font-bold">Supervisor Inventario</span>
+            </a>
+            <div class="pl-8 space-y-1">
+                <a routerLink="/admin/inventory/sedes" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Sedes</a>
+                <a routerLink="/admin/inventory/pedidos" routerLinkActive="active-sublink" class="nav-subitem">Pedidos Inter-Sede</a>
+            </div>
+        </div>
         
         <!-- Dropdown: Caja y Catálogos -->
         <div *ngIf="permissionService.can('Permissions.Admin.ManageCatalog')" class="space-y-1">

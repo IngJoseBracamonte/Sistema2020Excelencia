@@ -336,6 +336,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         detalle.Cantidad,
                         request.UsuarioCarga,
                         cuenta.Id,
+                        null,
                         ct
                     );
 

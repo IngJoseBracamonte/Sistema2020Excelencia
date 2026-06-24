@@ -6,6 +6,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     public class CierreInventario
     {
         public Guid Id { get; private set; }
+        public Guid SedeId { get; private set; }
+        public virtual Sede Sede { get; private set; }
         public DateTime FechaCierre { get; private set; }
         public string Usuario { get; private set; }
         public string Observaciones { get; private set; }
@@ -14,9 +16,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CierreInventario() { }
 
-        public CierreInventario(string usuario, string observaciones)
+        public CierreInventario(Guid sedeId, string usuario, string observaciones)
         {
             Id = Guid.NewGuid();
+            SedeId = sedeId;
             FechaCierre = DateTime.UtcNow;
             Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
             Observaciones = observaciones ?? string.Empty;

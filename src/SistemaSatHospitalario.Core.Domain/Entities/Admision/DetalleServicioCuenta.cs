@@ -18,6 +18,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? MedicoResponsableId { get; private set; }
         public string? CategoriaHonorario { get; private set; }
         public virtual CuentaServicios CuentaServicio { get; private set; }
+        public virtual System.Collections.Generic.ICollection<DetalleServicioMedicoResponsable> MedicosResponsables { get; private set; } = new System.Collections.Generic.List<DetalleServicioMedicoResponsable>();
+
+        public void AgregarMedicoResponsable(Guid medicoId, string rol, decimal montoHonorario)
+        {
+            MedicosResponsables.Add(new DetalleServicioMedicoResponsable(Id, medicoId, rol, montoHonorario));
+        }
 
 
         // [PHASE-6] Technical Validation Fields (Senior Traceability)

@@ -5,6 +5,8 @@ import { CatalogService, CatalogItem } from '../../../core/services/catalog.serv
 import { BillingFacadeService } from '../../../core/services/billing-facade.service';
 import { ActivatedRoute } from '@angular/router';
 import { MedicoService, Medico } from '../../../core/services/medico.service';
+import { InventoryService } from '../../../core/services/inventory.service';
+import { Insumo, CreateRecipe, ServicioInsumoReceta } from '../../../core/models/inventory.model';
 import { 
     LucideAngularModule, 
     Package, 
@@ -31,6 +33,18 @@ export class CatalogManagementComponent implements OnInit {
   private billingFacade = inject(BillingFacadeService);
   private route = inject(ActivatedRoute);
   private medicoService = inject(MedicoService);
+  private inventoryService = inject(InventoryService);
+
+  // BOM Recipe States
+  public insumosList = signal<Insumo[]>([]);
+  public recipesList = signal<ServicioInsumoReceta[]>([]);
+  public targetRecipeForm = signal<CreateRecipe>({
+    servicioClinicoId: '',
+    insumoId: '',
+    cantidad: 0,
+    unidadMedidaConsumo: 'UNIDAD'
+  });
+  public unidadesMedida = ['UNIDAD', 'KG', 'G', 'DG', 'MG', 'L', 'ML'];
 
   public tasaCambioDia = this.billingFacade.tasaCambioDia;
 
@@ -87,6 +101,7 @@ export class CatalogManagementComponent implements OnInit {
     honorarioBase: 0,
     tipo: 'CONSULTA',
     activo: true,
+    requiereInventario: true,
     sugerenciasIds: []
   });
 
@@ -114,7 +129,13 @@ export class CatalogManagementComponent implements OnInit {
       }
       this.refreshCatalog();
       this.loadMedicos();
+      this.loadInventoryData();
     });
+  }
+
+  loadInventoryData() {
+    this.inventoryService.getInsumos().subscribe(res => this.insumosList.set(res));
+    this.inventoryService.getRecetas().subscribe(res => this.recipesList.set(res));
   }
 
   loadMedicos() {
@@ -195,6 +216,7 @@ export class CatalogManagementComponent implements OnInit {
       honorarioBase: 0,
       tipo: 'CONSULTA',
       activo: true,
+      requiereInventario: true,
       sugerenciasIds: []
     });
     this.honorariosLocales.set({});
@@ -242,6 +264,47 @@ export class CatalogManagementComponent implements OnInit {
       this.catalogService.createItem(item).subscribe(() => {
         this.showModal.set(false);
         this.refreshCatalog();
+      });
+    }
+  }
+
+  // --- BOM RECIPES METHODS ---
+  getServiceRecipes(servicioClinicoId: string): ServicioInsumoReceta[] {
+    return this.recipesList().filter(r => r.servicioClinicoId === servicioClinicoId);
+  }
+
+  addRecipeLine() {
+    const serviceId = this.currentItem().id;
+    if (!serviceId) {
+      alert('Guarde el servicio primero antes de configurar los insumos.');
+      return;
+    }
+    const form = this.targetRecipeForm();
+    if (!form.insumoId || form.cantidad <= 0) return;
+
+    this.inventoryService.createOrUpdateRecipe({
+      servicioClinicoId: serviceId,
+      insumoId: form.insumoId,
+      cantidad: form.cantidad,
+      unidadMedidaConsumo: form.unidadMedidaConsumo
+    }).subscribe({
+      next: () => {
+        this.inventoryService.getRecetas().subscribe(res => this.recipesList.set(res));
+        this.targetRecipeForm.set({
+          servicioClinicoId: serviceId,
+          insumoId: '',
+          cantidad: 0,
+          unidadMedidaConsumo: 'UNIDAD'
+        });
+      },
+      error: (err) => alert(err.error?.message || 'Error al agregar insumo a la composición')
+    });
+  }
+
+  removeRecipeLine(id: string) {
+    if (confirm('¿Desea quitar este insumo de la composición del servicio?')) {
+      this.inventoryService.deleteRecipe(id).subscribe(() => {
+        this.inventoryService.getRecetas().subscribe(res => this.recipesList.set(res));
       });
     }
   }

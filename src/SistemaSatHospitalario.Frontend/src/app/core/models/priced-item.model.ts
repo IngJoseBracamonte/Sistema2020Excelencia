@@ -15,6 +15,8 @@ export abstract class BasePricedItem {
   activo?: boolean;
   honorarioBase?: number;
   HonorarioBase?: number;
+  requiereInventario?: boolean;
+  RequiereInventario?: boolean;
   sugerenciasIds?: string[];
   SugerenciasIds?: string[];
   honorariosMedicos?: { medicoId: string; medicoNombre?: string; honorario: number }[];
@@ -39,6 +41,7 @@ export abstract class BasePricedItem {
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;
     this.activo = data.activo ?? data.Activo;
     this.honorarioBase = data.honorarioBase ?? data.HonorarioBase ?? 0;
+    this.requiereInventario = data.requiereInventario ?? data.RequiereInventario ?? false;
     this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
     this.honorariosMedicos = data.honorariosMedicos || data.HonorariosMedicos || [];
 

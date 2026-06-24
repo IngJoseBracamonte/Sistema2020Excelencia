@@ -26,6 +26,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public bool Activo { get; set; }
         public decimal HonorarioBase { get; set; }
         public string? HonorariumCategory { get; set; }
+        public bool RequiereInventario { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
     }
@@ -54,6 +55,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             item.Codigo = request.Codigo;
             item.Activo = request.Activo;
             item.HonorariumCategory = request.HonorariumCategory;
+            item.RequiereInventario = request.RequiereInventario;
 
             // Actualizar sugerencias
             _context.ServiciosSugerencias.RemoveRange(item.Sugerencias);

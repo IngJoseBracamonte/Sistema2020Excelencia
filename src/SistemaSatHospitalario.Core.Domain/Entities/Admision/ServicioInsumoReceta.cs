@@ -13,7 +13,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public UnidadMedida UnidadMedidaConsumo { get; private set; }
 
         public virtual ServicioClinico ServicioClinico { get; private set; }
-        public virtual Insumo Insumo { get; private set; }
+        public virtual Insumo Insumo { get; set; }
 
         protected ServicioInsumoReceta() { }
 

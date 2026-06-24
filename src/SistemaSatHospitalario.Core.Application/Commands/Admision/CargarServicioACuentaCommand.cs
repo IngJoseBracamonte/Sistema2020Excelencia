@@ -34,6 +34,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
         public DateTime? HoraCita { get; set; }
+
+        // Datos para Cirugía/Procedimiento Complejo con Múltiples Médicos
+        public global::System.Collections.Generic.List<MedicoRolInputDto>? MedicosRoles { get; set; }
+    }
+
+    public class MedicoRolInputDto
+    {
+        public Guid MedicoId { get; set; }
+        public string Rol { get; set; } = string.Empty;
+        public decimal MontoHonorario { get; set; }
     }
 
     public record CargarServicioResult(Guid CuentaId, Guid DetalleId);
@@ -194,8 +204,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 _context.DetallesServicioCuenta.Add(detalle);
             }
 
-            // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5)
-            if (detalle.Honorario > 0 && !esConsulta)
+            // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5) o múltiples médicos desde MedicosRoles
+            if (request.MedicosRoles != null && request.MedicosRoles.Any())
+            {
+                decimal totalHonorarios = 0;
+                foreach (var mr in request.MedicosRoles)
+                {
+                    detalle.AgregarMedicoResponsable(mr.MedicoId, mr.Rol, mr.MontoHonorario);
+                    totalHonorarios += mr.MontoHonorario;
+
+                    var medicoNombre = (await _context.Medicos.FindAsync(new object[] { mr.MedicoId }, cancellationToken))?.Nombre;
+                    _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
+                        detalle.Id, request.Descripcion, HonorarioConstants.AccionAsignacionManual,
+                        null, null, mr.MedicoId, medicoNombre,
+                        request.UsuarioCarga, $"Asignado rol {mr.Rol} en cirugía compleja"));
+                }
+                
+                // Actualizar el honorario acumulado del detalle del servicio
+                detalle.ModificarPreciosAdministrativos(detalle.Precio, totalHonorarios);
+            }
+            else if (detalle.Honorario > 0 && !esConsulta)
             {
                 Guid? serviceId = Guid.TryParse(request.ServicioId, out var sid) ? sid : null;
                 string? categoriaMapeada = await _mapperService.MapToCategoryAsync(request.TipoServicio, serviceId);
@@ -223,6 +251,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                     detalle.AsignarMedicoResponsable(finalMedicoId.Value, categoriaMapeada ?? HonorarioConstants.CategoriaOtros, honorarioAsignado);
                     
+                    // También agregarlo a la lista de múltiples médicos con rol default para consistencia
+                    detalle.AgregarMedicoResponsable(finalMedicoId.Value, "Médico Responsable", honorarioAsignado);
+
                     var medicoNombre = (await _context.Medicos.FindAsync(new object[] { finalMedicoId.Value }, cancellationToken))?.Nombre;
                     _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                         detalle.Id, request.Descripcion, sourceAccion,
@@ -243,6 +274,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 detalle.Cantidad,
                 request.UsuarioCarga,
                 cuenta.Id,
+                null,
                 cancellationToken
             );
 

@@ -36,6 +36,25 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             return Ok(insumos);
         }
 
+        [HttpGet("stock-por-sede")]
+        public async Task<IActionResult> GetStockPorSede([FromQuery] Guid sedeId, CancellationToken ct)
+        {
+            var stocks = await _context.StocksSedes
+                .Include(s => s.Insumo)
+                .Where(s => s.SedeId == sedeId)
+                .Select(s => new
+                {
+                    s.InsumoId,
+                    InsumoCodigo = s.Insumo.Codigo,
+                    InsumoNombre = s.Insumo.Nombre,
+                    s.StockActual,
+                    s.StockMinimo,
+                    s.StockMaximo
+                })
+                .ToListAsync(ct);
+            return Ok(stocks);
+        }
+
         [HttpPost("insumos")]
         public async Task<IActionResult> CreateInsumo([FromBody] CreateInsumoDto dto, CancellationToken ct)
         {
@@ -49,8 +68,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
             if (dto.StockInicial != 0)
             {
+                var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, ct);
+                var targetSedeId = principalSede?.Id ?? Guid.Empty;
+
+                var stockSede = new StockSede(insumo.Id, targetSedeId, dto.StockInicial);
+                _context.StocksSedes.Add(stockSede);
+
                 var mov = new MovimientoInsumo(
                     insumo.Id,
+                    targetSedeId,
                     "Ingreso",
                     dto.StockInicial,
                     dto.UnidadMedidaBase,
@@ -82,6 +108,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var username = User.Identity?.Name ?? dto.Usuario ?? "System";
             await _inventoryService.RecordMovementAsync(
                 dto.InsumoId,
+                dto.SedeId,
                 dto.TipoMovimiento,
                 dto.CantidadOriginal,
                 dto.UnidadMedidaOriginal,
@@ -107,6 +134,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         {
             var username = User.Identity?.Name ?? dto.Usuario ?? "System";
             await _inventoryService.PerformClosingAsync(
+                dto.SedeId,
                 username,
                 dto.Observaciones,
                 dto.Detalles,
@@ -182,6 +210,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     public class RecordMovementDto
     {
         public Guid InsumoId { get; set; }
+        public Guid SedeId { get; set; }
         public string TipoMovimiento { get; set; }
         public decimal CantidadOriginal { get; set; }
         public UnidadMedida UnidadMedidaOriginal { get; set; }
@@ -191,6 +220,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
     public class PerformClosingDto
     {
+        public Guid SedeId { get; set; }
         public string? Usuario { get; set; }
         public string Observaciones { get; set; }
         public List<CierreDetalleInputDto> Detalles { get; set; }

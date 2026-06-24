@@ -43,6 +43,7 @@ export class CatalogService {
       precioUsd: item.precioUsd,
       tipo: item.tipo,
       honorarioBase: item.honorarioBase ?? 0,
+      requiereInventario: item.requiereInventario ?? true,
       sugerenciasIds: item.sugerenciasIds ?? [],
       honorariosMedicos: item.honorariosMedicos ?? [],
       activo: item.activo ?? true
@@ -57,6 +58,7 @@ export class CatalogService {
       precioUsd: item.precioUsd,
       tipo: item.tipo,
       honorarioBase: item.honorarioBase ?? 0,
+      requiereInventario: item.requiereInventario ?? true,
       sugerenciasIds: item.sugerenciasIds ?? [],
       honorariosMedicos: item.honorariosMedicos ?? [],
       activo: item.activo ?? true

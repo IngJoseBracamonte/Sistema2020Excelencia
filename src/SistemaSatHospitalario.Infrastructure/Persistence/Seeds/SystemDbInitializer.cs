@@ -181,6 +181,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedMonedasAsync();
                 await SeedMetodosPagoAsync();
                 await SeedHonorarioConfigAsync();
+                await SeedInventorySedesAndMigrateStockAsync();
 
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
@@ -524,6 +525,89 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 _context.HonorariumMappingRules.Add(new HonorariumMappingRule("RADI", "RX", MappingRuleType.Contains, 2, usuario));
                 _context.HonorariumMappingRules.Add(new HonorariumMappingRule("INFO", "INFORME", MappingRuleType.Contains, 3, usuario));
                 _context.HonorariumMappingRules.Add(new HonorariumMappingRule("CONS", "CONSULTA", MappingRuleType.Contains, 4, usuario));
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task SeedInventorySedesAndMigrateStockAsync()
+        {
+            _logger.LogInformation("[MIGRATION] Verificando existencia de Sede Principal...");
+            var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo);
+            if (principalSede == null)
+            {
+                principalSede = new Sede("PRINCIPAL", "Sede Principal Hospitalaria", true);
+                _context.Sedes.Add(principalSede);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("[MIGRATION] Sede Principal creada.");
+            }
+
+            // Migrar Stocks existentes en Insumos si no están registrados en StocksSede
+            var insumos = await _context.Insumos.Include(i => i.StocksPorSede).ToListAsync();
+            foreach (var insumo in insumos)
+            {
+                if (!insumo.StocksPorSede.Any(s => s.SedeId == principalSede.Id))
+                {
+                    // Si el insumo tiene stock físico legacy pero no en StocksSede, migrar
+                    // Podemos verificar si la DB tiene una columna física StockActual
+                    decimal legacyStock = 0;
+                    try
+                    {
+                        var conn = _context.Database.GetDbConnection();
+                        bool closeConnection = false;
+                        if (conn.State != System.Data.ConnectionState.Open)
+                        {
+                            await conn.OpenAsync();
+                            closeConnection = true;
+                        }
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = $"SELECT StockActual FROM Insumos WHERE Id = '{insumo.Id}';";
+                            var val = await cmd.ExecuteScalarAsync();
+                            if (val != null && val != DBNull.Value)
+                            {
+                                legacyStock = Convert.ToDecimal(val);
+                            }
+                        }
+                        if (closeConnection) await conn.CloseAsync();
+                    }
+                    catch
+                    {
+                        // Fallback si la columna ya no existe físicamente
+                        legacyStock = 0;
+                    }
+
+                    var stockSede = new StockSede(insumo.Id, principalSede.Id, legacyStock);
+                    _context.StocksSedes.Add(stockSede);
+                    _logger.LogInformation("[MIGRATION] Migrado Stock de Insumo {Codigo}: {Stock} a Sede Principal.", insumo.Codigo, legacyStock);
+                }
+            }
+
+            // Migrar Movimientos de Insumos huérfanos sin SedeId
+            try
+            {
+                var conn = _context.Database.GetDbConnection();
+                bool closeConnection = false;
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                    closeConnection = true;
+                }
+                using (var cmd = conn.CreateCommand())
+                {
+                    // Asignar Sede Principal a movimientos huérfanos
+                    cmd.CommandText = $"UPDATE MovimientosInsumo SET SedeId = '{principalSede.Id}' WHERE SedeId IS NULL OR SedeId = '00000000-0000-0000-0000-000000000000';";
+                    int affected = await cmd.ExecuteNonQueryAsync();
+                    if (affected > 0)
+                    {
+                        _logger.LogInformation("[MIGRATION] Se actualizaron {Count} movimientos huérfanos asignándoles la Sede Principal.", affected);
+                    }
+                }
+                if (closeConnection) await conn.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[MIGRATION] Error al intentar actualizar SedeId en MovimientosInsumo.");
             }
 
             await _context.SaveChangesAsync();
