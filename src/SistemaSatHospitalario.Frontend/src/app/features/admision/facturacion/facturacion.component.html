@@ -491,7 +491,12 @@
                                  <button (click)="seleccionarTurno(slot)" 
                                      [disabled]="slot.ocupado || slot.bloqueado"
                                      [class.opacity-30]="slot.ocupado || slot.bloqueado"
-                                     class="bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-xl shadow-rose-500/10 flex items-center group/add active:scale-95">
+                                     [ngClass]="{
+                                         'bg-orange-500 hover:bg-orange-600 shadow-orange-500/10': slot.bloqueado,
+                                         'bg-rose-500 hover:bg-rose-600 shadow-rose-500/10': slot.ocupado || slot.comentario === 'Tu reserva actual (Vigente)' || slot.reservado,
+                                         'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/10': !slot.bloqueado && !slot.ocupado && slot.comentario !== 'Tu reserva actual (Vigente)' && !slot.reservado
+                                     }"
+                                     class="text-white px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-xl flex items-center group/add active:scale-95">
                                      {{ slot.reservado ? 'RESERVANDO...' : (slot.bloqueado ? 'BLOQUEADO' : (slot.ocupado ? 'OCUPADO' : (slot.comentario === 'Tu reserva actual (Vigente)' ? 'CAMBIAR' : 'AGREGAR'))) }}
                                  </button>
                             </div>

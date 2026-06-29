@@ -382,3 +382,6 @@ deploy/docker/backups/
 .env
 .env.*
 !.env.template
+
+# Agent configuration and workspace plugins
+.agents/

@@ -42,6 +42,7 @@ export interface ControlCitaRow {
   observaciones: string;
   turno: number;
   cuentaServicioId: string;
+  tipoIngreso?: string;
 }
 
 @Injectable({

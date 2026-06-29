@@ -19,5 +19,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string Observaciones { get; set; }
         public int Turno { get; set; } // Calculado: Orden de llegada/cita
         public Guid CuentaServicioId { get; set; } // Para navegación a Expediente
+        public string? TipoIngreso { get; set; } // Particular, Seguro, Hospitalizacion, Emergencia
     }
 }

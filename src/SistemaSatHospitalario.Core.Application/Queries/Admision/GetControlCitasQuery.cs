@@ -99,7 +99,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Estado = cita.Estado,
                     Observaciones = cita.Comentario ?? "",
                     Turno = turnosContador[cita.MedicoId],
-                    CuentaServicioId = cita.CuentaServicioId
+                    CuentaServicioId = cita.CuentaServicioId,
+                    TipoIngreso = cita.CuentaServicio?.TipoIngreso ?? "Particular"
                 });
             }
 
