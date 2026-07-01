@@ -66,8 +66,7 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
 
     // 8. Fill in the Area Clinica details
     //    Estos selectores son diferentes a los del modal de Sede para evitar colisión
-    const areaCodeInput = page.locator('label:has-text("Código del Área") + input,
-                                         label:has-text("Código") + input').last();
+    const areaCodeInput = page.locator('label:has-text("Código del Área") + input, label:has-text("Código") + input').last();
     const areaNameInput = page.locator('label:has-text("Nombre del Área") + input');
 
     await areaCodeInput.fill('AREA_E2E');

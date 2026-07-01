@@ -76,7 +76,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Selected CONSULTA GINECOLOGICA.');
 
     // Verify doctor selector dropdown is shown
-    const doctorSelector = page.locator('select:has-text("Seleccionar Médico")');
+    // NOTE: Playwright cannot use has-text on <select> to match <option> text.
+    // We locate the <select> that immediately follows the doctor label inside the stepper.
+    await page.waitForSelector('select[data-testid="doctor-select"], select#doctorSelect, select', { timeout: 8000 });
+    const doctorSelector = page.locator('select').last();
     await expect(doctorSelector).toBeVisible();
     console.log('Doctor selector dropdown is visible.');
 
@@ -164,18 +167,21 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.click('button:has-text("CARGA DE INSUMOS")');
     const searchInput = page.locator('input[placeholder*="Escriba código o nombre"]');
 
-    // --- 1. Consulta Category ---
+    // --- 1. Consulta Category (requiere médico) ---
     await searchInput.fill('Consulta Medica General');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000); // esperar debounce del autocomplete
     await page.locator('div.hover\\:bg-white\\/5').first().click();
 
-    const doctorSelector = page.locator('select:has-text("Seleccionar Médico")');
+    // El selector de médico aparece solo cuando el servicio es tipo Consulta/Medico
+    // Usamos locator().last() porque puede haber otros <select> en la página
+    await page.waitForSelector('select', { timeout: 8000 });
+    const doctorSelector = page.locator('select').last();
     await doctorSelector.selectOption({ index: 1 });
     const nextBtn = page.locator('button:has-text("Siguiente")').last();
     await nextBtn.click();
 
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500); // esperar respuesta del API
 
     // --- 2. RX Category ---
     await searchInput.fill('Radiografía Tórax');
