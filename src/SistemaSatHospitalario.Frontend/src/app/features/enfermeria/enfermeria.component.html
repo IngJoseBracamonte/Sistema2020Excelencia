@@ -51,6 +51,28 @@
                     Pacientes Activos ({{ filteredAccounts().length }})
                 </h3>
 
+                <!-- Selector de Ubicación / Área Clínica -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" 
+                            (click)="nursingAreaFilter.set('Emergencia')"
+                            [ngClass]="nursingAreaFilter() === 'Emergencia' ? 'bg-rose-500 text-white font-black' : 'bg-white/5 text-slate-400 font-bold hover:bg-white/10'"
+                            class="py-2.5 rounded-xl text-[9px] uppercase tracking-wider transition-all border border-white/5">
+                        Emergencia
+                    </button>
+                    <button type="button" 
+                            (click)="nursingAreaFilter.set('Hospitalizacion')"
+                            [ngClass]="nursingAreaFilter() === 'Hospitalizacion' ? 'bg-rose-500 text-white font-black' : 'bg-white/5 text-slate-400 font-bold hover:bg-white/10'"
+                            class="py-2.5 rounded-xl text-[9px] uppercase tracking-wider transition-all border border-white/5">
+                        Hospitalización
+                    </button>
+                    <button type="button" 
+                            (click)="nursingAreaFilter.set('UCI')"
+                            [ngClass]="nursingAreaFilter() === 'UCI' ? 'bg-rose-500 text-white font-black' : 'bg-white/5 text-slate-400 font-bold hover:bg-white/10'"
+                            class="py-2.5 rounded-xl text-[9px] uppercase tracking-wider transition-all border border-white/5">
+                        UCI
+                    </button>
+                </div>
+
                 <!-- Buscador de pacientes -->
                 <div class="relative">
                     <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
@@ -543,101 +565,252 @@
 
                 <!-- TAB 2: CARGA RÁPIDA DE INSUMOS -->
                 <div *ngIf="activeTab() === 'fast-charge'" class="bg-white/[0.02] border border-white/5 rounded-3xl p-6 space-y-6">
-                    <div class="flex items-center gap-4">
-                        <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
-                            <lucide-icon [name]="icons.Droplet" class="w-6 h-6"></lucide-icon>
-                        </div>
-                        <div>
-                            <h3 class="text-md font-black text-white uppercase tracking-tight">Carga Rápida de Insumos y Medicamentos</h3>
-                            <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Añade consumos directos a la cuenta del paciente</p>
+                    
+                    <!-- Indicador Visual del Stepper (3 pasos) -->
+                    <div class="max-w-md mx-auto px-4 py-2">
+                        <div class="relative flex items-center justify-between">
+                            <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full bg-rose-500 transition-all duration-500 shadow-[0_0_10px_rgba(225,29,72,0.3)]" [style.width.%]="((currentStep() - 1) / 2) * 100"></div>
+                            </div>
+                            
+                            <!-- Paso 1: BÚSQUEDA -->
+                            <div class="flex flex-col items-center group cursor-pointer relative z-10" (click)="currentStep.set(1)">
+                                <div [class]="'w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ' + (currentStep() >= 1 ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-800 text-slate-400')">
+                                    <span *ngIf="currentStep() <= 1">1</span>
+                                    <lucide-icon *ngIf="currentStep() > 1" [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+                                </div>
+                                <span class="text-[8px] font-black mt-2 uppercase tracking-widest" [class.text-rose-500]="currentStep() >= 1" [class.text-slate-500]="currentStep() < 1">BÚSQUEDA</span>
+                            </div>
+
+                            <!-- Paso 2: AJUSTE -->
+                            <div class="flex flex-col items-center group cursor-pointer relative z-10" (click)="selectedService() ? currentStep.set(2) : null">
+                                <div [class]="'w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ' + (currentStep() >= 2 ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-800 text-slate-400')">
+                                    <span *ngIf="currentStep() <= 2">2</span>
+                                    <lucide-icon *ngIf="currentStep() > 2" [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+                                </div>
+                                <span class="text-[8px] font-black mt-2 uppercase tracking-widest" [class.text-rose-500]="currentStep() >= 2" [class.text-slate-500]="currentStep() < 2">AJUSTE</span>
+                            </div>
+
+                            <!-- Paso 3: CONFIRMACIÓN -->
+                            <div class="flex flex-col items-center group cursor-pointer relative z-10" (click)="selectedService() && selectedMedicoId() ? currentStep.set(3) : null">
+                                <div [class]="'w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ' + (currentStep() >= 3 ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-800 text-slate-400')">
+                                    <span>3</span>
+                                </div>
+                                <span class="text-[8px] font-black mt-2 uppercase tracking-widest" [class.text-rose-500]="currentStep() >= 3" [class.text-slate-500]="currentStep() < 3">CONFIRMACIÓN</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
-                        
-                        <!-- Buscador de Servicios / Insumos -->
+                    <!-- PASO 1: BÚSQUEDA DE SERVICIO/INSUMO -->
+                    <div *ngIf="currentStep() === 1" class="space-y-4 animate-fade-in">
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                                <lucide-icon [name]="icons.Search" class="w-6 h-6"></lucide-icon>
+                            </div>
+                            <div>
+                                <h3 class="text-md font-black text-white uppercase tracking-tight">Buscar Item de Catálogo</h3>
+                                <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Ingrese el nombre o código del insumo, medicamento o consulta</p>
+                            </div>
+                        </div>
+
+                        <!-- Buscador Gigante con autocompletado y botones táctiles -->
                         <div class="relative space-y-2">
-                            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Seleccionar Medicamento o Insumo</label>
                             <div class="relative">
                                 <input type="text" 
                                        [ngModel]="fastChargeSearchTerm()" 
                                        (ngModelChange)="onFastChargeSearchChange($event)"
-                                       placeholder="Escriba código o nombre del insumo (ej: Morfina, Jeringas...)"
-                                       class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-500/30 transition-all uppercase">
+                                       placeholder="Escriba código o nombre... (ej: Consulta, Paracetamol, Gasas)"
+                                       class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-rose-500/30 transition-all uppercase font-mono">
                                 
-                                <!-- Indicador de seleccion -->
-                                <lucide-icon *ngIf="selectedService()" [name]="icons.Check" class="w-4 h-4 text-emerald-500 absolute right-4 top-1/2 -translate-y-1/2"></lucide-icon>
+                                <lucide-icon *ngIf="selectedService()" [name]="icons.Check" class="w-5 h-5 text-emerald-500 absolute right-5 top-1/2 -translate-y-1/2"></lucide-icon>
                             </div>
 
                             <!-- Listado autocompletado catalog -->
                             <div *ngIf="filteredServices().length > 0" 
-                                 class="absolute z-30 w-full mt-1 bg-[#152035] border border-white/10 rounded-2xl shadow-2xl max-h-56 overflow-y-auto divide-y divide-white/5">
+                                 class="absolute z-30 w-full mt-1 bg-[#152035] border border-white/10 rounded-2xl shadow-2xl max-h-72 overflow-y-auto divide-y divide-white/5">
                                 <div *ngFor="let s of filteredServices()" 
                                      (click)="selectCatalogService(s)"
-                                     class="p-4 hover:bg-white/5 cursor-pointer text-xs text-white uppercase font-bold flex justify-between items-center transition-all">
+                                     class="p-5 hover:bg-white/5 cursor-pointer text-xs text-white uppercase font-bold flex justify-between items-center transition-all">
                                     <div class="flex flex-col">
-                                        <span>{{ s.descripcion }}</span>
-                                        <span class="text-[8px] text-slate-500 mt-0.5">COD: {{ s.codigo }} | TIPO: {{ s.tipo }}</span>
+                                        <span class="text-sm">{{ s.descripcion }}</span>
+                                        <span class="text-[9px] text-slate-400 mt-1">COD: {{ s.codigo }} | TIPO: {{ s.tipo }}</span>
                                     </div>
-                                    <span class="text-xs font-mono text-rose-400">${{ s.precioUsd }}</span>
+                                    <span class="text-sm font-mono text-rose-400 font-bold">${{ s.precioUsd }}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Parámetros de Carga -->
-                        <div *ngIf="selectedService()" 
-                             [ngClass]="(selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6) ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'"
-                             class="grid gap-6 p-5 bg-[#0b1120]/50 border border-white/5 rounded-2xl animate-fade-in animate-scale-in">
-                            <div>
-                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Insumo Seleccionado</label>
-                                <span class="text-xs font-black text-white uppercase tracking-tight block">{{ selectedService().descripcion }}</span>
-                                <span class="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-1 block">
-                                    Precio Base: ${{ selectedService().precioUsd }} USD
-                                </span>
-                            </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Paso 1 de 3</span>
+                            <button type="button" 
+                                    [disabled]="!selectedService()"
+                                    (click)="currentStep.set(2)"
+                                    class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
 
-                            <!-- Seleccionar Médico (Solo si requiere honorarios o es consulta/Rx/Tomo) -->
-                            <div *ngIf="selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6">
-                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Médico Tratante / Responsable <span class="text-rose-500 font-bold">*</span></label>
-                                <select [ngModel]="selectedMedicoId()" (ngModelChange)="selectedMedicoId.set($event)"
-                                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-rose-500/30 min-h-[42px] uppercase">
-                                    <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico ---</option>
-                                    <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }}</option>
-                                </select>
+                    <!-- PASO 2: AJUSTES DE CARGA -->
+                    <div *ngIf="currentStep() === 2" class="space-y-6 animate-fade-in">
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                                <lucide-icon [name]="icons.Edit" class="w-6 h-6"></lucide-icon>
                             </div>
-
-                            <!-- Input simple numérico nativo -->
                             <div>
-                                <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                                    Cantidad a Cargar (Unidad: {{ selectedService().unidadMedida || 'Unidad(es)' }})
+                                <h3 class="text-md font-black text-white uppercase tracking-tight">Ajustes de Cargo</h3>
+                                <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Ajuste cantidad, médico responsable y tarifas si corresponde</p>
+                            </div>
+                        </div>
+
+                        <div *ngIf="selectedService()" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-[#0b1120]/50 border border-white/5 rounded-3xl">
+                            
+                            <!-- Cantidad a Cargar con Inputs Gigantes de 56px -->
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                    Cantidad (Unidad: {{ selectedService().unidadMedida || 'UD' }})
                                 </label>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-3">
                                     <input type="number" 
                                            [(ngModel)]="fastChargeQuantity" 
                                            [step]="selectedService().permiteFraccionamiento ? '0.01' : '1'"
                                            min="0.01" 
-                                           class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500/30 font-mono">
-                                    <span class="text-xs text-slate-400 font-black uppercase tracking-wider">
-                                        {{ selectedService().unidadMedida || 'UD' }}
-                                    </span>
+                                           class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
                                 </div>
                             </div>
+
+                            <!-- Seleccionar Médico (Solo si requiere médico o es consulta) -->
+                            <div class="space-y-2" *ngIf="selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6 || selectedService().tipo === 'Medico'">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                    Médico Responsable / Cita <span class="text-rose-500 font-bold">*</span>
+                                </label>
+                                <select [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
+                                        class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
+                                    <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico ---</option>
+                                    <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Modificación Manual de Tarifas (Solo si es Consulta) -->
+                            <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5" *ngIf="selectedService().tipo === 'Medico' || selectedService().isConsultation || selectedService().categoryId === 1">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                        Precio Total Consulta ($ USD)
+                                    </label>
+                                    <input type="number" 
+                                           [ngModel]="customPrecio()" 
+                                           (ngModelChange)="customPrecio.set($event)"
+                                           class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                        Honorario Médico ($ USD)
+                                    </label>
+                                    <input type="number" 
+                                           [ngModel]="customHonorario()" 
+                                           (ngModelChange)="customHonorario.set($event)"
+                                           class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                            <button type="button" 
+                                    (click)="currentStep.set(1)"
+                                    class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                                Atrás
+                            </button>
+                            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Paso 2 de 3</span>
+                            <button type="button" 
+                                    [disabled]="(selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6 || selectedService().tipo === 'Medico') && !selectedMedicoId()"
+                                    (click)="currentStep.set(3)"
+                                    class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30">
+                                Siguiente
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Acciones fast charge -->
-                    <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
-                        <button type="button" (click)="selectedService.set(null); fastChargeSearchTerm.set('');"
-                                class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
-                            CANCELAR
-                        </button>
-                        <button type="button" (click)="submitFastCharge()"
-                                [disabled]="isSavingFastCharge() || !selectedService()"
-                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/10 disabled:opacity-50">
-                            <span *ngIf="!isSavingFastCharge()">CARGAR A LA CUENTA</span>
-                            <lucide-icon *ngIf="isSavingFastCharge()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
-                        </button>
+                    <!-- PASO 3: CONFIRMACIÓN Y CARGO -->
+                    <div *ngIf="currentStep() === 3" class="space-y-6 animate-fade-in">
+                        <div class="flex items-center gap-4">
+                            <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                                <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+                            </div>
+                            <div>
+                                <h3 class="text-md font-black text-white uppercase tracking-tight">Confirmar Cargo</h3>
+                                <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Revise los detalles del cargo clínico antes de enviar</p>
+                            </div>
+                        </div>
+
+                        <!-- Resumen en Tipografía Outfit sin Fotos ni IDs -->
+                        <div *ngIf="selectedService() && selectedAccount()" class="p-6 bg-[#0b1120]/50 border border-white/5 rounded-3xl space-y-4">
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Paciente</span>
+                                <span class="text-xl font-bold text-white uppercase tracking-tight font-outfit">{{ selectedAccount().pacienteNombre }}</span>
+                                <span class="text-xs text-slate-400 font-mono">Cédula: {{ selectedAccount().pacienteCedula }}</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Item a Cargar</span>
+                                    <span class="text-sm font-bold text-white uppercase mt-1">{{ selectedService().descripcion }}</span>
+                                    <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().tipo !== 'Medico' && !selectedService().isConsultation && selectedService().categoryId !== 1">CÓDIGO: {{ selectedService().codigo }}</span>
+                                    <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().tipo === 'Medico' || selectedService().isConsultation || selectedService().categoryId === 1">ESPECIALIDAD: {{ getMedicoEspecialidad(selectedMedicoId()) }}</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Cantidad</span>
+                                    <span class="text-sm font-mono text-white mt-1">{{ fastChargeQuantity }} {{ selectedService().unidadMedida || 'UD' }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Médico Responsable (Solo consultas) -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService().tipo === 'Medico' || selectedService().isConsultation || selectedService().categoryId === 1)">
+                                <div class="flex flex-col col-span-2">
+                                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Médico Tratante</span>
+                                    <span class="text-sm font-bold text-white uppercase mt-1">{{ getMedicoNombre(selectedMedicoId()) }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Costo Unitario y Costo Total para Reconciliación posterior sin desglose de seguro -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Precio Unitario ($)</span>
+                                    <span class="text-lg font-mono text-rose-400 font-bold mt-1">
+                                        ${{ (customPrecio() !== null ? customPrecio() : selectedService().precioUsd) | number:'1.2-2' }} USD
+                                    </span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Total Cargo Registrado ($)</span>
+                                    <span class="text-2xl font-mono text-rose-500 font-black mt-1">
+                                        ${{ ((customPrecio() !== null ? customPrecio() : selectedService().precioUsd) * fastChargeQuantity) | number:'1.2-2' }} USD
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl">
+                                <p class="text-[9px] text-rose-400 font-black uppercase tracking-wider leading-relaxed">
+                                    * Este cargo se registrará a crédito del paciente para su posterior reconciliación con el seguro.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                            <button type="button" 
+                                    (click)="currentStep.set(2)"
+                                    class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">
+                                Atrás
+                            </button>
+                            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Paso 3 de 3</span>
+                            <button type="button" (click)="submitFastCharge()"
+                                    [disabled]="isSavingFastCharge()"
+                                    class="bg-rose-600 hover:bg-rose-500 text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20 disabled:opacity-50">
+                                <span *ngIf="!isSavingFastCharge()">CONFIRMAR Y CARGAR A LA CUENTA</span>
+                                <lucide-icon *ngIf="isSavingFastCharge()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+                            </button>
+                        </div>
                     </div>
+
                 </div>
 
             </div>

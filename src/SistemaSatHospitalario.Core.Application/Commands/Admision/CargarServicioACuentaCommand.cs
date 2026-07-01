@@ -30,6 +30,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string UsuarioCarga { get; set; } = string.Empty;
         public string? SupervisorKey { get; set; } // V1.0 Security Matrix
         public bool IsPrivilegedUser { get; set; } // V1.0 Security Matrix
+        public decimal? PrecioModificado { get; set; }
+        public decimal? HonorarioModificado { get; set; }
 
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
@@ -122,40 +124,44 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 legacyId = baseService.LegacyMappingId;
             }
 
-            decimal finalPrecio = request.Precio;
-            decimal finalHonorario = request.Honorario;
-            if (esConsulta && baseService != null)
+            decimal finalPrecio = request.PrecioModificado ?? request.Precio;
+            decimal finalHonorario = request.HonorarioModificado ?? request.Honorario;
+
+            if (!request.PrecioModificado.HasValue && !request.HonorarioModificado.HasValue)
             {
-                decimal doctorHonorary = 0;
-                if (request.MedicoId.HasValue)
+                if (esConsulta && baseService != null)
                 {
-                    var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
-                    if (medico != null)
+                    decimal doctorHonorary = 0;
+                    if (request.MedicoId.HasValue)
                     {
-                        doctorHonorary = medico.HonorarioBase;
+                        var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
+                        if (medico != null)
+                        {
+                            doctorHonorary = medico.HonorarioBase;
+                        }
                     }
-                }
-                else
-                {
-                    doctorHonorary = baseService.HonorarioBase;
-                }
+                    else
+                    {
+                        doctorHonorary = baseService.HonorarioBase;
+                    }
 
-                if (request.Precio == baseService.PrecioBase && (request.Honorario == 0 || request.Honorario == baseService.HonorarioBase))
-                {
-                    finalPrecio = baseService.PrecioBase + doctorHonorary;
-                }
+                    if (request.Precio == baseService.PrecioBase && (request.Honorario == 0 || request.Honorario == baseService.HonorarioBase))
+                    {
+                        finalPrecio = baseService.PrecioBase + doctorHonorary;
+                    }
 
-                if (request.Honorario == 0)
-                {
-                    finalHonorario = doctorHonorary;
-                }
-                else if (request.Honorario == doctorHonorary + baseService.PrecioBase)
-                {
-                    finalHonorario = doctorHonorary;
-                }
-                else
-                {
-                    finalHonorario = request.Honorario;
+                    if (request.Honorario == 0)
+                    {
+                        finalHonorario = doctorHonorary;
+                    }
+                    else if (request.Honorario == doctorHonorary + baseService.PrecioBase)
+                    {
+                        finalHonorario = doctorHonorary;
+                    }
+                    else
+                    {
+                        finalHonorario = request.Honorario;
+                    }
                 }
             }
 

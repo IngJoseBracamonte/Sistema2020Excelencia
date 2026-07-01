@@ -131,6 +131,12 @@ export class EnfermeriaComponent implements OnInit {
   public fastChargeQuantity = 1;
   public isSavingFastCharge = signal<boolean>(false);
 
+  // Stepper & Pricing properties
+  public currentStep = signal<number>(1);
+  public nursingAreaFilter = signal<'Emergencia' | 'Hospitalizacion' | 'UCI'>('Emergencia');
+  public customPrecio = signal<number | null>(null);
+  public customHonorario = signal<number | null>(null);
+
   // Transfer Area Form
   public nuevoTipoIngreso = 'Hospitalizacion'; // UCI, Hospitalizacion, Emergencia, etc.
   public nuevoConvenioId: number | null = null;
@@ -141,8 +147,19 @@ export class EnfermeriaComponent implements OnInit {
   public filteredAccounts = computed(() => {
     const list = this.activeAccounts();
     const term = this.searchTerm().trim().toLowerCase();
-    if (!term) return list;
-    return list.filter(acc => 
+    
+    // Filtro estricto de enfermería: Solo Emergencia, Hospitalizacion y UCI
+    const nursingList = list.filter(acc => 
+      acc.tipoIngreso === 'Emergencia' || 
+      acc.tipoIngreso === 'Hospitalizacion' || 
+      acc.tipoIngreso === 'UCI'
+    );
+
+    // Filtro por área clínica seleccionada
+    const areaFiltered = nursingList.filter(acc => acc.tipoIngreso === this.nursingAreaFilter());
+
+    if (!term) return areaFiltered;
+    return areaFiltered.filter(acc => 
       acc.pacienteNombre.toLowerCase().includes(term) || 
       acc.pacienteCedula.toLowerCase().includes(term) ||
       acc.tipoIngreso.toLowerCase().includes(term)
@@ -441,6 +458,20 @@ export class EnfermeriaComponent implements OnInit {
     this.filteredServices.set([]);
     this.fastChargeQuantity = 1;
     this.selectedMedicoId.set(null);
+
+    // Inicializar precios si es una consulta
+    const esConsulta = service.isConsultation || service.categoryId === 1 || service.tipo === 'Medico';
+    if (esConsulta) {
+      const doctorHonorary = service.honorarioBase ?? 0;
+      this.customPrecio.set(service.precioUsd ?? 0);
+      this.customHonorario.set(doctorHonorary);
+    } else {
+      this.customPrecio.set(null);
+      this.customHonorario.set(null);
+    }
+
+    // Avanzar al Paso 2 del Stepper
+    this.currentStep.set(2);
   }
 
   public submitFastCharge(): void {
@@ -448,7 +479,8 @@ export class EnfermeriaComponent implements OnInit {
     const service = this.selectedService();
     if (!active || !service) return;
 
-    const requiresMedico = service.honorarioBase > 0 || service.categoryId === 1 || service.categoryId === 3 || service.categoryId === 6;
+    const esConsulta = service.isConsultation || service.categoryId === 1 || service.tipo === 'Medico';
+    const requiresMedico = service.honorarioBase > 0 || service.categoryId === 1 || service.categoryId === 3 || service.categoryId === 6 || esConsulta;
     if (requiresMedico && !this.selectedMedicoId()) {
       alert('Por favor, seleccione el médico tratante para este servicio/consulta.');
       return;
@@ -474,6 +506,11 @@ export class EnfermeriaComponent implements OnInit {
       payload.horaCita = new Date().toISOString(); // Default current time for instant service/consultation
     }
 
+    if (esConsulta && this.customPrecio() !== null && this.customHonorario() !== null) {
+      payload.precioModificado = Number(this.customPrecio());
+      payload.honorarioModificado = Number(this.customHonorario());
+    }
+
     this.http.post(`${environment.apiUrl}/api/Billing/CargarServicio`, payload)
       .subscribe({
         next: () => {
@@ -482,6 +519,9 @@ export class EnfermeriaComponent implements OnInit {
           this.fastChargeSearchTerm.set('');
           this.fastChargeQuantity = 1;
           this.selectedMedicoId.set(null);
+          this.customPrecio.set(null);
+          this.customHonorario.set(null);
+          this.currentStep.set(1); // Reiniciar Stepper
           this.isSavingFastCharge.set(false);
           this.refreshAccounts(); // Refresh to see total updates
         },
@@ -530,6 +570,37 @@ export class EnfermeriaComponent implements OnInit {
   private showSuccess(msg: string): void {
     this.actionMessage.set(msg);
     setTimeout(() => this.actionMessage.set(null), 6000);
+  }
+
+  public onMedicoSelected(medicoId: string | null): void {
+    this.selectedMedicoId.set(medicoId);
+    if (!medicoId) return;
+
+    const service = this.selectedService();
+    if (!service) return;
+
+    const esConsulta = service.isConsultation || service.categoryId === 1 || service.tipo === 'Medico';
+    if (esConsulta) {
+      const doctor = this.medicos().find(m => m.id === medicoId);
+      if (doctor) {
+        const doctorHonorary = doctor.honorarioBase ?? service.honorarioBase ?? 0;
+        const precioBase = (service.precioUsd ?? 0) - (service.honorarioBase ?? 0);
+        this.customPrecio.set(precioBase + doctorHonorary);
+        this.customHonorario.set(doctorHonorary);
+      }
+    }
+  }
+
+  public getMedicoNombre(medicoId: string | null): string {
+    if (!medicoId) return '';
+    const m = this.medicos().find(x => x.id === medicoId);
+    return m ? m.nombre.toUpperCase() : 'DESCONOCIDO';
+  }
+
+  public getMedicoEspecialidad(medicoId: string | null): string {
+    if (!medicoId) return '';
+    const m = this.medicos().find(x => x.id === medicoId);
+    return m ? (m.especialidad?.toUpperCase() || 'GENERAL') : 'GENERAL';
   }
 
   logout(): void {
