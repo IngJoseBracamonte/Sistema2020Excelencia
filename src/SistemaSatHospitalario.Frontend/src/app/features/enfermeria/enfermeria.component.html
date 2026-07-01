@@ -680,7 +680,7 @@
                             </div>
 
                             <!-- Seleccionar Médico (Solo si requiere médico o es consulta) -->
-                            <div class="space-y-2" *ngIf="selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6 || selectedService().tipo === 'Medico'">
+                            <div class="space-y-2" *ngIf="selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6 || selectedService().tipo === 'Medico' || selectedService().tipo === 'Consulta'">
                                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                     Médico Responsable / Cita <span class="text-rose-500 font-bold">*</span>
                                 </label>
@@ -692,7 +692,7 @@
                             </div>
 
                             <!-- Modificación Manual de Tarifas (Solo si es Consulta) -->
-                            <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5" *ngIf="selectedService().tipo === 'Medico' || selectedService().isConsultation || selectedService().categoryId === 1">
+                            <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5" *ngIf="selectedService().tipo === 'Medico' || selectedService().tipo === 'Consulta' || selectedService().isConsultation || selectedService().categoryId === 1">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                         Precio Total Consulta ($ USD)

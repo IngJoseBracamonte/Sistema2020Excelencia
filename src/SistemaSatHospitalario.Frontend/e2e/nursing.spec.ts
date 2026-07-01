@@ -36,7 +36,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Selected active patient.');
 
     // Verify modular triage section checkboxes are visible
-    await expect(page.locator('text=Triage y Valoracion')).toBeVisible();
+    await expect(page.locator('text=TRIAGE Y SIGNOS VITALES')).toBeVisible();
     await expect(page.locator('label:has-text("1. Constantes Vitales")')).toBeVisible();
     await expect(page.locator('label:has-text("2. Valoración Física Inicial")')).toBeVisible();
     await expect(page.locator('label:has-text("5. Antecedentes y Alergias")')).toBeVisible();
@@ -92,7 +92,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for active patients list
-    await page.waitForSelector('h1:has-text("Pacientes Activos")');
+    await page.waitForSelector('text=Pacientes Activos');
 
     // Click on the first active patient
     const firstPatient = page.locator('div.group.relative').first();
