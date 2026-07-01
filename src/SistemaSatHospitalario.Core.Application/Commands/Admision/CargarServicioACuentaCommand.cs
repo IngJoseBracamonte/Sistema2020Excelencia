@@ -75,6 +75,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<CargarServicioResult> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Iniciando CargarServicioACuenta para Paciente {PacienteId}, Servicio {ServicioId}", request.PacienteId, request.ServicioId);
+
             // 1. Obtención Directa del Paciente (V11.1 Identity Alignment)
             var paciente = await _context.PacientesAdmision.FirstOrDefaultAsync(
                 p => p.Id == request.PacienteId, cancellationToken);
@@ -93,39 +95,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
 
-            if (!request.IsPrivilegedUser && baseService != null)
-            {
-                decimal expectedPrecio = baseService.PrecioBase;
-                if (esConsulta)
-                {
-                    decimal doctorHonorary = 0;
-                    if (request.MedicoId.HasValue)
-                    {
-                        var medico = await _context.Medicos.AsNoTracking().FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
-                        if (medico != null)
-                        {
-                            doctorHonorary = medico.HonorarioBase;
-                        }
-                    }
-                    else
-                    {
-                        doctorHonorary = baseService.HonorarioBase;
-                    }
-                    expectedPrecio = baseService.PrecioBase + doctorHonorary;
-                }
-
-                if (request.Precio != expectedPrecio && request.Precio != baseService.PrecioBase)
-                {
-                    // El precio ha sido modificado, requiere Clave de Supervisor
-                    var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
-                    if (config == null || config.ClaveSupervisor != request.SupervisorKey)
-                    {
-                        throw new InvalidOperationException("La modificación de precios requiere una Clave de Supervisor válida.");
-                    }
-                    _logger.LogInformation("[SEC] Precio modificado por {Usuario} con Clave de Supervisor válida. Original: {Orig}, Nuevo: {New}", 
-                        request.UsuarioCarga, expectedPrecio, request.Precio);
-                }
-            }
+            await ValidarPrecioYClaveSupervisorAsync(request, baseService, esConsulta, cancellationToken);
 
             // 3. Asegurar cuenta activa usando el GUID local
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
@@ -204,7 +174,80 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 _context.DetallesServicioCuenta.Add(detalle);
             }
 
-            // Auto-asignación de Médico Responsable desde HonorarioConfig (V18.5) o múltiples médicos desde MedicosRoles
+            // Auto-asignación de Médico Responsable y honorarios
+            await AsignarMedicosYHonorariosAsync(request, detalle, esConsulta, cancellationToken);
+
+            // 5. Notificaciones e Integraciones Externas
+            await NotificarSistemasExternosAsync(request, cancellationToken);
+
+            // Deduct stock for inventory items associated with this service
+            await _inventoryService.DeductInventoryForServiceDetailAsync(
+                detalle.Id,
+                detalle.ServicioId,
+                baseService?.Codigo ?? string.Empty,
+                detalle.Descripcion,
+                detalle.Cantidad,
+                request.UsuarioCarga,
+                cuenta.Id,
+                null,
+                cancellationToken
+            );
+
+            await _repository.GuardarCambiosAsync(cancellationToken);
+
+            _logger.LogInformation("Servicio cargado exitosamente en cuenta {CuentaId}. Detalle: {DetalleId}", cuenta.Id, detalle.Id);
+
+            return new CargarServicioResult(cuenta.Id, detalle.Id);
+        }
+
+        private async Task ValidarPrecioYClaveSupervisorAsync(
+            CargarServicioACuentaCommand request,
+            ServicioClinico? baseService,
+            bool esConsulta,
+            CancellationToken cancellationToken)
+        {
+            if (request.IsPrivilegedUser || baseService == null) return;
+
+            decimal expectedPrecio = baseService.PrecioBase;
+            if (esConsulta)
+            {
+                decimal doctorHonorary = 0;
+                if (request.MedicoId.HasValue)
+                {
+                    var medico = await _context.Medicos.AsNoTracking().FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
+                    if (medico != null)
+                    {
+                        doctorHonorary = medico.HonorarioBase;
+                    }
+                }
+                else
+                {
+                    doctorHonorary = baseService.HonorarioBase;
+                }
+                expectedPrecio = baseService.PrecioBase + doctorHonorary;
+            }
+
+            if (request.Precio != expectedPrecio && request.Precio != baseService.PrecioBase)
+            {
+                // El precio ha sido modificado, requiere Clave de Supervisor
+                var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+                if (config == null || config.ClaveSupervisor != request.SupervisorKey)
+                {
+                    _logger.LogWarning("[SEC-WARN] Intento de modificación de precio no autorizado por {Usuario}. Esperado: {Orig}, Enviado: {New}",
+                        request.UsuarioCarga, expectedPrecio, request.Precio);
+                    throw new InvalidOperationException("La modificación de precios requiere una Clave de Supervisor válida.");
+                }
+                _logger.LogInformation("[SEC] Precio modificado por {Usuario} con Clave de Supervisor válida. Original: {Orig}, Nuevo: {New}", 
+                    request.UsuarioCarga, expectedPrecio, request.Precio);
+            }
+        }
+
+        private async Task AsignarMedicosYHonorariosAsync(
+            CargarServicioACuentaCommand request,
+            DetalleServicioCuenta detalle,
+            bool esConsulta,
+            CancellationToken cancellationToken)
+        {
             if (request.MedicosRoles != null && request.MedicosRoles.Any())
             {
                 decimal totalHonorarios = 0;
@@ -222,6 +265,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 
                 // Actualizar el honorario acumulado del detalle del servicio
                 detalle.ModificarPreciosAdministrativos(detalle.Precio, totalHonorarios);
+                _logger.LogInformation("Asignados múltiples médicos para cirugía compleja en detalle {DetalleId}. Total Honorarios: {Total}", detalle.Id, totalHonorarios);
             }
             else if (detalle.Honorario > 0 && !esConsulta)
             {
@@ -259,28 +303,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         detalle.Id, request.Descripcion, sourceAccion,
                         null, null, finalMedicoId.Value, medicoNombre,
                         request.UsuarioCarga, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante carga directa"));
+                    
+                    _logger.LogInformation("Asignado médico responsable {MedicoId} ({Accion}) para detalle {DetalleId}. Honorario: {Honorario}",
+                        finalMedicoId.Value, sourceAccion, detalle.Id, honorarioAsignado);
                 }
             }
-
-            // 5. Notificaciones e Integraciones Externas
-            await NotificarSistemasExternosAsync(request, cancellationToken);
-
-            // Deduct stock for inventory items associated with this service
-            await _inventoryService.DeductInventoryForServiceDetailAsync(
-                detalle.Id,
-                detalle.ServicioId,
-                baseService?.Codigo ?? string.Empty,
-                detalle.Descripcion,
-                detalle.Cantidad,
-                request.UsuarioCarga,
-                cuenta.Id,
-                null,
-                cancellationToken
-            );
-
-            await _repository.GuardarCambiosAsync(cancellationToken);
-
-            return new CargarServicioResult(cuenta.Id, detalle.Id);
         }
 
         private async Task<CuentaServicios> GetOrCreateCuentaAsync(Guid pacienteId, CargarServicioACuentaCommand request, CancellationToken ct)

@@ -59,54 +59,70 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             foreach (var recipe in recipes)
             {
-                if (recipe.Insumo == null) continue;
-
-                // 2. Conversion factor from consumption unit to base stock unit
-                decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
-                decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
-
-                // 3. Find or create StockSede for target Sede
-                var stockSede = await _context.StocksSedes
-                    .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == targetSedeId, cancellationToken);
-                if (stockSede == null)
-                {
-                    stockSede = new StockSede(recipe.InsumoId, targetSedeId, 0);
-                    _context.StocksSedes.Add(stockSede);
-                }
-
-                // Deduct stock (allowing negative values per user requirements)
-                stockSede.RegistrarMovimientoStock(-qtyBaseNeeded, recipe.Insumo.PermiteFraccionamiento);
-
-                // 4. Warning check
-                if (stockSede.StockActual < 0)
-                {
-                    _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}) en Sede {SedeId}.",
-                        recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId, targetSedeId);
-                }
-
-                // 5. Add ConsumoServicioRealizado
-                decimal costTotalUSD = recipe.Insumo.CostoUnitarioBaseUSD * qtyBaseNeeded;
-                var consumo = new ConsumoServicioRealizado(
-                    detalleId,
-                    recipe.InsumoId,
-                    qtyBaseNeeded,
-                    costTotalUSD
-                );
-                _context.ConsumosServiciosRealizados.Add(consumo);
-
-                // 6. Add MovimientoInsumo (Immutable Audit Ledger)
-                var movimiento = new MovimientoInsumo(
-                    recipe.InsumoId,
-                    targetSedeId,
-                    "Consumo",
-                    -qtyBaseNeeded,
-                    recipe.UnidadMedidaConsumo,
-                    recipe.Cantidad * cantidadServicio,
-                    usuarioCarga,
-                    $"Consumo automático por facturación de servicio {serviceDescripcion} (Cuenta ID: {cuentaId})"
-                );
-                _context.MovimientosInsumo.Add(movimiento);
+                await DeductStockForRecipeAsync(detalleId, cuentaId, targetSedeId, serviceDescripcion, cantidadServicio, usuarioCarga, recipe, cancellationToken);
             }
+        }
+
+        private async Task DeductStockForRecipeAsync(
+            Guid detalleId,
+            Guid cuentaId,
+            Guid targetSedeId,
+            string serviceDescripcion,
+            decimal cantidadServicio,
+            string usuarioCarga,
+            ServicioInsumoReceta recipe,
+            CancellationToken cancellationToken)
+        {
+            if (recipe.Insumo == null) return;
+
+            // 2. Conversion factor from consumption unit to base stock unit
+            decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
+            decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
+
+            // 3. Find or create StockSede for target Sede
+            var stockSede = await _context.StocksSedes
+                .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == targetSedeId, cancellationToken);
+            if (stockSede == null)
+            {
+                _logger.LogInformation("Inicializando stock JIT en sede para el insumo {InsumoId} en Sede {SedeId}", recipe.InsumoId, targetSedeId);
+                stockSede = new StockSede(recipe.InsumoId, targetSedeId, 0);
+                _context.StocksSedes.Add(stockSede);
+            }
+
+            // Deduct stock (allowing negative values per user requirements)
+            stockSede.RegistrarMovimientoStock(-qtyBaseNeeded, recipe.Insumo.PermiteFraccionamiento);
+            _logger.LogInformation("Stock deducido para Insumo {InsumoNombre} ({InsumoCodigo}) en Sede {SedeId}. Nuevo stock: {StockActual}",
+                recipe.Insumo.Nombre, recipe.Insumo.Codigo, targetSedeId, stockSede.StockActual);
+
+            // 4. Warning check
+            if (stockSede.StockActual < 0)
+            {
+                _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}) en Sede {SedeId}.",
+                    recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId, targetSedeId);
+            }
+
+            // 5. Add ConsumoServicioRealizado
+            decimal costTotalUSD = recipe.Insumo.CostoUnitarioBaseUSD * qtyBaseNeeded;
+            var consumo = new ConsumoServicioRealizado(
+                detalleId,
+                recipe.InsumoId,
+                qtyBaseNeeded,
+                costTotalUSD
+            );
+            _context.ConsumosServiciosRealizados.Add(consumo);
+
+            // 6. Add MovimientoInsumo (Immutable Audit Ledger)
+            var movimiento = new MovimientoInsumo(
+                recipe.InsumoId,
+                targetSedeId,
+                "Consumo",
+                -qtyBaseNeeded,
+                recipe.UnidadMedidaConsumo,
+                recipe.Cantidad * cantidadServicio,
+                usuarioCarga,
+                $"Consumo automático por facturación de servicio {serviceDescripcion} (Cuenta ID: {cuentaId})"
+            );
+            _context.MovimientosInsumo.Add(movimiento);
         }
 
         public async Task RecordMovementAsync(
@@ -247,7 +263,14 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 var stockSede = await _context.StocksSedes
                     .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeProveedoraId, cancellationToken);
 
-                var stockActual = stockSede?.StockActual ?? 0;
+                if (stockSede == null)
+                {
+                    _logger.LogInformation("Inicializando stock JIT para despacho en Sede Proveedora {SedeId} para Insumo {InsumoId}", pedido.SedeProveedoraId, detalle.InsumoId);
+                    stockSede = new StockSede(detalle.InsumoId, pedido.SedeProveedoraId, 0);
+                    _context.StocksSedes.Add(stockSede);
+                }
+
+                var stockActual = stockSede.StockActual;
                 if (stockActual < detalle.CantidadSolicitada)
                 {
                     throw new InvalidOperationException($"Stock insuficiente de '{detalle.Insumo.Nombre}' en la sede proveedora. Solicitado: {detalle.CantidadSolicitada}, Disponible: {stockActual}");
@@ -255,6 +278,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
                 // Descuenta stock
                 stockSede.RegistrarMovimientoStock(-detalle.CantidadSolicitada, detalle.Insumo.PermiteFraccionamiento);
+                _logger.LogInformation("Stock transferido desde Sede Proveedora {SedeId}. Insumo: {InsumoId}, Cantidad: {Cantidad}", pedido.SedeProveedoraId, detalle.InsumoId, detalle.CantidadSolicitada);
                 detalle.SetDespachado(detalle.CantidadSolicitada);
 
                 // Registrar movimiento de salida
