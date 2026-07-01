@@ -1,18 +1,36 @@
 import { test, expect } from '@playwright/test';
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+/**
+ * Autentica a un usuario y espera la redirección post-login.
+ * Acepta cualquiera de las rutas clínicas o de panel dependiendo del rol.
+ * - Admin/Billing: /dashboard
+ * - Rol clínico (user_emergencia, enfermera): /cierre-cuenta/* o /enfermeria
+ */
+async function loginAs(
+  page: any,
+  username: string,
+  password: string
+): Promise<void> {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.fill('input#username', username);
+  await page.fill('input#password', password);
+  await page.click('button[type="submit"]');
+  // Esperar redirección — acepta dashboard (admin) o ruta clínica (user_emergencia)
+  await page.waitForURL(
+    (url: URL) =>
+      url.pathname.includes('dashboard') ||
+      url.pathname.includes('cierre-cuenta') ||
+      url.pathname.includes('enfermeria'),
+    { timeout: 15000 }
+  );
+  console.log(`[AUTH] Logged in as '${username}' → ${page.url()}`);
+}
+
 test.describe('Emergency Nursing & Egress Integrity Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // 1. Authenticate as user_emergencia (Emergency Assistant / Nurse)
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    await page.fill('input#username', 'user_emergencia');
-    await page.fill('input#password', 'Hospital2026*!');
-    await page.click('button[type="submit"]');
-
-    // Wait for redirect to dashboard/landing or close account
-    await page.waitForURL(url => url.pathname.includes('dashboard') || url.pathname.includes('cierre-cuenta'));
-    console.log('Logged in successfully as user_emergencia.');
+    await loginAs(page, 'user_emergencia', 'Hospital2026*!');
   });
 
   test('Módulo Enfermería: Selective triage, pinned status, and doctor selection on quick charge', async ({ page }) => {

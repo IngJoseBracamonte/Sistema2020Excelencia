@@ -1,0 +1,11 @@
+.git
+.vs
+.vscode
+**/node_modules
+**/bin
+**/obj
+**/dist
+**/out
+temp/
+*.log
+docker-compose.override.yml
