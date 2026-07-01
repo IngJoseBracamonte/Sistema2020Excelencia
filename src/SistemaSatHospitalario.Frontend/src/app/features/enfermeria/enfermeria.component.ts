@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
+import { MultiSedeService, AreaClinica } from '../../core/services/multi-sede.service';
 import { 
   LucideAngularModule, 
   Search, 
@@ -41,6 +42,7 @@ export class EnfermeriaComponent implements OnInit {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private medicoService = inject(MedicoService);
+  public multiSedeService = inject(MultiSedeService);
 
   readonly icons = {
     Search,
@@ -128,6 +130,8 @@ export class EnfermeriaComponent implements OnInit {
   public filteredServices = signal<any[]>([]);
   public selectedService = signal<any | null>(null);
   public selectedMedicoId = signal<string | null>(null);
+  public selectedAreaClinicaId = signal<string | null>(null);
+  public areasClinicas = signal<AreaClinica[]>([]);
   public fastChargeQuantity = 1;
   public isSavingFastCharge = signal<boolean>(false);
 
@@ -224,6 +228,12 @@ export class EnfermeriaComponent implements OnInit {
       next: (res) => this.medicos.set(res.filter(m => m.activo)),
       error: (err) => console.error('[ENFERMERIA] Error loading medicos:', err)
     });
+
+    // Cargar áreas clínicas (Sedes)
+    this.http.get<any[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
+      next: (res) => this.areasClinicas.set(res.filter(a => a.activo)),
+      error: (err) => console.error('[ENFERMERIA] Error loading areas clinicas:', err)
+    });
   }
 
   public selectAccount(account: any): void {
@@ -289,7 +299,7 @@ export class EnfermeriaComponent implements OnInit {
     this.editingValoracionId = null;
   }
 
-  public saveTriage(): void {
+  public submitTriage(): void {
     const active = this.selectedAccount();
     if (!active) return;
 
@@ -506,6 +516,10 @@ export class EnfermeriaComponent implements OnInit {
       payload.horaCita = new Date().toISOString(); // Default current time for instant service/consultation
     }
 
+    if (this.selectedAreaClinicaId()) {
+      payload.areaClinicaId = this.selectedAreaClinicaId();
+    }
+
     if (esConsulta && this.customPrecio() !== null && this.customHonorario() !== null) {
       payload.precioModificado = Number(this.customPrecio());
       payload.honorarioModificado = Number(this.customHonorario());
@@ -519,6 +533,7 @@ export class EnfermeriaComponent implements OnInit {
           this.fastChargeSearchTerm.set('');
           this.fastChargeQuantity = 1;
           this.selectedMedicoId.set(null);
+          this.selectedAreaClinicaId.set(null);
           this.customPrecio.set(null);
           this.customHonorario.set(null);
           this.currentStep.set(1); // Reiniciar Stepper

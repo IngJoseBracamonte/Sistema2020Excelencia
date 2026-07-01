@@ -68,7 +68,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             // Opcionalmente vinculamos el IdPacienteLegacy si no lo tenía asignado
                             if (!existingLocal.IdPacienteLegacy.HasValue)
                             {
-                                existingLocal.IdPacienteLegacy = p.IdPersona;
+                                existingLocal.VincularLegacy(p.IdPersona);
                                 _context.PacientesAdmision.Update(existingLocal);
                                 changes = true;
                             }

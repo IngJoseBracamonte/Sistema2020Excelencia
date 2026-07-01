@@ -43,7 +43,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Active patients panel loaded.');
 
     // Click on the first active patient if any are listed
-    const firstPatient = page.locator('div.group.relative').first();
+    const firstPatient = page.locator('.space-y-3.max-h-\\[600px\\] > div').first();
     const countPatients = await firstPatient.count();
     if (countPatients === 0) {
       console.log('No active patients found, skipping clinical operations test.');
@@ -76,10 +76,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Selected CONSULTA GINECOLOGICA.');
 
     // --- Step 2: Configure manual price overrides and responsibilities ---
-    // Click Siguiente para avanzar del Paso 1 (selección) al Paso 2 (ajustes)
-    const nextBtnStep1 = page.locator('button:has-text("Siguiente")').last();
-    await nextBtnStep1.click();
-    await page.waitForTimeout(500);
+    // El sistema avanza automáticamente al Paso 2 (ajustes) tras seleccionar del autocompletado
 
     // Verify doctor selector dropdown is shown in Step 2
     await page.waitForSelector('select', { timeout: 8000 });
@@ -109,7 +106,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
 
   test('Cierre Cuenta: Read-only check and Egress/Transfer panel for clinical users', async ({ page }) => {
     // 1. Navigate to Cierre Cuenta (Emergency directory)
-    await page.goto('/admision/cierre-cuenta?type=Emergencia');
+    await page.goto('/cierre-cuenta/Emergencia');
     await page.waitForLoadState('networkidle');
 
     // Wait for active patients list
@@ -155,7 +152,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Click on the first active patient
-    const firstPatient = page.locator('div.group.relative').first();
+    const firstPatient = page.locator('.space-y-3.max-h-\\[600px\\] > div').first();
     const countPatients = await firstPatient.count();
     if (countPatients === 0) {
       console.log('No active patients found, skipping test.');
@@ -171,13 +168,9 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await searchInput.fill('Consulta Medica General');
     await page.waitForTimeout(1000); // esperar debounce del autocomplete
     await page.locator('div.hover\\:bg-white\\/5').first().click();
-
-    // Click Siguiente en el Paso 1
-    const nextBtnStep1 = page.locator('button:has-text("Siguiente")').last();
-    await nextBtnStep1.click();
     await page.waitForTimeout(500);
 
-    // El selector de médico aparece en el paso 2
+    // El selector de médico aparece en el paso 2 (al que se avanza automáticamente)
     await page.waitForSelector('select', { timeout: 8000 });
     const doctorSelector = page.locator('select').last();
     await doctorSelector.selectOption({ index: 1 });
@@ -194,12 +187,9 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await searchInput.fill('Radiografía Tórax');
     await page.waitForTimeout(1000);
     await page.locator('div.hover\\:bg-white\\/5').first().click();
-    
-    // Paso 1 -> Paso 2
-    await nextBtnStep1.click();
     await page.waitForTimeout(500);
     
-    // Paso 2 -> Paso 3 (no requiere médico)
+    // Avanza automáticamente al Paso 2. Paso 2 -> Paso 3 (no requiere médico)
     await nextBtnStep2.click();
     await page.waitForTimeout(500);
     
@@ -210,12 +200,9 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await searchInput.fill('Informe Médico Especializado');
     await page.waitForTimeout(1000);
     await page.locator('div.hover\\:bg-white\\/5').first().click();
-    
-    // Paso 1 -> Paso 2
-    await nextBtnStep1.click();
     await page.waitForTimeout(500);
     
-    // Paso 2 -> Paso 3
+    // Avanza automáticamente al Paso 2. Paso 2 -> Paso 3
     await nextBtnStep2.click();
     await page.waitForTimeout(500);
     

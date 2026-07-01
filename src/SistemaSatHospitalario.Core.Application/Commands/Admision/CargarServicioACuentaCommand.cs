@@ -36,6 +36,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
         public DateTime? HoraCita { get; set; }
+        public Guid? AreaClinicaId { get; set; }
 
         // Datos para Cirugía/Procedimiento Complejo con Múltiples Médicos
         public global::System.Collections.Generic.List<MedicoRolInputDto>? MedicosRoles { get; set; }
@@ -173,7 +174,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Cantidad, 
                 request.TipoServicio, 
                 request.UsuarioCarga,
-                legacyId);
+                legacyId,
+                request.AreaClinicaId);
 
             if (_context.DetallesServicioCuenta != null)
             {
@@ -340,7 +342,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
                 throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {horaNormalizada:HH:mm}.");
 
-            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada);
+            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, request.AreaClinicaId);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
         }
 

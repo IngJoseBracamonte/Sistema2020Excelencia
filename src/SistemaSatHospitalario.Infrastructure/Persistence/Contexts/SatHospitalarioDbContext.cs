@@ -276,6 +276,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(d => d.Id);
                 entity.Property(d => d.Precio).HasPrecision(18, 2);
                 entity.Property(d => d.Cantidad).HasPrecision(18, 4);
+                entity.HasOne(d => d.AreaClinica)
+                      .WithMany()
+                      .HasForeignKey(d => d.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             builder.Entity<CitaMedica>(entity =>
@@ -285,6 +289,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.HoraPautada);
+
+                entity.HasOne(c => c.AreaClinica)
+                      .WithMany()
+                      .HasForeignKey(c => c.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             builder.Entity<Medico>(entity =>
