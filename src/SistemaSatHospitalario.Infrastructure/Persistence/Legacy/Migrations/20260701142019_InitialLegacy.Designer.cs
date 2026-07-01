@@ -12,7 +12,7 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 {
     [DbContext(typeof(Sistema2020LegacyDbContext))]
-    [Migration("20260522161439_InitialLegacy")]
+    [Migration("20260701142019_InitialLegacy")]
     partial class InitialLegacy
     {
         /// <inheritdoc />
@@ -73,6 +73,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Correo")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Direccion")
                         .IsRequired()
                         .HasColumnType("longtext");
 

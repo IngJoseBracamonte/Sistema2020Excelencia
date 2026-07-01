@@ -73,6 +73,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("Direccion")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Fecha")
                         .IsRequired()
                         .HasColumnType("longtext");

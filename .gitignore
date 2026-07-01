@@ -385,3 +385,9 @@ deploy/docker/backups/
 
 # Agent configuration and workspace plugins
 .agents/
+
+# Interactive architectural documentation guides
+docs/guia_proyecto.html
+docs/guia_src.html
+docs/detalle_catalogo.html
+docs/prompts_receta.html

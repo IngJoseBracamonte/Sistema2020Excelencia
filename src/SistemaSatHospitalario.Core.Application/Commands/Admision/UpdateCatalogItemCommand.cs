@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
@@ -14,6 +15,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public Guid MedicoId { get; set; }
         public decimal Honorario { get; set; }
+    }
+
+    public class ServicioInsumoRecetaInputDto
+    {
+        public Guid InsumoId { get; set; }
+        public decimal Cantidad { get; set; }
+        public string UnidadMedidaConsumo { get; set; } = string.Empty;
     }
 
     public class UpdateCatalogItemCommand : IRequest<bool>
@@ -29,6 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public bool RequiereInventario { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
+        public List<ServicioInsumoRecetaInputDto>? RecetaInsumos { get; set; }
     }
 
     public class UpdateCatalogItemCommandHandler : IRequestHandler<UpdateCatalogItemCommand, bool>
@@ -85,6 +94,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     {
                         var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
                         _context.HonorariosMedicosServicios.Add(newHon);
+                    }
+                }
+            }
+
+            // Actualizar receta BOM de insumos condicionalmente
+            if (request.RecetaInsumos != null)
+            {
+                var existingRecetas = await _context.ServiciosInsumoRecetas
+                    .Where(r => r.ServicioClinicoId == item.Id)
+                    .ToListAsync(cancellationToken);
+                _context.ServiciosInsumoRecetas.RemoveRange(existingRecetas);
+
+                foreach (var r in request.RecetaInsumos)
+                {
+                    if (Enum.TryParse<UnidadMedida>(r.UnidadMedidaConsumo, true, out var uom))
+                    {
+                        var receta = new ServicioInsumoReceta(item.Id, item.Codigo, r.InsumoId, r.Cantidad, uom);
+                        _context.ServiciosInsumoRecetas.Add(receta);
                     }
                 }
             }
