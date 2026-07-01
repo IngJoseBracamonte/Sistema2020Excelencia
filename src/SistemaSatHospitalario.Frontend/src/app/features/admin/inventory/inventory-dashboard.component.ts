@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
+import { MultiSedeService, Sede } from '../../../core/services/multi-sede.service';
 import { 
   Insumo, 
   MovimientoInsumo, 
@@ -36,8 +37,11 @@ import {
 export class InventoryDashboardComponent implements OnInit {
   private inventoryService = inject(InventoryService);
   private catalogService = inject(CatalogService);
+  private multiSedeService = inject(MultiSedeService);
 
   // Lists
+  public sedes = signal<Sede[]>([]);
+  public selectedSede = signal<Sede | null>(null);
   public insumos = signal<Insumo[]>([]);
   public movements = signal<MovimientoInsumo[]>([]);
   public recipes = signal<ServicioInsumoReceta[]>([]);
@@ -69,6 +73,7 @@ export class InventoryDashboardComponent implements OnInit {
 
   public movementForm = signal<RecordMovement>({
     insumoId: '',
+    sedeId: '',
     tipoMovimiento: 'Ingreso',
     cantidadOriginal: 0,
     unidadMedidaOriginal: 'UNIDAD',
@@ -142,15 +147,34 @@ export class InventoryDashboardComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.multiSedeService.getSedes().subscribe({
+      next: (res) => {
+        const activeSedes = res.filter(s => s.activo);
+        this.sedes.set(activeSedes);
+        if (activeSedes.length > 0) {
+          const principal = activeSedes.find(s => s.esPrincipal) || activeSedes[0];
+          this.selectedSede.set(principal);
+          this.movementForm.update(prev => ({ ...prev, sedeId: principal.id }));
+        }
+        this.loadAllData();
+      },
+      error: (err) => {
+        console.error("Error loading sedes", err);
+        this.loadAllData();
+      }
+    });
+  }
+
+  onSedeChange(sede: Sede) {
+    this.selectedSede.set(sede);
+    this.movementForm.update(prev => ({ ...prev, sedeId: sede.id }));
     this.loadAllData();
   }
 
-  loadAllData() {
-    this.isLoading.set(true);
+  loadInsumosGlobal() {
     this.inventoryService.getInsumos().subscribe({
       next: (res) => {
         this.insumos.set(res);
-        // Initialize physical counts
         const counts: Record<string, number> = {};
         res.forEach(i => {
           counts[i.id] = i.stockActual;
@@ -160,9 +184,51 @@ export class InventoryDashboardComponent implements OnInit {
       },
       error: () => this.isLoading.set(false)
     });
+  }
+
+  loadAllData() {
+    this.isLoading.set(true);
+    const currentSede = this.selectedSede();
+    
+    if (currentSede) {
+      this.inventoryService.getStockPorSede(currentSede.id).subscribe({
+        next: (stockRes) => {
+          this.inventoryService.getInsumos().subscribe({
+            next: (insumosRes) => {
+              const mapped = insumosRes.map(i => {
+                const s = stockRes.find(x => x.insumoId === i.id);
+                return {
+                  ...i,
+                  stockActual: s ? s.stockActual : 0
+                };
+              });
+              this.insumos.set(mapped);
+              const counts: Record<string, number> = {};
+              mapped.forEach(i => {
+                counts[i.id] = i.stockActual;
+              });
+              this.physicalCounts.set(counts);
+              this.isLoading.set(false);
+            },
+            error: () => this.isLoading.set(false)
+          });
+        },
+        error: () => {
+          this.loadInsumosGlobal();
+        }
+      });
+    } else {
+      this.loadInsumosGlobal();
+    }
 
     this.inventoryService.getMovements().subscribe({
-      next: (res) => this.movements.set(res),
+      next: (res) => {
+        if (currentSede) {
+          this.movements.set(res.filter(m => m.sedeId === currentSede.id));
+        } else {
+          this.movements.set(res);
+        }
+      },
       error: (err) => console.error("Error loading movements", err)
     });
 
@@ -173,7 +239,6 @@ export class InventoryDashboardComponent implements OnInit {
 
     this.catalogService.getUnifiedCatalog().subscribe({
       next: (res) => {
-        // Only map/procedures/medicina categories if applicable, or all
         this.services.set(res.filter(s => s.activo));
       },
       error: (err) => console.error("Error loading services", err)
@@ -255,6 +320,7 @@ export class InventoryDashboardComponent implements OnInit {
         // Clear form
         this.movementForm.set({
           insumoId: '',
+          sedeId: this.selectedSede()?.id || '',
           tipoMovimiento: 'Ingreso',
           cantidadOriginal: 0,
           unidadMedidaOriginal: 'UNIDAD',
@@ -309,7 +375,6 @@ export class InventoryDashboardComponent implements OnInit {
       [insumoId]: isNaN(value) ? 0 : value
     }));
   }
-
   submitClosing() {
     if (!confirm('¿Está seguro de realizar el cierre físico del inventario? Esto actualizará el stock actual del sistema con los valores reales digitados.')) {
       return;
@@ -322,6 +387,7 @@ export class InventoryDashboardComponent implements OnInit {
     }));
 
     this.inventoryService.performClosing({
+      sedeId: this.selectedSede()?.id || '',
       observaciones: this.closingObservations(),
       detalles: details
     }).subscribe({

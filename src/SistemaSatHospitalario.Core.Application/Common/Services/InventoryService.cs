@@ -54,14 +54,41 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             {
                 return; // No recipe mapping for this service, skip inventory deduction
             }
+            var targetSedeId = sedeId;
+            if (targetSedeId == null || targetSedeId == Guid.Empty)
+            {
+                var cuenta = await _context.CuentasServicios
+                    .FirstOrDefaultAsync(c => c.Id == cuentaId, cancellationToken);
+                
+                if (cuenta != null && !string.IsNullOrEmpty(cuenta.TipoIngreso))
+                {
+                    string targetSedeCodigo = cuenta.TipoIngreso.ToUpper() switch
+                    {
+                        "EMERGENCIA" => "EMERGENCIA",
+                        "HOSPITALIZACION" => "HOSPITALIZACION",
+                        _ => "PRINCIPAL"
+                    };
 
-            var targetSedeId = sedeId ?? (await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, cancellationToken))?.Id ?? Guid.Empty;
+                    var matchedSede = await _context.Sedes
+                        .FirstOrDefaultAsync(s => s.Codigo == targetSedeCodigo && s.Activo, cancellationToken);
+                    
+                    if (matchedSede != null)
+                    {
+                        targetSedeId = matchedSede.Id;
+                    }
+                }
+
+                if (targetSedeId == null || targetSedeId == Guid.Empty)
+                {
+                    targetSedeId = (await _context.Sedes
+                        .FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, cancellationToken))?.Id ?? Guid.Empty;
+                }
+            }
 
             foreach (var recipe in recipes)
             {
-                await DeductStockForRecipeAsync(detalleId, cuentaId, targetSedeId, serviceDescripcion, cantidadServicio, usuarioCarga, recipe, cancellationToken);
-            }
-        }
+                await DeductStockForRecipeAsync(detalleId, cuentaId, targetSedeId.Value, serviceDescripcion, cantidadServicio, usuarioCarga, recipe, cancellationToken);
+            }        }
 
         private async Task DeductStockForRecipeAsync(
             Guid detalleId,
@@ -75,24 +102,38 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         {
             if (recipe.Insumo == null) return;
 
-            // 2. Conversion factor from consumption unit to base stock unit
+             // 2. Conversion factor from consumption unit to base stock unit
             decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
             decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
 
+            // Check if target Sede is predetermined/dedicated (with stock physical local tracker)
+            var targetSede = await _context.Sedes.FirstOrDefaultAsync(s => s.Id == targetSedeId, cancellationToken);
+            var isDedicatedSede = targetSede != null && (targetSede.EsPrincipal || targetSede.Codigo == "EMERGENCIA" || targetSede.Codigo == "HOSPITALIZACION");
+            
+            Guid stockDeductionSedeId = targetSedeId;
+            if (!isDedicatedSede)
+            {
+                var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, cancellationToken);
+                if (principalSede != null)
+                {
+                    stockDeductionSedeId = principalSede.Id;
+                }
+            }
+
             // 3. Find or create StockSede for target Sede
             var stockSede = await _context.StocksSedes
-                .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == targetSedeId, cancellationToken);
+                .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == stockDeductionSedeId, cancellationToken);
             if (stockSede == null)
             {
-                _logger.LogInformation("Inicializando stock JIT en sede para el insumo {InsumoId} en Sede {SedeId}", recipe.InsumoId, targetSedeId);
-                stockSede = new StockSede(recipe.InsumoId, targetSedeId, 0);
+                _logger.LogInformation("Inicializando stock JIT en sede para el insumo {InsumoId} en Sede {SedeId}", recipe.InsumoId, stockDeductionSedeId);
+                stockSede = new StockSede(recipe.InsumoId, stockDeductionSedeId, 0);
                 _context.StocksSedes.Add(stockSede);
             }
 
             // Deduct stock (allowing negative values per user requirements)
             stockSede.RegistrarMovimientoStock(-qtyBaseNeeded, recipe.Insumo.PermiteFraccionamiento);
             _logger.LogInformation("Stock deducido para Insumo {InsumoNombre} ({InsumoCodigo}) en Sede {SedeId}. Nuevo stock: {StockActual}",
-                recipe.Insumo.Nombre, recipe.Insumo.Codigo, targetSedeId, stockSede.StockActual);
+                recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockDeductionSedeId, stockSede.StockActual);
 
             // 4. Warning check
             if (stockSede.StockActual < 0)

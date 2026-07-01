@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { NotificationCenterComponent } from '../../components/notification-center/notification-center.component';
-import { SelectorSedeComponent } from '../../components/selector-sede/selector-sede.component';
 
 
 @Component({
     selector: 'app-user-layout',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, SidebarComponent, NotificationCenterComponent, SelectorSedeComponent],
+    imports: [CommonModule, RouterOutlet, SidebarComponent, NotificationCenterComponent],
 
     template: `
     <div class="flex h-screen bg-surface overflow-hidden">
@@ -21,7 +20,6 @@ import { SelectorSedeComponent } from '../../components/selector-sede/selector-s
         <!-- Top Bar / Header -->
         <header class="h-16 flex items-center justify-between px-6 md:px-12 bg-surface/50 backdrop-blur-md border-b border-white/5 z-[200]">
           <div class="flex items-center gap-4">
-            <app-selector-sede></app-selector-sede>
           </div>
           
           <div class="flex items-center gap-6">

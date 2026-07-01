@@ -11,6 +11,7 @@ export interface MovimientoInsumo {
   id: string;
   insumoId: string;
   insumo?: Insumo;
+  sedeId: string;
   tipoMovimiento: string; // 'Ingreso', 'Descarte', 'Consumo', 'AjusteCierre'
   cantidadBase: number;
   unidadMedidaOriginal: string;
@@ -69,6 +70,7 @@ export interface UpdateInsumo {
 
 export interface RecordMovement {
   insumoId: string;
+  sedeId: string;
   tipoMovimiento: string;
   cantidadOriginal: number;
   unidadMedidaOriginal: string;
@@ -77,6 +79,7 @@ export interface RecordMovement {
 }
 
 export interface PerformClosing {
+  sedeId: string;
   usuario?: string;
   observaciones: string;
   detalles: CierreDetalleInput[];
