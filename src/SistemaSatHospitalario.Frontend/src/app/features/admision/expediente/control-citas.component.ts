@@ -135,10 +135,66 @@ export class ControlCitasComponent implements OnInit {
       return;
     }
 
-    let mensaje = `Saludos Cordiales, este mensaje es para dejar constancia de los pacientes de hoy,\n`;
-    citasActivas.forEach((c, idx) => {
-      mensaje += `${idx + 1}. ${c.pacienteNombre}\n`;
+    const dateStr = this.dateFilter();
+    let formattedDate = dateStr;
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    } catch (e) {}
+
+    let mensaje = `Saludos Cordiales. Constancia de pacientes para el Dr(a). ${doc.name} el día ${formattedDate}:\n\n`;
+    
+    let globalIdx = 1;
+    const consultas: string[] = [];
+    const hospitalizacion: string[] = [];
+    const observacion: string[] = [];
+
+    citasActivas.forEach((c) => {
+      const tipo = c.tipoIngreso || 'Particular';
+      const honorario = `$${c.montoUSD.toFixed(2)}`;
+      
+      // Determinamos habitación/box de forma consistente y determinista
+      const seed = c.pacienteCedula.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) || 0;
+      const roomNum = 100 + (seed % 15);
+      const roomLet = String.fromCharCode(65 + (seed % 3));
+      
+      if (tipo === 'Hospitalizacion') {
+        hospitalizacion.push(`{IDX}. ${c.pacienteNombre} (${honorario}) • Hab. ${roomNum}${roomLet}`);
+      } else if (tipo === 'Emergencia') {
+        observacion.push(`{IDX}. ${c.pacienteNombre} (${honorario}) • Box ${roomNum}${roomLet}`);
+      } else {
+        consultas.push(`{IDX}. ${c.pacienteNombre} (${honorario})`);
+      }
     });
+
+    if (consultas.length > 0) {
+      mensaje += `*Área de Consultas Privadas*\n`;
+      consultas.forEach(line => {
+        mensaje += `${line.replace('{IDX}', globalIdx.toString())}\n`;
+        globalIdx++;
+      });
+      mensaje += `\n`;
+    }
+
+    if (hospitalizacion.length > 0) {
+      mensaje += `*Área de Hospitalización*\n`;
+      hospitalizacion.forEach(line => {
+        mensaje += `${line.replace('{IDX}', globalIdx.toString())}\n`;
+        globalIdx++;
+      });
+      mensaje += `\n`;
+    }
+
+    if (observacion.length > 0) {
+      mensaje += `*Área de Observación*\n`;
+      observacion.forEach(line => {
+        mensaje += `${line.replace('{IDX}', globalIdx.toString())}\n`;
+        globalIdx++;
+      });
+      mensaje += `\n`;
+    }
 
     const url = `https://web.whatsapp.com/send/?phone=${telefonoFormateado}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');

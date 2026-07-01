@@ -13,4 +13,5 @@ services:
       - WATCHTOWER_INCLUDE_RESTARTING=true
       - DOCKER_API_VERSION=1.41
       - WATCHTOWER_LOG_LEVEL=info
+      - WATCHTOWER_MONITOR_ONLY=${WATCHTOWER_MONITOR_ONLY:-false}
     command: sat-api sat-frontend

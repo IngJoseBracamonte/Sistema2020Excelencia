@@ -22,6 +22,10 @@ export class InventoryService {
     return this.http.get<Insumo[]>(`${this.apiUrl}/insumos`);
   }
 
+  getStockPorSede(sedeId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/stock-por-sede`, { params: { sedeId } });
+  }
+
   createInsumo(dto: CreateInsumo): Observable<Insumo> {
     return this.http.post<Insumo>(`${this.apiUrl}/insumos`, dto);
   }

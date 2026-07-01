@@ -1,5 +1,19 @@
 import { test, expect } from '@playwright/test';
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+/** Espera a que un <select> tenga al menos una opción con el texto dado. */
+async function waitForSelectOption(page: any, selector: string, optionText: string, timeout = 15000) {
+  await page.waitForFunction(
+    ({ sel, text }: { sel: string; text: string }) => {
+      const el = document.querySelector(sel) as HTMLSelectElement | null;
+      if (!el) return false;
+      return Array.from(el.options).some(opt => opt.text.trim() === text);
+    },
+    { sel: selector, text: optionText },
+    { timeout }
+  );
+}
+
 test.describe('Billing Wizard Stabilization', () => {
   test('Auto-Add Consultation and Sequential Suggestions Flow', async ({ page }) => {
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
@@ -19,12 +33,19 @@ test.describe('Billing Wizard Stabilization', () => {
     await page.goto('/facturacion?type=Particular');
     await page.waitForLoadState('networkidle');
 
-    // 3. Select Ginecología Specialty
+    // 3. Esperar carga asíncrona del dropdown de especialidades
+    // El selector retorna <option> desde la API — se necesita waitForFunction
+    await waitForSelectOption(page, 'select:first-of-type', 'GINECOLOGÍA');
+    console.log('Specialty options loaded.');
+
     const specialtySelect = page.locator('select').first();
     await specialtySelect.selectOption({ label: 'GINECOLOGÍA' });
     console.log('Selected specialty: Ginecología');
 
-    // 4. Select Doctor Lisa Cuddy
+    // 4. Esperar carga del dropdown de médicos tras seleccionar especialidad
+    await waitForSelectOption(page, 'select:nth-of-type(2)', 'LISA CUDDY');
+    console.log('Doctor options loaded.');
+
     const doctorSelect = page.locator('select').nth(1);
     await doctorSelect.selectOption({ label: 'LISA CUDDY' });
     console.log('Selected doctor: Lisa Cuddy');

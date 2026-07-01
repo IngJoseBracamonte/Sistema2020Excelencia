@@ -58,18 +58,36 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     }
                     else 
                     {
-                        // AUTOMATIC ONBOARDING (V11.8 Requirement)
-                        // Si no existe localmente, lo creamos de inmediato para garantizar consistencia GUID
-                        var fullName = $"{p.Nombre} {p.Apellidos}".Trim();
-                        var mainPhone = !string.IsNullOrEmpty(p.Celular) ? p.Celular : p.Telefono;
-                        
-                        DateTime? dob = null;
-                        if (DateTime.TryParse(p.Fecha, out var parsedDob)) dob = parsedDob;
+                        // Evitar Duplicación por Cédula/Pasaporte si ya está registrado en local con otra asociación legacy o registro nativo
+                        var existingLocal = await _context.PacientesAdmision
+                            .FirstOrDefaultAsync(pat => pat.CedulaPasaporte == p.Cedula, cancellationToken);
 
-                        var newNativePatient = new PacienteAdmision(p.Cedula, fullName, mainPhone ?? "", p.IdPersona, dob, p.Direccion);
-                        await _context.PacientesAdmision.AddAsync(newNativePatient, cancellationToken);
-                        nativeId = newNativePatient.Id;
-                        changes = true;
+                        if (existingLocal != null)
+                        {
+                            nativeId = existingLocal.Id;
+                            // Opcionalmente vinculamos el IdPacienteLegacy si no lo tenía asignado
+                            if (!existingLocal.IdPacienteLegacy.HasValue)
+                            {
+                                existingLocal.IdPacienteLegacy = p.IdPersona;
+                                _context.PacientesAdmision.Update(existingLocal);
+                                changes = true;
+                            }
+                        }
+                        else
+                        {
+                            // AUTOMATIC ONBOARDING (V11.8 Requirement)
+                            // Si no existe localmente, lo creamos de inmediato para garantizar consistencia GUID
+                            var fullName = $"{p.Nombre} {p.Apellidos}".Trim();
+                            var mainPhone = !string.IsNullOrEmpty(p.Celular) ? p.Celular : p.Telefono;
+                            
+                            DateTime? dob = null;
+                            if (DateTime.TryParse(p.Fecha, out var parsedDob)) dob = parsedDob;
+
+                            var newNativePatient = new PacienteAdmision(p.Cedula, fullName, mainPhone ?? "", p.IdPersona, dob, p.Direccion);
+                            await _context.PacientesAdmision.AddAsync(newNativePatient, cancellationToken);
+                            nativeId = newNativePatient.Id;
+                            changes = true;
+                        }
                     }
 
                     results.Add(new PatientDto

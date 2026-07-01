@@ -76,41 +76,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var userRecibos = receiptsByCaja.TryGetValue(caja.Id, out var rList) ? rList : new List<ReciboFactura>();
                 var allPayments = userRecibos.SelectMany(r => r.DetallesPago).ToList();
 
-                var pagosDetallados = new List<PagoDetalladoDto>();
-                foreach (var r in userRecibos)
-                {
-                    decimal totalPagadoRecibo = r.DetallesPago.Sum(dp => dp.EquivalenteAbonadoBase);
-                    decimal vueltoRecibo = r.MontoVueltoUSD;
-                    decimal pendienteRecibo = Math.Max(0, r.TotalFacturadoUSD - totalPagadoRecibo);
-
-                    foreach (var p in r.DetallesPago.Where(x => x.MontoAbonadoMoneda > 0))
-                    {
-                        var metodoCatalogObj = catalogoMetodos.FirstOrDefault(m => m.Valor == p.MetodoPago);
-                        bool isUSD = metodoCatalogObj?.EsUSD ?? (p.MetodoPago == "Dolar Efectivo" || p.MetodoPago == "Zelle");
-                        string vueltoDadoPor = vueltoRecibo > 0 ? (r.UsuarioEmision ?? caja.NombreUsuario ?? "System") : "-";
-
-                        pagosDetallados.Add(new PagoDetalladoDto
-                        {
-                            Fecha = p.FechaPago,
-                            PacienteNombre = r.CuentaServicio.Paciente.NombreCorto,
-                            PacienteCedula = r.CuentaServicio.Paciente.CedulaPasaporte,
-                            Concepto = $"Recibo: {r.NumeroRecibo}",
-                            MetodoPago = p.MetodoPago,
-                            Moneda = isUSD ? "$" : "Bs.",
-                            MontoMonedaOriginal = p.MontoAbonadoMoneda,
-                            EquivalenteUSD = p.EquivalenteAbonadoBase,
-                            IngresadoPor = p.UsuarioCarga,
-                            VueltoDadoPor = vueltoDadoPor,
-                            TotalCuentaUSD = r.TotalFacturadoUSD,
-                            PendienteCuentaUSD = pendienteRecibo,
-                            VueltoUSD = vueltoRecibo
-                        });
-                    }
-                }
-
-                var desgloseMetodos = new List<DesgloseMetodoDto>();
-                decimal totalCajaCobrado = 0;
-                decimal totalCajaIngresado = 0;
+                var pagosDetallados = ObtenerPagosDetallados(userRecibos, caja, catalogoMetodos);
 
                 List<MetodoDeclaradoDto>? declarados = null;
                 if (caja.Estado != EstadoConstants.CajaAbierta && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
@@ -122,58 +88,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     catch { }
                 }
 
-                var metodosPrincipales = catalogoMetodos.Where(m => !m.EsVuelto).ToList();
-                foreach (var metodo in metodosPrincipales)
-                {
-                    string vueltoMetodoValor = string.Empty;
-                    if (metodo.Valor == "Dolar Efectivo") vueltoMetodoValor = "Vuelto Efectivo USD";
-                    else if (metodo.Valor == "Efectivo BS") vueltoMetodoValor = "Vuelto Efectivo BS";
-                    else if (metodo.Valor == "Pago Movil") vueltoMetodoValor = "Vuelto Pago Movil";
-
-                    var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
-                    decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
-                    decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
-
-                    decimal esperadoVueltosOriginal = 0;
-                    decimal esperadoVueltosBase = 0;
-                    if (!string.IsNullOrEmpty(vueltoMetodoValor))
-                    {
-                        var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
-                        esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
-                        esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
-                    }
-
-                    decimal esperadoNetoOriginal = esperadoIngresoOriginal - esperadoVueltosOriginal;
-                    decimal esperadoNetoBase = esperadoIngresoBase - esperadoVueltosBase;
-
-                    decimal declaradoNetoOriginal = esperadoNetoOriginal;
-                    if (declarados != null)
-                    {
-                        var dec = declarados.FirstOrDefault(d => d.MetodoPago == metodo.Valor);
-                        if (dec != null)
-                        {
-                            declaradoNetoOriginal = dec.MontoIngreso - dec.MontoVueltos;
-                        }
-                    }
-
-                    decimal diferenciaOriginal = declaradoNetoOriginal - esperadoNetoOriginal;
-
-                    totalCajaCobrado += esperadoNetoBase;
-
-                    decimal tasaCambioCaja = userRecibos.FirstOrDefault(r => r.TasaCambioDia > 0)?.TasaCambioDia ?? 1;
-                    decimal declaradoNetoBase = metodo.EsUSD ? declaradoNetoOriginal : (tasaCambioCaja > 0 ? declaradoNetoOriginal / tasaCambioCaja : 0);
-                    totalCajaIngresado += declaradoNetoBase;
-
-                    desgloseMetodos.Add(new DesgloseMetodoDto
-                    {
-                        Metodo = metodo.Valor,
-                        Nombre = metodo.Nombre,
-                        Esperado = esperadoNetoOriginal,
-                        Declarado = declaradoNetoOriginal,
-                        Diferencia = diferenciaOriginal,
-                        EsUSD = metodo.EsUSD
-                    });
-                }
+                var desgloseMetodos = CalcularDesgloseMetodos(
+                    userRecibos,
+                    allPayments,
+                    catalogoMetodos,
+                    declarados,
+                    out decimal totalCajaCobrado,
+                    out decimal totalCajaIngresado);
 
                 cajerosReport.Add(new CajeroReportDto
                 {
@@ -192,6 +113,113 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             return _excelService.GenerateDetailedCashierReport(cajerosReport, grandTotalEsperado, grandTotalRecaudado);
+        }
+
+        private List<PagoDetalladoDto> ObtenerPagosDetallados(
+            List<ReciboFactura> userRecibos,
+            CajaDiaria caja,
+            List<CatalogoMetodoPago> catalogoMetodos)
+        {
+            var pagosDetallados = new List<PagoDetalladoDto>();
+            foreach (var r in userRecibos)
+            {
+                decimal totalPagadoRecibo = r.DetallesPago.Sum(dp => dp.EquivalenteAbonadoBase);
+                decimal vueltoRecibo = r.MontoVueltoUSD;
+                decimal pendienteRecibo = Math.Max(0, r.TotalFacturadoUSD - totalPagadoRecibo);
+
+                foreach (var p in r.DetallesPago.Where(x => x.MontoAbonadoMoneda > 0))
+                {
+                    var metodoCatalogObj = catalogoMetodos.FirstOrDefault(m => m.Valor == p.MetodoPago);
+                    bool isUSD = metodoCatalogObj?.EsUSD ?? (p.MetodoPago == "Dolar Efectivo" || p.MetodoPago == "Zelle");
+                    string vueltoDadoPor = vueltoRecibo > 0 ? (r.UsuarioEmision ?? caja.NombreUsuario ?? "System") : "-";
+
+                    pagosDetallados.Add(new PagoDetalladoDto
+                    {
+                        Fecha = p.FechaPago,
+                        PacienteNombre = r.CuentaServicio.Paciente.NombreCorto,
+                        PacienteCedula = r.CuentaServicio.Paciente.CedulaPasaporte,
+                        Concepto = $"Recibo: {r.NumeroRecibo}",
+                        MetodoPago = p.MetodoPago,
+                        Moneda = isUSD ? "$" : "Bs.",
+                        MontoMonedaOriginal = p.MontoAbonadoMoneda,
+                        EquivalenteUSD = p.EquivalenteAbonadoBase,
+                        IngresadoPor = p.UsuarioCarga,
+                        VueltoDadoPor = vueltoDadoPor,
+                        TotalCuentaUSD = r.TotalFacturadoUSD,
+                        PendienteCuentaUSD = pendienteRecibo,
+                        VueltoUSD = vueltoRecibo
+                    });
+                }
+            }
+            return pagosDetallados;
+        }
+
+        private List<DesgloseMetodoDto> CalcularDesgloseMetodos(
+            List<ReciboFactura> userRecibos,
+            List<DetallePago> allPayments,
+            List<CatalogoMetodoPago> catalogoMetodos,
+            List<MetodoDeclaradoDto>? declarados,
+            out decimal totalCajaCobrado,
+            out decimal totalCajaIngresado)
+        {
+            var desgloseMetodos = new List<DesgloseMetodoDto>();
+            totalCajaCobrado = 0;
+            totalCajaIngresado = 0;
+
+            var metodosPrincipales = catalogoMetodos.Where(m => !m.EsVuelto).ToList();
+            foreach (var metodo in metodosPrincipales)
+            {
+                string vueltoMetodoValor = string.Empty;
+                if (metodo.Valor == "Dolar Efectivo") vueltoMetodoValor = "Vuelto Efectivo USD";
+                else if (metodo.Valor == "Efectivo BS") vueltoMetodoValor = "Vuelto Efectivo BS";
+                else if (metodo.Valor == "Pago Movil") vueltoMetodoValor = "Vuelto Pago Movil";
+
+                var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
+                decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
+                decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
+
+                decimal esperadoVueltosOriginal = 0;
+                decimal esperadoVueltosBase = 0;
+                if (!string.IsNullOrEmpty(vueltoMetodoValor))
+                {
+                    var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
+                    esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
+                    esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
+                }
+
+                decimal esperadoNetoOriginal = esperadoIngresoOriginal - esperadoVueltosOriginal;
+                decimal esperadoNetoBase = esperadoIngresoBase - esperadoVueltosBase;
+
+                decimal declaradoNetoOriginal = esperadoNetoOriginal;
+                if (declarados != null)
+                {
+                    var dec = declarados.FirstOrDefault(d => d.MetodoPago == metodo.Valor);
+                    if (dec != null)
+                    {
+                        declaradoNetoOriginal = dec.MontoIngreso - dec.MontoVueltos;
+                    }
+                }
+
+                decimal diferenciaOriginal = declaradoNetoOriginal - esperadoNetoOriginal;
+
+                totalCajaCobrado += esperadoNetoBase;
+
+                decimal tasaCambioCaja = userRecibos.FirstOrDefault(r => r.TasaCambioDia > 0)?.TasaCambioDia ?? 1;
+                decimal declaradoNetoBase = metodo.EsUSD ? declaradoNetoOriginal : (tasaCambioCaja > 0 ? declaradoNetoOriginal / tasaCambioCaja : 0);
+                totalCajaIngresado += declaradoNetoBase;
+
+                desgloseMetodos.Add(new DesgloseMetodoDto
+                {
+                    Metodo = metodo.Valor,
+                    Nombre = metodo.Nombre,
+                    Esperado = esperadoNetoOriginal,
+                    Declarado = declaradoNetoOriginal,
+                    Diferencia = diferenciaOriginal,
+                    EsUSD = metodo.EsUSD
+                });
+            }
+
+            return desgloseMetodos;
         }
     }
 }

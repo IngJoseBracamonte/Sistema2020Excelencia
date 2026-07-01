@@ -77,6 +77,9 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var movimientosList = new List<MovimientoInsumo>();
             var movimientosMock = movimientosList.BuildMockDbSet<MovimientoInsumo>();
 
+            var cuentasList = new List<CuentaServicios> { cuenta };
+            var cuentasMock = cuentasList.BuildMockDbSet<CuentaServicios>();
+
             mockContext.Setup(c => c.PacientesAdmision).Returns(pacientesMock.Object);
             mockContext.Setup(c => c.ServiciosClinicos).Returns(serviciosMock.Object);
             mockContext.Setup(c => c.Medicos).Returns(medicosMock.Object);
@@ -87,6 +90,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             mockContext.Setup(c => c.DetallesServicioCuenta).Returns(detallesCuentasMock.Object);
             mockContext.Setup(c => c.ConsumosServiciosRealizados).Returns(consumosMock.Object);
             mockContext.Setup(c => c.MovimientosInsumo).Returns(movimientosMock.Object);
+            mockContext.Setup(c => c.CuentasServicios).Returns(cuentasMock.Object);
 
             mockBillingRepo.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(paciente.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(cuenta);

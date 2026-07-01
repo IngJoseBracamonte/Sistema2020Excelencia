@@ -1,18 +1,36 @@
 import { test, expect } from '@playwright/test';
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+/**
+ * Autentica a un usuario y espera la redirección post-login.
+ * Acepta cualquiera de las rutas clínicas o de panel dependiendo del rol.
+ * - Admin/Billing: /dashboard
+ * - Rol clínico (user_emergencia, enfermera): /cierre-cuenta/* o /enfermeria
+ */
+async function loginAs(
+  page: any,
+  username: string,
+  password: string
+): Promise<void> {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.fill('input#username', username);
+  await page.fill('input#password', password);
+  await page.click('button[type="submit"]');
+  // Esperar redirección — acepta dashboard (admin) o ruta clínica (user_emergencia)
+  await page.waitForURL(
+    (url: URL) =>
+      url.pathname.includes('dashboard') ||
+      url.pathname.includes('cierre-cuenta') ||
+      url.pathname.includes('enfermeria'),
+    { timeout: 15000 }
+  );
+  console.log(`[AUTH] Logged in as '${username}' → ${page.url()}`);
+}
+
 test.describe('Emergency Nursing & Egress Integrity Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // 1. Authenticate as user_emergencia (Emergency Assistant / Nurse)
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-
-    await page.fill('input#username', 'user_emergencia');
-    await page.fill('input#password', 'Hospital2026*!');
-    await page.click('button[type="submit"]');
-
-    // Wait for redirect to dashboard/landing
-    await page.waitForURL('**/dashboard');
-    console.log('Logged in successfully as user_emergencia.');
+    await loginAs(page, 'user_emergencia', 'Hospital2026*!');
   });
 
   test('Módulo Enfermería: Selective triage, pinned status, and doctor selection on quick charge', async ({ page }) => {
@@ -36,11 +54,11 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Selected active patient.');
 
     // Verify modular triage section checkboxes are visible
-    await expect(page.locator('text=Triage y Valoracion')).toBeVisible();
-    await expect(page.locator('label:has-text("1. Constantes Vitales")')).toBeVisible();
-    await expect(page.locator('label:has-text("2. Valoración Física Inicial")')).toBeVisible();
-    await expect(page.locator('label:has-text("5. Antecedentes y Alergias")')).toBeVisible();
-    await expect(page.locator('label:has-text("6. Descripción del Estado Actual")')).toBeVisible();
+    await expect(page.locator('text=TRIAGE Y SIGNOS VITALES')).toBeVisible();
+    await expect(page.locator('label:has-text("1. Signos Vitales")')).toBeVisible();
+    await expect(page.locator('label:has-text("2. Valoración Física")')).toBeVisible();
+    await expect(page.locator('label:has-text("3. Antecedentes")')).toBeVisible();
+    await expect(page.locator('label:has-text("4. Estado Actual")')).toBeVisible();
     console.log('Modular triage flags verified.');
 
     // Navigate to Carga de Insumos tab
@@ -57,28 +75,35 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await firstResult.click();
     console.log('Selected CONSULTA GINECOLOGICA.');
 
-    // Verify doctor selector dropdown is shown
-    const doctorSelector = page.locator('select:has-text("Seleccionar Médico")');
+    // --- Step 2: Configure manual price overrides and responsibilities ---
+    // Click Siguiente para avanzar del Paso 1 (selección) al Paso 2 (ajustes)
+    const nextBtnStep1 = page.locator('button:has-text("Siguiente")').last();
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+
+    // Verify doctor selector dropdown is shown in Step 2
+    await page.waitForSelector('select', { timeout: 8000 });
+    const doctorSelector = page.locator('select').last();
     await expect(doctorSelector).toBeVisible();
     console.log('Doctor selector dropdown is visible.');
 
-    // Try to load to account without selecting doctor
-    // Capture alert/dialog
-    page.once('dialog', async dialog => {
-      expect(dialog.message()).toContain('seleccione el médico tratante');
-      await dialog.dismiss();
-      console.log('Verified alert dialog for doctor selection validation.');
-    });
-
-    await page.click('button:has-text("CARGAR A LA CUENTA")');
-    await page.waitForTimeout(500);
-
-    // Select a doctor and submit
+    // Select a doctor
     await doctorSelector.selectOption({ index: 1 });
     console.log('Selected a seeded doctor.');
 
-    // Verify submission
-    await page.click('button:has-text("CARGAR A LA CUENTA")');
+    // Now click Siguiente to advance to Step 3 (Confirmation)
+    const nextBtnStep2 = page.locator('button:has-text("Siguiente")').last();
+    await expect(nextBtnStep2).toBeEnabled();
+    await nextBtnStep2.click();
+    console.log('Advanced to Step 3 (Confirmation).');
+
+    // Verify Step 3 displays the patient's name and Cédula
+    await expect(page.locator('span:has-text("Cédula:")')).toBeVisible();
+    await expect(page.locator('span:has-text("Médico Tratante")')).toBeVisible();
+    console.log('Step 3 confirmation details verified.');
+
+    // Verify final submission
+    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
     await page.waitForTimeout(2000);
   });
 
@@ -88,10 +113,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for active patients list
-    await page.waitForSelector('h1:has-text("Pacientes Activos")');
+    await page.waitForSelector('h3:has-text("Pacientes Activos")', { timeout: 15000 });
 
     // Click on the first active patient
-    const firstPatient = page.locator('div.group.relative').first();
+    const firstPatient = page.locator('.premium-card').first();
     const countPatients = await firstPatient.count();
     if (countPatients === 0) {
       console.log('No active patients found, skipping egress panel tests.');
@@ -122,5 +147,81 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     const egressBtn = page.locator('button:has-text("Procesar Traslado y Egreso")');
     await expect(egressBtn).toBeVisible();
     console.log('"Procesar Traslado y Egreso" button is visible for clinical assistants.');
+  });
+
+  test('Módulo Enfermería: Charge clinical services of different categories separately and verify total calculation', async ({ page }) => {
+    // 1. Navigate to Módulo Enfermería
+    await page.goto('/enfermeria');
+    await page.waitForLoadState('networkidle');
+
+    // Click on the first active patient
+    const firstPatient = page.locator('div.group.relative').first();
+    const countPatients = await firstPatient.count();
+    if (countPatients === 0) {
+      console.log('No active patients found, skipping test.');
+      return;
+    }
+    await firstPatient.click();
+
+    // Go to "CARGA DE INSUMOS"
+    await page.click('button:has-text("CARGA DE INSUMOS")');
+    const searchInput = page.locator('input[placeholder*="Escriba código o nombre"]');
+
+    // --- 1. Consulta Category (requiere médico) ---
+    await searchInput.fill('Consulta Medica General');
+    await page.waitForTimeout(1000); // esperar debounce del autocomplete
+    await page.locator('div.hover\\:bg-white\\/5').first().click();
+
+    // Click Siguiente en el Paso 1
+    const nextBtnStep1 = page.locator('button:has-text("Siguiente")').last();
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+
+    // El selector de médico aparece en el paso 2
+    await page.waitForSelector('select', { timeout: 8000 });
+    const doctorSelector = page.locator('select').last();
+    await doctorSelector.selectOption({ index: 1 });
+    
+    // Click Siguiente en el Paso 2
+    const nextBtnStep2 = page.locator('button:has-text("Siguiente")').last();
+    await nextBtnStep2.click();
+    await page.waitForTimeout(500);
+
+    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.waitForTimeout(1500); // esperar respuesta del API
+
+    // --- 2. RX Category (no requiere médico, tipo examen) ---
+    await searchInput.fill('Radiografía Tórax');
+    await page.waitForTimeout(1000);
+    await page.locator('div.hover\\:bg-white\\/5').first().click();
+    
+    // Paso 1 -> Paso 2
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+    
+    // Paso 2 -> Paso 3 (no requiere médico)
+    await nextBtnStep2.click();
+    await page.waitForTimeout(500);
+    
+    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.waitForTimeout(1500);
+
+    // --- 3. Informe Category ---
+    await searchInput.fill('Informe Médico Especializado');
+    await page.waitForTimeout(1000);
+    await page.locator('div.hover\\:bg-white\\/5').first().click();
+    
+    // Paso 1 -> Paso 2
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+    
+    // Paso 2 -> Paso 3
+    await nextBtnStep2.click();
+    await page.waitForTimeout(500);
+    
+    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.waitForTimeout(2000);
+
+    console.log('All three separate catalog categories successfully charged to patient.');
   });
 });

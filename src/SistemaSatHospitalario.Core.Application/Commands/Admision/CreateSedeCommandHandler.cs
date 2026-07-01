@@ -30,6 +30,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
             }
 
+            var codeExists = await _context.Sedes
+                .AnyAsync(s => s.Codigo == request.Codigo, cancellationToken);
+            if (codeExists)
+            {
+                throw new InvalidOperationException($"Ya existe una sede con el código '{request.Codigo}'.");
+            }
+
             var entity = new Sede(request.Codigo, request.Nombre, request.EsPrincipal);
             _context.Sedes.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);

@@ -529,7 +529,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
             await _context.SaveChangesAsync();
         }
-
         private async Task SeedInventorySedesAndMigrateStockAsync()
         {
             _logger.LogInformation("[MIGRATION] Verificando existencia de Sede Principal...");
@@ -540,6 +539,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 _context.Sedes.Add(principalSede);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("[MIGRATION] Sede Principal creada.");
+            }
+
+            _logger.LogInformation("[MIGRATION] Verificando existencia de Sede de Emergencia...");
+            var emergenciaSede = await _context.Sedes.FirstOrDefaultAsync(s => s.Codigo == "EMERGENCIA");
+            if (emergenciaSede == null)
+            {
+                emergenciaSede = new Sede("EMERGENCIA", "Área de Emergencia", false);
+                _context.Sedes.Add(emergenciaSede);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("[MIGRATION] Sede de Emergencia creada.");
+            }
+
+            _logger.LogInformation("[MIGRATION] Verificando existencia de Sede de Hospitalización...");
+            var hospSede = await _context.Sedes.FirstOrDefaultAsync(s => s.Codigo == "HOSPITALIZACION");
+            if (hospSede == null)
+            {
+                hospSede = new Sede("HOSPITALIZACION", "Área de Hospitalización", false);
+                _context.Sedes.Add(hospSede);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("[MIGRATION] Sede de Hospitalización creada.");
             }
 
             // Migrar Stocks existentes en Insumos si no están registrados en StocksSede

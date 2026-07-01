@@ -68,8 +68,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             {
                                 columns.ConstantColumn(40);
                                 columns.RelativeColumn();
-                                columns.ConstantColumn(100);
-                                columns.ConstantColumn(100);
+                                columns.ConstantColumn(130);
+                                columns.ConstantColumn(130);
                             });
 
                             table.Header(header =>
@@ -112,11 +112,11 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                             row.RelativeItem().Column(c => {
                                 c.Item().Row(r => {
                                     r.RelativeItem().Text("TOTAL USD:").SemiBold();
-                                    r.ConstantItem(90).AlignRight().Text($"$ {data.TotalUSD:N2}").SemiBold();
+                                    r.ConstantItem(130).AlignRight().Text($"$ {data.TotalUSD:N2}").SemiBold();
                                 });
                                 c.Item().PaddingTop(10).BorderTop(1).BorderColor(Colors.Grey.Lighten2).PaddingTop(5).Row(r => {
                                     r.RelativeItem().Text("TOTAL Bs.:").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
-                                    r.ConstantItem(100).AlignRight().Text($"{data.TotalBS:N2}").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
+                                    r.ConstantItem(130).AlignRight().Text($"{data.TotalBS:N2}").FontSize(13).SemiBold().FontColor(Colors.Blue.Medium);
                                 });
                                 c.Item().AlignRight().Text($"Tasa: {data.TasaBcv:N2} Bs/$").FontSize(7).Italic().FontColor(Colors.Grey.Medium);
                             });
@@ -333,9 +333,9 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                                             {
                                                 table.ColumnsDefinition(columns =>
                                                 {
-                                                    columns.ConstantColumn(30);
+                                                    columns.ConstantColumn(25);
                                                     columns.RelativeColumn();
-                                                    columns.ConstantColumn(100);
+                                                    columns.ConstantColumn(130);
                                                 });
 
                                                 table.Header(header =>
@@ -626,9 +626,9 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                                         {
                                             table.ColumnsDefinition(columns =>
                                             {
-                                                columns.ConstantColumn(30);
+                                                columns.ConstantColumn(25);
                                                 columns.RelativeColumn();
-                                                columns.ConstantColumn(100);
+                                                columns.ConstantColumn(130);
                                             });
 
                                             table.Header(header =>
@@ -853,9 +853,9 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                                      {
                                          table.ColumnsDefinition(columns =>
                                          {
-                                             columns.ConstantColumn(30);
+                                             columns.ConstantColumn(25);
                                              columns.RelativeColumn();
-                                             columns.ConstantColumn(100);
+                                             columns.ConstantColumn(130);
                                          });
 
                                          table.Header(header =>
@@ -1043,6 +1043,8 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                             
                             text.Span(", emitida por ");
                             text.Span("Centro Diagnóstico Clínico La Excelencia, C.A.").Bold();
+                            text.Span(" Se realiza abono por ");
+                            text.Span("_____________________").Bold();
                             text.Span(".");
                         });
 
@@ -1055,9 +1057,7 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                         column.Item().PaddingBottom(35).Text(text =>
                         {
                             text.Justify();
-                            text.Span("Declaro expresamente que he recibido a entera satisfacción los servicios médicos, estudios y/o procedimientos descritos en el documento fiscal antes mencionado. Los nombres y números de documento de identidad aquí registrados corresponden fielmente a nuestras identidades legales, asumiendo total responsabilidad por la veracidad de esta información. Asimismo, certifico que ");
-                            text.Span("todo lo reflejado en la factura corresponde fielmente a los servicios realizados").Bold();
-                            text.Span(".");
+                            text.Span("Declaro expresamente que he recibido a entera satisfacción los servicios médicos, estudios y/o procedimientos descritos en el documento fiscal antes mencionado. Los nombres y números de documento de identidad aquí registrados corresponden fielmente a nuestras identidades legales, asumiendo total responsabilidad por la veracidad de esta información.");
                         });
 
                         column.Item().PaddingTop(50).Row(row =>
@@ -1065,12 +1065,12 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                             row.RelativeItem().Text(t =>
                             {
                                 t.Span("Firma: ").Bold();
-                                t.Span("__________________________________");
+                                t.Span("________________________");
                             });
                             row.RelativeItem().AlignRight().Text(t =>
                             {
                                 t.Span("Fecha: ").Bold();
-                                t.Span("__________________________________");
+                                t.Span("________________________");
                             });
                         });
                     });

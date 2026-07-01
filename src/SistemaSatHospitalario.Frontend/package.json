@@ -1,6 +1,6 @@
 {
   "name": "sistema-sat-hospitalario.frontend",
-  "version": "1.2.82",
+  "version": "1.2.85",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

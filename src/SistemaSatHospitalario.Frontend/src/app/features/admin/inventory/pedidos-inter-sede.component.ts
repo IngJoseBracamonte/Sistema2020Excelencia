@@ -23,9 +23,18 @@ import { Insumo } from '../../../core/models/inventory.model';
           
           <div class="space-y-3">
             <div>
+              <label class="text-xs text-muted-foreground font-semibold">Sede Solicitante (Destino)</label>
+              <select [(ngModel)]="newPedido.sedeSolicitanteId" class="w-full mt-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-indigo-500">
+                <option *ngFor="let s of sedes" [value]="s.id">
+                  {{ s.nombre }} {{ s.esPrincipal ? '(Principal)' : '' }}
+                </option>
+              </select>
+            </div>
+
+            <div>
               <label class="text-xs text-muted-foreground font-semibold">Sede Proveedora (Origen)</label>
               <select [(ngModel)]="newPedido.sedeProveedoraId" class="w-full mt-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-indigo-500">
-                <option *ngFor="let s of sedes" [value]="s.id" [disabled]="s.id === multiSedeService.activeSede()?.id">
+                <option *ngFor="let s of sedes" [value]="s.id" [disabled]="s.id === newPedido.sedeSolicitanteId">
                   {{ s.nombre }} {{ s.esPrincipal ? '(Principal)' : '' }}
                 </option>
               </select>
@@ -182,6 +191,7 @@ export class PedidosInterSedeComponent implements OnInit {
 
   // Form states
   public newPedido = {
+    sedeSolicitanteId: '',
     sedeProveedoraId: '',
     observaciones: '',
     lineas: [] as { insumoId: string; cantidadSolicitada: number }[]
@@ -200,7 +210,12 @@ export class PedidosInterSedeComponent implements OnInit {
 
   loadInitialData() {
     this.multiSedeService.getSedes().subscribe(res => {
-      this.sedes = res.filter(s => s.activo);
+      const activeSedes = res.filter(s => s.activo);
+      this.sedes = activeSedes;
+      if (activeSedes.length > 0) {
+        const principal = activeSedes.find(s => s.esPrincipal) || activeSedes[0];
+        this.newPedido.sedeSolicitanteId = principal.id;
+      }
     });
     this.inventoryService.getInsumos().subscribe(res => {
       this.insumos = res;
@@ -237,18 +252,19 @@ export class PedidosInterSedeComponent implements OnInit {
   }
 
   crearSolicitud() {
-    const active = this.multiSedeService.activeSede();
-    if (!active) return;
+    if (!this.newPedido.sedeSolicitanteId || !this.newPedido.sedeProveedoraId) return;
 
     this.multiSedeService.createPedido({
-      sedeSolicitanteId: active.id,
+      sedeSolicitanteId: this.newPedido.sedeSolicitanteId,
       sedeProveedoraId: this.newPedido.sedeProveedoraId,
       observaciones: this.newPedido.observaciones,
       lineas: this.newPedido.lineas
     }).subscribe({
       next: () => {
         this.loadPedidos();
+        const prevSolicitante = this.newPedido.sedeSolicitanteId;
         this.newPedido = {
+          sedeSolicitanteId: prevSolicitante,
           sedeProveedoraId: '',
           observaciones: '',
           lineas: []
@@ -259,11 +275,11 @@ export class PedidosInterSedeComponent implements OnInit {
   }
 
   isSedeProveedora(ped: PedidoInterSede): boolean {
-    return ped.sedeProveedoraId === this.multiSedeService.activeSede()?.id;
+    return true;
   }
 
   isSedeSolicitante(ped: PedidoInterSede): boolean {
-    return ped.sedeSolicitanteId === this.multiSedeService.activeSede()?.id;
+    return true;
   }
 
   despachar(id: string) {
