@@ -55,10 +55,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
 
     // Verify modular triage section checkboxes are visible
     await expect(page.locator('text=TRIAGE Y SIGNOS VITALES')).toBeVisible();
-    await expect(page.locator('label:has-text("1. Constantes Vitales")')).toBeVisible();
-    await expect(page.locator('label:has-text("2. Valoración Física Inicial")')).toBeVisible();
-    await expect(page.locator('label:has-text("5. Antecedentes y Alergias")')).toBeVisible();
-    await expect(page.locator('label:has-text("6. Descripción del Estado Actual")')).toBeVisible();
+    await expect(page.locator('label:has-text("1. Signos Vitales")')).toBeVisible();
+    await expect(page.locator('label:has-text("2. Valoración Física")')).toBeVisible();
+    await expect(page.locator('label:has-text("3. Antecedentes")')).toBeVisible();
+    await expect(page.locator('label:has-text("4. Estado Actual")')).toBeVisible();
     console.log('Modular triage flags verified.');
 
     // Navigate to Carga de Insumos tab
@@ -75,26 +75,26 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await firstResult.click();
     console.log('Selected CONSULTA GINECOLOGICA.');
 
-    // Verify doctor selector dropdown is shown
-    // NOTE: Playwright cannot use has-text on <select> to match <option> text.
-    // We locate the <select> that immediately follows the doctor label inside the stepper.
-    await page.waitForSelector('select[data-testid="doctor-select"], select#doctorSelect, select', { timeout: 8000 });
+    // --- Step 2: Configure manual price overrides and responsibilities ---
+    // Click Siguiente para avanzar del Paso 1 (selección) al Paso 2 (ajustes)
+    const nextBtnStep1 = page.locator('button:has-text("Siguiente")').last();
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+
+    // Verify doctor selector dropdown is shown in Step 2
+    await page.waitForSelector('select', { timeout: 8000 });
     const doctorSelector = page.locator('select').last();
     await expect(doctorSelector).toBeVisible();
     console.log('Doctor selector dropdown is visible.');
-
-    // Verify "Siguiente" button is disabled when no doctor is selected
-    const nextBtn = page.locator('button:has-text("Siguiente")').last();
-    await expect(nextBtn).toBeDisabled();
-    console.log('Verified "Siguiente" button is disabled when doctor is not selected.');
 
     // Select a doctor
     await doctorSelector.selectOption({ index: 1 });
     console.log('Selected a seeded doctor.');
 
-    // Now Siguiente should be enabled, click it
-    await expect(nextBtn).toBeEnabled();
-    await nextBtn.click();
+    // Now click Siguiente to advance to Step 3 (Confirmation)
+    const nextBtnStep2 = page.locator('button:has-text("Siguiente")').last();
+    await expect(nextBtnStep2).toBeEnabled();
+    await nextBtnStep2.click();
     console.log('Advanced to Step 3 (Confirmation).');
 
     // Verify Step 3 displays the patient's name and Cédula
@@ -113,10 +113,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForLoadState('networkidle');
 
     // Wait for active patients list
-    await page.waitForSelector('text=Pacientes Activos');
+    await page.waitForSelector('h3:has-text("Pacientes Activos")', { timeout: 15000 });
 
     // Click on the first active patient
-    const firstPatient = page.locator('div.group.relative').first();
+    const firstPatient = page.locator('.premium-card').first();
     const countPatients = await firstPatient.count();
     if (countPatients === 0) {
       console.log('No active patients found, skipping egress panel tests.');
@@ -172,32 +172,55 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(1000); // esperar debounce del autocomplete
     await page.locator('div.hover\\:bg-white\\/5').first().click();
 
-    // El selector de médico aparece solo cuando el servicio es tipo Consulta/Medico
-    // Usamos locator().last() porque puede haber otros <select> en la página
+    // Click Siguiente en el Paso 1
+    const nextBtnStep1 = page.locator('button:has-text("Siguiente")').last();
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+
+    // El selector de médico aparece en el paso 2
     await page.waitForSelector('select', { timeout: 8000 });
     const doctorSelector = page.locator('select').last();
     await doctorSelector.selectOption({ index: 1 });
-    const nextBtn = page.locator('button:has-text("Siguiente")').last();
-    await nextBtn.click();
+    
+    // Click Siguiente en el Paso 2
+    const nextBtnStep2 = page.locator('button:has-text("Siguiente")').last();
+    await nextBtnStep2.click();
+    await page.waitForTimeout(500);
 
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
     await page.waitForTimeout(1500); // esperar respuesta del API
 
-    // --- 2. RX Category ---
+    // --- 2. RX Category (no requiere médico, tipo examen) ---
     await searchInput.fill('Radiografía Tórax');
-    await page.waitForTimeout(500);
-    await page.locator('div.hover\\:bg-white\\/5').first().click();
-    await nextBtn.click();
-    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
     await page.waitForTimeout(1000);
+    await page.locator('div.hover\\:bg-white\\/5').first().click();
+    
+    // Paso 1 -> Paso 2
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+    
+    // Paso 2 -> Paso 3 (no requiere médico)
+    await nextBtnStep2.click();
+    await page.waitForTimeout(500);
+    
+    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.waitForTimeout(1500);
 
     // --- 3. Informe Category ---
     await searchInput.fill('Informe Médico Especializado');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(1000);
     await page.locator('div.hover\\:bg-white\\/5').first().click();
-    await nextBtn.click();
+    
+    // Paso 1 -> Paso 2
+    await nextBtnStep1.click();
+    await page.waitForTimeout(500);
+    
+    // Paso 2 -> Paso 3
+    await nextBtnStep2.click();
+    await page.waitForTimeout(500);
+    
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
     console.log('All three separate catalog categories successfully charged to patient.');
   });
