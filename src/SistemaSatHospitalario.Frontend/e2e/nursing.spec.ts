@@ -102,7 +102,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Advanced to Step 3 (Confirmation).');
 
     // Verify Step 3 displays the patient's name and Cédula
-    await expect(page.locator('span:has-text("Cédula:")')).toBeVisible();
+    await expect(page.locator('span:has-text("Cédula:")').first()).toBeVisible();
     await expect(page.locator('span:has-text("Médico Tratante")')).toBeVisible();
     console.log('Step 3 confirmation details verified.');
 
