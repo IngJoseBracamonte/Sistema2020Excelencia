@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { PatientService, PatientHistory, PatientRecord } from '../../../core/services/patient.service';
 import { FacturacionService, DailyBilledPatient } from '../../../core/services/facturacion.service';
 import { PrintService } from '../../../core/services/print.service';
-import { LucideAngularModule, UserPlus, X, Check, Edit3, User } from 'lucide-angular';
+import { LucideAngularModule, UserPlus, X, Check, Edit3, User, Calendar } from 'lucide-angular';
 
 @Component({
   selector: 'app-patient-history',
@@ -19,7 +19,7 @@ export class PatientHistoryComponent implements OnInit {
   private printService = inject(PrintService);
   private route = inject(ActivatedRoute);
 
-  readonly icons = { UserPlus, X, Check, Edit3, User };
+  readonly icons = { UserPlus, X, Check, Edit3, User, Calendar };
 
   public searchTerm = signal<string>('');
   public patients = signal<PatientRecord[]>([]);
@@ -41,17 +41,53 @@ export class PatientHistoryComponent implements OnInit {
 
   public newPatientData: any = {
     id: '',
+    idPacienteLegacy: null,
     cedula: '',
     nombre: '',
     apellidos: '',
-    sexo: 'M',
-    fechaNacimiento: new Date().toISOString().split('T')[0],
+    correo: '',
     celular: '',
-    codigoCelular: '0414',
     telefono: '',
-    codigoTelefono: '0274',
-    direccion: ''
+    direccion: '',
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    sexo: 'ND',
+    tipoCorreo: '@gmail.com',
+    codigoCelular: '0414',
+    codigoTelefono: '0274'
   };
+
+  get fechaNacimientoFormatted(): string {
+    const raw = this.newPatientData.fechaNacimiento;
+    if (!raw) return '';
+    const datePart = raw.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return raw;
+  }
+
+  set fechaNacimientoFormatted(val: string) {
+    if (!val) {
+      this.newPatientData.fechaNacimiento = '';
+      return;
+    }
+    const cleaned = val.replace(/\//g, '-').trim();
+    const parts = cleaned.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 2 && parts[2].length === 4) {
+        const dd = parts[0].padStart(2, '0');
+        const mm = parts[1].padStart(2, '0');
+        const yyyy = parts[2];
+        this.newPatientData.fechaNacimiento = `${yyyy}-${mm}-${dd}`;
+        return;
+      } else if (parts[0].length === 4) {
+        this.newPatientData.fechaNacimiento = cleaned;
+        return;
+      }
+    }
+    this.newPatientData.fechaNacimiento = val;
+  }
 
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
   public codigosTelefonoCombinados = ['0274', '0273', '0251', '0212', '0281', '0241', '0416', '0426', '0414', '0424', '0412', '0422'];

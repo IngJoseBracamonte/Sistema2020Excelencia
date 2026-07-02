@@ -563,8 +563,11 @@
 
                                 <!-- Seleccionar Área Clínica de Procedencia (Siempre Visible) -->
                                 <div class="space-y-2 col-span-1 md:col-span-2">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                        Área Clínica de Procedencia <span class="text-rose-500 font-bold">*</span>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block flex items-center justify-between">
+                                        <span>Área Clínica de Ubicación / Procedencia <span class="text-rose-500 font-bold">*</span></span>
+                                        <span class="text-[9px] text-blue-400 font-bold uppercase tracking-wider bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-md" *ngIf="selectedAccount()?.tipoIngreso">
+                                            Auto-preseleccionada: {{ selectedAccount()?.tipoIngreso }}
+                                        </span>
                                     </label>
                                     <select id="selectAreaClinicaFastCharge" [ngModel]="selectedAreaClinicaId()" (ngModelChange)="selectedAreaClinicaId.set($event)"
                                             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">

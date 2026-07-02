@@ -408,9 +408,36 @@ export class EnfermeriaComponent implements OnInit {
 
     // Cargar áreas clínicas (Sedes)
     this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
-      next: (res) => this.areasClinicas.set(res.filter(a => a.activo)),
+      next: (res) => {
+        const activeAreas = res.filter(a => a.activo);
+        this.areasClinicas.set(activeAreas);
+        if (this.selectedAccount()) {
+          this.autoSelectAreaClinicaForAccount(this.selectedAccount());
+        }
+      },
       error: (err) => console.error('[ENFERMERIA] Error loading areas clinicas:', err)
     });
+  }
+
+  public autoSelectAreaClinicaForAccount(account: CuentaAdministrativa | null): void {
+    if (!account) return;
+    const areas = this.areasClinicas();
+    if (!areas || areas.length === 0) return;
+
+    const ingresoNorm = (account.tipoIngreso || '').toLowerCase().trim();
+    
+    // Buscar coincidencia por nombre o código con el tipoIngreso del paciente (Emergencia, Hospitalizacion, UCI, etc.)
+    const matched = areas.find(a => {
+      const nameNorm = (a.nombre || '').toLowerCase().trim();
+      const codeNorm = (a.codigo || '').toLowerCase().trim();
+      return nameNorm.includes(ingresoNorm) || ingresoNorm.includes(nameNorm) || codeNorm === ingresoNorm;
+    });
+
+    if (matched) {
+      this.selectedAreaClinicaId.set(matched.id);
+    } else if (areas.length > 0 && !this.selectedAreaClinicaId()) {
+      this.selectedAreaClinicaId.set(areas[0].id);
+    }
   }
 
   public selectAccount(account: CuentaAdministrativa): void {
@@ -423,6 +450,9 @@ export class EnfermeriaComponent implements OnInit {
     this.nuevoConvenioId = account.convenioId;
     this.nuevoTipoIngreso = account.tipoIngreso;
     this.esEgreso = false;
+
+    // Auto pre-select Area Clinica matching patient's admission area / current location
+    this.autoSelectAreaClinicaForAccount(account);
   }
 
   public loadTriageHistory(cuentaId: string): void {
@@ -614,6 +644,11 @@ export class EnfermeriaComponent implements OnInit {
     this.filteredServices.set([]);
     this.fastChargeQuantity = 1;
     this.selectedMedicoId.set(null);
+
+    // Auto pre-select Area Clinica from active account
+    if (this.selectedAccount()) {
+      this.autoSelectAreaClinicaForAccount(this.selectedAccount());
+    }
 
     // Inicializar precio base del catálogo y honorario por defecto
     this.customPrecio.set(service.precioUsd ?? 0);
