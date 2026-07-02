@@ -679,16 +679,19 @@ export class EnfermeriaComponent implements OnInit {
 
     this.isSavingFastCharge.set(true);
 
+    const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : (service.precioUsd ?? 0);
+    const honoraryPrice = this.customHonorario() !== null ? Number(this.customHonorario()) : (service.honorarioBase ?? 0);
+
     const payload: Record<string, any> = {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
-      servicioId: service.id,
+      servicioId: String(service.id),
       descripcion: service.descripcion,
-      precio: service.precioUsd,
-      honorario: service.honorarioBase,
+      precio: basePrice,
+      honorario: honoraryPrice,
       cantidad: effectiveQty,
-      tipoServicio: service.tipo,
+      tipoServicio: classification === ITEM_CLASSIFICATIONS.CONSULTA ? 'Medico' : (service.tipo || classification),
       usuarioCarga: '' // Se sobreescribe en Backend
     };
 
@@ -701,9 +704,12 @@ export class EnfermeriaComponent implements OnInit {
       payload['areaClinicaId'] = this.selectedAreaClinicaId();
     }
 
-    if (classification === ITEM_CLASSIFICATIONS.CONSULTA) {
-      payload['precioModificado'] = this.precioFinalCalculado();
-      payload['honorarioModificado'] = Number(this.customHonorario() ?? 0);
+    if (this.customPrecio() !== null && this.customPrecio() !== service.precioUsd) {
+      payload['precioModificado'] = Number(this.customPrecio());
+    }
+
+    if (this.customHonorario() !== null && this.customHonorario() !== service.honorarioBase) {
+      payload['honorarioModificado'] = Number(this.customHonorario());
     }
 
     this.http.post(`${environment.apiUrl}/api/Billing/CargarServicio`, payload)
