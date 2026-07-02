@@ -188,7 +188,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.locator('#btnStep2Next').click();
     await page.waitForTimeout(500);
 
-    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.locator('#btnStep3Confirm').click();
     await page.waitForTimeout(2000); // esperar respuesta del API y reinicio a Paso 1
 
     // --- 2. RX Category (no requiere médico, tipo examen) ---
@@ -206,7 +206,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.locator('#btnStep2Next').click();
     await page.waitForTimeout(500);
     
-    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.locator('#btnStep3Confirm').click();
     await page.waitForTimeout(2000);
 
     // --- 3. Informe Category ---
@@ -224,7 +224,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.locator('#btnStep2Next').click();
     await page.waitForTimeout(500);
     
-    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    await page.locator('#btnStep3Confirm').click();
     await page.waitForTimeout(2000);
 
     console.log('All three separate catalog categories successfully charged to patient.');

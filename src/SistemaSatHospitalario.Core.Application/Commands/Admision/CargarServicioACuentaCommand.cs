@@ -239,7 +239,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 expectedPrecio = baseService.PrecioBase + doctorHonorary;
             }
 
-            if (request.Precio != expectedPrecio && request.Precio != baseService.PrecioBase)
+            decimal checkPrecio = request.PrecioModificado ?? request.Precio;
+            if (checkPrecio != expectedPrecio && checkPrecio != baseService.PrecioBase)
             {
                 // El precio ha sido modificado, requiere Clave de Supervisor
                 var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
