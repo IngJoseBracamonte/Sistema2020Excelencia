@@ -520,7 +520,7 @@
 
                                     <div class="space-y-2">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                            Precio Base ($ USD)
+                                            Precio Base Consulta ($ USD)
                                         </label>
                                         <input type="number" 
                                                [ngModel]="customPrecio()" 
@@ -605,28 +605,29 @@
                         <!-- PASO 3: CONFIRMACIÓN Y CARGO -->
                         <div *ngIf="currentStep() === 3" class="space-y-6 animate-fade-in">
                             <div class="flex items-center gap-4">
-                                <div class="h-12 w-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
-                                    <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+                                <div class="h-12 w-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">
+                                    <lucide-icon [name]="icons.CheckCircle" class="w-6 h-6"></lucide-icon>
                                 </div>
                                 <div>
                                     <h3 class="text-md font-black text-white uppercase tracking-tight">Confirmar Cargo</h3>
-                                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Revise los detalles del cargo clínico antes de enviar</p>
+                                    <p class="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Verifique los detalles antes de registrar a la cuenta</p>
                                 </div>
                             </div>
 
                             <!-- Resumen en Tipografía Outfit sin Fotos ni IDs -->
-                            <div *ngIf="selectedService() && selectedAccount()" class="p-6 bg-[#0b1120]/50 border border-white/5 rounded-3xl space-y-4">
-                                <div class="flex flex-col space-y-1">
+                            <div class="p-6 bg-[#0b1120]/50 border border-white/5 rounded-3xl space-y-4">
+                                <!-- Paciente Objetivo -->
+                                <div class="flex flex-col border-b border-white/5 pb-3">
                                     <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Paciente</span>
-                                    <span class="text-xl font-bold text-white uppercase tracking-tight font-outfit">{{ selectedAccount().pacienteNombre }}</span>
+                                    <span class="text-lg font-black text-white uppercase tracking-tight">{{ selectedAccount().pacienteNombre }}</span>
                                     <span class="text-xs text-slate-400 font-mono">Cédula: {{ selectedAccount().pacienteCedula }}</span>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                <!-- Ítem Seleccionado -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="flex flex-col">
-                                        <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Item a Cargar</span>
+                                        <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Ítem a Cargar</span>
                                         <span class="text-sm font-bold text-white uppercase mt-1">{{ selectedService().descripcion }}</span>
-                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="!selectedService().isConsultation && selectedService().categoryId !== 1">CÓDIGO: {{ selectedService().codigo }}</span>
                                         <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().isConsultation || selectedService().categoryId === 1">ESPECIALIDAD: {{ getMedicoEspecialidad(selectedMedicoId()) }}</span>
                                     </div>
                                     <div class="flex flex-col">
@@ -636,22 +637,28 @@
                                 </div>
                                 
                                 <!-- Médico Responsable (Solo consultas) -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService().isConsultation || selectedService().categoryId === 1)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService().isConsultation || selectedService().categoryId === 1 || itemClassification() === 'Consulta')">
                                     <div class="flex flex-col col-span-2">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Médico Tratante</span>
                                         <span class="text-sm font-bold text-white uppercase mt-1">{{ getMedicoNombre(selectedMedicoId()) }}</span>
                                     </div>
                                 </div>
 
-                                <!-- Costo Unitario y Costo Total para Reconciliación posterior sin desglose de seguro -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                                <!-- Costo Unitario/Base, Honorario y Costo Total -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-white/5">
                                     <div class="flex flex-col">
-                                        <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Base / Unitario ($)</span>
+                                        <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Precio Base ($)</span>
                                         <span class="text-lg font-mono text-rose-400 font-bold mt-1">
                                             ${{ (customPrecio() !== null ? customPrecio() : selectedService().precioUsd) | number:'1.2-2' }} USD
                                         </span>
                                     </div>
-                                    <div class="flex flex-col">
+                                    <div class="flex flex-col" *ngIf="itemClassification() === 'Consulta'">
+                                        <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Honorario Médico ($)</span>
+                                        <span class="text-lg font-mono text-rose-400 font-bold mt-1">
+                                            ${{ (customHonorario() !== null ? customHonorario() : selectedService().honorarioBase) | number:'1.2-2' }} USD
+                                        </span>
+                                    </div>
+                                    <div class="flex flex-col" [class.col-span-2]="itemClassification() !== 'Consulta'">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Total Cargo Registrado ($)</span>
                                         <span class="text-2xl font-mono text-rose-500 font-black mt-1">
                                             ${{ precioFinalCalculado() | number:'1.2-2' }} USD

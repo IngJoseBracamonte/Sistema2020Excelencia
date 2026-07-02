@@ -515,16 +515,9 @@ export class EnfermeriaComponent implements OnInit {
     this.fastChargeQuantity = 1;
     this.selectedMedicoId.set(null);
 
-    // Inicializar precios si es una consulta
-    const esConsulta = service.isConsultation || service.categoryId === 1;
-    if (esConsulta) {
-      const doctorHonorary = service.honorarioBase ?? 0;
-      this.customPrecio.set(service.precioUsd ?? 0);
-      this.customHonorario.set(doctorHonorary);
-    } else {
-      this.customPrecio.set(null);
-      this.customHonorario.set(null);
-    }
+    // Inicializar precio base del catálogo y honorario por defecto
+    this.customPrecio.set(service.precioUsd ?? 0);
+    this.customHonorario.set(service.honorarioBase ?? 0);
 
     // Avanzar al Paso 2 del Stepper
     this.currentStep.set(2);
@@ -546,10 +539,6 @@ export class EnfermeriaComponent implements OnInit {
     }
 
     this.isSavingFastCharge.set(true);
-
-    const classification = this.itemClassification();
-    const isFixedQty = classification === 'Consulta' || classification === 'Laboratorio' || classification === 'RX';
-    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
 
     const payload: any = {
       pacienteId: active.pacienteId,
@@ -573,9 +562,9 @@ export class EnfermeriaComponent implements OnInit {
       payload.areaClinicaId = this.selectedAreaClinicaId();
     }
 
-    if (esConsulta && this.customPrecio() !== null && this.customHonorario() !== null) {
-      payload.precioModificado = Number(this.customPrecio());
-      payload.honorarioModificado = Number(this.customHonorario());
+    if (classification === 'Consulta') {
+      payload.precioModificado = this.precioFinalCalculado();
+      payload.honorarioModificado = Number(this.customHonorario() ?? 0);
     }
 
     this.http.post(`${environment.apiUrl}/api/Billing/CargarServicio`, payload)
@@ -644,18 +633,11 @@ export class EnfermeriaComponent implements OnInit {
     this.selectedMedicoId.set(medicoId);
     if (!medicoId) return;
 
-    const service = this.selectedService();
-    if (!service) return;
-
-    const esConsulta = service.isConsultation || service.categoryId === 1 || service.tipo === 'Medico';
-    if (esConsulta) {
-      const doctor = this.medicos().find(m => m.id === medicoId);
-      if (doctor) {
-        const doctorHonorary = doctor.honorarioBase ?? service.honorarioBase ?? 0;
-        const precioBase = (service.precioUsd ?? 0) - (service.honorarioBase ?? 0);
-        this.customPrecio.set(precioBase + doctorHonorary);
-        this.customHonorario.set(doctorHonorary);
-      }
+    const doctor = this.medicos().find(m => m.id === medicoId);
+    if (doctor) {
+      const service = this.selectedService();
+      const doctorHonorary = doctor.honorarioBase ?? (service?.honorarioBase ?? 0);
+      this.customHonorario.set(doctorHonorary);
     }
   }
 

@@ -184,11 +184,14 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.locator('#selectMedicoFastCharge').selectOption({ index: 1 });
     await page.locator('#selectAreaClinicaFastCharge').selectOption({ index: 1 });
     
-    // Click Siguiente en el Paso 2
-    await page.locator('#btnStep2Next').click();
-    await page.waitForTimeout(500);
-
-    await page.locator('#btnStep3Confirm').click();
+    // Click Siguiente en el Paso 2 cuando el botón esté habilitado
+    const step2Btn1 = page.locator('#btnStep2Next');
+    await expect(step2Btn1).toBeEnabled();
+    await step2Btn1.click();
+    
+    const step3Btn1 = page.locator('#btnStep3Confirm');
+    await expect(step3Btn1).toBeVisible();
+    await step3Btn1.click();
     await page.waitForTimeout(2000); // esperar respuesta del API y reinicio a Paso 1
 
     // --- 2. RX Category (no requiere médico, tipo examen) ---
@@ -202,11 +205,14 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     // Seleccionar área clínica
     await page.locator('#selectAreaClinicaFastCharge').selectOption({ index: 1 });
 
-    // Avanza automáticamente al Paso 2. Paso 2 -> Paso 3
-    await page.locator('#btnStep2Next').click();
-    await page.waitForTimeout(500);
+    // Avanza al Paso 3
+    const step2Btn2 = page.locator('#btnStep2Next');
+    await expect(step2Btn2).toBeEnabled();
+    await step2Btn2.click();
     
-    await page.locator('#btnStep3Confirm').click();
+    const step3Btn2 = page.locator('#btnStep3Confirm');
+    await expect(step3Btn2).toBeVisible();
+    await step3Btn2.click();
     await page.waitForTimeout(2000);
 
     // --- 3. Informe Category ---
@@ -220,11 +226,14 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     // Seleccionar área clínica
     await page.locator('#selectAreaClinicaFastCharge').selectOption({ index: 1 });
 
-    // Avanza automáticamente al Paso 2. Paso 2 -> Paso 3
-    await page.locator('#btnStep2Next').click();
-    await page.waitForTimeout(500);
+    // Avanza al Paso 3
+    const step2Btn3 = page.locator('#btnStep2Next');
+    await expect(step2Btn3).toBeEnabled();
+    await step2Btn3.click();
     
-    await page.locator('#btnStep3Confirm').click();
+    const step3Btn3 = page.locator('#btnStep3Confirm');
+    await expect(step3Btn3).toBeVisible();
+    await step3Btn3.click();
     await page.waitForTimeout(2000);
 
     console.log('All three separate catalog categories successfully charged to patient.');
