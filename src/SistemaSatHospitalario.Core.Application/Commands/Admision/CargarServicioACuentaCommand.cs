@@ -344,8 +344,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.HoraCita.Value.Hour, request.HoraCita.Value.Minute, 0, 
                 DateTimeKind.Unspecified);
 
-            if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
-                throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {horaNormalizada:HH:mm}.");
+            while (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
+            {
+                horaNormalizada = horaNormalizada.AddMinutes(1);
+            }
 
             var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, request.AreaClinicaId);
             await _repository.AgregarCitaMedicaAsync(cita, ct);

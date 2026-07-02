@@ -535,10 +535,13 @@ export class EnfermeriaComponent implements OnInit {
     const service = this.selectedService();
     if (!active || !service) return;
 
-    const esConsulta = service.isConsultation || service.categoryId === 1 || service.tipo === 'Medico';
-    const requiresMedico = service.honorarioBase > 0 || service.categoryId === 1 || service.categoryId === 3 || service.categoryId === 6 || esConsulta;
+    const classification = this.itemClassification();
+    const isFixedQty = classification === 'Consulta' || classification === 'Laboratorio' || classification === 'RX';
+    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
+
+    const requiresMedico = classification === 'Consulta' || (service.honorarioBase > 0 && classification !== 'RX' && classification !== 'Laboratorio');
     if (requiresMedico && !this.selectedMedicoId()) {
-      alert('Por favor, seleccione el médico tratante para este servicio/consulta.');
+      alert('Por favor, seleccione el médico tratante para la consulta.');
       return;
     }
 
