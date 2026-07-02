@@ -696,7 +696,7 @@
                                     {{ acc.pacienteNombre }}
                                 </h4>
                                 <p class="text-[9px] font-mono font-bold text-slate-500 mt-1 uppercase">
-                                    ID: {{ acc.pacienteCedula }} • FN: {{ patientDetailsMap()[acc.pacienteId]?.fechaNacimiento | date:'yyyy-MM-dd' }}
+                                    ID: {{ acc.pacienteCedula }} • Edad: {{ calcularEdad(patientDetailsMap()[acc.pacienteId]?.fechaNacimiento) }}
                                 </p>
                             </div>
                         </div>
@@ -704,8 +704,7 @@
                         <!-- Right details/status (Responsive stack on mobile, row on tablet/desktop) -->
                         <div class="flex items-center justify-between sm:justify-end space-x-4 w-full sm:w-auto pt-3 sm:pt-0 border-t border-white/5 sm:border-0">
                             <div class="text-left sm:text-right">
-                                <span class="text-[10px] font-black text-slate-300 block">{{ acc.room }}</span>
-                                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 block">
+                                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">
                                     {{ acc.seguroNombre || 'Particular' }}
                                 </span>
                             </div>

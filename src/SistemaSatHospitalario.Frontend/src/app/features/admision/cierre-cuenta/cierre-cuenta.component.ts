@@ -263,6 +263,31 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     return Math.round((totalDays / list.length) * 10) / 10;
   });
 
+  public calcularEdad(fechaNacimiento: string | null | undefined): string {
+    if (!fechaNacimiento) return '—';
+    const nacimiento = new Date(fechaNacimiento);
+    if (isNaN(nacimiento.getTime())) return '—';
+    
+    const hoy = new Date();
+    let años = hoy.getFullYear() - nacimiento.getFullYear();
+    let meses = hoy.getMonth() - nacimiento.getMonth();
+    let dias = hoy.getDate() - nacimiento.getDate();
+    
+    if (dias < 0) {
+      meses--;
+      const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+      dias += mesAnterior.getDate();
+    }
+    if (meses < 0) {
+      años--;
+      meses += 12;
+    }
+    
+    if (años > 0) return `${años} ${años === 1 ? 'año' : 'años'}`;
+    if (meses > 0) return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+    return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+  }
+
   public alertasCriticosCount = computed(() => {
     return this.enrichedAccounts().filter(a => a.status === 'Crítico').length;
   });
