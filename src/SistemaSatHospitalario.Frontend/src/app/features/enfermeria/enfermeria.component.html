@@ -489,49 +489,38 @@
 
                             <div *ngIf="selectedService()" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-[#0b1120]/50 border border-white/5 rounded-3xl">
                                 
-                                <!-- Cantidad a Cargar con Inputs Gigantes de 56px -->
-                                <div class="space-y-2">
+                                <!-- CASE 1: Medicamento o Procedimiento (Muestra Input Numérico Gigante de Cantidad con + y -) -->
+                                <div class="space-y-2 col-span-1 md:col-span-2" *ngIf="itemClassification() === 'Medicamento' || itemClassification() === 'Procedimiento'">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                        Cantidad (Unidad: {{ selectedService().unidadMedida || 'UD' }})
+                                        Cantidad a Cargar (Unidad: {{ selectedService().unidadMedida || 'UD' }}) <span class="text-rose-500 font-bold">*</span>
                                     </label>
                                     <div class="flex items-center gap-3">
+                                        <button type="button" (click)="decrementQuantity()" class="w-14 h-14 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-2xl font-black text-2xl flex items-center justify-center transition-all border border-white/10">-</button>
                                         <input type="number" 
                                                [(ngModel)]="fastChargeQuantity" 
                                                [step]="selectedService().permiteFraccionamiento ? '0.01' : '1'"
                                                min="0.01" 
-                                               class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
+                                               class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-2xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
+                                        <button type="button" (click)="incrementQuantity()" class="w-14 h-14 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-2xl font-black text-2xl flex items-center justify-center transition-all border border-white/10">+</button>
                                     </div>
                                 </div>
 
-                                <!-- Seleccionar Médico (Solo si requiere médico o es consulta) -->
-                                <div class="space-y-2" *ngIf="selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6 || selectedService().tipo === 'Medico' || selectedService().tipo === 'Consulta'">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                        Médico Responsable / Cita <span class="text-rose-500 font-bold">*</span>
-                                    </label>
-                                    <select [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
-                                            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
-                                        <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico ---</option>
-                                        <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
-                                    </select>
-                                </div>
+                                <!-- CASE 2: Consulta (Muestra Selector de Médico Responsable y Tarifas Base + Honorario) -->
+                                <div class="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="itemClassification() === 'Consulta'">
+                                    <div class="space-y-2 col-span-1 md:col-span-2">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                            Médico Responsable / Cita <span class="text-rose-500 font-bold">*</span>
+                                        </label>
+                                        <select [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
+                                                class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
+                                            <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico ---</option>
+                                            <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
+                                        </select>
+                                    </div>
 
-                                <!-- Seleccionar Área Clínica (Desglose de Origen de Ingresos) -->
-                                <div class="space-y-2 col-span-1 md:col-span-2">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                        Área Clínica de Procedencia <span class="text-rose-500 font-bold">*</span>
-                                    </label>
-                                    <select [ngModel]="selectedAreaClinicaId()" (ngModelChange)="selectedAreaClinicaId.set($event)"
-                                            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
-                                        <option [value]="null" class="bg-[#152035]">--- Seleccionar Área Clínica ---</option>
-                                        <option *ngFor="let a of areasClinicas()" [value]="a.id" class="bg-[#152035]">{{ a.nombre | uppercase }} ({{ a.codigo }})</option>
-                                    </select>
-                                </div>
-
-                                <!-- Modificación Manual de Tarifas (Solo si es Consulta) -->
-                                <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5" *ngIf="selectedService().tipo === 'Medico' || selectedService().tipo === 'Consulta' || selectedService().isConsultation || selectedService().categoryId === 1">
                                     <div class="space-y-2">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                            Precio Total Consulta ($ USD)
+                                            Precio Base ($ USD)
                                         </label>
                                         <input type="number" 
                                                [ngModel]="customPrecio()" 
@@ -549,6 +538,51 @@
                                     </div>
                                 </div>
 
+                                <!-- CASE 3: Laboratorio / RX (Muestra precio base estático/editable) -->
+                                <div class="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="itemClassification() === 'Laboratorio' || itemClassification() === 'RX'">
+                                    <div class="space-y-2" *ngIf="selectedService().honorarioBase > 0">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                            Médico Responsable (Opcional)
+                                        </label>
+                                        <select [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
+                                                class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
+                                            <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico (Opcional) ---</option>
+                                            <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2" [class.col-span-2]="selectedService().honorarioBase <= 0">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                            Precio del Estudio / Perfil ($ USD)
+                                        </label>
+                                        <input type="number" 
+                                               [ngModel]="customPrecio()" 
+                                               (ngModelChange)="customPrecio.set($event)"
+                                               class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
+                                    </div>
+                                </div>
+
+                                <!-- Seleccionar Área Clínica de Procedencia (Siempre Visible) -->
+                                <div class="space-y-2 col-span-1 md:col-span-2">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                                        Área Clínica de Procedencia <span class="text-rose-500 font-bold">*</span>
+                                    </label>
+                                    <select [ngModel]="selectedAreaClinicaId()" (ngModelChange)="selectedAreaClinicaId.set($event)"
+                                            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
+                                        <option [value]="null" class="bg-[#152035]">--- Seleccionar Área Clínica ---</option>
+                                        <option *ngFor="let a of areasClinicas()" [value]="a.id" class="bg-[#152035]">{{ a.nombre | uppercase }} ({{ a.codigo }})</option>
+                                    </select>
+                                </div>
+
+                                <!-- Badge Resumen de Precio Calculado Reactivamente -->
+                                <div class="col-span-1 md:col-span-2 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex justify-between items-center">
+                                    <span class="text-xs font-black text-rose-300 uppercase tracking-wider">
+                                        Total Estimado ({{ itemClassification() }}):
+                                    </span>
+                                    <span class="text-xl font-black text-white font-mono">
+                                        $ {{ precioFinalCalculado() | number:'1.2-2' }} USD
+                                    </span>
+                                </div>
+
                             </div>
 
                             <div class="flex justify-between items-center pt-4 border-t border-white/5">
@@ -559,7 +593,7 @@
                                 </button>
                                 <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Paso 2 de 3</span>
                                 <button type="button" 
-                                        [disabled]="((selectedService().honorarioBase > 0 || selectedService().categoryId === 1 || selectedService().categoryId === 3 || selectedService().categoryId === 6 || selectedService().tipo === 'Medico') && !selectedMedicoId()) || !selectedAreaClinicaId()"
+                                        [disabled]="(itemClassification() === 'Consulta' && !selectedMedicoId()) || !selectedAreaClinicaId()"
                                         (click)="currentStep.set(3)"
                                         class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30">
                                     Siguiente
@@ -591,8 +625,8 @@
                                     <div class="flex flex-col">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Item a Cargar</span>
                                         <span class="text-sm font-bold text-white uppercase mt-1">{{ selectedService().descripcion }}</span>
-                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().tipo !== 'Medico' && !selectedService().isConsultation && selectedService().categoryId !== 1">CÓDIGO: {{ selectedService().codigo }}</span>
-                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().tipo === 'Medico' || selectedService().isConsultation || selectedService().categoryId === 1">ESPECIALIDAD: {{ getMedicoEspecialidad(selectedMedicoId()) }}</span>
+                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="!selectedService().isConsultation && selectedService().categoryId !== 1">CÓDIGO: {{ selectedService().codigo }}</span>
+                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().isConsultation || selectedService().categoryId === 1">ESPECIALIDAD: {{ getMedicoEspecialidad(selectedMedicoId()) }}</span>
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Cantidad</span>
@@ -601,7 +635,7 @@
                                 </div>
                                 
                                 <!-- Médico Responsable (Solo consultas) -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService().tipo === 'Medico' || selectedService().isConsultation || selectedService().categoryId === 1)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService().isConsultation || selectedService().categoryId === 1)">
                                     <div class="flex flex-col col-span-2">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Médico Tratante</span>
                                         <span class="text-sm font-bold text-white uppercase mt-1">{{ getMedicoNombre(selectedMedicoId()) }}</span>

@@ -111,7 +111,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
-            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio);
+            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory);
+            bool esRx = baseService != null && (baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Tomography);
+
+            // Regla Polimórfica de Cantidad: Consulta, Laboratorio y RX son unidades unitarias estrictas (1)
+            decimal finalCantidad = (esConsulta || esLab || esRx) ? 1m : Math.Max(1m, request.Cantidad);
 
             if (esLab)
             {
@@ -171,7 +175,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Descripcion, 
                 finalPrecio, 
                 finalHonorario,
-                request.Cantidad, 
+                finalCantidad, 
                 request.TipoServicio, 
                 request.UsuarioCarga,
                 legacyId,

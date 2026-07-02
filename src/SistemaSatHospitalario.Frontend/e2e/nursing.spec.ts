@@ -190,9 +190,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(500);
 
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
-    await page.waitForTimeout(1500); // esperar respuesta del API
+    await page.waitForTimeout(2000); // esperar respuesta del API y reinicio a Paso 1
 
     // --- 2. RX Category (no requiere médico, tipo examen) ---
+    await expect(searchInput).toBeVisible({ timeout: 10000 });
     await searchInput.fill('Radiografía Tórax');
     await page.waitForTimeout(1000);
     await page.locator('div.hover\\:bg-white\\/5').first().click();
@@ -206,9 +207,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(500);
     
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
     // --- 3. Informe Category ---
+    await expect(searchInput).toBeVisible({ timeout: 10000 });
     await searchInput.fill('Informe Médico Especializado');
     await page.waitForTimeout(1000);
     await page.locator('div.hover\\:bg-white\\/5').first().click();

@@ -21,6 +21,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public List<DoctorHonorarioDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioDto>();
         public string? UnidadMedida { get; set; }
         public bool PermiteFraccionamiento { get; set; }
+        public bool IsConsultation => CategoryId == 1 || (Tipo ?? "").Contains("CONSULT", StringComparison.OrdinalIgnoreCase);
 
         public void CalculatePrices(decimal tasa)
         {

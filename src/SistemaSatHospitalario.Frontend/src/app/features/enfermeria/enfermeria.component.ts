@@ -141,6 +141,52 @@ export class EnfermeriaComponent implements OnInit {
   public customPrecio = signal<number | null>(null);
   public customHonorario = signal<number | null>(null);
 
+  // Computed Item Classification for Dynamic Step 2 UI
+  public itemClassification = computed<'Consulta' | 'Laboratorio' | 'RX' | 'Medicamento' | 'Procedimiento'>(() => {
+    const s = this.selectedService();
+    if (!s) return 'Procedimiento';
+    if (s.isConsultation || s.categoryId === 1 || (s.tipo && (s.tipo.toUpperCase() === 'MEDICO' || s.tipo.toUpperCase() === 'CONSULTA'))) {
+      return 'Consulta';
+    }
+    if (s.categoryId === 2 || (s.tipo && s.tipo.toUpperCase() === 'LABORATORIO')) {
+      return 'Laboratorio';
+    }
+    if (s.categoryId === 3 || s.categoryId === 6 || (s.tipo && (s.tipo.toUpperCase() === 'RADIOLOGIA' || s.tipo.toUpperCase() === 'TOMOGRAFIA' || s.tipo.toUpperCase() === 'RX'))) {
+      return 'RX';
+    }
+    if (s.categoryId === 4 || (s.tipo && (s.tipo.toUpperCase() === 'INSUMO' || s.tipo.toUpperCase() === 'MEDICAMENTO'))) {
+      return 'Medicamento';
+    }
+    return 'Procedimiento';
+  });
+
+  public precioFinalCalculado = computed<number>(() => {
+    const s = this.selectedService();
+    if (!s) return 0;
+    const classification = this.itemClassification();
+    if (classification === 'Consulta') {
+      const base = this.customPrecio() !== null ? this.customPrecio()! : (s.precioUsd ?? 0);
+      const honorario = this.customHonorario() !== null ? this.customHonorario()! : (s.honorarioBase ?? 0);
+      return base + honorario;
+    } else if (classification === 'Laboratorio' || classification === 'RX') {
+      return (this.customPrecio() !== null ? this.customPrecio()! : (s.precioUsd ?? 0));
+    } else {
+      const unitPrice = (this.customPrecio() !== null ? this.customPrecio()! : (s.precioUsd ?? 0));
+      const qty = this.fastChargeQuantity || 1;
+      return unitPrice * qty;
+    }
+  });
+
+  public incrementQuantity(): void {
+    this.fastChargeQuantity = (Number(this.fastChargeQuantity) || 1) + 1;
+  }
+
+  public decrementQuantity(): void {
+    if (this.fastChargeQuantity > 1) {
+      this.fastChargeQuantity = Number(this.fastChargeQuantity) - 1;
+    }
+  }
+
   // Transfer Area Form
   public nuevoTipoIngreso = 'Hospitalizacion'; // UCI, Hospitalizacion, Emergencia, etc.
   public nuevoConvenioId: number | null = null;
@@ -470,7 +516,7 @@ export class EnfermeriaComponent implements OnInit {
     this.selectedMedicoId.set(null);
 
     // Inicializar precios si es una consulta
-    const esConsulta = service.isConsultation || service.categoryId === 1 || service.tipo === 'Medico';
+    const esConsulta = service.isConsultation || service.categoryId === 1;
     if (esConsulta) {
       const doctorHonorary = service.honorarioBase ?? 0;
       this.customPrecio.set(service.precioUsd ?? 0);
@@ -498,6 +544,10 @@ export class EnfermeriaComponent implements OnInit {
 
     this.isSavingFastCharge.set(true);
 
+    const classification = this.itemClassification();
+    const isFixedQty = classification === 'Consulta' || classification === 'Laboratorio' || classification === 'RX';
+    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
+
     const payload: any = {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
@@ -506,7 +556,7 @@ export class EnfermeriaComponent implements OnInit {
       descripcion: service.descripcion,
       precio: service.precioUsd,
       honorario: service.honorarioBase,
-      cantidad: Number(this.fastChargeQuantity),
+      cantidad: effectiveQty,
       tipoServicio: service.tipo,
       usuarioCarga: '' // Se sobreescribe en Backend
     };

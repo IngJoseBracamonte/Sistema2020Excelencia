@@ -58,15 +58,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     }
                     else 
                     {
-                        // Evitar Duplicación por Cédula/Pasaporte si ya está registrado en local con otra asociación legacy o registro nativo
+                        // Evitar Duplicación por Cédula/Pasaporte si ya está registrado en local
                         var existingLocal = await _context.PacientesAdmision
                             .FirstOrDefaultAsync(pat => pat.CedulaPasaporte == p.Cedula, cancellationToken);
 
                         if (existingLocal != null)
                         {
                             nativeId = existingLocal.Id;
-                            // Opcionalmente vinculamos el IdPacienteLegacy si no lo tenía asignado
-                            if (!existingLocal.IdPacienteLegacy.HasValue)
+                            if (!existingLocal.IdPacienteLegacy.HasValue || existingLocal.IdPacienteLegacy != p.IdPersona)
                             {
                                 existingLocal.VincularLegacy(p.IdPersona);
                                 _context.PacientesAdmision.Update(existingLocal);
