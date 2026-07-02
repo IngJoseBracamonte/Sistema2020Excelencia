@@ -38,6 +38,8 @@ export interface CuentaAdministrativa {
   pacienteCedula: string;
   tipoIngreso: string;
   convenioId: number | null;
+  seguroNombre?: string;
+  total?: number;
   [key: string]: any;
 }
 
@@ -52,6 +54,7 @@ export interface ServicioCatalogo {
   unidadMedida?: string;
   isConsultation?: boolean;
   honorariumCategory?: string;
+  permiteFraccionamiento?: boolean;
   [key: string]: any;
 }
 
@@ -92,6 +95,8 @@ export interface TriageRecord {
   registrarEstadoActual?: boolean;
   descripcionRapida?: string;
   descripcionDetallada?: string;
+  fechaRegistro?: string;
+  usuarioRegistro?: string;
   [key: string]: any;
 }
 

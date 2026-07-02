@@ -136,18 +136,18 @@
                             Cuenta Abierta
                         </span>
                         <h2 class="text-xl font-bold text-white uppercase tracking-tight font-outfit mt-1">
-                            {{ selectedAccount().pacienteNombre }}
+                            {{ selectedAccount()?.pacienteNombre }}
                         </h2>
                         <div class="flex items-center gap-4 text-xs text-slate-400 font-medium">
-                            <span class="font-mono">Cédula: {{ selectedAccount().pacienteCedula }}</span>
+                            <span class="font-mono">Cédula: {{ selectedAccount()?.pacienteCedula }}</span>
                             <span class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
-                            <span>Seguro: {{ selectedAccount().seguroNombre || 'PARTICULAR' }}</span>
+                            <span>Seguro: {{ selectedAccount()?.seguroNombre || 'PARTICULAR' }}</span>
                         </div>
                     </div>
                     
                     <div class="bg-black/20 p-4 rounded-2xl border border-white/5 text-left md:text-right w-full md:w-auto">
                         <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Total Acumulado en Cuenta</span>
-                        <span class="text-2xl font-black text-white font-mono block mt-1">$ {{ selectedAccount().total | number:'1.2-2' }}</span>
+                        <span class="text-2xl font-black text-white font-mono block mt-1">$ {{ selectedAccount()?.total | number:'1.2-2' }}</span>
                     </div>
                 </div>
 
@@ -179,13 +179,13 @@
                             <lucide-icon [name]="icons.Activity" class="w-4 h-4"></lucide-icon>
                             <span class="text-[9px] font-black uppercase tracking-widest">Último Reporte Clínico Registrado</span>
                         </div>
-                        <h4 class="text-sm font-bold text-white uppercase tracking-tight mt-1">{{ estadoActualPaciente().descripcionRapida }}</h4>
-                        <p class="text-xs text-slate-400 leading-normal">{{ estadoActualPaciente().descripcionDetallada }}</p>
+                        <h4 class="text-sm font-bold text-white uppercase tracking-tight mt-1">{{ estadoActualPaciente()?.descripcionRapida }}</h4>
+                        <p class="text-xs text-slate-400 leading-normal">{{ estadoActualPaciente()?.descripcionDetallada }}</p>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5 text-xs text-slate-400">
-                            <div><span class="text-slate-500">T/A:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente().tensionArterial }} mmHg</span></div>
-                            <div><span class="text-slate-500">F/C:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente().frecuenciaCardiaca }} lpm</span></div>
-                            <div><span class="text-slate-500">Temp:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente().temperatura }} °C</span></div>
-                            <div><span class="text-slate-500">SatO2:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente().saturacionO2 }} %</span></div>
+                            <div><span class="text-slate-500">T/A:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.tensionArterial }} mmHg</span></div>
+                            <div><span class="text-slate-500">F/C:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.frecuenciaCardiaca }} lpm</span></div>
+                            <div><span class="text-slate-500">Temp:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.temperatura }} °C</span></div>
+                            <div><span class="text-slate-500">SatO2:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.saturacionO2 }} %</span></div>
                         </div>
                     </div>
 
@@ -492,13 +492,13 @@
                                 <!-- CASE 1: Medicamento o Procedimiento (Muestra Input Numérico Gigante de Cantidad con + y -) -->
                                 <div class="space-y-2 col-span-1 md:col-span-2" *ngIf="itemClassification() === 'Medicamento' || itemClassification() === 'Procedimiento'">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                                        Cantidad a Cargar (Unidad: {{ selectedService().unidadMedida || 'UD' }}) <span class="text-rose-500 font-bold">*</span>
+                                        Cantidad a Cargar (Unidad: {{ selectedService()?.unidadMedida || 'UD' }}) <span class="text-rose-500 font-bold">*</span>
                                     </label>
                                     <div class="flex items-center gap-3">
                                         <button type="button" (click)="decrementQuantity()" class="w-14 h-14 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-2xl font-black text-2xl flex items-center justify-center transition-all border border-white/10">-</button>
                                         <input type="number" 
                                                [(ngModel)]="fastChargeQuantity" 
-                                               [step]="selectedService().permiteFraccionamiento ? '0.01' : '1'"
+                                               [step]="selectedService()?.permiteFraccionamiento ? '0.01' : '1'"
                                                min="0.01" 
                                                class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-2xl text-white font-mono text-center focus:outline-none focus:border-rose-500/30">
                                         <button type="button" (click)="incrementQuantity()" class="w-14 h-14 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-2xl font-black text-2xl flex items-center justify-center transition-all border border-white/10">+</button>
@@ -540,7 +540,7 @@
 
                                 <!-- CASE 3: Laboratorio / RX (Muestra precio base estático/editable) -->
                                 <div class="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="itemClassification() === 'Laboratorio' || itemClassification() === 'RX'">
-                                    <div class="space-y-2" *ngIf="selectedService().honorarioBase > 0">
+                                    <div class="space-y-2" *ngIf="(selectedService()?.honorarioBase ?? 0) > 0">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                             Médico Responsable (Opcional)
                                         </label>
@@ -550,7 +550,7 @@
                                             <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
                                         </select>
                                     </div>
-                                    <div class="space-y-2" [class.col-span-2]="selectedService().honorarioBase <= 0">
+                                    <div class="space-y-2" [class.col-span-2]="(selectedService()?.honorarioBase ?? 0) <= 0">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                             Precio del Estudio / Perfil ($ USD)
                                         </label>
@@ -619,25 +619,25 @@
                                 <!-- Paciente Objetivo -->
                                 <div class="flex flex-col border-b border-white/5 pb-3">
                                     <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Paciente</span>
-                                    <span class="text-lg font-black text-white uppercase tracking-tight">{{ selectedAccount().pacienteNombre }}</span>
-                                    <span class="text-xs text-slate-400 font-mono">Cédula: {{ selectedAccount().pacienteCedula }}</span>
+                                    <span class="text-lg font-black text-white uppercase tracking-tight">{{ selectedAccount()?.pacienteNombre }}</span>
+                                    <span class="text-xs text-slate-400 font-mono">Cédula: {{ selectedAccount()?.pacienteCedula }}</span>
                                 </div>
 
                                 <!-- Ítem Seleccionado -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="flex flex-col">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Ítem a Cargar</span>
-                                        <span class="text-sm font-bold text-white uppercase mt-1">{{ selectedService().descripcion }}</span>
-                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService().isConsultation || selectedService().categoryId === 1">ESPECIALIDAD: {{ getMedicoEspecialidad(selectedMedicoId()) }}</span>
+                                        <span class="text-sm font-bold text-white uppercase mt-1">{{ selectedService()?.descripcion }}</span>
+                                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-1" *ngIf="selectedService()?.isConsultation || selectedService()?.categoryId === 1">ESPECIALIDAD: {{ getMedicoEspecialidad(selectedMedicoId()) }}</span>
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Cantidad</span>
-                                        <span class="text-sm font-mono text-white mt-1">{{ (itemClassification() === 'Consulta' || itemClassification() === 'Laboratorio' || itemClassification() === 'RX') ? 1 : fastChargeQuantity }} {{ selectedService().unidadMedida || 'UD' }}</span>
+                                        <span class="text-sm font-mono text-white mt-1">{{ (itemClassification() === 'Consulta' || itemClassification() === 'Laboratorio' || itemClassification() === 'RX') ? 1 : fastChargeQuantity }} {{ selectedService()?.unidadMedida || 'UD' }}</span>
                                     </div>
                                 </div>
                                 
                                 <!-- Médico Responsable (Solo consultas) -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService().isConsultation || selectedService().categoryId === 1 || itemClassification() === 'Consulta')">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5" *ngIf="selectedMedicoId() && (selectedService()?.isConsultation || selectedService()?.categoryId === 1 || itemClassification() === 'Consulta')">
                                     <div class="flex flex-col col-span-2">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Médico Tratante</span>
                                         <span class="text-sm font-bold text-white uppercase mt-1">{{ getMedicoNombre(selectedMedicoId()) }}</span>
@@ -649,13 +649,13 @@
                                     <div class="flex flex-col">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Precio Base ($)</span>
                                         <span class="text-lg font-mono text-rose-400 font-bold mt-1">
-                                            ${{ (customPrecio() !== null ? customPrecio() : selectedService().precioUsd) | number:'1.2-2' }} USD
+                                            ${{ (customPrecio() !== null ? customPrecio() : selectedService()?.precioUsd) | number:'1.2-2' }} USD
                                         </span>
                                     </div>
                                     <div class="flex flex-col" *ngIf="itemClassification() === 'Consulta'">
                                         <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Honorario Médico ($)</span>
                                         <span class="text-lg font-mono text-rose-400 font-bold mt-1">
-                                            ${{ (customHonorario() !== null ? customHonorario() : selectedService().honorarioBase) | number:'1.2-2' }} USD
+                                            ${{ (customHonorario() !== null ? customHonorario() : selectedService()?.honorarioBase) | number:'1.2-2' }} USD
                                         </span>
                                     </div>
                                     <div class="flex flex-col" [class.col-span-2]="itemClassification() !== 'Consulta'">
