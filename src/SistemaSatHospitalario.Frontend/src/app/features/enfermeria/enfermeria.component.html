@@ -505,13 +505,13 @@
                                     </div>
                                 </div>
 
-                                <!-- CASE 2: Consulta (Muestra Selector de Médico Responsable y Tarifas Base + Honorario) -->
+                                 <!-- CASE 2: Consulta (Muestra Selector de Médico Responsable y Tarifas Base + Honorario) -->
                                 <div class="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6" *ngIf="itemClassification() === 'Consulta'">
                                     <div class="space-y-2 col-span-1 md:col-span-2">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                             Médico Responsable / Cita <span class="text-rose-500 font-bold">*</span>
                                         </label>
-                                        <select [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
+                                        <select id="selectMedicoFastCharge" [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
                                                 class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
                                             <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico ---</option>
                                             <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
@@ -544,7 +544,7 @@
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                             Médico Responsable (Opcional)
                                         </label>
-                                        <select [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
+                                        <select id="selectMedicoFastChargeOpt" [ngModel]="selectedMedicoId()" (ngModelChange)="onMedicoSelected($event)"
                                                 class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
                                             <option [value]="null" class="bg-[#152035]">--- Seleccionar Médico (Opcional) ---</option>
                                             <option *ngFor="let m of medicos()" [value]="m.id" class="bg-[#152035]">{{ m.nombre | uppercase }} - {{ m.especialidad | uppercase }}</option>
@@ -566,7 +566,7 @@
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
                                         Área Clínica de Procedencia <span class="text-rose-500 font-bold">*</span>
                                     </label>
-                                    <select [ngModel]="selectedAreaClinicaId()" (ngModelChange)="selectedAreaClinicaId.set($event)"
+                                    <select id="selectAreaClinicaFastCharge" [ngModel]="selectedAreaClinicaId()" (ngModelChange)="selectedAreaClinicaId.set($event)"
                                             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-xs text-white outline-none focus:border-rose-500/30 uppercase">
                                         <option [value]="null" class="bg-[#152035]">--- Seleccionar Área Clínica ---</option>
                                         <option *ngFor="let a of areasClinicas()" [value]="a.id" class="bg-[#152035]">{{ a.nombre | uppercase }} ({{ a.codigo }})</option>
@@ -593,6 +593,7 @@
                                 </button>
                                 <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Paso 2 de 3</span>
                                 <button type="button" 
+                                        id="btnStep2Next"
                                         [disabled]="(itemClassification() === 'Consulta' && !selectedMedicoId()) || !selectedAreaClinicaId()"
                                         (click)="currentStep.set(3)"
                                         class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30">

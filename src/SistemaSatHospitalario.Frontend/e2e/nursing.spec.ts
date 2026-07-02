@@ -79,10 +79,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     // El sistema avanza automáticamente al Paso 2 (ajustes) tras seleccionar del autocompletado
 
     // Verify doctor selector dropdown is shown in Step 2
-    await page.waitForSelector('select', { timeout: 8000 });
+    await page.waitForSelector('#selectMedicoFastCharge', { timeout: 8000 });
     
-    // Seleccionar médico y área clínica en el Paso 2 usando selectores de posición específicos
-    const doctorSelector = page.locator('select').first();
+    // Seleccionar médico y área clínica en el Paso 2 usando IDs explícitos
+    const doctorSelector = page.locator('#selectMedicoFastCharge');
     await expect(doctorSelector).toBeVisible();
     console.log('Doctor selector dropdown is visible.');
 
@@ -90,13 +90,13 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await doctorSelector.selectOption({ index: 1 });
     console.log('Selected a seeded doctor.');
 
-    // Seleccionar también el Área Clínica en el Paso 2 (es el segundo select en la jerarquía)
-    const areaSelector = page.locator('select').last();
+    // Seleccionar también el Área Clínica en el Paso 2
+    const areaSelector = page.locator('#selectAreaClinicaFastCharge');
     await areaSelector.selectOption({ index: 1 });
     console.log('Selected an Area Clinica.');
 
     // Now click Siguiente to advance to Step 3 (Confirmation)
-    const nextBtnStep2 = page.locator('button:has-text("Siguiente")').last();
+    const nextBtnStep2 = page.locator('#btnStep2Next');
     await expect(nextBtnStep2).toBeEnabled();
     await nextBtnStep2.click();
     console.log('Advanced to Step 3 (Confirmation).');
@@ -178,15 +178,14 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(500);
 
     // El selector de médico aparece en el paso 2 (al que se avanza automáticamente)
-    await page.waitForSelector('select', { timeout: 8000 });
+    await page.waitForSelector('#selectMedicoFastCharge', { timeout: 8000 });
     
-    // Seleccionar médico (primero) y área clínica (último)
-    await page.locator('select').first().selectOption({ index: 1 });
-    await page.locator('select').last().selectOption({ index: 1 });
+    // Seleccionar médico y área clínica
+    await page.locator('#selectMedicoFastCharge').selectOption({ index: 1 });
+    await page.locator('#selectAreaClinicaFastCharge').selectOption({ index: 1 });
     
     // Click Siguiente en el Paso 2
-    const nextBtnStep2 = page.locator('button:has-text("Siguiente")').last();
-    await nextBtnStep2.click();
+    await page.locator('#btnStep2Next').click();
     await page.waitForTimeout(500);
 
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
@@ -200,11 +199,11 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.locator('div.hover\\:bg-white\\/5').first().click();
     await page.waitForTimeout(500);
     
-    // Seleccionar área clínica (es el único selector visible si no requiere médico)
-    await page.locator('select').last().selectOption({ index: 1 });
+    // Seleccionar área clínica
+    await page.locator('#selectAreaClinicaFastCharge').selectOption({ index: 1 });
 
     // Avanza automáticamente al Paso 2. Paso 2 -> Paso 3
-    await nextBtnStep2.click();
+    await page.locator('#btnStep2Next').click();
     await page.waitForTimeout(500);
     
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
@@ -219,10 +218,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(500);
     
     // Seleccionar área clínica
-    await page.locator('select').last().selectOption({ index: 1 });
+    await page.locator('#selectAreaClinicaFastCharge').selectOption({ index: 1 });
 
     // Avanza automáticamente al Paso 2. Paso 2 -> Paso 3
-    await nextBtnStep2.click();
+    await page.locator('#btnStep2Next').click();
     await page.waitForTimeout(500);
     
     await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
