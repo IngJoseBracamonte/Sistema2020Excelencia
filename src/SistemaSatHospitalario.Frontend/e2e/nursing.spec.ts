@@ -72,7 +72,8 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(1000);
 
     // Select the autocomplete result
-    const firstResult = page.locator('div.hover\\:bg-white\\/5').first();
+    const firstResult = page.locator('app-step-catalog-search div.hover\\:bg-white\\/5').first();
+    await expect(firstResult).toBeVisible({ timeout: 10000 });
     await firstResult.click();
     console.log('Selected CONSULTA GINECOLOGICA.');
 
@@ -183,7 +184,9 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     // --- 1. Consulta Category (requiere médico) ---
     await searchInput.fill('Consulta Medica General');
     await page.waitForTimeout(1000); // esperar debounce del autocomplete
-    await page.locator('div.hover\\:bg-white\\/5').first().click();
+    const firstRes1 = page.locator('app-step-catalog-search div.hover\\:bg-white\\/5').first();
+    await expect(firstRes1).toBeVisible({ timeout: 10000 });
+    await firstRes1.click();
     await page.waitForTimeout(500);
 
     // El selector de médico aparece en el paso 2 (al que se avanza automáticamente)
@@ -208,7 +211,9 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await expect(searchInput2).toBeVisible({ timeout: 10000 });
     await searchInput2.fill('Radiografía Tórax');
     await page.waitForTimeout(1000);
-    await page.locator('div.hover\\:bg-white\\/5').first().click();
+    const firstRes2 = page.locator('app-step-catalog-search div.hover\\:bg-white\\/5').first();
+    await expect(firstRes2).toBeVisible({ timeout: 10000 });
+    await firstRes2.click();
     await page.waitForTimeout(500);
     
     // Seleccionar área clínica
@@ -229,7 +234,9 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await expect(searchInput3).toBeVisible({ timeout: 10000 });
     await searchInput3.fill('Informe Médico Especializado');
     await page.waitForTimeout(1000);
-    await page.locator('div.hover\\:bg-white\\/5').first().click();
+    const firstRes3 = page.locator('app-step-catalog-search div.hover\\:bg-white\\/5').first();
+    await expect(firstRes3).toBeVisible({ timeout: 10000 });
+    await firstRes3.click();
     await page.waitForTimeout(500);
     
     // Seleccionar área clínica
