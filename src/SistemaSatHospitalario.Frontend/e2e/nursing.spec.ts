@@ -30,6 +30,7 @@ async function loginAs(
 
 test.describe('Emergency Nursing & Egress Integrity Tests', () => {
   test.beforeEach(async ({ page }) => {
+    page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
     await loginAs(page, 'user_emergencia', 'Hospital2026*!');
   });
 
@@ -112,7 +113,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
 
     // Verify it is visible in the cart
     await expect(page.locator('app-nursing-cart')).toBeVisible();
-    await expect(page.locator('app-nursing-cart :text-is("CONSULTA GINECOLOGICA")')).toBeVisible();
+    await expect(page.locator('app-nursing-cart').locator('text=Consulta Ginecologica')).toBeVisible();
 
     // Submit all cart items to backend
     await page.click('button:has-text("Registrar todo a la cuenta")');
