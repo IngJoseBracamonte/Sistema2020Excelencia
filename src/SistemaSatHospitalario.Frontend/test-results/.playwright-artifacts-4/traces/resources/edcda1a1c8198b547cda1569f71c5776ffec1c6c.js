@@ -1,1 +1,0 @@
-import{Qa as t}from"./chunk-P7NNHKRF.js";var a=class i{transform(r,e){return r?r.filter(n=>n.diaSemana===e):[]}static \u0275fac=function(e){return new(e||i)};static \u0275pipe=t({name:"filterByDay",type:i,pure:!0})};export{a};
