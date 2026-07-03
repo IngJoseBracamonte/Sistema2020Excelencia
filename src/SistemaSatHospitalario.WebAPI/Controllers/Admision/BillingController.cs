@@ -67,6 +67,31 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
         }
 
+        [HttpPost("CargarServiciosMasivo")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CargarServiciosMasivo([FromBody] CargarServiciosMasivoCommand command)
+        {
+            try
+            {
+                var result = await _mediator.Send(command);
+                return Ok(new { 
+                    Message = "Servicios cargados masivamente con éxito.", 
+                    Resultados = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Validación de negocio fallida en CargarServiciosMasivo");
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inesperado en CargarServiciosMasivo");
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
+            }
+        }
+
         [HttpPost("AbrirCuenta")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

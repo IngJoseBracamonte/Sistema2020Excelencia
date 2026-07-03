@@ -106,8 +106,16 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await expect(page.locator('span:has-text("Médico Tratante")')).toBeVisible();
     console.log('Step 3 confirmation details verified.');
 
-    // Verify final submission
-    await page.click('button:has-text("CONFIRMAR Y CARGAR A LA CUENTA")');
+    // Verify final submission via local cart
+    await page.click('#btnStep3Confirm');
+    console.log('Added CONSULTA GINECOLOGICA to cart.');
+
+    // Verify it is visible in the cart
+    await expect(page.locator('app-nursing-cart')).toBeVisible();
+    await expect(page.locator('app-nursing-cart :text-is("CONSULTA GINECOLOGICA")')).toBeVisible();
+
+    // Submit all cart items to backend
+    await page.click('button:has-text("Registrar todo a la cuenta")');
     await page.waitForTimeout(2000);
   });
 
@@ -234,7 +242,14 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     const step3Btn3 = page.locator('#btnStep3Confirm');
     await expect(step3Btn3).toBeVisible();
     await step3Btn3.click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
+
+    // Verify all items are accumulated in the cart
+    await expect(page.locator('app-nursing-cart')).toBeVisible();
+
+    // Now click the "Registrar todo a la cuenta" button in the cart
+    await page.click('button:has-text("Registrar todo a la cuenta")');
+    await page.waitForTimeout(3000);
 
     console.log('All three separate catalog categories successfully charged to patient.');
   });

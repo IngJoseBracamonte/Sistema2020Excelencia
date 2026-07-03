@@ -2,6 +2,13 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { DynamicStepperComponent } from './components/dynamic-stepper/dynamic-stepper.component';
+import { NursingCartComponent } from './components/nursing-cart/nursing-cart.component';
+import { StepCatalogSearchComponent } from './components/step-panels/step-catalog-search.component';
+import { StepDoctorSelectComponent } from './components/step-panels/step-doctor-select.component';
+import { StepLabRxPriceComponent } from './components/step-panels/step-lab-rx-price.component';
+import { StepQuantityComponent } from './components/step-panels/step-quantity.component';
+import { StepConfirmComponent } from './components/step-panels/step-confirm.component';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
@@ -55,7 +62,26 @@ export interface ServicioCatalogo {
   isConsultation?: boolean;
   honorariumCategory?: string;
   permiteFraccionamiento?: boolean;
+  sugerenciasIds?: string[];
+  SugerenciasIds?: string[];
   [key: string]: any;
+}
+
+export type StepperMode = 'catalog' | 'consulta' | 'lab-rx' | 'medicamento' | 'procedimiento';
+
+export interface CartItem {
+  id: string;
+  servicioId: string;
+  descripcion: string;
+  classification: ItemClassification;
+  precioBase: number;
+  honorario: number;
+  cantidad: number;
+  medicoId: string | null;
+  medicoNombre: string | null;
+  areaClinicaId: string | null;
+  areaClinicaNombre: string | null;
+  unidadMedida: string;
 }
 
 export interface Convenio {
@@ -176,7 +202,18 @@ export function classifyService(service: ServicioCatalogo | null | undefined): I
 @Component({
   selector: 'app-enfermeria',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule,
+    DynamicStepperComponent,
+    NursingCartComponent,
+    StepCatalogSearchComponent,
+    StepDoctorSelectComponent,
+    StepLabRxPriceComponent,
+    StepQuantityComponent,
+    StepConfirmComponent
+  ],
   templateUrl: './enfermeria.component.html',
   styleUrls: ['./enfermeria.component.css']
 })
@@ -279,6 +316,16 @@ export class EnfermeriaComponent implements OnInit {
 
   // Stepper & Pricing properties
   public currentStep = signal<number>(1);
+  public activeStepperMode = signal<StepperMode>('catalog');
+  public cartItems = signal<CartItem[]>([]);
+  public activeSuggestions = signal<ServicioCatalogo[]>([]);
+  public selectedSuggestions = signal<Record<string, boolean>>({});
+
+  public cartTotalUSD = computed(() => 
+    this.cartItems().reduce((acc, item) => acc + (item.precioBase + item.honorario) * item.cantidad, 0)
+  );
+
+  public cartItemCount = computed(() => this.cartItems().length);
   public nursingAreaFilter = signal<'Emergencia' | 'Hospitalizacion' | 'UCI'>('Emergencia');
   public customPrecio = signal<number | null>(null);
   public customHonorario = signal<number | null>(null);
@@ -638,6 +685,17 @@ export class EnfermeriaComponent implements OnInit {
     }
   }
 
+  public mapClassificationToMode(c: ItemClassification): StepperMode {
+    switch (c) {
+      case ITEM_CLASSIFICATIONS.CONSULTA: return 'consulta';
+      case ITEM_CLASSIFICATIONS.LABORATORIO:
+      case ITEM_CLASSIFICATIONS.RX: return 'lab-rx';
+      case ITEM_CLASSIFICATIONS.MEDICAMENTO: return 'medicamento';
+      case ITEM_CLASSIFICATIONS.PROCEDIMIENTO: return 'procedimiento';
+      default: return 'medicamento';
+    }
+  }
+
   public selectCatalogService(service: ServicioCatalogo): void {
     this.selectedService.set(service);
     this.fastChargeSearchTerm.set(service.descripcion);
@@ -654,14 +712,50 @@ export class EnfermeriaComponent implements OnInit {
     this.customPrecio.set(service.precioUsd ?? 0);
     this.customHonorario.set(service.honorarioBase ?? 0);
 
+    // Determinar modo del stepper
+    const classification = classifyService(service);
+    this.activeStepperMode.set(this.mapClassificationToMode(classification));
+
+    // Sugerencias Dinámicas desde Maestro de Servicios / DB
+    const sugIds = service.sugerenciasIds || service.SugerenciasIds || [];
+    const suggestions = this.servicesCatalog().filter(item => sugIds.includes(String(item.id)));
+    this.activeSuggestions.set(suggestions);
+
+    const initialSelection: Record<string, boolean> = {};
+    suggestions.forEach(s => initialSelection[s.id] = true);
+    this.selectedSuggestions.set(initialSelection);
+
     // Avanzar al Paso 2 del Stepper
     this.currentStep.set(2);
   }
 
-  public submitFastCharge(): void {
+  public toggleSuggestionSelection(id: string): void {
+    this.selectedSuggestions.update(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  }
+
+  public resetCurrentItemSelection(): void {
+    this.selectedService.set(null);
+    this.fastChargeSearchTerm.set('');
+    this.fastChargeQuantity = 1;
+    this.selectedMedicoId.set(null);
+    this.selectedAreaClinicaId.set(null);
+    this.customPrecio.set(null);
+    this.customHonorario.set(null);
+    this.activeSuggestions.set([]);
+    this.selectedSuggestions.set({});
+    this.currentStep.set(1);
+    this.activeStepperMode.set('catalog');
+  }
+
+  public addCurrentItemToCart(): void {
     const active = this.selectedAccount();
     const service = this.selectedService();
     if (!active || !service) return;
+
+    const getUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 
     const classification = this.itemClassification();
     const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA || 
@@ -677,61 +771,124 @@ export class EnfermeriaComponent implements OnInit {
       return;
     }
 
-    this.isSavingFastCharge.set(true);
-
     const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : (service.precioUsd ?? 0);
     const honoraryPrice = this.customHonorario() !== null ? Number(this.customHonorario()) : (service.honorarioBase ?? 0);
 
-    const payload: Record<string, any> = {
+    const mainItem: CartItem = {
+      id: getUuid(),
+      servicioId: String(service.id),
+      descripcion: service.descripcion,
+      classification: classification,
+      precioBase: basePrice,
+      honorario: honoraryPrice,
+      cantidad: effectiveQty,
+      medicoId: this.selectedMedicoId(),
+      medicoNombre: this.getMedicoNombre(this.selectedMedicoId()),
+      areaClinicaId: this.selectedAreaClinicaId(),
+      areaClinicaNombre: this.getAreaClinicaNombre(this.selectedAreaClinicaId()),
+      unidadMedida: service.unidadMedida || 'UD'
+    };
+
+    const newItems: CartItem[] = [mainItem];
+
+    // Sugerencias Dinámicas
+    const activeSugs = this.activeSuggestions();
+    const selSugs = this.selectedSuggestions();
+    for (const sug of activeSugs) {
+      if (selSugs[sug.id]) {
+        const sugClass = classifyService(sug);
+        newItems.push({
+          id: getUuid(),
+          servicioId: String(sug.id),
+          descripcion: sug.descripcion,
+          classification: sugClass,
+          precioBase: sug.precioUsd ?? 0,
+          honorario: sug.honorarioBase ?? 0,
+          cantidad: 1,
+          medicoId: null,
+          medicoNombre: null,
+          areaClinicaId: this.selectedAreaClinicaId(),
+          areaClinicaNombre: this.getAreaClinicaNombre(this.selectedAreaClinicaId()),
+          unidadMedida: sug.unidadMedida || 'UD'
+        });
+      }
+    }
+
+    this.cartItems.update(prev => [...prev, ...newItems]);
+    this.resetCurrentItemSelection();
+  }
+
+  public removeCartItem(itemId: string): void {
+    this.cartItems.update(prev => prev.filter(i => i.id !== itemId));
+  }
+
+  public editCartItem(itemId: string): void {
+    const item = this.cartItems().find(i => i.id === itemId);
+    if (!item) return;
+
+    this.removeCartItem(itemId);
+
+    const catalogItem = this.servicesCatalog().find(s => String(s.id) === item.servicioId);
+    if (catalogItem) {
+      this.selectedService.set(catalogItem);
+      this.fastChargeSearchTerm.set(catalogItem.descripcion);
+      this.fastChargeQuantity = item.cantidad;
+      this.selectedMedicoId.set(item.medicoId);
+      this.customPrecio.set(item.precioBase);
+      this.customHonorario.set(item.honorario);
+      this.selectedAreaClinicaId.set(item.areaClinicaId);
+      
+      const classification = classifyService(catalogItem);
+      this.activeStepperMode.set(this.mapClassificationToMode(classification));
+      this.currentStep.set(2);
+    }
+  }
+
+  public submitAllCartItems(): void {
+    const active = this.selectedAccount();
+    const items = this.cartItems();
+    if (!active || items.length === 0) return;
+
+    this.isSavingFastCharge.set(true);
+
+    const payload = {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
-      servicioId: String(service.id),
-      descripcion: service.descripcion,
-      precio: basePrice,
-      honorario: honoraryPrice,
-      cantidad: effectiveQty,
-      tipoServicio: classification === ITEM_CLASSIFICATIONS.CONSULTA ? 'Medico' : (service.tipo || classification),
-      usuarioCarga: '' // Se sobreescribe en Backend
+      items: items.map(item => ({
+        servicioId: item.servicioId,
+        descripcion: item.descripcion,
+        precio: item.precioBase,
+        honorario: item.honorario,
+        cantidad: item.cantidad,
+        tipoServicio: item.classification === ITEM_CLASSIFICATIONS.CONSULTA ? 'Medico' : item.classification,
+        medicoId: item.medicoId,
+        horaCita: item.medicoId ? new Date().toISOString() : undefined,
+        areaClinicaId: item.areaClinicaId,
+        usuarioCarga: ''
+      }))
     };
 
-    if (this.selectedMedicoId()) {
-      payload['medicoId'] = this.selectedMedicoId();
-      payload['horaCita'] = new Date().toISOString(); // Default current time for instant service/consultation
-    }
-
-    if (this.selectedAreaClinicaId()) {
-      payload['areaClinicaId'] = this.selectedAreaClinicaId();
-    }
-
-    if (this.customPrecio() !== null && this.customPrecio() !== service.precioUsd) {
-      payload['precioModificado'] = Number(this.customPrecio());
-    }
-
-    if (this.customHonorario() !== null && this.customHonorario() !== service.honorarioBase) {
-      payload['honorarioModificado'] = Number(this.customHonorario());
-    }
-
-    this.http.post(`${environment.apiUrl}/api/Billing/CargarServicio`, payload)
+    this.http.post(`${environment.apiUrl}/api/Billing/CargarServiciosMasivo`, payload)
       .subscribe({
         next: () => {
-          this.showSuccess(`Se cargó ${this.fastChargeQuantity} ${service.unidadMedida || 'Unidad(es)'} de ${service.descripcion} a la cuenta del paciente.`);
-          this.selectedService.set(null);
-          this.fastChargeSearchTerm.set('');
-          this.fastChargeQuantity = 1;
-          this.selectedMedicoId.set(null);
-          this.selectedAreaClinicaId.set(null);
-          this.customPrecio.set(null);
-          this.customHonorario.set(null);
-          this.currentStep.set(1); // Reiniciar Stepper
+          this.showSuccess(`${items.length} servicio(s) cargado(s) a la cuenta del paciente.`);
+          this.cartItems.set([]);
+          this.resetCurrentItemSelection();
           this.isSavingFastCharge.set(false);
-          this.refreshAccounts(); // Refresh to see total updates
+          this.refreshAccounts();
         },
-        error: (err) => {
-          alert('Error al cargar insumo: ' + (err.error?.Error || err.error?.message || err.message));
+        error: (err: any) => {
+          alert('Error al cargar servicios: ' + (err.error?.Error || err.error?.message || err.message));
           this.isSavingFastCharge.set(false);
         }
       });
+  }
+
+  public getAreaClinicaNombre(areaId: string | null): string {
+    if (!areaId) return '';
+    const a = this.areasClinicas().find(x => x.id === areaId);
+    return a ? a.nombre.toUpperCase() : 'DESCONOCIDA';
   }
 
   // Clinical Transfer / Discharge
