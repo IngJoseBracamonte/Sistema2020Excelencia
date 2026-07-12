@@ -28,7 +28,7 @@ else
 }
 try 
 {
-    Log.Information("Iniciando Sistema Sat Hospitalario v1.2.88 (Cloud-Native Mode)...");
+    Log.Information("Iniciando Sistema Sat Hospitalario v1.2.90 (Cloud-Native Mode)...");
     
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();

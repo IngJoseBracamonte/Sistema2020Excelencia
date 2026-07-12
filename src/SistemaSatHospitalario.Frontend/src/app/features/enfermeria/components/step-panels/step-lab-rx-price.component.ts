@@ -33,7 +33,7 @@ import { AreaClinica } from '../../../../core/services/multi-sede.service';
           class="w-full bg-slate-950/60 border border-slate-700 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-indigo-500"
         >
           <option [value]="null">-- Seleccione Médico --</option>
-          <option *ngFor="let m of medicos" [value]="m.id">{{ m.nombre | uppercase }}</option>
+          <option *ngFor="let m of medicos" [value]="m.id">{{ m.nombre | uppercase }} - {{ (m.especialidad || 'GENERAL') | uppercase }}</option>
         </select>
       </div>
 

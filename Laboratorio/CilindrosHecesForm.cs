@@ -10,26 +10,21 @@ using System.Windows.Forms;
 
 namespace Laboratorio
 {
-    public partial class Form10 : Form
+    public partial class CilindrosHecesForm : Form
     {
-        public Form10()
+        public CilindrosHecesForm()
         {
             InitializeComponent();
         }
 
         private void iconButton7_Click(object sender, EventArgs e)
         {
-            textBox1.AppendText(listBox1.SelectedItem.ToString()+ " "+ comboBox1.Text + Environment.NewLine); 
+            textBox1.AppendText(listBox1.SelectedItem.ToString() +" "+ comboBox1.Text + Environment.NewLine);
         }
 
         private void iconButton2_Click(object sender, EventArgs e)
         {
             this.Close();
-        }
-
-        private void Form10_FormClosing(object sender, FormClosingEventArgs e)
-        {
-          
         }
 
         private void iconButton1_Click(object sender, EventArgs e)
@@ -42,9 +37,14 @@ namespace Laboratorio
             AcceptButton = iconButton7;
         }
 
-        private void Form10_Load(object sender, EventArgs e)
+        private void Form11_Load(object sender, EventArgs e)
         {
             AcceptButton = iconButton2;
+        }
+
+        private void panel5_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

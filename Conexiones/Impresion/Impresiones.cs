@@ -1,22 +1,15 @@
-﻿using PdfSharp.Drawing;
+using PdfSharp.Drawing;
 using PdfSharp.Drawing.Layout;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Mail;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Web;
-using System.Threading;
 using System.IO;
 using System.Diagnostics;
 using System.Configuration;
 using Conexiones.DbConnect;
-using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace Conexiones.Impresion
 {
@@ -26,7 +19,7 @@ namespace Conexiones.Impresion
         const string Curva2 = "Arial";
         public static PdfSharp.Pdf.PdfDocument Documento(int IdOrden, int IdAnalisis, string Metodo)
         {
-            string Ruta = ConfigurationManager.ConnectionStrings["Probando"].ConnectionString;
+            string Ruta = ConfigurationManager.ConnectionStrings["Probando"]?.ConnectionString ?? "";
             bool impresion, primerapagina = false, cerrar;
             DataSet Paciente = new DataSet();
             DataSet dsPrint = new DataSet();
@@ -189,9 +182,10 @@ namespace Conexiones.Impresion
                     }
                     if (r["IdAnalisis"].ToString() == "55" && r["EstadoDeResultado"].ToString() != "" && r["EstadoDeResultado"].ToString() != " " && r["EstadoDeResultado"].ToString() != x)
                     {
-
+                        
                         //Hematologia
                         fontRegular = new XFont(facename, 11, XFontStyle.Regular);
+                        XFont fontSmallValores = new XFont(facename, 8.5, XFontStyle.Regular);
                         PosicionP = 90;
                         Margen = new XRect(15, 12, 145, 14);
                         if (Metodo == "Correo")
@@ -204,7 +198,7 @@ namespace Conexiones.Impresion
                         tf.Alignment = XParagraphAlignment.Left;
                         string Formato = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
                         tf.DrawString(Formato, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
-                        //gfx.DrawImage(Logo, 5, 10);
+
                         XColor color = new XColor { R = 105, G = 105, B = 105 };
                         XPen pen = new XPen(color);
                         XPoint point = new XPoint(5, 70);
@@ -224,32 +218,20 @@ namespace Conexiones.Impresion
                         gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
                         gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
                         point = new XPoint(5, 110);
-                        size = new XSize(580, 225);
+                        size = new XSize(580, 255);
                         rect = new XRect(point, size);
                         gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
                         MargenAncho = 15;
                         Posicion = 110;
 
-                        for (int i = 1; i < 6; i++)
+                        for (int pos = 125; pos <= 365; pos += 15)
                         {
-                            if (i == 2)
-                            {
-                                gfx.DrawLine(pen, 5, Posicion = Posicion + MargenAncho * 4, 585, Posicion);
-                            }
-                            else if (i == 4)
-                            {
-                                gfx.DrawLine(pen, 5, Posicion = Posicion + MargenAncho * 8, 585, Posicion);
-                            }
-                            else
-                            {
-                                gfx.DrawLine(pen, 5, Posicion = Posicion + MargenAncho, 585, Posicion);
-                            }
-
+                            gfx.DrawLine(pen, 5, pos, 585, pos);
                         }
 
                         PosicionP = 70;
                         Margen = new XRect(15, PosicionP, 145, 14);
-                        DateTime nacimiento = new DateTime(); //Fecha de nacimiento
+                        DateTime nacimiento = new DateTime();
                         nacimiento = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
                         gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimiento)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
                         PosicionP = 90;
@@ -258,187 +240,282 @@ namespace Conexiones.Impresion
                         gfx.DrawString("Hematologia Completa", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                         PosicionP = 110;
                         Margen = new XRect(5, PosicionP, 145, 14);
+
                         //ANALISIS
-
                         gfx.DrawString("Analisis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Leucocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Hematíes", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Hemoglobina", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Hematocritos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Diferencial Leucocitario", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("VCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("HCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("CHCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("ADE", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Leucocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Recuento Diferencial", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Neutrófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Linfocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Monocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Eosinofilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Neutrófilos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Linfocitos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Monocitos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Eosinofilos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                        Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Basófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                         gfx.DrawString("Plaquetas", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-
+                        Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Volumen Plaquentario Medio", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        double YPalabras = 140;
                         PosicionP = 110;
-                        double YPalabras = 180;
                         //Resultados
+                       
                         Hematologia hematologia = new Hematologia();
                         hematologia = Conexion.Hematologia(Convert.ToInt32(IdOrden.ToString()), 55);
-                        Margen = new XRect(YPalabras, PosicionP, 145, 14);
-                        gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString(string.Format("{0:0.00}", Convert.ToDouble(hematologia.leucocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (!string.IsNullOrEmpty(hematologia.Hematies))
+
+                        try
                         {
-                            gfx.DrawString(string.Format("{0:0.00}", Convert.ToDouble(hematologia.Hematies)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                           
+                            Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                            gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+
+                            if (!string.IsNullOrEmpty(hematologia.Hematies))
+                            {
+                                gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologia.Hematies)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+
+                    
+
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.Hemoglobina)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+
+
+               
+
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.Hematocritos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+
+           
+
+                            if (!string.IsNullOrEmpty(hematologia.VCM))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.VCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+
+       
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.HCM))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.HCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+
+     
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.CHCM))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.CHCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+
+                 
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.ADE))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.ADE)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+
+
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.00}", Convert.ToDouble(hematologia.leucocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+
+                            Conexion.CrearEvento("Valores de Margen: " + YPalabras + " " + PosicionP + " " + 90 + " " +14 );
+
+             
+
+
+                            if (!string.IsNullOrEmpty(hematologia.Neutrofilos))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDouble(hematologia.Neutrofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+
+                  
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.linfocitos))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDouble(hematologia.linfocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+
+                  
+
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.Monocitos))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Monocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.Eosinofilos))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Eosinofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.Basofilos))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Basofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.Plaquetas))
+                            {
+                                gfx.DrawString(Convert.ToDecimal(hematologia.Plaquetas).ToString("#,##0", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologia.VPM))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.VPM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
                         }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString(string.Format("{0:0.00}", Convert.ToDouble(hematologia.Hemoglobina)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString(string.Format("{0:0.00}", Convert.ToDouble(hematologia.Hematocritos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Neutrofilos != "" && hematologia.Neutrofilos != " ")
+                        catch (Exception ex)
                         {
-                            gfx.DrawString(string.Format("{0:0.00}%", Convert.ToDouble(hematologia.Neutrofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.linfocitos != "" && hematologia.linfocitos != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}%", Convert.ToDouble(hematologia.linfocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Monocitos != "" && hematologia.Monocitos != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}%", Convert.ToDouble(hematologia.Monocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Eosinofilos != "" && hematologia.Eosinofilos != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}%", Convert.ToDouble(hematologia.Eosinofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Neutrofilos2 != "" && hematologia.Neutrofilos2 != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}  10^3/ul", Convert.ToDouble(hematologia.Neutrofilos2)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Linfocitos2 != "" && hematologia.Linfocitos2 != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}  10^3/ul", Convert.ToDouble(hematologia.Linfocitos2)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Monocitos2 != "" && hematologia.Monocitos2 != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}  10^3/ul", Convert.ToDouble(hematologia.Monocitos2)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                            Conexion.CrearEvento(ex.ToString());
                         }
 
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Eosinofilos2 != "" && hematologia.Eosinofilos2 != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}  10^3/ul", Convert.ToDouble(hematologia.Eosinofilos2)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        if (hematologia.Plaquetas != "" && hematologia.Plaquetas != " ")
-                        {
-                            gfx.DrawString(string.Format("{0:0.00}  10^3/ul", Convert.ToDouble(hematologia.Plaquetas)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        }
+
+                        
+
+                        PosicionP = 110;
+                        YPalabras = 230;
+                        //Unidades
+                        Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                        gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("10^6/µL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("pg", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
 
                         PosicionP = 110;
                         YPalabras = 320;
-                        //Unidades
-                        Margen = new XRect(YPalabras, PosicionP, 135, 14);
-                        gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^6/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("gr/dL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-
-                        PosicionP = 110;
-                        YPalabras = 460;
                         //Valores Normales
-                        Margen = new XRect(YPalabras, PosicionP, 135, 14);
+                        Margen = new XRect(YPalabras, PosicionP, 260, 14);
                         gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("4.0 – 10.0 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("3.5 – 5.5 10^6/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("11.0 – 16.0 gr/dL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("35.0 – 54.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("3.50-5.20", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("H: 12,5-16,5 M: 11,5-15,5 N: 10,0-14,0 RN: 15,0-23,0 E: 9,0-13,0", fontSmallValores, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("H: 40,0-50,0 M: 37,0-47,0 N: 33,0-43,0 RN: 44,0-64,0 E: 34,0-44,0", fontSmallValores, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("80.0-100.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("27.0-34.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("32.0-36.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("11.0-16.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("A: 4.50-11.00 N: 4.50-13.50 RN: 5.50-18.00", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
                         gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("40.0% – 70.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("18.0% – 48.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("3.0% 0 – 12.0%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("1.0% 0 – 7.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("2.0 – 7.0 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("1.1 – 2.9 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("0.12 – 1.2 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("0.02 – 0.50  10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                        gfx.DrawString("150 – 450 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                        PosicionP = 335;
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("55-65%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("35-45%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("04-08%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("02-04%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("<01%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("150-450 x10^3/uL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("6.5-12.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                        PosicionP = 365;
                         Margen = new XRect(5, PosicionP, 320, 60);
                         gfx.DrawRoundedRectangle(pen, Margen, Elipsesize);
                         Margen = new XRect(10, PosicionP + 5, 320, 60);
                         fontRegular2 = new XFont(facename, 10, XFontStyle.Regular);
-                        gfx.DrawString("Observaciones", fontRegular2, XBrushes.Black, Margen, XStringFormats.TopLeft);
-                        rect = new XRect(10, PosicionP + 15, 300, 40);
+                        XRect rectObs = new XRect(10, PosicionP + 15, 300, 40);
                         tf.Alignment = XParagraphAlignment.Left;
-                        string text1 = hematologia.Comentario;
-                        tf.DrawString(text1, fontRegular2, XBrushes.Black, rect, XStringFormats.TopLeft);
-                        //Seleccionar BIoanalista
+
+                        //aqui el problema es que el comentario no se esta por lo tanto no se puede imprimir
+                        DataSet comentario = new DataSet();
+                        comentario = Conexion.SelectComentario(IdOrden, 55);
+                        string text1 = string.Empty;
+                        if (comentario.Tables.Count != 0)
+                        {
+                            text1 = comentario.Tables[0].Rows[0]["Comentario"].ToString();
+                        }
+                        
+                        tf.DrawString(text1, fontRegular2, XBrushes.Black, rectObs, XStringFormats.TopLeft);
+                        //Seleccionar Bioanalista
                         DataSet Bioanalista = new DataSet();
                         Bioanalista = Conexion.Bioanalista(IdOrden, 55);
                         string text = string.Format("LCD. {0} CB:{1} MPPS:{2}", Bioanalista.Tables[0].Rows[0]["NombreUsuario"].ToString(), Bioanalista.Tables[0].Rows[0]["CB"].ToString(), Bioanalista.Tables[0].Rows[0]["MPPS"].ToString());
-                        //rectangulo de Comentario
                         Margen = new XRect(325, PosicionP, 260, 60);
                         gfx.DrawRoundedRectangle(pen, Margen, Elipsesize);
                         Margen = new XRect(330, PosicionP + 10, 50, 60);
@@ -447,10 +524,6 @@ namespace Conexiones.Impresion
                         tf.DrawString(text, fontRegular, XBrushes.Black, rect, XStringFormats.TopLeft);
                         XImage Firma = XImage.FromFile(string.Format(@"Firma\{1}", Ruta, Bioanalista.Tables[0].Rows[0]["FIRMA"].ToString()));
                         gfx.DrawImage(Firma, 500, PosicionP + 5);
-                        //point = new XPoint(Convert.ToDouble(textBox3.Text), Convert.ToDouble(textBox4.Text));
-                        //size = new XSize(Convert.ToDouble(textBox1.Text), Convert.ToDouble(textBox2.Text));
-                        // rect = new XRect(point, size);
-                        //gfx.DrawRectangle(pen, rect);
                         if (r["EstadoDeResultado"].ToString() != "1" && Metodo != "Correo" && Metodo != "Convenio")
                         {
                             Conexion.ActualizarOrden("EstadoDeResultado = 3", Convert.ToInt32(IdOrden), Convert.ToInt32(r["IdAnalisis"].ToString()));
@@ -1170,265 +1243,313 @@ namespace Conexiones.Impresion
                     else if ((r["IdAnalisis"].ToString() == "203" || r["IdAnalisis"].ToString() == "49") && r["EstadoDeResultado"].ToString() != "" && r["EstadoDeResultado"].ToString() != " " && r["EstadoDeResultado"].ToString() != x)
                     {
                         fontRegular = new XFont(facename, 11, XFontStyle.Regular);
+                        XFont fontSmallValoresEsp = new XFont(facename, 8.5, XFontStyle.Regular);
                         PosicionP = 90;
                         Margen = new XRect(15, 12, 145, 14);
-                        XColor color = new XColor { R = 105, G = 105, B = 105 };
-                        XPen pen = new XPen(color);
-                        XPoint point = new XPoint(5, 70);
-                        XSize size = new XSize(580, 15);
-                        XSize Elipsesize = new XSize(5, 5);
-                        XRect rect = new XRect(point, size);
-                        DateTime nacimiento = new DateTime(); //Fecha de nacimiento
-                        string Formato;
-                        //Hematologia
+                        XColor colorEsp = new XColor { R = 105, G = 105, B = 105 };
+                        XPen penEsp = new XPen(colorEsp);
+                        XPoint pointEsp = new XPoint(5, 70);
+                        XSize sizeEsp = new XSize(580, 15);
+                        XSize ElipsesizeEsp = new XSize(5, 5);
+                        XRect rectEsp = new XRect(pointEsp, sizeEsp);
+                        DateTime nacimientoEsp = new DateTime();
+                        string FormatoEsp2;
 
                         if (r["IdAnalisis"].ToString() == "203")
                         {
-
                             if (Metodo == "Correo")
                             {
                                 page.Height = 400;
                             }
                             tf.Alignment = XParagraphAlignment.Center;
-
-                            //gfx.DrawImage(Logo, 5, 10);
                             gfx.DrawString(Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Titulo, XBrushes.Black, Margen, XStringFormats.TopLeft);
                             Margen = new XRect(15, 30, 250, 48);
                             tf.Alignment = XParagraphAlignment.Left;
+                            string FormatoEsp1 = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                            tf.DrawString(FormatoEsp1, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
 
-
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(500, 20);
-                            size = new XSize(80, 15);
-                            rect = new XRect(point, size);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(500, 20);
+                            sizeEsp = new XSize(80, 15);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
                             FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
-                            gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(500, 40);
-                            size = new XSize(80, 15);
-                            rect = new XRect(point, size);
-                            gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(5, 110);
-                            size = new XSize(580, 225);
-                            rect = new XRect(point, size);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize); ;
+                            gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(500, 40);
+                            sizeEsp = new XSize(80, 15);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+
+                            pointEsp = new XPoint(5, 110);
+                            sizeEsp = new XSize(580, 300);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
                             MargenAncho = 15;
                             Posicion = 110;
-                            for (int i = 1; i < 6; i++)
-                            {
-                                if (i == 2)
-                                {
-                                    gfx.DrawLine(pen, 5, Posicion = Posicion + MargenAncho * 4, 585, Posicion);
-                                }
-                                else if (i == 4)
-                                {
-                                    gfx.DrawLine(pen, 5, Posicion = Posicion + MargenAncho * 8, 585, Posicion);
-                                }
-                                else
-                                {
-                                    gfx.DrawLine(pen, 5, Posicion = Posicion + MargenAncho, 585, Posicion);
-                                }
 
+                            for (int pos = 125; pos <= 410; pos += 15)
+                            {
+                                gfx.DrawLine(penEsp, 5, pos, 585, pos);
                             }
 
                             PosicionP = 70;
-                            Margen = new XRect(15, PosicionP, 145, 14);
-
-                            nacimiento = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
-                            gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimiento)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP, 560, 14);
+                            nacimientoEsp = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                            gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimientoEsp)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
                             PosicionP = 90;
                             Margen = new XRect(5, PosicionP, 145, 14);
-                            gfx.DrawRoundedRectangle(pen, Margen, Elipsesize); ;
+                            gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
                             gfx.DrawString("Hematologia Especial", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             PosicionP = 110;
                             Margen = new XRect(5, PosicionP, 145, 14);
+
                             //ANALISIS
                             gfx.DrawString("Analisis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Leucocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Hematíes", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Hemoglobina", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Hematocritos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Diferencial Leucocitario", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("VCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("HCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("CHCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("ADE", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("Leucocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("Recuento Diferencial", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Neutrófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Linfocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Monocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Eosinofilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Neutrófilos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Linfocitos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Monocitos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Eosinofilos#", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
-                            Margen = new XRect(10, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("Basófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
                             gfx.DrawString("Plaquetas", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("Volumen Plaquentario Medio", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("ADP", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("PCT", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(15, PosicionP = PosicionP + 15, 130, 14);
+                            gfx.DrawString("Reticulocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
 
                             PosicionP = 110;
-                            double YPalabras = 180;
+                            double YPalabras = 140;
                             //Resultados
-                            DataSet Print = new DataSet();
-                            Print = Conexion.HematologiaEspecial(IdOrden, 203);
-                            Margen = new XRect(YPalabras, PosicionP, 145, 14);
+                            HematologiaEspecial hematologiaEspecial = Conexion.HematologiaEspecial(IdOrden, 203);
+
+                            Margen = new XRect(YPalabras, PosicionP, 90, 14);
                             gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDouble(Print.Tables[0].Rows[0]["Leucocitos"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDouble(Print.Tables[0].Rows[0]["Hematies"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDouble(Print.Tables[0].Rows[0]["Hemoglobina"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDouble(Print.Tables[0].Rows[0]["Hematocritos"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.Hematies)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.Hemoglobina)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.Hematocritos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.VCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.HCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.CHCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.ADE))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.ADE)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.leucocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                             gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["Neutrofilos"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.Neutrofilos))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDouble(Print.Tables[0].Rows[0]["Neutrofilos"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Neutrofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["Linfocitos"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.linfocitos))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDouble(Print.Tables[0].Rows[0]["Linfocitos"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.linfocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["MONOCITOS"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.Monocitos))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDouble(Print.Tables[0].Rows[0]["MONOCITOS"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Monocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["EOSINOFILOS"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.Eosinofilos))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDouble(Print.Tables[0].Rows[0]["EOSINOFILOS"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Eosinofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["Neutrofilos2"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.Basofilos))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}  10^3/ul", Convert.ToDouble(Print.Tables[0].Rows[0]["Neutrofilos2"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Basofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["Linfocitos2"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.Plaquetas))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}  10^3/ul", Convert.ToDouble(Print.Tables[0].Rows[0]["Linfocitos2"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(Convert.ToDecimal(hematologiaEspecial.Plaquetas).ToString("#,##0", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["MONOCITOS2"].ToString() != "")
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.VPM))
                             {
-                                gfx.DrawString(string.Format("{0:0.0}  10^3/ul", Convert.ToDouble(Print.Tables[0].Rows[0]["MONOCITOS2"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.VPM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.ADP))
+                            {
+                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.ADP)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.PCT))
+                            {
+                                gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.PCT)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            if (!string.IsNullOrEmpty(hematologiaEspecial.Reticulocitos))
+                            {
+                                gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.Reticulocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            }
+                            else
+                            {
+                                gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                             }
 
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["EOSINOFILOS2"].ToString() != "")
-                            {
-                                gfx.DrawString(string.Format("{0:0.0}  10^3/ul", Convert.ToDouble(Print.Tables[0].Rows[0]["EOSINOFILOS2"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            }
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            if (Print.Tables[0].Rows[0]["plaquetas"].ToString() != "")
-                            {
-                                gfx.DrawString(string.Format("{0:0.0}  10^3/ul", Convert.ToDouble(Print.Tables[0].Rows[0]["plaquetas"].ToString())), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            }
+                            PosicionP = 110;
+                            YPalabras = 230;
+                            //Unidades
+                            Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                            gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("10^6/µL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("pg", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
 
                             PosicionP = 110;
                             YPalabras = 320;
-                            //Unidades
-                            Margen = new XRect(YPalabras, PosicionP, 135, 14);
-                            gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^6/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("gr/dL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-
-                            PosicionP = 110;
-                            YPalabras = 460;
                             //Valores Normales
-                            Margen = new XRect(YPalabras, PosicionP, 135, 14);
+                            Margen = new XRect(YPalabras, PosicionP, 260, 14);
                             gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("4.0 – 10.0 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("3.5 – 5.5 10^6/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("11.0 – 16.0 gr/dL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("35.0 – 54.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("3.50-5.20", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("H: 12,5-16,5 M: 11,5-15,5 N: 10,0-14,0 RN: 15,0-23,0 E: 9,0-13,0", fontSmallValoresEsp, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("H: 40,0-50,0 M: 37,0-47,0 N: 33,0-43,0 RN: 44,0-64,0 E: 34,0-44,0", fontSmallValoresEsp, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("80.0-100.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("27.0-34.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("32.0-36.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("11.0-16.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("A: 4.50-11.00 N: 4.50-13.50 RN: 5.50-18.00", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
                             gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("40.0% – 70.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("18.0% – 48.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("3.0% 0 – 12.0%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("1.0% 0 – 7.0 %", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("2.0 – 7.0 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("1.1 – 2.9 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("0.12 – 1.2 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("0.02 – 0.50  10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 135, 14);
-                            gfx.DrawString("150 – 450 10^3/ul", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            PosicionP = 335;
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("55-65%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("35-45%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("04-08%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("02-04%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("<01%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("150-450 x10^3/uL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("6.5-12.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("9.0-17.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("0.100-0.400", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                            Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                            gfx.DrawString("0.5 – 2.5%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                            PosicionP = 410;
                             Margen = new XRect(5, PosicionP, 320, 60);
-                            gfx.DrawRoundedRectangle(pen, Margen, Elipsesize);
+                            gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
                             Margen = new XRect(10, PosicionP + 5, 320, 60);
                             fontRegular2 = new XFont(facename, 10, XFontStyle.Regular);
-                            rect = new XRect(10, PosicionP + 15, 300, 40);
+                            XRect rectObsEsp = new XRect(10, PosicionP + 15, 300, 40);
                             tf.Alignment = XParagraphAlignment.Left;
-                            Margen = new XRect(325, PosicionP, 260, 60);
-                            gfx.DrawRoundedRectangle(pen, Margen, Elipsesize);
-                            Margen = new XRect(330, PosicionP + 10, 50, 60);
                             DataSet Bioanalista = new DataSet();
                             Bioanalista = Conexion.Bioanalista(IdOrden, 203);
                             string text = string.Format("LCD. {0} CB:{1} MPPS:{2}", Bioanalista.Tables[0].Rows[0]["NombreUsuario"].ToString(), Bioanalista.Tables[0].Rows[0]["CB"].ToString(), Bioanalista.Tables[0].Rows[0]["MPPS"].ToString());
-                            rect = new XRect(330, PosicionP + 5, 150, 40);
+                            Margen = new XRect(325, PosicionP, 260, 60);
+                            gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
+                            Margen = new XRect(330, PosicionP + 10, 50, 60);
+                            XRect rectBioEsp = new XRect(330, PosicionP + 5, 150, 40);
                             tf.Alignment = XParagraphAlignment.Center;
-                            tf.DrawString(text, fontRegular, XBrushes.Black, rect, XStringFormats.TopLeft);
+                            tf.DrawString(text, fontRegular, XBrushes.Black, rectBioEsp, XStringFormats.TopLeft);
                             XImage Firma = XImage.FromFile(string.Format(@"Firma\{1}", Ruta, Bioanalista.Tables[0].Rows[0]["FIRMA"].ToString()));
                             gfx.DrawImage(Firma, 500, PosicionP + 5);
-                            //point = new XPoint(Convert.ToDouble(textBox3.Text), Convert.ToDouble(textBox4.Text));
-                            //size = new XSize(Convert.ToDouble(textBox1.Text), Convert.ToDouble(textBox2.Text));
-                            // rect = new XRect(point, size);
-                            //gfx.DrawRectangle(pen, rect);
-
-                            //gfx.DrawImage(Logo, 5, 10);
 
                             page = document.AddPage();
                             gfx = XGraphics.FromPdfPage(page);
@@ -1438,64 +1559,67 @@ namespace Conexiones.Impresion
                             gfx.DrawString(Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Titulo, XBrushes.Black, Margen, XStringFormats.TopLeft);
                             Margen = new XRect(15, 30, 250, 48);
                             tf.Alignment = XParagraphAlignment.Left;
-                            Formato = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
-                            tf.DrawString(Formato, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                            FormatoEsp2 = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                            tf.DrawString(FormatoEsp2, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
 
-                            color = new XColor { R = 105, G = 105, B = 105 };
-                            pen = new XPen(color);
-                            point = new XPoint(5, 70);
-                            size = new XSize(580, 15);
-                            Elipsesize = new XSize(5, 5);
-                            rect = new XRect(point, size);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(500, 20);
-                            size = new XSize(80, 15);
-                            rect = new XRect(point, size);
+                            colorEsp = new XColor { R = 105, G = 105, B = 105 };
+                            penEsp = new XPen(colorEsp);
+                            pointEsp = new XPoint(5, 70);
+                            sizeEsp = new XSize(580, 15);
+                            ElipsesizeEsp = new XSize(5, 5);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(500, 20);
+                            sizeEsp = new XSize(80, 15);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
                             FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
-                            gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(500, 40);
-                            size = new XSize(80, 15);
-                            rect = new XRect(point, size);
-                            gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
-                            //gfx.DrawString(Print.Tables[0].Rows[0]["frotis"].ToString(), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(5, 110);
-                            size = new XSize(580, 225);
-                            rect = new XRect(point, size);
+                            gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(500, 40);
+                            sizeEsp = new XSize(80, 15);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(5, 110);
+                            sizeEsp = new XSize(580, 225);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
                             tf.Alignment = XParagraphAlignment.Left;
-                            string text1 = Print.Tables[0].Rows[0]["frotis"].ToString();
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(10, 110);
-                            size = new XSize(580, 225);
-                            rect = new XRect(point, size);
-                            tf.DrawString(text1, fontRegular2, XBrushes.Black, rect, XStringFormats.TopLeft);
+                            string textFrotis = hematologiaEspecial.Comentario.ToString();
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(10, 110);
+                            sizeEsp = new XSize(580, 225);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            tf.DrawString(textFrotis, fontRegular2, XBrushes.Black, rectEsp, XStringFormats.TopLeft);
 
                             MargenAncho = 15;
                             Posicion = 110;
                             PosicionP = 70;
-                            Margen = new XRect(10, PosicionP, 145, 14);
-                            nacimiento = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
-                            gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimiento)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(10, PosicionP, 560, 14);
+                            nacimientoEsp = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                            gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimientoEsp)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
                             PosicionP = 90;
-
                             Margen = new XRect(5, PosicionP, 145, 14);
                             gfx.DrawString("Descripcion de Frotis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, Margen, Elipsesize); ;
-
-
+                            gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
 
                             if (r["EstadoDeResultado"].ToString() != "1" && Metodo != "Correo" && Metodo != "Convenio")
                             {
                                 Conexion.ActualizarOrden("EstadoDeResultado = 3", Convert.ToInt32(IdOrden), Convert.ToInt32(r["IdAnalisis"].ToString()));
                             }
-                            int index = dsPrint.Tables[0].Rows.IndexOf(r);
-                            if (dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "" && dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "1" && r != dsPrint.Tables[0].Rows[dsPrint.Tables[0].Rows.Count - 1])
+                            if (r != dsPrint.Tables[0].Rows[dsPrint.Tables[0].Rows.Count - 1])
                             {
-                                page = document.AddPage();
-                                gfx = XGraphics.FromPdfPage(page);
-                                tf = new XTextFormatter(gfx);
-                                Posicion = 110;
+                                int index = dsPrint.Tables[0].Rows.IndexOf(r) + 1;
+                                if (dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "" && dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "1")
+                                {
+                                    page = document.AddPage();
+                                    gfx = XGraphics.FromPdfPage(page);
+                                    tf = new XTextFormatter(gfx);
+                                    Posicion = 110;
+                                }
+                                else
+                                {
+                                    return document;
+                                }
                             }
                             else
                             {
@@ -1504,76 +1628,77 @@ namespace Conexiones.Impresion
                         }
                         else
                         {
-
                             Margen = new XRect(15, 12, 145, 14);
                             gfx.DrawString(Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Titulo, XBrushes.Black, Margen, XStringFormats.TopLeft);
                             Margen = new XRect(15, 30, 250, 48);
                             tf.Alignment = XParagraphAlignment.Left;
-                            Formato = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
-                            tf.DrawString(Formato, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                            FormatoEsp2 = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                            tf.DrawString(FormatoEsp2, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
 
-                            color = new XColor { R = 105, G = 105, B = 105 };
-                            pen = new XPen(color);
-                            point = new XPoint(5, 70);
-                            size = new XSize(580, 15);
-                            Elipsesize = new XSize(5, 5);
-                            rect = new XRect(point, size);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(500, 20);
-                            size = new XSize(80, 15);
-                            rect = new XRect(point, size);
+                            colorEsp = new XColor { R = 105, G = 105, B = 105 };
+                            penEsp = new XPen(colorEsp);
+                            pointEsp = new XPoint(5, 70);
+                            sizeEsp = new XSize(580, 15);
+                            ElipsesizeEsp = new XSize(5, 5);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(500, 20);
+                            sizeEsp = new XSize(80, 15);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
                             FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
-                            gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(500, 40);
-                            size = new XSize(80, 15);
-                            rect = new XRect(point, size);
-                            gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rect, XStringFormats.Center);
-                            //gfx.DrawString(Print.Tables[0].Rows[0]["frotis"].ToString(), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(5, 110);
-                            size = new XSize(580, 225);
-                            rect = new XRect(point, size);
+                            gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(500, 40);
+                            sizeEsp = new XSize(80, 15);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(5, 110);
+                            sizeEsp = new XSize(580, 225);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
                             tf.Alignment = XParagraphAlignment.Left;
-                            string text1 = r["Comentario"].ToString();
-                            gfx.DrawRoundedRectangle(pen, rect, Elipsesize);
-                            point = new XPoint(10, 110);
-                            size = new XSize(580, 225);
-                            rect = new XRect(point, size);
-                            tf.DrawString(text1, fontRegular2, XBrushes.Black, rect, XStringFormats.TopLeft);
+                            string text1b = r["Comentario"].ToString();
+                            gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                            pointEsp = new XPoint(10, 110);
+                            sizeEsp = new XSize(580, 225);
+                            rectEsp = new XRect(pointEsp, sizeEsp);
+                            tf.DrawString(text1b, fontRegular2, XBrushes.Black, rectEsp, XStringFormats.TopLeft);
 
                             MargenAncho = 15;
                             Posicion = 110;
                             PosicionP = 70;
-                            Margen = new XRect(10, PosicionP, 145, 14);
-                            nacimiento = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
-                            gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimiento)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                            Margen = new XRect(10, PosicionP, 560, 14);
+                            nacimientoEsp = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                            gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimientoEsp)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
                             PosicionP = 90;
-
                             Margen = new XRect(5, PosicionP, 145, 14);
                             gfx.DrawString("Descripcion de Frotis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                            gfx.DrawRoundedRectangle(pen, Margen, Elipsesize); ;
-
-
+                            gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
 
                             if (r["EstadoDeResultado"].ToString() != "1" && Metodo != "Correo" && Metodo != "Convenio")
                             {
                                 Conexion.ActualizarOrden("EstadoDeResultado = 3", Convert.ToInt32(IdOrden), Convert.ToInt32(r["IdAnalisis"].ToString()));
                             }
-                            int index = dsPrint.Tables[0].Rows.IndexOf(r);
-                            if (dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "" && dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "1" && r != dsPrint.Tables[0].Rows[dsPrint.Tables[0].Rows.Count - 1])
+                            if (r != dsPrint.Tables[0].Rows[dsPrint.Tables[0].Rows.Count - 1])
                             {
-                                page = document.AddPage();
-                                gfx = XGraphics.FromPdfPage(page);
-                                tf = new XTextFormatter(gfx);
-                                Posicion = 110;
+                                int index = dsPrint.Tables[0].Rows.IndexOf(r) + 1;
+                                if (dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "" && dsPrint.Tables[0].Rows[index]["EstadoDeResultado"].ToString() != "1")
+                                {
+                                    page = document.AddPage();
+                                    gfx = XGraphics.FromPdfPage(page);
+                                    tf = new XTextFormatter(gfx);
+                                    Posicion = 110;
+                                }
+                                else
+                                {
+                                    return document;
+                                }
                             }
                             else
                             {
                                 return document;
                             }
                         }
-
 
 
                     }
@@ -1671,7 +1796,7 @@ namespace Conexiones.Impresion
                             {
                                 if (r["ValorMenor"].ToString() != "" && r["ValorMayor"].ToString() != "")
                                 {
-                                    text = Convert.ToDouble(r["ValorMenor"].ToString()).ToString("0.#0") + " - " + Convert.ToDouble(r["ValorMayor"].ToString()).ToString("0.#0") + " " + r["UNIDAD"].ToString();
+                                    text = Convert.ToDecimal(r["ValorMenor"].ToString()).ToString("0.#0") + " - " + Convert.ToDecimal(r["ValorMayor"].ToString()).ToString("0.#0") + " " + r["UNIDAD"].ToString();
                                 }
                                 else
                                 {
@@ -2066,11 +2191,11 @@ namespace Conexiones.Impresion
 
                 }
             }
-            catch (Exception ex)
-            {
-                Conexion.CrearEvento(ex.ToString());
-            }
-            return document;
+        catch (Exception ex)
+        {
+            Conexion.CrearEvento(ex.ToString());
+        }
+        return document;
         }
         private static void CorreoConvenio(PdfSharp.Pdf.PdfDocument document, int IdOrden, int userId)
         {
@@ -2236,6 +2361,967 @@ namespace Conexiones.Impresion
                 ProcessStartInfo SendWhatsapp = new ProcessStartInfo(string.Format("https://web.whatsapp.com/send?phone={0}&text=Saludos%20cordiales%20{1}%20{2}%20de%20parte%20de%20{3}%20Próximamente%20se%20les%20enviara%20sus%20resultados%20de%20laboratorio,%20si%20desea%20comunicarse%20con%20nosotros%20por%20favor%20llame%20a%20los%20siguientes%20números%20Tlf:%20{4}%20y%20Tlf:%20{5}.", Telefono, Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Telefono2"].ToString()));
                 Process.Start(SendWhatsapp);
             }
+        }
+
+        public static PdfSharp.Pdf.PdfDocument DocumentoHematologiaCompleta(int IdOrden, int IdAnalisis, string Metodo)
+        {
+            string Ruta = ConfigurationManager.ConnectionStrings["Probando"]?.ConnectionString ?? "";
+            bool impresion, primerapagina = false, cerrar;
+            DataSet Paciente = new DataSet();
+            DataSet dsPrint = new DataSet();
+            PdfSharp.Pdf.PdfDocument document = new PdfSharp.Pdf.PdfDocument();
+            try
+            {
+                List<int> Bio = new List<int>();
+                List<int> IdAnalisisBio = new List<int>();
+                bool bioencontrado = false, Portada = false;
+                const string facename = "Arial";
+                XFont fontRegular = new XFont(facename, 11, XFontStyle.Regular);
+                XFont Titulo = new XFont(Curva, 18, XFontStyle.Regular);
+                XFont fontRegular2 = new XFont(facename, 9, XFontStyle.Regular);
+                XFont ObservacionesHeces = new XFont(facename, 7, XFontStyle.Regular);
+                XFont Direccion = new XFont(facename, 8, XFontStyle.Regular);
+                XFont DireccionCaratula = new XFont(Curva, 10, XFontStyle.Italic);
+                XFont TituloCaratula = new XFont(Curva2, 12, XFontStyle.Regular);
+                XFont Caratula = new XFont(Curva, 22, XFontStyle.Regular);
+                XFont Cursiva = new XFont(Curva2, 10, XFontStyle.Italic);
+                double PosicionP = 90;
+                double Posicion = 110;
+                XBrush brushes;
+                double y = 0;
+                DateTime FechaImp = new DateTime();
+                int MargenAncho = 15;
+                XRect Margen = new XRect(5, 0, 145, 14);
+                PdfSharp.Pdf.PdfPage page = document.AddPage();
+                XGraphics gfx = XGraphics.FromPdfPage(page);
+                XTextFormatter tf = new XTextFormatter(gfx);
+                DataSet Empresa = new DataSet();
+                string x = "1";
+                Empresa = Conexion.SelectEmpresaActiva();
+                if (Empresa.Tables[0].Rows[0]["IdEmpresa"].ToString() == "5")
+                {
+                    x = "0";
+                }
+                if (Metodo == "Correo" || Metodo == "Convenio" || Metodo == "Guardar")
+                {
+                    x = "1";
+                }
+
+                dsPrint = Conexion.SELECTIMPRIMIRTOTAL(IdOrden.ToString());
+                Paciente = Conexion.PacienteAImprimir(IdOrden);
+                Empresa = new DataSet();
+                if (Convert.ToInt32(Paciente.Tables[0].Rows[0]["IdConvenio"].ToString()) > 3 && Convert.ToInt32(Paciente.Tables[0].Rows[0]["IdConvenio"].ToString()) < 11)
+                {
+                    Empresa = Conexion.SelectEmpresaConvenio(Paciente.Tables[0].Rows[0]["IdConvenio"].ToString());
+                }
+                else
+                {
+                    Empresa = Conexion.SelectEmpresaActiva();
+                }
+
+                foreach (DataRow r in dsPrint.Tables[0].Rows)
+                {
+                    if (r["IdAnalisis"].ToString() != "55") continue;
+
+                    if (!Portada)
+                    {
+                        XImage Logo = XImage.FromFile(string.Format(@"Logos\{0}", Empresa.Tables[0].Rows[0]["Ruta"].ToString()));
+                        string Formato = "";
+                        gfx.DrawImage(Logo, 5, 25);
+                        XPoint point = new XPoint(50, 70);
+                        XSize size = new XSize(580, 15);
+                        XSize Elipsesize = new XSize(5, 5);
+                        XRect rect = new XRect(point, size);
+                        XColor color = new XColor { R = 105, G = 105, B = 105 };
+                        XPen pen = new XPen(color);
+                        PosicionP = 90;
+
+                        //Linea
+                        point = new XPoint(10, 50);
+                        size = new XSize(580, 350);
+                        rect = new XRect(point, size);
+                        point = new XPoint(5, 10);
+                        size = new XSize(620, 350);
+                        rect = new XRect(point, size);
+                        XPoint Inicio = new XPoint(5, 40);
+                        XPoint Final = new XPoint(5, 40);
+                        gfx.DrawLine(pen, rect.X, 110, 585, 110);
+                        gfx.DrawLine(pen, rect.X, 250, 585, 250);
+                        gfx.DrawLine(pen, rect.X, 285, 585, 285);
+                        MargenAncho = 15;
+                        Posicion = 90;
+                        int PosicionY = 120;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        Formato = string.Format("NUMERO DE ORDEN:");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        Formato = string.Format("{0}", IdOrden);
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        Formato = string.Format("PACIENTE: ");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        Formato = string.Format("{0} {1}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString());
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        Formato = string.Format("CEDULA: ");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        Formato = string.Format("{0}", Paciente.Tables[0].Rows[0]["Cedula"].ToString());
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        DateTime nacimiento = new DateTime(); //Fecha de nacimiento
+                        nacimiento = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                        string edad = Conexion.Fecha(nacimiento);
+                        Formato = string.Format("EDAD:");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Formato = string.Format("{0}", edad);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                        Formato = string.Format("FECHA:", FechaImp.ToString("dd/MM/yyyy"));
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                        Formato = string.Format("{0}", FechaImp.ToString("dd/MM/yyyy"));
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(105, 75, 460, 120);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        Margen = new XRect(470, 95, 250, 48);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        Formato = string.Format("RIF: {0}", Empresa.Tables[0].Rows[0]["RIF"].ToString());
+                        tf.DrawString(Formato, Cursiva, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Formato = string.Format("DIRECCION: {0} TLF: {1} CORREO: {2}", Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                        Margen = new XRect(40, 255, 500, 48);
+                        tf.DrawString(Formato, Cursiva, XBrushes.Black, Margen, XStringFormats.TopLeft);
+
+                        Portada = true;
+
+                        page = document.AddPage();
+                        gfx = XGraphics.FromPdfPage(page);
+                        tf = new XTextFormatter(gfx);
+                        Posicion = 110;
+                    }
+
+                    // DIBUJAR HEMATOLOGIA COMPLETA (copia exacta de líneas 185-451)
+                    fontRegular = new XFont(facename, 11, XFontStyle.Regular);
+                    XFont fontSmallValores = new XFont(facename, 8.5, XFontStyle.Regular);
+                    PosicionP = 90;
+                    Margen = new XRect(15, 12, 145, 14);
+                    if (Metodo == "Correo")
+                    {
+                        page.Height = 400;
+                    }
+                    tf.Alignment = XParagraphAlignment.Center;
+                    gfx.DrawString(Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Titulo, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                    Margen = new XRect(15, 30, 250, 48);
+                    tf.Alignment = XParagraphAlignment.Left;
+                    string FormatoHem = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                    tf.DrawString(FormatoHem, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
+
+                    XColor colorHem = new XColor { R = 105, G = 105, B = 105 };
+                    XPen penHem = new XPen(colorHem);
+                    XPoint pointHem = new XPoint(5, 70);
+                    XSize sizeHem = new XSize(580, 15);
+                    XSize ElipsesizeHem = new XSize(5, 5);
+                    XRect rectHem = new XRect(pointHem, sizeHem);
+                    gfx.DrawRoundedRectangle(penHem, rectHem, ElipsesizeHem);
+                    pointHem = new XPoint(500, 20);
+                    sizeHem = new XSize(80, 15);
+                    rectHem = new XRect(pointHem, sizeHem);
+                    FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                    gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rectHem, XStringFormats.Center);
+                    gfx.DrawRoundedRectangle(penHem, rectHem, ElipsesizeHem);
+                    pointHem = new XPoint(500, 40);
+                    sizeHem = new XSize(80, 15);
+                    rectHem = new XRect(pointHem, sizeHem);
+                    gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rectHem, XStringFormats.Center);
+                    gfx.DrawRoundedRectangle(penHem, rectHem, ElipsesizeHem);
+                    pointHem = new XPoint(5, 110);
+                    sizeHem = new XSize(580, 255);
+                    rectHem = new XRect(pointHem, sizeHem);
+                    gfx.DrawRoundedRectangle(penHem, rectHem, ElipsesizeHem);
+                    MargenAncho = 15;
+                    Posicion = 110;
+
+                    for (int pos = 125; pos <= 365; pos += 15)
+                    {
+                        gfx.DrawLine(penHem, 5, pos, 585, pos);
+                    }
+
+                    PosicionP = 70;
+                    Margen = new XRect(15, PosicionP, 145, 14);
+                    DateTime nacimientoHem = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                    gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimientoHem)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    PosicionP = 90;
+                    Margen = new XRect(5, PosicionP, 145, 14);
+                    gfx.DrawRoundedRectangle(penHem, Margen, ElipsesizeHem);
+                    gfx.DrawString("Hematologia Completa", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    PosicionP = 110;
+                    Margen = new XRect(5, PosicionP, 145, 14);
+
+                    //ANALISIS
+                    gfx.DrawString("Analisis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Hematíes", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Hemoglobina", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Hematocritos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("VCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("HCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("CHCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("ADE", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Leucocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Recuento Diferencial", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Neutrófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Linfocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Monocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Eosinofilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Basófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Plaquetas", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                    Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                    gfx.DrawString("Volumen Plaquentario Medio", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+
+                    PosicionP = 110;
+                    double YPalabras = 140;
+                    //Resultados
+                    Hematologia hematologia = Conexion.Hematologia(Convert.ToInt32(IdOrden.ToString()), 55);
+                    DataSet dsPrintFull = Conexion.SELECTIMPRIMIRTOTAL(IdOrden.ToString());
+
+                  
+
+                    Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                    gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (!string.IsNullOrEmpty(hematologia.Hematies))
+                    {
+                        gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologia.Hematies)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.Hemoglobina)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.Hematocritos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (!string.IsNullOrEmpty(hematologia.VCM))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.VCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (!string.IsNullOrEmpty(hematologia.HCM))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.HCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (!string.IsNullOrEmpty(hematologia.CHCM))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.CHCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (!string.IsNullOrEmpty(hematologia.ADE))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.ADE)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    else
+                    {
+                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologia.leucocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (string.IsNullOrEmpty(hematologia.Neutrofilos))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Neutrofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (string.IsNullOrEmpty(hematologia.linfocitos))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.linfocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (string.IsNullOrEmpty(hematologia.Monocitos))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Monocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (string.IsNullOrEmpty(hematologia.Eosinofilos))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Eosinofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (string.IsNullOrEmpty(hematologia.Basofilos))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologia.Basofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (string.IsNullOrEmpty(hematologia.Plaquetas))
+                    {
+                        gfx.DrawString(Convert.ToDecimal(hematologia.Plaquetas).ToString("#,##0", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    if (!string.IsNullOrEmpty(hematologia.VPM))
+                    {
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologia.VPM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+                    else
+                    {
+                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    }
+
+
+                    PosicionP = 110;
+                    YPalabras = 230;
+                    //Unidades
+                    Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                    gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("10^6/µL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("pg", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                    gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                    PosicionP = 110;
+                    YPalabras = 320;
+                    //Valores Normales
+                    Margen = new XRect(YPalabras, PosicionP, 260, 14);
+                    gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("3.50-5.20", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("H: 12,5-16,5 M: 11,5-15,5 N: 10,0-14,0 RN: 15,0-23,0 E: 9,0-13,0", fontSmallValores, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("H: 40,0-50,0 M: 37,0-47,0 N: 33,0-43,0 RN: 44,0-64,0 E: 34,0-44,0", fontSmallValores, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("80.0-100.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("27.0-34.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("32.0-36.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("11.0-16.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("A: 4.50-11.00 N: 4.50-13.50 RN: 5.50-18.00", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("55-65%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("35-45%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("04-08%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("02-04%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("<01%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("150.000-450.000", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                    Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                    gfx.DrawString("6.5-12.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                    PosicionP = 365;
+                    Margen = new XRect(5, PosicionP, 320, 60);
+                    gfx.DrawRoundedRectangle(penHem, Margen, ElipsesizeHem);
+                    Margen = new XRect(10, PosicionP + 5, 320, 60);
+                    fontRegular2 = new XFont(facename, 10, XFontStyle.Regular);
+                    XRect rectObs = new XRect(10, PosicionP + 15, 300, 40);
+                    tf.Alignment = XParagraphAlignment.Left;
+                    string text1 = hematologia.Comentario;
+                    tf.DrawString(text1, fontRegular2, XBrushes.Black, rectObs, XStringFormats.TopLeft);
+
+                    DataSet Bioanalista = Conexion.Bioanalista(IdOrden, 55);
+                    string textBio = string.Format("LCD. {0} CB:{1} MPPS:{2}", Bioanalista.Tables[0].Rows[0]["NombreUsuario"].ToString(), Bioanalista.Tables[0].Rows[0]["CB"].ToString(), Bioanalista.Tables[0].Rows[0]["MPPS"].ToString());
+                    Margen = new XRect(325, PosicionP, 260, 60);
+                    gfx.DrawRoundedRectangle(penHem, Margen, ElipsesizeHem);
+                    Margen = new XRect(330, PosicionP + 10, 50, 60);
+                    XRect rectBio = new XRect(330, PosicionP + 5, 150, 40);
+                    tf.Alignment = XParagraphAlignment.Center;
+                    tf.DrawString(textBio, fontRegular, XBrushes.Black, rectBio, XStringFormats.TopLeft);
+                    XImage Firma = XImage.FromFile(string.Format(@"Firma\{1}", Ruta, Bioanalista.Tables[0].Rows[0]["FIRMA"].ToString()));
+                    gfx.DrawImage(Firma, 500, PosicionP + 5);
+
+                    if (r["EstadoDeResultado"].ToString() != "1" && Metodo != "Correo" && Metodo != "Convenio")
+                    {
+                        Conexion.ActualizarOrden("EstadoDeResultado = 3", Convert.ToInt32(IdOrden), Convert.ToInt32(r["IdAnalisis"].ToString()));
+                    }
+                }
+                return document;
+            }
+            catch (Exception ex)
+            {
+                Conexion.CrearEvento(ex.ToString());
+            }
+            return document;
+        }
+
+        public static PdfSharp.Pdf.PdfDocument DocumentoHematologiaEspecial(int IdOrden, int IdAnalisis, string Metodo)
+        {
+            string Ruta = ConfigurationManager.ConnectionStrings["Probando"]?.ConnectionString ?? "";
+            bool impresion, primerapagina = false, cerrar;
+            DataSet Paciente = new DataSet();
+            DataSet dsPrint = new DataSet();
+            PdfSharp.Pdf.PdfDocument document = new PdfSharp.Pdf.PdfDocument();
+            try
+            {
+                List<int> Bio = new List<int>();
+                List<int> IdAnalisisBio = new List<int>();
+                bool bioencontrado = false, Portada = false;
+                const string facename = "Arial";
+                XFont fontRegular = new XFont(facename, 11, XFontStyle.Regular);
+                XFont Titulo = new XFont(Curva, 18, XFontStyle.Regular);
+                XFont fontRegular2 = new XFont(facename, 9, XFontStyle.Regular);
+                XFont ObservacionesHeces = new XFont(facename, 7, XFontStyle.Regular);
+                XFont Direccion = new XFont(facename, 8, XFontStyle.Regular);
+                XFont DireccionCaratula = new XFont(Curva, 10, XFontStyle.Italic);
+                XFont TituloCaratula = new XFont(Curva2, 12, XFontStyle.Regular);
+                XFont Caratula = new XFont(Curva, 22, XFontStyle.Regular);
+                XFont Cursiva = new XFont(Curva2, 10, XFontStyle.Italic);
+                double PosicionP = 90;
+                double Posicion = 110;
+                XBrush brushes;
+                double y = 0;
+                double YPalabras = 180;
+                DateTime FechaImp = new DateTime();
+                int MargenAncho = 15;
+                XRect Margen = new XRect(5, 0, 145, 14);
+                PdfSharp.Pdf.PdfPage page = document.AddPage();
+                XGraphics gfx = XGraphics.FromPdfPage(page);
+                XTextFormatter tf = new XTextFormatter(gfx);
+                DataSet Empresa = new DataSet();
+                string x = "1";
+                Empresa = Conexion.SelectEmpresaActiva();
+                if (Empresa.Tables[0].Rows[0]["IdEmpresa"].ToString() == "5")
+                {
+                    x = "0";
+                }
+                if (Metodo == "Correo" || Metodo == "Convenio" || Metodo == "Guardar")
+                {
+                    x = "1";
+                }
+
+                dsPrint = Conexion.SELECTIMPRIMIRTOTAL(IdOrden.ToString());
+                Paciente = Conexion.PacienteAImprimir(IdOrden);
+                Empresa = new DataSet();
+                if (Convert.ToInt32(Paciente.Tables[0].Rows[0]["IdConvenio"].ToString()) > 3 && Convert.ToInt32(Paciente.Tables[0].Rows[0]["IdConvenio"].ToString()) < 11)
+                {
+                    Empresa = Conexion.SelectEmpresaConvenio(Paciente.Tables[0].Rows[0]["IdConvenio"].ToString());
+                }
+                else
+                {
+                    Empresa = Conexion.SelectEmpresaActiva();
+                }
+
+                foreach (DataRow r in dsPrint.Tables[0].Rows)
+                {
+                    if (r["IdAnalisis"].ToString() != "203" && r["IdAnalisis"].ToString() != "49") continue;
+
+                    if (!Portada)
+                    {
+                        XImage Logo = XImage.FromFile(string.Format(@"Logos\{0}", Empresa.Tables[0].Rows[0]["Ruta"].ToString()));
+                        string Formato = "";
+                        gfx.DrawImage(Logo, 5, 25);
+                        XPoint point = new XPoint(50, 70);
+                        XSize size = new XSize(580, 15);
+                        XSize Elipsesize = new XSize(5, 5);
+                        XRect rect = new XRect(point, size);
+                        XColor color = new XColor { R = 105, G = 105, B = 105 };
+                        XPen pen = new XPen(color);
+                        PosicionP = 90;
+
+                        //Linea
+                        point = new XPoint(10, 50);
+                        size = new XSize(580, 350);
+                        rect = new XRect(point, size);
+                        point = new XPoint(5, 10);
+                        size = new XSize(620, 350);
+                        rect = new XRect(point, size);
+                        XPoint Inicio = new XPoint(5, 40);
+                        XPoint Final = new XPoint(5, 40);
+                        gfx.DrawLine(pen, rect.X, 110, 585, 110);
+                        gfx.DrawLine(pen, rect.X, 250, 585, 250);
+                        gfx.DrawLine(pen, rect.X, 285, 585, 285);
+                        MargenAncho = 15;
+                        Posicion = 90;
+                        int PosicionY = 120;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        Formato = string.Format("NUMERO DE ORDEN:");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        Formato = string.Format("{0}", IdOrden);
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        Formato = string.Format("PACIENTE: ");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        Formato = string.Format("{0} {1}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString());
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        Formato = string.Format("CEDULA: ");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        Formato = string.Format("{0}", Paciente.Tables[0].Rows[0]["Cedula"].ToString());
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        DateTime nacimiento = new DateTime(); //Fecha de nacimiento
+                        nacimiento = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                        string edad = Conexion.Fecha(nacimiento);
+                        Formato = string.Format("EDAD:");
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Formato = string.Format("{0}", edad);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        PosicionY = PosicionY + 25;
+                        Margen = new XRect(50, PosicionY, 400, 60);
+                        FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                        Formato = string.Format("FECHA:", FechaImp.ToString("dd/MM/yyyy"));
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(210, PosicionY, 400, 60);
+                        FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                        Formato = string.Format("{0}", FechaImp.ToString("dd/MM/yyyy"));
+                        tf.DrawString(Formato, TituloCaratula, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(105, 75, 460, 120);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        Margen = new XRect(470, 95, 250, 48);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        Formato = string.Format("RIF: {0}", Empresa.Tables[0].Rows[0]["RIF"].ToString());
+                        tf.DrawString(Formato, Cursiva, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Formato = string.Format("DIRECCION: {0} TLF: {1} CORREO: {2}", Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                        Margen = new XRect(40, 255, 500, 48);
+                        tf.DrawString(Formato, Cursiva, XBrushes.Black, Margen, XStringFormats.TopLeft);
+
+                        Portada = true;
+
+                        page = document.AddPage();
+                        gfx = XGraphics.FromPdfPage(page);
+                        tf = new XTextFormatter(gfx);
+                        Posicion = 110;
+                    }
+
+                    // DIBUJAR HEMATOLOGIA ESPECIAL / FROTIS (copia exacta de líneas 1163-1568)
+                    fontRegular = new XFont(facename, 11, XFontStyle.Regular);
+                    XFont fontSmallValores = new XFont(facename, 8.5, XFontStyle.Regular);
+                    PosicionP = 90;
+                    Margen = new XRect(15, 12, 145, 14);
+                    XColor colorEsp = new XColor { R = 105, G = 105, B = 105 };
+                    XPen penEsp = new XPen(colorEsp);
+                    XPoint pointEsp = new XPoint(5, 70);
+                    XSize sizeEsp = new XSize(580, 15);
+                    XSize ElipsesizeEsp = new XSize(5, 5);
+                    XRect rectEsp = new XRect(pointEsp, sizeEsp);
+                    DateTime nacimientoEsp = new DateTime(); //Fecha de nacimiento
+                    string FormatoEsp;
+
+                    if (r["IdAnalisis"].ToString() == "203")
+                    {
+                        if (Metodo == "Correo")
+                        {
+                            page.Height = 400;
+                        }
+                        tf.Alignment = XParagraphAlignment.Center;
+                        gfx.DrawString(Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Titulo, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(15, 30, 250, 48);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        string FormatoEsp1 = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                        tf.DrawString(FormatoEsp1, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
+
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        pointEsp = new XPoint(500, 20);
+                        sizeEsp = new XSize(80, 15);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                        gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        pointEsp = new XPoint(500, 40);
+                        sizeEsp = new XSize(80, 15);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+
+                        pointEsp = new XPoint(5, 110);
+                        sizeEsp = new XSize(580, 300);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        MargenAncho = 15;
+                        Posicion = 110;
+
+                        for (int pos = 125; pos <= 410; pos += 15)
+                        {
+                            gfx.DrawLine(penEsp, 5, pos, 585, pos);
+                        }
+
+                        PosicionP = 70;
+                        Margen = new XRect(15, PosicionP, 145, 14);
+                        nacimientoEsp = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                        gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimientoEsp)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        PosicionP = 90;
+                        Margen = new XRect(5, PosicionP, 145, 14);
+                        gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
+                        gfx.DrawString("Hematologia Especial", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        PosicionP = 110;
+                        Margen = new XRect(5, PosicionP, 145, 14);
+
+                        //ANALISIS
+                        gfx.DrawString("Analisis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Hematíes", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Hemoglobina", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Hematocritos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("VCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("HCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("CHCM", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("ADE", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Leucocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Recuento Diferencial", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Neutrófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Linfocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Monocitos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Eosinofilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Basófilos%", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Plaquetas", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Volumen Plaquentario Medio", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("ADP", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("PCT", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        Margen = new XRect(10, PosicionP = PosicionP + 15, 130, 14);
+                        gfx.DrawString("Reticulocitos", fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+
+                        PosicionP = 110;
+                        YPalabras = 140;
+                        //Resultados
+                        HematologiaEspecial hematologiaEspecial = Conexion.HematologiaEspecial(IdOrden, 203);
+                        DataSet dsPrintFull = Conexion.SELECTIMPRIMIRTOTAL(IdOrden.ToString());
+
+                     
+                        Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                        gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.Hematies)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.Hemoglobina)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.Hematocritos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.VCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.HCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.CHCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (!string.IsNullOrEmpty(hematologiaEspecial.ADE))
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.ADE)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        else
+                        {
+                            gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.leucocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (hematologiaEspecial.Neutrofilos != "")
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Neutrofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (hematologiaEspecial.linfocitos != "")
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.linfocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (hematologiaEspecial.Monocitos != "")
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Monocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (hematologiaEspecial.Eosinofilos != "")
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Eosinofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (hematologiaEspecial.Basofilos != "")
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Basofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (hematologiaEspecial.Plaquetas != "")
+                        {
+                            gfx.DrawString(Convert.ToDecimal(hematologiaEspecial.Plaquetas).ToString("#,##0", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (!string.IsNullOrEmpty(hematologiaEspecial.VPM))
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.VPM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        else
+                        {
+                            gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (!string.IsNullOrEmpty(hematologiaEspecial.ADP))
+                        {
+                            gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.ADP)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        else
+                        {
+                            gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (!string.IsNullOrEmpty(hematologiaEspecial.PCT))
+                        {
+                            gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.PCT)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        else
+                        {
+                            gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        if (!string.IsNullOrEmpty(hematologiaEspecial.Reticulocitos))
+                        {
+                            gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.Reticulocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+                        else
+                        {
+                            gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        }
+
+                        PosicionP = 110;
+                        YPalabras = 230;
+                        //Unidades
+                        Margen = new XRect(YPalabras, PosicionP, 90, 14);
+                        gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("10^6/µL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("pg", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("g/dl", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("Unidades", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("cel/mm3", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("fL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                        gfx.DrawString("%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                        PosicionP = 110;
+                        YPalabras = 320;
+                        //Valores Normales
+                        Margen = new XRect(YPalabras, PosicionP, 260, 14);
+                        gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("3.50-5.20", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("H: 12,5-16,5 M: 11,5-15,5 N: 10,0-14,0 RN: 15,0-23,0 E: 9,0-13,0", fontSmallValores, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("H: 40,0-50,0 M: 37,0-47,0 N: 33,0-43,0 RN: 44,0-64,0 E: 34,0-44,0", fontSmallValores, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("80.0-100.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("27.0-34.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("32.0-36.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("11.0-16.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("A: 4.50-11.00 N: 4.50-13.50 RN: 5.50-18.00", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("55-65%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("35-45%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("04-08%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("02-04%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("<01%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("150.000-450.000", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("6.5-12.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("9.0-17.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("0.100-0.400", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
+                        gfx.DrawString("0.5 – 2.5%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+
+                        PosicionP = 410;
+                        Margen = new XRect(5, PosicionP, 320, 60);
+                        gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
+                        Margen = new XRect(10, PosicionP + 5, 320, 60);
+                        fontRegular2 = new XFont(facename, 10, XFontStyle.Regular);
+                        XRect rectObs = new XRect(10, PosicionP + 15, 300, 40);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        DataSet Bioanalista = Conexion.Bioanalista(IdOrden, 203);
+                        string textBio = string.Format("LCD. {0} CB:{1} MPPS:{2}", Bioanalista.Tables[0].Rows[0]["NombreUsuario"].ToString(), Bioanalista.Tables[0].Rows[0]["CB"].ToString(), Bioanalista.Tables[0].Rows[0]["MPPS"].ToString());
+                        Margen = new XRect(325, PosicionP, 260, 60);
+                        gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
+                        Margen = new XRect(330, PosicionP + 10, 50, 60);
+                        XRect rectBio = new XRect(330, PosicionP + 5, 150, 40);
+                        tf.Alignment = XParagraphAlignment.Center;
+                        tf.DrawString(textBio, fontRegular, XBrushes.Black, rectBio, XStringFormats.TopLeft);
+                        XImage Firma = XImage.FromFile(string.Format(@"Firma\{1}", Ruta, Bioanalista.Tables[0].Rows[0]["FIRMA"].ToString()));
+                        gfx.DrawImage(Firma, 500, PosicionP + 5);
+
+                        page = document.AddPage();
+                        gfx = XGraphics.FromPdfPage(page);
+                        tf = new XTextFormatter(gfx);
+                        Posicion = 110;
+                        Margen = new XRect(15, 12, 145, 14);
+                        gfx.DrawString(Empresa.Tables[0].Rows[0]["Nombre"].ToString(), Titulo, XBrushes.Black, Margen, XStringFormats.TopLeft);
+                        Margen = new XRect(15, 30, 250, 48);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        FormatoEsp = string.Format("RIF: {0}\nDireccion:{1} TLF:{2} Correo:{3}", Empresa.Tables[0].Rows[0]["RIF"].ToString(), Empresa.Tables[0].Rows[0]["Direccion"].ToString(), Empresa.Tables[0].Rows[0]["Telefono"].ToString(), Empresa.Tables[0].Rows[0]["Correo"].ToString());
+                        tf.DrawString(FormatoEsp, Direccion, XBrushes.Black, Margen, XStringFormats.TopLeft);
+
+                        colorEsp = new XColor { R = 105, G = 105, B = 105 };
+                        penEsp = new XPen(colorEsp);
+                        pointEsp = new XPoint(5, 70);
+                        sizeEsp = new XSize(580, 15);
+                        ElipsesizeEsp = new XSize(5, 5);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        pointEsp = new XPoint(500, 20);
+                        sizeEsp = new XSize(80, 15);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        FechaImp = Convert.ToDateTime(dsPrint.Tables[0].Rows[0]["FechaImp"].ToString());
+                        gfx.DrawString(string.Format("{0}", FechaImp.ToString("dd/MM/yyyy")), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        pointEsp = new XPoint(500, 40);
+                        sizeEsp = new XSize(80, 15);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        gfx.DrawString(IdOrden.ToString(), fontRegular, XBrushes.Black, rectEsp, XStringFormats.Center);
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        pointEsp = new XPoint(5, 110);
+                        sizeEsp = new XSize(580, 225);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        tf.Alignment = XParagraphAlignment.Left;
+                        string textFrotis = hematologiaEspecial.Comentario;
+                        gfx.DrawRoundedRectangle(penEsp, rectEsp, ElipsesizeEsp);
+                        pointEsp = new XPoint(10, 110);
+                        sizeEsp = new XSize(580, 225);
+                        rectEsp = new XRect(pointEsp, sizeEsp);
+                        tf.DrawString(textFrotis, fontRegular2, XBrushes.Black, rectEsp, XStringFormats.TopLeft);
+
+                        MargenAncho = 15;
+                        Posicion = 110;
+                        PosicionP = 70;
+                        Margen = new XRect(10, PosicionP, 145, 14);
+                        nacimientoEsp = DateTime.Parse(dsPrint.Tables[0].Rows[0]["Fecha"].ToString());
+                        gfx.DrawString(string.Format("Paciente:{0} {1}       C.I: {2}        Edad: {3}", Paciente.Tables[0].Rows[0]["Nombre"].ToString(), Paciente.Tables[0].Rows[0]["Apellidos"].ToString(), Paciente.Tables[0].Rows[0]["Cedula"].ToString(), Conexion.Fecha(nacimientoEsp)), fontRegular, XBrushes.Black, Margen, XStringFormats.CenterLeft);
+                        PosicionP = 90;
+                        Margen = new XRect(5, PosicionP, 145, 14);
+                        gfx.DrawString("Descripcion de Frotis", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                        gfx.DrawRoundedRectangle(penEsp, Margen, ElipsesizeEsp);
+
+                        if (r["EstadoDeResultado"].ToString() != "1" && Metodo != "Correo" && Metodo != "Convenio")
+                        {
+                            Conexion.ActualizarOrden("EstadoDeResultado = 3", Convert.ToInt32(IdOrden), Convert.ToInt32(r["IdAnalisis"].ToString()));
+                        }
+                    }
+                }
+                return document;
+            }
+            catch (Exception ex)
+            {
+                Conexion.CrearEvento(ex.ToString());
+            }
+            return document;
         }
     }
 }

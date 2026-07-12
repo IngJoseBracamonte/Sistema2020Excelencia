@@ -546,17 +546,17 @@
     <Compile Include="EstadisticaPersonascs.Designer.cs">
       <DependentUpon>EstadisticaPersonascs.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form10.cs">
+    <Compile Include="CristalesHecesForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form10.Designer.cs">
-      <DependentUpon>Form10.cs</DependentUpon>
+    <Compile Include="CristalesHecesForm.Designer.cs">
+      <DependentUpon>CristalesHecesForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form11.cs">
+    <Compile Include="CilindrosHecesForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form11.Designer.cs">
-      <DependentUpon>Form11.cs</DependentUpon>
+    <Compile Include="CilindrosHecesForm.Designer.cs">
+      <DependentUpon>CilindrosHecesForm.cs</DependentUpon>
     </Compile>
     <Compile Include="HecesForm.cs">
       <SubType>Form</SubType>
@@ -594,11 +594,11 @@
     <Compile Include="Form17.Designer.cs">
       <DependentUpon>Form17.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form19.cs">
+    <Compile Include="LipidogramaForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form19.Designer.cs">
-      <DependentUpon>Form19.cs</DependentUpon>
+    <Compile Include="LipidogramaForm.Designer.cs">
+      <DependentUpon>LipidogramaForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Form2.cs">
       <SubType>Form</SubType>
@@ -654,11 +654,11 @@
     <Compile Include="Form27.Designer.cs">
       <DependentUpon>Form27.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form28.cs">
+    <Compile Include="HematologiaEspecialForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form28.Designer.cs">
-      <DependentUpon>Form28.cs</DependentUpon>
+    <Compile Include="HematologiaEspecialForm.Designer.cs">
+      <DependentUpon>HematologiaEspecialForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Form29.cs">
       <SubType>Form</SubType>
@@ -756,11 +756,11 @@
     <Compile Include="OrinaForm.Designer.cs">
       <DependentUpon>OrinaForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form6.cs">
+    <Compile Include="DepuracionCreatininaForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form6.Designer.cs">
-      <DependentUpon>Form6.cs</DependentUpon>
+    <Compile Include="DepuracionCreatininaForm.Designer.cs">
+      <DependentUpon>DepuracionCreatininaForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Form7.cs">
       <SubType>Form</SubType>
@@ -932,11 +932,11 @@
     <EmbeddedResource Include="EstadisticaPersonascs.resx">
       <DependentUpon>EstadisticaPersonascs.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form10.resx">
-      <DependentUpon>Form10.cs</DependentUpon>
+    <EmbeddedResource Include="CristalesHecesForm.resx">
+      <DependentUpon>CristalesHecesForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form11.resx">
-      <DependentUpon>Form11.cs</DependentUpon>
+    <EmbeddedResource Include="CilindrosHecesForm.resx">
+      <DependentUpon>CilindrosHecesForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="HecesForm.resx">
       <DependentUpon>HecesForm.cs</DependentUpon>
@@ -956,8 +956,8 @@
     <EmbeddedResource Include="Form17.resx">
       <DependentUpon>Form17.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form19.resx">
-      <DependentUpon>Form19.cs</DependentUpon>
+    <EmbeddedResource Include="LipidogramaForm.resx">
+      <DependentUpon>LipidogramaForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form2.resx">
       <DependentUpon>Form2.cs</DependentUpon>
@@ -986,8 +986,8 @@
     <EmbeddedResource Include="Form27.resx">
       <DependentUpon>Form27.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form28.resx">
-      <DependentUpon>Form28.cs</DependentUpon>
+    <EmbeddedResource Include="HematologiaEspecialForm.resx">
+      <DependentUpon>HematologiaEspecialForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form29.resx">
       <DependentUpon>Form29.cs</DependentUpon>
@@ -1037,8 +1037,8 @@
     <EmbeddedResource Include="OrinaForm.resx">
       <DependentUpon>OrinaForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Form6.resx">
-      <DependentUpon>Form6.cs</DependentUpon>
+    <EmbeddedResource Include="DepuracionCreatininaForm.resx">
+      <DependentUpon>DepuracionCreatininaForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form7.resx">
       <DependentUpon>Form7.cs</DependentUpon>

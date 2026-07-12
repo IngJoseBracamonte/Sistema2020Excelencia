@@ -408,7 +408,7 @@
                         <!-- PASO 2: AJUSTES DE CARGA POR MODO -->
                         <app-step-doctor-select
                             *ngIf="currentStep() === 2 && activeStepperMode() === 'consulta'"
-                            [medicos]="medicos()"
+                            [medicos]="medicosFiltrados()"
                             [selectedMedicoId]="selectedMedicoId()"
                             [areasClinicas]="areasClinicas()"
                             [selectedAreaClinicaId]="selectedAreaClinicaId()"
@@ -416,7 +416,7 @@
                             [customHonorario]="customHonorario()"
                             [precioFinalCalculado]="precioFinalCalculado()"
                             (medicoSelected)="onMedicoSelected($event)"
-                            (areaSelected)="selectedAreaClinicaId.set($event)"
+                            (areaSelected)="onAreaSelected($event)"
                             (precioChange)="customPrecio.set($event)"
                             (honorarioChange)="customHonorario.set($event)"
                         ></app-step-doctor-select>
@@ -425,12 +425,12 @@
                             *ngIf="currentStep() === 2 && activeStepperMode() === 'lab-rx'"
                             [areasClinicas]="areasClinicas()"
                             [selectedAreaClinicaId]="selectedAreaClinicaId()"
-                            [medicos]="medicos()"
+                            [medicos]="medicosFiltrados()"
                             [selectedMedicoId]="selectedMedicoId()"
                             [customPrecio]="customPrecio()"
                             [precioFinalCalculado]="precioFinalCalculado()"
-                            [hasHonorario]="(selectedService()?.honorarioBase ?? 0) > 0"
-                            (areaSelected)="selectedAreaClinicaId.set($event)"
+                            [hasHonorario]="(selectedService()?.honorarioBase ?? 0) > 0 && !(itemClassification() === 'RX' && getAreaClinicaNombre(selectedAreaClinicaId()) === 'EMERGENCIA')"
+                            (areaSelected)="onAreaSelected($event)"
                             (medicoSelected)="onMedicoSelected($event)"
                             (precioChange)="customPrecio.set($event)"
                         ></app-step-lab-rx-price>
@@ -444,7 +444,7 @@
                             [selectedAreaClinicaId]="selectedAreaClinicaId()"
                             [precioFinalCalculado]="precioFinalCalculado()"
                             (quantityChange)="fastChargeQuantity = $event"
-                            (areaSelected)="selectedAreaClinicaId.set($event)"
+                            (areaSelected)="onAreaSelected($event)"
                         ></app-step-quantity>
 
                         <!-- PASO 3: CONFIRMACIÓN Y SUGERENCIAS -->
@@ -460,6 +460,7 @@
                             [precioFinalCalculado]="precioFinalCalculado()"
                             [activeSuggestions]="activeSuggestions()"
                             [selectedSuggestions]="selectedSuggestions()"
+                            [classification]="itemClassification()"
                             (toggleSuggestion)="toggleSuggestionSelection($event)"
                         ></app-step-confirm>
 

@@ -59,8 +59,10 @@
       <!-- Item Meta -->
       <div class="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
         <div class="text-slate-400">
-          <span class="font-bold text-slate-300">{{ item.cantidad }}</span> {{ item.unidadMedida }} 
-          × <span class="font-mono">${{ item.precioBase }}</span>
+          <ng-container *ngIf="item.classification !== 'RX' && item.classification !== 'Consulta' && item.classification !== 'Laboratorio'">
+            <span class="font-bold text-slate-300">{{ item.cantidad }}</span> {{ item.unidadMedida }} × 
+          </ng-container>
+          <span class="font-mono">${{ item.precioBase }}</span>
           <span *ngIf="item.honorario > 0" class="text-emerald-400 font-mono"> + ${{ item.honorario }} Hon</span>
         </div>
         <div class="font-mono font-bold text-slate-200">

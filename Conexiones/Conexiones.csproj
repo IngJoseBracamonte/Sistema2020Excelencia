@@ -219,6 +219,7 @@
     <Compile Include="Modelos\Fincas.cs" />
     <Compile Include="Helpers\Gmail.cs" />
     <Compile Include="Modelos\Heces.cs" />
+    <Compile Include="Modelos\HematologiaEspecial.cs" />
     <Compile Include="Modelos\Hematologia.cs" />
     <Compile Include="Modelos\Hemo.cs" />
     <Compile Include="Impresion\Impresiones.cs" />

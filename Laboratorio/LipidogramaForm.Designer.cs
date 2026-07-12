@@ -1,6 +1,6 @@
 ﻿namespace Laboratorio
 {
-    partial class Form19
+    partial class LipidogramaForm
     {
         /// <summary>
         /// Required designer variable.

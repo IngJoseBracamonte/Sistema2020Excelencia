@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Conexiones
 {
-    public class Hematologia
+    public class HematologiaEspecial
     {
         public string Neutrofilos { get; set; }
         public string linfocitos { get; set; }
@@ -28,6 +28,10 @@ namespace Conexiones
         public string leucocitos { get; set; }
         public string ADE { get; set; }
         public string VPM { get; set; }
+
+        public string ADP { get; set; }
+        public string PCT { get; set; }
+        public string Reticulocitos { get; set; }
         public string Comentario { get; set; }
 
     }

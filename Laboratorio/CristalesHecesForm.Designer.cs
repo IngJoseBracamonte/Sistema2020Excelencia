@@ -1,6 +1,6 @@
 ﻿namespace Laboratorio
 {
-    partial class Form10
+    partial class CristalesHecesForm
     {
         /// <summary>
         /// Required designer variable.

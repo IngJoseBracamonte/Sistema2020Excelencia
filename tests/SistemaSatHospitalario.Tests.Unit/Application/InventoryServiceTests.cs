@@ -52,8 +52,11 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             await service.RecordMovementAsync(insumo.Id, Guid.Empty, "Ingreso", 5.0m, UnidadMedida.G, "Operator", "Reason", CancellationToken.None);
 
             using var assertContext = new SatHospitalarioDbContext(_options);
-            var updatedInsumo = await assertContext.Insumos.FindAsync(insumo.Id);
-            updatedInsumo.StockActual.Should().Be(15.0m);
+            var updatedInsumo = await assertContext.Insumos
+                .Include(i => i.StocksPorSede)
+                .FirstOrDefaultAsync(i => i.Id == insumo.Id);
+            updatedInsumo.Should().NotBeNull();
+            updatedInsumo!.StockActual.Should().Be(15.0m);
 
             var movement = await assertContext.MovimientosInsumo.FirstOrDefaultAsync(m => m.InsumoId == insumo.Id);
             movement.Should().NotBeNull();

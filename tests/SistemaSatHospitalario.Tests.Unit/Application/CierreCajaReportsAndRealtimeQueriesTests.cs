@@ -135,7 +135,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
 
             var query = new ExportCashierAuditQuery
             {
-                Date = DateTime.Today,
+                Date = DateTime.UtcNow,
                 IsAuditMode = true
             };
 

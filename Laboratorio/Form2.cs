@@ -1224,15 +1224,15 @@ namespace Laboratorio
                             form17.ShowDialog();
                             break;
                         case 19:
-                            Form form19 = new Form19(IdUser, OrdenID, AnalisisID);
+                            Form form19 = new LipidogramaForm(IdUser, OrdenID, AnalisisID);
                             form19.ShowDialog();
                             break;
                         case 20:
-                            Form form28 = new Form28(IdUser, OrdenID, AnalisisID);
+                            Form form28 = new HematologiaEspecialForm(IdUser, OrdenID, AnalisisID);
                             form28.ShowDialog();
                             break;
                         case 21:
-                            Form form6 = new Form6(IdUser, OrdenID, AnalisisID);
+                            Form form6 = new DepuracionCreatininaForm(IdUser, OrdenID, AnalisisID);
                             form6.ShowDialog();
                             break;
 

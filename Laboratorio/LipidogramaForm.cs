@@ -13,14 +13,14 @@ using FontAwesome.Sharp;
 
 namespace Laboratorio
 {
-    public partial class Form19 : Form
+    public partial class LipidogramaForm : Form
     {
         private int IdUser;
         int IdOrden = 0;
         private int IdAnalisis;
         private string Comentario;
 
-        public Form19(int idUser, int idOrden, int idAnalisis)
+        public LipidogramaForm(int idUser, int idOrden, int idAnalisis)
         {
             IdUser = idUser;
             IdOrden = idOrden;

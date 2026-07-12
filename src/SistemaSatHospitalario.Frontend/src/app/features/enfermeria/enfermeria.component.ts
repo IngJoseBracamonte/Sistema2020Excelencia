@@ -333,6 +333,25 @@ export class EnfermeriaComponent implements OnInit {
   // Computed Item Classification delegated to pure rules engine
   public itemClassification = computed<ItemClassification>(() => classifyService(this.selectedService()));
 
+  public medicosFiltrados = computed(() => {
+    const service = this.selectedService();
+    const allMedicos = this.medicos();
+    if (!service) return allMedicos;
+
+    const descUpper = (service.descripcion || '').toUpperCase();
+    const tipoUpper = (service.tipo || '').toUpperCase();
+
+    const filtered = allMedicos.filter(m => {
+      if (!m.especialidad) return false;
+      const espClean = m.especialidad.trim().toUpperCase();
+      const prefix = espClean.substring(0, 5);
+      if (prefix.length < 3) return false;
+      return descUpper.includes(prefix) || tipoUpper.includes(prefix);
+    });
+
+    return filtered.length > 0 ? filtered : allMedicos;
+  });
+
   public precioFinalCalculado = computed<number>(() => {
     const s = this.selectedService();
     if (!s) return 0;
@@ -940,6 +959,14 @@ export class EnfermeriaComponent implements OnInit {
       const service = this.selectedService();
       const doctorHonorary = doctor.honorarioBase ?? (service?.honorarioBase ?? 0);
       this.customHonorario.set(doctorHonorary);
+    }
+  }
+
+  public onAreaSelected(areaId: string | null): void {
+    this.selectedAreaClinicaId.set(areaId);
+    if (this.itemClassification() === 'RX' && this.getAreaClinicaNombre(areaId) === 'EMERGENCIA') {
+      this.selectedMedicoId.set(null);
+      this.customHonorario.set(null);
     }
   }
 

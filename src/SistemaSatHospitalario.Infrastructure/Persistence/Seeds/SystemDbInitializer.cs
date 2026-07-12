@@ -88,6 +88,69 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'Direccion' en PacientesAdmision.");
                 }
 
+                // Self-healing: Ensure AreaClinicaId column exists in CitasMedicas table (V16.3 Requirement)
+                try
+                {
+                    bool hasAreaClinicaId = false;
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConnection = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConnection = true;
+                    }
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (_context.Database.IsSqlite())
+                        {
+                            cmd.CommandText = "PRAGMA table_info(CitasMedicas);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    if (reader["name"].ToString().Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        hasAreaClinicaId = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `CitasMedicas` LIKE 'AreaClinicaId';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    hasAreaClinicaId = true;
+                                }
+                            }
+                        }
+                    }
+                    if (closeConnection)
+                    {
+                        await conn.CloseAsync();
+                    }
+
+                    if (!hasAreaClinicaId)
+                    {
+                        _logger.LogInformation("La columna 'AreaClinicaId' no existe en CitasMedicas. Ejecutando ALTER TABLE...");
+                        if (_context.Database.IsSqlite())
+                        {
+                            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CitasMedicas` ADD COLUMN `AreaClinicaId` TEXT NULL;");
+                        }
+                        else
+                        {
+                            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CitasMedicas` ADD COLUMN `AreaClinicaId` CHAR(36) NULL;");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'AreaClinicaId' en CitasMedicas.");
+                }
+
                 // Self-healing: Ensure PermiteFraccionamiento and UnidadMedida columns exist in ServiciosClinicos table
                 try
                 {

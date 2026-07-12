@@ -11,7 +11,7 @@ using Conexiones.DbConnect;
 
 namespace Laboratorio
 {
-    public partial class Form6 : Form
+    public partial class DepuracionCreatininaForm : Form
     {
         Double CreatininaVM, VoluOrinaVM, Creatinina24hVM, CreaOrinaVM, PesoVM, AlturaVM, SuperficieVM, DepCreatininaVM, DepCreatinina24VM, VoluMinutoVM;
         Double CreatininaVm, VoluOrinaVm, Creatinina24hVm, CreaOrinaVm, PesoVm, AlturaVm, SuperficieVm, DepCreatininaVm, DepCreatinina24Vm, VoluMinutoVm;
@@ -234,7 +234,7 @@ namespace Laboratorio
             }
         }
 
-        public Form6(int idUser, int idOrden, int idAnalisis)
+        public DepuracionCreatininaForm(int idUser, int idOrden, int idAnalisis)
         {
             IdUser = idUser;
             IdOrden = idOrden;

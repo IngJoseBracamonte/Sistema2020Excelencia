@@ -1,6 +1,6 @@
 ﻿namespace Laboratorio
 {
-    partial class Form6
+    partial class DepuracionCreatininaForm
     {
         /// <summary>
         /// Required designer variable.

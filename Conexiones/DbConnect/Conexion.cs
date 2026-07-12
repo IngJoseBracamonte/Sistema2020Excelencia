@@ -28,6 +28,16 @@ namespace Conexiones.DbConnect
         private static MySqlDataAdapter adapter = new MySqlDataAdapter();
         private static MySqlCommand command = new MySqlCommand();
 
+        // Static overrides for Unit Testing
+        public static Func<DataSet> SelectEmpresaActivaOverride { get; set; }
+        public static Func<string, DataSet> SelectEmpresaConvenioOverride { get; set; }
+        public static Func<int, DataSet> PacienteAImprimirOverride { get; set; }
+        public static Func<string, DataSet> SELECTIMPRIMIRTOTALOverride { get; set; }
+        public static Func<int, int, Hematologia> HematologiaOverride { get; set; }
+        public static Func<int, int, DataSet> HematologiaEspecialOverride { get; set; }
+        public static Func<int, int, DataSet> BioanalistaOverride { get; set; }
+        public static Func<string, int, int, string> ActualizarOrdenOverride { get; set; }
+
         public static bool activo, proceso1 = false, proceso2 = false, proceso3 = false;
         public static void Connection(string cmd, string Nombre)
         {
@@ -1238,6 +1248,7 @@ namespace Conexiones.DbConnect
         }
         public static DataSet SelectEmpresaActiva()
         {
+            if (SelectEmpresaActivaOverride != null) return SelectEmpresaActivaOverride();
             MySqlConnection conn = new MySqlConnection(connection);
             DataSet ds = new DataSet();
             try
@@ -1329,6 +1340,7 @@ namespace Conexiones.DbConnect
         }
         public static DataSet SelectEmpresaConvenio(string IdConvenio)
         {
+            if (SelectEmpresaConvenioOverride != null) return SelectEmpresaConvenioOverride(IdConvenio);
             MySqlConnection conn = new MySqlConnection(connection);
             DataSet ds = new DataSet();
             try
@@ -2765,6 +2777,7 @@ namespace Conexiones.DbConnect
         }
         public static DataSet PacienteAImprimir(int IDOrden)
         {
+            if (PacienteAImprimirOverride != null) return PacienteAImprimirOverride(IDOrden);
             MySqlConnection conn = new MySqlConnection(connection);
             DataSet ds = new DataSet();
             try
@@ -2908,6 +2921,7 @@ namespace Conexiones.DbConnect
         }
         public static Hematologia Hematologia(int IDOrden, int IdAnalisis)
         {
+            if (HematologiaOverride != null) return HematologiaOverride(IDOrden, IdAnalisis);
             Hematologia hematologia = new Hematologia();
             DataSet ds = new DataSet();
             MySqlConnection conn = new MySqlConnection(connection);
@@ -2915,7 +2929,7 @@ namespace Conexiones.DbConnect
             {
 
                 conn.Open();
-                adapter.SelectCommand = new MySqlCommand(string.Format("SELECT ResultadosPaciente.IdOrden, ordenes.NumeroDia, ordenes.Fecha as FechaImp, ResultadosPaciente.IdUsuario, ResultadosPaciente.IdAnalisis, datospersonales.Nombre, datospersonales.Apellidos, datospersonales.Sexo, datospersonales.Fecha, ResultadosPaciente.Comentario, Hematologias.Neutrofilos, Hematologias.linfocitos, Hematologias.Monocitos, Hematologias.Eosinofilos, Hematologias.Basofilos, Hematologias.Hematies, Hematologias.Hemoglobina, Hematologias.Hematocritos, Hematologias.VCM, Hematologias.HCM, Hematologias.CHCM, Hematologias.Plaquetas, Hematologias.Neutrofilos2, Hematologias.Linfocitos2, Hematologias.Monocitos2, Hematologias.Eosinofilos2, Hematologias.Basofilos2, Hematologias.leucocitos FROM((datospersonales INNER JOIN ordenes ON datospersonales.IdPersona = ordenes.IdPersona) INNER JOIN(analisislaboratorio INNER JOIN ResultadosPaciente ON analisislaboratorio.IdAnalisis = ResultadosPaciente.IdAnalisis) ON(ordenes.IdOrden = ResultadosPaciente.IdOrden) AND(datospersonales.IdPersona = ResultadosPaciente.IdPaciente)) LEFT JOIN Hematologias ON ordenes.IdOrden = Hematologias.IdOrden WHERE(((ResultadosPaciente.IdOrden) = {0}) AND((ResultadosPaciente.IdAnalisis) = {1}));", IDOrden, IdAnalisis), conn);
+                adapter.SelectCommand = new MySqlCommand(string.Format("SELECT * FROM((datospersonales INNER JOIN ordenes ON datospersonales.IdPersona = ordenes.IdPersona) INNER JOIN(analisislaboratorio INNER JOIN ResultadosPaciente ON analisislaboratorio.IdAnalisis = ResultadosPaciente.IdAnalisis) ON(ordenes.IdOrden = ResultadosPaciente.IdOrden) AND(datospersonales.IdPersona = ResultadosPaciente.IdPaciente)) LEFT JOIN Hematologias ON ordenes.IdOrden = Hematologias.IdOrden WHERE(((ResultadosPaciente.IdOrden) = {0}) AND((ResultadosPaciente.IdAnalisis) = {1}));", IDOrden, IdAnalisis), conn);
                 adapter.Fill(ds);
                 adapter.Dispose();
                 if (ds.Tables.Count > 0)
@@ -2939,7 +2953,8 @@ namespace Conexiones.DbConnect
                     hematologia.Eosinofilos2 = ds.Tables[0].Rows[0]["Eosinofilos2"].ToString();
                     hematologia.Basofilos2 = ds.Tables[0].Rows[0]["Basofilos2"].ToString();
                     hematologia.Comentario = ds.Tables[0].Rows[0]["Comentario"].ToString();
-
+                    hematologia.ADE = ds.Tables[0].Rows[0]["ADE"].ToString();
+                    hematologia.VPM = ds.Tables[0].Rows[0]["VPM"].ToString();
                 }
 
                 return hematologia;
@@ -2963,7 +2978,7 @@ namespace Conexiones.DbConnect
             {
 
                 conn.Open();
-                adapter.SelectCommand = new MySqlCommand(string.Format("SELECT ResultadosPaciente.IdOrden, ordenes.NumeroDia, ordenes.Fecha as FechaImp, ResultadosPaciente.IdUsuario, ResultadosPaciente.IdAnalisis, datospersonales.Nombre, datospersonales.Apellidos, datospersonales.Sexo, datospersonales.Fecha, ResultadosPaciente.Comentario, Hematologias.Neutrofilos, Hematologias.linfocitos, Hematologias.Monocitos, Hematologias.Eosinofilos, Hematologias.Basofilos, Hematologias.Hematies, Hematologias.Hemoglobina, Hematologias.Hematocritos, Hematologias.VCM, Hematologias.HCM, Hematologias.CHCM, Hematologias.Plaquetas, Hematologias.Neutrofilos2, Hematologias.Linfocitos2, Hematologias.Monocitos2, Hematologias.Eosinofilos2, Hematologias.Basofilos2, Hematologias.leucocitos FROM((datospersonales INNER JOIN ordenes ON datospersonales.IdPersona = ordenes.IdPersona) INNER JOIN(analisislaboratorio INNER JOIN ResultadosPaciente ON analisislaboratorio.IdAnalisis = ResultadosPaciente.IdAnalisis) ON(ordenes.IdOrden = ResultadosPaciente.IdOrden) AND(datospersonales.IdPersona = ResultadosPaciente.IdPaciente)) LEFT JOIN Hematologias ON ordenes.IdOrden = Hematologias.IdOrden WHERE ResultadosPaciente.IdOrden = {0};", IDOrden), conn);
+                adapter.SelectCommand = new MySqlCommand(string.Format("SELECT * FROM((datospersonales INNER JOIN ordenes ON datospersonales.IdPersona = ordenes.IdPersona) INNER JOIN(analisislaboratorio INNER JOIN ResultadosPaciente ON analisislaboratorio.IdAnalisis = ResultadosPaciente.IdAnalisis) ON(ordenes.IdOrden = ResultadosPaciente.IdOrden) AND(datospersonales.IdPersona = ResultadosPaciente.IdPaciente)) LEFT JOIN Hematologias ON ordenes.IdOrden = Hematologias.IdOrden WHERE ResultadosPaciente.IdOrden = {0};", IDOrden), conn);
                 adapter.Fill(ds);
                 adapter.Dispose();
                 return ds;
@@ -3826,6 +3841,7 @@ namespace Conexiones.DbConnect
         }
         public static DataSet SELECTIMPRIMIRTOTAL(string cmd)
         {
+            if (SELECTIMPRIMIRTOTALOverride != null) return SELECTIMPRIMIRTOTALOverride(cmd);
             MySqlConnection conn = new MySqlConnection(connection);
             DataSet ds = new DataSet();
             try
@@ -4599,6 +4615,7 @@ namespace Conexiones.DbConnect
         }
         public static string ActualizarOrden(string cmd3, int IDOrden, int IdAnalisis)
         {
+            if (ActualizarOrdenOverride != null) return ActualizarOrdenOverride(cmd3, IDOrden, IdAnalisis);
             MySqlConnection conn = new MySqlConnection(connection);
             try
             {
@@ -4767,6 +4784,7 @@ namespace Conexiones.DbConnect
         }
         public static DataSet Bioanalista(int OrdenID, int AnalisisID)
         {
+            if (BioanalistaOverride != null) return BioanalistaOverride(OrdenID, AnalisisID);
             MySqlConnection conn = new MySqlConnection(connection);
             DataSet ds = new DataSet();
             try
@@ -5457,6 +5475,52 @@ namespace Conexiones.DbConnect
                 con.Close();
             }
         }
+        public static DatosDePaciente selectDatosPacientePorIdOrden(int IdOrden)
+        {
+            DatosDePaciente datosDePaciente = new DatosDePaciente();
+            MySqlConnection con = new MySqlConnection(connection);
+            DataSet ds = new DataSet();
+            try
+            {
+
+                con.Open();
+                adapter.SelectCommand = new MySqlCommand(string.Format(@"SELECT `dp`.*
+                FROM `sistema2020`.`datospersonales` AS `dp`
+                INNER JOIN `sistema2020`.`ordenes` AS `o` 
+                ON `dp`.`IdPersona` = `o`.`IdPersona`
+                WHERE `o`.`IdOrden` = @IDOrden; ;", IdOrden), con);
+                adapter.Fill(ds);
+                adapter.Dispose();
+                if (ds.Tables.Count > 0)
+                {
+                    if (ds.Tables[0].Rows.Count > 0)
+                    {
+                        datosDePaciente.IdPersona = (int)ds.Tables[0].Rows[0]["IdPersona"];
+                        datosDePaciente.Cedula = ds.Tables[0].Rows[0]["Cedula"].ToString();
+                        datosDePaciente.Nombre = ds.Tables[0].Rows[0]["Nombre"].ToString();
+                        datosDePaciente.Apellidos = ds.Tables[0].Rows[0]["Apellidos"].ToString();
+                        datosDePaciente.Fecha = Convert.ToDateTime(ds.Tables[0].Rows[0]["Fecha"].ToString());
+                        datosDePaciente.CodigoCelular = ds.Tables[0].Rows[0]["CodigoCelular"].ToString();
+                        datosDePaciente.Celular = ds.Tables[0].Rows[0]["Celular"].ToString();
+                        datosDePaciente.CodigoTelefono = ds.Tables[0].Rows[0]["CodigoTelefono"].ToString();
+                        datosDePaciente.Telefono = ds.Tables[0].Rows[0]["Telefono"].ToString();
+                        datosDePaciente.TipoCorreo = ds.Tables[0].Rows[0]["TipoCorreo"].ToString();
+                        datosDePaciente.Correo = ds.Tables[0].Rows[0]["Correo"].ToString();
+                        datosDePaciente.Edad = FechaSinAnio(datosDePaciente.Fecha);
+                    }
+                }
+                return datosDePaciente;
+            }
+            catch (Exception ex)
+            {
+                CrearEvento(ex.ToString());
+                return datosDePaciente;
+            }
+            finally
+            {
+                con.Close();
+            }
+        }
         public static DataSet SerialDeBillete(string cmd)
         {
             MySqlConnection conn = new MySqlConnection(connection);
@@ -5702,24 +5766,98 @@ namespace Conexiones.DbConnect
                 conn.Close();
             }
         }
-        public static DataSet HematologiaEspecial(int IDOrden, int IdAnalisis)
+        public static HematologiaEspecial HematologiaEspecial(int IDOrden, int IdAnalisis)
         {
+            if (HematologiaEspecialOverride != null)
+            {
+                DataSet dsOverride = HematologiaEspecialOverride(IDOrden, IdAnalisis);
+                if (dsOverride.Tables.Count > 0 && dsOverride.Tables[0].Rows.Count > 0)
+                {
+                    DataRow row = dsOverride.Tables[0].Rows[0];
+                    return new HematologiaEspecial
+                    {
+                        Neutrofilos = row.Table.Columns.Contains("Neutrofilos") ? row["Neutrofilos"]?.ToString() ?? string.Empty : string.Empty,
+                        linfocitos = row.Table.Columns.Contains("linfocitos") ? row["linfocitos"]?.ToString() ?? string.Empty : string.Empty,
+                        Monocitos = row.Table.Columns.Contains("Monocitos") ? row["Monocitos"]?.ToString() ?? string.Empty : string.Empty,
+                        Eosinofilos = row.Table.Columns.Contains("Eosinofilos") ? row["Eosinofilos"]?.ToString() ?? string.Empty : string.Empty,
+                        Basofilos = row.Table.Columns.Contains("Basofilos") ? row["Basofilos"]?.ToString() ?? string.Empty : string.Empty,
+                        Hematies = row.Table.Columns.Contains("Hematies") ? row["Hematies"]?.ToString() ?? string.Empty : string.Empty,
+                        Hemoglobina = row.Table.Columns.Contains("Hemoglobina") ? row["Hemoglobina"]?.ToString() ?? string.Empty : string.Empty,
+                        Hematocritos = row.Table.Columns.Contains("Hematocritos") ? row["Hematocritos"]?.ToString() ?? string.Empty : string.Empty,
+                        VCM = row.Table.Columns.Contains("VCM") ? row["VCM"]?.ToString() ?? string.Empty : string.Empty,
+                        HCM = row.Table.Columns.Contains("HCM") ? row["HCM"]?.ToString() ?? string.Empty : string.Empty,
+                        CHCM = row.Table.Columns.Contains("CHCM") ? row["CHCM"]?.ToString() ?? string.Empty : string.Empty,
+                        Plaquetas = row.Table.Columns.Contains("Plaquetas") ? row["Plaquetas"]?.ToString() ?? string.Empty : string.Empty,
+                        Neutrofilos2 = row.Table.Columns.Contains("Neutrofilos2") ? row["Neutrofilos2"]?.ToString() ?? string.Empty : string.Empty,
+                        Linfocitos2 = row.Table.Columns.Contains("Linfocitos2") ? row["Linfocitos2"]?.ToString() ?? string.Empty : string.Empty,
+                        Monocitos2 = row.Table.Columns.Contains("Monocitos2") ? row["Monocitos2"]?.ToString() ?? string.Empty : string.Empty,
+                        Eosinofilos2 = row.Table.Columns.Contains("Eosinofilos2") ? row["Eosinofilos2"]?.ToString() ?? string.Empty : string.Empty,
+                        Basofilos2 = row.Table.Columns.Contains("Basofilos2") ? row["Basofilos2"]?.ToString() ?? string.Empty : string.Empty,
+                        leucocitos = row.Table.Columns.Contains("leucocitos") ? row["leucocitos"]?.ToString() ?? string.Empty : string.Empty,
+                        ADE = row.Table.Columns.Contains("ADE") ? (row["ADE"]?.ToString() ?? string.Empty) : (row.Table.Columns.Contains("ADEvarchar") ? (row["ADEvarchar"]?.ToString() ?? string.Empty) : string.Empty),
+                        VPM = row.Table.Columns.Contains("VPM") ? row["VPM"]?.ToString() ?? string.Empty : string.Empty,
+                        ADP = row.Table.Columns.Contains("ADP") ? row["ADP"]?.ToString() ?? string.Empty : string.Empty,
+                        PCT = row.Table.Columns.Contains("PCT") ? row["PCT"]?.ToString() ?? string.Empty : string.Empty,
+                        Reticulocitos = row.Table.Columns.Contains("Reticulocitos") ? row["Reticulocitos"]?.ToString() ?? string.Empty : string.Empty,
+                        Comentario = row.Table.Columns.Contains("Frotis") ? (row["Frotis"]?.ToString() ?? string.Empty) : (row.Table.Columns.Contains("Comentario") ? (row["Comentario"]?.ToString() ?? string.Empty) : string.Empty)
+                    };
+                }
+                return new HematologiaEspecial();
+            }
+
+            HematologiaEspecial hematologia = new HematologiaEspecial();
             MySqlConnection conn = new MySqlConnection(connection);
             DataSet ds = new DataSet();
             try
             {
 
                 conn.Open();
-                adapter.SelectCommand = new MySqlCommand(string.Format("SELECT ResultadosPaciente.IdOrden, ordenes.Fecha as FechaImp, ordenes.NumeroDia, ResultadosPaciente.IdUsuario, ResultadosPaciente.IdAnalisis, datospersonales.Nombre, datospersonales.Apellidos, datospersonales.Sexo, datospersonales.Fecha, ResultadosPaciente.Comentario, HemaEspecial.Neutrofilos, HemaEspecial.linfocitos, HemaEspecial.Monocitos, HemaEspecial.Eosinofilos, HemaEspecial.Basofilos, HemaEspecial.Hematies, HemaEspecial.Hemoglobina, HemaEspecial.Hematocritos, HemaEspecial.VCM, HemaEspecial.HCM, HemaEspecial.CHCM, HemaEspecial.Plaquetas, HemaEspecial.Neutrofilos2, HemaEspecial.Linfocitos2, HemaEspecial.Monocitos2, HemaEspecial.Eosinofilos2, HemaEspecial.Basofilos2, HemaEspecial.leucocitos, HemaEspecial.Frotis FROM(datospersonales INNER JOIN(HemaEspecial RIGHT JOIN ordenes ON HemaEspecial.IdOrden = ordenes.IdOrden) ON datospersonales.IdPersona = ordenes.IdPersona) INNER JOIN ResultadosPaciente ON(ordenes.IdOrden = ResultadosPaciente.IdOrden) AND(datospersonales.IdPersona = ResultadosPaciente.IdPaciente) WHERE(((ResultadosPaciente.IdOrden) = {0}) AND((ResultadosPaciente.IdAnalisis) = {1})); ", IDOrden, IdAnalisis), conn);
+                adapter.SelectCommand = new MySqlCommand(string.Format("SELECT * FROM sistema2020.hemaespecial WHERE hemaespecial.IdOrden = {0};", IDOrden), conn);
                 adapter.Fill(ds);
                 adapter.Dispose();
-                return ds;
 
+
+                if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                {       
+                    DataRow row = ds.Tables[0].Rows[0];
+                    hematologia = new HematologiaEspecial
+                    {
+                        // Mapeo uno a uno respetando los nombres exactos de la tabla hemaespecial
+                        Neutrofilos = row["Neutrofilos"]?.ToString() ?? string.Empty,
+                        linfocitos = row["linfocitos"]?.ToString() ?? string.Empty,
+                        Monocitos = row["Monocitos"]?.ToString() ?? string.Empty,
+                        Eosinofilos = row["Eosinofilos"]?.ToString() ?? string.Empty,
+                        Basofilos = row["Basofilos"]?.ToString() ?? string.Empty,
+                        Hematies = row["Hematies"]?.ToString() ?? string.Empty,
+                        Hemoglobina = row["Hemoglobina"]?.ToString() ?? string.Empty,
+                        Hematocritos = row["Hematocritos"]?.ToString() ?? string.Empty,
+                        VCM = row["VCM"]?.ToString() ?? string.Empty,
+                        HCM = row["HCM"]?.ToString() ?? string.Empty,
+                        CHCM = row["CHCM"]?.ToString() ?? string.Empty,
+                        Plaquetas = row["Plaquetas"]?.ToString() ?? string.Empty,
+                        Neutrofilos2 = row["Neutrofilos2"]?.ToString() ?? string.Empty,
+                        Linfocitos2 = row["Linfocitos2"]?.ToString() ?? string.Empty,
+                        Monocitos2 = row["Monocitos2"]?.ToString() ?? string.Empty,
+                        Eosinofilos2 = row["Eosinofilos2"]?.ToString() ?? string.Empty,
+                        Basofilos2 = row["Basofilos2"]?.ToString() ?? string.Empty,
+                        leucocitos = row["leucocitos"]?.ToString() ?? string.Empty,
+                        ADE = row["ADE"]?.ToString() ?? string.Empty, // Ajustar según el nombre físico (si es ADE o ADEvarchar)
+                        VPM = row["VPM"]?.ToString() ?? string.Empty,
+                        ADP = row["ADP"]?.ToString() ?? string.Empty,
+                        PCT = row["PCT"]?.ToString() ?? string.Empty,
+                        Reticulocitos = row["Reticulocitos"]?.ToString() ?? string.Empty,
+
+                        // Mapeo especial: Frotis (BD) -> Comentario (Clase C#)
+                        Comentario = row["Frotis"]?.ToString() ?? string.Empty
+                    };
+                    
+                }
+                return hematologia;
             }
             catch (Exception ex)
             {
                 CrearEvento(ex.ToString());
-                return ds;
+                return hematologia;
             }
             finally
             {
@@ -5750,42 +5888,38 @@ namespace Conexiones.DbConnect
                 conn.Close();
             }
         }
-        public static string InsertarHematologia(string IdOrden1, string HoraValidacion1, string IdAnalisis1,
-        string Comentario1,
-        string Neutrofilos1, string linfocitos1, string Monocitos1, string Eosinofilo1, string Basofilos1,
-        string Hematies1, string Hemoglobina1, string Hematocritos1, string VCM1, string HCM1, string CHCM1,
-        string Plaquetas1, string Neutrofilos22, string Linfocitos22, string Monocitos22, string Usuario1,
-        string Eosinofilos22, string Basofilos22, string leucocitos1)
+        public static string InsertarHematologia(int IdOrden, int IdAnalisis, Conexiones.Hematologia hematologia, int IdUsuario)
         {
             MySqlConnection conn = new MySqlConnection(connection);
             try
             {
-
                 MySqlCommand cmd2 = new MySqlCommand("InsertarHematologia", conn);
                 cmd2.CommandType = CommandType.StoredProcedure;
-                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden1;
-                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = HoraValidacion1;
-                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis1;
-                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = Comentario1;
-                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = Neutrofilos1;
-                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = linfocitos1;
-                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = Monocitos1;
-                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = Eosinofilo1;
-                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = Basofilos1;
-                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = Hematies1;
-                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = Hemoglobina1;
-                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = Hematocritos1;
-                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = VCM1;
-                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = HCM1;
-                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = CHCM1;
-                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = Plaquetas1;
-                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = Neutrofilos22;
-                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = Linfocitos22;
-                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = Monocitos22;
-                cmd2.Parameters.Add("Usuario1", MySqlDbType.VarChar).Value = Usuario1;
-                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = Eosinofilos22;
-                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = Basofilos22;
-                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = leucocitos1;
+                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden;
+                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = DateTime.Now.ToString("hh:mm:ss");
+                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis;
+                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = hematologia?.Comentario ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos ?? string.Empty;
+                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = hematologia?.linfocitos ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = hematologia?.Monocitos ?? string.Empty;
+                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = hematologia?.Basofilos ?? string.Empty;
+                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = hematologia?.Hematies ?? string.Empty;
+                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = hematologia?.Hemoglobina ?? string.Empty;
+                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = hematologia?.Hematocritos ?? string.Empty;
+                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = hematologia?.VCM ?? string.Empty;
+                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = hematologia?.HCM ?? string.Empty;
+                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = hematologia?.CHCM ?? string.Empty;
+                cmd2.Parameters.Add("ADE1", MySqlDbType.VarChar).Value = hematologia?.ADE ?? string.Empty;
+                cmd2.Parameters.Add("VPM1", MySqlDbType.VarChar).Value = hematologia?.VPM ?? string.Empty;
+                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = hematologia?.Plaquetas ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = hematologia?.Linfocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = hematologia?.Monocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Usuario1", MySqlDbType.Int32).Value = IdUsuario;
+                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = hematologia?.Basofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = hematologia?.leucocitos ?? string.Empty;
                 conn.Open();
                 cmd2.ExecuteNonQuery();
                 string MS = "Exitoso";
@@ -5802,42 +5936,40 @@ namespace Conexiones.DbConnect
                 conn.Close();
             }
         }
-        public static string InsertarHematologiaSinValidar(string IdOrden1, string HoraValidacion1, string IdAnalisis1,
-        string Comentario1,
-        string Neutrofilos1, string linfocitos1, string Monocitos1, string Eosinofilo1, string Basofilos1,
-        string Hematies1, string Hemoglobina1, string Hematocritos1, string VCM1, string HCM1, string CHCM1,
-        string Plaquetas1, string Neutrofilos22, string Linfocitos22, string Monocitos22, string Usuario1,
-        string Eosinofilos22, string Basofilos22, string leucocitos1)
+        // Nueva versión: recibe objeto Hematologia y el Id del usuario
+        public static string InsertarHematologiaSinValidar(int IdOrden, int IdAnalisis, Conexiones.Hematologia hematologia, int IdUsuario)
         {
             MySqlConnection conn = new MySqlConnection(connection);
             try
             {
-
                 MySqlCommand cmd2 = new MySqlCommand("InsertarHematologiaSSinValidar", conn);
                 cmd2.CommandType = CommandType.StoredProcedure;
-                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden1;
-                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = HoraValidacion1;
-                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis1;
-                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = Comentario1;
-                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = Neutrofilos1;
-                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = linfocitos1;
-                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = Monocitos1;
-                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = Eosinofilo1;
-                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = Basofilos1;
-                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = Hematies1;
-                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = Hemoglobina1;
-                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = Hematocritos1;
-                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = VCM1;
-                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = HCM1;
-                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = CHCM1;
-                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = Plaquetas1;
-                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = Neutrofilos22;
-                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = Linfocitos22;
-                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = Monocitos22;
-                cmd2.Parameters.Add("Usuario1", MySqlDbType.VarChar).Value = Usuario1;
-                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = Eosinofilos22;
-                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = Basofilos22;
-                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = leucocitos1;
+                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden;
+                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = DateTime.Now.ToString("hh:mm:ss");
+                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis;
+                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = hematologia?.Comentario ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos ?? string.Empty;
+                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = hematologia?.linfocitos ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = hematologia?.Monocitos ?? string.Empty;
+                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = hematologia?.Basofilos ?? string.Empty;
+                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = hematologia?.Hematies ?? string.Empty;
+                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = hematologia?.Hemoglobina ?? string.Empty;
+                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = hematologia?.Hematocritos ?? string.Empty;
+
+                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = hematologia?.VCM ?? string.Empty;
+                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = hematologia?.HCM ?? string.Empty;
+                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = hematologia?.CHCM ?? string.Empty;
+                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = hematologia?.Plaquetas ?? string.Empty;
+                cmd2.Parameters.Add("ADE1", MySqlDbType.VarChar).Value = hematologia?.ADE ?? string.Empty;
+                cmd2.Parameters.Add("VPM1", MySqlDbType.VarChar).Value = hematologia?.VPM ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = hematologia?.Linfocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = hematologia?.Monocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Usuario1", MySqlDbType.Int32).Value = IdUsuario;
+                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = hematologia?.Basofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = hematologia?.leucocitos ?? string.Empty;
                 conn.Open();
                 cmd2.ExecuteNonQuery();
                 string MS = "Exitoso";
@@ -5854,42 +5986,43 @@ namespace Conexiones.DbConnect
                 conn.Close();
             }
         }
-        public static string InsertarHematologiaEspecial(string IdOrden1, string HoraValidacion1, string IdAnalisis1,
-       string Comentario1,
-       string Neutrofilos1, string linfocitos1, string Monocitos1, string Eosinofilo1, string Basofilos1,
-       string Hematies1, string Hemoglobina1, string Hematocritos1, string VCM1, string HCM1, string CHCM1,
-       string Plaquetas1, string Neutrofilos22, string Linfocitos22, string Monocitos22, string Usuario1,
-       string Eosinofilos22, string Basofilos22, string leucocitos1)
+        // Nueva versión: recibe objeto HematologiaEspecial y el Id del usuario
+        public static string InsertarHematologiaEspecial(int IdOrden, int IdAnalisis, Conexiones.HematologiaEspecial hematologia, int IdUsuario)
         {
             MySqlConnection conn = new MySqlConnection(connection);
             try
             {
-
                 MySqlCommand cmd2 = new MySqlCommand("InsertarHematologiaEspecial", conn);
                 cmd2.CommandType = CommandType.StoredProcedure;
-                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden1;
-                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = HoraValidacion1;
-                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis1;
-                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = Comentario1;
-                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = Neutrofilos1;
-                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = linfocitos1;
-                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = Monocitos1;
-                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = Eosinofilo1;
-                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = Basofilos1;
-                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = Hematies1;
-                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = Hemoglobina1;
-                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = Hematocritos1;
-                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = VCM1;
-                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = HCM1;
-                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = CHCM1;
-                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = Plaquetas1;
-                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = Neutrofilos22;
-                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = Linfocitos22;
-                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = Monocitos22;
-                cmd2.Parameters.Add("Usuario1", MySqlDbType.VarChar).Value = Usuario1;
-                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = Eosinofilos22;
-                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = Basofilos22;
-                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = leucocitos1;
+                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden;
+                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = DateTime.Now.ToString("hh:mm:ss");
+                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis;
+                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = hematologia?.Comentario ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos ?? string.Empty;
+                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = hematologia?.linfocitos ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = hematologia?.Monocitos ?? string.Empty;
+                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = hematologia?.Basofilos ?? string.Empty;
+                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = hematologia?.Hematies ?? string.Empty;
+                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = hematologia?.Hemoglobina ?? string.Empty;
+                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = hematologia?.Hematocritos ?? string.Empty;
+                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = hematologia?.VCM ?? string.Empty;
+                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = hematologia?.HCM ?? string.Empty;
+                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = hematologia?.CHCM ?? string.Empty;
+                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = hematologia?.Plaquetas ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = hematologia?.Linfocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = hematologia?.Monocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Usuario1", MySqlDbType.Int32).Value = IdUsuario;
+                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = hematologia?.Basofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = hematologia?.leucocitos ?? string.Empty;
+                // Nuevos campos
+                cmd2.Parameters.Add("ADE1", MySqlDbType.VarChar).Value = hematologia?.ADE ?? string.Empty;
+                cmd2.Parameters.Add("VPM1", MySqlDbType.VarChar).Value = hematologia?.VPM ?? string.Empty;
+                cmd2.Parameters.Add("ADP1", MySqlDbType.VarChar).Value = hematologia?.ADP ?? string.Empty;
+                cmd2.Parameters.Add("PCT1", MySqlDbType.VarChar).Value = hematologia?.PCT ?? string.Empty;
+                cmd2.Parameters.Add("Reticulocitos1", MySqlDbType.VarChar).Value = hematologia?.Reticulocitos ?? string.Empty;
                 conn.Open();
                 cmd2.ExecuteNonQuery();
                 string MS = "Exitoso";
@@ -5906,42 +6039,42 @@ namespace Conexiones.DbConnect
                 conn.Close();
             }
         }
-        public static string InsertarHematologiaEspecialSinValidar(string IdOrden1, string HoraValidacion1, string IdAnalisis1,
-       string Comentario1,
-       string Neutrofilos1, string linfocitos1, string Monocitos1, string Eosinofilo1, string Basofilos1,
-       string Hematies1, string Hemoglobina1, string Hematocritos1, string VCM1, string HCM1, string CHCM1,
-       string Plaquetas1, string Neutrofilos22, string Linfocitos22, string Monocitos22, string Usuario1,
-       string Eosinofilos22, string Basofilos22, string leucocitos1)
+        public static string InsertarHematologiaEspecialSinValidar(int IdOrden, int IdAnalisis, Conexiones.HematologiaEspecial hematologia, int IdUsuario)
         {
             MySqlConnection conn = new MySqlConnection(connection);
             try
             {
-
                 MySqlCommand cmd2 = new MySqlCommand("InsertarHematologiaEspecialSinValidar", conn);
                 cmd2.CommandType = CommandType.StoredProcedure;
-                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden1;
-                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = HoraValidacion1;
-                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis1;
-                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = Comentario1;
-                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = Neutrofilos1;
-                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = linfocitos1;
-                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = Monocitos1;
-                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = Eosinofilo1;
-                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = Basofilos1;
-                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = Hematies1;
-                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = Hemoglobina1;
-                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = Hematocritos1;
-                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = VCM1;
-                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = HCM1;
-                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = CHCM1;
-                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = Plaquetas1;
-                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = Neutrofilos22;
-                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = Linfocitos22;
-                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = Monocitos22;
-                cmd2.Parameters.Add("Usuario1", MySqlDbType.VarChar).Value = Usuario1;
-                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = Eosinofilos22;
-                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = Basofilos22;
-                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = leucocitos1;
+                cmd2.Parameters.Add("IdOrden1", MySqlDbType.Int32).Value = IdOrden;
+                cmd2.Parameters.Add("HoraValidacion1", MySqlDbType.VarChar).Value = DateTime.Now.ToString("hh:mm:ss");
+                cmd2.Parameters.Add("IdAnalisis1", MySqlDbType.Int32).Value = IdAnalisis;
+                cmd2.Parameters.Add("Comentario1", MySqlDbType.LongText).Value = hematologia?.Comentario ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos1", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos ?? string.Empty;
+                cmd2.Parameters.Add("linfocitos1", MySqlDbType.VarChar).Value = hematologia?.linfocitos ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos1", MySqlDbType.VarChar).Value = hematologia?.Monocitos ?? string.Empty;
+                cmd2.Parameters.Add("Eosinofilo1", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos1", MySqlDbType.VarChar).Value = hematologia?.Basofilos ?? string.Empty;
+                cmd2.Parameters.Add("Hematies1", MySqlDbType.VarChar).Value = hematologia?.Hematies ?? string.Empty;
+                cmd2.Parameters.Add("Hemoglobina1", MySqlDbType.VarChar).Value = hematologia?.Hemoglobina ?? string.Empty;
+                cmd2.Parameters.Add("Hematocritos1", MySqlDbType.VarChar).Value = hematologia?.Hematocritos ?? string.Empty;
+                cmd2.Parameters.Add("VCM1", MySqlDbType.VarChar).Value = hematologia?.VCM ?? string.Empty;
+                cmd2.Parameters.Add("HCM1", MySqlDbType.VarChar).Value = hematologia?.HCM ?? string.Empty;
+                cmd2.Parameters.Add("CHCM1", MySqlDbType.VarChar).Value = hematologia?.CHCM ?? string.Empty;
+                cmd2.Parameters.Add("Plaquetas1", MySqlDbType.VarChar).Value = hematologia?.Plaquetas ?? string.Empty;
+                cmd2.Parameters.Add("Neutrofilos22", MySqlDbType.VarChar).Value = hematologia?.Neutrofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Linfocitos22", MySqlDbType.VarChar).Value = hematologia?.Linfocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Monocitos22", MySqlDbType.VarChar).Value = hematologia?.Monocitos2 ?? string.Empty;
+                cmd2.Parameters.Add("Usuario1", MySqlDbType.Int32).Value = IdUsuario;
+                cmd2.Parameters.Add("Eosinofilos22", MySqlDbType.VarChar).Value = hematologia?.Eosinofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("Basofilos22", MySqlDbType.VarChar).Value = hematologia?.Basofilos2 ?? string.Empty;
+                cmd2.Parameters.Add("leucocitos1", MySqlDbType.VarChar).Value = hematologia?.leucocitos ?? string.Empty;
+                // Nuevos campos
+                cmd2.Parameters.Add("ADE1", MySqlDbType.VarChar).Value = hematologia?.ADE ?? string.Empty;
+                cmd2.Parameters.Add("VPM1", MySqlDbType.VarChar).Value = hematologia?.VPM ?? string.Empty;
+                cmd2.Parameters.Add("ADP1", MySqlDbType.VarChar).Value = hematologia?.ADP ?? string.Empty;
+                cmd2.Parameters.Add("PCT1", MySqlDbType.VarChar).Value = hematologia?.PCT ?? string.Empty;
+                cmd2.Parameters.Add("Reticulocitos1", MySqlDbType.VarChar).Value = hematologia?.Reticulocitos ?? string.Empty;
                 conn.Open();
                 cmd2.ExecuteNonQuery();
                 string MS = "Exitoso";
@@ -7887,8 +8020,10 @@ namespace Conexiones.DbConnect
             }
         }
 
-
-       
+        public static Ordenes SELECTordenesPorIdOrden(int idOrden)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

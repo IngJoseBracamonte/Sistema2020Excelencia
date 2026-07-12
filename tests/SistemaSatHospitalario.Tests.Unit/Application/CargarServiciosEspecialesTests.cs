@@ -134,7 +134,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task Should_ThrowException_When_CitaCollisionOccurs()
+        public async Task Should_AutoReschedule_When_CitaCollisionOccurs()
         {
             // Arrange
             var paciente = await SeedPacienteAsync();
@@ -174,10 +174,18 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 HoraCita = horaPautada
             };
 
-            // Act & Assert
-            Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*médico ya tiene una cita pautada*");
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            
+            // Verify CitaMedica was created and time was auto-shifted to 10:01
+            var newCita = await _context.CitasMedicas
+                .FirstOrDefaultAsync(c => c.CuentaServicioId == result.CuentaId && c.Id != existingCita.Id);
+            
+            newCita.Should().NotBeNull();
+            newCita.HoraPautada.Should().Be(horaPautada.AddMinutes(1));
         }
 
         [Fact]

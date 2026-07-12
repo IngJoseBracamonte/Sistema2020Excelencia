@@ -61,6 +61,12 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var emptyRules = new List<HonorariumMappingRule>().AsQueryable().BuildMockDbSet().Object;
             _contextMock.Setup(c => c.HonorariumMappingRules).Returns(emptyRules);
 
+            var emptyConvenioPerfilPrecios = new List<ConvenioPerfilPrecio>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.ConvenioPerfilPrecios).Returns(emptyConvenioPerfilPrecios);
+
+            var emptyPreciosServicioConvenio = new List<PrecioServicioConvenio>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.PreciosServicioConvenio).Returns(emptyPreciosServicioConvenio);
+
             var mockInventory = new Mock<IInventoryService>();
 
             _handler = new SyncCarritoCommandHandler(
@@ -267,6 +273,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var result = await _handler.Handle(command, CancellationToken.None);
 
             // Assert
+            // Assert
             result.Should().NotBeNull();
             result.CuentaId.Should().Be(cuentaId);
             result.Detalles.Should().HaveCount(1);
@@ -274,6 +281,124 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Verificar que NO se haya agregado una nueva cuenta
             _repositoryMock.Verify(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()), Times.Never);
             _repositoryMock.Verify(r => r.GuardarCambiosAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_WithHospitalizationAndNoAppointmentTime_ShouldSyncWithoutCita()
+        {
+            var pacienteId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("CONS-HOSP", "Consulta Hospitalización", 60, "Medico")
+            {
+                Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation,
+                HonorarioBase = 20
+            };
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            CuentaServicios? capturedCuenta = null;
+            _repositoryMock.Setup(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()))
+                .Callback<CuentaServicios, CancellationToken>((c, _) => capturedCuenta = c)
+                .Returns(Task.CompletedTask);
+
+            var command = new SyncCarritoCommand
+            {
+                PacienteId = pacienteId,
+                UsuarioCarga = "NurseAdmin",
+                TipoIngreso = "Hospitalizacion", // No requiere HoraCita ni MedicoId obligatorio
+                Items = new List<ServicioCarritoDto>
+                {
+                    new()
+                    {
+                        ServicioId = servicioId.ToString(),
+                        Descripcion = "Consulta Hospitalización",
+                        Precio = 60,
+                        Honorario = 20,
+                        Cantidad = 1,
+                        TipoServicio = "Medico"
+                        // HoraCita y MedicoId quedan null/no especificados
+                    }
+                }
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            capturedCuenta.Should().NotBeNull();
+            capturedCuenta!.Detalles.Should().ContainSingle();
+            var detail = capturedCuenta.Detalles.First();
+            detail.Precio.Should().Be(80); // 60 (base) + 20 (honorario)
+        }
+
+        [Fact]
+        public async Task Handle_WithConvenioPricing_ShouldUseConvenioBasePrice()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            int convenioId = 42;
+            
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("SRV-CONV", "Servicio Convenio", 100, "Otros")
+            {
+                Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Other,
+                HonorarioBase = 15
+            };
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            var precioConvenio = new PrecioServicioConvenio(servicioId, convenioId, 75.00m);
+            var pricesSet = new List<PrecioServicioConvenio> { precioConvenio }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PreciosServicioConvenio).Returns(pricesSet.Object);
+
+            CuentaServicios? capturedCuenta = null;
+            _repositoryMock.Setup(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()))
+                .Callback<CuentaServicios, CancellationToken>((c, _) => capturedCuenta = c)
+                .Returns(Task.CompletedTask);
+
+            var command = new SyncCarritoCommand
+            {
+                PacienteId = pacienteId,
+                UsuarioCarga = "NurseAdmin",
+                TipoIngreso = "Particular",
+                ConvenioId = convenioId,
+                Items = new List<ServicioCarritoDto>
+                {
+                    new()
+                    {
+                        ServicioId = servicioId.ToString(),
+                        Descripcion = "Servicio Convenio",
+                        Precio = 75.00m, // Coincide con el precio del convenio
+                        Honorario = 0,
+                        Cantidad = 1,
+                        TipoServicio = "Otros"
+                    }
+                }
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            capturedCuenta.Should().NotBeNull();
+            capturedCuenta!.Detalles.Should().ContainSingle();
+            var detail = capturedCuenta.Detalles.First();
+            detail.Precio.Should().Be(90.00m); // 75 (convenio) + 15 (honorario)
+            detail.Honorario.Should().Be(15.00m);
         }
     }
 }

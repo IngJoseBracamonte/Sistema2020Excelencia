@@ -26,6 +26,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CostoUnitarioBaseUSD = costoUnitarioBaseUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
             Categoria = categoria;
+            
+            if (stockActual > 0)
+            {
+                StocksPorSede.Add(new StockSede(Id, Guid.Empty, stockActual));
+            }
         }
 
         public void RegistrarMovimientoStock(decimal cantidadBase)

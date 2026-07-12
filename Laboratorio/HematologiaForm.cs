@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Conexiones;
+using Conexiones.DbConnect;
+using DocumentFormat.OpenXml.EMMA;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,7 +11,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Conexiones.DbConnect;
 
 namespace Laboratorio
 {
@@ -359,6 +361,8 @@ namespace Laboratorio
                 tMonoU.Text = ds.Tables[0].Rows[0]["Monocitos2"].ToString();
                 tEosU.Text = ds.Tables[0].Rows[0]["Eosinofilos2"].ToString();
                 tBasoU.Text = ds.Tables[0].Rows[0]["Basofilos2"].ToString();
+                tADE.Text = ds.Tables[0].Rows[0]["ADE"].ToString();
+                tVPM.Text = ds.Tables[0].Rows[0]["VPM"].ToString();
             }
             catch 
             {
@@ -593,21 +597,7 @@ namespace Laboratorio
             }
             else tHematocrito.ForeColor = Color.FromArgb(0, 0, 0);
         }
-            if (tHematocrito.Text != "")
-            {
-                Double Resultado;
-                Resultado = (Convert.ToDouble(tHematocrito.Text) * 0.32);
-                tHemoglobina.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(tHematocrito.Text) * 0.11);
-                tHematies.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(tHematocrito.Text) * 10)/Convert.ToDouble(tHematies.Text);
-                tVCM.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(tHemoglobina.Text) * 100) / Convert.ToDouble(tHematocrito.Text);
-                tCHCM.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(tHemoglobina.Text) * 10) / Convert.ToDouble(tHematies.Text);
-                tHCM.Text = Resultado.ToString("0.##");
 
-            }
         }
         private void textBox17_TextChanged(object sender, EventArgs e)
         {
@@ -721,44 +711,15 @@ namespace Laboratorio
             try
             {
 
-                Leuco = Convert.ToDouble(tLeucocitos.Text);
-                Linfo = Convert.ToDouble(tNeutroPor.Text);
-                Neutro = Convert.ToDouble(tLinfoPor.Text);
-                Hemoglobina = Convert.ToDouble(tHematocrito.Text);
-                Hematocrito = Convert.ToDouble(tHematies.Text);
-                plaquetas = Convert.ToDouble(tPlaquetas.Text);;
-                if (Leuco < 1)
-                {
-                    MessageBox.Show("Leucocitos = " + Leuco + " Por Favor coloque otro valor");
-                } else if(Linfo < 1)
-                {
-                    MessageBox.Show("Neutrofilos = " + Neutro + " Por Favor coloque otro valor");
-                }
-                else if (Neutro < 1)
-                {
-                    MessageBox.Show("Linfocitos = " + Linfo + " Por Favor coloque otro valor");
-                }
-                else if (Hematocrito < 1)
-                {
-                    MessageBox.Show("Hematocrito = " + Hematocrito + " Por Favor coloque otro valor");
-                }
-                else if (Hemoglobina < 1)
-                {
-                    MessageBox.Show("Hemoglobina = " + Hemoglobina + " Por Favor coloque otro valor");
-                }
-                else if (plaquetas < 1)
-                {
-                    MessageBox.Show("plaquetas = " + plaquetas + " Por Favor coloque otro valor");
-                }
-                else
-                {
+            
                     MessageBoxButtons button = MessageBoxButtons.YesNo;
                     if (ds2.Tables[0].Rows[0]["Validar"].ToString() == "1")
                     {
                         DialogResult dialog = MessageBox.Show(mensaje, titulo, button, MessageBoxIcon.Warning);
                         if (dialog == DialogResult.Yes)
                         {
-                            string cmd = Conexion.InsertarHematologia(IdOrden.ToString(), DateTime.Now.ToString("h:mm:ss tt"), IdAnalisis.ToString(), tComentario.Text, tNeutroPor.Text, tLinfoPor.Text, tMonoPor.Text, tEosPor.Text, tBasoPor.Text, tHematies.Text, tHemoglobina.Text, tHematocrito.Text, tVCM.Text, tHCM.Text, tCHCM.Text, tPlaquetas.Text, tNeutroU.Text, tLinfoU.Text, tMonoU.Text, IdUser.ToString(), tEosU.Text, tBasoU.Text, tLeucocitos.Text);
+                             var he = AsignarValores();
+                            string cmd = Conexion.InsertarHematologia(IdOrden, IdAnalisis, he, IdUser);
                             MessageBox.Show(cmd);
                         }
                     }
@@ -766,7 +727,6 @@ namespace Laboratorio
                     {
                         MessageBox.Show("No tiene privilegios para realizar esta operacion");
                     }
-                }
             }
             catch
             {
@@ -969,6 +929,74 @@ namespace Laboratorio
 
         }
 
+        private bool VerificarValores()
+        {
+            Double Leuco = Convert.ToDouble(tLeucocitos.Text);
+            Double Linfo = Convert.ToDouble(tNeutroPor.Text);
+            Double Neutro = Convert.ToDouble(tLinfoPor.Text);
+            Double Hemoglobina = Convert.ToDouble(tHematocrito.Text);
+            Double Hematocrito = Convert.ToDouble(tHematies.Text);
+            Double plaquetas = Convert.ToDouble(tPlaquetas.Text); ;
+            if (Leuco < 1)
+            {
+                MessageBox.Show("Leucocitos = " + Leuco + " Por Favor coloque otro valor");
+            }
+            else if (Linfo < 1)
+            {
+                MessageBox.Show("Neutrofilos = " + Neutro + " Por Favor coloque otro valor");
+            }
+            else if (Neutro < 1)
+            {
+                MessageBox.Show("Linfocitos = " + Linfo + " Por Favor coloque otro valor");
+            }
+            else if (Hematocrito < 1)
+            {
+                MessageBox.Show("Hematocrito = " + Hematocrito + " Por Favor coloque otro valor");
+            }
+            else if (Hemoglobina < 1)
+            {
+                MessageBox.Show("Hemoglobina = " + Hemoglobina + " Por Favor coloque otro valor");
+            }
+            else if (plaquetas < 1)
+            {
+                MessageBox.Show("plaquetas = " + plaquetas + " Por Favor coloque otro valor");
+            }
+            return true;
+        }
+        private Hematologia AsignarValores()
+        {
+           if(VerificarValores() == false)
+            {
+                return null;
+            }
+
+            var he = new Conexiones.Hematologia
+            {
+                Neutrofilos = tNeutroPor.Text,
+                linfocitos = tLinfoPor.Text,
+                Monocitos = tMonoPor.Text,
+                Eosinofilos = tEosPor.Text,
+                Basofilos = tBasoPor.Text,
+                Hematies = tHematies.Text,
+                Hemoglobina = tHemoglobina.Text,
+                Hematocritos = tHematocrito.Text,
+                VCM = tVCM.Text,
+                HCM = tHCM.Text,
+                CHCM = tCHCM.Text,
+                Plaquetas = tPlaquetas.Text,
+                Neutrofilos2 = tNeutroU.Text,
+                Linfocitos2 = tLinfoU.Text,
+                Monocitos2 = tMonoU.Text,
+                Eosinofilos2 = tEosU.Text,
+                Basofilos2 = tBasoU.Text,
+                leucocitos = tLeucocitos.Text,
+                ADE = tADE.Text,
+                VPM = tVPM.Text,
+                Comentario = tComentario.Text
+            };
+            return he;
+        }
+
         private void iconButton3_Click(object sender, EventArgs e)
         {
 
@@ -989,7 +1017,8 @@ namespace Laboratorio
                 DialogResult dialog = MessageBox.Show(mensaje, titulo, button, MessageBoxIcon.Warning);
                 if (dialog == DialogResult.Yes)
                 {
-                    string cmd = Conexion.InsertarHematologiaSinValidar(IdOrden.ToString(), DateTime.Now.ToString("h:mm:ss tt"), IdAnalisis.ToString(), tComentario.Text, tNeutroPor.Text, tLinfoPor.Text, tMonoPor.Text, tEosPor.Text, tBasoPor.Text, tHematies.Text, tHemoglobina.Text, tHematocrito.Text, tVCM.Text, tHCM.Text, tCHCM.Text, tPlaquetas.Text, tNeutroU.Text, tLinfoU.Text, tMonoU.Text, IdUser.ToString(), tEosU.Text, tBasoU.Text, tLeucocitos.Text);
+                    var he = AsignarValores();
+                    string cmd = Conexion.InsertarHematologiaSinValidar(IdOrden, IdAnalisis, he, IdUser);
                     MessageBox.Show(cmd);
                 }
             }
@@ -1045,6 +1074,67 @@ namespace Laboratorio
 
             }
         }
+
+        private void label64_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tVPM_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tVPM_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (Char.IsDigit(e.KeyChar) || e.KeyChar == '\b')
+            {
+                // Allow Digits and BackSpace char
+            }
+            else if (e.KeyChar == '.' && !((TextBox)sender).Text.Contains(','))
+            {
+                e.KeyChar = ',';
+            }
+            else if (e.KeyChar == ',' && !((TextBox)sender).Text.Contains(','))
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void tADE_TextChanged(object sender, EventArgs e)
+        {
+         
+        }
+
+        private void tADE_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (Char.IsDigit(e.KeyChar) || e.KeyChar == '\b')
+            {
+                // Allow Digits and BackSpace char
+            }
+            else if (e.KeyChar == '.' && !((TextBox)sender).Text.Contains(','))
+            {
+                e.KeyChar = ',';
+            }
+            else if (e.KeyChar == ',' && !((TextBox)sender).Text.Contains(','))
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void panel3_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
         private void MoverIzquierda()
         {
             if (PoscionActual > 0)

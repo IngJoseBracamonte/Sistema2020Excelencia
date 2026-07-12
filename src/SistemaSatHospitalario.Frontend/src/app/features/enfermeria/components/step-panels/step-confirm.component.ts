@@ -22,8 +22,10 @@ import { LucideAngularModule, Sparkles, CheckCircle } from 'lucide-angular';
           <span class="text-slate-500">Item Principal:</span>
           <span class="font-bold text-slate-200 truncate">{{ itemDescription }}</span>
 
-          <span class="text-slate-500">Cantidad:</span>
-          <span class="font-bold text-indigo-400">{{ quantity }} {{ unitLabel }}</span>
+          <ng-container *ngIf="classification !== 'RX' && classification !== 'Consulta' && classification !== 'Laboratorio'">
+            <span class="text-slate-500">Cantidad:</span>
+            <span class="font-bold text-indigo-400">{{ quantity }} {{ unitLabel }}</span>
+          </ng-container>
 
           <span *ngIf="medicoNombre" class="text-slate-500">Médico Tratante:</span>
           <span *ngIf="medicoNombre" class="font-bold text-slate-200 truncate">{{ medicoNombre }}</span>
@@ -80,6 +82,7 @@ export class StepConfirmComponent {
   @Input() medicoNombre: string | null = null;
   @Input() areaClinicaNombre: string | null = null;
   @Input() precioFinalCalculado = 0;
+  @Input() classification: string | null = null;
 
   // Sugerencias
   @Input() activeSuggestions: ServicioCatalogo[] = [];

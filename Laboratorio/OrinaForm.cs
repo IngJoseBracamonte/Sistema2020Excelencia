@@ -37,7 +37,7 @@ namespace Laboratorio
         {
             if (keyData == (Keys.F2))
             {
-                Form form10 = new Form10();
+                Form form10 = new CristalesHecesForm();
                 form10.ShowDialog();
                 return true;
             }
@@ -213,7 +213,7 @@ namespace Laboratorio
 
         private void button2_Click(object sender, EventArgs e)
         {
-            Form11 form11 = new Form11();
+            CilindrosHecesForm form11 = new CilindrosHecesForm();
             form11.ShowDialog();
             textBox4.Clear();
             textBox4.Text = form11.textBox1.Text;
@@ -222,7 +222,7 @@ namespace Laboratorio
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Form10 form10 = new Form10();
+            CristalesHecesForm form10 = new CristalesHecesForm();
             form10.ShowDialog();
             textBox3.Clear();
             textBox3.Text = form10.textBox1.Text;

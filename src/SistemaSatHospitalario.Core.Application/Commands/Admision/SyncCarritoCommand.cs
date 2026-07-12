@@ -174,10 +174,38 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                             if (baseService != null)
                             {
                                 bool itemEsConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation;
-                                decimal expectedPrecio = baseService.PrecioBase;
+                                bool itemEsLab = EstadoConstants.EsLaboratorio(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory;
+
+                                decimal basePrice = baseService.PrecioBase;
+                                if (request.ConvenioId.HasValue)
+                                {
+                                    if (itemEsLab)
+                                    {
+                                        if (int.TryParse(item.ServicioId, out int perfilId))
+                                        {
+                                            var exc = await _context.ConvenioPerfilPrecios
+                                                .FirstOrDefaultAsync(x => x.SeguroConvenioId == request.ConvenioId.Value && x.PerfilId == perfilId, ct);
+                                            if (exc != null && exc.PrecioUSD > 0)
+                                            {
+                                                basePrice = exc.PrecioUSD;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var priceConv = await _context.PreciosServicioConvenio
+                                            .FirstOrDefaultAsync(p => p.SeguroConvenioId == request.ConvenioId.Value && p.ServicioClinicoId == baseService.Id, ct);
+                                        if (priceConv != null)
+                                        {
+                                            basePrice = priceConv.PrecioDiferencial;
+                                        }
+                                    }
+                                }
+
+                                decimal expectedPrecio = basePrice;
+                                decimal doctorHonorary = 0;
                                 if (itemEsConsulta)
                                 {
-                                    decimal doctorHonorary = 0;
                                     if (item.MedicoId.HasValue)
                                     {
                                         var medico = await _context.Medicos.AsNoTracking().FirstOrDefaultAsync(m => m.Id == item.MedicoId.Value, ct);
@@ -190,10 +218,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                                     {
                                         doctorHonorary = baseService.HonorarioBase;
                                     }
-                                    expectedPrecio = baseService.PrecioBase + doctorHonorary;
+                                    expectedPrecio = basePrice + doctorHonorary;
+                                }
+                                else
+                                {
+                                    if (item.MedicoId.HasValue)
+                                    {
+                                        var customHonorarium = await _context.HonorariosMedicosServicios
+                                            .FirstOrDefaultAsync(h => h.ServicioId == baseService.Id && h.MedicoId == item.MedicoId.Value, ct);
+                                        doctorHonorary = customHonorarium?.MontoHonorario ?? baseService.HonorarioBase;
+                                    }
+                                    else
+                                    {
+                                        doctorHonorary = baseService.HonorarioBase;
+                                    }
+                                    expectedPrecio = basePrice + doctorHonorary;
                                 }
 
-                                if (item.Precio != expectedPrecio && item.Precio != baseService.PrecioBase)
+                                if (item.Precio != expectedPrecio && item.Precio != basePrice)
                                 {
                                     hasPriceModification = true;
                                     break;
@@ -232,30 +274,38 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                     if (esConsulta)
                     {
-                        if (!item.MedicoId.HasValue || !item.HoraCita.HasValue)
-                        {
-                            _logger.LogWarning("[SYNC] Fallo de Validación: El servicio '{Descripcion}' ({ServicioId}) es de consulta pero no tiene Médico u Horario asignado.", item.Descripcion, item.ServicioId);
-                            throw new InvalidOperationException($"El servicio '{item.Descripcion}' requiere la asignación de un médico y un horario de cita para ser facturado.");
-                        }
+                        bool requiresAppointmentTime = request.TipoIngreso == EstadoConstants.Particular || request.TipoIngreso == EstadoConstants.Seguro;
 
-                        // [BUG-FIX] Strict Specialty Validation (V15.0)
-                        if (baseService != null)
+                        if (requiresAppointmentTime)
                         {
-                            var medico = await _context.Medicos.FindAsync(new object[] { item.MedicoId.Value }, ct);
-
-                            if (medico != null && baseService.EspecialidadId.HasValue)
+                            if (!item.MedicoId.HasValue || !item.HoraCita.HasValue)
                             {
-                                if (baseService.EspecialidadId.Value != medico.EspecialidadId)
-                                {
-                                    _logger.LogError("[SYNC] Mismatch de Especialidad: Servicio '{Serv}' ({SpecS}) vs Médico '{Med}' ({SpecM})", 
-                                        baseService.Descripcion, baseService.EspecialidadId, medico.Nombre, medico.EspecialidadId);
-                                    throw new InvalidOperationException($"No se puede asignar el médico '{medico.Nombre}' a la consulta de '{baseService.Descripcion}' porque las especialidades no coinciden.");
-                                }
+                                _logger.LogWarning("[SYNC] Fallo de Validación: El servicio '{Descripcion}' ({ServicioId}) es de consulta pero no tiene Médico u Horario asignado.", item.Descripcion, item.ServicioId);
+                                throw new InvalidOperationException($"El servicio '{item.Descripcion}' requiere la asignación de un médico y un horario de cita para ser facturado.");
                             }
                         }
 
-                        _logger.LogInformation("[SYNC] Registrando cita médica - Medico: {MedicoId}, Hora: {Hora}", item.MedicoId, item.HoraCita);
-                        await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
+                        if (item.MedicoId.HasValue && item.HoraCita.HasValue)
+                        {
+                            // [BUG-FIX] Strict Specialty Validation (V15.0)
+                            if (baseService != null)
+                            {
+                                var medico = await _context.Medicos.FindAsync(new object[] { item.MedicoId.Value }, ct);
+
+                                if (medico != null && baseService.EspecialidadId.HasValue)
+                                {
+                                    if (baseService.EspecialidadId.Value != medico.EspecialidadId)
+                                    {
+                                        _logger.LogError("[SYNC] Mismatch de Especialidad: Servicio '{Serv}' ({SpecS}) vs Médico '{Med}' ({SpecM})", 
+                                            baseService.Descripcion, baseService.EspecialidadId, medico.Nombre, medico.EspecialidadId);
+                                        throw new InvalidOperationException($"No se puede asignar el médico '{medico.Nombre}' a la consulta de '{baseService.Descripcion}' porque las especialidades no coinciden.");
+                                    }
+                                }
+                            }
+
+                            _logger.LogInformation("[SYNC] Registrando cita médica - Medico: {MedicoId}, Hora: {Hora}", item.MedicoId, item.HoraCita);
+                            await ProcesarCitaMedicaAsync(item, paciente.Id, cuenta.Id, ct);
+                        }
                     }
 
                     // Senior Enrichment V12.2: Capturar LegacyMappingId del catálogo
@@ -272,37 +322,80 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         legacyId = baseService.LegacyMappingId;
                     }
 
-                    decimal doctorHonorary = 0;
-                    if (esConsulta && baseService != null)
+                    // Obtener precio base dependiente de convenio
+                    decimal basePrice = baseService?.PrecioBase ?? 0;
+                    if (request.ConvenioId.HasValue)
                     {
-                        if (item.MedicoId.HasValue)
+                        if (esLab)
                         {
-                            var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == item.MedicoId.Value, ct);
-                            if (medico != null)
+                            if (int.TryParse(item.ServicioId, out int perfilId))
                             {
-                                doctorHonorary = medico.HonorarioBase;
+                                var exc = await _context.ConvenioPerfilPrecios
+                                    .FirstOrDefaultAsync(x => x.SeguroConvenioId == request.ConvenioId.Value && x.PerfilId == perfilId, ct);
+                                if (exc != null && exc.PrecioUSD > 0)
+                                {
+                                    basePrice = exc.PrecioUSD;
+                                }
+                            }
+                        }
+                        else if (baseService != null)
+                        {
+                            var priceConv = await _context.PreciosServicioConvenio
+                                .FirstOrDefaultAsync(p => p.SeguroConvenioId == request.ConvenioId.Value && p.ServicioClinicoId == baseService.Id, ct);
+                            if (priceConv != null)
+                            {
+                                basePrice = priceConv.PrecioDiferencial;
+                            }
+                        }
+                    }
+
+                    decimal doctorHonorary = 0;
+                    if (baseService != null)
+                    {
+                        if (esConsulta)
+                        {
+                            if (item.MedicoId.HasValue)
+                            {
+                                var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == item.MedicoId.Value, ct);
+                                if (medico != null)
+                                {
+                                    doctorHonorary = medico.HonorarioBase;
+                                }
+                            }
+                            else
+                            {
+                                doctorHonorary = baseService.HonorarioBase;
                             }
                         }
                         else
                         {
-                            doctorHonorary = baseService.HonorarioBase;
+                            if (item.MedicoId.HasValue)
+                            {
+                                var customHonorarium = await _context.HonorariosMedicosServicios
+                                    .FirstOrDefaultAsync(h => h.ServicioId == serviceGuid && h.MedicoId == item.MedicoId.Value, ct);
+                                doctorHonorary = customHonorarium?.MontoHonorario ?? baseService.HonorarioBase;
+                            }
+                            else
+                            {
+                                doctorHonorary = baseService.HonorarioBase;
+                            }
                         }
                     }
 
                     decimal finalPrecio = item.Precio;
                     decimal finalHonorario = item.Honorario;
-                    if (esConsulta && baseService != null)
+                    if (baseService != null || esLab)
                     {
-                        if (item.Precio == baseService.PrecioBase && (item.Honorario == 0 || item.Honorario == baseService.HonorarioBase))
+                        if (item.Precio == basePrice && (item.Honorario == 0 || (baseService != null && item.Honorario == baseService.HonorarioBase)))
                         {
-                            finalPrecio = baseService.PrecioBase + doctorHonorary;
+                            finalPrecio = basePrice + doctorHonorary;
                         }
 
                         if (item.Honorario == 0)
                         {
                             finalHonorario = doctorHonorary;
                         }
-                        else if (item.Honorario == doctorHonorary + baseService.PrecioBase)
+                        else if (item.Honorario == doctorHonorary + basePrice)
                         {
                             finalHonorario = doctorHonorary;
                         }

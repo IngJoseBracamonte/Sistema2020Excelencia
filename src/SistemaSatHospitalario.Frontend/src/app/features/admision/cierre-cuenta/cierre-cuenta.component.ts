@@ -189,6 +189,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public diagnostico = signal<string>('Diagnóstico General / Control Médico');
   public destinoPaciente = signal<string>('Alta Médica');
   public personalRelevo = signal<string>('');
+  public mostrarSeccionPago = signal<boolean>(false);
+  public mostrarDetalleItems = signal<boolean>(false);
 
   // Billing Fields
   public tasaCambioDia = signal<number>(36.5);
@@ -612,6 +614,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.destinoPaciente.set('Alta Médica');
     this.personalRelevo.set('');
     this.medicoTratanteId.set(null); // Resetear selección de médico
+    this.mostrarSeccionPago.set(false);
+    this.mostrarDetalleItems.set(false);
     
     // Si la cuenta ya tiene convenio pre-configurado
     if (acc.convenioId) {
@@ -626,6 +630,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   // Volver a la Antesala (Directorio de Pacientes)
   public deselectAccount() {
     this.selectedAccount.set(null);
+    this.mostrarSeccionPago.set(false);
+    this.mostrarDetalleItems.set(false);
     this.loadOpenAccounts();
   }
 

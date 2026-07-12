@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,11 +8,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Conexiones;
 using Conexiones.DbConnect;
 
 namespace Laboratorio
 {
-    public partial class Form28 : Form
+    public partial class HematologiaEspecialForm : Form
     {
         public Double Neutrofilos = 0, linfocitos = 0, Monocitos = 0, Eosinofilos = 0, Basofilos = 0, Neutrofilos2 = 0, linfocitos2 = 0, Monocitos2 = 0, Eosinofilos2 = 0, Basofilos2 = 0, Hematies = 0, Hemoglobina = 0, Hematocritos = 0, VCM = 0, HCM = 0, CHCM = 0, Plaquetas = 0;
         public string TeclaLeu, TeclaNeu, TeclaLin, TeclaMono, TeclaEos, TeclaBaso, TeclaPla;
@@ -21,7 +22,7 @@ namespace Laboratorio
         private int IdAnalisis;
         private Double Total = 0, Neu = 0, Lin = 0, Mono = 0, Eos = 0, Baso = 0;
         bool Reportar = false;
-        public Form28(int idUser, int idOrden, int idAnalisis)
+        public HematologiaEspecialForm(int idUser, int idOrden, int idAnalisis)
         {
             IdUser = idUser;
             IdOrden = idOrden;
@@ -50,27 +51,27 @@ namespace Laboratorio
                     Sumar = (Neu / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox1.Text = Sumar.ToString("0.##");
+                        tNeutrofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Lin / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox2.Text = Sumar.ToString("0.##");
+                        tLinfocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Eos / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox3.Text = Sumar.ToString("0.##");
+                        tEosinofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Mono / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox4.Text = Sumar.ToString("0.##");
+                        tMonocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Baso / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox10.Text = Sumar.ToString("0.##");
+                        tBasofilosP.Text = Sumar.ToString("0.##");
                     }
                     Conteo();
                     return true;
@@ -84,27 +85,27 @@ namespace Laboratorio
                     Sumar = (Neu / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox1.Text = Sumar.ToString("0.##");
+                        tNeutrofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Lin / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox2.Text = Sumar.ToString("0.##");
+                        tLinfocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Eos / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox3.Text = Sumar.ToString("0.##");
+                        tEosinofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Mono / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox4.Text = Sumar.ToString("0.##");
+                        tMonocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Baso / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox10.Text = Sumar.ToString("0.##");
+                        tBasofilosP.Text = Sumar.ToString("0.##");
                     }
                     Conteo();
                     return true;
@@ -117,27 +118,27 @@ namespace Laboratorio
                     Sumar = (Neu / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox1.Text = Sumar.ToString("0.##");
+                        tNeutrofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Lin / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox2.Text = Sumar.ToString("0.##");
+                        tLinfocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Eos / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox3.Text = Sumar.ToString("0.##");
+                        tEosinofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Mono / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox4.Text = Sumar.ToString("0.##");
+                        tMonocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Baso / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox10.Text = Sumar.ToString("0.##");
+                        tBasofilosP.Text = Sumar.ToString("0.##");
                     }
                     Conteo();
                     return true;
@@ -151,27 +152,27 @@ namespace Laboratorio
                     Sumar = (Neu / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox1.Text = Sumar.ToString("0.##");
+                        tNeutrofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Lin / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox2.Text = Sumar.ToString("0.##");
+                        tLinfocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Eos / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox3.Text = Sumar.ToString("0.##");
+                        tEosinofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Mono / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox4.Text = Sumar.ToString("0.##");
+                        tMonocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Baso / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox10.Text = Sumar.ToString("0.##");
+                        tBasofilosP.Text = Sumar.ToString("0.##");
                     }
                     Conteo();
                     return true;
@@ -185,38 +186,38 @@ namespace Laboratorio
                     Sumar = (Neu / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox1.Text = Sumar.ToString("0.##");
+                        tNeutrofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Lin / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox2.Text = Sumar.ToString("0.##");
+                        tLinfocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Eos / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox3.Text = Sumar.ToString("0.##");
+                        tEosinofilosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Mono / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox4.Text = Sumar.ToString("0.##");
+                        tMonocitosP.Text = Sumar.ToString("0.##");
                     }
                     Sumar = (Baso / Total) * 100;
                     if (Sumar != 0)
                     {
-                        textBox10.Text = Sumar.ToString("0.##");
+                        tBasofilosP.Text = Sumar.ToString("0.##");
                     }
                     Conteo();
                     return true;
                 }
                 if (keyData.ToString() == TeclaLeu.ToUpper() && TeclaLeu.ToUpper() != "")
                 {
-                    if (textBox14.Text != "")
+                    if (tLeucocitos.Text != "")
                     {
                         Double Sumar;
-                        Sumar = Convert.ToDouble(textBox14.Text) + 1;
-                        textBox14.Text = Sumar.ToString();
+                        Sumar = Convert.ToDouble(tLeucocitos.Text) + 1;
+                        tLeucocitos.Text = Sumar.ToString();
 
 
                     }
@@ -224,25 +225,25 @@ namespace Laboratorio
                     {
                         Double Sumar;
                         Sumar = 1;
-                        textBox14.Text = Sumar.ToString();
+                        tLeucocitos.Text = Sumar.ToString();
                     }
                     return true;
                 }
                 if (keyData.ToString() == TeclaPla.ToUpper() && TeclaPla.ToUpper() != "")
                 {
 
-                    if (textBox16.Text != "")
+                    if (tPlaquetas.Text != "")
                     {
                         Double Sumar;
-                        Sumar = Convert.ToDouble(textBox16.Text) + 1;
-                        textBox16.Text = Sumar.ToString();
+                        Sumar = Convert.ToDouble(tPlaquetas.Text) + 1;
+                        tPlaquetas.Text = Sumar.ToString();
 
                     }
                     else
                     {
                         int Sumar;
                         Sumar = 1;
-                        textBox16.Text = Sumar.ToString();
+                        tPlaquetas.Text = Sumar.ToString();
                     }
                     return true;
                 }
@@ -264,7 +265,8 @@ namespace Laboratorio
 
             DataSet ds = new DataSet();
             DataSet ds1 = new DataSet();
-            ds = Conexion.HematologiaEspecial(IdOrden, IdAnalisis);
+            DatosDePaciente datosDePaciente = Conexion.selectDatosPacientePorId(IdOrden);
+            HematologiaEspecial hematologiaEspecial = Conexion.HematologiaEspecial(IdOrden, IdAnalisis);
             ds1 = Conexion.TeclasYPrivilegios(IdUser);
             if (ds1.Tables[0].Rows.Count != 0)
             {
@@ -292,33 +294,38 @@ namespace Laboratorio
 
             try
             {
-                Sexo.Text = ds.Tables[0].Rows[0]["Sexo"].ToString();
-                Nombre.Text = ds.Tables[0].Rows[0]["Nombre"].ToString() + " " + ds.Tables[0].Rows[0]["Apellidos"].ToString();
-                NPaciente.Text = "# " + ds.Tables[0].Rows[0]["NumeroDia"].ToString();
+                Sexo.Text = datosDePaciente.Sexo;
+                Nombre.Text = datosDePaciente.Nombre + " " + datosDePaciente.Apellidos;
+                //NPaciente.Text = "# " + datosDePaciente.NumeroDia;
                 DateTime nacimiento = new DateTime(); //Fecha de nacimiento
-                nacimiento = DateTime.Parse(ds.Tables[0].Rows[0]["Fecha"].ToString());
+                nacimiento = DateTime.Parse(datosDePaciente.Fecha.ToString());
                 int Hoy = Convert.ToInt32(DateTime.Now.ToString("yyyy"));
                 int edad = Hoy - nacimiento.Year;
                 Edad.Text = edad.ToString();
-                textBox14.Text = ds.Tables[0].Rows[0]["Leucocitos"].ToString();
-                textBox1.Text = ds.Tables[0].Rows[0]["Neutrofilos"].ToString();
-                textBox2.Text = ds.Tables[0].Rows[0]["Linfocitos"].ToString();
-                textBox4.Text = ds.Tables[0].Rows[0]["Monocitos"].ToString();
-                textBox3.Text = ds.Tables[0].Rows[0]["Eosinofilos"].ToString();
-                textBox10.Text = ds.Tables[0].Rows[0]["Basofilos"].ToString();
-                textBox20.Text = ds.Tables[0].Rows[0]["hematies"].ToString();
-                textBox19.Text = ds.Tables[0].Rows[0]["Hemoglobina"].ToString();
-                textBox18.Text = ds.Tables[0].Rows[0]["Hematocritos"].ToString();
-                textBox17.Text = ds.Tables[0].Rows[0]["VCM"].ToString();
-                textBox12.Text = ds.Tables[0].Rows[0]["HCM"].ToString();
-                textBox11.Text = ds.Tables[0].Rows[0]["CHCM"].ToString();
-                textBox16.Text = ds.Tables[0].Rows[0]["plaquetas"].ToString();
-                textBox7.Text = ds.Tables[0].Rows[0]["Neutrofilos2"].ToString();
-                textBox8.Text = ds.Tables[0].Rows[0]["Linfocitos2"].ToString();
-                textBox6.Text = ds.Tables[0].Rows[0]["Monocitos2"].ToString();
-                textBox5.Text = ds.Tables[0].Rows[0]["Eosinofilos2"].ToString();
-                textBox9.Text = ds.Tables[0].Rows[0]["Basofilos2"].ToString();
-                textBox15.Text = ds.Tables[0].Rows[0]["Frotis"].ToString();
+                tLeucocitos.Text = hematologiaEspecial.leucocitos;
+                tNeutrofilosP.Text = hematologiaEspecial.Neutrofilos;
+                tLinfocitosP.Text = hematologiaEspecial.linfocitos;
+                tMonocitosP.Text = hematologiaEspecial.Monocitos;
+                tEosinofilosP.Text = hematologiaEspecial.Eosinofilos;
+                tBasofilosP.Text = hematologiaEspecial.Basofilos;
+                tHematies.Text = hematologiaEspecial.Hematies;
+                tHemoglobina.Text = hematologiaEspecial.Hemoglobina;
+                tHematocritos.Text = hematologiaEspecial.Hematocritos;
+                tVCM.Text = hematologiaEspecial.VCM;
+                tHCM.Text = hematologiaEspecial.HCM;
+                tCHCM.Text = hematologiaEspecial.CHCM;
+                tPlaquetas.Text = hematologiaEspecial.Plaquetas;
+                tNeutrofilosU.Text = hematologiaEspecial.Neutrofilos2;
+                tLinfocitosU.Text = hematologiaEspecial.Linfocitos2;
+                tMonocitosU.Text = hematologiaEspecial.Monocitos2;
+                tEosinofilosU.Text = hematologiaEspecial.Eosinofilos2;
+                tBasofilosU.Text = hematologiaEspecial.Basofilos2;
+                tFrotis.Text = hematologiaEspecial.Comentario;
+                tADE.Text = hematologiaEspecial.ADE;
+                tADP.Text = hematologiaEspecial.ADP;
+                tReticulocitos.Text = hematologiaEspecial.Reticulocitos;
+                tVPM.Text = hematologiaEspecial.VPM;
+                tPCT.Text = hematologiaEspecial.PCT;
             }
             catch
             {
@@ -330,60 +337,60 @@ namespace Laboratorio
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            if (textBox1.Text != " " && textBox1.Text != "")
+            if (tNeutrofilosP.Text != " " && tNeutrofilosP.Text != "")
             {
-                if (textBox1.Text == ",")
+                if (tNeutrofilosP.Text == ",")
                 {
-                    textBox1.Text = "0,";
+                    tNeutrofilosP.Text = "0,";
                 }
                 //NEUTROFILOS
-                Neutrofilos = Convert.ToDouble(textBox1.Text);
+                Neutrofilos = Convert.ToDouble(tNeutrofilosP.Text);
                 if (Neutrofilos < 40.0)
                 {
-                    textBox1.ForeColor = Color.FromArgb(0, 110, 242);
+                    tNeutrofilosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Neutrofilos > 70.0)
                 {
-                    textBox1.ForeColor = Color.FromArgb(150, 40, 130);
+                    tNeutrofilosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox1.ForeColor = Color.FromArgb(0, 0, 0);
+                else tNeutrofilosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox1.Text != "")
+            if (tLeucocitos.Text != "" && tNeutrofilosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox1.Text)) / 100;
-                textBox7.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tNeutrofilosP.Text)) / 100;
+                tNeutrofilosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
             //NEUTROFILOS
-            if (textBox2.Text != " " && textBox2.Text != "")
+            if (tLinfocitosP.Text != " " && tLinfocitosP.Text != "")
             {
-                if (textBox2.Text == ",")
+                if (tLinfocitosP.Text == ",")
                 {
-                    textBox2.Text = "0,";
+                    tLinfocitosP.Text = "0,";
                 }
                 //NEUTROFILOS
-                linfocitos = Convert.ToDouble(textBox2.Text);
+                linfocitos = Convert.ToDouble(tLinfocitosP.Text);
                 if (linfocitos < 18.0)
                 {
-                    textBox2.ForeColor = Color.FromArgb(0, 110, 242);
+                    tLinfocitosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (linfocitos > 48.0)
                 {
-                    textBox2.ForeColor = Color.FromArgb(150, 40, 130);
+                    tLinfocitosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox2.ForeColor = Color.FromArgb(0, 0, 0);
+                else tLinfocitosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox2.Text != "")
+            if (tLeucocitos.Text != "" && tLinfocitosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox2.Text)) / 100;
-                textBox8.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tLinfocitosP.Text)) / 100;
+                tLinfocitosU.Text = Resultado.ToString("0.##");
             }
         }
 
@@ -391,199 +398,199 @@ namespace Laboratorio
         {
 
             //Monocitos
-            if (textBox4.Text != " " && textBox4.Text != "")
+            if (tMonocitosP.Text != " " && tMonocitosP.Text != "")
             {
-                if (textBox4.Text == ",")
+                if (tMonocitosP.Text == ",")
                 {
-                    textBox4.Text = "0,";
+                    tMonocitosP.Text = "0,";
                 }
-                Monocitos = Convert.ToDouble(textBox4.Text);
+                Monocitos = Convert.ToDouble(tMonocitosP.Text);
                 //Monocitos
                 if (Monocitos < 3.0)
                 {
-                    textBox4.ForeColor = Color.FromArgb(0, 110, 242);
+                    tMonocitosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Monocitos > 12.0)
                 {
-                    textBox4.ForeColor = Color.FromArgb(150, 40, 130);
+                    tMonocitosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox4.ForeColor = Color.FromArgb(0, 0, 0);
+                else tMonocitosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox4.Text != "")
+            if (tLeucocitos.Text != "" && tMonocitosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox4.Text)) / 100;
-                textBox6.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tMonocitosP.Text)) / 100;
+                tMonocitosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox3_TextChanged(object sender, EventArgs e)
         {
             //Eosinofilos 
-            if (textBox3.Text != " " && textBox3.Text != "")
+            if (tEosinofilosP.Text != " " && tEosinofilosP.Text != "")
             {
-                if (textBox3.Text == ",")
+                if (tEosinofilosP.Text == ",")
                 {
-                    textBox3.Text = "0,";
+                    tEosinofilosP.Text = "0,";
                 }
-                Eosinofilos = Convert.ToDouble(textBox3.Text);
+                Eosinofilos = Convert.ToDouble(tEosinofilosP.Text);
 
                 //Eosinofilos
                 if (Eosinofilos < 0.6)
                 {
-                    textBox3.ForeColor = Color.FromArgb(0, 110, 242);
+                    tEosinofilosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Eosinofilos > 7.3)
                 {
-                    textBox3.ForeColor = Color.FromArgb(150, 40, 130);
+                    tEosinofilosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox3.ForeColor = Color.FromArgb(0, 0, 0);
+                else tEosinofilosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox3.Text != "")
+            if (tLeucocitos.Text != "" && tEosinofilosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox3.Text)) / 100;
-                textBox5.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tEosinofilosP.Text)) / 100;
+                tEosinofilosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox10_TextChanged(object sender, EventArgs e)
         {
-            if (textBox10.Text != " " && textBox10.Text != "")
+            if (tBasofilosP.Text != " " && tBasofilosP.Text != "")
             {
-                if (textBox10.Text == ",")
+                if (tBasofilosP.Text == ",")
                 {
-                    textBox10.Text = "0,";
+                    tBasofilosP.Text = "0,";
                 }
-                Basofilos = Convert.ToDouble(textBox10.Text);
+                Basofilos = Convert.ToDouble(tBasofilosP.Text);
                 //Basofilos
                 if (Basofilos < 0)
                 {
-                    textBox10.ForeColor = Color.FromArgb(0, 110, 242);
+                    tBasofilosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Basofilos > 1.7)
                 {
-                    textBox10.ForeColor = Color.FromArgb(150, 40, 130);
+                    tBasofilosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox10.ForeColor = Color.FromArgb(0, 0, 0);
+                else tBasofilosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox10.Text != "")
+            if (tLeucocitos.Text != "" && tBasofilosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox10.Text)) / 100;
-                textBox9.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tBasofilosP.Text)) / 100;
+                tBasofilosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox20_TextChanged(object sender, EventArgs e)
         {
 
-            if (textBox20.Text != " " && textBox20.Text != "")
+            if (tHematies.Text != " " && tHematies.Text != "")
             {
-                if (textBox20.Text == ",")
+                if (tHematies.Text == ",")
                 {
-                    textBox20.Text = "0,";
+                    tHematies.Text = "0,";
                 }
 
-                Hematies = Convert.ToDouble(textBox20.Text);
+                Hematies = Convert.ToDouble(tHematies.Text);
                 //Hematies
                 if (Hematies < 3.5)
                 {
-                    textBox20.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHematies.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Hematies > 5.5)
                 {
-                    textBox20.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHematies.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox20.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHematies.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
         private void textBox19_TextChanged(object sender, EventArgs e)
         {
 
-            if (textBox19.Text != " " && textBox19.Text != "")
+            if (tHemoglobina.Text != " " && tHemoglobina.Text != "")
             {
-                if (textBox19.Text == ",")
+                if (tHemoglobina.Text == ",")
                 {
-                    textBox19.Text = "0,";
+                    tHemoglobina.Text = "0,";
                 }
-                Hemoglobina = Convert.ToDouble(textBox19.Text);
+                Hemoglobina = Convert.ToDouble(tHemoglobina.Text);
                 //Hemoglobina
                 if (Hemoglobina < 11)
                 {
-                    textBox19.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHemoglobina.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Hemoglobina > 16)
                 {
-                    textBox19.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHemoglobina.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox19.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHemoglobina.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
         private void textBox18_TextChanged(object sender, EventArgs e)
         {
 
-            if (textBox18.Text != " " && textBox18.Text != "")
+            if (tHematocritos.Text != " " && tHematocritos.Text != "")
             {
-                if (textBox18.Text == ",")
+                if (tHematocritos.Text == ",")
                 {
-                    textBox18.Text = "0,";
+                    tHematocritos.Text = "0,";
                 }
-                Hematocritos = Convert.ToDouble(textBox18.Text);
+                Hematocritos = Convert.ToDouble(tHematocritos.Text);
                 //Hematocritos
                 if (Hematocritos < 35)
                 {
-                    textBox18.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHematocritos.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Hematocritos > 54)
                 {
-                    textBox18.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHematocritos.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox18.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHematocritos.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox18.Text != "")
+            if (tHematocritos.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox18.Text) * 0.32);
-                textBox19.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox18.Text) * 0.11);
-                textBox20.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox18.Text) * 10) / Convert.ToDouble(textBox20.Text);
-                textBox17.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox19.Text) * 100) / Convert.ToDouble(textBox18.Text);
-                textBox11.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox19.Text) * 10) / Convert.ToDouble(textBox20.Text);
-                textBox12.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tHematocritos.Text) * 0.32);
+                tHemoglobina.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tHematocritos.Text) * 0.11);
+                tHematies.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tHematocritos.Text) * 10) / Convert.ToDouble(tHematies.Text);
+                tVCM.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tHemoglobina.Text) * 100) / Convert.ToDouble(tHematocritos.Text);
+                tCHCM.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tHemoglobina.Text) * 10) / Convert.ToDouble(tHematies.Text);
+                tHCM.Text = Resultado.ToString("0.##");
 
             }
         }
         private void textBox17_TextChanged(object sender, EventArgs e)
         {
 
-            if (textBox17.Text != " " && textBox17.Text != "")
+            if (tVCM.Text != " " && tVCM.Text != "")
             {
-                if (textBox17.Text == ",")
+                if (tVCM.Text == ",")
                 {
-                    textBox17.Text = "0,";
+                    tVCM.Text = "0,";
                 }
-                VCM = Convert.ToDouble(textBox17.Text);
+                VCM = Convert.ToDouble(tVCM.Text);
                 //VCM
                 if (VCM < 80)
                 {
-                    textBox17.ForeColor = Color.FromArgb(0, 110, 242);
+                    tVCM.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (VCM > 100)
                 {
-                    textBox17.ForeColor = Color.FromArgb(150, 40, 130);
+                    tVCM.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox17.ForeColor = Color.FromArgb(0, 0, 0);
+                else tVCM.ForeColor = Color.FromArgb(0, 0, 0);
 
             }
         }
@@ -591,73 +598,73 @@ namespace Laboratorio
         private void textBox12_TextChanged(object sender, EventArgs e)
         {
 
-            if (textBox12.Text != " " && textBox12.Text != "")
+            if (tHCM.Text != " " && tHCM.Text != "")
             {
 
-                if (textBox12.Text == ",")
+                if (tHCM.Text == ",")
                 {
-                    textBox12.Text = "0,";
+                    tHCM.Text = "0,";
                 }
-                HCM = Convert.ToDouble(textBox12.Text);
+                HCM = Convert.ToDouble(tHCM.Text);
                 //HCM
                 if (HCM < 27)
                 {
-                    textBox12.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHCM.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (HCM > 34)
                 {
-                    textBox12.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHCM.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox12.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHCM.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox11_TextChanged(object sender, EventArgs e)
         {
-            if (textBox11.Text != " " && textBox11.Text != "")
+            if (tCHCM.Text != " " && tCHCM.Text != "")
             {
 
-                if (textBox11.Text == ",")
+                if (tCHCM.Text == ",")
                 {
-                    textBox11.Text = "0,";
+                    tCHCM.Text = "0,";
                 }
-                CHCM = Convert.ToDouble(textBox11.Text);
+                CHCM = Convert.ToDouble(tCHCM.Text);
                 //CHCM
                 if (CHCM < 31)
                 {
-                    textBox11.ForeColor = Color.FromArgb(0, 110, 242);
+                    tCHCM.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (CHCM > 34)
                 {
-                    textBox11.ForeColor = Color.FromArgb(150, 40, 130);
+                    tCHCM.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox11.ForeColor = Color.FromArgb(0, 0, 0);
+                else tCHCM.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox16_TextChanged(object sender, EventArgs e)
         {
-            if (textBox16.Text != " " && textBox16.Text != "")
+            if (tPlaquetas.Text != " " && tPlaquetas.Text != "")
             {
-                if (textBox16.Text == ",")
+                if (tPlaquetas.Text == ",")
                 {
-                    textBox16.Text = "0,";
+                    tPlaquetas.Text = "0,";
                 }
 
-                Plaquetas = Convert.ToDouble(textBox16.Text);
+                Plaquetas = Convert.ToDouble(tPlaquetas.Text);
                 //Plaquetas
                 if (Plaquetas < 150)
                 {
-                    textBox16.ForeColor = Color.FromArgb(0, 110, 242);
+                    tPlaquetas.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Plaquetas > 450)
                 {
-                    textBox16.ForeColor = Color.FromArgb(150, 40, 130);
+                    tPlaquetas.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox16.ForeColor = Color.FromArgb(0, 0, 0);
+                else tPlaquetas.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
@@ -681,7 +688,8 @@ namespace Laboratorio
                 {
 
                         string MS;
-                        MS = Conexion.InsertarHematologiaEspecial(IdOrden.ToString(),DateTime.Now.ToString("hh:mm:ss"),IdAnalisis.ToString(), textBox15.Text, textBox1.Text, textBox2.Text, textBox4.Text, textBox3.Text, textBox10.Text, textBox20.Text, textBox19.Text, textBox18.Text, textBox17.Text, textBox12.Text, textBox11.Text, textBox16.Text, textBox7.Text, textBox8.Text, textBox6.Text,IdUser.ToString(), textBox5.Text, textBox9.Text, textBox14.Text);
+                        var he = AsignarValores();
+                         MS = Conexion.InsertarHematologiaEspecial(IdOrden, IdAnalisis, he, IdUser);
                         MessageBox.Show(MS);
                 }
             }
@@ -696,121 +704,121 @@ namespace Laboratorio
         private void textBox8_TextChanged(object sender, EventArgs e)
         {
 
-            if (textBox7.Text != " " && textBox7.Text != "")
+            if (tNeutrofilosU.Text != " " && tNeutrofilosU.Text != "")
             {
-                if (textBox7.Text != " " && textBox7.Text != "")
+                if (tNeutrofilosU.Text != " " && tNeutrofilosU.Text != "")
                 {
-                    if (textBox7.Text == ",")
+                    if (tNeutrofilosU.Text == ",")
                     {
-                        textBox7.Text = "0,";
+                        tNeutrofilosU.Text = "0,";
                     }
 
-                    Neutrofilos2 = Convert.ToDouble(textBox7.Text);
+                    Neutrofilos2 = Convert.ToDouble(tNeutrofilosU.Text);
                     //Neutrofilos2
                     if (Neutrofilos2 < 2)
                     {
-                        textBox7.ForeColor = Color.FromArgb(0, 110, 242);
+                        tNeutrofilosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                     }
                     else if (Neutrofilos2 > 7)
                     {
-                        textBox7.ForeColor = Color.FromArgb(150, 40, 130);
+                        tNeutrofilosU.ForeColor = Color.FromArgb(150, 40, 130);
                     }
-                    else textBox7.ForeColor = Color.FromArgb(0, 0, 0);
+                    else tNeutrofilosU.ForeColor = Color.FromArgb(0, 0, 0);
                 }
             }
         }
 
         private void textBox7_TextChanged(object sender, EventArgs e)
         {
-            if (textBox8.Text != " " && textBox8.Text != "")
+            if (tLinfocitosU.Text != " " && tLinfocitosU.Text != "")
             {
-                if (textBox8.Text == ",")
+                if (tLinfocitosU.Text == ",")
                 {
-                    textBox8.Text = "0,";
+                    tLinfocitosU.Text = "0,";
                 }
 
-                linfocitos2 = Convert.ToDouble(textBox8.Text);
+                linfocitos2 = Convert.ToDouble(tLinfocitosU.Text);
                 //linfocitos2
                 if (linfocitos2 < 1.1)
                 {
-                    textBox8.ForeColor = Color.FromArgb(0, 110, 242);
+                    tLinfocitosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (linfocitos2 > 2.9)
                 {
-                    textBox8.ForeColor = Color.FromArgb(150, 40, 130);
+                    tLinfocitosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox8.ForeColor = Color.FromArgb(0, 0, 0);
+                else tLinfocitosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox6_TextChanged(object sender, EventArgs e)
         {
-            if (textBox6.Text != " " && textBox6.Text != "")
+            if (tMonocitosU.Text != " " && tMonocitosU.Text != "")
             {
-                if (textBox6.Text == ",")
+                if (tMonocitosU.Text == ",")
                 {
-                    textBox6.Text = "0,";
+                    tMonocitosU.Text = "0,";
                 }
-                Monocitos2 = Convert.ToDouble(textBox6.Text);
+                Monocitos2 = Convert.ToDouble(tMonocitosU.Text);
                 //Monocitos2
                 if (Monocitos2 < 0.12)
                 {
-                    textBox6.ForeColor = Color.FromArgb(0, 110, 242);
+                    tMonocitosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Monocitos2 > 1.2)
                 {
-                    textBox6.ForeColor = Color.FromArgb(150, 40, 130);
+                    tMonocitosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox6.ForeColor = Color.FromArgb(0, 0, 0);
+                else tMonocitosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox5_TextChanged(object sender, EventArgs e)
         {
-            if (textBox5.Text != " " && textBox5.Text != "")
+            if (tEosinofilosU.Text != " " && tEosinofilosU.Text != "")
             {
-                if (textBox5.Text == ",")
+                if (tEosinofilosU.Text == ",")
                 {
-                    textBox5.Text = "0,";
+                    tEosinofilosU.Text = "0,";
                 }
-                Eosinofilos2 = Convert.ToDouble(textBox5.Text);
+                Eosinofilos2 = Convert.ToDouble(tEosinofilosU.Text);
                 //Eosinofilos2
                 if (Eosinofilos2 < 0.02)
                 {
-                    textBox5.ForeColor = Color.FromArgb(0, 110, 242);
+                    tEosinofilosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Eosinofilos2 > 0.50)
                 {
-                    textBox5.ForeColor = Color.FromArgb(150, 40, 130);
+                    tEosinofilosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox5.ForeColor = Color.FromArgb(0, 0, 0);
+                else tEosinofilosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox9_TextChanged(object sender, EventArgs e)
         {
-            if (textBox9.Text != " " && textBox9.Text != "")
+            if (tBasofilosU.Text != " " && tBasofilosU.Text != "")
             {
-                if (textBox9.Text == ",")
+                if (tBasofilosU.Text == ",")
                 {
-                    textBox9.Text = "0,";
+                    tBasofilosU.Text = "0,";
                 }
-                Basofilos2 = Convert.ToDouble(textBox9.Text);
+                Basofilos2 = Convert.ToDouble(tBasofilosU.Text);
                 //Basofilos2
                 if (Basofilos2 < 0.0)
                 {
-                    textBox9.ForeColor = Color.FromArgb(0, 110, 242);
+                    tBasofilosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Basofilos2 > 0.1)
                 {
-                    textBox9.ForeColor = Color.FromArgb(150, 40, 130);
+                    tBasofilosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox9.ForeColor = Color.FromArgb(0, 0, 0);
+                else tBasofilosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
@@ -885,7 +893,10 @@ namespace Laboratorio
         {
             DataSet ds = new DataSet();
             DataSet ds1 = new DataSet();
-            ds = Conexion.HematologiaEspecial(IdOrden, IdAnalisis);
+            Ordenes orden = new Ordenes();
+            orden = Conexion.SELECTordenesPorIdOrden(IdOrden);
+            DatosDePaciente datosDePaciente = Conexion.selectDatosPacientePorIdOrden(IdOrden);
+            HematologiaEspecial hematologiaEspecial = Conexion.HematologiaEspecial(IdOrden, IdAnalisis);
             ds1 = Conexion.TeclasYPrivilegios(IdUser);
             if (ds1.Tables[0].Rows.Count != 0)
             {
@@ -913,33 +924,39 @@ namespace Laboratorio
 
             try
             {
-                Sexo.Text = ds.Tables[0].Rows[0]["Sexo"].ToString();
-                Nombre.Text = ds.Tables[0].Rows[0]["Nombre"].ToString() + " " + ds.Tables[0].Rows[0]["Apellidos"].ToString();
-                NPaciente.Text = "# " + ds.Tables[0].Rows[0]["NumeroDia"].ToString();
+                Sexo.Text = datosDePaciente.Sexo;
+                Nombre.Text = datosDePaciente.Nombre + " " + datosDePaciente.Apellidos;
+                //NPaciente.Text = "# " + datosDePaciente.NumeroDia;
                 DateTime nacimiento = new DateTime(); //Fecha de nacimiento
-                nacimiento = DateTime.Parse(ds.Tables[0].Rows[0]["Fecha"].ToString());
+                nacimiento = datosDePaciente.Fecha;
                 int Hoy = Convert.ToInt32(DateTime.Now.ToString("yyyy"));
                 int edad = Hoy - nacimiento.Year;
                 Edad.Text = Conexion.Fecha(nacimiento);
-                textBox14.Text = ds.Tables[0].Rows[0]["Leucocitos"].ToString();
-                textBox1.Text = ds.Tables[0].Rows[0]["Neutrofilos"].ToString();
-                textBox2.Text = ds.Tables[0].Rows[0]["Linfocitos"].ToString();
-                textBox4.Text = ds.Tables[0].Rows[0]["Monocitos"].ToString();
-                textBox3.Text = ds.Tables[0].Rows[0]["Eosinofilos"].ToString();
-                textBox10.Text = ds.Tables[0].Rows[0]["Basofilos"].ToString();
-                textBox20.Text = ds.Tables[0].Rows[0]["hematies"].ToString();
-                textBox19.Text = ds.Tables[0].Rows[0]["Hemoglobina"].ToString();
-                textBox18.Text = ds.Tables[0].Rows[0]["Hematocritos"].ToString();
-                textBox17.Text = ds.Tables[0].Rows[0]["VCM"].ToString();
-                textBox12.Text = ds.Tables[0].Rows[0]["HCM"].ToString();
-                textBox11.Text = ds.Tables[0].Rows[0]["CHCM"].ToString();
-                textBox16.Text = ds.Tables[0].Rows[0]["plaquetas"].ToString();
-                textBox7.Text = ds.Tables[0].Rows[0]["Neutrofilos2"].ToString();
-                textBox8.Text = ds.Tables[0].Rows[0]["Linfocitos2"].ToString();
-                textBox6.Text = ds.Tables[0].Rows[0]["Monocitos2"].ToString();
-                textBox5.Text = ds.Tables[0].Rows[0]["Eosinofilos2"].ToString();
-                textBox9.Text = ds.Tables[0].Rows[0]["Basofilos2"].ToString();
-                textBox15.Text = ds.Tables[0].Rows[0]["Frotis"].ToString();
+                tLeucocitos.Text = hematologiaEspecial.leucocitos.ToString();
+                tNeutrofilosP.Text = hematologiaEspecial.Neutrofilos.ToString();
+                tLinfocitosP.Text = hematologiaEspecial.linfocitos.ToString();
+                tMonocitosP.Text = hematologiaEspecial.Monocitos.ToString();
+                tEosinofilosP.Text = hematologiaEspecial.Eosinofilos.ToString();
+                tBasofilosP.Text = hematologiaEspecial.Basofilos.ToString();
+                tHematies.Text = hematologiaEspecial.Hematies.ToString();
+                tHemoglobina.Text = hematologiaEspecial.Hemoglobina.ToString();
+                tHematocritos.Text = hematologiaEspecial.Hematocritos.ToString();
+                tVCM.Text = hematologiaEspecial.VCM.ToString();
+                tHCM.Text = hematologiaEspecial.HCM.ToString();
+                tCHCM.Text = hematologiaEspecial.CHCM.ToString();
+                tPlaquetas.Text = hematologiaEspecial.Plaquetas.ToString();
+                tNeutrofilosU.Text = hematologiaEspecial.Neutrofilos2.ToString();
+                tLinfocitosU.Text = hematologiaEspecial.Linfocitos2.ToString();
+                tMonocitosU.Text = hematologiaEspecial.Monocitos2.ToString();
+                tEosinofilosU.Text = hematologiaEspecial.Eosinofilos2.ToString();
+                tBasofilosU.Text = hematologiaEspecial.Basofilos2.ToString();
+                tFrotis.Text = hematologiaEspecial.Comentario.ToString();
+                tADE.Text = hematologiaEspecial.ADE.ToString();
+                tADP.Text = hematologiaEspecial.ADP.ToString();
+                tReticulocitos.Text = hematologiaEspecial.Reticulocitos.ToString();
+               tVPM.Text = hematologiaEspecial.VPM.ToString();
+                tPCT.Text = hematologiaEspecial.PCT.ToString();
+
             }
             catch
             {
@@ -964,16 +981,16 @@ namespace Laboratorio
                     Mono = 0;
                     Eos = 0;
                     Baso = 0;
-                    textBox1.Clear();
-                    textBox2.Clear();
-                    textBox4.Clear();
-                    textBox3.Clear();
-                    textBox10.Clear();
-                    textBox7.Clear();
-                    textBox8.Clear();
-                    textBox6.Clear();
-                    textBox5.Clear();
-                    textBox9.Clear();
+                    tNeutrofilosP.Clear();
+                    tLinfocitosP.Clear();
+                    tMonocitosP.Clear();
+                    tEosinofilosP.Clear();
+                    tBasofilosP.Clear();
+                    tNeutrofilosU.Clear();
+                    tLinfocitosU.Clear();
+                    tMonocitosU.Clear();
+                    tEosinofilosU.Clear();
+                    tBasofilosU.Clear();
                 }
                 else
                 {
@@ -1000,236 +1017,222 @@ namespace Laboratorio
         private void textBox18_TextChanged_1(object sender, EventArgs e)
         {
 
-            if (textBox18.Text != " " && textBox18.Text != "")
+            if (tHematocritos.Text != " " && tHematocritos.Text != "")
             {
-                if (textBox18.Text == ",")
+                if (tHematocritos.Text == ",")
                 {
-                    textBox18.Text = "0,";
+                    tHematocritos.Text = "0,";
                 }
-                Hematocritos = Convert.ToDouble(textBox18.Text);
+                Hematocritos = Convert.ToDouble(tHematocritos.Text);
                 //Hematocritos
                 if (Hematocritos < 35)
                 {
-                    textBox18.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHematocritos.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Hematocritos > 54)
                 {
-                    textBox18.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHematocritos.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox18.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHematocritos.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox18.Text != "")
-            {
-                Double Resultado;
-                Resultado = (Convert.ToDouble(textBox18.Text) * 0.32);
-                textBox19.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox18.Text) * 0.11);
-                textBox20.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox18.Text) * 10) / Convert.ToDouble(textBox20.Text);
-                textBox17.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox19.Text) * 100) / Convert.ToDouble(textBox18.Text);
-                textBox11.Text = Resultado.ToString("0.##");
-                Resultado = (Convert.ToDouble(textBox19.Text) * 10) / Convert.ToDouble(textBox20.Text);
-                textBox12.Text = Resultado.ToString("0.##");
-
-            }
+           
         }
 
         private void textBox1_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox1.Text != " " && textBox1.Text != "")
+            if (tNeutrofilosP.Text != " " && tNeutrofilosP.Text != "")
             {
-                if (textBox1.Text == ",")
+                if (tNeutrofilosP.Text == ",")
                 {
-                    textBox1.Text = "0,";
+                    tNeutrofilosP.Text = "0,";
                 }
                 //NEUTROFILOS
-                Neutrofilos = Convert.ToDouble(textBox1.Text);
+                Neutrofilos = Convert.ToDouble(tNeutrofilosP.Text);
                 if (Neutrofilos < 40.0)
                 {
-                    textBox1.ForeColor = Color.FromArgb(0, 110, 242);
+                    tNeutrofilosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Neutrofilos > 70.0)
                 {
-                    textBox1.ForeColor = Color.FromArgb(150, 40, 130);
+                    tNeutrofilosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox1.ForeColor = Color.FromArgb(0, 0, 0);
+                else tNeutrofilosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox1.Text != "")
+            if (tLeucocitos.Text != "" && tNeutrofilosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox1.Text)) / 100;
-                textBox7.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tNeutrofilosP.Text)) / 100;
+                tNeutrofilosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox2_TextChanged_1(object sender, EventArgs e)
         {
             //NEUTROFILOS
-            if (textBox2.Text != " " && textBox2.Text != "")
+            if (tLinfocitosP.Text != " " && tLinfocitosP.Text != "")
             {
-                if (textBox2.Text == ",")
+                if (tLinfocitosP.Text == ",")
                 {
-                    textBox2.Text = "0,";
+                    tLinfocitosP.Text = "0,";
                 }
                 //NEUTROFILOS
-                linfocitos = Convert.ToDouble(textBox2.Text);
+                linfocitos = Convert.ToDouble(tLinfocitosP.Text);
                 if (linfocitos < 18.0)
                 {
-                    textBox2.ForeColor = Color.FromArgb(0, 110, 242);
+                    tLinfocitosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (linfocitos > 48.0)
                 {
-                    textBox2.ForeColor = Color.FromArgb(150, 40, 130);
+                    tLinfocitosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox2.ForeColor = Color.FromArgb(0, 0, 0);
+                else tLinfocitosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox2.Text != "")
+            if (tLeucocitos.Text != "" && tLinfocitosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox2.Text)) / 100;
-                textBox8.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tLinfocitosP.Text)) / 100;
+                tLinfocitosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox4_TextChanged_1(object sender, EventArgs e)
         {
             //Monocitos
-            if (textBox4.Text != " " && textBox4.Text != "")
+            if (tMonocitosP.Text != " " && tMonocitosP.Text != "")
             {
-                if (textBox4.Text == ",")
+                if (tMonocitosP.Text == ",")
                 {
-                    textBox4.Text = "0,";
+                    tMonocitosP.Text = "0,";
                 }
-                Monocitos = Convert.ToDouble(textBox4.Text);
+                Monocitos = Convert.ToDouble(tMonocitosP.Text);
                 //Monocitos
                 if (Monocitos < 3.0)
                 {
-                    textBox4.ForeColor = Color.FromArgb(0, 110, 242);
+                    tMonocitosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Monocitos > 12.0)
                 {
-                    textBox4.ForeColor = Color.FromArgb(150, 40, 130);
+                    tMonocitosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox4.ForeColor = Color.FromArgb(0, 0, 0);
+                else tMonocitosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox4.Text != "")
+            if (tLeucocitos.Text != "" && tMonocitosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox4.Text)) / 100;
-                textBox6.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tMonocitosP.Text)) / 100;
+                tMonocitosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox3_TextChanged_1(object sender, EventArgs e)
         {
             //Eosinofilos 
-            if (textBox3.Text != " " && textBox3.Text != "")
+            if (tEosinofilosP.Text != " " && tEosinofilosP.Text != "")
             {
-                if (textBox3.Text == ",")
+                if (tEosinofilosP.Text == ",")
                 {
-                    textBox3.Text = "0,";
+                    tEosinofilosP.Text = "0,";
                 }
-                Eosinofilos = Convert.ToDouble(textBox3.Text);
+                Eosinofilos = Convert.ToDouble(tEosinofilosP.Text);
 
                 //Eosinofilos
                 if (Eosinofilos < 0.6)
                 {
-                    textBox3.ForeColor = Color.FromArgb(0, 110, 242);
+                    tEosinofilosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Eosinofilos > 7.3)
                 {
-                    textBox3.ForeColor = Color.FromArgb(150, 40, 130);
+                    tEosinofilosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox3.ForeColor = Color.FromArgb(0, 0, 0);
+                else tEosinofilosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox3.Text != "")
+            if (tLeucocitos.Text != "" && tEosinofilosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox3.Text)) / 100;
-                textBox5.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tEosinofilosP.Text)) / 100;
+                tEosinofilosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox10_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox10.Text != " " && textBox10.Text != "")
+            if (tBasofilosP.Text != " " && tBasofilosP.Text != "")
             {
-                if (textBox10.Text == ",")
+                if (tBasofilosP.Text == ",")
                 {
-                    textBox10.Text = "0,";
+                    tBasofilosP.Text = "0,";
                 }
-                Basofilos = Convert.ToDouble(textBox10.Text);
+                Basofilos = Convert.ToDouble(tBasofilosP.Text);
                 //Basofilos
                 if (Basofilos < 0)
                 {
-                    textBox10.ForeColor = Color.FromArgb(0, 110, 242);
+                    tBasofilosP.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Basofilos > 1.7)
                 {
-                    textBox10.ForeColor = Color.FromArgb(150, 40, 130);
+                    tBasofilosP.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox10.ForeColor = Color.FromArgb(0, 0, 0);
+                else tBasofilosP.ForeColor = Color.FromArgb(0, 0, 0);
             }
-            if (textBox14.Text != "" && textBox10.Text != "")
+            if (tLeucocitos.Text != "" && tBasofilosP.Text != "")
             {
                 Double Resultado;
-                Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox10.Text)) / 100;
-                textBox9.Text = Resultado.ToString("0.##");
+                Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tBasofilosP.Text)) / 100;
+                tBasofilosU.Text = Resultado.ToString("0.##");
             }
         }
 
         private void textBox14_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox14.Text != " " && textBox14.Text != "")
+            if (tLeucocitos.Text != " " && tLeucocitos.Text != "")
             {
-                if (textBox14.Text == ",")
+                if (tLeucocitos.Text == ",")
                 {
-                    textBox14.Text = "0,";
+                    tLeucocitos.Text = "0,";
                 }
-                Monocitos2 = Convert.ToDouble(textBox14.Text);
+                Monocitos2 = Convert.ToDouble(tLeucocitos.Text);
                 //Monocitos2
                 if (Monocitos2 < 4.0)
                 {
-                    textBox14.ForeColor = Color.FromArgb(0, 110, 242);
+                    tLeucocitos.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Monocitos2 > 10.0)
                 {
-                    textBox14.ForeColor = Color.FromArgb(150, 40, 130);
+                    tLeucocitos.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox14.ForeColor = Color.FromArgb(0, 0, 0);
+                else tLeucocitos.ForeColor = Color.FromArgb(0, 0, 0);
                 Double Resultado;
-                if (textBox10.Text != "")
+                if (tBasofilosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox10.Text)) / 100;
-                    textBox9.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tBasofilosP.Text)) / 100;
+                    tBasofilosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox3.Text != "")
+                if (tEosinofilosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox3.Text)) / 100;
-                    textBox5.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tEosinofilosP.Text)) / 100;
+                    tEosinofilosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox4.Text != "")
+                if (tMonocitosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox4.Text)) / 100;
-                    textBox6.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tMonocitosP.Text)) / 100;
+                    tMonocitosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox2.Text != "")
+                if (tLinfocitosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox2.Text)) / 100;
-                    textBox8.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tLinfocitosP.Text)) / 100;
+                    tLinfocitosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox1.Text != "")
+                if (tNeutrofilosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox1.Text)) / 100;
-                    textBox7.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tNeutrofilosP.Text)) / 100;
+                    tNeutrofilosU.Text = Resultado.ToString("0.##");
                 }
             }
 
@@ -1238,217 +1241,217 @@ namespace Laboratorio
         private void textBox7_TextChanged_1(object sender, EventArgs e)
         {
 
-            if (textBox7.Text != " " && textBox7.Text != "")
+            if (tNeutrofilosU.Text != " " && tNeutrofilosU.Text != "")
             {
-                if (textBox7.Text != " " && textBox7.Text != "")
+                if (tNeutrofilosU.Text != " " && tNeutrofilosU.Text != "")
                 {
-                    if (textBox7.Text == ",")
+                    if (tNeutrofilosU.Text == ",")
                     {
-                        textBox7.Text = "0,";
+                        tNeutrofilosU.Text = "0,";
                     }
 
-                    Neutrofilos2 = Convert.ToDouble(textBox7.Text);
+                    Neutrofilos2 = Convert.ToDouble(tNeutrofilosU.Text);
                     //Neutrofilos2
                     if (Neutrofilos2 < 2)
                     {
-                        textBox7.ForeColor = Color.FromArgb(0, 110, 242);
+                        tNeutrofilosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                     }
                     else if (Neutrofilos2 > 7)
                     {
-                        textBox7.ForeColor = Color.FromArgb(150, 40, 130);
+                        tNeutrofilosU.ForeColor = Color.FromArgb(150, 40, 130);
                     }
-                    else textBox7.ForeColor = Color.FromArgb(0, 0, 0);
+                    else tNeutrofilosU.ForeColor = Color.FromArgb(0, 0, 0);
                 }
             }
         }
 
         private void textBox8_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox8.Text != " " && textBox8.Text != "")
+            if (tLinfocitosU.Text != " " && tLinfocitosU.Text != "")
             {
-                if (textBox8.Text == ",")
+                if (tLinfocitosU.Text == ",")
                 {
-                    textBox8.Text = "0,";
+                    tLinfocitosU.Text = "0,";
                 }
 
-                linfocitos2 = Convert.ToDouble(textBox8.Text);
+                linfocitos2 = Convert.ToDouble(tLinfocitosU.Text);
                 //linfocitos2
                 if (linfocitos2 < 1.1)
                 {
-                    textBox8.ForeColor = Color.FromArgb(0, 110, 242);
+                    tLinfocitosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (linfocitos2 > 2.9)
                 {
-                    textBox8.ForeColor = Color.FromArgb(150, 40, 130);
+                    tLinfocitosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox8.ForeColor = Color.FromArgb(0, 0, 0);
+                else tLinfocitosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox6_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox6.Text != " " && textBox6.Text != "")
+            if (tMonocitosU.Text != " " && tMonocitosU.Text != "")
             {
-                if (textBox6.Text == ",")
+                if (tMonocitosU.Text == ",")
                 {
-                    textBox6.Text = "0,";
+                    tMonocitosU.Text = "0,";
                 }
-                Monocitos2 = Convert.ToDouble(textBox6.Text);
+                Monocitos2 = Convert.ToDouble(tMonocitosU.Text);
                 //Monocitos2
                 if (Monocitos2 < 0.12)
                 {
-                    textBox6.ForeColor = Color.FromArgb(0, 110, 242);
+                    tMonocitosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Monocitos2 > 1.2)
                 {
-                    textBox6.ForeColor = Color.FromArgb(150, 40, 130);
+                    tMonocitosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox6.ForeColor = Color.FromArgb(0, 0, 0);
+                else tMonocitosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox5_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox5.Text != " " && textBox5.Text != "")
+            if (tEosinofilosU.Text != " " && tEosinofilosU.Text != "")
             {
-                if (textBox5.Text == ",")
+                if (tEosinofilosU.Text == ",")
                 {
-                    textBox5.Text = "0,";
+                    tEosinofilosU.Text = "0,";
                 }
-                Eosinofilos2 = Convert.ToDouble(textBox5.Text);
+                Eosinofilos2 = Convert.ToDouble(tEosinofilosU.Text);
                 //Eosinofilos2
                 if (Eosinofilos2 < 0.02)
                 {
-                    textBox5.ForeColor = Color.FromArgb(0, 110, 242);
+                    tEosinofilosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Eosinofilos2 > 0.50)
                 {
-                    textBox5.ForeColor = Color.FromArgb(150, 40, 130);
+                    tEosinofilosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox5.ForeColor = Color.FromArgb(0, 0, 0);
+                else tEosinofilosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox9_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox9.Text != " " && textBox9.Text != "")
+            if (tBasofilosU.Text != " " && tBasofilosU.Text != "")
             {
-                if (textBox9.Text == ",")
+                if (tBasofilosU.Text == ",")
                 {
-                    textBox9.Text = "0,";
+                    tBasofilosU.Text = "0,";
                 }
-                Basofilos2 = Convert.ToDouble(textBox9.Text);
+                Basofilos2 = Convert.ToDouble(tBasofilosU.Text);
                 //Basofilos2
                 if (Basofilos2 < 0.0)
                 {
-                    textBox9.ForeColor = Color.FromArgb(0, 110, 242);
+                    tBasofilosU.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Basofilos2 > 0.1)
                 {
-                    textBox9.ForeColor = Color.FromArgb(150, 40, 130);
+                    tBasofilosU.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox9.ForeColor = Color.FromArgb(0, 0, 0);
+                else tBasofilosU.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox16_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox16.Text != " " && textBox16.Text != "")
+            if (tPlaquetas.Text != " " && tPlaquetas.Text != "")
             {
-                if (textBox16.Text == ",")
+                if (tPlaquetas.Text == ",")
                 {
-                    textBox16.Text = "0,";
+                    tPlaquetas.Text = "0,";
                 }
 
-                Plaquetas = Convert.ToDouble(textBox16.Text);
+                Plaquetas = Convert.ToDouble(tPlaquetas.Text);
                 //Plaquetas
                 if (Plaquetas < 150)
                 {
-                    textBox16.ForeColor = Color.FromArgb(0, 110, 242);
+                    tPlaquetas.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Plaquetas > 450)
                 {
-                    textBox16.ForeColor = Color.FromArgb(150, 40, 130);
+                    tPlaquetas.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox16.ForeColor = Color.FromArgb(0, 0, 0);
+                else tPlaquetas.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox20_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox20.Text != " " && textBox20.Text != "")
+            if (tHematies.Text != " " && tHematies.Text != "")
             {
-                if (textBox20.Text == ",")
+                if (tHematies.Text == ",")
                 {
-                    textBox20.Text = "0,";
+                    tHematies.Text = "0,";
                 }
 
-                Hematies = Convert.ToDouble(textBox20.Text);
+                Hematies = Convert.ToDouble(tHematies.Text);
                 //Hematies
                 if (Hematies < 3.5)
                 {
-                    textBox20.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHematies.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Hematies > 5.5)
                 {
-                    textBox20.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHematies.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox20.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHematies.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox19_TextChanged_1(object sender, EventArgs e)
         {
 
-            if (textBox19.Text != " " && textBox19.Text != "")
+            if (tHemoglobina.Text != " " && tHemoglobina.Text != "")
             {
-                if (textBox19.Text == ",")
+                if (tHemoglobina.Text == ",")
                 {
-                    textBox19.Text = "0,";
+                    tHemoglobina.Text = "0,";
                 }
-                Hemoglobina = Convert.ToDouble(textBox19.Text);
+                Hemoglobina = Convert.ToDouble(tHemoglobina.Text);
                 //Hemoglobina
                 if (Hemoglobina < 11)
                 {
-                    textBox19.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHemoglobina.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Hemoglobina > 16)
                 {
-                    textBox19.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHemoglobina.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox19.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHemoglobina.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox17_TextChanged_1(object sender, EventArgs e)
         {
 
-            if (textBox17.Text != " " && textBox17.Text != "")
+            if (tVCM.Text != " " && tVCM.Text != "")
             {
-                if (textBox17.Text == ",")
+                if (tVCM.Text == ",")
                 {
-                    textBox17.Text = "0,";
+                    tVCM.Text = "0,";
                 }
-                VCM = Convert.ToDouble(textBox17.Text);
+                VCM = Convert.ToDouble(tVCM.Text);
                 //VCM
                 if (VCM < 80)
                 {
-                    textBox17.ForeColor = Color.FromArgb(0, 110, 242);
+                    tVCM.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (VCM > 100)
                 {
-                    textBox17.ForeColor = Color.FromArgb(150, 40, 130);
+                    tVCM.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox17.ForeColor = Color.FromArgb(0, 0, 0);
+                else tVCM.ForeColor = Color.FromArgb(0, 0, 0);
 
             }
         }
@@ -1456,49 +1459,49 @@ namespace Laboratorio
         private void textBox12_TextChanged_1(object sender, EventArgs e)
         {
 
-            if (textBox12.Text != " " && textBox12.Text != "")
+            if (tHCM.Text != " " && tHCM.Text != "")
             {
 
-                if (textBox12.Text == ",")
+                if (tHCM.Text == ",")
                 {
-                    textBox12.Text = "0,";
+                    tHCM.Text = "0,";
                 }
-                HCM = Convert.ToDouble(textBox12.Text);
+                HCM = Convert.ToDouble(tHCM.Text);
                 //HCM
                 if (HCM < 27)
                 {
-                    textBox12.ForeColor = Color.FromArgb(0, 110, 242);
+                    tHCM.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (HCM > 34)
                 {
-                    textBox12.ForeColor = Color.FromArgb(150, 40, 130);
+                    tHCM.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox12.ForeColor = Color.FromArgb(0, 0, 0);
+                else tHCM.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
         private void textBox11_TextChanged_1(object sender, EventArgs e)
         {
-            if (textBox11.Text != " " && textBox11.Text != "")
+            if (tCHCM.Text != " " && tCHCM.Text != "")
             {
 
-                if (textBox11.Text == ",")
+                if (tCHCM.Text == ",")
                 {
-                    textBox11.Text = "0,";
+                    tCHCM.Text = "0,";
                 }
-                CHCM = Convert.ToDouble(textBox11.Text);
+                CHCM = Convert.ToDouble(tCHCM.Text);
                 //CHCM
                 if (CHCM < 31)
                 {
-                    textBox11.ForeColor = Color.FromArgb(0, 110, 242);
+                    tCHCM.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (CHCM > 34)
                 {
-                    textBox11.ForeColor = Color.FromArgb(150, 40, 130);
+                    tCHCM.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox11.ForeColor = Color.FromArgb(0, 0, 0);
+                else tCHCM.ForeColor = Color.FromArgb(0, 0, 0);
             }
         }
 
@@ -1626,12 +1629,84 @@ namespace Laboratorio
         {
 
         }
+        private bool VerificarValores()
+        {
+            Double Leuco = Convert.ToDouble(tLeucocitos.Text);
+            Double Linfo = Convert.ToDouble(tNeutrofilosP.Text);
+            Double Neutro = Convert.ToDouble(tLinfocitosP.Text);
+            Double Hemoglobina = Convert.ToDouble(tHematocritos.Text);
+            Double Hematocrito = Convert.ToDouble(tHematies.Text);
+            Double plaquetas = Convert.ToDouble(tPlaquetas.Text); ;
+            if (Leuco < 1)
+            {
+                MessageBox.Show("Leucocitos = " + Leuco + " Por Favor coloque otro valor");
+            }
+            else if (Linfo < 1)
+            {
+                MessageBox.Show("Neutrofilos = " + Neutro + " Por Favor coloque otro valor");
+            }
+            else if (Neutro < 1)
+            {
+                MessageBox.Show("Linfocitos = " + Linfo + " Por Favor coloque otro valor");
+            }
+            else if (Hematocrito < 1)
+            {
+                MessageBox.Show("Hematocrito = " + Hematocrito + " Por Favor coloque otro valor");
+            }
+            else if (Hemoglobina < 1)
+            {
+                MessageBox.Show("Hemoglobina = " + Hemoglobina + " Por Favor coloque otro valor");
+            }
+            else if (plaquetas < 1)
+            {
+                MessageBox.Show("plaquetas = " + plaquetas + " Por Favor coloque otro valor");
+            }
+            return true;
+        }
+        private HematologiaEspecial AsignarValores()
+        {
+            if (VerificarValores() == false)
+            {
+                return null;
+            }
+            var he = new Conexiones.HematologiaEspecial
+            {
+                //Globulos Blancos
+                leucocitos = tLeucocitos.Text,
 
+                //Globulos Blancos Porcentajes
+                Neutrofilos = tNeutrofilosP.Text,
+                linfocitos = tLinfocitosP.Text,
+                Monocitos = tMonocitosP.Text,
+                Eosinofilos = tEosinofilosP.Text,
+                Basofilos = tBasofilosP.Text,
+
+                //Globulos Blancos Unidades
+                Neutrofilos2 = tNeutrofilosU.Text,
+                Linfocitos2 = tLinfocitosU.Text,
+                Monocitos2 = tMonocitosU.Text,
+                Eosinofilos2 = tEosinofilosU.Text,
+                Basofilos2 = tBasofilosU.Text,
+
+                //Globulos Rojos 
+                Hematies = tHematies.Text,
+                Hemoglobina = tHemoglobina.Text,
+                Hematocritos = tHematocritos.Text,
+                VCM = tVCM.Text,
+                HCM = tHCM.Text,
+                CHCM = tCHCM.Text,
+                Plaquetas = tPlaquetas.Text,
+                ADE = tADE.Text,
+                VPM = tVPM.Text,
+                ADP = tADP.Text,
+                PCT = tPCT.Text,
+                Reticulocitos = tReticulocitos.Text,
+                Comentario = tFrotis.Text
+            };
+            return he;
+        }
         private void iconButton3_Click(object sender, EventArgs e)
         {
-
-            string cmd4 = "";
-            string cmd3 = "EstadoDeResultado = 2";
 
             DataSet ds = new DataSet();
             DataSet ds1 = new DataSet();
@@ -1649,7 +1724,8 @@ namespace Laboratorio
                 {
 
                     string MS;
-                    MS = Conexion.InsertarHematologiaEspecialSinValidar(IdOrden.ToString(), DateTime.Now.ToString("hh:mm:ss"), IdAnalisis.ToString(), textBox15.Text, textBox1.Text, textBox2.Text, textBox4.Text, textBox3.Text, textBox10.Text, textBox20.Text, textBox19.Text, textBox18.Text, textBox17.Text, textBox12.Text, textBox11.Text, textBox16.Text, textBox7.Text, textBox8.Text, textBox6.Text, IdUser.ToString(), textBox5.Text, textBox9.Text, textBox14.Text);
+                    var he = AsignarValores();
+                    MS = Conexion.InsertarHematologiaEspecialSinValidar(IdOrden, IdAnalisis, he, IdUser);
                     MessageBox.Show(MS);
                 }
             }
@@ -1798,16 +1874,16 @@ namespace Laboratorio
                     Mono = 0;
                     Eos = 0;
                     Baso = 0;
-                    textBox1.Clear();
-                    textBox2.Clear();
-                    textBox4.Clear();
-                    textBox3.Clear();
-                    textBox10.Clear();
-                    textBox7.Clear();
-                    textBox8.Clear();
-                    textBox6.Clear();
-                    textBox5.Clear();
-                    textBox9.Clear();
+                    tNeutrofilosP.Clear();
+                    tLinfocitosP.Clear();
+                    tMonocitosP.Clear();
+                    tEosinofilosP.Clear();
+                    tBasofilosP.Clear();
+                    tNeutrofilosU.Clear();
+                    tLinfocitosU.Clear();
+                    tMonocitosU.Clear();
+                    tEosinofilosU.Clear();
+                    tBasofilosU.Clear();
                 }
                 else
                 {
@@ -2039,49 +2115,49 @@ namespace Laboratorio
 
         private void textBox14_TextChanged(object sender, EventArgs e)
         {
-            if (textBox14.Text != " " && textBox14.Text != "")
+            if (tLeucocitos.Text != " " && tLeucocitos.Text != "")
             {
-                if (textBox14.Text == ",")
+                if (tLeucocitos.Text == ",")
                 {
-                    textBox14.Text = "0,";
+                    tLeucocitos.Text = "0,";
                 }
-                Monocitos2 = Convert.ToDouble(textBox14.Text);
+                Monocitos2 = Convert.ToDouble(tLeucocitos.Text);
                 //Monocitos2
                 if (Monocitos2 < 4.0)
                 {
-                    textBox14.ForeColor = Color.FromArgb(0, 110, 242);
+                    tLeucocitos.ForeColor = Color.FromArgb(0, 110, 242);
 
                 }
                 else if (Monocitos2 > 10.0)
                 {
-                    textBox14.ForeColor = Color.FromArgb(150, 40, 130);
+                    tLeucocitos.ForeColor = Color.FromArgb(150, 40, 130);
                 }
-                else textBox14.ForeColor = Color.FromArgb(0, 0, 0);
+                else tLeucocitos.ForeColor = Color.FromArgb(0, 0, 0);
                 Double Resultado;
-                if (textBox10.Text != "")
+                if (tBasofilosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox10.Text)) / 100;
-                    textBox9.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tBasofilosP.Text)) / 100;
+                    tBasofilosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox3.Text != "")
+                if (tEosinofilosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox3.Text)) / 100;
-                    textBox5.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tEosinofilosP.Text)) / 100;
+                    tEosinofilosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox4.Text != "")
+                if (tMonocitosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox4.Text)) / 100;
-                    textBox6.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tMonocitosP.Text)) / 100;
+                    tMonocitosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox2.Text != "")
+                if (tLinfocitosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox2.Text)) / 100;
-                    textBox8.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tLinfocitosP.Text)) / 100;
+                    tLinfocitosU.Text = Resultado.ToString("0.##");
                 }
-                if (textBox1.Text != "")
+                if (tNeutrofilosP.Text != "")
                 {
-                    Resultado = (Convert.ToDouble(textBox14.Text) * Convert.ToDouble(textBox1.Text)) / 100;
-                    textBox7.Text = Resultado.ToString("0.##");
+                    Resultado = (Convert.ToDouble(tLeucocitos.Text) * Convert.ToDouble(tNeutrofilosP.Text)) / 100;
+                    tNeutrofilosU.Text = Resultado.ToString("0.##");
                 }
             }
 

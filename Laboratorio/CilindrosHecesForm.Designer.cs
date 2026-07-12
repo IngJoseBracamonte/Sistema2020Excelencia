@@ -1,6 +1,6 @@
 ﻿namespace Laboratorio
 {
-    partial class Form11
+    partial class CilindrosHecesForm
     {
         /// <summary>
         /// Required designer variable.

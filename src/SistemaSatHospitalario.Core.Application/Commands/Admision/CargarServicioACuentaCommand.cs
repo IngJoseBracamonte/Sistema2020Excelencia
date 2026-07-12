@@ -106,7 +106,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 3. Procesar lógica específica de Consultas/Citas
             if (esConsulta)
             {
-                await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
+                bool requiresAppointmentTime = request.TipoIngreso == EstadoConstants.Particular || request.TipoIngreso == EstadoConstants.Seguro;
+                if (requiresAppointmentTime || (request.MedicoId.HasValue && request.HoraCita.HasValue))
+                {
+                    await ProcesarCitaMedicaAsync(request, paciente.Id, cuenta.Id, cancellationToken);
+                }
             }
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
@@ -134,32 +138,78 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (!request.PrecioModificado.HasValue && !request.HonorarioModificado.HasValue)
             {
-                if (esConsulta && baseService != null)
+                decimal basePrice = baseService?.PrecioBase ?? 0;
+                if (request.ConvenioId.HasValue)
                 {
-                    decimal doctorHonorary = 0;
-                    if (request.MedicoId.HasValue)
+                    if (esLab)
                     {
-                        var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
-                        if (medico != null)
+                        if (int.TryParse(request.ServicioId, out int perfilId))
                         {
-                            doctorHonorary = medico.HonorarioBase;
+                            var exc = await _context.ConvenioPerfilPrecios
+                                .FirstOrDefaultAsync(x => x.SeguroConvenioId == request.ConvenioId.Value && x.PerfilId == perfilId, cancellationToken);
+                            if (exc != null && exc.PrecioUSD > 0)
+                            {
+                                basePrice = exc.PrecioUSD;
+                            }
+                        }
+                    }
+                    else if (baseService != null)
+                    {
+                        var priceConv = await _context.PreciosServicioConvenio
+                            .FirstOrDefaultAsync(p => p.SeguroConvenioId == request.ConvenioId.Value && p.ServicioClinicoId == baseService.Id, cancellationToken);
+                        if (priceConv != null)
+                        {
+                            basePrice = priceConv.PrecioDiferencial;
+                        }
+                    }
+                }
+
+                decimal doctorHonorary = 0;
+                if (baseService != null)
+                {
+                    if (esConsulta)
+                    {
+                        if (request.MedicoId.HasValue)
+                        {
+                            var medico = await _context.Medicos.FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
+                            if (medico != null)
+                            {
+                                doctorHonorary = medico.HonorarioBase;
+                            }
+                        }
+                        else
+                        {
+                            doctorHonorary = baseService.HonorarioBase;
                         }
                     }
                     else
                     {
-                        doctorHonorary = baseService.HonorarioBase;
+                        if (request.MedicoId.HasValue)
+                        {
+                            var serviceGuid = Guid.TryParse(request.ServicioId, out var parsedGuid) ? parsedGuid : Guid.Empty;
+                            var customHonorarium = await _context.HonorariosMedicosServicios
+                                .FirstOrDefaultAsync(h => h.ServicioId == serviceGuid && h.MedicoId == request.MedicoId.Value, cancellationToken);
+                            doctorHonorary = customHonorarium?.MontoHonorario ?? baseService.HonorarioBase;
+                        }
+                        else
+                        {
+                            doctorHonorary = baseService.HonorarioBase;
+                        }
                     }
+                }
 
-                    if (request.Precio == baseService.PrecioBase && (request.Honorario == 0 || request.Honorario == baseService.HonorarioBase))
+                if (baseService != null || esLab)
+                {
+                    if (request.Precio == basePrice && (request.Honorario == 0 || (baseService != null && request.Honorario == baseService.HonorarioBase)))
                     {
-                        finalPrecio = baseService.PrecioBase + doctorHonorary;
+                        finalPrecio = basePrice + doctorHonorary;
                     }
 
                     if (request.Honorario == 0)
                     {
                         finalHonorario = doctorHonorary;
                     }
-                    else if (request.Honorario == doctorHonorary + baseService.PrecioBase)
+                    else if (request.Honorario == doctorHonorary + basePrice)
                     {
                         finalHonorario = doctorHonorary;
                     }
@@ -220,10 +270,38 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             if (request.IsPrivilegedUser || baseService == null) return;
 
-            decimal expectedPrecio = baseService.PrecioBase;
+            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory);
+
+            decimal basePrice = baseService.PrecioBase;
+            if (request.ConvenioId.HasValue)
+            {
+                if (esLab)
+                {
+                    if (int.TryParse(request.ServicioId, out int perfilId))
+                    {
+                        var exc = await _context.ConvenioPerfilPrecios
+                            .FirstOrDefaultAsync(x => x.SeguroConvenioId == request.ConvenioId.Value && x.PerfilId == perfilId, cancellationToken);
+                        if (exc != null && exc.PrecioUSD > 0)
+                        {
+                            basePrice = exc.PrecioUSD;
+                        }
+                    }
+                }
+                else
+                {
+                    var priceConv = await _context.PreciosServicioConvenio
+                        .FirstOrDefaultAsync(p => p.SeguroConvenioId == request.ConvenioId.Value && p.ServicioClinicoId == baseService.Id, cancellationToken);
+                    if (priceConv != null)
+                    {
+                        basePrice = priceConv.PrecioDiferencial;
+                    }
+                }
+            }
+
+            decimal expectedPrecio = basePrice;
+            decimal doctorHonorary = 0;
             if (esConsulta)
             {
-                decimal doctorHonorary = 0;
                 if (request.MedicoId.HasValue)
                 {
                     var medico = await _context.Medicos.AsNoTracking().FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
@@ -236,11 +314,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 {
                     doctorHonorary = baseService.HonorarioBase;
                 }
-                expectedPrecio = baseService.PrecioBase + doctorHonorary;
+                expectedPrecio = basePrice + doctorHonorary;
+            }
+            else
+            {
+                if (request.MedicoId.HasValue)
+                {
+                    var serviceGuid = Guid.TryParse(request.ServicioId, out var parsedGuid) ? parsedGuid : Guid.Empty;
+                    var customHonorarium = await _context.HonorariosMedicosServicios
+                        .FirstOrDefaultAsync(h => h.ServicioId == serviceGuid && h.MedicoId == request.MedicoId.Value, cancellationToken);
+                    doctorHonorary = customHonorarium?.MontoHonorario ?? baseService.HonorarioBase;
+                }
+                else
+                {
+                    doctorHonorary = baseService.HonorarioBase;
+                }
+                expectedPrecio = basePrice + doctorHonorary;
             }
 
             decimal checkPrecio = request.PrecioModificado ?? request.Precio;
-            if (checkPrecio != expectedPrecio && checkPrecio != baseService.PrecioBase)
+            if (checkPrecio != expectedPrecio && checkPrecio != basePrice)
             {
                 // El precio ha sido modificado, requiere Clave de Supervisor
                 var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
