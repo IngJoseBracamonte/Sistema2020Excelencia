@@ -123,6 +123,7 @@ export interface TriageRecord {
   descripcionDetallada?: string;
   fechaRegistro?: string;
   usuarioRegistro?: string;
+  diagnosticoPresuntivo?: string;
   [key: string]: any;
 }
 
@@ -300,6 +301,7 @@ export class EnfermeriaComponent implements OnInit {
   public antecedentesMedicos = '';
 
   // Editing state
+  public showTriageForm = false;
   public isEditingTriage = false;
   public editingTriageId: string | null = null;
   public editingValoracionId: string | null = null;
@@ -524,7 +526,14 @@ export class EnfermeriaComponent implements OnInit {
   public loadTriageHistory(cuentaId: string): void {
     this.http.get<TriageRecord[]>(`${environment.apiUrl}/api/Enfermeria/triageHistorial/${cuentaId}`)
       .subscribe({
-        next: (res) => this.nursingHistory.set(res),
+        next: (res) => {
+          this.nursingHistory.set(res);
+          if (res.length > 0) {
+            this.showTriageForm = false;
+          } else {
+            this.showTriageForm = true;
+          }
+        },
         error: (err) => console.error('[ENFERMERIA] Error loading history:', err)
       });
   }
@@ -570,6 +579,12 @@ export class EnfermeriaComponent implements OnInit {
     this.isEditingTriage = false;
     this.editingTriageId = null;
     this.editingValoracionId = null;
+    
+    if (this.nursingHistory().length > 0) {
+      this.showTriageForm = false;
+    } else {
+      this.showTriageForm = true;
+    }
   }
 
   private buildTriagePayload(cuentaId?: string): Record<string, any> {
@@ -681,12 +696,15 @@ export class EnfermeriaComponent implements OnInit {
     this.isEditingTriage = true;
     this.editingTriageId = item.triageId || null;
     this.editingValoracionId = item.valoracionId || null;
+    this.showTriageForm = true;
 
     // Scroll vertical del panel al formulario
-    const formElement = document.getElementById('nursingForm');
-    if (formElement) {
-      formElement.scrollIntoView({ behavior: 'smooth' });
-    }
+    setTimeout(() => {
+      const formElement = document.getElementById('nursingForm');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 50);
   }
 
   // Fast Charge Medication Autocomplete

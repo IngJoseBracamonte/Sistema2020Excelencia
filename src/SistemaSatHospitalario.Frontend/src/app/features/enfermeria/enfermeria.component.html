@@ -174,7 +174,7 @@
                 <div *ngIf="activeTab() === 'triage'" class="space-y-6 animate-fade-in">
                     
                     <!-- Estado Actual Paciente (Pinned Header) -->
-                    <div *ngIf="estadoActualPaciente()" class="p-6 bg-rose-500/5 border border-rose-500/10 rounded-[2rem] space-y-2">
+                    <div *ngIf="showTriageForm && estadoActualPaciente()" class="p-6 bg-rose-500/5 border border-rose-500/10 rounded-[2rem] space-y-2">
                         <div class="flex items-center gap-2 text-rose-400">
                             <lucide-icon [name]="icons.Activity" class="w-4 h-4"></lucide-icon>
                             <span class="text-[9px] font-black uppercase tracking-widest">Último Reporte Clínico Registrado</span>
@@ -189,15 +189,117 @@
                         </div>
                     </div>
 
+                    <!-- BOTÓN NUEVO TRIAGE Y VISTA DETALLADA DEL PRIMER HISTORIAL -->
+                    <div *ngIf="!showTriageForm" class="space-y-6">
+                        <div class="flex justify-between items-center bg-[#1e293b]/20 border border-white/5 p-6 rounded-[2rem]">
+                            <div>
+                                <h3 class="text-sm font-black text-white uppercase tracking-wider">Triage y Signos Vitales</h3>
+                                <p class="text-xs text-slate-400 mt-1">Gestione el registro de constantes clínicas para este paciente.</p>
+                            </div>
+                            <button (click)="showTriageForm = true; isEditingTriage = false" 
+                                    class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
+                                Nuevo Triage
+                            </button>
+                        </div>
+
+                        <!-- VISTA DETALLADA DEL PRIMER HISTORIAL (TRIAGE MÁS RECIENTE) -->
+                        <div *ngIf="nursingHistory().length > 0; else noHistory" class="glass-panel p-8 rounded-[2rem] border border-white/5 space-y-8 bg-slate-900/20">
+                            <div class="flex items-center justify-between pb-4 border-b border-white/5">
+                                <div class="space-y-1">
+                                    <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest">Triage Más Reciente</span>
+                                    <h3 class="text-base font-bold text-white uppercase tracking-tight">{{ nursingHistory()[0].descripcionRapida || 'Triage General' }}</h3>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{{ nursingHistory()[0].fechaRegistro | date:'medium' }}</p>
+                                    <p class="text-[9px] font-medium text-slate-400 mt-0.5">Por: {{ nursingHistory()[0].usuarioRegistro }}</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <!-- 1. Signos Vitales -->
+                                <div class="space-y-3">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 1. Constantes y Signos Vitales
+                                    </h4>
+                                    <div class="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
+                                        <div><span class="text-slate-500 block">Tensión Arterial:</span><strong class="text-white">{{ nursingHistory()[0].tensionArterial || '---' }} mmHg</strong></div>
+                                        <div><span class="text-slate-500 block">Frecuencia Cardíaca:</span><strong class="text-white">{{ nursingHistory()[0].frecuenciaCardiaca || '0' }} lpm</strong></div>
+                                        <div><span class="text-slate-500 block">Frecuencia Respiratoria:</span><strong class="text-white">{{ nursingHistory()[0].frecuenciaRespiratoria || '0' }} rpm</strong></div>
+                                        <div><span class="text-slate-500 block">Temperatura:</span><strong class="text-white">{{ nursingHistory()[0].temperatura || '0' }} °C</strong></div>
+                                        <div><span class="text-slate-500 block">Saturación O2:</span><strong class="text-white">{{ nursingHistory()[0].saturacionO2 || '0' }} %</strong></div>
+                                        <div><span class="text-slate-500 block">Glicemia Capilar:</span><strong class="text-white">{{ nursingHistory()[0].glicemiaCapilar || '---' }} mg/dL</strong></div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Valoración Física -->
+                                <div class="space-y-3">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 2. Valoración Física
+                                    </h4>
+                                    <div class="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
+                                        <div><span class="text-slate-500 block">Vía Aérea:</span><strong class="text-white">{{ nursingHistory()[0].viaAerea || '---' }}</strong></div>
+                                        <div><span class="text-slate-500 block">Ventilación:</span><strong class="text-white">{{ nursingHistory()[0].ventilacion || '---' }}</strong></div>
+                                        <div><span class="text-slate-500 block">Pulso:</span><strong class="text-white">{{ nursingHistory()[0].pulso || '---' }}</strong></div>
+                                        <div><span class="text-slate-500 block">Piel/Mucosas:</span><strong class="text-white">{{ nursingHistory()[0].pielMucosas || '---' }}</strong></div>
+                                        <div><span class="text-slate-500 block">Llenado Capilar:</span><strong class="text-white">{{ nursingHistory()[0].llenadoCapilar || '---' }}</strong></div>
+                                        <div><span class="text-slate-500 block">Pupilas:</span><strong class="text-white">{{ nursingHistory()[0].pupilas || '---' }}</strong></div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Antecedentes -->
+                                <div class="space-y-3">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 3. Antecedentes Clínicos
+                                    </h4>
+                                    <div class="space-y-2 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
+                                        <div><span class="text-slate-500">Alergias:</span> <span class="text-white font-bold">{{ nursingHistory()[0].alergias || 'Ninguna' }}</span></div>
+                                        <div><span class="text-slate-500">Antecedentes Médicos:</span> <span class="text-white font-bold">{{ nursingHistory()[0].antecedentesMedicos || 'Ninguno' }}</span></div>
+                                        <div><span class="text-slate-500">Accesos Venosos:</span> <span class="text-white font-bold">{{ nursingHistory()[0].accesosVenosos || 'Ninguno' }}</span></div>
+                                        <div><span class="text-slate-500">Pertenencias recibidas:</span> <span class="text-white font-bold">{{ nursingHistory()[0].pertenencias || 'Ninguna' }}</span></div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Estado Actual y Diagnóstico -->
+                                <div class="space-y-3">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 4. Estado Actual y Diagnóstico
+                                    </h4>
+                                    <div class="space-y-2 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
+                                        <div><span class="text-slate-500">Estado de Conciencia:</span> <span class="text-white font-bold">{{ nursingHistory()[0].estadoConciencia || '---' }}</span></div>
+                                        <div><span class="text-slate-500">Glasgow:</span> <span class="font-mono text-white font-bold">Ocular {{ nursingHistory()[0].glasgowOcular }}/4, Verbal {{ nursingHistory()[0].glasgowVerbal }}/5, Motor {{ nursingHistory()[0].glasgowMotor }}/6 (Total: {{ nursingHistory()[0].glasgowTotal }}/15)</span></div>
+                                        <div><span class="text-slate-500">Diagnóstico Presuntivo:</span> <p class="text-white font-semibold leading-relaxed mt-0.5">{{ nursingHistory()[0].diagnosticoPresuntivo || 'No registrado' }}</p></div>
+                                        <div><span class="text-slate-500">Observaciones Generales:</span> <p class="text-slate-300 leading-relaxed mt-0.5">{{ nursingHistory()[0].descripcionDetallada || 'No registradas' }}</p></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botón para Editar este registro directamente -->
+                            <div class="flex justify-end pt-4 border-t border-white/5">
+                                <button (click)="onEditTriageClick(nursingHistory()[0])" 
+                                        class="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                                    Modificar Triage
+                                </button>
+                            </div>
+                        </div>
+
+                        <ng-template #noHistory>
+                            <div class="glass-panel p-8 rounded-[2rem] border border-white/5 text-center text-slate-500 py-12">
+                                <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto text-slate-600 mb-2"></lucide-icon>
+                                <p class="text-xs font-bold uppercase tracking-wider">No se han registrado constantes ni triage para esta cuenta</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Utilice el botón "Nuevo Triage" arriba para registrar el primer informe.</p>
+                            </div>
+                        </ng-template>
+                    </div>
+
                     <!-- REGISTRO / EDITAR FORMULARIO -->
-                    <div id="nursingForm" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
+                    <div *ngIf="showTriageForm" id="nursingForm" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
                         <div class="flex justify-between items-center">
                             <h3 class="text-sm font-black text-white uppercase tracking-wider">
                                 {{ isEditingTriage ? 'Modificar Registro Clínico' : 'Nuevo Registro de Triage' }}
                             </h3>
-                            <button *ngIf="isEditingTriage" (click)="resetTriageForm()" 
+                            <button *ngIf="isEditingTriage || nursingHistory().length > 0" (click)="resetTriageForm()" 
                                     class="text-xs text-slate-400 hover:text-white uppercase font-bold transition-colors">
-                                Cancelar Edición
+                                {{ isEditingTriage ? 'Cancelar Edición' : 'Volver' }}
                             </button>
                         </div>
 

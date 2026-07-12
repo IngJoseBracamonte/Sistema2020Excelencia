@@ -35,18 +35,18 @@ test.describe('Billing Wizard Stabilization', () => {
 
     // 3. Esperar carga asíncrona del dropdown de especialidades
     // El selector retorna <option> desde la API — se necesita waitForFunction
-    await waitForSelectOption(page, 'select:first-of-type', 'GINECOLOGÍA');
+    await waitForSelectOption(page, 'app-service-catalog select:first-of-type', 'GINECOLOGÍA');
     console.log('Specialty options loaded.');
 
-    const specialtySelect = page.locator('select').first();
+    const specialtySelect = page.locator('app-service-catalog select').first();
     await specialtySelect.selectOption({ label: 'GINECOLOGÍA' });
     console.log('Selected specialty: Ginecología');
 
     // 4. Esperar carga del dropdown de médicos tras seleccionar especialidad
-    await waitForSelectOption(page, 'select:nth-of-type(2)', 'LISA CUDDY');
+    await waitForSelectOption(page, 'app-service-catalog div.grid > div:nth-child(2) select', 'LISA CUDDY');
     console.log('Doctor options loaded.');
 
-    const doctorSelect = page.locator('select').nth(1);
+    const doctorSelect = page.locator('app-service-catalog select').nth(1);
     await doctorSelect.selectOption({ label: 'LISA CUDDY' });
     console.log('Selected doctor: Lisa Cuddy');
 

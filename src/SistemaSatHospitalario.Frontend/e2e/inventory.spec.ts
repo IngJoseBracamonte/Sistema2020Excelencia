@@ -18,6 +18,8 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
   test('Should create a new Sede and associate an Area Clinica to it', async ({ page }) => {
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
+    const sedeCode = 'SUC_' + Math.floor(Math.random() * 100000);
+
     // 1. Navigate to Sede management page
     await page.goto('/admin/inventory/sedes');
     await page.waitForLoadState('networkidle');
@@ -31,11 +33,11 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     // 3. Fill in the Sede details (dentro del modal de Sede)
     //    Usamos el contenedor del modal para aislar los inputs del formulario de Sede
     //    vs. los inputs del formulario de Área Clínica (mismo label 'Código')
-    const sedeModal = page.locator('[role="dialog"], .modal-sede, form').first();
+    const sedeModal = page.locator('div.bg-surface', { hasText: 'Nueva Sede' }).first();
     const codeInput = sedeModal.locator('input').first();
     const nameInput = sedeModal.locator('input').nth(1);
 
-    await codeInput.fill('SUC_TEST');
+    await codeInput.fill(sedeCode);
     await nameInput.fill('Sucursal de Pruebas E2E');
     console.log('Filled Sede form.');
 
@@ -49,7 +51,7 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
 
     // 5. Verify the Sede is added and visible in the list
     //    Re-localizamos tras el re-render para obtener la referencia fresca del nodo
-    const newSedeBlock = page.locator('.rounded-xl.border', { hasText: 'SUC_TEST' });
+    const newSedeBlock = page.locator('.rounded-xl.border', { hasText: sedeCode });
     await expect(newSedeBlock).toBeVisible({ timeout: 10000 });
     console.log('New Sede is visible in the list.');
 
@@ -74,14 +76,15 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     console.log('Filled Area form.');
 
     // 9. Save Area Clinica y esperar re-render de la lista
-    const agregarBtn = page.locator('button:has-text("Agregar")');
+    const areaModal = page.locator('div.fixed', { has: page.locator('h3:has-text("Agregar Área Clínica")') }).first();
+    const agregarBtn = areaModal.locator('button:has-text("Agregar")');
     await agregarBtn.click();
     await page.waitForLoadState('networkidle');
     console.log('Clicked Agregar Area Clinica.');
 
     // 10. Verify the Area Clinica is listed under the Sede
     //     Re-localizamos newSedeBlock de nuevo (fresco tras segundo re-render)
-    const updatedSedeBlock = page.locator('.rounded-xl.border', { hasText: 'SUC_TEST' });
+    const updatedSedeBlock = page.locator('.rounded-xl.border', { hasText: sedeCode });
     const areaListItem = updatedSedeBlock.locator('text=[AREA_E2E] Departamento de Pruebas');
     await expect(areaListItem).toBeVisible({ timeout: 10000 });
     console.log('Area Clinica successfully associated and visible.');
