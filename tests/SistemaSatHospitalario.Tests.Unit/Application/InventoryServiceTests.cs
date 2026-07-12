@@ -49,7 +49,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
 
             var service = new InventoryService(context, NullLogger<InventoryService>.Instance);
 
-            await service.RecordMovementAsync(insumo.Id, "Ingreso", 5.0m, UnidadMedida.G, "Operator", "Reason", CancellationToken.None);
+            await service.RecordMovementAsync(insumo.Id, Guid.Empty, "Ingreso", 5.0m, UnidadMedida.G, "Operator", "Reason", CancellationToken.None);
 
             using var assertContext = new SatHospitalarioDbContext(_options);
             var updatedInsumo = await assertContext.Insumos.FindAsync(insumo.Id);
@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             await context.SaveChangesAsync();
 
             var service = new InventoryService(context, NullLogger<InventoryService>.Instance);
-            await service.RecordMovementAsync(insumo.Id, "Ingreso", 5.0m, UnidadMedida.G, "Operator", "Reason", CancellationToken.None);
+            await service.RecordMovementAsync(insumo.Id, Guid.Empty, "Ingreso", 5.0m, UnidadMedida.G, "Operator", "Reason", CancellationToken.None);
 
             using var actContext = new SatHospitalarioDbContext(_options);
             var movement = await actContext.MovimientosInsumo.FirstOrDefaultAsync();

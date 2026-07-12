@@ -131,18 +131,53 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public triageAntecedenteDiabetes = signal<boolean>(false);
   public triageAntecedenteCardiopatia = signal<boolean>(false);
 
-  public newPatientData: any = {
+  public newPatientData = {
     cedula: '',
     nombre: '',
     apellidos: '',
-    sexo: 'M',
-    fechaNacimiento: new Date().toISOString().split('T')[0],
+    correo: '',
     celular: '',
-    codigoCelular: '0414',
     telefono: '',
-    codigoTelefono: '0274',
-    direccion: ''
+    direccion: '',
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    sexo: 'ND',
+    tipoCorreo: '@gmail.com',
+    codigoCelular: '0414',
+    codigoTelefono: '0274'
   };
+
+  get fechaNacimientoFormatted(): string {
+    const raw = this.newPatientData.fechaNacimiento;
+    if (!raw) return '';
+    const datePart = raw.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return raw;
+  }
+
+  set fechaNacimientoFormatted(val: string) {
+    if (!val) {
+      this.newPatientData.fechaNacimiento = '';
+      return;
+    }
+    const cleaned = val.replace(/\//g, '-').trim();
+    const parts = cleaned.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 2 && parts[2].length === 4) {
+        const dd = parts[0].padStart(2, '0');
+        const mm = parts[1].padStart(2, '0');
+        const yyyy = parts[2];
+        this.newPatientData.fechaNacimiento = `${yyyy}-${mm}-${dd}`;
+        return;
+      } else if (parts[0].length === 4) {
+        this.newPatientData.fechaNacimiento = cleaned;
+        return;
+      }
+    }
+    this.newPatientData.fechaNacimiento = val;
+  }
 
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
   public codigosTelefonoCombinados = ['0274', '0273', '0251', '0212', '0281', '0241', '0416', '0426', '0414', '0424', '0412', '0422'];
@@ -262,6 +297,31 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     });
     return Math.round((totalDays / list.length) * 10) / 10;
   });
+
+  public calcularEdad(fechaNacimiento: string | null | undefined): string {
+    if (!fechaNacimiento) return '—';
+    const nacimiento = new Date(fechaNacimiento);
+    if (isNaN(nacimiento.getTime())) return '—';
+    
+    const hoy = new Date();
+    let años = hoy.getFullYear() - nacimiento.getFullYear();
+    let meses = hoy.getMonth() - nacimiento.getMonth();
+    let dias = hoy.getDate() - nacimiento.getDate();
+    
+    if (dias < 0) {
+      meses--;
+      const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+      dias += mesAnterior.getDate();
+    }
+    if (meses < 0) {
+      años--;
+      meses += 12;
+    }
+    
+    if (años > 0) return `${años} ${años === 1 ? 'año' : 'años'}`;
+    if (meses > 0) return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+    return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+  }
 
   public alertasCriticosCount = computed(() => {
     return this.enrichedAccounts().filter(a => a.status === 'Crítico').length;
@@ -739,13 +799,15 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       cedula: '',
       nombre: '',
       apellidos: '',
-      sexo: 'M',
-      fechaNacimiento: new Date().toISOString().split('T')[0],
+      correo: '',
       celular: '',
-      codigoCelular: '0414',
       telefono: '',
-      codigoTelefono: '0274',
-      direccion: ''
+      direccion: '',
+      fechaNacimiento: new Date().toISOString().split('T')[0],
+      sexo: 'ND',
+      tipoCorreo: '@gmail.com',
+      codigoCelular: '0414',
+      codigoTelefono: '0274'
     };
     this.errorMessage.set(null);
     

@@ -36,6 +36,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
         public DateTime? HoraCita { get; set; }
+        public Guid? AreaClinicaId { get; set; }
 
         // Datos para Cirugía/Procedimiento Complejo con Múltiples Médicos
         public global::System.Collections.Generic.List<MedicoRolInputDto>? MedicosRoles { get; set; }
@@ -110,7 +111,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
-            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio);
+            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory);
+            bool esRx = baseService != null && (baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Tomography);
+
+            // Regla Polimórfica de Cantidad: Consulta, Laboratorio y RX son unidades unitarias estrictas (1)
+            decimal finalCantidad = (esConsulta || esLab || esRx) ? 1m : Math.Max(1m, request.Cantidad);
 
             if (esLab)
             {
@@ -170,10 +175,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Descripcion, 
                 finalPrecio, 
                 finalHonorario,
-                request.Cantidad, 
+                finalCantidad, 
                 request.TipoServicio, 
                 request.UsuarioCarga,
-                legacyId);
+                legacyId,
+                request.AreaClinicaId);
 
             if (_context.DetallesServicioCuenta != null)
             {
@@ -233,7 +239,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 expectedPrecio = baseService.PrecioBase + doctorHonorary;
             }
 
-            if (request.Precio != expectedPrecio && request.Precio != baseService.PrecioBase)
+            decimal checkPrecio = request.PrecioModificado ?? request.Precio;
+            if (checkPrecio != expectedPrecio && checkPrecio != baseService.PrecioBase)
             {
                 // El precio ha sido modificado, requiere Clave de Supervisor
                 var config = await _context.ConfiguracionGeneral.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
@@ -337,10 +344,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.HoraCita.Value.Hour, request.HoraCita.Value.Minute, 0, 
                 DateTimeKind.Unspecified);
 
-            if (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
-                throw new InvalidOperationException($"El médico ya tiene una cita pautada para las {horaNormalizada:HH:mm}.");
+            while (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, ct))
+            {
+                horaNormalizada = horaNormalizada.AddMinutes(1);
+            }
 
-            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada);
+            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, request.AreaClinicaId);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
         }
 

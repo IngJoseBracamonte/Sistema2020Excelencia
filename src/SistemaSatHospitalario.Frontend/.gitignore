@@ -45,3 +45,8 @@ Thumbs.db
 /e2e-db-tests
 /playwright-db.config.ts
 
+# Playwright Test Results
+/test-results/
+playwright-report/
+.playwright-artifacts-*/
+

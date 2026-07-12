@@ -14,13 +14,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Estado { get; private set; } // Pendiente, Confirmada, Cancelada, Atendida
         public string? Comentario { get; private set; }
         public DateTime FechaRegistro { get; private set; }
+        public Guid? AreaClinicaId { get; private set; }
 
         public Medico Medico { get; private set; }
         public CuentaServicios CuentaServicio { get; private set; }
+        public virtual AreaClinica? AreaClinica { get; private set; }
 
         protected CitaMedica() { }
 
-        public CitaMedica(Guid medicoId, Guid pacienteId, Guid cuentaServicioId, DateTime horaPautada, string? comentario = null)
+        public CitaMedica(Guid medicoId, Guid pacienteId, Guid cuentaServicioId, DateTime horaPautada, string? comentario = null, Guid? areaClinicaId = null)
         {
             Id = Guid.NewGuid();
             MedicoId = medicoId;
@@ -30,6 +32,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Estado = EstadoConstants.Pendiente;
             Comentario = comentario;
             FechaRegistro = DateTime.UtcNow;
+            AreaClinicaId = areaClinicaId;
+        }
+
+        public void AsignarAreaClinica(Guid areaClinicaId)
+        {
+            AreaClinicaId = areaClinicaId;
         }
 
         public void ActualizarComentario(string? comentario) => Comentario = comentario;
