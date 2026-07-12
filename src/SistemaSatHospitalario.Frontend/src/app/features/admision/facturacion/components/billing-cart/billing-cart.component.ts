@@ -74,11 +74,8 @@ export class BillingCartComponent {
 
   public getItemBasePriceUsd(s: any): number {
     const total = s.precioUsd ?? s.PrecioUsd ?? 0;
-    if (this.isConsultationItem(s)) {
-      const honorary = s.honorarioUsd ?? s.HonorarioUsd ?? 0;
-      return total - honorary;
-    }
-    return total;
+    const honorary = s.honorarioUsd ?? s.HonorarioUsd ?? 0;
+    return total - honorary;
   }
 
   public getItemHonoraryUsd(s: any): number {
@@ -88,7 +85,7 @@ export class BillingCartComponent {
   // --- Desglose de Totales para Consultas y Honorarios ---
   public totalBaseConsultasUSD = computed(() => {
     return this.serviciosCargados().reduce((acc: number, s: any) => {
-      if (this.isConsultationItem(s)) {
+      if (this.isConsultationItem(s) || this.getItemHonoraryUsd(s) > 0) {
         return acc + this.getItemBasePriceUsd(s);
       }
       return acc;
@@ -97,16 +94,13 @@ export class BillingCartComponent {
 
   public totalHonorariosMedicosUSD = computed(() => {
     return this.serviciosCargados().reduce((acc: number, s: any) => {
-      if (this.isConsultationItem(s)) {
-        return acc + this.getItemHonoraryUsd(s);
-      }
-      return acc;
+      return acc + this.getItemHonoraryUsd(s);
     }, 0);
   });
 
   public totalOtrosServiciosUSD = computed(() => {
     return this.serviciosCargados().reduce((acc: number, s: any) => {
-      if (!this.isConsultationItem(s)) {
+      if (!this.isConsultationItem(s) && this.getItemHonoraryUsd(s) === 0) {
         return acc + (s.precioUsd ?? s.PrecioUsd ?? 0);
       }
       return acc;

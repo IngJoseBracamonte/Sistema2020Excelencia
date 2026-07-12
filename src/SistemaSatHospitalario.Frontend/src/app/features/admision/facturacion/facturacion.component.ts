@@ -1114,11 +1114,11 @@ export class FacturacionComponent {
       finalDescripcion = `${finalDescripcion} (${esp})`;
     }
 
-    const selectedDoctor = esConsulta ? this.medicosFiltrados().find(m => (m.id || (m as any).Id) === this.selectedMedicoId()) : null;
+    const selectedDoctor = (esConsulta || s.honorarioBase > 0) ? this.medicosFiltrados().find(m => (m.id || (m as any).Id) === this.selectedMedicoId()) : null;
     const doctorHonorary = selectedDoctor ? (selectedDoctor.honorarioBase ?? (selectedDoctor as any).HonorarioBase ?? 0) : 0;
-    const precioBase = (s.precioUsd ?? 0) - (s.honorarioUsd ?? 0);
+    const precioBase = (s.precioUsd ?? 0) - (s.honorarioUsd ?? s.honorarioBase ?? 0);
     const finalPrecio = esConsulta ? (precioBase + doctorHonorary) : (s.precioUsd ?? 0);
-    const finalHonorary = esConsulta ? doctorHonorary : (s.honorarioUsd ?? 0);
+    const finalHonorary = esConsulta ? doctorHonorary : (s.honorarioUsd ?? s.honorarioBase ?? 0);
 
     const pId = this.pacienteId();
 
@@ -1135,8 +1135,8 @@ export class FacturacionComponent {
           honorarioUsd: finalHonorary,
           honorarioBase: esConsulta ? doctorHonorary : s.honorarioBase,
           descripcion: finalDescripcion,
-          medicoId: esConsulta ? this.selectedMedicoId() : undefined,
-          medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
+          medicoId: (esConsulta || s.honorarioBase > 0) ? this.selectedMedicoId() : undefined,
+          medicoNombre: (esConsulta || s.honorarioBase > 0) ? this.nombreMedicoSeleccionado() : undefined,
           horaCita: esConsulta ? this.horaCita() : undefined,
           comentario: this.comentarioCita()
         })]);
@@ -1174,7 +1174,7 @@ export class FacturacionComponent {
       cantidad: 1,
       tipoServicio: s.tipo,
       usuarioCarga: this.user()?.username || '',
-      medicoId: esConsulta ? this.selectedMedicoId() || undefined : undefined,
+      medicoId: (esConsulta || s.honorarioBase > 0) ? this.selectedMedicoId() || undefined : undefined,
       horaCita: fullHoraCita,
       comentario: this.comentarioCita() || undefined
     };
@@ -1192,9 +1192,9 @@ export class FacturacionComponent {
       this.serviciosEnBackend.update((prev: any[]) => [...prev, new CatalogItem({
         ...s,
         detalleId: res.detalleId, // Guárdalo para eliminación precisa (V4.8)
-        medicoId: esConsulta ? this.selectedMedicoId() : undefined, // Guardar ID para limpieza de cita
+        medicoId: (esConsulta || s.honorarioBase > 0) ? this.selectedMedicoId() : undefined, // Guardar ID para limpieza de cita
         hora: this.horaCita(),
-        medicoNombre: esConsulta ? this.nombreMedicoSeleccionado() : undefined,
+        medicoNombre: (esConsulta || s.honorarioBase > 0) ? this.nombreMedicoSeleccionado() : undefined,
         precio: payload.precio,
         precioBs: payload.precio * this.tasaCambioDia(),
         precioUsd: payload.precio,
