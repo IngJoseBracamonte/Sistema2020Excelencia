@@ -35,6 +35,11 @@ Los servicios nativos de Laboratorio poseen un identificador en el catálogo lla
 *   **`ordenes`**: Registra las órdenes de laboratorio clínico generadas en emergencias o consultas.
 *   **`examenes_orden`**: Tabla de relación que asocia exámenes individuales a una orden de laboratorio.
 
+> [!WARNING]
+> **Políticas de Precios en el Legado (Ignorar Precio y PrecioDolar)**:
+> Los campos de precios heredados (ej. `Precio` o `PrecioDolar` en la tabla `perfil` o mapeos heredados) **no se utilizan y deben ser totalmente ignorados**.
+> El sistema legacy ha dejado de registrar de forma confiable o actualizar estos precios debido a un desfase e incompatibilidad técnica con el modelo y requerimientos de negocio actuales de la empresa. La gestión contable e impositiva de precios autoritativa reside de forma exclusiva en el sistema moderno (`SatHospitalario`).
+
 ---
 
 ## 🧠 3. Control de Concurrencia Atómica (C# & Dapper)

@@ -384,7 +384,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 IdPersona = legacyId,
                 IDConvenio = cuenta.ConvenioId ?? 1,
                 Fecha = DateTime.Now,
-                HoraIngreso = DateTime.Now.ToString("HH:mm:ss")
+                HoraIngreso = DateTime.Now.ToString("HH:mm:ss"),
+                PrecioF = perfilesFacturados.Sum(p => p.PrecioPerfil)
             };
 
             var idOrden = await _legacyRepository.GenerarOrdenLaboratorioAsync(orden, perfilesFacturados, new List<ResultadosPacienteLegacy>(), ct);
