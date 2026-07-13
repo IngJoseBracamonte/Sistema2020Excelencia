@@ -9,5 +9,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string Nombre { get; set; }
         public bool EsPrincipal { get; set; }
         public bool Activo { get; set; }
+        public System.Collections.Generic.List<AreaClinicaDto> AreasClinicas { get; set; } = new System.Collections.Generic.List<AreaClinicaDto>();
     }
 }

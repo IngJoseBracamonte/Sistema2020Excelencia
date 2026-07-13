@@ -63,20 +63,18 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     console.log('Opened Agregar Área Clinica modal.');
 
     // 7. Esperar a que el formulario de Área aparezca en el DOM
-    //    El modal se renderiza async — necesitamos que los inputs estén presentes
-    await page.waitForSelector('label:has-text("Nombre del Área") + input', { timeout: 8000 });
+    const areaModal = page.locator('div.fixed', { has: page.locator('h3:has-text("Agregar Área Clínica")') }).first();
+    await expect(areaModal).toBeVisible({ timeout: 8000 });
 
     // 8. Fill in the Area Clinica details
-    //    Estos selectores son diferentes a los del modal de Sede para evitar colisión
-    const areaCodeInput = page.locator('label:has-text("Código del Área") + input, label:has-text("Código") + input').last();
-    const areaNameInput = page.locator('label:has-text("Nombre del Área") + input');
+    const areaCodeInput = areaModal.locator('input').first();
+    const areaNameInput = areaModal.locator('input').nth(1);
 
     await areaCodeInput.fill('AREA_E2E');
     await areaNameInput.fill('Departamento de Pruebas');
     console.log('Filled Area form.');
 
     // 9. Save Area Clinica y esperar re-render de la lista
-    const areaModal = page.locator('div.fixed', { has: page.locator('h3:has-text("Agregar Área Clínica")') }).first();
     const agregarBtn = areaModal.locator('button:has-text("Agregar")');
     await agregarBtn.click();
     await page.waitForLoadState('networkidle');

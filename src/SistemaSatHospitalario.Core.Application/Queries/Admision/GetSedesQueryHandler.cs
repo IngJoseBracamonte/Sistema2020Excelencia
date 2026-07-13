@@ -27,7 +27,19 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Codigo = s.Codigo,
                     Nombre = s.Nombre,
                     EsPrincipal = s.EsPrincipal,
-                    Activo = s.Activo
+                    Activo = s.Activo,
+                    AreasClinicas = _context.AreasClinicas
+                        .Where(a => a.SedeId == s.Id && a.Activo)
+                        .Select(a => new AreaClinicaDto
+                        {
+                            Id = a.Id,
+                            SedeId = a.SedeId,
+                            Codigo = a.Codigo,
+                            Nombre = a.Nombre,
+                            Activo = a.Activo,
+                            SedeNombre = s.Nombre
+                        })
+                        .ToList()
                 })
                 .ToListAsync(cancellationToken);
         }
