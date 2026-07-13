@@ -54,24 +54,24 @@ describe('LoginRedirectService', () => {
     expect(route).toEqual(['/rx-orders']);
   });
 
-  it('debe redirigir a cierre-cuenta/Emergencia si el usuario es EmergencyAssistant', () => {
+  it('debe redirigir a /enfermeria si el usuario es EmergencyAssistant', () => {
     authServiceSpy.isAdmin.and.returnValue(false);
     authServiceSpy.isRxAssistant.and.returnValue(false);
     authServiceSpy.isEmergencyAssistant.and.returnValue(true);
     authServiceSpy.isHospitalAssistant.and.returnValue(false);
 
     const route = service.redirectRoute(false);
-    expect(route).toEqual(['/cierre-cuenta/Emergencia']);
+    expect(route).toEqual(['/enfermeria']);
   });
 
-  it('debe redirigir a cierre-cuenta/Hospitalizacion si el usuario es HospitalAssistant', () => {
+  it('debe redirigir a /enfermeria si el usuario es HospitalAssistant', () => {
     authServiceSpy.isAdmin.and.returnValue(false);
     authServiceSpy.isRxAssistant.and.returnValue(false);
     authServiceSpy.isEmergencyAssistant.and.returnValue(false);
     authServiceSpy.isHospitalAssistant.and.returnValue(true);
 
     const route = service.redirectRoute(false);
-    expect(route).toEqual(['/cierre-cuenta/Hospitalizacion']);
+    expect(route).toEqual(['/enfermeria']);
   });
 
   it('debe redirigir a dashboard por defecto', () => {

@@ -27,11 +27,11 @@ export class LoginRedirectService {
     },
     {
       applies: () => this.authService.isEmergencyAssistant(),
-      getRoute: () => ['/cierre-cuenta/Emergencia']
+      getRoute: () => ['/enfermeria']
     },
     {
       applies: () => this.authService.isHospitalAssistant(),
-      getRoute: () => ['/cierre-cuenta/Hospitalizacion']
+      getRoute: () => ['/enfermeria']
     },
     {
       applies: () => true, // Fallback/Default
