@@ -13,6 +13,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
 import { MultiSedeService, AreaClinica } from '../../core/services/multi-sede.service';
+import { PatientService, PatientRecord } from '../../core/services/patient.service';
+import { FacturacionService } from '../../core/services/facturacion.service';
 import { 
   LucideAngularModule, 
   Search, 
@@ -35,7 +37,8 @@ import {
   Thermometer, 
   Droplet, 
   Shuffle, 
-  Edit
+  Edit,
+  UserPlus
 } from 'lucide-angular';
 
 export interface CuentaAdministrativa {
@@ -223,6 +226,8 @@ export class EnfermeriaComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly medicoService = inject(MedicoService);
   public readonly multiSedeService = inject(MultiSedeService);
+  private readonly patientService = inject(PatientService);
+  private readonly facturacionService = inject(FacturacionService);
 
   readonly icons = {
     Search,
@@ -245,8 +250,72 @@ export class EnfermeriaComponent implements OnInit {
     Thermometer,
     Droplet,
     Shuffle,
-    Edit
+    Edit,
+    UserPlus
   };
+
+  // Admission flow states (V1.2.92 Onboarding)
+  public showIngresoModal = signal<boolean>(false);
+  public ingresoStep = signal<number>(1);
+  public showNewPatientForm = signal<boolean>(false);
+  public searchIngresoTerm = signal<string>('');
+  public isSearchingPatient = signal<boolean>(false);
+  public patientsEncontrados = signal<PatientRecord[]>([]);
+  public selectedPatientForIngreso = signal<PatientRecord | null>(null);
+  public convenioIngresoId = signal<number | null>(null);
+  public errorMessage = signal<string | null>(null);
+  public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
+
+  public newPatientData = {
+    cedula: '',
+    nombre: '',
+    apellidos: '',
+    correo: '',
+    celular: '',
+    telefono: '',
+    direccion: '',
+    fechaNacimiento: new Date().toISOString().split('T')[0],
+    sexo: 'ND',
+    tipoCorreo: '@gmail.com',
+    codigoCelular: '0414',
+    codigoTelefono: '0274'
+  };
+
+  // Triage Signals (for Emergency complete flow)
+  public triageSelectedPatientId = signal<string | null>(null);
+  public triageMotivoConsulta = signal<string>('');
+  public triageTensionArterial = signal<string>('');
+  public triageFrecuenciaCardiaca = signal<number>(80);
+  public triageFrecuenciaRespiratoria = signal<number>(18);
+  public triageTemperatura = signal<number>(37.0);
+  public triageSaturacionO2 = signal<number>(98);
+  public triageGlicemiaCapilar = signal<number | null>(null);
+  public triageClasificacion = signal<string>('Nivel III (Amarillo)');
+  public triageEstadoConciencia = signal<string>('Alerta');
+  public triageGlasgowOcular = signal<number>(4);
+  public triageGlasgowVerbal = signal<number>(5);
+  public triageGlasgowMotor = signal<number>(6);
+  public triageGlasgowTotal = computed(() => {
+    return this.triageGlasgowOcular() + this.triageGlasgowVerbal() + this.triageGlasgowMotor();
+  });
+  public triageViaAerea = signal<string>('Permeable');
+  public triageVentilacion = signal<string>('Normal');
+  public triagePulso = signal<string>('Rítmico');
+  public triagePielMucosas = signal<string>('Normocoloreada');
+  public triageLlenadoCapilar = signal<string>('< 2 segundos');
+  public triagePupilas = signal<string>('Isocóricas');
+  public triageAlergiasNinguna = signal<boolean>(true);
+  public triageAlergiasEspecificar = signal<string>('');
+  public triageAccesosVenososTrae = signal<boolean>(false);
+  public triageAccesosVenososLugar = signal<string>('');
+  public triagePertenencias = signal<string>('Entregadas a familiar');
+  public triageAntecedenteHTA = signal<boolean>(false);
+  public triageAntecedenteDiabetes = signal<boolean>(false);
+  public triageAntecedenteCardiopatia = signal<boolean>(false);
+
+  // Determinar dinámicamente el tipo de ingreso según el área clínica activa en Enfermería
+  public type = computed(() => this.nursingAreaFilter());
+
 
   // State Lists
   public activeAccounts = signal<CuentaAdministrativa[]>([]);
@@ -998,6 +1067,274 @@ export class EnfermeriaComponent implements OnInit {
     if (!medicoId) return '';
     const m = this.medicos().find(x => x.id === medicoId);
     return m ? (m.especialidad?.toUpperCase() || 'GENERAL') : 'GENERAL';
+  }
+
+  // --- Ingresar Paciente / Abrir Cuenta Clinica Flow (V1.2.92) ---
+  public abrirModalIngreso() {
+    this.searchIngresoTerm.set('');
+    this.patientsEncontrados.set([]);
+    this.selectedPatientForIngreso.set(null);
+    this.convenioIngresoId.set(null);
+    this.showNewPatientForm.set(false);
+    this.newPatientData = {
+      cedula: '',
+      nombre: '',
+      apellidos: '',
+      correo: '',
+      celular: '',
+      telefono: '',
+      direccion: '',
+      fechaNacimiento: new Date().toISOString().split('T')[0],
+      sexo: 'ND',
+      tipoCorreo: '@gmail.com',
+      codigoCelular: '0414',
+      codigoTelefono: '0274'
+    };
+    this.errorMessage.set(null);
+    
+    // Reset triage signals
+    this.ingresoStep.set(1);
+    this.triageSelectedPatientId.set(null);
+    this.triageMotivoConsulta.set('');
+    this.triageTensionArterial.set('');
+    this.triageFrecuenciaCardiaca.set(80);
+    this.triageFrecuenciaRespiratoria.set(18);
+    this.triageTemperatura.set(37.0);
+    this.triageSaturacionO2.set(98);
+    this.triageGlicemiaCapilar.set(null);
+    this.triageClasificacion.set('Nivel III (Amarillo)');
+    this.triageEstadoConciencia.set('Alerta');
+    this.triageGlasgowOcular.set(4);
+    this.triageGlasgowVerbal.set(5);
+    this.triageGlasgowMotor.set(6);
+    this.triageViaAerea.set('Permeable');
+    this.triageVentilacion.set('Normal');
+    this.triagePulso.set('Rítmico');
+    this.triagePielMucosas.set('Normocoloreada');
+    this.triageLlenadoCapilar.set('< 2 segundos');
+    this.triagePupilas.set('Isocóricas');
+    this.triageAlergiasNinguna.set(true);
+    this.triageAlergiasEspecificar.set('');
+    this.triageAccesosVenososTrae.set(false);
+    this.triageAccesosVenososLugar.set('');
+    this.triagePertenencias.set('Entregadas a familiar');
+    this.triageAntecedenteHTA.set(false);
+    this.triageAntecedenteDiabetes.set(false);
+    this.triageAntecedenteCardiopatia.set(false);
+
+    this.showIngresoModal.set(true);
+  }
+
+  public buscarPacienteIngreso() {
+    const term = this.searchIngresoTerm().trim();
+    if (term.length >= 3) {
+      this.isSearchingPatient.set(true);
+      this.patientService.searchPatients(term).subscribe({
+        next: (res) => {
+          this.patientsEncontrados.set(res);
+          this.isSearchingPatient.set(false);
+        },
+        error: () => {
+          this.isSearchingPatient.set(false);
+        }
+      });
+    }
+  }
+
+  public seleccionarPacienteIngreso(p: PatientRecord) {
+    this.selectedPatientForIngreso.set(p);
+    this.patientsEncontrados.set([]);
+  }
+
+  public deseleccionarPacienteIngreso() {
+    this.selectedPatientForIngreso.set(null);
+  }
+
+  public procesarIngreso() {
+    this.errorMessage.set(null);
+
+    // Si fechaNacimientoFormatted tiene un valor válido de 10 caracteres, actualizar la propiedad subyacente
+    if (this.fechaNacimientoFormatted && this.fechaNacimientoFormatted.length === 10) {
+      const parts = this.fechaNacimientoFormatted.split('-');
+      if (parts.length === 3) {
+        this.newPatientData.fechaNacimiento = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+
+    if (this.showNewPatientForm()) {
+      // Registrar nuevo paciente primero
+      if (!this.newPatientData.cedula || 
+          !this.newPatientData.nombre || 
+          !this.newPatientData.apellidos || 
+          !this.newPatientData.fechaNacimiento || 
+          !this.newPatientData.celular || 
+          !this.newPatientData.direccion) {
+        this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento, Celular y Dirección.");
+        return;
+      }
+
+      this.isLoading.set(true);
+      this.patientService.createPatient(this.newPatientData).subscribe({
+        next: (p: PatientRecord) => {
+          if (this.type() === 'Emergencia') {
+            this.isLoading.set(false);
+            this.triageSelectedPatientId.set(p.id);
+            this.ingresoStep.set(2);
+          } else {
+            this.abrirCuentaParaPaciente(p.id);
+          }
+        },
+        error: (err: any) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || err.error?.error || "Error al registrar nuevo paciente.");
+        }
+      });
+    } else {
+      // Usar paciente existente
+      const patient = this.selectedPatientForIngreso();
+      if (!patient) {
+        this.errorMessage.set("Por favor busque y seleccione un paciente o complete el formulario de nuevo registro.");
+        return;
+      }
+
+      if (this.type() === 'Emergencia') {
+        this.triageSelectedPatientId.set(patient.id);
+        this.ingresoStep.set(2);
+      } else {
+        this.isLoading.set(true);
+        this.abrirCuentaParaPaciente(patient.id);
+      }
+    }
+  }
+
+  private abrirCuentaParaPaciente(pacienteId: string) {
+    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId()).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.showIngresoModal.set(false);
+        this.actionMessage.set(`Paciente ingresado exitosamente a la sección de ${this.type()}.`);
+        setTimeout(() => this.actionMessage.set(null), 5000);
+        this.refreshAccounts(); // Refrescar lista de activos en Enfermería
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.Error || err.error?.message || "Error al abrir la cuenta clínica.");
+      }
+    });
+  }
+
+  public procesarIngresoEmergenciaCompleto() {
+    const pacienteId = this.triageSelectedPatientId();
+    if (!pacienteId) {
+      this.errorMessage.set("Error: No se ha seleccionado un paciente válido.");
+      return;
+    }
+
+    if (!this.triageMotivoConsulta().trim()) {
+      this.errorMessage.set("El Motivo de Consulta es obligatorio para el triage de Emergencia.");
+      return;
+    }
+
+    this.isLoading.set(true);
+
+    // 1. Abrir la cuenta clínica
+    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId()).subscribe({
+      next: (res: any) => {
+        const cuentaId = res.cuentaId || res.id;
+        if (!cuentaId) {
+          this.isLoading.set(false);
+          this.errorMessage.set("Error: No se pudo obtener el ID de la cuenta creada.");
+          return;
+        }
+
+        // 2. Preparar el payload del triage
+        const antecedenteParts: string[] = [];
+        if (this.triageAntecedenteHTA()) antecedenteParts.push('HTA');
+        if (this.triageAntecedenteDiabetes()) antecedenteParts.push('Diabetes');
+        if (this.triageAntecedenteCardiopatia()) antecedenteParts.push('Cardiopatía');
+        const antecedentes = antecedenteParts.join(', ') || 'Ninguno';
+
+        const rawMotivo = this.triageMotivoConsulta().trim();
+        const clasificacion = this.triageClasificacion();
+        const motivoConTriaje = `[CLASIFICACIÓN TRIAJE: ${clasificacion.toUpperCase()}] ${rawMotivo}`;
+
+        const currentUser = this.authService.currentUser();
+
+        const triagePayload = {
+          cuentaServicioId: cuentaId,
+          motivoConsulta: motivoConTriaje,
+          tensionArterial: this.triageTensionArterial().trim() || 'N/A',
+          frecuenciaCardiaca: Number(this.triageFrecuenciaCardiaca()) || 0,
+          frecuenciaRespiratoria: Number(this.triageFrecuenciaRespiratoria()) || 0,
+          temperatura: Number(this.triageTemperatura()) || 37.0,
+          saturacionO2: Number(this.triageSaturacionO2()) || 98,
+          glicemiaCapilar: this.triageGlicemiaCapilar() ? Number(this.triageGlicemiaCapilar()) : null,
+          estadoConciencia: this.triageEstadoConciencia(),
+          glasgowOcular: Number(this.triageGlasgowOcular()) || 4,
+          glasgowVerbal: Number(this.triageGlasgowVerbal()) || 5,
+          glasgowMotor: Number(this.triageGlasgowMotor()) || 6,
+          glasgowTotal: Number(this.triageGlasgowTotal()) || 15,
+          viaAerea: this.triageViaAerea(),
+          ventilacion: this.triageVentilacion(),
+          pulso: this.triagePulso(),
+          pielMucosas: this.triagePielMucosas().trim() || 'Normocoloreada',
+          llenadoCapilar: this.triageLlenadoCapilar(),
+          pupilas: this.triagePupilas(),
+          alergias: this.triageAlergiasNinguna() ? 'Ninguna' : (this.triageAlergiasEspecificar().trim() || 'Ninguna'),
+          accesosVenosos: this.triageAccesosVenososTrae() ? `Sí (${this.triageAccesosVenososLugar().trim() || 'No especificado'})` : 'No',
+          pertenencias: this.triagePertenencias(),
+          antecedentesMedicos: antecedentes,
+          usuarioRegistro: currentUser?.username || 'admin',
+          registrarConstantesVitales: true,
+          registrarValoracionFisica: true,
+          registrarAntecedentes: true,
+          registrarEstadoActual: true,
+          descripcionRapida: rawMotivo,
+          descripcionDetallada: `Ingreso inicial por: ${rawMotivo}. Clasificación: ${clasificacion}`
+        };
+
+        // 3. Registrar el Triage y Valoración Física
+        this.http.post(`${environment.apiUrl}/api/Enfermeria/Triage`, triagePayload).subscribe({
+          next: () => {
+            this.isLoading.set(false);
+            this.showIngresoModal.set(false);
+            this.actionMessage.set(`Paciente ingresado y triage registrado exitosamente en Emergencia.`);
+            setTimeout(() => this.actionMessage.set(null), 5000);
+            this.refreshAccounts(); // Refrescar lista de activos en Enfermería
+          },
+          error: (err: any) => {
+            this.isLoading.set(false);
+            // Mostramos éxito del ingreso pero advertimos sobre el triage
+            this.showIngresoModal.set(false);
+            this.actionMessage.set(`Paciente ingresado, pero hubo un error al registrar el triage: ${err.error?.Error || err.message}`);
+            setTimeout(() => this.actionMessage.set(null), 8000);
+            this.refreshAccounts();
+          }
+        });
+      },
+      error: (err: any) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.Error || err.error?.message || "Error al abrir la cuenta clínica.");
+      }
+    });
+  }
+
+  // Formateador de Fecha de Nacimiento
+  public get fechaNacimientoFormatted(): string {
+    if (!this.newPatientData.fechaNacimiento) return '';
+    const parts = this.newPatientData.fechaNacimiento.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return this.newPatientData.fechaNacimiento;
+  }
+  public set fechaNacimientoFormatted(val: string) {
+    if (val && val.length === 10) {
+      const parts = val.split('-');
+      if (parts.length === 3) {
+        this.newPatientData.fechaNacimiento = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
   }
 
   logout(): void {
