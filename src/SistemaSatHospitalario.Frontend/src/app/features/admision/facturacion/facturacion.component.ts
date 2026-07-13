@@ -589,10 +589,10 @@ export class FacturacionComponent {
     const currentPrice = item.precioUsd || item.PrecioUsd || item.precio || 0;
     const currentHonorary = item.honorarioUsd ?? item.HonorarioUsd ?? item.honorario ?? item.Honorario ?? item.honorarioBase ?? item.HonorarioBase ?? 0;
     
-    const isConsult = item.isConsultation;
-    
-    const inputPrice = isConsult ? Math.max(0, currentPrice - currentHonorary) : currentPrice;
+    const hasHonorary = currentHonorary > 0 || item.isConsultation;
+    const inputPrice = hasHonorary ? Math.max(0, currentPrice - currentHonorary) : currentPrice;
     const inputHonorary = currentHonorary;
+
 
     // Delegar al componente cart que inicie el modo edición
     this.billingCart.startEdit(index, isBackend, inputPrice, inputHonorary);
@@ -613,10 +613,9 @@ export class FacturacionComponent {
       this.billingFacade.carritoLocal.update(cart => {
         const newCart = [...cart];
         const item = newCart[index];
-        const isConsult = item.isConsultation;
-        const finalPrice = isConsult ? (newPrice + newHonorary) : newPrice;
+        const finalPrice = newPrice + newHonorary; // Siempre Monto + Honorario (Regla Unificada)
         const finalHonorary = newHonorary;
-        const baseHon = isConsult ? newHonorary : item.honorarioBase;
+        const baseHon = newHonorary;
 
         newCart[index] = new CatalogItem({ 
           ...item, 
@@ -630,6 +629,7 @@ export class FacturacionComponent {
       this.actionMessage.set("Precio y Honorario modificados exitosamente.");
     }
   }
+
 
 
 
@@ -1116,9 +1116,14 @@ export class FacturacionComponent {
 
     const selectedDoctor = (esConsulta || (s.honorarioBase ?? 0) > 0) ? this.medicosFiltrados().find(m => (m.id || (m as any).Id) === this.selectedMedicoId()) : null;
     const doctorHonorary = selectedDoctor ? (selectedDoctor.honorarioBase ?? (selectedDoctor as any).HonorarioBase ?? 0) : 0;
-    const precioBase = (s.precioUsd ?? 0) - (s.honorarioUsd ?? s.honorarioBase ?? 0);
-    const finalPrecio = esConsulta ? (precioBase + doctorHonorary) : (s.precioUsd ?? 0);
-    const finalHonorary = esConsulta ? doctorHonorary : (s.honorarioUsd ?? s.honorarioBase ?? 0);
+    
+    const isConsult = esConsulta || (s.categoryId === 1);
+    const defaultHonorary = s.honorarioUsd ?? s.honorarioBase ?? 0;
+    const precioBase = isConsult ? ((s.precioUsd ?? 0) - defaultHonorary) : (s.precioUsd ?? 0);
+    
+    const finalHonorary = (esConsulta || selectedDoctor) ? doctorHonorary : defaultHonorary;
+    const finalPrecio = precioBase + finalHonorary; // Siempre base + honorario (Regla Unificada)
+
 
     const pId = this.pacienteId();
 

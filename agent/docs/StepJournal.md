@@ -252,7 +252,27 @@ Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 - **Resultado**: Configuración de red lista para entornos de producción seguros.
 
 
+## 🗓️ 2026-07-13 (Estabilización E2E y Modularización de Documentación V12.2)
+### 1. QA: Estabilización de Pruebas de Triage Modular
+- **Acción**: Corrección del archivo [nursing.spec.ts](file:///c:/Src/src/Sistema2020Excelencia/src/SistemaSatHospitalario.Frontend/e2e/nursing.spec.ts) para verificar y hacer click condicional en el botón "Nuevo Triage" si el paciente ya tiene historial clínico registrado.
+- **Razón**: Si el paciente de prueba ya contaba con datos históricos en base de datos, el formulario con los checkboxes `1. Signos Vitales`, etc., no se mostraba por defecto, haciendo fallar la aserción de visibilidad.
+- **Resultado**: Suite de pruebas e2e del módulo de enfermería 100% exitosa (3/3 passed).
+
+### 2. Documentación: Refactor de Arquitectura de Módulos (V13.0)
+- **Acción**: Actualización de [Architecture.md](file:///c:/Src/src/Sistema2020Excelencia/agent/docs/Architecture.md) agregando un Catálogo de Módulos (Activos y Planificados) y un protocolo de desarrollo paso a paso.
+- **Expansión Completa del Sidebar**: Creación de 5 nuevos archivos extensos bajo la carpeta `Architecture/` para documentar la totalidad del menú administrativo:
+  - `Inventario_Sedes.md` (Supervisor de Inventario, Sedes, existencias y pedidos de traslado).
+  - `Cajas_Catalogos.md` (Gestión de cajas, arqueos, declaración de cierre JSON y maestro de servicios con sugerencias).
+  - `Reportes_Operativos_Auditoria.md` (Expediente de facturación, logs de documentos e historial de modificación de ingresos/reasignaciones de pacientes).
+  - `Honorarios_Liquidacion.md` (Cálculo de honorarios, panel de asignaciones y comisiones fijas vs porcentuales).
+  - `Configuracion_Sistemas.md` (General y finanzas, RBAC, auditoría de integridad, resets de base de datos y visor de tickets sanitizados de error).
+
 ## 📌 Lecciones del Día
-- **Default Insecurity**: Las configuraciones por defecto de plantillas (.NET/Angular) suelen priorizar la agilidad del desarrollador sobre la seguridad. Es mandatorio realizar un paso de hardening antes de avanzar a producción.
-- **Information Disclosure**: El mensaje de error es el principal vector de reconocimiento para un atacante. El enmascaramiento en el `GlobalExceptionHandler` es la primera línea de defensa.
-- **CORS Broadness**: `AllowAnyOrigin` es incompatible con `AllowCredentials` en navegadores modernos y es un riesgo de seguridad mayor; siempre usar listas blancas de dominios.
+- **Test Idempotency**: Las pruebas e2e que interactúan con estados dinámicos del frontend (como si el formulario se muestra o se oculta según el historial existente) deben ser tolerantes y manejar ambos flujos para no ser propensas a flakiness.
+- **Documentation Safety**: A medida que un software crece, indexar de manera clara las ubicaciones físicas de los componentes y las fases planificadas evita la pérdida de control y la sobrecarga cognitiva del desarrollador.
+- **Exhaustive Spec Mapping**: Separar la arquitectura en sub-especificaciones técnicas detalladas por lógica de negocio y mapear el 100% de las rutas/opciones visuales del sistema garantiza una base de conocimiento sólida para futuras extensiones.
+- **Asignación Clínica de Ubicaciones**: Definir por arquitectura el sistema de separación de pacientes en áreas clínicas (Emergencia, Hospitalización, UCI) mediante asignación dinámica a espacios físicos (Boxes, Habitaciones y Camas) con historial de traslados previene colisiones operativas en planta.
+- **Políticas Sectorizadas del Carrito**: La flexibilización del agendamiento médico (citas sin turno en urgencias/planta) combinada con el control de inventario local (descuento en sedes EMG/HOS/UCI) permite amoldar el sistema al dinamismo del entorno clínico hospitalario.
+- **Fórmula de Precio Unificada**: Para todos los ingresos (Particular, Seguros, Emergencia, Hospitalización, UCI), el total final de cada ítem/estudio cargado se rige estrictamente por la regla $\text{Precio Final} = \text{Monto Base} + \text{Honorarios (si aplica)}$, garantizando la consistencia del desglose financiero.
+
+

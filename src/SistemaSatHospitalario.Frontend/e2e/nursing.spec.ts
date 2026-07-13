@@ -54,8 +54,17 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await firstPatient.click();
     console.log('Selected active patient.');
 
-    // Verify modular triage section checkboxes are visible (con el case exacto del HTML)
+    // Verify triage title is visible
     await expect(page.locator('text=Triage y Signos Vitales')).toBeVisible();
+
+    // If the "Nuevo Triage" button is visible (because patient already has history), click it to open the form
+    const nuevoTriageBtn = page.locator('button:has-text("Nuevo Triage")');
+    if (await nuevoTriageBtn.isVisible()) {
+      await nuevoTriageBtn.click();
+      console.log('Clicked "Nuevo Triage" button to display the form.');
+    }
+
+    // Verify modular triage section checkboxes are visible (con el case exacto del HTML)
     await expect(page.locator('label:has-text("1. Signos Vitales")')).toBeVisible();
     await expect(page.locator('label:has-text("2. Valoración Física")')).toBeVisible();
     await expect(page.locator('label:has-text("3. Antecedentes")')).toBeVisible();
