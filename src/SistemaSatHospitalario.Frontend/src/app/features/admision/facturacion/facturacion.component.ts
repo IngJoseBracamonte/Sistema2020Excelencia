@@ -1119,7 +1119,7 @@ export class FacturacionComponent {
     
     const isConsult = esConsulta || (s.categoryId === 1);
     const defaultHonorary = s.honorarioUsd ?? s.honorarioBase ?? 0;
-    const precioBase = isConsult ? ((s.precioUsd ?? 0) - defaultHonorary) : (s.precioUsd ?? 0);
+    const precioBase = s.precioUsd ?? 0;
     
     const finalHonorary = (esConsulta || selectedDoctor) ? doctorHonorary : defaultHonorary;
     const finalPrecio = precioBase + finalHonorary; // Siempre base + honorario (Regla Unificada)

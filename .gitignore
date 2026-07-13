@@ -395,3 +395,16 @@ docs/prompts_receta.html
 
 # Legacy synchronization diagnostics log
 legacy_sync_log.txt
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FASE A — Tests de integración directa contra BD (Pre-Producción)
+# Estos archivos validan la lógica contra MySQL real ANTES de integrar
+# los cambios en el sistema productivo. No deben llegar a producción.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Test de traslados, Hospitalización y UCI contra BD real
+src/SistemaSatHospitalario.UnitTests/Application/TrasladoHospitalizacionUCIDbDirectTests.cs
+
+# Logs de diagnóstico de los tests de BD
+**/scratch/traslado_uci_test_log.txt
+**/scratch/ef_log.txt

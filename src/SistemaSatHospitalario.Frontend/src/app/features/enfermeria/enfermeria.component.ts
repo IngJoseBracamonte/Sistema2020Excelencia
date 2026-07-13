@@ -445,7 +445,7 @@ export class EnfermeriaComponent implements OnInit {
     const customPriceVal = this.customPrecio();
     const defaultHonorary = s.honorarioBase ?? 0;
     const isConsult = classification === ITEM_CLASSIFICATIONS.CONSULTA || (s.categoryId === 1);
-    const pureBasePrice = isConsult ? ((s.precioUsd ?? 0) - defaultHonorary) : (s.precioUsd ?? 0);
+    const pureBasePrice = s.precioUsd ?? 0;
     const basePrice = customPriceVal ?? pureBasePrice;
 
     if (classification === ITEM_CLASSIFICATIONS.CONSULTA) {
@@ -897,7 +897,7 @@ export class EnfermeriaComponent implements OnInit {
 
     const defaultHonorary = service.honorarioBase ?? 0;
     const isConsult = classification === ITEM_CLASSIFICATIONS.CONSULTA || (service.categoryId === 1);
-    const pureBasePrice = isConsult ? ((service.precioUsd ?? 0) - defaultHonorary) : (service.precioUsd ?? 0);
+    const pureBasePrice = service.precioUsd ?? 0;
     const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : pureBasePrice;
     const honoraryPrice = this.customHonorario() !== null ? Number(this.customHonorario()) : (service.honorarioBase ?? 0);
 
@@ -926,7 +926,7 @@ export class EnfermeriaComponent implements OnInit {
         const sugClass = classifyService(sug);
         const sugDefaultHonorary = sug.honorarioBase ?? 0;
         const sugIsConsult = sugClass === ITEM_CLASSIFICATIONS.CONSULTA || (sug.categoryId === 1);
-        const sugPureBasePrice = sugIsConsult ? ((sug.precioUsd ?? 0) - sugDefaultHonorary) : (sug.precioUsd ?? 0);
+        const sugPureBasePrice = sug.precioUsd ?? 0;
         newItems.push({
           id: getUuid(),
           servicioId: String(sug.id),
