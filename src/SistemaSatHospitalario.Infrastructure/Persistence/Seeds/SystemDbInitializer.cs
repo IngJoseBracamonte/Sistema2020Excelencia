@@ -315,9 +315,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await FixOrphanPaymentDatesAsync();
                 await SeedMonedasAsync();
                 await SeedMetodosPagoAsync();
-                await SeedHonorarioConfigAsync();
                 await SeedInventorySedesAndMigrateStockAsync();
                 await SeedAreasClinicasAsync();
+                await SeedInsumosYRecetasTestAsync();
  
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
@@ -972,6 +972,56 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
 
             _logger.LogInformation($"[MIGRATION] Área Clínica ID migrado de {oldId} a {newId} (incluyendo tablas relacionadas).");
+        }
+
+        private async Task SeedInsumosYRecetasTestAsync()
+        {
+            _logger.LogInformation("Sembrando Insumos y Recetas de prueba para E2E...");
+
+            var med01 = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "MED-01");
+            if (med01 == null) return;
+
+            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Codigo == "INS-01");
+            if (insumo == null)
+            {
+                insumo = new Insumo("INS-01", "Ibuprofeno 600mg (Medicamento)", 0.00m, UnidadMedida.UNIDAD, 1.00m, true, "Medicamento");
+                _context.Insumos.Add(insumo);
+                await _context.SaveChangesAsync();
+            }
+
+            var receta = await _context.ServiciosInsumoRecetas.FirstOrDefaultAsync(r => r.ServicioClinicoId == med01.Id && r.InsumoId == insumo.Id);
+            if (receta == null)
+            {
+                receta = new ServicioInsumoReceta(med01.Id, med01.Codigo, insumo.Id, 1.00m, UnidadMedida.UNIDAD);
+                _context.ServiciosInsumoRecetas.Add(receta);
+                await _context.SaveChangesAsync();
+            }
+
+            // Sembrar Stock para UCI
+            var stockUci = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI);
+            if (stockUci == null)
+            {
+                stockUci = new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, 5.00m);
+                _context.StocksSedes.Add(stockUci);
+            }
+            else
+            {
+                stockUci.RegistrarMovimientoStock(5.00m - stockUci.StockActual, true); // Restablecer a 5
+            }
+
+            // Sembrar Stock para Hospitalización
+            var stockHos = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion);
+            if (stockHos == null)
+            {
+                stockHos = new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, 10.00m);
+                _context.StocksSedes.Add(stockHos);
+            }
+            else
+            {
+                stockHos.RegistrarMovimientoStock(10.00m - stockHos.StockActual, true); // Restablecer a 10
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

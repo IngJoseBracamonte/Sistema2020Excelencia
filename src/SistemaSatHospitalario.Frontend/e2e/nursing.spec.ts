@@ -55,7 +55,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Selected active patient.');
 
     // Verify triage title is visible
-    await expect(page.locator('text=Triage y Signos Vitales')).toBeVisible();
+    await expect(page.locator('h3:has-text("Triage y Signos Vitales")')).toBeVisible();
 
     // If the "Nuevo Triage" button is visible (because patient already has history), click it to open the form
     const nuevoTriageBtn = page.locator('button:has-text("Nuevo Triage")');
