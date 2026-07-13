@@ -19,11 +19,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int? ConvenioId { get; private set; }
         public int? LegacyOrderId { get; private set; }
         public string? ProcesamientoEstado { get; private set; } // PENDIENTE, PROCESADA
+        public Guid? AreaClinicaId { get; private set; }
+        public string? SubAreaClinica { get; private set; }
  
         public virtual PacienteAdmision Paciente { get; private set; }
         public virtual SeguroConvenio Convenio { get; private set; }
         public virtual CuentaServicios? CuentaPrincipal { get; private set; }
-
+        public virtual AreaClinica? AreaClinica { get; private set; }
+ 
         public virtual ICollection<TriageEnfermeria> Triages { get; private set; } = new List<TriageEnfermeria>();
         public virtual ICollection<ValoracionFisica> Valoraciones { get; private set; } = new List<ValoracionFisica>();
 
@@ -41,7 +44,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null)
+        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
@@ -50,6 +53,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Estado = EstadoConstants.Abierta;
             TipoIngreso = tipoIngreso ?? EstadoConstants.Particular;
             ConvenioId = convenioId;
+            AreaClinicaId = areaClinicaId;
+            SubAreaClinica = subAreaClinica;
+        }
+ 
+        public void AsignarAreaClinica(Guid? areaClinicaId, string? subAreaClinica)
+        {
+            AreaClinicaId = areaClinicaId;
+            SubAreaClinica = subAreaClinica;
         }
 
         public void VincularCuentaPrincipal(Guid cuentaPrincipalId)

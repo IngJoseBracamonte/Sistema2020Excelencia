@@ -38,6 +38,14 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         /// </summary>
         public static readonly Guid SedeId_UCI = new Guid("10000000-0000-0000-0000-000000000004");
 
+
+        // ─────────────────────────────────────────────────────────────
+        // ÁREAS CLÍNICAS (IDs fijos para mapear por ID y no por strings)
+        // ─────────────────────────────────────────────────────────────
+        public static readonly Guid AreaId_Emergencia = new Guid("30000000-0000-0000-0000-000000000001");
+        public static readonly Guid AreaId_Hospitalizacion = new Guid("30000000-0000-0000-0000-000000000002");
+        public static readonly Guid AreaId_UCI = new Guid("30000000-0000-0000-0000-000000000003");
+
         // ─────────────────────────────────────────────────────────────
         // ÁREAS CLÍNICAS / UBICACIONES FÍSICAS (Camas, Boxes, Habitaciones)
         // ─────────────────────────────────────────────────────────────

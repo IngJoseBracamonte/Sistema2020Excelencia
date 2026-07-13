@@ -15,9 +15,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         private Sede() { }
 
-        public Sede(string codigo, string nombre, bool esPrincipal)
+        public Sede(string codigo, string nombre, bool esPrincipal, Guid? id = null)
         {
-            Id = Guid.NewGuid();
+            Id = id ?? Guid.NewGuid();
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             EsPrincipal = esPrincipal;

@@ -58,30 +58,24 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             if (targetSedeId == null || targetSedeId == Guid.Empty)
             {
                 var cuenta = await _context.CuentasServicios
+                    .Include(c => c.AreaClinica)
                     .FirstOrDefaultAsync(c => c.Id == cuentaId, cancellationToken);
                 
-                if (cuenta != null && !string.IsNullOrEmpty(cuenta.TipoIngreso))
+                if (cuenta != null)
                 {
-                    string targetSedeCodigo = cuenta.TipoIngreso.ToUpper() switch
+                    if (cuenta.AreaClinica != null)
                     {
-                        "EMERGENCIA" => "EMERGENCIA",
-                        "HOSPITALIZACION" => "HOSPITALIZACION",
-                        _ => "PRINCIPAL"
-                    };
-
-                    var matchedSede = await _context.Sedes
-                        .FirstOrDefaultAsync(s => s.Codigo == targetSedeCodigo && s.Activo, cancellationToken);
-                    
-                    if (matchedSede != null)
+                        targetSedeId = cuenta.AreaClinica.SedeId;
+                    }
+                    else
                     {
-                        targetSedeId = matchedSede.Id;
+                        targetSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.ResolveSedeInventario(cuenta.TipoIngreso, cuenta.SubAreaClinica);
                     }
                 }
 
                 if (targetSedeId == null || targetSedeId == Guid.Empty)
                 {
-                    targetSedeId = (await _context.Sedes
-                        .FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, cancellationToken))?.Id ?? Guid.Empty;
+                    targetSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
                 }
             }
 
@@ -107,17 +101,15 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
 
             // Check if target Sede is predetermined/dedicated (with stock physical local tracker)
-            var targetSede = await _context.Sedes.FirstOrDefaultAsync(s => s.Id == targetSedeId, cancellationToken);
-            var isDedicatedSede = targetSede != null && (targetSede.EsPrincipal || targetSede.Codigo == "EMERGENCIA" || targetSede.Codigo == "HOSPITALIZACION");
+            var isDedicatedSede = targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal ||
+                                  targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia ||
+                                  targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion ||
+                                  targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI;
             
             Guid stockDeductionSedeId = targetSedeId;
             if (!isDedicatedSede)
             {
-                var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, cancellationToken);
-                if (principalSede != null)
-                {
-                    stockDeductionSedeId = principalSede.Id;
-                }
+                stockDeductionSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
             }
 
             // 3. Find or create StockSede for target Sede

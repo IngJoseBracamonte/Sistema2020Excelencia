@@ -10,6 +10,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public int? NuevoConvenioId { get; set; }
         public string UsuarioTraslado { get; set; } = string.Empty;
         public bool EsEgreso { get; set; } // Si es true, representa el alta del paciente (no abre nueva cuenta)
+        public Guid? NuevaAreaClinicaId { get; set; }
+        public string? NuevaSubAreaClinica { get; set; }
     }
 
     public class TrasladarPacienteResult

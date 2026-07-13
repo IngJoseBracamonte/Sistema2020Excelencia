@@ -242,6 +242,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 
+            Guid? targetSedeId = cuenta.AreaClinicaId.HasValue
+                ? (await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken))?.SedeId
+                : SeedConstants.ResolveSedeInventario(cuenta.TipoIngreso, cuenta.SubAreaClinica);
+
             // Deduct stock for inventory items associated with this service
             await _inventoryService.DeductInventoryForServiceDetailAsync(
                 detalle.Id,
@@ -251,7 +255,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 detalle.Cantidad,
                 request.UsuarioCarga,
                 cuenta.Id,
-                null,
+                targetSedeId,
                 cancellationToken
             );
 

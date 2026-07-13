@@ -152,6 +152,77 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'AreaClinicaId' en CitasMedicas.");
                 }
 
+                // Self-healing: Ensure AreaClinicaId and SubAreaClinica columns exist in CuentasServicios table
+                try
+                {
+                    bool hasAreaClinicaId = false;
+                    bool hasSubAreaClinica = false;
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConnection = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConnection = true;
+                    }
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (_context.Database.IsSqlite())
+                        {
+                            cmd.CommandText = "PRAGMA table_info(CuentasServicios);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"].ToString();
+                                    if (name.Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
+                                        hasAreaClinicaId = true;
+                                    if (name.Equals("SubAreaClinica", StringComparison.OrdinalIgnoreCase))
+                                        hasSubAreaClinica = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `CuentasServicios` WHERE Field IN ('AreaClinicaId', 'SubAreaClinica');";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var field = reader["Field"].ToString();
+                                    if (field.Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
+                                        hasAreaClinicaId = true;
+                                    if (field.Equals("SubAreaClinica", StringComparison.OrdinalIgnoreCase))
+                                        hasSubAreaClinica = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!hasAreaClinicaId)
+                    {
+                        _logger.LogInformation("La columna 'AreaClinicaId' no existe en CuentasServicios. Ejecutando ALTER TABLE...");
+                        if (_context.Database.IsSqlite())
+                            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `AreaClinicaId` TEXT NULL;");
+                        else
+                            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `AreaClinicaId` CHAR(36) NULL;");
+                    }
+
+                    if (!hasSubAreaClinica)
+                    {
+                        _logger.LogInformation("La columna 'SubAreaClinica' no existe en CuentasServicios. Ejecutando ALTER TABLE...");
+                        await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `SubAreaClinica` VARCHAR(100) NULL;");
+                    }
+
+                    if (closeConnection)
+                    {
+                        await conn.CloseAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear las columnas AreaClinicaId/SubAreaClinica en CuentasServicios.");
+                }
+
                 // Self-healing: Ensure PermiteFraccionamiento and UnidadMedida columns exist in ServiciosClinicos table
                 try
                 {
@@ -246,7 +317,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedMetodosPagoAsync();
                 await SeedHonorarioConfigAsync();
                 await SeedInventorySedesAndMigrateStockAsync();
-
+                await SeedAreasClinicasAsync();
+ 
                 _logger.LogInformation("System Database Inicializada Correctamente.");
             }
             catch (Exception ex)
@@ -596,74 +668,96 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         }
         private async Task SeedInventorySedesAndMigrateStockAsync()
         {
-            _logger.LogInformation("[MIGRATION] Verificando existencia de Sede Principal...");
-            var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo);
-            if (principalSede == null)
-            {
-                principalSede = new Sede("PRINCIPAL", "Sede Principal Hospitalaria", true);
-                _context.Sedes.Add(principalSede);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("[MIGRATION] Sede Principal creada.");
-            }
+            _logger.LogInformation("[MIGRATION] Verificando existencia y migrando IDs de Sedes a constantes fijas...");
 
-            _logger.LogInformation("[MIGRATION] Verificando existencia de Sede de Emergencia...");
-            var emergenciaSede = await _context.Sedes.FirstOrDefaultAsync(s => s.Codigo == "EMERGENCIA");
-            if (emergenciaSede == null)
+            var sedesDef = new[]
             {
-                emergenciaSede = new Sede("EMERGENCIA", "Área de Emergencia", false);
-                _context.Sedes.Add(emergenciaSede);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("[MIGRATION] Sede de Emergencia creada.");
-            }
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "PRINCIPAL",       Nombre: "Sede Principal Hospitalaria",    EsPrincipal: true),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia,      Codigo: "EMERGENCIA",      Nombre: "Área de Emergencia",             EsPrincipal: false),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, Codigo: "HOSPITALIZACION", Nombre: "Área de Hospitalización",        EsPrincipal: false),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos",  EsPrincipal: false)
+            };
 
-            _logger.LogInformation("[MIGRATION] Verificando existencia de Sede de Hospitalización...");
-            var hospSede = await _context.Sedes.FirstOrDefaultAsync(s => s.Codigo == "HOSPITALIZACION");
-            if (hospSede == null)
+            foreach (var def in sedesDef)
             {
-                hospSede = new Sede("HOSPITALIZACION", "Área de Hospitalización", false);
-                _context.Sedes.Add(hospSede);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("[MIGRATION] Sede de Hospitalización creada.");
+                var existingId = await ObtenerSedeIdPorCodigoAsync(def.Codigo);
+                if (existingId == null && def.EsPrincipal)
+                {
+                    // Fallback para principal por flag
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConn = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConn = true;
+                    }
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT `Id` FROM `Sedes` WHERE `EsPrincipal` = 1 LIMIT 1;";
+                        var val = await cmd.ExecuteScalarAsync();
+                        if (val != null && val != DBNull.Value)
+                        {
+                            existingId = Guid.Parse(val.ToString());
+                        }
+                    }
+                    if (closeConn) await conn.CloseAsync();
+                }
+
+                if (existingId == null)
+                {
+                    // Crear nueva
+                    var newSede = new Sede(def.Codigo, def.Nombre, def.EsPrincipal);
+                    SetSedeId(newSede, def.Id);
+                    _context.Sedes.Add(newSede);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"[MIGRATION] Sede creada: {def.Codigo} con ID {def.Id}.");
+                }
+                else if (existingId.Value != def.Id)
+                {
+                    // Migrar ID existente
+                    await MigrateSedeIdAsync(existingId.Value, def.Id);
+                }
             }
 
             // Migrar Stocks existentes en Insumos si no están registrados en StocksSede
-            var insumos = await _context.Insumos.Include(i => i.StocksPorSede).ToListAsync();
-            foreach (var insumo in insumos)
+            var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo);
+            if (principalSede != null)
             {
-                if (!insumo.StocksPorSede.Any(s => s.SedeId == principalSede.Id))
+                var insumos = await _context.Insumos.Include(i => i.StocksPorSede).ToListAsync();
+                foreach (var insumo in insumos)
                 {
-                    // Si el insumo tiene stock físico legacy pero no en StocksSede, migrar
-                    // Podemos verificar si la DB tiene una columna física StockActual
-                    decimal legacyStock = 0;
-                    try
+                    if (!insumo.StocksPorSede.Any(s => s.SedeId == principalSede.Id))
                     {
-                        var conn = _context.Database.GetDbConnection();
-                        bool closeConnection = false;
-                        if (conn.State != System.Data.ConnectionState.Open)
+                        decimal legacyStock = 0;
+                        try
                         {
-                            await conn.OpenAsync();
-                            closeConnection = true;
-                        }
-                        using (var cmd = conn.CreateCommand())
-                        {
-                            cmd.CommandText = $"SELECT StockActual FROM Insumos WHERE Id = '{insumo.Id}';";
-                            var val = await cmd.ExecuteScalarAsync();
-                            if (val != null && val != DBNull.Value)
+                            var conn = _context.Database.GetDbConnection();
+                            bool closeConnection = false;
+                            if (conn.State != System.Data.ConnectionState.Open)
                             {
-                                legacyStock = Convert.ToDecimal(val);
+                                await conn.OpenAsync();
+                                closeConnection = true;
                             }
+                            using (var cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = $"SELECT StockActual FROM Insumos WHERE Id = '{insumo.Id}';";
+                                var val = await cmd.ExecuteScalarAsync();
+                                if (val != null && val != DBNull.Value)
+                                {
+                                    legacyStock = Convert.ToDecimal(val);
+                                }
+                            }
+                            if (closeConnection) await conn.CloseAsync();
                         }
-                        if (closeConnection) await conn.CloseAsync();
-                    }
-                    catch
-                    {
-                        // Fallback si la columna ya no existe físicamente
-                        legacyStock = 0;
-                    }
+                        catch
+                        {
+                            legacyStock = 0;
+                        }
 
-                    var stockSede = new StockSede(insumo.Id, principalSede.Id, legacyStock);
-                    _context.StocksSedes.Add(stockSede);
-                    _logger.LogInformation("[MIGRATION] Migrado Stock de Insumo {Codigo}: {Stock} a Sede Principal.", insumo.Codigo, legacyStock);
+                        var stockSede = new StockSede(insumo.Id, principalSede.Id, legacyStock);
+                        _context.StocksSedes.Add(stockSede);
+                        _logger.LogInformation("[MIGRATION] Migrado Stock de Insumo {Codigo}: {Stock} a Sede Principal.", insumo.Codigo, legacyStock);
+                    }
                 }
             }
 
@@ -679,8 +773,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 }
                 using (var cmd = conn.CreateCommand())
                 {
-                    // Asignar Sede Principal a movimientos huérfanos
-                    cmd.CommandText = $"UPDATE MovimientosInsumo SET SedeId = '{principalSede.Id}' WHERE SedeId IS NULL OR SedeId = '00000000-0000-0000-0000-000000000000';";
+                    cmd.CommandText = $"UPDATE MovimientosInsumo SET SedeId = '{SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal}' WHERE SedeId IS NULL OR SedeId = '00000000-0000-0000-0000-000000000000';";
                     int affected = await cmd.ExecuteNonQueryAsync();
                     if (affected > 0)
                     {
@@ -695,6 +788,190 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        private async Task SeedAreasClinicasAsync()
+        {
+            _logger.LogInformation("[MIGRATION] Verificando existencia de áreas clínicas y migrando sus IDs a constantes fijas...");
+
+            var areasDef = new[]
+            {
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Emergencia,      SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia,      Codigo: "EMERGENCIA",      Nombre: "Área de Emergencia"),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Hospitalizacion, SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, Codigo: "HOSPITALIZACION", Nombre: "Área de Hospitalización"),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_UCI,             SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos")
+            };
+
+            foreach (var def in areasDef)
+            {
+                var conn = _context.Database.GetDbConnection();
+                bool closeConnection = false;
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                    closeConnection = true;
+                }
+
+                Guid? existingId = null;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $"SELECT `Id` FROM `AreasClinicas` WHERE `Codigo` = '{def.Codigo}' LIMIT 1;";
+                    var val = await cmd.ExecuteScalarAsync();
+                    if (val != null && val != DBNull.Value)
+                    {
+                        existingId = Guid.Parse(val.ToString());
+                    }
+                }
+                if (closeConnection) await conn.CloseAsync();
+
+                if (existingId == null)
+                {
+                    var newArea = new AreaClinica(def.SedeId, def.Codigo, def.Nombre);
+                    SetAreaClinicaId(newArea, def.Id);
+                    _context.AreasClinicas.Add(newArea);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"[MIGRATION] Área Clínica creada: {def.Codigo} con ID {def.Id}.");
+                }
+                else if (existingId.Value != def.Id)
+                {
+                    await MigrateAreaClinicaIdAsync(existingId.Value, def.Id);
+                }
+            }
+        }
+
+        private async Task<Guid?> ObtenerSedeIdPorCodigoAsync(string codigo)
+        {
+            var conn = _context.Database.GetDbConnection();
+            bool closeConnection = false;
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+                closeConnection = true;
+            }
+
+            Guid? id = null;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = $"SELECT `Id` FROM `Sedes` WHERE `Codigo` = '{codigo}' LIMIT 1;";
+                var val = await cmd.ExecuteScalarAsync();
+                if (val != null && val != DBNull.Value)
+                {
+                    id = Guid.Parse(val.ToString());
+                }
+            }
+            if (closeConnection) await conn.CloseAsync();
+            return id;
+        }
+
+        private static void SetSedeId(Sede Sede, Guid id)
+        {
+            var prop = typeof(Sede).GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            prop?.SetValue(Sede, id);
+        }
+
+        private static void SetAreaClinicaId(AreaClinica area, Guid id)
+        {
+            var prop = typeof(AreaClinica).GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            prop?.SetValue(area, id);
+        }
+
+        private async Task MigrateSedeIdAsync(Guid oldId, Guid newId)
+        {
+            if (oldId == newId) return;
+
+            var conn = _context.Database.GetDbConnection();
+            bool closeConnection = false;
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+                closeConnection = true;
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                if (!_context.Database.IsSqlite())
+                {
+                    cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 0;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                cmd.CommandText = $"UPDATE `Sedes` SET `Id` = '{newId}' WHERE `Id` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `StocksSede` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `MovimientosInsumo` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `CierresInventario` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `AreasClinicas` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `PedidosInterSede` SET `SedeSolicitanteId` = '{newId}' WHERE `SedeSolicitanteId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `PedidosInterSede` SET `SedeProveedoraId` = '{newId}' WHERE `SedeProveedoraId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                if (!_context.Database.IsSqlite())
+                {
+                    cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 1;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+
+            if (closeConnection)
+            {
+                await conn.CloseAsync();
+            }
+
+            _logger.LogInformation($"[MIGRATION] Sede ID migrado de {oldId} a {newId} (incluyendo tablas relacionadas).");
+        }
+
+        private async Task MigrateAreaClinicaIdAsync(Guid oldId, Guid newId)
+        {
+            if (oldId == newId) return;
+
+            var conn = _context.Database.GetDbConnection();
+            bool closeConnection = false;
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+                closeConnection = true;
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                if (!_context.Database.IsSqlite())
+                {
+                    cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 0;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                cmd.CommandText = $"UPDATE `AreasClinicas` SET `Id` = '{newId}' WHERE `Id` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `CitasMedicas` SET `AreaClinicaId` = '{newId}' WHERE `AreaClinicaId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $"UPDATE `CuentasServicios` SET `AreaClinicaId` = '{newId}' WHERE `AreaClinicaId` = '{oldId}';";
+                await cmd.ExecuteNonQueryAsync();
+
+                if (!_context.Database.IsSqlite())
+                {
+                    cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 1;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+
+            if (closeConnection)
+            {
+                await conn.CloseAsync();
+            }
+
+            _logger.LogInformation($"[MIGRATION] Área Clínica ID migrado de {oldId} a {newId} (incluyendo tablas relacionadas).");
         }
     }
 }

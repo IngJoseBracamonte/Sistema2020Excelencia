@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var servicioCirugia = new ServicioClinico("CIR-01", "Cirugía de Vesícula", 1500, "Procedimiento");
             servicioCirugia.RequiereInventario = true;
 
-            var sedePrincipal = new Sede("S01", "Sede Principal", true);
+            var sedePrincipal = new Sede("S01", "Sede Principal", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal);
             var insumo1 = new Insumo("INS-01", "Insumo 1", 100, UnidadMedida.UNIDAD, 1.50m);
             var stockSede = new StockSede(insumo1.Id, sedePrincipal.Id, 50); // Sede Principal con stock inicial de 50
             insumo1.StocksPorSede.Add(stockSede);

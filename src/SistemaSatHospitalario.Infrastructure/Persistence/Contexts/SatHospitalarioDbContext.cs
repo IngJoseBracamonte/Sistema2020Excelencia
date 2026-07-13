@@ -266,6 +266,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(v => v.CuentaServicioId)
                       .OnDelete(DeleteBehavior.Cascade);
                 
+                entity.HasOne(c => c.AreaClinica)
+                      .WithMany()
+                      .HasForeignKey(c => c.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(c => c.SubAreaClinica)
+                      .HasMaxLength(100);
+
                 // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.FechaCarga);
             });

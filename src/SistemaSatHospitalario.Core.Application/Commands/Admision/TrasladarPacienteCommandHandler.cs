@@ -42,7 +42,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     request.PacienteId,
                     request.UsuarioTraslado,
                     request.NuevoTipoIngreso, // ej: "Hospitalizacion", "Emergencia", etc.
-                    request.NuevoConvenioId
+                    request.NuevoConvenioId,
+                    request.NuevaAreaClinicaId,
+                    request.NuevaSubAreaClinica
                 );
 
                 // Enlazar a la cuenta principal
