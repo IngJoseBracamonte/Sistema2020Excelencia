@@ -428,7 +428,10 @@ export class EnfermeriaComponent implements OnInit {
     if (!s) return 0;
     const classification = this.itemClassification();
     const customPriceVal = this.customPrecio();
-    const basePrice = customPriceVal ?? s.precioUsd ?? 0;
+    const defaultHonorary = s.honorarioBase ?? 0;
+    const isConsult = classification === ITEM_CLASSIFICATIONS.CONSULTA || (s.categoryId === 1);
+    const pureBasePrice = isConsult ? ((s.precioUsd ?? 0) - defaultHonorary) : (s.precioUsd ?? 0);
+    const basePrice = customPriceVal ?? pureBasePrice;
 
     if (classification === ITEM_CLASSIFICATIONS.CONSULTA) {
       const customHonoraryVal = this.customHonorario();
@@ -877,7 +880,10 @@ export class EnfermeriaComponent implements OnInit {
       return;
     }
 
-    const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : (service.precioUsd ?? 0);
+    const defaultHonorary = service.honorarioBase ?? 0;
+    const isConsult = classification === ITEM_CLASSIFICATIONS.CONSULTA || (service.categoryId === 1);
+    const pureBasePrice = isConsult ? ((service.precioUsd ?? 0) - defaultHonorary) : (service.precioUsd ?? 0);
+    const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : pureBasePrice;
     const honoraryPrice = this.customHonorario() !== null ? Number(this.customHonorario()) : (service.honorarioBase ?? 0);
 
     const mainItem: CartItem = {
@@ -903,13 +909,16 @@ export class EnfermeriaComponent implements OnInit {
     for (const sug of activeSugs) {
       if (selSugs[sug.id]) {
         const sugClass = classifyService(sug);
+        const sugDefaultHonorary = sug.honorarioBase ?? 0;
+        const sugIsConsult = sugClass === ITEM_CLASSIFICATIONS.CONSULTA || (sug.categoryId === 1);
+        const sugPureBasePrice = sugIsConsult ? ((sug.precioUsd ?? 0) - sugDefaultHonorary) : (sug.precioUsd ?? 0);
         newItems.push({
           id: getUuid(),
           servicioId: String(sug.id),
           descripcion: sug.descripcion,
           classification: sugClass,
-          precioBase: sug.precioUsd ?? 0,
-          honorario: sug.honorarioBase ?? 0,
+          precioBase: sugPureBasePrice,
+          honorario: sugDefaultHonorary,
           cantidad: 1,
           medicoId: null,
           medicoNombre: null,
@@ -964,7 +973,7 @@ export class EnfermeriaComponent implements OnInit {
       items: items.map(item => ({
         servicioId: item.servicioId,
         descripcion: item.descripcion,
-        precio: item.precioBase,
+        precio: item.precioBase + item.honorario,
         honorario: item.honorario,
         cantidad: item.cantidad,
         tipoServicio: item.classification === ITEM_CLASSIFICATIONS.CONSULTA ? 'Medico' : item.classification,
