@@ -24,5 +24,8 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const string AccionAsignacionDefault = "ASIGNACION_DEFAULT";
         public const string AccionLimpiezaManual = "LIMPIEZA_MANUAL";
         public const string AccionConfiguracionCambio = "CONFIG_CAMBIO";
+
+        // Roles de Médicos
+        public const string RolMedicoResponsable = "Médico Responsable";
     }
 }

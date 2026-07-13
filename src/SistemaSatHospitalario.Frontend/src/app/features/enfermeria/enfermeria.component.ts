@@ -203,6 +203,21 @@ export function classifyService(service: ServicioCatalogo | null | undefined): I
   return ITEM_CLASSIFICATIONS.PROCEDIMIENTO;
 }
 
+export const DEFAULT_TRIAGE = {
+  CLASIFICACION: 'Nivel III (Amarillo)',
+  ESTADO_CONCIENCIA: 'Alerta',
+  VIA_AEREA: 'Permeable',
+  VENTILACION: 'Normal',
+  PULSO: 'Rítmico',
+  PIEL_MUCOSAS: 'Normocoloreada',
+  LLENADO_CAPILAR: '< 2 segundos',
+  PUPILAS: 'Isocóricas',
+  PERTENENCIAS: 'Entregadas a familiar',
+  TIPO_CORREO: '@gmail.com',
+  CODIGO_CELULAR: '0414',
+  CODIGO_TELEFONO: '0274'
+} as const;
+
 @Component({
   selector: 'app-enfermeria',
   standalone: true,
@@ -276,9 +291,9 @@ export class EnfermeriaComponent implements OnInit {
     direccion: '',
     fechaNacimiento: new Date().toISOString().split('T')[0],
     sexo: 'ND',
-    tipoCorreo: '@gmail.com',
-    codigoCelular: '0414',
-    codigoTelefono: '0274'
+    tipoCorreo: DEFAULT_TRIAGE.TIPO_CORREO,
+    codigoCelular: DEFAULT_TRIAGE.CODIGO_CELULAR,
+    codigoTelefono: DEFAULT_TRIAGE.CODIGO_TELEFONO
   };
 
   // Triage Signals (for Emergency complete flow)
@@ -290,25 +305,25 @@ export class EnfermeriaComponent implements OnInit {
   public triageTemperatura = signal<number>(37.0);
   public triageSaturacionO2 = signal<number>(98);
   public triageGlicemiaCapilar = signal<number | null>(null);
-  public triageClasificacion = signal<string>('Nivel III (Amarillo)');
-  public triageEstadoConciencia = signal<string>('Alerta');
+  public triageClasificacion = signal<string>(DEFAULT_TRIAGE.CLASIFICACION);
+  public triageEstadoConciencia = signal<string>(DEFAULT_TRIAGE.ESTADO_CONCIENCIA);
   public triageGlasgowOcular = signal<number>(4);
   public triageGlasgowVerbal = signal<number>(5);
   public triageGlasgowMotor = signal<number>(6);
   public triageGlasgowTotal = computed(() => {
     return this.triageGlasgowOcular() + this.triageGlasgowVerbal() + this.triageGlasgowMotor();
   });
-  public triageViaAerea = signal<string>('Permeable');
-  public triageVentilacion = signal<string>('Normal');
-  public triagePulso = signal<string>('Rítmico');
-  public triagePielMucosas = signal<string>('Normocoloreada');
-  public triageLlenadoCapilar = signal<string>('< 2 segundos');
-  public triagePupilas = signal<string>('Isocóricas');
+  public triageViaAerea = signal<string>(DEFAULT_TRIAGE.VIA_AEREA);
+  public triageVentilacion = signal<string>(DEFAULT_TRIAGE.VENTILACION);
+  public triagePulso = signal<string>(DEFAULT_TRIAGE.PULSO);
+  public triagePielMucosas = signal<string>(DEFAULT_TRIAGE.PIEL_MUCOSAS);
+  public triageLlenadoCapilar = signal<string>(DEFAULT_TRIAGE.LLENADO_CAPILAR);
+  public triagePupilas = signal<string>(DEFAULT_TRIAGE.PUPILAS);
   public triageAlergiasNinguna = signal<boolean>(true);
   public triageAlergiasEspecificar = signal<string>('');
   public triageAccesosVenososTrae = signal<boolean>(false);
   public triageAccesosVenososLugar = signal<string>('');
-  public triagePertenencias = signal<string>('Entregadas a familiar');
+  public triagePertenencias = signal<string>(DEFAULT_TRIAGE.PERTENENCIAS);
   public triageAntecedenteHTA = signal<boolean>(false);
   public triageAntecedenteDiabetes = signal<boolean>(false);
   public triageAntecedenteCardiopatia = signal<boolean>(false);
@@ -625,17 +640,17 @@ export class EnfermeriaComponent implements OnInit {
     this.saturacionO2 = 98;
     this.glicemiaCapilar = null;
 
-    this.estadoConciencia = 'Alerta';
+    this.estadoConciencia = DEFAULT_TRIAGE.ESTADO_CONCIENCIA;
     this.glasgowOcular = 4;
     this.glasgowVerbal = 5;
     this.glasgowMotor = 6;
     this.glasgowTotal = 15;
-    this.viaAerea = 'Permeable';
-    this.ventilacion = 'Normal';
-    this.pulso = 'Rítmico';
-    this.pielMucosas = 'Normocoloreada';
-    this.llenadoCapilar = '< 2 segundos';
-    this.pupilas = 'Isocóricas';
+    this.viaAerea = DEFAULT_TRIAGE.VIA_AEREA;
+    this.ventilacion = DEFAULT_TRIAGE.VENTILACION;
+    this.pulso = DEFAULT_TRIAGE.PULSO;
+    this.pielMucosas = DEFAULT_TRIAGE.PIEL_MUCOSAS;
+    this.llenadoCapilar = DEFAULT_TRIAGE.LLENADO_CAPILAR;
+    this.pupilas = DEFAULT_TRIAGE.PUPILAS;
     this.alergias = '';
     this.accesosVenosos = '';
     this.pertenencias = '';
@@ -1095,9 +1110,9 @@ export class EnfermeriaComponent implements OnInit {
       direccion: '',
       fechaNacimiento: new Date().toISOString().split('T')[0],
       sexo: 'ND',
-      tipoCorreo: '@gmail.com',
-      codigoCelular: '0414',
-      codigoTelefono: '0274'
+      tipoCorreo: DEFAULT_TRIAGE.TIPO_CORREO,
+      codigoCelular: DEFAULT_TRIAGE.CODIGO_CELULAR,
+      codigoTelefono: DEFAULT_TRIAGE.CODIGO_TELEFONO
     };
     this.errorMessage.set(null);
     
@@ -1111,22 +1126,22 @@ export class EnfermeriaComponent implements OnInit {
     this.triageTemperatura.set(37.0);
     this.triageSaturacionO2.set(98);
     this.triageGlicemiaCapilar.set(null);
-    this.triageClasificacion.set('Nivel III (Amarillo)');
-    this.triageEstadoConciencia.set('Alerta');
+    this.triageClasificacion.set(DEFAULT_TRIAGE.CLASIFICACION);
+    this.triageEstadoConciencia.set(DEFAULT_TRIAGE.ESTADO_CONCIENCIA);
     this.triageGlasgowOcular.set(4);
     this.triageGlasgowVerbal.set(5);
     this.triageGlasgowMotor.set(6);
-    this.triageViaAerea.set('Permeable');
-    this.triageVentilacion.set('Normal');
-    this.triagePulso.set('Rítmico');
-    this.triagePielMucosas.set('Normocoloreada');
-    this.triageLlenadoCapilar.set('< 2 segundos');
-    this.triagePupilas.set('Isocóricas');
+    this.triageViaAerea.set(DEFAULT_TRIAGE.VIA_AEREA);
+    this.triageVentilacion.set(DEFAULT_TRIAGE.VENTILACION);
+    this.triagePulso.set(DEFAULT_TRIAGE.PULSO);
+    this.triagePielMucosas.set(DEFAULT_TRIAGE.PIEL_MUCOSAS);
+    this.triageLlenadoCapilar.set(DEFAULT_TRIAGE.LLENADO_CAPILAR);
+    this.triagePupilas.set(DEFAULT_TRIAGE.PUPILAS);
     this.triageAlergiasNinguna.set(true);
     this.triageAlergiasEspecificar.set('');
     this.triageAccesosVenososTrae.set(false);
     this.triageAccesosVenososLugar.set('');
-    this.triagePertenencias.set('Entregadas a familiar');
+    this.triagePertenencias.set(DEFAULT_TRIAGE.PERTENENCIAS);
     this.triageAntecedenteHTA.set(false);
     this.triageAntecedenteDiabetes.set(false);
     this.triageAntecedenteCardiopatia.set(false);

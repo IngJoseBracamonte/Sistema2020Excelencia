@@ -402,7 +402,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     detalle.AsignarMedicoResponsable(finalMedicoId.Value, categoriaMapeada ?? HonorarioConstants.CategoriaOtros, honorarioAsignado);
                     
                     // También agregarlo a la lista de múltiples médicos con rol default para consistencia
-                    detalle.AgregarMedicoResponsable(finalMedicoId.Value, "Médico Responsable", honorarioAsignado);
+                    detalle.AgregarMedicoResponsable(finalMedicoId.Value, HonorarioConstants.RolMedicoResponsable, honorarioAsignado);
 
                     var medicoNombre = (await _context.Medicos.FindAsync(new object[] { finalMedicoId.Value }, cancellationToken))?.Nombre;
                     _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
