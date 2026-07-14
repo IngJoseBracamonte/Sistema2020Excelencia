@@ -13,6 +13,24 @@ import { environment } from '../../../../environments/environment';
 import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { MedicoService, Medico } from '../../../core/services/medico.service';
+import { MultiSedeService, AreaClinica } from '../../../core/services/multi-sede.service';
+// Wizard components shared with Enfermeria
+import { DynamicStepperComponent } from '../../enfermeria/components/dynamic-stepper/dynamic-stepper.component';
+import { NursingCartComponent } from '../../enfermeria/components/nursing-cart/nursing-cart.component';
+import { StepCatalogSearchComponent } from '../../enfermeria/components/step-panels/step-catalog-search.component';
+import { StepDoctorSelectComponent } from '../../enfermeria/components/step-panels/step-doctor-select.component';
+import { StepLabRxPriceComponent } from '../../enfermeria/components/step-panels/step-lab-rx-price.component';
+import { StepQuantityComponent } from '../../enfermeria/components/step-panels/step-quantity.component';
+import { StepConfirmComponent } from '../../enfermeria/components/step-panels/step-confirm.component';
+import {
+  ServicioCatalogo,
+  CartItem,
+  StepperMode,
+  ItemClassification,
+  ITEM_CLASSIFICATIONS,
+  classifyService,
+  CLASSIFICATION_RULES
+} from '../../enfermeria/enfermeria.component';
 import {
   LucideAngularModule,
   Search,
@@ -38,7 +56,18 @@ import {
 @Component({
   selector: 'app-cierre-cuenta',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    DynamicStepperComponent,
+    NursingCartComponent,
+    StepCatalogSearchComponent,
+    StepDoctorSelectComponent,
+    StepLabRxPriceComponent,
+    StepQuantityComponent,
+    StepConfirmComponent
+  ],
   templateUrl: './cierre-cuenta.component.html',
   styleUrl: './cierre-cuenta.component.css'
 })
@@ -55,6 +84,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   private settingsService = inject(SettingsService);
   private http = inject(HttpClient);
   private medicoService = inject(MedicoService);
+  private multiSedeService = inject(MultiSedeService);
 
   readonly icons = {
     Search,
@@ -224,17 +254,74 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     return this.authService.isEmergencyAssistant() && !this.authService.isCajero();
   });
 
-  // Clinical Item Loading (Emergency Nurse Fast Charge)
-  public servicesCatalog = signal<any[]>([]);
+  // Clinical Item Loading — Wizard (shared with Enfermeria)
+  public servicesCatalog = signal<ServicioCatalogo[]>([]);
   public fastChargeSearchTerm = signal<string>('');
-  public filteredServices = signal<any[]>([]);
-  public selectedService = signal<any | null>(null);
-  public fastChargeQuantity = signal<number>(1);
+  public filteredServices = signal<ServicioCatalogo[]>([]);
+  public selectedService = signal<ServicioCatalogo | null>(null);
+  public fastChargeQuantity = 1;
   public isSavingFastCharge = signal<boolean>(false);
   public triageHistoryMap = signal<Record<string, any[]>>({});
   // Medicos Catalog
   public medicos = signal<Medico[]>([]);
   public medicoTratanteId = signal<string | null>(null);
+  // Wizard signals
+  public selectedMedicoId = signal<string | null>(null);
+  public selectedAreaClinicaId = signal<string | null>(null);
+  public areasClinicas = signal<AreaClinica[]>([]);
+  public customPrecio = signal<number | null>(null);
+  public customHonorario = signal<number | null>(null);
+  public activeSuggestions = signal<ServicioCatalogo[]>([]);
+  public selectedSuggestions = signal<Record<string, boolean>>({});
+  public currentStep = signal<number>(1);
+  public activeStepperMode = signal<StepperMode>('catalog');
+  public cartItems = signal<CartItem[]>([]);
+
+  // Computed: cart total
+  public cartTotalUSD = computed(() =>
+    this.cartItems().reduce((acc, item) => acc + (item.precioBase + item.honorario) * item.cantidad, 0)
+  );
+  public cartItemCount = computed(() => this.cartItems().length);
+
+  // Computed: item classification delegated to shared rules engine
+  public itemClassification = computed<ItemClassification>(() => classifyService(this.selectedService()));
+
+  // Computed: medicos filtered by service specialty
+  public medicosFiltrados = computed(() => {
+    const service = this.selectedService();
+    const allMedicos = this.medicos();
+    if (!service) return allMedicos;
+    const descUpper = (service.descripcion || '').toUpperCase();
+    const tipoUpper = (service.tipo || '').toUpperCase();
+    const filtered = allMedicos.filter(m => {
+      if (!m.especialidad) return false;
+      const espClean = m.especialidad.trim().toUpperCase();
+      const prefix = espClean.substring(0, 5);
+      if (prefix.length < 3) return false;
+      return descUpper.includes(prefix) || tipoUpper.includes(prefix);
+    });
+    return filtered.length > 0 ? filtered : allMedicos;
+  });
+
+  // Computed: precio final (base + honorario) por item seleccionado
+  public precioFinalCalculado = computed<number>(() => {
+    const s = this.selectedService();
+    if (!s) return 0;
+    const classification = this.itemClassification();
+    const customPriceVal = this.customPrecio();
+    const pureBasePrice = s.precioUsd ?? 0;
+    const basePrice = customPriceVal ?? pureBasePrice;
+    if (classification === ITEM_CLASSIFICATIONS.CONSULTA) {
+      const customHonoraryVal = this.customHonorario();
+      const honorario = customHonoraryVal ?? s.honorarioBase ?? 0;
+      return basePrice + honorario;
+    }
+    if (classification === ITEM_CLASSIFICATIONS.LABORATORIO || classification === ITEM_CLASSIFICATIONS.RX) {
+      return basePrice;
+    }
+    const qty = this.fastChargeQuantity || 1;
+    return basePrice * qty;
+  });
 
   private paramSub!: Subscription;
 
@@ -542,6 +629,12 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.medicoService.getAll().subscribe({
       next: (res) => this.medicos.set(res.filter(m => m.activo)),
       error: (err) => console.error('[CIERRE-CUENTA] Error al cargar médicos:', err)
+    });
+
+    // 6. Cargar áreas clínicas
+    this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
+      next: (res) => this.areasClinicas.set(res.filter(a => a.activo)),
+      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar áreas clínicas:', err)
     });
   }
 
@@ -1036,47 +1129,204 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     });
   }
 
-  // --- Fast Charge / Add Service & Medicine Methods ---
+  // --- Wizard: Fast Charge (shared logic with Enfermeria) ---
   public onFastChargeSearchChange(val: string): void {
     this.fastChargeSearchTerm.set(val);
     const term = val.trim().toLowerCase();
     if (term.length >= 1) {
-      const filtered = this.servicesCatalog().filter(s => 
-        s.descripcion.toLowerCase().includes(term) || 
-        (s.codigo && s.codigo.toLowerCase().includes(term))
+      const filtered = this.servicesCatalog().filter(s =>
+        s.descripcion.toLowerCase().includes(term) ||
+        s.codigo.toLowerCase().includes(term)
       );
-      this.filteredServices.set(filtered.slice(0, 10)); // Limit to top 10 results
+      this.filteredServices.set(filtered);
     } else {
       this.filteredServices.set([]);
     }
   }
 
-  public selectCatalogService(service: any): void {
+  public selectCatalogService(service: ServicioCatalogo): void {
     this.selectedService.set(service);
     this.fastChargeSearchTerm.set(service.descripcion);
     this.filteredServices.set([]);
-    this.fastChargeQuantity.set(1);
+    this.fastChargeQuantity = 1;
+    this.selectedMedicoId.set(null);
+    this.customPrecio.set(service.precioUsd ?? 0);
+    this.customHonorario.set(service.honorarioBase ?? 0);
+    const classification = classifyService(service);
+    this.activeStepperMode.set(this.mapClassificationToMode(classification));
+    const sugIds = service.sugerenciasIds || service.SugerenciasIds || [];
+    const suggestions = this.servicesCatalog().filter(item => sugIds.includes(String(item.id)));
+    this.activeSuggestions.set(suggestions);
+    const initialSelection: Record<string, boolean> = {};
+    suggestions.forEach(s => initialSelection[s.id] = true);
+    this.selectedSuggestions.set(initialSelection);
+    this.currentStep.set(2);
   }
 
-  public clearSelectedService(): void {
+  public mapClassificationToMode(c: ItemClassification): StepperMode {
+    switch (c) {
+      case ITEM_CLASSIFICATIONS.CONSULTA: return 'consulta';
+      case ITEM_CLASSIFICATIONS.LABORATORIO:
+      case ITEM_CLASSIFICATIONS.RX: return 'lab-rx';
+      case ITEM_CLASSIFICATIONS.MEDICAMENTO: return 'medicamento';
+      default: return 'medicamento';
+    }
+  }
+
+  public toggleSuggestionSelection(id: string): void {
+    this.selectedSuggestions.update(prev => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  public resetCurrentItemSelection(): void {
     this.selectedService.set(null);
     this.fastChargeSearchTerm.set('');
-    this.filteredServices.set([]);
-    this.fastChargeQuantity.set(1);
+    this.fastChargeQuantity = 1;
+    this.selectedMedicoId.set(null);
+    this.selectedAreaClinicaId.set(null);
+    this.customPrecio.set(null);
+    this.customHonorario.set(null);
+    this.activeSuggestions.set([]);
+    this.selectedSuggestions.set({});
+    this.currentStep.set(1);
+    this.activeStepperMode.set('catalog');
   }
 
-  public submitFastCharge(): void {
+  public onMedicoSelected(medicoId: string | null): void {
+    this.selectedMedicoId.set(medicoId);
+    if (!medicoId) return;
+    const doctor = this.medicos().find(m => m.id === medicoId);
+    if (doctor) {
+      const service = this.selectedService();
+      const doctorHonorary = doctor.honorarioBase ?? (service?.honorarioBase ?? 0);
+      this.customHonorario.set(doctorHonorary);
+    }
+  }
+
+  public onAreaSelected(areaId: string | null): void {
+    this.selectedAreaClinicaId.set(areaId);
+    if (this.itemClassification() === 'RX' && this.getAreaClinicaNombre(areaId) === 'EMERGENCIA') {
+      this.selectedMedicoId.set(null);
+      this.customHonorario.set(null);
+    }
+  }
+
+  public getMedicoNombre(medicoId: string | null): string {
+    if (!medicoId) return '';
+    const m = this.medicos().find(x => x.id === medicoId);
+    return m ? m.nombre.toUpperCase() : 'DESCONOCIDO';
+  }
+
+  public getAreaClinicaNombre(areaId: string | null): string {
+    if (!areaId) return '';
+    const a = this.areasClinicas().find(x => x.id === areaId);
+    return a ? a.nombre.toUpperCase() : 'DESCONOCIDA';
+  }
+
+  public obtenerNombreMedico(id: string | null): string {
+    if (!id) return '--- SIN ASIGNAR ---';
+    const medico = this.medicos().find(m => m.id === id);
+    return medico ? medico.nombre : '--- SIN ASIGNAR ---';
+  }
+
+  public addCurrentItemToCart(): void {
     const active = this.selectedAccount();
     const service = this.selectedService();
-    if (!active || !service) {
-      this.errorMessage.set('Por favor, seleccione un servicio o insumo válido.');
+    if (!active || !service) return;
+
+    const getUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'id_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+
+    const classification = this.itemClassification();
+    const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
+                       classification === ITEM_CLASSIFICATIONS.LABORATORIO ||
+                       classification === ITEM_CLASSIFICATIONS.RX;
+    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
+
+    const requiresMedico = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
+      ((service.honorarioBase ?? 0) > 0 &&
+       classification !== ITEM_CLASSIFICATIONS.RX &&
+       classification !== ITEM_CLASSIFICATIONS.LABORATORIO);
+
+    if (requiresMedico && !this.selectedMedicoId()) {
+      alert('Por favor, seleccione el médico tratante para la consulta.');
       return;
     }
 
-    if (this.fastChargeQuantity() <= 0) {
-      this.errorMessage.set('La cantidad debe ser mayor a cero.');
-      return;
+    const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : (service.precioUsd ?? 0);
+    const honoraryPrice = this.customHonorario() !== null ? Number(this.customHonorario()) : (service.honorarioBase ?? 0);
+
+    const mainItem: CartItem = {
+      id: getUuid(),
+      servicioId: String(service.id),
+      descripcion: service.descripcion,
+      classification,
+      precioBase: basePrice,
+      honorario: honoraryPrice,
+      cantidad: effectiveQty,
+      medicoId: this.selectedMedicoId(),
+      medicoNombre: this.getMedicoNombre(this.selectedMedicoId()),
+      areaClinicaId: this.selectedAreaClinicaId(),
+      areaClinicaNombre: this.getAreaClinicaNombre(this.selectedAreaClinicaId()),
+      unidadMedida: service.unidadMedida || 'UD'
+    };
+
+    const newItems: CartItem[] = [mainItem];
+
+    // Sugerencias dinámicas seleccionadas
+    const activeSugs = this.activeSuggestions();
+    const selSugs = this.selectedSuggestions();
+    for (const sug of activeSugs) {
+      if (selSugs[sug.id]) {
+        const sugClass = classifyService(sug);
+        newItems.push({
+          id: getUuid(),
+          servicioId: String(sug.id),
+          descripcion: sug.descripcion,
+          classification: sugClass,
+          precioBase: sug.precioUsd ?? 0,
+          honorario: sug.honorarioBase ?? 0,
+          cantidad: 1,
+          medicoId: null,
+          medicoNombre: null,
+          areaClinicaId: this.selectedAreaClinicaId(),
+          areaClinicaNombre: this.getAreaClinicaNombre(this.selectedAreaClinicaId()),
+          unidadMedida: sug.unidadMedida || 'UD'
+        });
+      }
     }
+
+    this.cartItems.update(prev => [...prev, ...newItems]);
+    this.resetCurrentItemSelection();
+  }
+
+  public removeCartItem(itemId: string): void {
+    this.cartItems.update(prev => prev.filter(i => i.id !== itemId));
+  }
+
+  public editCartItem(itemId: string): void {
+    const item = this.cartItems().find(i => i.id === itemId);
+    if (!item) return;
+    this.removeCartItem(itemId);
+    const catalogItem = this.servicesCatalog().find(s => String(s.id) === item.servicioId);
+    if (catalogItem) {
+      this.selectedService.set(catalogItem);
+      this.fastChargeSearchTerm.set(catalogItem.descripcion);
+      this.fastChargeQuantity = item.cantidad;
+      this.selectedMedicoId.set(item.medicoId);
+      this.customPrecio.set(item.precioBase);
+      this.customHonorario.set(item.honorario);
+      this.selectedAreaClinicaId.set(item.areaClinicaId);
+      const classification = classifyService(catalogItem);
+      this.activeStepperMode.set(this.mapClassificationToMode(classification));
+      this.currentStep.set(2);
+    }
+  }
+
+  public submitAllCartItems(): void {
+    const active = this.selectedAccount();
+    const items = this.cartItems();
+    if (!active || items.length === 0) return;
 
     this.isSavingFastCharge.set(true);
     this.errorMessage.set(null);
@@ -1085,41 +1335,34 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
-      servicioId: service.id,
-      descripcion: service.descripcion,
-      precio: service.precioUsd,
-      honorario: service.honorarioBase,
-      cantidad: Number(this.fastChargeQuantity()),
-      tipoServicio: service.tipo,
-      usuarioCarga: this.authService.currentUser()?.username || 'admin'
+      items: items.map(item => ({
+        servicioId: item.servicioId,
+        descripcion: item.descripcion,
+        precio: item.precioBase + item.honorario,
+        honorario: item.honorario,
+        cantidad: item.cantidad,
+        tipoServicio: item.classification === ITEM_CLASSIFICATIONS.CONSULTA ? 'Medico' : item.classification,
+        medicoId: item.medicoId,
+        horaCita: item.medicoId ? new Date().toISOString() : undefined,
+        areaClinicaId: item.areaClinicaId,
+        usuarioCarga: this.authService.currentUser()?.username || 'admin'
+      }))
     };
 
-    const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-          const r = Math.random() * 16 | 0;
-          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-
-    this.facturacionService.cargarServicio(payload, idempotencyKey)
+    this.http.post(`${environment.apiUrl}/api/Billing/CargarServiciosMasivo`, payload)
       .subscribe({
         next: () => {
-          this.actionMessage.set(`Se cargó exitosamente ${this.fastChargeQuantity()} unidad(es) de ${service.descripcion} a la cuenta.`);
-          this.clearSelectedService();
+          this.actionMessage.set(`${items.length} servicio(s) cargado(s) exitosamente a la cuenta.`);
+          this.cartItems.set([]);
+          this.resetCurrentItemSelection();
           this.isSavingFastCharge.set(false);
-          this.loadOpenAccounts(); // Auto-refresh selected account's details
-          setTimeout(() => this.actionMessage.set(null), 3000);
+          this.loadOpenAccounts();
+          setTimeout(() => this.actionMessage.set(null), 4000);
         },
-        error: (err) => {
-          this.errorMessage.set('Error al cargar insumo: ' + (err.error?.Error || err.error?.message || err.message));
+        error: (err: any) => {
+          this.errorMessage.set('Error al cargar servicios: ' + (err.error?.Error || err.error?.message || err.message));
           this.isSavingFastCharge.set(false);
         }
       });
-  }
-
-  public obtenerNombreMedico(id: string | null): string {
-    if (!id) return '--- SIN ASIGNAR ---';
-    const medico = this.medicos().find(m => m.id === id);
-    return medico ? medico.nombre : '--- SIN ASIGNAR ---';
   }
 }
