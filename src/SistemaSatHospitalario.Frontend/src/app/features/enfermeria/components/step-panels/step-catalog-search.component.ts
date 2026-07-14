@@ -11,7 +11,7 @@ import { LucideAngularModule, Search } from 'lucide-angular';
   template: `
     <div class="space-y-4">
       <div class="relative">
-        <lucide-icon [name]="icons.Search" class="absolute left-3 top-3 text-slate-500 w-4 h-4"></lucide-icon>
+        <lucide-icon [name]="icons.Search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none"></lucide-icon>
         <input 
           type="text"
           id="fastChargeSearchInput"
