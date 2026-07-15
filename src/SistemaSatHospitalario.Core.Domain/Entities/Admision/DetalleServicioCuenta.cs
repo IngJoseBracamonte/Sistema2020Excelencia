@@ -19,6 +19,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? MedicoResponsableId { get; private set; }
         public string? CategoriaHonorario { get; private set; }
         public Guid? AreaClinicaId { get; private set; }
+        public bool IncluidoEnTarifaBase { get; private set; }
+        public decimal PrecioCatalogoHistorico { get; private set; }
         public virtual CuentaServicios CuentaServicio { get; private set; }
         public virtual AreaClinica? AreaClinica { get; private set; }
         public virtual System.Collections.Generic.ICollection<DetalleServicioMedicoResponsable> MedicosResponsables { get; private set; } = new System.Collections.Generic.List<DetalleServicioMedicoResponsable>();
@@ -28,6 +30,23 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MedicosResponsables.Add(new DetalleServicioMedicoResponsable(Id, medicoId, rol, montoHonorario));
         }
 
+        // [PHASE-2] Courtesy / All-Inclusive methods
+        public decimal ObtenerSubtotal() => IncluidoEnTarifaBase ? 0.00m : (Precio * Cantidad);
+
+        public void MarcarComoIncluidoEnTarifaBase()
+        {
+            if (IncluidoEnTarifaBase) return;
+            PrecioCatalogoHistorico = Precio;
+            Precio = 0.00m;
+            IncluidoEnTarifaBase = true;
+        }
+
+        public void RemoverDeTarifaBase(decimal precioRestaurado)
+        {
+            Precio = precioRestaurado;
+            PrecioCatalogoHistorico = 0.00m;
+            IncluidoEnTarifaBase = false;
+        }
 
         // [PHASE-6] Technical Validation Fields (Senior Traceability)
         public bool Realizado { get; private set; }

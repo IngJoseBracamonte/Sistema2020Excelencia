@@ -12,6 +12,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal StockActual { get; private set; }
         public decimal? StockMinimo { get; private set; }
         public decimal? StockMaximo { get; private set; }
+        public byte[] RowVersion { get; private set; }
 
         private StockSede() { }
 

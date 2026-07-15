@@ -61,6 +61,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<PedidoInterSede> PedidosInterSede { get; }
         DbSet<PedidoInterSedeDetalle> PedidosInterSedeDetalles { get; }
         DbSet<DetalleServicioMedicoResponsable> DetallesServicioMedicosResponsables { get; }
+        DbSet<ServicioIncluidoArea> ServiciosIncluidosAreas { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
         Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }
