@@ -77,11 +77,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             foreach (var lp in legacyProfiles)
             {
-                // Buscar si existe en la cuenta nativa
-                var nativeDetail = cuenta.Detalles.FirstOrDefault(d => 
-                    d.TipoServicio == EstadoConstants.Laboratorio && 
-                    (d.LegacyMappingId == lp.IdPerfil.ToString() || 
-                     (d.Descripcion.Contains("LAB-") && Regex.IsMatch(d.Descripcion, $@"LAB-{lp.IdPerfil}\b"))));
+                 // Buscar en la cuenta nativa por TipoServicioId (Laboratorio = 2) y mapeo directo de ID legacy (sin strings/regex)
+                 var nativeDetail = cuenta.Detalles.FirstOrDefault(d => 
+                    d.TipoServicioId == TipoServicioConstants.Laboratorio && 
+                    d.LegacyMappingId == lp.IdPerfil.ToString());
 
                 bool esAnulado = nativeDetail == null || nativeDetail.Cantidad <= 0 || nativeDetail.Precio <= 0;
 

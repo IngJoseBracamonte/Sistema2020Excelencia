@@ -28,6 +28,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<Medico> Medicos { get; set; }
         public DbSet<TasaCambio> TasaCambio { get; set; }
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
+        public DbSet<TipoServicio> TiposServicio { get; set; }
         public DbSet<ServicioSugerencia> ServiciosSugerencias { get; set; }
         public DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; set; }
         public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
@@ -288,6 +289,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(d => d.AreaClinicaId)
                       .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne<TipoServicio>()
+                      .WithMany()
+                      .HasForeignKey(d => d.TipoServicioId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<CitaMedica>(entity =>
@@ -814,6 +820,32 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(d => d.MedicoId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<ServicioClinico>(entity =>
+            {
+                entity.ToTable("ServiciosClinicos");
+                entity.HasOne<TipoServicio>()
+                      .WithMany()
+                      .HasForeignKey(s => s.TipoServicioId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<TipoServicio>(entity =>
+            {
+                entity.ToTable("TiposServicio");
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Id).ValueGeneratedNever();
+                entity.Property(t => t.Nombre).IsRequired().HasMaxLength(50);
+                entity.Property(t => t.Codigo).IsRequired().HasMaxLength(10);
+
+                entity.HasData(
+                    new TipoServicio(1, "Medico", "MED"),
+                    new TipoServicio(2, "Laboratorio", "LAB"),
+                    new TipoServicio(3, "RX", "RX"),
+                    new TipoServicio(4, "Tomo", "TOMO"),
+                    new TipoServicio(5, "Insumo", "INS")
+                );
             });
         }
 

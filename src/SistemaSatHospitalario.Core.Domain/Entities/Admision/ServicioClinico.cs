@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal PrecioBase { get; set; }
         public decimal HonorarioBase { get; set; }
         public string TipoServicio { get; set; } // Legacy compatibility
+        public int TipoServicioId { get; set; }
         public string? LegacyMappingId { get; set; }
         public ServiceCategory Category { get; set; } 
         public string? HonorariumCategory { get; set; } // Nuevo: Clasificación explícita para honorarios
@@ -31,6 +32,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Descripcion = descripcion;
             PrecioBase = precioBase;
             TipoServicio = tipoServicio;
+            TipoServicioId = MapearTipoServicioAId(tipoServicio);
             Activo = true;
         }
 
@@ -41,5 +43,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Desactivar() => Activo = false;
         public void ActualizarPrecio(decimal nuevoPrecio) => PrecioBase = nuevoPrecio;
+
+        private static int MapearTipoServicioAId(string tipoServicio)
+        {
+            if (string.IsNullOrWhiteSpace(tipoServicio)) return Constants.TipoServicioConstants.Insumo;
+            var t = tipoServicio.ToUpperInvariant();
+            if (t == "LABORATORIO" || t == "LAB") return Constants.TipoServicioConstants.Laboratorio;
+            if (t == "RX") return Constants.TipoServicioConstants.RX;
+            if (t == "TOMO" || t == "TOMOGRAFIA" || t == "TOMOGRAFÍA") return Constants.TipoServicioConstants.Tomo;
+            if (t == "MEDICO" || t == "MEDICA" || t == "MÉDICO" || t == "MÉDICA" || t == "CONSULTA") return Constants.TipoServicioConstants.Medico;
+            return Constants.TipoServicioConstants.Insumo;
+        }
     }
 }

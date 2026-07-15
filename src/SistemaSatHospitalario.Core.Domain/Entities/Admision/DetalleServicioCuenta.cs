@@ -12,6 +12,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal Honorario { get; private set; }
         public decimal Cantidad { get; private set; }
         public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo
+        public int TipoServicioId { get; private set; }
         public string UsuarioCarga { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public string? LegacyMappingId { get; private set; }
@@ -45,6 +46,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Honorario = honorario;
             Cantidad = cantidad;
             TipoServicio = tipoServicio ?? throw new ArgumentNullException(nameof(tipoServicio));
+            TipoServicioId = MapearTipoServicioAId(tipoServicio);
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
             LegacyMappingId = legacyMappingId; // V12.1 Fix: Assigning mapping ID for legacy sync
             FechaCarga = DateTime.UtcNow;
@@ -85,6 +87,17 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void ModificarCantidadAdministrativa(decimal nuevaCantidad)
         {
             Cantidad = nuevaCantidad;
+        }
+
+        private static int MapearTipoServicioAId(string tipoServicio)
+        {
+            if (string.IsNullOrWhiteSpace(tipoServicio)) return Constants.TipoServicioConstants.Insumo;
+            var t = tipoServicio.ToUpperInvariant();
+            if (t == "LABORATORIO" || t == "LAB") return Constants.TipoServicioConstants.Laboratorio;
+            if (t == "RX") return Constants.TipoServicioConstants.RX;
+            if (t == "TOMO" || t == "TOMOGRAFIA" || t == "TOMOGRAFÍA") return Constants.TipoServicioConstants.Tomo;
+            if (t == "MEDICO" || t == "MEDICA" || t == "MÉDICO" || t == "MÉDICA" || t == "CONSULTA") return Constants.TipoServicioConstants.Medico;
+            return Constants.TipoServicioConstants.Insumo;
         }
     }
 }

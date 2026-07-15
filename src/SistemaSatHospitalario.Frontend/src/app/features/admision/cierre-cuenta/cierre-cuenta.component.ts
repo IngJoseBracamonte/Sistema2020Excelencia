@@ -1316,9 +1316,15 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     const service = this.selectedService();
     if (!active || !service) return;
 
-    const getUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : 'id_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    const getUuid = () => {
+      if (typeof crypto !== 'undefined') {
+        if (crypto.randomUUID) return crypto.randomUUID();
+        const array = new Uint32Array(1);
+        crypto.getRandomValues(array);
+        return 'id_' + array[0].toString(36) + Date.now().toString(36);
+      }
+      return 'id_' + Date.now().toString(36);
+    };
 
     const classification = this.itemClassification();
     const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
