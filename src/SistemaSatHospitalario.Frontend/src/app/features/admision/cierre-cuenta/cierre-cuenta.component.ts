@@ -28,8 +28,7 @@ import {
   StepperMode,
   ItemClassification,
   ITEM_CLASSIFICATIONS,
-  classifyService,
-  CLASSIFICATION_RULES
+  classifyService
 } from '../../enfermeria/enfermeria.component';
 import {
   LucideAngularModule,
@@ -74,18 +73,18 @@ import {
 })
 export class CierreCuentaComponent implements OnInit, OnDestroy {
   // Services
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private adminBillingService = inject(AdminBillingService);
-  private facturacionService = inject(FacturacionService);
-  private patientService = inject(PatientService);
-  private authService = inject(AuthService);
-  private printService = inject(PrintService);
-  private conveniosService = inject(ConveniosService);
-  private settingsService = inject(SettingsService);
-  private http = inject(HttpClient);
-  private medicoService = inject(MedicoService);
-  private multiSedeService = inject(MultiSedeService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly adminBillingService = inject(AdminBillingService);
+  private readonly facturacionService = inject(FacturacionService);
+  private readonly patientService = inject(PatientService);
+  private readonly authService = inject(AuthService);
+  private readonly printService = inject(PrintService);
+  private readonly conveniosService = inject(ConveniosService);
+  private readonly settingsService = inject(SettingsService);
+  private readonly http = inject(HttpClient);
+  private readonly medicoService = inject(MedicoService);
+  private readonly multiSedeService = inject(MultiSedeService);
 
   readonly icons = {
     Search,
