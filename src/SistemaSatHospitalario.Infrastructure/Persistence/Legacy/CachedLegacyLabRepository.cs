@@ -123,5 +123,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 return await _innerRepository.GetMuestraStatusAsync(legacyOrderId, cancellationToken);
             });
         }
+
+        public async Task<List<(int IdPerfil, string Descripcion, bool TieneResultados)>> GetProfilesWithResultStatusAsync(int legacyOrderId, CancellationToken cancellationToken)
+        {
+            return await _innerRepository.GetProfilesWithResultStatusAsync(legacyOrderId, cancellationToken);
+        }
     }
 }

@@ -81,6 +81,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Precio = nuevoPrecio;
             Honorario = nuevoHonorario;
         }
+
+        public void ModificarCantidadAdministrativa(decimal nuevaCantidad)
+        {
+            Cantidad = nuevaCantidad;
+        }
     }
 }
 

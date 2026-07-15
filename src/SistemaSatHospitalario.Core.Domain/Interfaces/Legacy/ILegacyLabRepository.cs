@@ -29,5 +29,6 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces.Legacy
         
         // V16.3: Monitoreo de Procesamiento (Worker)
         Task<int?> GetMuestraStatusAsync(int legacyOrderId, CancellationToken cancellationToken);
+        Task<List<(int IdPerfil, string Descripcion, bool TieneResultados)>> GetProfilesWithResultStatusAsync(int legacyOrderId, CancellationToken cancellationToken);
     }
 }

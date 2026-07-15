@@ -36,6 +36,7 @@ export interface DetallePrecioCorreccionDto {
   detalleId: string;
   nuevoPrecio: number;
   nuevoHonorario: number;
+  nuevaCantidad?: number;
 }
 
 export interface UpdateCuentaAdministrativaCommand {

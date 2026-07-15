@@ -394,5 +394,54 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                 return null;
             }
         }
+
+        public async Task<List<(int IdPerfil, string Descripcion, bool TieneResultados)>> GetProfilesWithResultStatusAsync(int legacyOrderId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync(cancellationToken);
+
+                // 1. Obtener perfiles facturados para la orden
+                const string sqlPerfiles = @"SELECT pf.IdPerfil, p.Descripcion 
+                                            FROM perfilesfacturados pf 
+                                            JOIN perfil p ON pf.IdPerfil = p.IdPerfil 
+                                            WHERE pf.IdOrden = @legacyOrderId";
+                
+                var perfilesData = await connection.QueryAsync<dynamic>(sqlPerfiles, new { legacyOrderId });
+                var perfiles = perfilesData.Select(x => new { IdPerfil = (int)x.IdPerfil, Descripcion = (string)x.Descripcion }).ToList();
+
+                // 2. Obtener resultados de la orden
+                const string sqlResultados = "SELECT IdAnalisis, ValorResultado FROM resultadospaciente WHERE IdOrden = @legacyOrderId";
+                var resultadosData = await connection.QueryAsync<dynamic>(sqlResultados, new { legacyOrderId });
+                var resultados = resultadosData.Select(x => new { IdAnalisis = (int)x.IdAnalisis, ValorResultado = (string)x.ValorResultado }).ToList();
+
+                // 3. Obtener mapeo de perfiles a análisis
+                const string sqlMapeo = "SELECT IdPerfil, IdAnalisis FROM perfilesanalisis";
+                var mapeosData = await connection.QueryAsync<dynamic>(sqlMapeo);
+                var mapeos = mapeosData.Select(x => new { IdPerfil = (int)x.IdPerfil, IdAnalisis = (int)x.IdAnalisis }).ToList();
+
+                var result = new List<(int IdPerfil, string Descripcion, bool TieneResultados)>();
+                foreach (var p in perfiles)
+                {
+                    var analisisIdsForPerfil = mapeos
+                        .Where(m => m.IdPerfil == p.IdPerfil)
+                        .Select(m => m.IdAnalisis)
+                        .ToList();
+
+                    bool tieneResultados = resultados
+                        .Any(r => analisisIdsForPerfil.Contains(r.IdAnalisis) && !string.IsNullOrEmpty(r.ValorResultado));
+
+                    result.Add((p.IdPerfil, p.Descripcion, tieneResultados));
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[LEGACY ERROR] GetProfilesWithResultStatusAsync (Order: {legacyOrderId}): {ex.Message}", ex);
+                return new List<(int IdPerfil, string Descripcion, bool TieneResultados)>();
+            }
+        }
     }
 }

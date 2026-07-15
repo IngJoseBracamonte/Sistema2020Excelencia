@@ -27,6 +27,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Guid DetalleId { get; set; }
         public decimal NuevoPrecio { get; set; }
         public decimal NuevoHonorario { get; set; }
+        public decimal? NuevaCantidad { get; set; }
     }
 
     public class UpdateCuentaAdministrativaCommandHandler : IRequestHandler<UpdateCuentaAdministrativaCommand, bool>
@@ -85,7 +86,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     foreach (var corr in request.CorreccionesPrecios)
                     {
                         var detalle = cuenta.Detalles.FirstOrDefault(d => d.Id == corr.DetalleId);
-                        if (detalle != null && (detalle.Precio != corr.NuevoPrecio || detalle.Honorario != corr.NuevoHonorario))
+                        if (detalle != null && (detalle.Precio != corr.NuevoPrecio || detalle.Honorario != corr.NuevoHonorario || (corr.NuevaCantidad.HasValue && detalle.Cantidad != corr.NuevaCantidad.Value)))
                         {
                             serviceChanges.Add(new
                             {
@@ -94,7 +95,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                                 PrecioAnterior = detalle.Precio,
                                 PrecioNuevo = corr.NuevoPrecio,
                                 HonorarioAnterior = detalle.Honorario,
-                                HonorarioNuevo = corr.NuevoHonorario
+                                HonorarioNuevo = corr.NuevoHonorario,
+                                CantidadAnterior = detalle.Cantidad,
+                                CantidadNueva = corr.NuevaCantidad ?? detalle.Cantidad
                             });
                         }
                     }
@@ -170,6 +173,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         if (detalle != null)
                         {
                             detalle.ModificarPreciosAdministrativos(corr.NuevoPrecio, corr.NuevoHonorario);
+                            if (corr.NuevaCantidad.HasValue)
+                            {
+                                detalle.ModificarCantidadAdministrativa(corr.NuevaCantidad.Value);
+                            }
                         }
                     }
                 }

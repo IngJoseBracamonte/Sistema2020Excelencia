@@ -105,5 +105,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             return Ok(await _mediator.Send(new GetMonitoringOrdersQuery()));
         }
+
+        [HttpGet("Worklist/{cuentaId}")]
+        public async Task<ActionResult<WorklistDto>> GetWorklist(Guid cuentaId)
+        {
+            var result = await _mediator.Send(new GetWorklistQuery { CuentaId = cuentaId });
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
+        [HttpPost("CompleteOrder/{cuentaId}")]
+        public async Task<IActionResult> CompleteOrder(Guid cuentaId)
+        {
+            var result = await _mediator.Send(new CompleteMonitoringOrderCommand { CuentaId = cuentaId });
+            if (result) return Ok(new { Message = "Orden procesada con éxito." });
+            return BadRequest(new { Error = "No se pudo marcar la orden como procesada." });
+        }
     }
 }

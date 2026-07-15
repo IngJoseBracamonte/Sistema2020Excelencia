@@ -112,6 +112,11 @@ export class AuthService {
     return role.includes(RoleKeywords.Emergencia) || this.isAdmin();
   });
 
+  public isLabAssistant = computed(() => {
+    const role = this.currentUser()?.role?.toLowerCase() || '';
+    return role.includes('laboratorio') || role.includes('bioanalista') || this.isAdmin();
+  });
+
   // Recupera la sesión persistida (Abstracted via StorageService)
   private getUserFromSession(): AuthResponse | null {
     const data = this.storage.getAuthData();

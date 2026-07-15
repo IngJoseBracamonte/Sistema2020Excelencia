@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { LucideAngularModule, Monitor, RefreshCw, Clock, FlaskConical, ClipboardCheck } from 'lucide-angular';
+import { LucideAngularModule, Monitor, RefreshCw, Clock, FlaskConical, ClipboardCheck, Printer, X, Check, AlertTriangle } from 'lucide-angular';
 import { environment } from '../../../../environments/environment';
 import { SignalrService } from '../../../core/services/signalr.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -84,6 +84,21 @@ interface MonitoringOrder {
                             }" class="h-full transition-all duration-1000 ease-out"></div>
                         </div>
                     </div>
+
+                    <!-- Acciones del Monitor (Hoja de Trabajo y Completar) -->
+                    <div class="pt-4 border-t border-white/5 flex items-center justify-between gap-3 relative z-20">
+                        <button (click)="showWorklist(order.cuentaId)" 
+                            class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center justify-center space-x-2 border border-white/5">
+                            <lucide-icon [name]="icons.Printer" class="w-3.5 h-3.5"></lucide-icon>
+                            <span>Hoja de Trabajo</span>
+                        </button>
+                        <button *ngIf="isLabAssistant() && order.estado === 'PENDIENTE'"
+                            (click)="completeOrder(order.cuentaId)"
+                            class="p-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-xl border border-emerald-500/20 transition-all"
+                            title="Marcar como Procesada">
+                            <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Icon decoration -->
@@ -99,6 +114,91 @@ interface MonitoringOrder {
             </div>
             <h2 class="text-xl font-black text-slate-400 uppercase tracking-tight">Sin órdenes para mostrar</h2>
             <p class="text-xs text-slate-600 mt-2">No hay órdenes de laboratorio en el ciclo de monitoreo actual.</p>
+        </div>
+
+        <!-- Dialogo de Hoja de Trabajo (Worklist de Conciliación) -->
+        <div *ngIf="showWorklistDialog()" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div class="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-surface p-8 shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto">
+                <button (click)="closeWorklistDialog()" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                    <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
+                </button>
+
+                <div class="flex items-center space-x-4 border-b border-white/5 pb-4">
+                    <div class="h-12 w-12 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-500/20">
+                        <lucide-icon [name]="icons.Lab" class="w-6 h-6"></lucide-icon>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-white uppercase tracking-tight">Hoja de Trabajo - Control</h2>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-0.5 font-mono">Conciliación Física vs Digital (Doble Check)</p>
+                    </div>
+                </div>
+
+                <!-- Box estilo retro-premium de la Imagen -->
+                <div class="bg-black/40 border border-white/10 rounded-2xl p-6 font-mono text-xs md:text-sm text-slate-300 shadow-inner relative overflow-hidden">
+                    <div class="text-center font-bold border-b border-white/10 pb-3 mb-4 tracking-wider text-white">
+                        ---------------------------------------------------------<br>
+                        |               HOJA DE TRABAJO - CONTROL               |<br>
+                        | Paciente: {{ selectedWorklist()?.pacienteNombre }} | Cuenta: #{{ selectedWorklist()?.legacyOrderId }} |<br>
+                        ---------------------------------------------------------
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <div *ngFor="let item of selectedWorklist()?.items; let i = index" 
+                             [ngClass]="{'text-red-400 line-through opacity-70': item.esAnulado}"
+                             class="flex items-start justify-between py-1">
+                            <div class="flex items-center space-x-3">
+                                <span>[{{ item.tieneResultados ? '✓' : ' ' }}] [ ]</span>
+                                <span>{{ (i+1).toString().padStart(3, '0') }} - {{ item.nombre }}</span>
+                            </div>
+                            <span class="font-bold text-[10px] tracking-wider uppercase px-2 py-0.5 rounded"
+                                  [ngClass]="{
+                                      'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': !item.esAnulado,
+                                      'bg-red-500/10 text-red-400 border border-red-500/20': item.esAnulado
+                                  }">
+                                ({{ item.estado }})
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Nota al pie si hay anulados -->
+                    <div *ngIf="selectedWorklist()?.tieneAnulados" class="border-t border-dashed border-red-500/30 pt-3 mt-3 text-red-400 text-xs space-y-1">
+                        <div class="font-bold">---------------------------------------------------------</div>
+                        <div class="flex items-start space-x-2">
+                            <lucide-icon [name]="icons.Alert" class="w-4 h-4 mt-0.5 flex-shrink-0"></lucide-icon>
+                            <div>
+                                <span class="font-bold">*Nota:</span> Exámenes marcados con [X] fueron anulados en la cuenta por Administración.<br>
+                                <span class="font-bold">NO ingresar estos códigos en el sistema de Laboratorio Legacy.</span>
+                            </div>
+                        </div>
+                        <div class="font-bold">---------------------------------------------------------</div>
+                    </div>
+                </div>
+
+                <!-- Footer del Dialog con Acciones -->
+                <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                    <button (click)="printWorklist()" 
+                            class="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-xs font-bold text-white rounded-xl transition-all flex items-center space-x-2 border border-white/5">
+                        <lucide-icon [name]="icons.Printer" class="w-4 h-4"></lucide-icon>
+                        <span>Imprimir Hoja</span>
+                    </button>
+
+                    <div class="flex items-center space-x-3">
+                        <button (click)="closeWorklistDialog()" 
+                                class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-xl transition-all">
+                            Cerrar
+                        </button>
+                        
+                        <!-- Botón exclusivo para Asistente de Laboratorio -->
+                        <button *ngIf="isLabAssistant() && selectedWorklist()?.legacyOrderId && selectedWorklist()?.items?.length > 0"
+                                [disabled]="selectedWorklist()?.estado === 'PROCESADA'"
+                                (click)="completeOrder(selectedWorklist().cuentaId)"
+                                class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-xs font-bold text-white rounded-xl transition-all flex items-center space-x-2 shadow-md">
+                            <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+                            <span>Marcar como Procesada</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
   `,
@@ -117,11 +217,20 @@ export class ProcessingMonitorComponent implements OnInit {
     Refresh: RefreshCw,
     Clock: Clock,
     Lab: FlaskConical,
-    Empty: ClipboardCheck
+    Empty: ClipboardCheck,
+    Printer: Printer,
+    X: X,
+    Check: Check,
+    Alert: AlertTriangle
   };
+
+  public isLabAssistant = this.auth.isLabAssistant;
 
   orders = signal<MonitoringOrder[]>([]);
   pendingCount = signal(0);
+
+  selectedWorklist = signal<any>(null);
+  showWorklistDialog = signal(false);
 
   ngOnInit() {
     this.loadOrders();
@@ -169,4 +278,84 @@ export class ProcessingMonitorComponent implements OnInit {
   updateCounts() {
     this.pendingCount.set(this.orders().filter(o => o.estado === 'PENDIENTE').length);
   }
+
+  showWorklist(cuentaId: string) {
+    this.http.get<any>(`${environment.apiUrl}/api/ReciboFactura/Worklist/${cuentaId}`).subscribe({
+      next: (data) => {
+        this.selectedWorklist.set(data);
+        this.showWorklistDialog.set(true);
+      },
+      error: (err) => console.error('Error loading worklist:', err)
+    });
+  }
+
+  closeWorklistDialog() {
+    this.showWorklistDialog.set(false);
+    this.selectedWorklist.set(null);
+  }
+
+  completeOrder(cuentaId: string) {
+    this.http.post<any>(`${environment.apiUrl}/api/ReciboFactura/CompleteOrder/${cuentaId}`, {}).subscribe({
+      next: () => {
+        this.loadOrders();
+        this.closeWorklistDialog();
+      },
+      error: (err) => alert(err.error?.message || 'Error al completar la orden')
+    });
+  }
+
+  printWorklist() {
+    const listData = this.selectedWorklist();
+    if (!listData) return;
+
+    // Construcción del documento de impresión con formato exacto de Hoja de Trabajo
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Hoja de Trabajo - Control</title>');
+      printWindow.document.write('<style>');
+      printWindow.document.write('body { font-family: "Courier New", Courier, monospace; padding: 40px; background: white; color: black; line-height: 1.4; }');
+      printWindow.document.write('.text-center { text-align: center; }');
+      printWindow.document.write('.font-bold { font-weight: bold; }');
+      printWindow.document.write('.item-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }');
+      printWindow.document.write('.line-through { text-decoration: line-through; color: #555; }');
+      printWindow.document.write('.footer-note { border-top: 1px dashed black; margin-top: 20px; padding-top: 10px; font-size: 13px; font-weight: bold; }');
+      printWindow.document.write('</style></head><body>');
+      
+      printWindow.document.write('<pre class="font-bold">');
+      printWindow.document.write('+-------------------------------------------------------+\n');
+      printWindow.document.write('|               HOJA DE TRABAJO - CONTROL               |\n');
+      printWindow.document.write(`| Paciente: ${listData.pacienteNombre.padEnd(44)}|\n`);
+      printWindow.document.write(`| Cuenta: #${listData.legacyOrderId.toString().padEnd(44)}|\n`);
+      printWindow.document.write('+-------------------------------------------------------+\n');
+      printWindow.document.write('</pre>');
+
+      printWindow.document.write('<div style="margin-top: 15px; margin-bottom: 15px;">');
+      listData.items.forEach((item: any, index: number) => {
+        const itemNum = (index + 1).toString().padStart(3, '0');
+        const checkMark = item.tieneResultados ? '✓' : ' ';
+        const isAnuladoStyle = item.esAnulado ? 'class="line-through"' : '';
+        printWindow.document.write(`
+          <div class="item-row">
+            <span ${isAnuladoStyle}>[${checkMark}] [ ]  ${itemNum} - ${item.nombre}</span>
+            <span>(${item.estado})</span>
+          </div>
+        `);
+      });
+      printWindow.document.write('</div>');
+
+      if (listData.tieneAnulados) {
+        printWindow.document.write('<div class="footer-note">');
+        printWindow.document.write('*Nota: Los exámenes tachados fueron anulados en la cuenta por Administración.<br>');
+        printWindow.document.write('NO ingresar estos códigos en el sistema de Laboratorio Legacy.');
+        printWindow.document.write('</div>');
+      }
+
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  }
 }
+

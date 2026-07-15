@@ -2,7 +2,7 @@ import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AdminBillingService, CuentaAdministrativaDto } from '../../../core/services/admin-billing.service';
+import { AdminBillingService, CuentaAdministrativaDto, CuentaAdministrativaDetailDto } from '../../../core/services/admin-billing.service';
 import { FacturacionService, DetallePagoDto, ReceiptPrintData } from '../../../core/services/facturacion.service';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -45,6 +45,7 @@ import {
   Clock,
   Plus,
   Trash2,
+  Edit,
   DollarSign,
   CreditCard,
   ArrowLeft,
@@ -99,6 +100,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     Clock,
     Plus,
     Trash2,
+    Edit,
     DollarSign,
     CreditCard,
     ArrowLeft,
@@ -252,6 +254,10 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   public isEmergencyNurse = computed(() => {
     return this.authService.isEmergencyAssistant() && !this.authService.isCajero();
+  });
+
+  public isAdmin = computed(() => {
+    return this.authService.isAdmin();
   });
 
   // Clinical Item Loading — Wizard (shared with Enfermeria)
@@ -796,6 +802,84 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   public eliminarPago(index: number) {
     this.pagos.update(list => list.filter((_, i) => i !== index));
+  }
+
+  // Administracion de Detalles de la Cuenta
+  public selectedDetailToEdit = signal<CuentaAdministrativaDetailDto | null>(null);
+  public editPrecio = 0;
+  public editHonorario = 0;
+  public editCantidad = 1;
+
+  public iniciarEdicionDetalle(item: CuentaAdministrativaDetailDto) {
+    this.selectedDetailToEdit.set(item);
+    this.editPrecio = item.precio;
+    this.editHonorario = item.honorario;
+    this.editCantidad = item.cantidad;
+  }
+
+  public cancelarEdicionDetalle() {
+    this.selectedDetailToEdit.set(null);
+  }
+
+  public guardarEdicionDetalle() {
+    const detail = this.selectedDetailToEdit();
+    const account = this.selectedAccount();
+    if (!detail || !account) return;
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    const command = {
+      cuentaId: account.cuentaId,
+      correccionesPrecios: [
+        {
+          detalleId: detail.id,
+          nuevoPrecio: Number(this.editPrecio),
+          nuevoHonorario: Number(this.editHonorario),
+          nuevaCantidad: Number(this.editCantidad)
+        }
+      ]
+    };
+
+    this.adminBillingService.updateCuentaAdministrativa(command as any).subscribe({
+      next: () => {
+        this.actionMessage.set('Servicio modificado administrativamente con éxito.');
+        this.selectedDetailToEdit.set(null);
+        this.isLoading.set(false);
+        this.loadOpenAccounts(); // Refrescar cuenta para ver cambios
+        setTimeout(() => this.actionMessage.set(null), 3000);
+      },
+      error: (err: any) => {
+        console.error('[CIERRE-CUENTA] Error al modificar servicio:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al modificar el servicio.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  public anularDetalleServicio(item: CuentaAdministrativaDetailDto) {
+    const account = this.selectedAccount();
+    if (!account) return;
+
+    const confirmDel = confirm(`¿Está seguro de que desea anular el servicio "${item.descripcion}" de la cuenta?`);
+    if (!confirmDel) return;
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.facturacionService.quitarServicio(account.cuentaId, item.id).subscribe({
+      next: () => {
+        this.actionMessage.set('Servicio anulado y removido de la cuenta con éxito.');
+        this.isLoading.set(false);
+        this.loadOpenAccounts(); // Refrescar cuenta para ver cambios
+        setTimeout(() => this.actionMessage.set(null), 3000);
+      },
+      error: (err: any) => {
+        console.error('[CIERRE-CUENTA] Error al anular servicio:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al anular el servicio.');
+        this.isLoading.set(false);
+      }
+    });
   }
 
   // Print Emergency Release Report

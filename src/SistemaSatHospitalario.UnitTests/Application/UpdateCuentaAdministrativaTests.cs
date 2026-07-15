@@ -109,5 +109,84 @@ namespace SistemaSatHospitalario.UnitTests.Application
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
             mockTransaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task Handle_ShouldModifyDetailQuantityAndPricesAndAddAuditHistory()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var mockTransaction = new Mock<IDbContextTransaction>();
+
+            mockContext.Setup(c => c.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockTransaction.Object);
+
+            var accountId = Guid.NewGuid();
+            var patientId = Guid.NewGuid();
+            var serviceDetailId = Guid.NewGuid();
+
+            var patient = new PacienteAdmision("12345", "Juan Perez", "04141234567");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(patient, patientId);
+
+            var patientsList = new List<PacienteAdmision> { patient }.BuildMockDbSet<PacienteAdmision>();
+            mockContext.Setup(c => c.PacientesAdmision).Returns(patientsList.Object);
+
+            var account = new CuentaServicios(patientId, "Admin", EstadoConstants.Particular);
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(account, accountId);
+            
+            var detail = account.AgregarServicio(Guid.NewGuid(), "Insumo Especial", 10m, 0m, 1, "Insumo", "Admin");
+            typeof(DetalleServicioCuenta).GetProperty("Id")?.SetValue(detail, serviceDetailId);
+
+            var accountsList = new List<CuentaServicios> { account }.BuildMockDbSet<CuentaServicios>();
+            mockContext.Setup(c => c.CuentasServicios).Returns(accountsList.Object);
+
+            var recibosList = new List<ReciboFactura>().BuildMockDbSet<ReciboFactura>();
+            mockContext.Setup(c => c.RecibosFactura).Returns(recibosList.Object);
+
+            var cxcList = new List<CuentaPorCobrar>().BuildMockDbSet<CuentaPorCobrar>();
+            mockContext.Setup(c => c.CuentasPorCobrar).Returns(cxcList.Object);
+
+            var historyList = new Mock<DbSet<HistorialModificacionCuenta>>();
+            mockContext.Setup(c => c.HistorialModificacionCuentas).Returns(historyList.Object);
+
+            var citas = new List<CitaMedica>().BuildMockDbSet<CitaMedica>();
+            mockContext.Setup(c => c.CitasMedicas).Returns(citas.Object);
+
+            var handler = new UpdateCuentaAdministrativaCommandHandler(mockContext.Object);
+
+            var command = new UpdateCuentaAdministrativaCommand
+            {
+                CuentaId = accountId,
+                CorreccionesPrecios = new List<DetallePrecioCorreccionDto>
+                {
+                    new DetallePrecioCorreccionDto 
+                    { 
+                        DetalleId = serviceDetailId, 
+                        NuevoPrecio = 15m, 
+                        NuevoHonorario = 0m,
+                        NuevaCantidad = 5m
+                    }
+                },
+                UsuarioModificacion = "SupervisorAdmin"
+            };
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(15m, detail.Precio);
+            Assert.Equal(0m, detail.Honorario);
+            Assert.Equal(5m, detail.Cantidad);
+
+            historyList.Verify(m => m.Add(It.Is<HistorialModificacionCuenta>(h => 
+                h.CuentaServicioId == accountId &&
+                h.Usuario == "SupervisorAdmin" &&
+                h.TotalAnteriorUSD == 10m &&
+                h.TotalNuevoUSD == 75m
+            )), Times.Once);
+
+            mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+            mockTransaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }

@@ -905,14 +905,15 @@
                 </div>
 
                 <!-- Tabla de Detalle Completo -->
-                <div *ngIf="mostrarDetalleItems()" class="overflow-x-auto animate-fade-in">
+                <div *ngIf="mostrarDetalleItems()" class="max-h-[350px] overflow-y-auto pr-2 custom-scrollbar animate-fade-in">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="border-b border-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                            <tr class="border-b border-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest sticky top-0 bg-slate-900/95 backdrop-blur-sm z-10">
                                 <th class="py-3 px-2">Descripción</th>
                                 <th class="py-3 px-2 text-center">Cant.</th>
                                 <th class="py-3 px-2 text-right">Precio Unit.</th>
                                 <th class="py-3 px-2 text-right">Subtotal</th>
+                                <th *ngIf="isAdmin()" class="py-3 px-2 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/[0.02]">
@@ -924,6 +925,20 @@
                                 <td class="py-4 px-2 text-center text-white">{{ item.cantidad }}</td>
                                 <td class="py-4 px-2 text-right font-mono text-white">$ {{ item.precio | number:'1.2-2' }}</td>
                                 <td class="py-4 px-2 text-right font-mono text-white">$ {{ (item.precio * item.cantidad) | number:'1.2-2' }}</td>
+                                <td *ngIf="isAdmin()" class="py-4 px-2 text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button (click)="iniciarEdicionDetalle(item)" type="button"
+                                            class="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/30 rounded-lg text-amber-400 hover:text-amber-300 transition-all"
+                                            title="Modificar Servicio">
+                                            <lucide-icon [name]="icons.Edit" class="w-3.5 h-3.5"></lucide-icon>
+                                        </button>
+                                        <button (click)="anularDetalleServicio(item)" type="button"
+                                            class="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 rounded-lg text-rose-500 hover:text-rose-400 transition-all"
+                                            title="Anular Servicio">
+                                            <lucide-icon [name]="icons.Trash2" class="w-3.5 h-3.5"></lucide-icon>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -1268,6 +1283,52 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Modal de Edición de Servicio (Admin) -->
+        <div *ngIf="selectedDetailToEdit()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="cancelarEdicionDetalle()"></div>
+            <div class="bg-slate-900 border border-white/10 p-6 rounded-[2rem] w-full max-w-md space-y-4 shadow-3xl relative overflow-hidden">
+                <div class="flex items-center justify-between pb-3 border-b border-white/5">
+                    <h3 class="text-sm font-black text-white tracking-tight uppercase">Modificar Servicio</h3>
+                    <button (click)="cancelarEdicionDetalle()" class="p-1.5 text-slate-500 hover:text-white transition-colors">
+                        <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Servicio:</span>
+                        <span class="text-xs font-bold text-white block mt-1">{{ selectedDetailToEdit()?.descripcion }}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Cantidad:</label>
+                            <input type="number" [(ngModel)]="editCantidad" min="1" step="any"
+                                class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Precio Unit. ($):</label>
+                            <input type="number" [(ngModel)]="editPrecio" min="0" step="any"
+                                class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+                    </div>
+                    <div *ngIf="selectedDetailToEdit()?.tipoServicio === 'Medico'">
+                        <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest block mb-1">Honorario ($):</label>
+                        <input type="number" [(ngModel)]="editHonorario" min="0" step="any"
+                            class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                </div>
+                <div class="flex space-x-3 pt-2">
+                    <button (click)="cancelarEdicionDetalle()" type="button"
+                        class="flex-1 px-4 py-2 border border-white/10 hover:bg-white/5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all uppercase tracking-wider">
+                        Cancelar
+                    </button>
+                    <button (click)="guardarEdicionDetalle()" type="button"
+                        class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all uppercase tracking-wider">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
         </div>
 
     </div>
