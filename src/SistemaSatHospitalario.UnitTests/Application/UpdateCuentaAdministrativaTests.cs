@@ -68,7 +68,8 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var citas = new List<CitaMedica>().BuildMockDbSet<CitaMedica>();
             mockContext.Setup(c => c.CitasMedicas).Returns(citas.Object);
 
-            var handler = new UpdateCuentaAdministrativaCommandHandler(mockContext.Object);
+            var mockAuditLogger = new Mock<IUserAuditLogger>();
+            var handler = new UpdateCuentaAdministrativaCommandHandler(mockContext.Object, mockAuditLogger.Object);
 
             var command = new UpdateCuentaAdministrativaCommand
             {
@@ -151,7 +152,8 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var citas = new List<CitaMedica>().BuildMockDbSet<CitaMedica>();
             mockContext.Setup(c => c.CitasMedicas).Returns(citas.Object);
 
-            var handler = new UpdateCuentaAdministrativaCommandHandler(mockContext.Object);
+            var mockAuditLogger = new Mock<IUserAuditLogger>();
+            var handler = new UpdateCuentaAdministrativaCommandHandler(mockContext.Object, mockAuditLogger.Object);
 
             var command = new UpdateCuentaAdministrativaCommand
             {

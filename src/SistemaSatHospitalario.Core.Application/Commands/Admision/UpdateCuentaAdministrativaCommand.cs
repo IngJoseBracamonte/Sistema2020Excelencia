@@ -33,10 +33,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class UpdateCuentaAdministrativaCommandHandler : IRequestHandler<UpdateCuentaAdministrativaCommand, bool>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserAuditLogger _auditLogger;
 
-        public UpdateCuentaAdministrativaCommandHandler(IApplicationDbContext context)
+        public UpdateCuentaAdministrativaCommandHandler(IApplicationDbContext context, IUserAuditLogger auditLogger)
         {
             _context = context;
+            _auditLogger = auditLogger;
         }
 
         public async Task<bool> Handle(UpdateCuentaAdministrativaCommand request, CancellationToken cancellationToken)
@@ -149,6 +151,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     {
                         cita.CambiarPacienteAdministrativo(request.NuevoPacienteId.Value);
                     }
+
+                    // Log de Auditoria
+                    await _auditLogger.LogActionAsync(
+                        request.UsuarioModificacion,
+                        "CAMBIO_PACIENTE",
+                        cuenta.Id,
+                        $"Paciente cambiado de '{pacienteAnteriorNombre}' (ID: {pacienteAnteriorId}) a '{pacienteNuevoNombre}' (ID: {pacienteNuevoId})."
+                    );
                 }
 
                 // 3. Modificar tipo de ingreso/convenio si es provisto
@@ -161,7 +171,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     {
                         convenioId = request.NuevoConvenioId;
                     }
+
+                    string? newConvenioName = null;
+                    if (convenioId.HasValue)
+                    {
+                        newConvenioName = (await _context.SegurosConvenios.AsNoTracking().FirstOrDefaultAsync(s => s.Id == convenioId.Value, cancellationToken))?.Nombre;
+                    }
+
                     cuenta.CambiarTipoIngresoAdministrativo(request.NuevoTipoIngreso, convenioId);
+
+                    // Log de Auditoria
+                    await _auditLogger.LogActionAsync(
+                        request.UsuarioModificacion,
+                        "CAMBIO_CONVENIO",
+                        cuenta.Id,
+                        $"Convenio/Ingreso cambiado de '{tipoIngresoAnterior}' ({convenioAnteriorNombre}) a '{request.NuevoTipoIngreso}' ({newConvenioName ?? "PARTICULAR"})."
+                    );
                 }
 
                 // 4. Modificar precios de los servicios si son provistos
@@ -172,10 +197,49 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         var detalle = cuenta.Detalles.FirstOrDefault(d => d.Id == corr.DetalleId);
                         if (detalle != null)
                         {
-                            detalle.ModificarPreciosAdministrativos(corr.NuevoPrecio, corr.NuevoHonorario);
-                            if (corr.NuevaCantidad.HasValue)
+                            decimal precioAnterior = detalle.Precio;
+                            decimal honorarioAnterior = detalle.Honorario;
+                            decimal cantidadAnterior = detalle.Cantidad;
+
+                            bool hasChanged = false;
+                            var changeDetails = new List<string>();
+
+                            if (detalle.Precio != corr.NuevoPrecio)
                             {
-                                detalle.ModificarCantidadAdministrativa(corr.NuevaCantidad.Value);
+                                changeDetails.Add($"Precio: {precioAnterior} -> {corr.NuevoPrecio}");
+                                hasChanged = true;
+                            }
+                            if (detalle.Honorario != corr.NuevoHonorario)
+                            {
+                                changeDetails.Add($"Honorario: {honorarioAnterior} -> {corr.NuevoHonorario}");
+                                hasChanged = true;
+                            }
+                            if (corr.NuevaCantidad.HasValue && detalle.Cantidad != corr.NuevaCantidad.Value)
+                            {
+                                changeDetails.Add($"Cantidad: {cantidadAnterior} -> {corr.NuevaCantidad.Value}");
+                                hasChanged = true;
+                            }
+
+                            if (hasChanged)
+                            {
+                                detalle.ModificarPreciosAdministrativos(corr.NuevoPrecio, corr.NuevoHonorario);
+                                if (corr.NuevaCantidad.HasValue)
+                                {
+                                    detalle.ModificarCantidadAdministrativa(corr.NuevaCantidad.Value);
+                                }
+
+                                bool esAnulado = (corr.NuevaCantidad.HasValue && corr.NuevaCantidad.Value == 0) || corr.NuevoPrecio == 0;
+                                string accion = esAnulado ? "ANULACION_SERVICIO" : "MODIFICACION_SERVICIO";
+                                string descripcionLog = esAnulado
+                                    ? $"Servicio '{detalle.Descripcion}' (ID: {detalle.Id}) ANULADO administrativamente. Detalles anteriores: Cantidad={cantidadAnterior}, Precio={precioAnterior}, Honorario={honorarioAnterior}."
+                                    : $"Servicio '{detalle.Descripcion}' (ID: {detalle.Id}) modificado. Cambios: {string.Join(", ", changeDetails)}.";
+
+                                await _auditLogger.LogActionAsync(
+                                    request.UsuarioModificacion,
+                                    accion,
+                                    cuenta.Id,
+                                    descripcionLog
+                                );
                             }
                         }
                     }

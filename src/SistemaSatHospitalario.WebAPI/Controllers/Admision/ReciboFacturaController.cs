@@ -117,7 +117,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpPost("CompleteOrder/{cuentaId}")]
         public async Task<IActionResult> CompleteOrder(Guid cuentaId)
         {
-            var result = await _mediator.Send(new CompleteMonitoringOrderCommand { CuentaId = cuentaId });
+            var user = User.Identity?.Name ?? "Bioanalista";
+            var result = await _mediator.Send(new CompleteMonitoringOrderCommand { CuentaId = cuentaId, UsuarioCompleta = user });
             if (result) return Ok(new { Message = "Orden procesada con éxito." });
             return BadRequest(new { Error = "No se pudo marcar la orden como procesada." });
         }

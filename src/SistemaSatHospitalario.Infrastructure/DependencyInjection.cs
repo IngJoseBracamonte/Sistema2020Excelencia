@@ -94,6 +94,9 @@ namespace SistemaSatHospitalario.Infrastructure
             // [PHASE-6] Standardized Time Infrastructure
             services.AddSingleton<IDateTimeProvider, SistemaSatHospitalario.Infrastructure.Services.MachineDateTimeProvider>();
 
+            // Registro del Servicio de Auditoria de Logs por Usuario
+            services.AddSingleton<IUserAuditLogger, UserAuditLogger>();
+
             // [PHASE-7] Proactive Monitoring Automation
             services.AddHostedService<SistemaSatHospitalario.Infrastructure.Services.LegacyLabMonitoringWorker>();
 
