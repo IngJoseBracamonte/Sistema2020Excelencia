@@ -14,10 +14,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
             migrationBuilder.AddColumn<DateTime>(
                 name: "RowVersion",
                 table: "StocksSede",
-                type: "timestamp(6)",
+                type: "datetime(6)",
                 rowVersion: true,
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
+                nullable: true);
 
             migrationBuilder.AddColumn<bool>(
                 name: "IncluidoEnTarifaBase",

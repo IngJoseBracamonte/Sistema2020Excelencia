@@ -54,6 +54,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             {
                 return; // No recipe mapping for this service, skip inventory deduction
             }
+
             var targetSedeId = sedeId;
             if (targetSedeId == null || targetSedeId == Guid.Empty)
             {
@@ -79,83 +80,103 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 }
             }
 
-            foreach (var recipe in recipes)
-            {
-                await DeductStockForRecipeAsync(detalleId, cuentaId, targetSedeId.Value, serviceDescripcion, cantidadServicio, usuarioCarga, recipe, cancellationToken);
-            }        }
-
-        private async Task DeductStockForRecipeAsync(
-            Guid detalleId,
-            Guid cuentaId,
-            Guid targetSedeId,
-            string serviceDescripcion,
-            decimal cantidadServicio,
-            string usuarioCarga,
-            ServicioInsumoReceta recipe,
-            CancellationToken cancellationToken)
-        {
-            if (recipe.Insumo == null) return;
-
-             // 2. Conversion factor from consumption unit to base stock unit
-            decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
-            decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
-
-            // Check if target Sede is predetermined/dedicated (with stock physical local tracker)
-            var isDedicatedSede = targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal ||
-                                  targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia ||
-                                  targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion ||
-                                  targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI;
+            // [PHASE-3] Wrap recipe deduction in atomic database transaction with optimistic concurrency retry loop
+            int maxRetries = 3;
+            int delayMs = 100;
             
-            Guid stockDeductionSedeId = targetSedeId;
-            if (!isDedicatedSede)
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                stockDeductionSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+                var transaction = _context.Database == null
+                    ? await _context.BeginTransactionAsync(cancellationToken)
+                    : (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory"
+                        ? null
+                        : await _context.BeginTransactionAsync(cancellationToken));
+                try
+                {
+                    foreach (var recipe in recipes)
+                    {
+                        if (recipe.Insumo == null) continue;
+
+                        decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
+                        decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
+
+                        var isDedicatedSede = targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal ||
+                                              targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia ||
+                                              targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion ||
+                                              targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI;
+                        
+                        Guid stockDeductionSedeId = isDedicatedSede ? targetSedeId.Value : SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+
+                        var stockSede = await _context.StocksSedes
+                            .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == stockDeductionSedeId, cancellationToken);
+                        if (stockSede == null)
+                        {
+                            _logger.LogInformation("Inicializando stock JIT en sede para el insumo {InsumoId} en Sede {SedeId}", recipe.InsumoId, stockDeductionSedeId);
+                            stockSede = new StockSede(recipe.InsumoId, stockDeductionSedeId, 0);
+                            _context.StocksSedes.Add(stockSede);
+                        }
+
+                        stockSede.RegistrarMovimientoStock(-qtyBaseNeeded, recipe.Insumo.PermiteFraccionamiento);
+
+                        if (stockSede.StockActual < 0)
+                        {
+                            _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}) en Sede {SedeId}.",
+                                recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId, targetSedeId);
+                        }
+
+                        decimal costTotalUSD = recipe.Insumo.CostoUnitarioBaseUSD * qtyBaseNeeded;
+                        var consumo = new ConsumoServicioRealizado(
+                            detalleId,
+                            recipe.InsumoId,
+                            qtyBaseNeeded,
+                            costTotalUSD
+                        );
+                        _context.ConsumosServiciosRealizados.Add(consumo);
+
+                        var movimiento = new MovimientoInsumo(
+                            recipe.InsumoId,
+                            targetSedeId.Value,
+                            "Consumo",
+                            -qtyBaseNeeded,
+                            recipe.UnidadMedidaConsumo,
+                            recipe.Cantidad * cantidadServicio,
+                            usuarioCarga,
+                            $"Consumo automático por facturación de servicio {serviceDescripcion} (Cuenta ID: {cuentaId})"
+                        );
+                        _context.MovimientosInsumo.Add(movimiento);
+                    }
+
+                    await _context.SaveChangesAsync(cancellationToken);
+                    if (transaction != null)
+                    {
+                        await transaction.CommitAsync(cancellationToken);
+                    }
+                    break; // Success, exit retry loop
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (transaction != null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                    }
+                    if (attempt == maxRetries)
+                    {
+                        _logger.LogError("Se agotaron los {MaxRetries} reintentos de concurrencia al deducir inventario para la cuenta {CuentaId}", maxRetries, cuentaId);
+                        throw;
+                    }
+                    _logger.LogWarning("Conflicto de concurrencia detectado (intento {Attempt}/{MaxRetries}). Reintentando...", attempt, maxRetries);
+                    await Task.Delay(delayMs * (int)Math.Pow(2, attempt - 1), cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    if (transaction != null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                    }
+                    _logger.LogError(ex, "Fallo no recuperable al deducir inventario para la cuenta {CuentaId}", cuentaId);
+                    throw;
+                }
             }
-
-            // 3. Find or create StockSede for target Sede
-            var stockSede = await _context.StocksSedes
-                .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == stockDeductionSedeId, cancellationToken);
-            if (stockSede == null)
-            {
-                _logger.LogInformation("Inicializando stock JIT en sede para el insumo {InsumoId} en Sede {SedeId}", recipe.InsumoId, stockDeductionSedeId);
-                stockSede = new StockSede(recipe.InsumoId, stockDeductionSedeId, 0);
-                _context.StocksSedes.Add(stockSede);
-            }
-
-            // Deduct stock (allowing negative values per user requirements)
-            stockSede.RegistrarMovimientoStock(-qtyBaseNeeded, recipe.Insumo.PermiteFraccionamiento);
-            _logger.LogInformation("Stock deducido para Insumo {InsumoNombre} ({InsumoCodigo}) en Sede {SedeId}. Nuevo stock: {StockActual}",
-                recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockDeductionSedeId, stockSede.StockActual);
-
-            // 4. Warning check
-            if (stockSede.StockActual < 0)
-            {
-                _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}) en Sede {SedeId}.",
-                    recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId, targetSedeId);
-            }
-
-            // 5. Add ConsumoServicioRealizado
-            decimal costTotalUSD = recipe.Insumo.CostoUnitarioBaseUSD * qtyBaseNeeded;
-            var consumo = new ConsumoServicioRealizado(
-                detalleId,
-                recipe.InsumoId,
-                qtyBaseNeeded,
-                costTotalUSD
-            );
-            _context.ConsumosServiciosRealizados.Add(consumo);
-
-            // 6. Add MovimientoInsumo (Immutable Audit Ledger)
-            var movimiento = new MovimientoInsumo(
-                recipe.InsumoId,
-                targetSedeId,
-                "Consumo",
-                -qtyBaseNeeded,
-                recipe.UnidadMedidaConsumo,
-                recipe.Cantidad * cantidadServicio,
-                usuarioCarga,
-                $"Consumo automático por facturación de servicio {serviceDescripcion} (Cuenta ID: {cuentaId})"
-            );
-            _context.MovimientosInsumo.Add(movimiento);
         }
 
         public async Task RecordMovementAsync(

@@ -449,5 +449,53 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpPost("actualizar-cortesia-detalle")]
+        public async Task<IActionResult> ActualizarCortesiaDetalle([FromBody] ActualizarCortesiaDetalleCommand command)
+        {
+            try
+            {
+                command.UsuarioModificacion = User.Identity?.Name ?? "Sistema";
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Estado de cortesía del detalle actualizado con éxito." });
+                return BadRequest(new { Error = "No se pudo actualizar el estado de cortesía." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("revertir-checkout")]
+        public async Task<IActionResult> RevertirCheckOut([FromBody] RevertirCheckOutCommand command)
+        {
+            try
+            {
+                command.UsuarioReversion = User.Identity?.Name ?? "Sistema";
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Check-Out revertido con éxito. La cuenta ha sido reabierta." });
+                return BadRequest(new { Error = "No se pudo revertir el check-out." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("devolver-insumo-cirugia")]
+        public async Task<IActionResult> DevolverInsumoCirugia([FromBody] DevolverInsumoCirugiaCommand command)
+        {
+            try
+            {
+                command.Usuario = User.Identity?.Name ?? "Sistema";
+                var result = await _mediator.Send(command);
+                if (result) return Ok(new { Message = "Devolución de insumo/medicamento de Quirófano procesada con éxito." });
+                return BadRequest(new { Error = "No se pudo procesar la devolución." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }

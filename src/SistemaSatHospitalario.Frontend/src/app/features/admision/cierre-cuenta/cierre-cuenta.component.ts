@@ -215,6 +215,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   // Selected Account State
   public selectedAccount = signal<CuentaAdministrativaDto | null>(null);
+  public estadoFiltro = signal<'Abierta' | 'Facturada'>('Abierta');
   public fechaEgreso = signal<string>(new Date().toISOString().split('T')[0]);
   public horaEgreso = signal<string>(new Date().toTimeString().substring(0, 5));
   public diagnostico = signal<string>('Diagnóstico General / Control Médico');
@@ -652,7 +653,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   // Cargar cuentas abiertas del tipo actual
   public loadOpenAccounts() {
     this.isLoading.set(true);
-    this.adminBillingService.getCuentasAdministrativas(undefined, this.type(), 'Abierta').subscribe({
+    this.adminBillingService.getCuentasAdministrativas(undefined, this.type(), this.estadoFiltro()).subscribe({
       next: (res) => {
         this.accounts.set(res);
         this.isLoading.set(false);
@@ -876,6 +877,79 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         console.error('[CIERRE-CUENTA] Error al anular servicio:', err);
         this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al anular el servicio.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  public toggleCortesiaDetalle(item: CuentaAdministrativaDetailDto, incluido: boolean) {
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.adminBillingService.actualizarCortesiaDetalle(item.id, incluido).subscribe({
+      next: () => {
+        this.actionMessage.set(`Servicio "${item.descripcion}" actualizado: Cortesía ${incluido ? 'ACTIVADA' : 'DESACTIVADA'}.`);
+        this.isLoading.set(false);
+        this.loadOpenAccounts();
+        setTimeout(() => this.actionMessage.set(null), 3000);
+      },
+      error: (err: any) => {
+        console.error('[CIERRE-CUENTA] Error al cambiar cortesía:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al actualizar cortesía.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  public revertirCheckOutActual() {
+    const account = this.selectedAccount();
+    if (!account) return;
+
+    const confirmRev = confirm(`¿Está seguro de que desea revertir el Check-Out / Alta de la cuenta de "${account.pacienteNombre}"? Esto reabrirá la cuenta y restablecerá la cama como ocupada.`);
+    if (!confirmRev) return;
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.adminBillingService.revertirCheckOut(account.cuentaId).subscribe({
+      next: () => {
+        this.actionMessage.set('Check-Out revertido con éxito. Cuenta reabierta y cama restablecida.');
+        this.isLoading.set(false);
+        this.estadoFiltro.set('Abierta'); // Cambiar filtro para mostrar la cuenta abierta
+        this.loadOpenAccounts();
+        this.deselectAccount();
+        setTimeout(() => this.actionMessage.set(null), 3000);
+      },
+      error: (err: any) => {
+        console.error('[CIERRE-CUENTA] Error al revertir check-out:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al revertir check-out.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  public devolverInsumoQuirofano(item: CuentaAdministrativaDetailDto) {
+    const account = this.selectedAccount();
+    if (!account) return;
+
+    const cantStr = prompt(`Ingrese la cantidad a devolver para "${item.descripcion}" (Máximo asignado: ${item.cantidad}):`, '1');
+    if (cantStr === null) return;
+    const cant = Number(cantStr);
+    if (isNaN(cant) || cant <= 0 || cant > item.cantidad) {
+      alert('Cantidad inválida.');
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.adminBillingService.devolverInsumoCirugia(account.cuentaId, item.servicioId, cant).subscribe({
+      next: () => {
+        this.actionMessage.set(`Se devolvieron ${cant} unidades de "${item.descripcion}" con éxito.`);
+        this.isLoading.set(false);
+        this.loadOpenAccounts();
+        setTimeout(() => this.actionMessage.set(null), 3000);
+      },
+      error: (err: any) => {
+        console.error('[CIERRE-CUENTA] Error al devolver insumo:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al procesar devolución de Quirófano.');
         this.isLoading.set(false);
       }
     });

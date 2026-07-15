@@ -12,8 +12,8 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SatHospitalarioDbContext))]
-    [Migration("20260715175858_AddHospitalizationDomainFeatures")]
-    partial class AddHospitalizationDomainFeatures
+    [Migration("20260715182409_AddHygieneMonitorAndSpecialistValidation")]
+    partial class AddHygieneMonitorAndSpecialistValidation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -494,6 +494,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Property<int?>("LegacyOrderId")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("MedicoId")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("PacienteId")
                         .HasColumnType("char(36)");
 
@@ -530,6 +533,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.HasIndex("CuentaPrincipalId");
 
                     b.HasIndex("FechaCarga");
+
+                    b.HasIndex("MedicoId");
 
                     b.HasIndex("PacienteId");
 
@@ -783,6 +788,40 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.HasIndex("CuentaPorCobrarId");
 
                     b.ToTable("GarantiasItems", (string)null);
+                });
+
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.HistorialLimpiezaCama", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CamaId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("FechaFin")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("FechaInicio")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UsuarioFin")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UsuarioInicio")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FechaFin");
+
+                    b.HasIndex("CamaId", "FechaFin");
+
+                    b.ToTable("HistorialesLimpiezasCamas", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.HistorialModificacionCuenta", b =>
@@ -1821,10 +1860,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("InsumoId")
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("RowVersion")
+                    b.Property<DateTime?>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("SedeId")
                         .HasColumnType("char(36)");
@@ -2465,6 +2504,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CuentaPrincipalId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.Medico", "Medico")
+                        .WithMany()
+                        .HasForeignKey("MedicoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.PacienteAdmision", "Paciente")
                         .WithMany()
                         .HasForeignKey("PacienteId")
@@ -2476,6 +2520,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                     b.Navigation("Convenio");
 
                     b.Navigation("CuentaPrincipal");
+
+                    b.Navigation("Medico");
 
                     b.Navigation("Paciente");
                 });
@@ -2548,6 +2594,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("CuentaPorCobrar");
+                });
+
+            modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.HistorialLimpiezaCama", b =>
+                {
+                    b.HasOne("SistemaSatHospitalario.Core.Domain.Entities.Admision.AreaClinica", "Cama")
+                        .WithMany()
+                        .HasForeignKey("CamaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cama");
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.HonorarioConfig", b =>

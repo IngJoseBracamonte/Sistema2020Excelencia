@@ -21,11 +21,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? ProcesamientoEstado { get; private set; } // PENDIENTE, PROCESADA
         public Guid? AreaClinicaId { get; private set; }
         public string? SubAreaClinica { get; private set; }
+        public Guid? MedicoId { get; private set; }
  
         public virtual PacienteAdmision Paciente { get; private set; }
         public virtual SeguroConvenio Convenio { get; private set; }
         public virtual CuentaServicios? CuentaPrincipal { get; private set; }
         public virtual AreaClinica? AreaClinica { get; private set; }
+        public virtual Medico? Medico { get; private set; }
  
         public virtual ICollection<TriageEnfermeria> Triages { get; private set; } = new List<TriageEnfermeria>();
         public virtual ICollection<ValoracionFisica> Valoraciones { get; private set; } = new List<ValoracionFisica>();
@@ -44,7 +46,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null)
+        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
@@ -55,12 +57,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             ConvenioId = convenioId;
             AreaClinicaId = areaClinicaId;
             SubAreaClinica = subAreaClinica;
+            MedicoId = medicoId;
         }
  
         public void AsignarAreaClinica(Guid? areaClinicaId, string? subAreaClinica)
         {
             AreaClinicaId = areaClinicaId;
             SubAreaClinica = subAreaClinica;
+        }
+
+        public void AsignarMedico(Guid? medicoId)
+        {
+            MedicoId = medicoId;
         }
 
         public void VincularCuentaPrincipal(Guid cuentaPrincipalId)
@@ -122,6 +130,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             // [PHASE-5] Raise Domain Event for downstream processing
             AddDomainEvent(new CuentaFacturadaEvent(Id, FechaCierre.Value));
+        }
+
+        public void Reabrir()
+        {
+            if (Estado != EstadoConstants.Facturada)
+                throw new InvalidOperationException("Solo se pueden reabrir cuentas que hayan sido facturadas (check-out).");
+
+            Estado = EstadoConstants.Abierta;
+            FechaCierre = null;
         }
 
         public void Anular()

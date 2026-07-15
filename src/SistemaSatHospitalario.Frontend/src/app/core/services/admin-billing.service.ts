@@ -13,6 +13,7 @@ export interface CuentaAdministrativaDetailDto {
   tipoServicio: string;
   fechaCarga: string;
   legacyMappingId?: string;
+  incluidoEnTarifaBase: boolean;
 }
 
 export interface CuentaAdministrativaDto {
@@ -96,5 +97,17 @@ export class AdminBillingService {
 
   getHistorialModificaciones(cuentaId: string): Observable<HistorialModificacionCuentaDto[]> {
     return this.http.get<HistorialModificacionCuentaDto[]>(`${this.apiUrl}/cuenta-historial/${cuentaId}`);
+  }
+
+  actualizarCortesiaDetalle(detalleId: string, incluidoEnTarifaBase: boolean): Observable<any> {
+    return this.http.post(`${this.apiUrl}/actualizar-cortesia-detalle`, { detalleId, incluidoEnTarifaBase });
+  }
+
+  revertirCheckOut(cuentaId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/revertir-checkout`, { cuentaId });
+  }
+
+  devolverInsumoCirugia(cuentaId: string, insumoId: string, cantidadRestar: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/devolver-insumo-cirugia`, { cuentaId, insumoId, cantidadRestar });
   }
 }

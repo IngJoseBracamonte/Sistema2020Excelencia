@@ -91,7 +91,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Cantidad = d.Cantidad,
                         TipoServicio = d.TipoServicio,
                         FechaCarga = d.FechaCarga,
-                        LegacyMappingId = d.LegacyMappingId
+                        LegacyMappingId = d.LegacyMappingId,
+                        IncluidoEnTarifaBase = d.IncluidoEnTarifaBase
                     }).ToList()
                 };
 

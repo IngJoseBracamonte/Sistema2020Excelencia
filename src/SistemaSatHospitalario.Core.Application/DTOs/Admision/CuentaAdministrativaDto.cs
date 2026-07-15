@@ -33,5 +33,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string TipoServicio { get; set; } = string.Empty;
         public DateTime FechaCarga { get; set; }
         public string? LegacyMappingId { get; set; }
+        public bool IncluidoEnTarifaBase { get; set; }
     }
 }

@@ -66,6 +66,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<PedidoInterSedeDetalle> PedidosInterSedeDetalles { get; set; }
         public DbSet<DetalleServicioMedicoResponsable> DetallesServicioMedicosResponsables { get; set; }
         public DbSet<ServicioIncluidoArea> ServiciosIncluidosAreas { get; set; }
+        public DbSet<HistorialLimpiezaCama> HistorialesLimpiezasCamas { get; set; }
+        public DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -271,6 +273,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasOne(c => c.AreaClinica)
                       .WithMany()
                       .HasForeignKey(c => c.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Medico)
+                      .WithMany()
+                      .HasForeignKey(c => c.MedicoId)
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Property(c => c.SubAreaClinica)
@@ -771,6 +778,41 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(s => s.ServicioClinicoId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<HistorialLimpiezaCama>(entity =>
+            {
+                entity.ToTable("HistorialesLimpiezasCamas");
+                entity.HasKey(h => h.Id);
+
+                entity.HasOne(h => h.Cama)
+                      .WithMany()
+                      .HasForeignKey(h => h.CamaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(h => new { h.CamaId, h.FechaFin });
+                entity.HasIndex(h => h.FechaFin);
+            });
+
+            builder.Entity<InsumoCirugiaPaciente>(entity =>
+            {
+                entity.ToTable("InsumosCirugiasPacientes");
+                entity.HasKey(i => i.Id);
+
+                entity.HasOne(i => i.CuentaServicio)
+                      .WithMany()
+                      .HasForeignKey(i => i.CuentaServicioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(i => i.Insumo)
+                      .WithMany()
+                      .HasForeignKey(i => i.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(i => new { i.CuentaServicioId, i.InsumoId });
+
+                entity.Property(i => i.CantidadEntregada).HasPrecision(18, 4);
+                entity.Property(i => i.CantidadDevuelta).HasPrecision(18, 4);
             });
 
             builder.Entity<StockSede>(entity =>
