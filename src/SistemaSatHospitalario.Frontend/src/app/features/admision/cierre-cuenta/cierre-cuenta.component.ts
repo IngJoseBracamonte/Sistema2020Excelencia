@@ -126,7 +126,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public convenioIngresoId = signal<number | null>(null);
   public showNewPatientForm = signal<boolean>(false);
   public selectedCamaId = signal<string | null>(null);
-  public camasDisponibles = signal<AreaClinica[]>([]);
+  public camasDisponibles = signal<any[]>([]);
 
   // Step admission & Triage Signals
   public ingresoStep = signal<number>(1);
