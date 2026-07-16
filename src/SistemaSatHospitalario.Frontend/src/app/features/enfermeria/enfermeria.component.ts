@@ -281,7 +281,7 @@ export class EnfermeriaComponent implements OnInit {
   public selectedPatientForIngreso = signal<PatientRecord | null>(null);
   public convenioIngresoId = signal<number | null>(null);
   public selectedCamaId = signal<string | null>(null);
-  public camasDisponibles = signal<AreaClinica[]>([]);
+  public camasDisponibles = signal<any[]>([]);
   public errorMessage = signal<string | null>(null);
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
 
