@@ -14,6 +14,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
         public string Categoria { get; private set; }
+        public string? ReactivosCombinados { get; private set; }
+        public string? Indicaciones { get; private set; }
+        public DateTime? FechaVencimiento { get; private set; }
+        public bool OcultoEnTraslados { get; private set; }
 
         protected Insumo() { }
 
@@ -26,6 +30,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CostoUnitarioBaseUSD = costoUnitarioBaseUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
             Categoria = categoria;
+            OcultoEnTraslados = false;
             
             if (stockActual > 0)
             {
@@ -47,6 +52,23 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             CostoUnitarioBaseUSD = costoUSD;
+        }
+
+        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria, string? reactivos, string? indicaciones, DateTime? vencimiento)
+        {
+            Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+            UnidadMedidaBase = unidadMedidaBase;
+            CostoUnitarioBaseUSD = costoUSD;
+            PermiteFraccionamiento = permiteFraccionamiento;
+            Categoria = categoria;
+            ReactivosCombinados = reactivos;
+            Indicaciones = indicaciones;
+            FechaVencimiento = vencimiento;
+        }
+
+        public void AlternarOcultoEnTraslados(bool ocultar)
+        {
+            OcultoEnTraslados = ocultar;
         }
     }
 }

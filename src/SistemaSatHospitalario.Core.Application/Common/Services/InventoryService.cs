@@ -100,12 +100,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
                         decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
 
-                        var isDedicatedSede = targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal ||
-                                              targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia ||
-                                              targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion ||
-                                              targetSedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI;
-                        
-                        Guid stockDeductionSedeId = isDedicatedSede ? targetSedeId.Value : SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+                        Guid stockDeductionSedeId = targetSedeId ?? SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
 
                         var stockSede = await _context.StocksSedes
                             .FirstOrDefaultAsync(s => s.InsumoId == recipe.InsumoId && s.SedeId == stockDeductionSedeId, cancellationToken);

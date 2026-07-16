@@ -35,6 +35,7 @@ export const routes: Routes = [
             { path: 'admin/inventory', loadComponent: () => import('./features/admin/inventory/inventory-dashboard.component').then(m => m.InventoryDashboardComponent) },
             { path: 'admin/inventory/sedes', loadComponent: () => import('./features/admin/inventory/sede-management.component').then(m => m.SedeManagementComponent) },
             { path: 'admin/inventory/pedidos', loadComponent: () => import('./features/admin/inventory/pedidos-inter-sede.component').then(m => m.PedidosInterSedeComponent) },
+            { path: 'admin/inventory/compras', loadComponent: () => import('./features/admin/inventory/compras.component').then(m => m.ComprasComponent) },
             { path: 'admin/analytics', loadComponent: () => import('./features/admin/analytics/admin-analytics.component').then(m => m.AdminAnalyticsComponent) },
             { path: 'admin/reportes/honorarios', loadComponent: () => import('./features/admin/medicos/components/honoraria-report/honoraria-report.component').then(m => m.HonorariaReportComponent) },
             { path: 'admin/reportes/calculo-honorarios', loadComponent: () => import('./features/admin/honorariums/admin-honorariums.component').then(m => m.AdminHonorariumsComponent) },

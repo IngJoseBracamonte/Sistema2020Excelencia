@@ -1,0 +1,5 @@
+ALTER TABLE SatHospitalario.Insumos 
+ADD COLUMN ReactivosCombinados VARCHAR(500) NULL,
+ADD COLUMN Indicaciones TEXT NULL,
+ADD COLUMN FechaVencimiento DATETIME NULL,
+ADD COLUMN OcultoEnTraslados TINYINT(1) NOT NULL DEFAULT 0;

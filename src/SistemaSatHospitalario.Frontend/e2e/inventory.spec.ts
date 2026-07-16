@@ -38,7 +38,7 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     const nameInput = sedeModal.locator('input').nth(1);
 
     await codeInput.fill(sedeCode);
-    await nameInput.fill('Sucursal de Pruebas E2E');
+    await nameInput.fill('Sede Hospitalaria');
     console.log('Filled Sede form.');
 
     // 4. Save Sede y esperar a que el DOM se estabilice (networkidle)
@@ -70,8 +70,8 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     const areaCodeInput = areaModal.locator('input').first();
     const areaNameInput = areaModal.locator('input').nth(1);
 
-    await areaCodeInput.fill('AREA_E2E');
-    await areaNameInput.fill('Departamento de Pruebas');
+    await areaCodeInput.fill('LAB');
+    await areaNameInput.fill('Laboratorio');
     console.log('Filled Area form.');
 
     // 9. Save Area Clinica y esperar re-render de la lista
@@ -83,7 +83,7 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     // 10. Verify the Area Clinica is listed under the Sede
     //     Re-localizamos newSedeBlock de nuevo (fresco tras segundo re-render)
     const updatedSedeBlock = page.locator('.rounded-xl.border', { hasText: sedeCode });
-    const areaListItem = updatedSedeBlock.locator('text=[AREA_E2E] Departamento de Pruebas');
+    const areaListItem = updatedSedeBlock.locator('text=[LAB] Laboratorio');
     await expect(areaListItem).toBeVisible({ timeout: 10000 });
     console.log('Area Clinica successfully associated and visible.');
   });

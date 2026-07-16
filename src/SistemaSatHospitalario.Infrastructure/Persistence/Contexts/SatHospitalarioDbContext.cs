@@ -640,6 +640,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
                 entity.Property(i => i.PermiteFraccionamiento).IsRequired().HasDefaultValue(true);
                 entity.Property(i => i.Categoria).HasMaxLength(50).HasDefaultValue("Medicamento");
+                entity.Property(i => i.ReactivosCombinados).HasMaxLength(500);
+                entity.Property(i => i.Indicaciones);
+                entity.Property(i => i.FechaVencimiento);
+                entity.Property(i => i.OcultoEnTraslados).IsRequired().HasDefaultValue(false);
                 entity.HasIndex(i => i.Codigo).IsUnique();
             });
 

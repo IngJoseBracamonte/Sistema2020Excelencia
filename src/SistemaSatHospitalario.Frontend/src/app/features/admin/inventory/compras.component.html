@@ -1,0 +1,534 @@
+<div class="min-h-screen bg-[#f3faff] p-6 text-slate-800 font-sans">
+  <!-- Encabezado de Página -->
+  <div class="mb-6 flex justify-between items-center border-b border-slate-200 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+        <lucide-icon [name]="icons.Package" class="text-[#005faf] w-7 h-7"></lucide-icon>
+        Módulo de Farmacia y Compras
+      </h1>
+      <p class="text-sm text-slate-500 mt-1">Gestión centralizada de compras, catálogo de insumos y despacho a sedes.</p>
+    </div>
+    <div class="flex gap-2">
+      <button 
+        *ngIf="activeTab() === 'crud'"
+        (click)="openCreateModal()"
+        class="bg-[#af101a] hover:bg-[#930010] text-white px-4 py-2 rounded-md font-semibold text-sm flex items-center gap-2 transition duration-150 ease-in-out cursor-pointer">
+        <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
+        Crear Insumo
+      </button>
+    </div>
+  </div>
+
+  <!-- Alertas Globales -->
+  <div *ngIf="successMessage()" class="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-md flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-3">
+      <lucide-icon [name]="icons.Check" class="text-emerald-500 w-5 h-5"></lucide-icon>
+      <span class="text-emerald-800 text-sm font-medium">{{ successMessage() }}</span>
+    </div>
+  </div>
+  <div *ngIf="errorMessage()" class="mb-4 bg-rose-50 border-l-4 border-[#af101a] p-4 rounded-r-md flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-3">
+      <lucide-icon [name]="icons.AlertCircle" class="text-[#af101a] w-5 h-5"></lucide-icon>
+      <span class="text-[#af101a] text-sm font-medium">{{ errorMessage() }}</span>
+    </div>
+  </div>
+
+  <!-- Navegación de Pestañas -->
+  <div class="flex border-b border-slate-200 mb-6 bg-white rounded-t-md p-1 shadow-sm gap-1">
+    <button 
+      (click)="activeTab.set('purchase')"
+      [class]="activeTab() === 'purchase' ? 'bg-[#005faf] text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+      class="flex-1 py-3 px-4 rounded-md font-semibold text-sm flex items-center justify-center gap-2 transition cursor-pointer">
+      <lucide-icon [name]="icons.PlusCircle" class="w-4 h-4"></lucide-icon>
+      Registrar Compra / Entrada
+    </button>
+    <button 
+      (click)="activeTab.set('pending')"
+      [class]="activeTab() === 'pending' ? 'bg-[#005faf] text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+      class="flex-1 py-3 px-4 rounded-md font-semibold text-sm flex items-center justify-center gap-2 transition cursor-pointer">
+      <lucide-icon [name]="icons.FileText" class="w-4 h-4"></lucide-icon>
+      Aprobar Pedidos Pendientes
+      <span *ngIf="pedidosPendientes().length > 0" class="ml-2 bg-[#af101a] text-white text-xs px-2 py-0.5 rounded-full font-bold">
+        {{ pedidosPendientes().length }}
+      </span>
+    </button>
+    <button 
+      (click)="activeTab.set('crud')"
+      [class]="activeTab() === 'crud' ? 'bg-[#005faf] text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+      class="flex-1 py-3 px-4 rounded-md font-semibold text-sm flex items-center justify-center gap-2 transition cursor-pointer">
+      <lucide-icon [name]="icons.Settings" class="w-4 h-4"></lucide-icon>
+      Gestión de Catálogo (CRUD)
+    </button>
+  </div>
+
+  <!-- Contenido de Pestañas -->
+
+  <!-- TAB 1: REGISTRAR COMPRA -->
+  <div *ngIf="activeTab() === 'purchase'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Formulario de Registro (Izquierda) -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 lg:col-span-1 h-fit">
+      <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+        <lucide-icon [name]="icons.PlusCircle" class="text-[#005faf] w-5 h-5"></lucide-icon>
+        Nueva Entrada
+      </h2>
+
+      <div class="space-y-4">
+        <!-- Sede Destino -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Sede de Entrada</label>
+          <select 
+            [ngModel]="selectedSedeId()"
+            (ngModelChange)="selectedSedeId.set($event)"
+            class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white">
+            <option *ngFor="let s of sedes()" [value]="s.id">{{ s.nombre }}</option>
+          </select>
+        </div>
+
+        <!-- Buscador de Insumos -->
+        <div class="relative">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Buscar Producto</label>
+          <div class="relative">
+            <input 
+              type="text" 
+              [ngModel]="purchaseSearchTerm()" 
+              (ngModelChange)="onPurchaseSearchChange($event)"
+              placeholder="Escribe código, nombre o reactivo..." 
+              class="w-full h-11 pl-10 pr-4 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white" />
+            <lucide-icon [name]="icons.Search" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></lucide-icon>
+          </div>
+          
+          <!-- Dropdown Autocompletado -->
+          <div *ngIf="filteredPurchaseInsumos().length > 0 animate-fadeIn" class="absolute z-10 w-full bg-white mt-1 border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+            <div 
+              *ngFor="let item of filteredPurchaseInsumos()" 
+              (click)="selectItem(item)"
+              class="p-3 hover:bg-[#f3faff] cursor-pointer border-b border-slate-100 transition duration-150">
+              <div class="font-semibold text-sm text-slate-900">{{ item.nombre }}</div>
+              <div class="text-xs text-slate-500 mt-0.5 flex justify-between">
+                <span>Cód: {{ item.codigo }}</span>
+                <span *ngIf="item.reactivosCombinados" class="italic text-[#005faf]">Reactivos: {{ item.reactivosCombinados }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Campos de Cantidad y Costo -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Cantidad</label>
+            <input 
+              type="number" 
+              [ngModel]="purchaseQty()" 
+              (ngModelChange)="purchaseQty.set($event)"
+              min="1" 
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Costo Unit. (USD)</label>
+            <input 
+              type="number" 
+              [ngModel]="purchaseCost()" 
+              (ngModelChange)="purchaseCost.set($event)"
+              min="0" 
+              step="0.01"
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono" />
+          </div>
+        </div>
+
+        <!-- Fecha de Vencimiento -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vencimiento</label>
+          <input 
+            type="date" 
+            [ngModel]="purchaseVencimiento()" 
+            (ngModelChange)="purchaseVencimiento.set($event)"
+            class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono" />
+        </div>
+
+        <!-- Botón Añadir -->
+        <button 
+          (click)="addToCart()"
+          [disabled]="!selectedInsumo()"
+          class="w-full bg-[#005faf] hover:bg-[#004786] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white h-11 rounded-md font-semibold text-sm flex items-center justify-center gap-2 transition duration-150 ease-in-out cursor-pointer mt-4 shadow-sm">
+          <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
+          Añadir al Carrito
+        </button>
+      </div>
+    </div>
+
+    <!-- Carrito y Confirmación (Derecha) -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 lg:col-span-2 flex flex-col justify-between min-h-[400px]">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2 justify-between">
+          <span class="flex items-center gap-2">
+            <lucide-icon [name]="icons.Package" class="text-[#005faf] w-5 h-5"></lucide-icon>
+            Lista de Ítems a Ingresar
+          </span>
+          <span class="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded-full font-bold">
+            {{ cart().length }} Ítems
+          </span>
+        </h2>
+
+        <!-- Tabla de Carrito -->
+        <div *ngIf="cart().length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400">
+          <lucide-icon [name]="icons.Package" class="w-12 h-12 mb-3 text-slate-300"></lucide-icon>
+          <p class="text-sm">No hay ítems en el carrito. Utiliza el formulario de la izquierda para agregar.</p>
+        </div>
+
+        <div *ngIf="cart().length > 0" class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-bold">
+                <th class="py-3 px-4">Código</th>
+                <th class="py-3 px-4">Producto</th>
+                <th class="py-3 px-4 text-right">Cant.</th>
+                <th class="py-3 px-4 text-right">Costo (USD)</th>
+                <th class="py-3 px-4 text-center">Vencimiento</th>
+                <th class="py-3 px-4 text-right">Total (USD)</th>
+                <th class="py-3 px-4 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of cart(); let idx = index" class="border-b border-slate-100 hover:bg-slate-50 text-sm">
+                <td class="py-3 px-4 font-mono font-semibold">{{ item.codigo }}</td>
+                <td class="py-3 px-4">
+                  <div class="font-medium text-slate-900">{{ item.nombre }}</div>
+                </td>
+                <td class="py-3 px-4 text-right font-mono font-semibold">{{ item.cantidad }}</td>
+                <td class="py-3 px-4 text-right font-mono">${{ item.precioCostoUSD | number:'1.2-2' }}</td>
+                <td class="py-3 px-4 text-center font-mono">
+                  {{ item.fechaVencimiento ? (item.fechaVencimiento | date:'dd/MM/yyyy') : 'N/A' }}
+                </td>
+                <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                  ${{ item.totalUSD | number:'1.2-2' }}
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <button 
+                    (click)="removeFromCart(idx)"
+                    class="text-slate-400 hover:text-[#af101a] p-1 rounded-md hover:bg-slate-100 transition cursor-pointer">
+                    <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Barra de Resumen y Confirmación -->
+      <div *ngIf="cart().length > 0" class="mt-6 border-t border-slate-100 pt-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 p-4 rounded-lg">
+        <div class="text-slate-700">
+          <span class="text-sm font-medium">Total de la Compra:</span>
+          <span class="text-xl font-extrabold text-[#005faf] font-mono ml-2">
+            ${{ cartTotal() | number:'1.2-2' }} USD
+          </span>
+        </div>
+        <button 
+          (click)="submitPurchase()"
+          [disabled]="isSubmittingPurchase()"
+          class="w-full md:w-auto bg-[#af101a] hover:bg-[#930010] text-white px-6 py-3 rounded-md font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition duration-150 ease-in-out cursor-pointer">
+          <lucide-icon *ngIf="!isSubmittingPurchase()" [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+          <lucide-icon *ngIf="isSubmittingPurchase()" [name]="icons.RefreshCcw" class="w-4 h-4 animate-spin"></lucide-icon>
+          Registrar Entrada de Inventario
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: APROBAR PEDIDOS PENDIENTES -->
+  <div *ngIf="activeTab() === 'pending'" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 min-h-[400px]">
+    <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+      <lucide-icon [name]="icons.FileText" class="text-[#005faf] w-5 h-5"></lucide-icon>
+      Solicitudes de Traslado Pendientes
+    </h2>
+
+    <div *ngIf="pedidosPendientes().length === 0" class="flex flex-col items-center justify-center py-20 text-slate-400">
+      <lucide-icon [name]="icons.FileText" class="w-16 h-16 mb-3 text-slate-300"></lucide-icon>
+      <p class="text-sm font-medium">No hay pedidos de traslado pendientes de aprobación.</p>
+    </div>
+
+    <div *ngIf="pedidosPendientes().length > 0" class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-bold">
+            <th class="py-3 px-4">Correlativo</th>
+            <th class="py-3 px-4">Sede Solicitante</th>
+            <th class="py-3 px-4">Sede Proveedora</th>
+            <th class="py-3 px-4">Fecha Creación</th>
+            <th class="py-3 px-4">Ítems Solicitados</th>
+            <th class="py-3 px-4">Observaciones</th>
+            <th class="py-3 px-4 text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of pedidosPendientes()" class="border-b border-slate-100 hover:bg-slate-50 text-sm">
+            <td class="py-3 px-4 font-mono font-bold text-[#005faf]">{{ p.correlativo }}</td>
+            <td class="py-3 px-4 font-semibold text-slate-900">{{ p.sedeSolicitanteNombre }}</td>
+            <td class="py-3 px-4 text-slate-600">{{ p.sedeProveedoraNombre }}</td>
+            <td class="py-3 px-4 font-mono">{{ p.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="py-3 px-4">
+              <div class="space-y-1">
+                <div *ngFor="let det of p.detalles" class="text-xs">
+                  <span class="font-semibold text-slate-800">{{ det.insumoNombre }}</span>
+                  <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded ml-1 font-mono font-semibold">
+                    x{{ det.cantidadSolicitada }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4 text-xs italic text-slate-500">{{ p.observaciones || 'Sin observaciones' }}</td>
+            <td class="py-3 px-4 text-center">
+              <button 
+                (click)="approvePedido(p.id)"
+                class="bg-[#005faf] hover:bg-[#004786] text-white px-3 py-1.5 rounded-md font-semibold text-xs flex items-center justify-center gap-1.5 transition duration-150 ease-in-out cursor-pointer mx-auto shadow-sm">
+                <lucide-icon [name]="icons.Check" class="w-3.5 h-3.5"></lucide-icon>
+                Aprobar y Despachar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: CRUD CATÁLOGO (CRUD) -->
+  <div *ngIf="activeTab() === 'crud'" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 min-h-[400px]">
+    <!-- Buscador del CRUD -->
+    <div class="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div class="relative w-full md:w-96">
+        <input 
+          type="text" 
+          [ngModel]="crudSearchTerm()"
+          (ngModelChange)="crudSearchTerm.set($event)"
+          placeholder="Buscar por código, nombre o reactivo..." 
+          class="w-full h-11 pl-10 pr-4 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white" />
+        <lucide-icon [name]="icons.Search" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></lucide-icon>
+      </div>
+      <div class="text-xs text-slate-500 font-medium">
+        Mostrando {{ filteredInsumosCatalog().length }} de {{ insumos().length }} productos.
+      </div>
+    </div>
+
+    <!-- Tabla del Catálogo Clínico -->
+    <div *ngIf="filteredInsumosCatalog().length === 0" class="flex flex-col items-center justify-center py-20 text-slate-400">
+      <lucide-icon [name]="icons.Package" class="w-16 h-16 mb-3 text-slate-300"></lucide-icon>
+      <p class="text-sm">No se encontraron productos que coincidan con la búsqueda.</p>
+    </div>
+
+    <div *ngIf="filteredInsumosCatalog().length > 0" class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50 text-slate-600 text-xs uppercase tracking-wider font-bold">
+            <th class="py-3 px-4 text-center w-12">Imagen</th>
+            <th class="py-3 px-4 text-center w-12">Pedir</th>
+            <th class="py-3 px-4">Código</th>
+            <th class="py-3 px-4 w-1/3">Nombre del Producto</th>
+            <th class="py-3 px-4 text-center">U.M.</th>
+            <th class="py-3 px-4 text-center">Vencimiento</th>
+            <th class="py-3 px-4 text-right">Existencia</th>
+            <th class="py-3 px-4 text-right">Costo (USD)</th>
+            <th class="py-3 px-4 text-center">Estado Envíos</th>
+            <th class="py-3 px-4 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            *ngFor="let item of filteredInsumosCatalog()" 
+            [class.bg-slate-50]="item.ocultoEnTraslados"
+            class="border-b border-slate-100 hover:bg-[#f3faff] text-sm transition">
+            <!-- Imagen (Icono genérico) -->
+            <td class="py-3 px-4 text-center">
+              <lucide-icon [name]="icons.Package" class="text-slate-400 w-5 h-5 mx-auto"></lucide-icon>
+            </td>
+            <!-- Pedir (Checkbox) -->
+            <td class="py-3 px-4 text-center">
+              <input type="checkbox" class="w-4 h-4 rounded text-[#005faf] border-slate-300 focus:ring-[#005faf]" />
+            </td>
+            <!-- Código -->
+            <td class="py-3 px-4 font-mono font-semibold text-slate-800">{{ item.codigo }}</td>
+            <!-- Nombre del Producto + Reactivos + Indicaciones -->
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">{{ item.nombre }}</div>
+              <!-- Principios activos/Reactivos combinados -->
+              <div *ngIf="item.reactivosCombinados" class="text-xs text-[#005faf] font-medium mt-1 flex items-center gap-1">
+                <span class="bg-[#005faf]/10 px-1.5 py-0.5 rounded">Fórmula: {{ item.reactivosCombinados }}</span>
+              </div>
+              <!-- Indicaciones -->
+              <div *ngIf="item.indicaciones" class="text-xs text-slate-500 mt-0.5 font-sans">
+                {{ item.indicaciones }}
+              </div>
+            </td>
+            <!-- Unidad de Medida -->
+            <td class="py-3 px-4 text-center font-medium">{{ item.unidadMedidaBase }}</td>
+            <!-- Vencimiento -->
+            <td class="py-3 px-4 text-center font-mono text-xs">
+              {{ item.fechaVencimiento ? (item.fechaVencimiento | date:'dd/MM/yyyy') : 'N/A' }}
+            </td>
+            <!-- Existencia -->
+            <td class="py-3 px-4 text-right font-mono font-bold" [class.text-[#af101a]]="item.stockActual <= 0">
+              {{ item.stockActual | number }}
+            </td>
+            <!-- Precio/Costo Unitario -->
+            <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">
+              ${{ item.costoUnitarioBaseUSD | number:'1.2-2' }}
+            </td>
+            <!-- Estado de Envíos -->
+            <td class="py-3 px-4 text-center">
+              <span 
+                [class]="item.ocultoEnTraslados ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'"
+                class="px-2.5 py-1 rounded-full text-xs font-bold shadow-xs">
+                {{ item.ocultoEnTraslados ? 'Oculto para Envíos' : 'Activo' }}
+              </span>
+            </td>
+            <!-- Acciones -->
+            <td class="py-3 px-4 text-center">
+              <div class="flex gap-2 justify-center">
+                <button 
+                  (click)="openEditModal(item)"
+                  class="text-[#005faf] hover:text-[#004786] p-1.5 rounded-md hover:bg-slate-100 transition cursor-pointer"
+                  title="Editar">
+                  <lucide-icon [name]="icons.Edit" class="w-4 h-4"></lucide-icon>
+                </button>
+                <button 
+                  (click)="toggleInsumoOculto(item)"
+                  [class]="item.ocultoEnTraslados ? 'text-emerald-500 hover:text-emerald-700' : 'text-amber-500 hover:text-amber-700'"
+                  class="p-1.5 rounded-md hover:bg-slate-100 transition cursor-pointer"
+                  [title]="item.ocultoEnTraslados ? 'Restaurar para envíos' : 'Ocultar para envíos'">
+                  <lucide-icon [name]="item.ocultoEnTraslados ? icons.Check : icons.Trash2" class="w-4 h-4"></lucide-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL DIALOG CRUD (NUEVO / EDITAR) -->
+  <div *ngIf="showCrudModal()" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl border border-slate-200 w-full max-w-xl overflow-hidden animate-zoomIn">
+      <!-- Encabezado Modal -->
+      <div class="bg-[#005faf] text-white px-6 py-4 flex justify-between items-center">
+        <h3 class="text-base font-bold flex items-center gap-2">
+          <lucide-icon [name]="icons.Package" class="w-5 h-5"></lucide-icon>
+          {{ isEditingCrud() ? 'Editar Insumo Médico' : 'Crear Nuevo Insumo' }}
+        </h3>
+        <button (click)="closeCrudModal()" class="text-white hover:text-slate-200 transition cursor-pointer">
+          <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+
+      <!-- Contenido Modal -->
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Código (Solo lectura si es edición) -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Código del Insumo</label>
+            <input 
+              type="text" 
+              [(ngModel)]="crudForm.codigo" 
+              [disabled]="isEditingCrud()"
+              placeholder="Ej: PM-500"
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono disabled:bg-slate-100 disabled:text-slate-500" />
+          </div>
+          <!-- Categoría -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Categoría</label>
+            <select 
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white">
+              <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Nombre -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nombre Comercial / Producto</label>
+          <input 
+            type="text" 
+            [(ngModel)]="crudForm.nombre" 
+            placeholder="Ej: Paracetamol + Ibuprofeno"
+            class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-semibold" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Unidad de Medida -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Unidad de Medida (U.M.)</label>
+            <select 
+              [(ngModel)]="crudForm.unidadMedidaBase"
+              [disabled]="isEditingCrud()"
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white">
+              <option *ngFor="let u of unidadesMedida" [value]="u">{{ u }}</option>
+            </select>
+          </div>
+          <!-- Costo Base USD -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Costo Unitario Base (USD)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="crudForm.costoUnitarioBaseUSD" 
+              min="0"
+              step="0.01"
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Stock Inicial (Solo Visible en Creación) -->
+          <div *ngIf="!isEditingCrud()">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Stock Inicial</label>
+            <input 
+              type="number" 
+              [(ngModel)]="crudForm.stockInicial" 
+              min="0"
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono" />
+          </div>
+          <!-- Fecha de Vencimiento -->
+          <div [class.col-span-2]="isEditingCrud()">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Fecha Vencimiento</label>
+            <input 
+              type="date" 
+              [(ngModel)]="crudForm.fechaVencimiento" 
+              class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white font-mono" />
+          </div>
+        </div>
+
+        <!-- Reactivos combinados -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Principios Activos / Reactivos (Fórmula)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="crudForm.reactivosCombinados" 
+            placeholder="Ej: Acetaminofen, Ibuprofeno (separados por coma)"
+            class="w-full h-11 px-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white" />
+        </div>
+
+        <!-- Indicaciones -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Indicaciones de Uso / Almacenamiento</label>
+          <textarea 
+            [(ngModel)]="crudForm.indicaciones" 
+            placeholder="Ej: Conservar a menos de 25 grados..."
+            rows="2"
+            class="w-full p-3 border border-slate-300 rounded-md focus:outline-none focus:border-[#005faf] text-sm bg-white"></textarea>
+        </div>
+      </div>
+
+      <!-- Pie Modal -->
+      <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">
+        <button 
+          (click)="closeCrudModal()"
+          class="border border-slate-300 hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-md font-semibold text-sm cursor-pointer transition">
+          Cancelar
+        </button>
+        <button 
+          (click)="saveCrudItem()"
+          class="bg-[#005faf] hover:bg-[#004786] text-white px-5 py-2 rounded-md font-semibold text-sm flex items-center gap-2 cursor-pointer shadow-sm transition">
+          <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

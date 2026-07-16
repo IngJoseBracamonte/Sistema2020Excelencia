@@ -217,7 +217,7 @@ export class PedidosInterSedeComponent implements OnInit {
         this.newPedido.sedeSolicitanteId = principal.id;
       }
     });
-    this.inventoryService.getInsumos().subscribe(res => {
+    this.inventoryService.getInsumos(true).subscribe(res => {
       this.insumos = res;
       if (res.length > 0) this.selectedInsumoId = res[0].id;
     });

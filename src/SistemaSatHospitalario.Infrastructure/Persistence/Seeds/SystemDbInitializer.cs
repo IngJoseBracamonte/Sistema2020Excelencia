@@ -672,7 +672,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
             var sedesDef = new[]
             {
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "PRINCIPAL",       Nombre: "Sede Principal Hospitalaria",    EsPrincipal: true),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "PRINCIPAL",       Nombre: "Almacen Principal",    EsPrincipal: true),
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia,      Codigo: "EMERGENCIA",      Nombre: "Área de Emergencia",             EsPrincipal: false),
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, Codigo: "HOSPITALIZACION", Nombre: "Área de Hospitalización",        EsPrincipal: false),
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos",  EsPrincipal: false)
@@ -798,7 +798,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             {
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Emergencia,      SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia,      Codigo: "EMERGENCIA",      Nombre: "Área de Emergencia"),
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Hospitalizacion, SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, Codigo: "HOSPITALIZACION", Nombre: "Área de Hospitalización"),
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_UCI,             SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos")
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_UCI,             SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos"),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Farmacia,        SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "FARMACIA",        Nombre: "Farmacia"),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Laboratorio,     SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "LABORATORIO",     Nombre: "Laboratorio")
             };
 
             foreach (var def in areasDef)

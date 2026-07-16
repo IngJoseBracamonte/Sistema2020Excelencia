@@ -10,7 +10,8 @@ import {
   UpdateInsumo, 
   RecordMovement, 
   PerformClosing, 
-  CreateRecipe 
+  CreateRecipe,
+  RecordPurchase
 } from '../models/inventory.model';
 
 @Injectable({ providedIn: 'root' })
@@ -18,8 +19,15 @@ export class InventoryService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/inventory`;
 
-  getInsumos(): Observable<Insumo[]> {
-    return this.http.get<Insumo[]>(`${this.apiUrl}/insumos`);
+  getInsumos(excludeHidden?: boolean, search?: string): Observable<Insumo[]> {
+    let params: any = {};
+    if (excludeHidden !== undefined) {
+      params.excludeHidden = excludeHidden.toString();
+    }
+    if (search) {
+      params.search = search;
+    }
+    return this.http.get<Insumo[]>(`${this.apiUrl}/insumos`, { params });
   }
 
   getStockPorSede(sedeId: string): Observable<any[]> {
@@ -56,5 +64,17 @@ export class InventoryService {
 
   deleteRecipe(id: string): Observable<any> {
     return this.http.delete<any>(`${`${this.apiUrl}/recetas`}/${id}`);
+  }
+
+  deleteInsumo(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/insumos/${id}`);
+  }
+
+  restoreInsumo(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/insumos/${id}/restaurar`, {});
+  }
+
+  recordPurchase(dto: RecordPurchase): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/compras`, dto);
   }
 }

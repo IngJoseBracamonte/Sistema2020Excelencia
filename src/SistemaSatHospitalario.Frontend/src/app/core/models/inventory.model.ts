@@ -5,6 +5,10 @@ export interface Insumo {
   stockActual: number;
   unidadMedidaBase: string;
   costoUnitarioBaseUSD: number;
+  reactivosCombinados?: string;
+  indicaciones?: string;
+  fechaVencimiento?: string;
+  ocultoEnTraslados?: boolean;
 }
 
 export interface MovimientoInsumo {
@@ -61,11 +65,17 @@ export interface CreateInsumo {
   stockInicial: number;
   unidadMedidaBase: string;
   costoUnitarioBaseUSD: number;
+  reactivosCombinados?: string;
+  indicaciones?: string;
+  fechaVencimiento?: string;
 }
 
 export interface UpdateInsumo {
   nombre: string;
   costoUnitarioBaseUSD: number;
+  reactivosCombinados?: string;
+  indicaciones?: string;
+  fechaVencimiento?: string;
 }
 
 export interface RecordMovement {
@@ -90,4 +100,16 @@ export interface CreateRecipe {
   insumoId: string;
   cantidad: number;
   unidadMedidaConsumo: string;
+}
+
+export interface PurchaseItem {
+  insumoId: string;
+  cantidad: number;
+  precioCostoUSD: number;
+  fechaVencimiento?: string;
+}
+
+export interface RecordPurchase {
+  sedeId: string;
+  items: PurchaseItem[];
 }
