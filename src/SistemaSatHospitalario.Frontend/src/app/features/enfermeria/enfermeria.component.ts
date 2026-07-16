@@ -50,6 +50,8 @@ export interface CuentaAdministrativa {
   convenioId: number | null;
   seguroNombre?: string;
   total?: number;
+  areaClinicaId?: string;
+  areaClinicaNombre?: string;
   [key: string]: any;
 }
 
