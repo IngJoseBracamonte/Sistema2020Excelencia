@@ -32,7 +32,8 @@ describe('AccountModificationComponent', () => {
         honorario: 20,
         cantidad: 1,
         tipoServicio: 'Medico',
-        fechaCarga: new Date().toISOString()
+        fechaCarga: new Date().toISOString(),
+        incluidoEnTarifaBase: false
       }
     ]
   };

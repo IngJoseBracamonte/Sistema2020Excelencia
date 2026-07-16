@@ -13,6 +13,8 @@ const IS_RX_ASSISTANT = 'isRxAssistant';
 const IS_TOMOGRAPHY_ASSISTANT = 'isTomographyAssistant';
 const IS_SUPERVISOR = 'isSupervisor';
 const IS_INVENTORY_SUPERVISOR = 'isInventorySupervisor';
+const IS_EMERGENCY_ASSISTANT = 'isEmergencyAssistant';
+const IS_HOSPITAL_ASSISTANT = 'isHospitalAssistant';
 
 describe('SidebarComponent', () => {
     let component: SidebarComponent;
@@ -36,7 +38,9 @@ describe('SidebarComponent', () => {
             isRxAssistant: jasmine.createSpy(IS_RX_ASSISTANT).and.returnValue(false),
             isTomographyAssistant: jasmine.createSpy(IS_TOMOGRAPHY_ASSISTANT).and.returnValue(false),
             isSupervisor: jasmine.createSpy(IS_SUPERVISOR).and.returnValue(false),
-            isInventorySupervisor: jasmine.createSpy(IS_INVENTORY_SUPERVISOR).and.returnValue(false)
+            isInventorySupervisor: jasmine.createSpy(IS_INVENTORY_SUPERVISOR).and.returnValue(false),
+            isEmergencyAssistant: jasmine.createSpy(IS_EMERGENCY_ASSISTANT).and.returnValue(false),
+            isHospitalAssistant: jasmine.createSpy(IS_HOSPITAL_ASSISTANT).and.returnValue(false)
         };
 
 
