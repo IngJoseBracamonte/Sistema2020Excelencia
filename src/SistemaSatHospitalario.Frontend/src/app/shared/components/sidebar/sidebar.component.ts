@@ -123,4 +123,12 @@ export class SidebarComponent implements OnInit {
     isSupervisor(): boolean {
         return this.auth.isSupervisor();
     }
+
+    isEmergencyAssistant(): boolean {
+        return this.auth.isEmergencyAssistant();
+    }
+
+    isHospitalAssistant(): boolean {
+        return this.auth.isHospitalAssistant();
+    }
 }

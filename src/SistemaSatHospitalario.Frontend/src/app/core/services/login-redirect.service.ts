@@ -31,7 +31,7 @@ export class LoginRedirectService {
     },
     {
       applies: () => this.authService.isHospitalAssistant(),
-      getRoute: () => ['/enfermeria']
+      getRoute: () => ['/cierre-cuenta/Hospitalizacion']
     },
     {
       applies: () => true, // Fallback/Default

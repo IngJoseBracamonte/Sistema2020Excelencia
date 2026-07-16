@@ -11,15 +11,21 @@
     <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar pb-10">
         <div class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mb-4 opacity-60">Menu Principal</div>
         
-        <a routerLink="/dashboard" routerLinkActive="active-link" class="nav-item flex items-center">
+        <a *ngIf="!((isEmergencyAssistant() || isHospitalAssistant()) && !isAdmin() && !isParticularAssistant() && !isInsuranceAssistant() && !isSupervisor())" routerLink="/dashboard" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.Dashboard" class="w-5 h-5 mr-3"></lucide-icon>
             <span class="font-bold">Panel de Control</span>
         </a>
 
         <!-- Módulo de Enfermería -->
-        <a *ngIf="isAdmin() || auth.isHospitalAssistant() || auth.isEmergencyAssistant() || permissionService.can('Permissions.Facturacion.View')" routerLink="/enfermeria" routerLinkActive="active-link" class="nav-item flex items-center">
+        <a *ngIf="isAdmin() || isEmergencyAssistant() || permissionService.can('Permissions.Facturacion.View')" routerLink="/enfermeria" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.Enfermeria" class="w-5 h-5 mr-3 text-rose-500"></lucide-icon>
             <span class="font-bold">Módulo Enfermería</span>
+        </a>
+
+        <!-- Enlace Directo a Cuentas Hospitalarias para Hospital Assistant -->
+        <a *ngIf="isHospitalAssistant() && !isAdmin() && !isParticularAssistant() && !isInsuranceAssistant() && !isSupervisor()" routerLink="/cierre-cuenta/Hospitalizacion" routerLinkActive="active-link" class="nav-item flex items-center">
+            <lucide-icon [name]="icons.Billing" class="w-5 h-5 mr-3 text-indigo-500"></lucide-icon>
+            <span class="font-bold">Cuentas Hospitalarias</span>
         </a>
 
 

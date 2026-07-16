@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { NgFor, NgIf, NgClass, DecimalPipe, DatePipe, PercentPipe, NgTemplateOutlet } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { SignalrService } from '../../core/services/signalr.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService, BusinessInsights } from '../../core/services/dashboard.service';
@@ -20,6 +20,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public dashboardService = inject(DashboardService);
   public cajaService = inject(CajaService);
   public settingsService = inject(SettingsService);
+  private router = inject(Router);
 
   private jwtToken = this.authService.getToken() || '';
   private tasaSubscription?: Subscription;
@@ -55,6 +56,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public tasa = signal<number>(0);
 
   ngOnInit(): void {
+    const isExclusiveEmergency = this.isEmergencyAssistant() && !this.isAdmin() && !this.isParticularAssistant() && !this.isInsuranceAssistant() && !this.authService.isSupervisor();
+    const isExclusiveHospital = this.isHospitalAssistant() && !this.isAdmin() && !this.isParticularAssistant() && !this.isInsuranceAssistant() && !this.authService.isSupervisor();
+
+    if (isExclusiveEmergency) {
+      this.router.navigate(['/enfermeria']);
+      return;
+    }
+    if (isExclusiveHospital) {
+      this.router.navigate(['/cierre-cuenta/Hospitalizacion']);
+      return;
+    }
+
     if (this.jwtToken) {
       const role = this.authService.currentUser()?.role || '';
       this.signalRService.startConnection(this.jwtToken, role);
