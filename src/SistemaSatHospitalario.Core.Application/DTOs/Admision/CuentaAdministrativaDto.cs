@@ -18,6 +18,8 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal Total { get; set; }
         public Guid? ReciboId { get; set; }
         public string? NumeroRecibo { get; set; }
+        public Guid? AreaClinicaId { get; set; }
+        public string? AreaClinicaNombre { get; set; }
         
         public List<CuentaAdministrativaDetailDto> Detalles { get; set; } = new();
     }

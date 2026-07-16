@@ -125,6 +125,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public selectedPatientForIngreso = signal<PatientRecord | null>(null);
   public convenioIngresoId = signal<number | null>(null);
   public showNewPatientForm = signal<boolean>(false);
+  public selectedCamaId = signal<string | null>(null);
+  public camasDisponibles = signal<AreaClinica[]>([]);
 
   // Step admission & Triage Signals
   public ingresoStep = signal<number>(1);
@@ -355,7 +357,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       const status = statuses[seed % statuses.length];
       
       const roomType = this.type() === 'Hospitalizacion' ? 'Hab.' : 'Box';
-      const room = `${roomType} ${100 + (seed % 15)}${String.fromCharCode(65 + (seed % 3))}`;
+      const room = acc.areaClinicaNombre || `${roomType} ${100 + (seed % 15)}${String.fromCharCode(65 + (seed % 3))}`;
       
       let statusClass = 'text-rose-500 bg-rose-500/10 border border-rose-500/20';
       if (status === 'Estable') {
@@ -622,6 +624,14 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       this.loadOpenAccounts();
     });
 
+    // 3.1 Suscribirse a los queryParams para auto-seleccionar paciente
+    this.route.queryParams.subscribe(queryParams => {
+      const cedula = queryParams['cedula'];
+      if (cedula) {
+        this.searchTerm.set(cedula);
+      }
+    });
+
     // 4. Cargar catálogo unificado de servicios/medicamentos
     this.http.get<any[]>(`${environment.apiUrl}/api/Catalog/unified`)
       .subscribe({
@@ -637,10 +647,18 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       error: (err) => console.error('[CIERRE-CUENTA] Error al cargar médicos:', err)
     });
 
-    // 6. Cargar áreas clínicas
-    this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
-      next: (res) => this.areasClinicas.set(res.filter(a => a.activo)),
-      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar áreas clínicas:', err)
+    // 6. Cargar áreas clínicas (camas)
+    this.loadCamasDisponibles();
+  }
+
+  public loadCamasDisponibles() {
+    this.http.get<any[]>(`${environment.apiUrl}/api/AreaClinica/monitoreo`).subscribe({
+      next: (res) => {
+        // Almacenar todas las camas y filtrar las disponibles
+        const libres = res.filter((c: any) => c.estado === 'Disponible');
+        this.camasDisponibles.set(libres);
+      },
+      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar áreas clínicas/camas:', err)
     });
   }
 
@@ -666,6 +684,15 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
             this.selectedAccount.set(updated);
           } else {
             this.selectedAccount.set(null); // Si ya se cerró/no está, deseleccionar
+          }
+        } else {
+          // Auto-seleccionar cuenta basada en queryParam de cédula
+          const cedulaParam = this.route.snapshot.queryParams['cedula'];
+          if (cedulaParam) {
+            const matchedAcc = res.find(acc => acc.pacienteCedula === cedulaParam);
+            if (matchedAcc) {
+              this.selectAccount(matchedAcc);
+            }
           }
         }
 
@@ -1051,6 +1078,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.selectedPatientForIngreso.set(null);
     this.convenioIngresoId.set(null);
     this.showNewPatientForm.set(false);
+    this.selectedCamaId.set(null);
+    this.loadCamasDisponibles();
     this.newPatientData = {
       cedula: '',
       nombre: '',
@@ -1175,7 +1204,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   }
 
   private abrirCuentaParaPaciente(pacienteId: string) {
-    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId()).subscribe({
+    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId(), this.selectedCamaId()).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.showIngresoModal.set(false);
@@ -1205,7 +1234,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
 
     // 1. Abrir la cuenta clínica
-    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId()).subscribe({
+    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId(), this.selectedCamaId()).subscribe({
       next: (res: any) => {
         const cuentaId = res.cuentaId || res.id;
         if (!cuentaId) {

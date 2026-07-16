@@ -133,8 +133,8 @@ export class FacturacionService {
     return this.http.post<any>(`${this.billingUrl}/CloseAccount`, request);
   }
 
-  abrirCuenta(pacienteId: string, tipoIngreso: string, convenioId?: number | null): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/AbrirCuenta`, { pacienteId, tipoIngreso, convenioId });
+  abrirCuenta(pacienteId: string, tipoIngreso: string, convenioId?: number | null, areaClinicaId?: string | null): Observable<any> {
+    return this.http.post<any>(`${this.billingUrl}/AbrirCuenta`, { pacienteId, tipoIngreso, convenioId, areaClinicaId });
   }
 
   updateARMetadata(request: any): Observable<any> {

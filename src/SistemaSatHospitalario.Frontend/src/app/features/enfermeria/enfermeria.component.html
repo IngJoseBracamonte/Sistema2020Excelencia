@@ -199,10 +199,15 @@
                                 <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre | uppercase }}</option>
                             </select>
                         </div>
-                        <div class="flex flex-col justify-end">
-                            <p class="text-[9px] text-slate-500 font-bold leading-relaxed">
-                                El paciente será ingresado al área de **{{ type() | uppercase }}**. Al procesar, el sistema creará un expediente clínico activo para comenzar a cargar signos vitales, medicamentos e insumos médicos.
-                            </p>
+                        <div>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Cama / Habitación Asignada</label>
+                            <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
+                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
+                                <option [value]="null">--- SELECCIONAR CAMA ---</option>
+                                <option *ngFor="let cama of camasDisponibles()" [value]="cama.camaId">
+                                    {{ cama.nombre }} ({{ cama.codigo }})
+                                </option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -620,6 +625,9 @@
                                 <span class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-[8px] font-black uppercase tracking-widest">
                                     {{ acc.tipoIngreso }}
                                 </span>
+                                <span *ngIf="acc.areaClinicaNombre" class="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-[8px] font-black uppercase tracking-widest">
+                                    {{ acc.areaClinicaNombre }}
+                                </span>
                                 <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
                                     {{ acc.seguroNombre }}
                                 </span>
@@ -680,6 +688,8 @@
                             <span class="font-mono">Cédula: {{ selectedAccount()?.pacienteCedula }}</span>
                             <span class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
                             <span>Seguro: {{ selectedAccount()?.seguroNombre || 'PARTICULAR' }}</span>
+                            <span *ngIf="selectedAccount()?.areaClinicaNombre" class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
+                            <span *ngIf="selectedAccount()?.areaClinicaNombre">Cama: {{ selectedAccount()?.areaClinicaNombre }}</span>
                         </div>
                     </div>
                     
@@ -1200,6 +1210,18 @@
                                 <select [(ngModel)]="nuevoConvenioId" class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
                                     <option [value]="null" class="bg-[#152035]">PARTICULAR / SIN SEGURO</option>
                                     <option *ngFor="let c of convenios()" [value]="c.id" class="bg-[#152035]">{{ c.nombre | uppercase }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Selector de Cama Física Destino (Solo si no es Alta) -->
+                            <div class="space-y-2 col-span-1 md:col-span-2" *ngIf="!esEgreso">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar Cama / Habitación Destino</label>
+                                <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
+                                        class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
+                                    <option [value]="null" class="bg-[#152035]">--- SELECCIONAR CAMA ---</option>
+                                    <option *ngFor="let cama of camasDisponibles()" [value]="cama.camaId" class="bg-[#152035]">
+                                        {{ cama.nombre }} ({{ cama.codigo }})
+                                    </option>
                                 </select>
                             </div>
                         </div>

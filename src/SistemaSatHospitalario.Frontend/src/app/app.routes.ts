@@ -24,6 +24,7 @@ export const routes: Routes = [
             { path: 'cajas', loadComponent: () => import('./features/admision/cajas/cajas.component').then(m => m.CajasComponent) },
             { path: 'facturacion', loadComponent: () => import('./features/admision/facturacion/facturacion.component').then(m => m.FacturacionComponent) },
             { path: 'cierre-cuenta/:type', loadComponent: () => import('./features/admision/cierre-cuenta/cierre-cuenta.component').then(m => m.CierreCuentaComponent) },
+            { path: 'admision/hospitalizacion', loadComponent: () => import('./features/admision/hospitalizacion/hospitalizacion.component').then(m => m.HospitalizacionComponent) },
             { path: 'processing-monitor', loadComponent: () => import('./features/admision/processing-monitor/processing-monitor.component').then(m => m.ProcessingMonitorComponent) },
             { path: 'cxc', loadComponent: () => import('./features/admision/receivables/receivables.component').then(m => m.ReceivablesComponent) },
             { path: 'expediente-facturacion', loadComponent: () => import('./features/admision/expediente/expediente-facturacion.component').then(m => m.ExpedienteFacturacionComponent) },

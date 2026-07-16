@@ -278,6 +278,8 @@ export class EnfermeriaComponent implements OnInit {
   public patientsEncontrados = signal<PatientRecord[]>([]);
   public selectedPatientForIngreso = signal<PatientRecord | null>(null);
   public convenioIngresoId = signal<number | null>(null);
+  public selectedCamaId = signal<string | null>(null);
+  public camasDisponibles = signal<AreaClinica[]>([]);
   public errorMessage = signal<string | null>(null);
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
 
@@ -511,6 +513,17 @@ export class EnfermeriaComponent implements OnInit {
   ngOnInit(): void {
     this.refreshAccounts();
     this.loadCatalogAndConvenios();
+    this.loadCamasDisponibles();
+  }
+
+  public loadCamasDisponibles() {
+    this.http.get<any[]>(`${environment.apiUrl}/api/AreaClinica/monitoreo`).subscribe({
+      next: (res) => {
+        const libres = res.filter((c: any) => c.estado === 'Disponible');
+        this.camasDisponibles.set(libres);
+      },
+      error: (err) => console.error('[ENFERMERIA] Error al cargar áreas clínicas/camas:', err)
+    });
   }
 
   public refreshAccounts(): void {
@@ -1033,7 +1046,8 @@ export class EnfermeriaComponent implements OnInit {
       nuevoTipoIngreso: this.esEgreso ? 'Particular' : this.nuevoTipoIngreso, // Alta closes only
       nuevoConvenioId: this.esEgreso ? null : this.nuevoConvenioId,
       usuarioTraslado: '', // Se sobreescribe en Backend
-      esEgreso: this.esEgreso
+      esEgreso: this.esEgreso,
+      nuevaAreaClinicaId: this.esEgreso ? null : this.selectedCamaId()
     };
 
     this.http.post(`${environment.apiUrl}/api/Enfermeria/Traslado`, payload)
@@ -1100,6 +1114,8 @@ export class EnfermeriaComponent implements OnInit {
     this.selectedPatientForIngreso.set(null);
     this.convenioIngresoId.set(null);
     this.showNewPatientForm.set(false);
+    this.selectedCamaId.set(null);
+    this.loadCamasDisponibles();
     this.newPatientData = {
       cedula: '',
       nombre: '',
@@ -1232,7 +1248,7 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   private abrirCuentaParaPaciente(pacienteId: string) {
-    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId()).subscribe({
+    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId(), this.selectedCamaId()).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.showIngresoModal.set(false);
@@ -1262,7 +1278,7 @@ export class EnfermeriaComponent implements OnInit {
     this.isLoading.set(true);
 
     // 1. Abrir la cuenta clínica
-    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId()).subscribe({
+    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId(), this.selectedCamaId()).subscribe({
       next: (res: any) => {
         const cuentaId = res.cuentaId || res.id;
         if (!cuentaId) {

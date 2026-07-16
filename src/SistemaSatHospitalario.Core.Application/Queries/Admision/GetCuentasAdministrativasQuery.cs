@@ -33,6 +33,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(c => c.Detalles)
                 .Include(c => c.Paciente)
                 .Include(c => c.Convenio)
+                .Include(c => c.AreaClinica)
                 .AsNoTracking();
 
             if (!string.IsNullOrEmpty(request.SearchTerm))
@@ -81,6 +82,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Total = c.CalcularTotal(),
                     ReciboId = recibo?.Id,
                     NumeroRecibo = recibo?.NumeroRecibo,
+                    AreaClinicaId = c.AreaClinicaId,
+                    AreaClinicaNombre = c.AreaClinica?.Nombre,
                     Detalles = c.Detalles.Select(d => new CuentaAdministrativaDetailDto
                     {
                         Id = d.Id,

@@ -29,13 +29,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException($"El paciente con ID {request.PacienteId} no tiene una cuenta activa para realizar el traslado o egreso.");
             }
 
-            // 2. Cerrar administrativamente la cuenta actual
+            // 2. Liberar la cama física anterior si el paciente estaba asignado a una
+            if (cuentaActual.AreaClinicaId.HasValue)
+            {
+                var camaAnterior = await _context.AreasClinicas
+                    .FirstOrDefaultAsync(a => a.Id == cuentaActual.AreaClinicaId.Value, cancellationToken);
+                if (camaAnterior != null)
+                {
+                    camaAnterior.Liberar();
+                }
+            }
+
+            // 3. Cerrar administrativamente la cuenta actual
             cuentaActual.Facturar(); // Cambia el estado a 'Facturada' y guarda la fecha de cierre
 
             Guid? parentCuentaId = cuentaActual.CuentaPrincipalId ?? cuentaActual.Id;
             Guid? nuevaCuentaId = null;
 
-            // 3. Si no es un egreso definitivo (Alta), crear la nueva cuenta (hija) para la nueva ubicación
+            // 4. Si no es un egreso definitivo (Alta), crear la nueva cuenta (hija) para la nueva ubicación
             if (!request.EsEgreso)
             {
                 var nuevaCuenta = new CuentaServicios(
@@ -50,11 +61,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // Enlazar a la cuenta principal
                 nuevaCuenta.VincularCuentaPrincipal(parentCuentaId.Value);
 
+                // Ocupar la nueva cama si fue especificada
+                if (request.NuevaAreaClinicaId.HasValue)
+                {
+                    var nuevaCama = await _context.AreasClinicas
+                        .FirstOrDefaultAsync(a => a.Id == request.NuevaAreaClinicaId.Value, cancellationToken);
+                    if (nuevaCama != null)
+                    {
+                        nuevaCama.MarcarComoOcupada();
+                    }
+                }
+
                 await _context.CuentasServicios.AddAsync(nuevaCuenta, cancellationToken);
                 nuevaCuentaId = nuevaCuenta.Id;
             }
 
-            // 4. Guardar cambios en base de datos
+            // 5. Guardar cambios en base de datos
             await _context.SaveChangesAsync(cancellationToken);
 
             return new TrasladarPacienteResult

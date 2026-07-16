@@ -27,6 +27,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(result);
         }
 
+        [HttpGet("monitoreo")]
+        public async Task<IActionResult> GetCamasMonitoreo()
+        {
+            var result = await _mediator.Send(new GetCamasMonitoreoQuery());
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAreaClinicaCommand command)
         {

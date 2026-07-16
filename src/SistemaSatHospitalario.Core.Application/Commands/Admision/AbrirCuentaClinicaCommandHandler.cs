@@ -105,6 +105,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.MedicoId
             );
 
+            // 5. Marcar la cama física como ocupada si fue especificada
+            if (request.AreaClinicaId.HasValue)
+            {
+                var cama = await _context.AreasClinicas
+                    .FirstOrDefaultAsync(a => a.Id == request.AreaClinicaId.Value, cancellationToken);
+                if (cama != null)
+                {
+                    cama.MarcarComoOcupada();
+                }
+            }
+
             await _context.CuentasServicios.AddAsync(nuevaCuenta, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 

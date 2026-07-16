@@ -1,0 +1,352 @@
+<div class="space-y-6 animate-fade-in p-2 md:p-4 relative z-10">
+    
+    <!-- HEADER GENERAL DE SECCIÓN -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-5 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -z-10 blur-3xl"></div>
+        <div class="flex items-center space-x-6">
+            <div class="h-10 w-10 bg-primary/10 text-primary border border-primary/20 rounded-xl flex items-center justify-center shadow-lg shadow-primary/5">
+                <lucide-icon [name]="icons.Bed" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase">
+                    Modulo de Hospitalización
+                </h1>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">
+                    Monitoreo en tiempo real de camas físicas, estado de ocupación e ingresos clínicos
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3 mt-4 md:mt-0">
+            <button (click)="cargarDatos()" class="h-12 px-5 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center gap-2 border border-white/5 transition-all">
+                <lucide-icon [name]="icons.RefreshCcw" class="w-4 h-4"></lucide-icon>
+                <span class="text-[9px] font-black uppercase tracking-wider">Refrescar</span>
+            </button>
+            <button (click)="showCreateForm.set(true)" class="h-12 px-6 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center gap-2 transition-all active:scale-95">
+                <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
+                <span class="text-[9px] font-black uppercase tracking-wider">Crear Cama</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIONES TOASTS -->
+    <div class="fixed top-8 right-8 z-[110] space-y-4 max-w-sm pointer-events-none">
+        <div *ngIf="actionMessage()" class="pointer-events-auto bg-[#0a0f1d]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-emerald-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
+            <div class="h-10 w-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg">
+                <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-60">Operación Exitosa</p>
+                <p class="text-sm font-black text-white leading-tight mt-0.5">{{ actionMessage() }}</p>
+            </div>
+        </div>
+
+        <div *ngIf="errorMessage()" class="pointer-events-auto bg-[#1a0f16]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-rose-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
+            <div class="h-10 w-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg">
+                <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div class="flex-1">
+                <p class="text-[9px] font-black text-primary uppercase tracking-widest opacity-60">Atención</p>
+                <p class="text-sm font-black text-white leading-tight mt-0.5">{{ errorMessage() }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- METRICAS DE PLANTA -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        
+        <!-- Ocupación -->
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ocupación General</p>
+                <h3 class="text-2xl font-black text-white mt-1">{{ porcentajeOcupacion() }}%</h3>
+                <p class="text-[9px] text-slate-400 mt-0.5">Capacidad física activa</p>
+            </div>
+            <div class="h-12 w-12 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center">
+                <lucide-icon [name]="icons.Activity" class="w-6 h-6"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Camas Disponibles -->
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Camas Disponibles</p>
+                <h3 class="text-2xl font-black text-emerald-400 mt-1">{{ camasDisponiblesCount() }}</h3>
+                <p class="text-[9px] text-slate-400 mt-0.5">Listas para asignación</p>
+            </div>
+            <div class="h-12 w-12 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
+                <lucide-icon [name]="icons.Bed" class="w-6 h-6"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Camas Ocupadas -->
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pacientes Internados</p>
+                <h3 class="text-2xl font-black text-rose-500 mt-1">{{ camasOcupadasCount() }}</h3>
+                <p class="text-[9px] text-slate-400 mt-0.5">En planta de hospitalización</p>
+            </div>
+            <div class="h-12 w-12 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-2xl flex items-center justify-center">
+                <lucide-icon [name]="icons.User" class="w-6 h-6"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Total de Camas -->
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Camas Activas</p>
+                <h3 class="text-2xl font-black text-white mt-1">{{ totalCamas() }}</h3>
+                <p class="text-[9px] text-slate-400 mt-0.5">Inventario de planta</p>
+            </div>
+            <div class="h-12 w-12 bg-white/5 text-white/50 border border-white/10 rounded-2xl flex items-center justify-center">
+                <lucide-icon [name]="icons.Sparkles" class="w-6 h-6"></lucide-icon>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CONTROL DE FILTROS POR SEDE -->
+    <div class="flex flex-wrap items-center justify-between gap-4 bg-surface-card p-4 rounded-[1.5rem] border border-white/5">
+        <div class="flex items-center space-x-2">
+            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-2">Filtrar Sede:</span>
+            <div class="flex flex-wrap gap-2">
+                <button (click)="selectedSedeFilter.set('all')"
+                    [class]="selectedSedeFilter() === 'all' ? 'bg-rose-600 text-white' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'"
+                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
+                    Todas las Sedes
+                </button>
+                <button *ngFor="let s of sedes()" (click)="selectedSedeFilter.set(s.nombre)"
+                    [class]="selectedSedeFilter() === s.nombre ? 'bg-rose-600 text-white' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'"
+                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
+                    {{ s.nombre }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRILLA DE CAMAS FÍSICAS -->
+    <div *ngIf="isLoading()" class="py-20 text-center">
+        <lucide-icon [name]="icons.RefreshCcw" class="w-10 h-10 mx-auto mb-4 animate-spin text-rose-500"></lucide-icon>
+        <p class="text-xs font-black uppercase tracking-widest text-slate-500">Cargando estado de la planta...</p>
+    </div>
+
+    <div *ngIf="!isLoading() && camasFiltradas().length === 0" class="glass-panel p-20 text-center rounded-[2rem] border border-white/5">
+        <lucide-icon [name]="icons.Bed" class="w-12 h-12 mx-auto mb-4 text-slate-600 opacity-40"></lucide-icon>
+        <h4 class="text-sm font-black text-white uppercase tracking-wider">No se encontraron camas</h4>
+        <p class="text-[10px] text-slate-500 font-bold mt-2 max-w-xs mx-auto leading-relaxed">
+            No se han registrado camas clínicas para esta sede o filtro. Utilice el botón "Crear Cama" para registrar una.
+        </p>
+    </div>
+
+    <div *ngIf="!isLoading() && camasFiltradas().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div *ngFor="let cama of camasFiltradas()" 
+            [class]="cama.estado === 'Disponible' 
+                ? 'border-emerald-500/20 bg-emerald-500/[0.01] hover:border-emerald-500/40 hover:bg-emerald-500/[0.03]' 
+                : 'border-rose-500/20 bg-rose-500/[0.01] hover:border-rose-500/40 hover:bg-rose-500/[0.03]'"
+            class="glass-panel p-6 rounded-[2rem] border transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[220px] group shadow-xl">
+            
+            <div class="absolute top-0 right-0 w-32 h-32 -z-10 blur-3xl opacity-20 transition-all group-hover:scale-125"
+                 [ngClass]="cama.estado === 'Disponible' ? 'bg-emerald-500/10' : 'bg-rose-500/10'"></div>
+
+            <!-- Camas Top Details -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-slate-400 font-mono tracking-wider">
+                        {{ cama.codigo }}
+                    </span>
+                    <span [class]="cama.estado === 'Disponible' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'"
+                          class="px-2.5 py-0.5 border rounded-lg text-[8px] font-black uppercase tracking-widest">
+                        {{ cama.estado | uppercase }}
+                    </span>
+                </div>
+
+                <h3 class="text-sm font-black text-white uppercase tracking-tight">{{ cama.nombre }}</h3>
+                <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1 italic">{{ cama.sedeNombre }}</p>
+            </div>
+
+            <!-- Camas Mid Info (Paciente & Total si está ocupada) -->
+            <div class="my-4 pt-4 border-t border-white/5 space-y-3 flex-1" *ngIf="cama.estado === 'Ocupada'">
+                <div>
+                    <span class="text-[8px] font-black text-rose-400 uppercase tracking-widest block">Paciente Internado</span>
+                    <span class="text-xs font-black text-white uppercase block mt-1 leading-tight">{{ cama.pacienteNombre }}</span>
+                    <span class="text-[9px] text-slate-400 font-mono block mt-0.5">C.I. {{ cama.pacienteCedula }}</span>
+                </div>
+                <div class="flex items-center justify-between bg-black/30 p-3 rounded-xl border border-white/5">
+                    <div>
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Ingreso</span>
+                        <span class="text-[9px] font-mono text-white font-bold block mt-0.5">{{ cama.fechaIngreso | date:'dd-MM-yyyy' }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Balance Acum.</span>
+                        <span class="text-[11px] font-mono text-white font-bold block mt-0.5">$ {{ cama.totalFacturado | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camas Fallback (Cama Libre) -->
+            <div class="my-4 pt-4 border-t border-white/5 flex items-center justify-center flex-1" *ngIf="cama.estado === 'Disponible'">
+                <div class="text-center text-slate-600 group-hover:text-emerald-500/40 transition-colors">
+                    <lucide-icon [name]="icons.Bed" class="w-10 h-10 mx-auto mb-1"></lucide-icon>
+                    <span class="text-[9px] font-black uppercase tracking-wider block">Cama vacía disponible</span>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="flex gap-2 pt-4 border-t border-white/5">
+                <button *ngIf="cama.estado === 'Ocupada'" (click)="verHistorialClinico(cama)"
+                    class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-wider border border-white/5 flex items-center justify-center gap-1.5 transition-all">
+                    <lucide-icon [name]="icons.ClipboardList" class="w-3.5 h-3.5"></lucide-icon>
+                    Clínica
+                </button>
+                <button *ngIf="cama.estado === 'Ocupada'" (click)="irAFacturacion(cama)"
+                    class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md">
+                    Facturar
+                    <lucide-icon [name]="icons.ArrowRight" class="w-3.5 h-3.5"></lucide-icon>
+                </button>
+                <div *ngIf="cama.estado === 'Disponible'" class="w-full text-center py-1 text-slate-500 text-[8px] font-black uppercase tracking-widest italic">
+                    Sin pacientes asignados
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL DE ALTA RÁPIDA DE CAMAS -->
+    <div *ngIf="showCreateForm()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showCreateForm.set(false)"></div>
+        <div class="relative bg-surface-card rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/5 animate-scale-in">
+            
+            <!-- Encabezado Modal -->
+            <div class="p-6 pb-4 flex items-center justify-between border-b border-white/5">
+                <div class="flex items-center space-x-3">
+                    <div class="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg">
+                        <lucide-icon [name]="icons.Bed" class="w-5 h-5"></lucide-icon>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-white uppercase tracking-wider">Registrar Nueva Cama</h3>
+                    </div>
+                </div>
+                <button (click)="showCreateForm.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
+                    <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
+                </button>
+            </div>
+            
+            <!-- Form Body -->
+            <div class="p-6 space-y-4">
+                
+                <div class="space-y-1">
+                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sede / Ala Destino</label>
+                    <select [(ngModel)]="nuevaCama.sedeId" 
+                            class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50">
+                        <option *ngFor="let s of sedes()" [value]="s.id">{{ s.nombre | uppercase }}</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Código de la Cama (Código único)</label>
+                    <input type="text" [(ngModel)]="nuevaCama.codigo" placeholder="Ej: HAB-106A"
+                           class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase font-mono">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombre / Identificador Físico</label>
+                    <input type="text" [(ngModel)]="nuevaCama.nombre" placeholder="Ej: Habitación 106 - Cama A"
+                           class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
+                </div>
+
+                <div class="space-y-1 pt-2">
+                    <label class="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/5 cursor-pointer">
+                        <input type="checkbox" [(ngModel)]="nuevaCama.esAreaAdmision" class="h-4 w-4 rounded border-white/10 text-rose-600 focus:ring-rose-500 bg-black/30">
+                        <span class="text-[9px] font-black text-white uppercase tracking-wider">Es Área de Admisión / Recepción</span>
+                    </label>
+                </div>
+
+                <div *ngIf="errorMessage()" class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold rounded-xl">
+                    {{ errorMessage() }}
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t border-white/5">
+                    <button type="button" (click)="showCreateForm.set(false)"
+                            class="bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-5 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
+                        CANCELAR
+                    </button>
+                    <button type="button" (click)="crearNuevaCama()" [disabled]="isSaving()"
+                            class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50">
+                        {{ isSaving() ? 'GUARDANDO...' : 'REGISTRAR CAMA' }}
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZACIÓN DE HISTORIAL CLÍNICO (TRIAGE) -->
+    <div *ngIf="showHistoryModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showHistoryModal.set(false)"></div>
+        <div class="relative bg-surface-card rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-white/5 animate-scale-in">
+            
+            <!-- Encabezado Modal -->
+            <div class="p-6 pb-4 flex items-center justify-between border-b border-white/5">
+                <div class="flex items-center space-x-3">
+                    <div class="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg">
+                        <lucide-icon [name]="icons.ClipboardList" class="w-5 h-5"></lucide-icon>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-white uppercase tracking-wider">Historial Clínico del Paciente</h3>
+                        <p class="text-[8px] text-slate-400 uppercase tracking-widest mt-0.5">Triage y valoraciones físicas de {{ selectedCamaForHistory()?.pacienteNombre }}</p>
+                    </div>
+                </div>
+                <button (click)="showHistoryModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
+                    <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                
+                <div *ngIf="!selectedCamaForHistory()?.historialTriage || selectedCamaForHistory()?.historialTriage.length === 0" class="text-center py-10 text-slate-500">
+                    <p class="text-xs font-bold uppercase tracking-wider">No se han registrado constantes vitales ni valoraciones de triage para este paciente.</p>
+                </div>
+
+                <div *ngIf="selectedCamaForHistory()?.historialTriage && selectedCamaForHistory()?.historialTriage.length > 0" class="space-y-4">
+                    <div *ngFor="let item of selectedCamaForHistory().historialTriage" 
+                         class="p-5 bg-white/[0.01] border border-white/5 rounded-2xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">
+                                {{ item.fechaRegistro | date:'dd-MM-yyyy hh:mm:ss a' }}
+                            </span>
+                            <span class="px-2.5 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black rounded-lg uppercase tracking-wider">
+                                Registrado por: {{ item.usuarioRegistro }}
+                            </span>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <p class="text-xs text-white leading-relaxed font-semibold">
+                                <span class="text-rose-400 uppercase text-[9px] font-black tracking-wider block">Motivo de Consulta:</span>
+                                {{ item.motivoConsulta }}
+                            </p>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-3 border-t border-white/5 text-xs">
+                                <div><span class="text-slate-500 block text-[8px] font-black uppercase">T/A</span> <span class="font-mono text-white font-bold">{{ item.tensionArterial }} mmHg</span></div>
+                                <div><span class="text-slate-500 block text-[8px] font-black uppercase">F/C</span> <span class="font-mono text-white font-bold">{{ item.frecuenciaCardiaca }} lpm</span></div>
+                                <div><span class="text-slate-500 block text-[8px] font-black uppercase">Temp</span> <span class="font-mono text-white font-bold">{{ item.temperatura }} °C</span></div>
+                                <div><span class="text-slate-500 block text-[8px] font-black uppercase">SatO2</span> <span class="font-mono text-white font-bold">{{ item.saturacionO2 }} %</span></div>
+                                <div><span class="text-slate-500 block text-[8px] font-black uppercase">Glasgow</span> <span class="font-mono text-white font-bold">{{ item.glasgowTotal }}/15</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-white/5 flex justify-end">
+                <button (click)="showHistoryModal.set(false)" 
+                        class="bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
+                    CERRAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -19,6 +19,9 @@ export interface AreaClinica {
   codigo: string;
   nombre: string;
   activo: boolean;
+  estado?: number;
+  estadoNombre?: string;
+  esAreaAdmision?: boolean;
 }
 
 export interface PedidoInterSede {
@@ -136,5 +139,14 @@ export class MultiSedeService {
 
   recibirPedido(id: string, discrepancias: { [key: string]: number }): Observable<any> {
     return this.http.put(`${environment.apiUrl}/api/PedidoInterSede/${id}/recibir`, discrepancias);
+  }
+
+  // --- MONITOREO Y CREACIÓN DE CAMAS ---
+  getCamasMonitoreo(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/api/AreaClinica/monitoreo`);
+  }
+
+  crearCama(dto: { sedeId: string; codigo: string; nombre: string }): Observable<string> {
+    return this.http.post<string>(`${environment.apiUrl}/api/AreaClinica`, dto);
   }
 }
