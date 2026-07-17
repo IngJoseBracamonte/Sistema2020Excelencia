@@ -119,6 +119,69 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                     _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'Direccion' en la tabla legacy 'datospersonales'.");
                 }
 
+                // Sincronización de Convenios Legados por requerimiento del sistema
+                try
+                {
+                    _logger.LogInformation("Sincronizando convenios legados en la tabla 'convenios'...");
+
+                    // 1. DELETEs de convenios no deseados
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM `convenios` WHERE `IdConvenio` IN (4, 5, 6, 7, 8, 9, 10, 12);");
+
+                    // 2. UPDATEs / INSERTs para garantizar IDs exactos (1, 2, 3, 11)
+                    
+                    // ID 1: Particular/Seguros
+                    var exist1 = await _context.Database.ExecuteSqlRawAsync("UPDATE `convenios` SET `Nombre` = 'Particular/Seguros' WHERE `IdConvenio` = 1;");
+                    if (exist1 == 0)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync("INSERT INTO `convenios` (`IdConvenio`, `Nombre`) VALUES (1, 'Particular/Seguros');");
+                    }
+
+                    // ID 2: Emergencia
+                    var exist2 = await _context.Database.ExecuteSqlRawAsync("UPDATE `convenios` SET `Nombre` = 'Emergencia' WHERE `IdConvenio` = 2;");
+                    if (exist2 == 0)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync("INSERT INTO `convenios` (`IdConvenio`, `Nombre`) VALUES (2, 'Emergencia');");
+                    }
+
+                    // ID 3: Hospitalizacion
+                    var exist3 = await _context.Database.ExecuteSqlRawAsync("UPDATE `convenios` SET `Nombre` = 'Hospitalizacion' WHERE `IdConvenio` = 3;");
+                    if (exist3 == 0)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync("INSERT INTO `convenios` (`IdConvenio`, `Nombre`) VALUES (3, 'Hospitalizacion');");
+                    }
+
+                    // ID 11: UCI
+                    try
+                    {
+                        // Intentar actualización completa con campos Correo y Telefono para la base de datos real
+                        var exist11 = await _context.Database.ExecuteSqlRawAsync("UPDATE `convenios` SET `Nombre` = 'UCI', `Correo` = '', `Telefono` = '' WHERE `IdConvenio` = 11;");
+                        if (exist11 == 0)
+                        {
+                            try
+                            {
+                                await _context.Database.ExecuteSqlRawAsync("INSERT INTO `convenios` (`IdConvenio`, `Nombre`, `Correo`, `Telefono`) VALUES (11, 'UCI', '', '');");
+                            }
+                            catch
+                            {
+                                await _context.Database.ExecuteSqlRawAsync("INSERT INTO `convenios` (`IdConvenio`, `Nombre`) VALUES (11, 'UCI');");
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback para entornos de pruebas (SQLite)
+                        var exist11Fallback = await _context.Database.ExecuteSqlRawAsync("UPDATE `convenios` SET `Nombre` = 'UCI' WHERE `IdConvenio` = 11;");
+                        if (exist11Fallback == 0)
+                        {
+                            await _context.Database.ExecuteSqlRawAsync("INSERT INTO `convenios` (`IdConvenio`, `Nombre`) VALUES (11, 'UCI');");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudieron sincronizar los convenios legados.");
+                }
+
                 _logger.LogInformation("✅ Legacy Database '{Database}' Inicializada y Migrada Correctamente.", builder.Database);
             }
             catch (Exception ex)
