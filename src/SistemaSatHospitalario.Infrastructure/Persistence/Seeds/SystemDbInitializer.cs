@@ -803,6 +803,62 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Laboratorio,     SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "LABORATORIO",     Nombre: "Laboratorio")
             };
 
+            // Senior Maintenance: Limpiar áreas clínicas no fijas o sobrantes de pruebas anteriores
+            try
+            {
+                var conn = _context.Database.GetDbConnection();
+                bool closeConnection = false;
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                    closeConnection = true;
+                }
+                using (var cmd = conn.CreateCommand())
+                {
+                    var idsFijos = string.Join(",", areasDef.Select(a => $"'{a.Id}'"));
+                    
+                    cmd.CommandText = $"SELECT `Id` FROM `AreasClinicas` WHERE `Id` NOT IN ({idsFijos});";
+                    var idsToDelete = new List<string>();
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var valStr = reader[0]?.ToString();
+                            if (!string.IsNullOrEmpty(valStr) && Guid.TryParse(valStr, out var parsedGuid))
+                            {
+                                idsToDelete.Add($"'{parsedGuid}'");
+                            }
+                        }
+                    }
+
+                    if (idsToDelete.Any())
+                    {
+                        var idsStr = string.Join(",", idsToDelete);
+
+                        cmd.CommandText = $"UPDATE `CuentasServicios` SET `AreaClinicaId` = NULL WHERE `AreaClinicaId` IN ({idsStr});";
+                        await cmd.ExecuteNonQueryAsync();
+
+                        cmd.CommandText = $"UPDATE `CitasMedicas` SET `AreaClinicaId` = NULL WHERE `AreaClinicaId` IN ({idsStr});";
+                        await cmd.ExecuteNonQueryAsync();
+
+                        cmd.CommandText = $"UPDATE `DetallesServicioCuenta` SET `AreaClinicaId` = NULL WHERE `AreaClinicaId` IN ({idsStr});";
+                        await cmd.ExecuteNonQueryAsync();
+
+                        cmd.CommandText = $"DELETE FROM `HistorialesLimpiezasCamas` WHERE `CamaId` IN ({idsStr});";
+                        await cmd.ExecuteNonQueryAsync();
+
+                        cmd.CommandText = $"DELETE FROM `AreasClinicas` WHERE `Id` IN ({idsStr});";
+                        int deleted = await cmd.ExecuteNonQueryAsync();
+                        _logger.LogInformation($"[MIGRATION] Se eliminaron {deleted} áreas clínicas de prueba/sobrantes.");
+                    }
+                }
+                if (closeConnection) await conn.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[MIGRATION] Error al intentar limpiar áreas clínicas de prueba.");
+            }
+
             foreach (var def in areasDef)
             {
                 var conn = _context.Database.GetDbConnection();

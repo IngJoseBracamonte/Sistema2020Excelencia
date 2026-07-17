@@ -365,6 +365,9 @@ namespace SistemaSatHospitalario.UnitTests.Application
                 {
                     // Eliminar detalles, cuentas por cobrar, recibos y cuentas
                     var detalles = await systemContext.DetallesServicioCuenta.Where(d => d.CuentaServicioId == c.Id).ToListAsync();
+                    var detalleIds = detalles.Select(d => d.Id).ToList();
+                    var consumos = await systemContext.ConsumosServiciosRealizados.Where(cs => detalleIds.Contains(cs.DetalleServicioCuentaId)).ToListAsync();
+                    systemContext.ConsumosServiciosRealizados.RemoveRange(consumos);
                     systemContext.DetallesServicioCuenta.RemoveRange(detalles);
 
                     var cxc = await systemContext.CuentasPorCobrar.Where(ar => ar.CuentaServicioId == c.Id).ToListAsync();
