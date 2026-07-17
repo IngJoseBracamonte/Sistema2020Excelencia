@@ -204,7 +204,7 @@
                             <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
                                     class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
                                 <option [value]="null">--- SELECCIONAR CAMA ---</option>
-                                <option *ngFor="let cama of camasDisponibles()" [value]="cama.camaId">
+                                <option *ngFor="let cama of camasDisponiblesIngreso()" [value]="cama.camaId">
                                     {{ cama.nombre }} ({{ cama.codigo }})
                                 </option>
                             </select>
@@ -1197,7 +1197,7 @@
                             <!-- Selector de área interna (Solo si no es Alta) -->
                             <div class="space-y-2" *ngIf="!esEgreso">
                                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Ubicación Destino de Traslado</label>
-                                <select [(ngModel)]="nuevoTipoIngreso" class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
+                                <select [ngModel]="nuevoTipoIngreso()" (ngModelChange)="nuevoTipoIngreso.set($event)" class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
                                     <option value="Hospitalizacion" class="bg-[#152035]">Hospitalización General</option>
                                     <option value="UCI" class="bg-[#152035]">Unidad de Cuidados Intensivos (UCI)</option>
                                     <option value="Emergencia" class="bg-[#152035]">Observación de Emergencia</option>
@@ -1219,7 +1219,7 @@
                                 <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
                                         class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
                                     <option [value]="null" class="bg-[#152035]">--- SELECCIONAR CAMA ---</option>
-                                    <option *ngFor="let cama of camasDisponibles()" [value]="cama.camaId" class="bg-[#152035]">
+                                    <option *ngFor="let cama of camasDisponiblesTraslado()" [value]="cama.camaId" class="bg-[#152035]">
                                         {{ cama.nombre }} ({{ cama.codigo }})
                                     </option>
                                 </select>

@@ -6,6 +6,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
     public class CamaMonitoreoDto
     {
         public Guid CamaId { get; set; }
+        public Guid SedeId { get; set; }
         public string Codigo { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
         public string SedeNombre { get; set; } = string.Empty;

@@ -127,6 +127,17 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public showNewPatientForm = signal<boolean>(false);
   public selectedCamaId = signal<string | null>(null);
   public camasDisponibles = signal<any[]>([]);
+  public camasDisponiblesFiltradas = computed(() => {
+    const camas = this.camasDisponibles();
+    const currentType = this.type();
+    let targetSedeId = '';
+    if (currentType === 'Hospitalizacion') {
+      targetSedeId = '10000000-0000-0000-0000-000000000003';
+    } else if (currentType === 'Emergencia') {
+      targetSedeId = '10000000-0000-0000-0000-000000000002';
+    }
+    return targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+  });
 
   // Step admission & Triage Signals
   public ingresoStep = signal<number>(1);

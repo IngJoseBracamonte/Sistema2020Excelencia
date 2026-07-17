@@ -13,6 +13,7 @@ using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 
 namespace SistemaSatHospitalario.UnitTests.Application
 {
@@ -28,6 +29,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var mockMapper = new Mock<IHonorariumMapperService>();
             var mockLogger = new Mock<ILogger<CargarServicioACuentaCommandHandler>>();
             var mockInvLogger = new Mock<ILogger<InventoryService>>();
+            var mockLegacyRepo = new Mock<ILegacyLabRepository>();
 
             var paciente = new PacienteAdmision("V-12345678", "Juan Perez", "0412-1234567", null, null, "Direccion");
             var doctor = new Medico("Dr. Jose", Guid.NewGuid(), 80);
@@ -73,7 +75,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             var inventoryService = new InventoryService(mockContext.Object, mockInvLogger.Object);
             var handler = new CargarServicioACuentaCommandHandler(
-                mockBillingRepo.Object, mockExternaService.Object, mockContext.Object, mockMapper.Object, inventoryService, mockLogger.Object);
+                mockBillingRepo.Object, mockExternaService.Object, mockContext.Object, mockMapper.Object, inventoryService, mockLegacyRepo.Object, mockLogger.Object);
 
             var command = new CargarServicioACuentaCommand
             {
@@ -114,6 +116,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var mockMapper = new Mock<IHonorariumMapperService>();
             var mockLogger = new Mock<ILogger<CargarServicioACuentaCommandHandler>>();
             var mockInvLogger = new Mock<ILogger<InventoryService>>();
+            var mockLegacyRepo = new Mock<ILegacyLabRepository>();
 
             var paciente = new PacienteAdmision("V-12345678", "Juan Perez", "0412-1234567", null, null, "Direccion");
             var doctor = new Medico("Dr. Jose", Guid.NewGuid(), 80);
@@ -159,7 +162,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             var inventoryService = new InventoryService(mockContext.Object, mockInvLogger.Object);
             var handler = new CargarServicioACuentaCommandHandler(
-                mockBillingRepo.Object, mockExternaService.Object, mockContext.Object, mockMapper.Object, inventoryService, mockLogger.Object);
+                mockBillingRepo.Object, mockExternaService.Object, mockContext.Object, mockMapper.Object, inventoryService, mockLegacyRepo.Object, mockLogger.Object);
 
             var command = new CargarServicioACuentaCommand
             {

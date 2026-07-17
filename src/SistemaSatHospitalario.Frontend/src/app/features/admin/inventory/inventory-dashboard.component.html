@@ -99,11 +99,6 @@
             [class.text-primary]="activeTab() === 'closing'" [class.text-muted]="activeTab() !== 'closing'">
             Cierre Físico
         </button>
-        <button (click)="setTab('recipes')" [class.border-primary]="activeTab() === 'recipes'"
-            class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
-            [class.text-primary]="activeTab() === 'recipes'" [class.text-muted]="activeTab() !== 'recipes'">
-            Recetas de Consumo
-        </button>
         <button (click)="setTab('audit')" [class.border-primary]="activeTab() === 'audit'"
             class="pb-4 text-xs font-black uppercase tracking-widest border-b-2 border-transparent transition-all"
             [class.text-primary]="activeTab() === 'audit'" [class.text-muted]="activeTab() !== 'audit'">
@@ -320,116 +315,6 @@
         </div>
     </div>
 
-    <!-- TAB 4: Recipes Mapping (BOM) -->
-    <div *ngIf="activeTab() === 'recipes'" class="space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Side: Config Form -->
-            <div class="glass-card p-6 border border-glass-border rounded-2xl space-y-4 h-fit">
-                <div>
-                    <h3 class="text-sm font-black uppercase tracking-widest text-primary-glow">Vincular Consumo a Servicio</h3>
-                    <p class="text-[10px] text-muted font-bold uppercase tracking-wider">Configure qué insumos se consumen automáticamente al vender o cargar un servicio clínico</p>
-                </div>
-
-                <form (ngSubmit)="saveRecipe()" class="space-y-4">
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Servicio Clínico *</label>
-                        <select [ngModel]="recipeForm().servicioClinicoId" (ngModelChange)="recipeForm().servicioClinicoId = $event" name="servicioClinicoId" required
-                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
-                            <option value="" disabled>Seleccione un servicio...</option>
-                            <option *ngFor="let s of services()" [value]="s.id">
-                                [{{ s.codigo }}] {{ s.descripcion }} ({{ s.tipo }})
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase text-muted tracking-wider">Insumo Médico a Consumir *</label>
-                        <select [ngModel]="recipeForm().insumoId" (ngModelChange)="recipeForm().insumoId = $event" name="insumoId" required
-                            class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
-                            <option value="" disabled>Seleccione un insumo...</option>
-                            <option *ngFor="let i of insumos()" [value]="i.id">
-                                {{ i.nombre }} ({{ i.codigo }})
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-muted tracking-wider">Cantidad *</label>
-                            <input type="number" step="any" [ngModel]="recipeForm().cantidad" (ngModelChange)="recipeForm().cantidad = $event" name="cantidad" required
-                                class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-muted tracking-wider">Unidad Consumo *</label>
-                            <select [ngModel]="recipeForm().unidadMedidaConsumo" (ngModelChange)="recipeForm().unidadMedidaConsumo = $event" name="unidadMedidaConsumo" required
-                                class="w-full px-3 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold focus:outline-none focus:border-primary text-main">
-                                <option *ngFor="let u of unidadesMedida" [value]="u">{{ u }}</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end pt-2">
-                        <button type="submit" [disabled]="isSubmitting()"
-                            class="w-full px-4 py-2.5 bg-primary hover:bg-primary-glow text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20">
-                            {{ isSubmitting() ? 'Guardando...' : 'Asignar / Actualizar Receta' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Right Side: Recipes List -->
-            <div class="lg:col-span-2 space-y-4">
-                <div class="relative max-w-md">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
-                        <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
-                    </span>
-                    <input type="text" [ngModel]="recipeSearchQuery()" (ngModelChange)="recipeSearchQuery.set($event)"
-                        placeholder="Buscar recetas por servicio o insumo..."
-                        class="w-full pl-10 pr-4 py-2.5 bg-surface-card border border-glass-border rounded-xl text-xs font-bold placeholder-muted focus:outline-none focus:border-primary/50 text-main transition-all">
-                </div>
-
-                <div class="glass-card border border-glass-border overflow-hidden rounded-2xl">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-surface/50 border-b border-glass-border text-[10px] font-black text-muted uppercase tracking-widest">
-                                    <th class="p-4">Servicio Clínico</th>
-                                    <th class="p-4">Insumo Consumido</th>
-                                    <th class="p-4 text-center">Cantidad Consumo</th>
-                                    <th class="p-4 text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-glass-border text-xs font-bold">
-                                <tr *ngFor="let r of filteredRecipes()" class="hover:bg-white/5 transition-all">
-                                    <td class="p-4">
-                                        <div class="font-bold text-main">{{ r.servicioClinico?.descripcion || 'Servicio Externo' }}</div>
-                                        <div class="font-mono text-[10px] text-muted">{{ r.servicioCodigo }}</div>
-                                    </td>
-                                    <td class="p-4 text-main">
-                                        {{ r.insumo?.nombre }} ({{ r.insumo?.codigo }})
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <span class="px-2 py-0.5 bg-surface border border-glass-border rounded text-[11px] font-bold text-primary-glow">
-                                            {{ r.cantidad | number:'1.2-4' }} {{ r.unidadMedidaConsumo }}
-                                        </span>
-                                    </td>
-                                    <td class="p-4 text-center">
-                                        <button (click)="deleteRecipe(r.id)" class="p-1.5 text-muted hover:text-rose-500 transition-all">
-                                            <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="filteredRecipes().length === 0">
-                                    <td colspan="4" class="p-8 text-center text-muted font-bold italic">No hay recetas de consumo configuradas.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- TAB 5: Audit Log Ledger -->
     <div *ngIf="activeTab() === 'audit'" class="space-y-4">

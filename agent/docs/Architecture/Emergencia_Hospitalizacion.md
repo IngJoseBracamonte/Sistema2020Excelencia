@@ -120,6 +120,13 @@ Un botón de "Traslado Interno" despliega un modal interactivo:
 *   **Selector de Camas Libres**: Carga de forma reactiva las ubicaciones de la base de datos que tengan `Disponible == true` filtrando por el área seleccionada.
 *   **Confirmación**: Al hacer clic en "Confirmar Traslado", envía el payload al API y recarga las señales de estado del paciente en el dashboard.
 
+### 3. Tarjetas KPI de Antesala de Cierre (CierreCuentaComponent)
+Al cargar la antesala de cierre (Vista 1) en `/cierre-cuenta`, el sistema presenta una fila de tarjetas de métricas operativas configuradas según el área clínica:
+*   **Estado de la Unidad**: Muestra la capacidad ocupada estimada (`%`), el total de pacientes activos y el promedio de estancia en días (`d`).
+*   **Alerta Crítica / Alta**: Indica el volumen de pacientes con estado crítico activo en el área.
+*   **Acciones de Caja (Arqueo Caja / Ver CxC)**: Atajos rápidos a la gestión de turnos y CxC.
+    *   *Regla Determinista*: Esta tarjeta de **Acciones de Caja** se oculta completamente en el dashboard de **Emergencia** (`type() === 'Emergencia'`) para mantener la orientación clínica del sector de urgencias y evitar accesos directos de caja por el personal de enfermería o auxiliares, mostrándose únicamente en el área de **Hospitalización**.
+
 ---
 
 ## 🛒 5. Comportamiento del Carrito de Carga (Emergencia, Hospitalización y UCI)

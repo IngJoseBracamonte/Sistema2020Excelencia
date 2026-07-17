@@ -242,7 +242,7 @@
                             <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
                                     class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
                                 <option [value]="null">--- SELECCIONAR CAMA ---</option>
-                                <option *ngFor="let cama of camasDisponibles()" [value]="cama.camaId">
+                                <option *ngFor="let cama of camasDisponiblesFiltradas()" [value]="cama.camaId">
                                     {{ cama.nombre }} ({{ cama.codigo }})
                                 </option>
                             </select>
@@ -578,19 +578,76 @@
     <div *ngIf="!selectedAccount()" class="space-y-6">
         
         <!-- KPI METRICS GRID ROW -->
-        <div class="flex justify-start">
-            <!-- 2. Alerta de Paciente Crítico / Altas Pendientes (Coral / Primary style theme) -->
-            <div class="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent relative overflow-hidden flex flex-col justify-between w-64 shadow-2xl">
+        <div class="grid grid-cols-1 gap-6" [ngClass]="type() === 'Emergencia' ? 'md:grid-cols-2' : 'md:grid-cols-3'">
+            <!-- 1. Estado del Sistema / Capacidad (Scanline/Holographic background style) -->
+            <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
+                <!-- Glowing effect -->
+                <div class="absolute -right-12 -top-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-white/[0.01] to-transparent pointer-events-none"></div>
+                
                 <div>
-                    <span class="text-[9px] font-black text-primary uppercase tracking-[0.2em] font-semibold">Alerta Crítica / Alta</span>
-                    <h4 class="text-sm font-black text-white uppercase tracking-tight mt-1">Paciente Crítico</h4>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado de la Unidad</span>
+                        <lucide-icon [name]="icons.Activity" class="w-4 h-4 text-primary animate-pulse"></lucide-icon>
+                    </div>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">TODOS LOS SERVICIOS OPERATIVOS</p>
                 </div>
 
-                <div class="flex items-end justify-between mt-2">
+                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5">
                     <div>
-                        <p class="text-xl font-black text-white font-mono leading-none">{{ alertasCriticosCount() }}</p>
+                        <p class="text-[9px] font-black text-slate-500 uppercase">Capacidad</p>
+                        <p class="text-xl font-black text-white font-mono tracking-tighter mt-1">{{ capacidadUnidad() }}%</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 uppercase">Activos</p>
+                        <p class="text-xl font-black text-white font-mono tracking-tighter mt-1">{{ accounts().length }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 uppercase">Prom. Estancia</p>
+                        <p class="text-xl font-black text-white font-mono tracking-tighter mt-1">{{ estanciaPromedio() }}d</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Alerta de Paciente Crítico / Altas Pendientes (Coral / Primary style theme) -->
+            <div class="p-6 rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
+                <div class="absolute -right-8 -top-8 w-24 h-24 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+                
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black text-primary uppercase tracking-[0.2em] font-semibold">Alerta Crítica / Alta</span>
+                        <lucide-icon [name]="icons.Info" class="w-4 h-4 text-primary animate-bounce"></lucide-icon>
+                    </div>
+                    <h4 class="text-lg font-black text-white uppercase tracking-tight mt-2">Paciente Crítico</h4>
+                </div>
+
+                <div class="flex items-end justify-between mt-4">
+                    <div>
+                        <p class="text-2xl font-black text-white font-mono leading-none">{{ alertasCriticosCount() }}</p>
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Pacientes en alerta de cuidado</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- 3. Despachar Recurso / Nueva Admisión (Blue-grey slate style theme) -->
+            <div *ngIf="type() !== 'Emergencia'" class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
+                <div class="absolute -right-12 -top-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all"></div>
+                
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones de Caja</span>
+                        <lucide-icon [name]="icons.CreditCard" class="w-4 h-4 text-indigo-400"></lucide-icon>
+                    </div>
+                    <h4 class="text-sm font-black text-white uppercase tracking-tight mt-2">Gestión de Órdenes</h4>
+                </div>
+
+                <div class="mt-4 flex gap-2">
+                    <a routerLink="/cajas" class="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 text-[9px] font-black uppercase tracking-widest text-center transition-all cursor-pointer flex items-center justify-center">
+                        Arqueo Caja
+                    </a>
+                    <a routerLink="/cxc" class="flex-1 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest text-center transition-all cursor-pointer flex items-center justify-center">
+                        Ver CxC
+                    </a>
                 </div>
             </div>
         </div>

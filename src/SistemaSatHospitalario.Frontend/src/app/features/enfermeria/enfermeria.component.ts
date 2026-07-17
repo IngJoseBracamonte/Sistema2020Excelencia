@@ -477,10 +477,38 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   // Transfer Area Form
-  public nuevoTipoIngreso = 'Hospitalizacion'; // UCI, Hospitalizacion, Emergencia, etc.
+  public nuevoTipoIngreso = signal<string>('Hospitalizacion'); // UCI, Hospitalizacion, Emergencia, etc.
   public nuevoConvenioId: number | null = null;
   public esEgreso = false;
   public isSavingTransfer = signal<boolean>(false);
+
+  public camasDisponiblesIngreso = computed(() => {
+    const camas = this.camasDisponibles();
+    const activeFilter = this.nursingAreaFilter();
+    let targetSedeId = '';
+    if (activeFilter === 'Hospitalizacion') {
+      targetSedeId = '10000000-0000-0000-0000-000000000003';
+    } else if (activeFilter === 'UCI') {
+      targetSedeId = '10000000-0000-0000-0000-000000000004';
+    } else if (activeFilter === 'Emergencia') {
+      targetSedeId = '10000000-0000-0000-0000-000000000002';
+    }
+    return targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+  });
+
+  public camasDisponiblesTraslado = computed(() => {
+    const camas = this.camasDisponibles();
+    const dest = this.nuevoTipoIngreso();
+    let targetSedeId = '';
+    if (dest === 'Hospitalizacion') {
+      targetSedeId = '10000000-0000-0000-0000-000000000003';
+    } else if (dest === 'UCI') {
+      targetSedeId = '10000000-0000-0000-0000-000000000004';
+    } else if (dest === 'Emergencia') {
+      targetSedeId = '10000000-0000-0000-0000-000000000002';
+    }
+    return targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+  });
 
   // Filtered active accounts computed list
   public filteredAccounts = computed(() => {
@@ -618,7 +646,7 @@ export class EnfermeriaComponent implements OnInit {
     
     // Auto-set the current convenio for transfer panel
     this.nuevoConvenioId = account.convenioId;
-    this.nuevoTipoIngreso = account.tipoIngreso;
+    this.nuevoTipoIngreso.set(account.tipoIngreso);
     this.esEgreso = false;
 
     // Auto pre-select Area Clinica matching patient's admission area / current location
@@ -1045,7 +1073,7 @@ export class EnfermeriaComponent implements OnInit {
 
     const payload = {
       pacienteId: active.pacienteId,
-      nuevoTipoIngreso: this.esEgreso ? 'Particular' : this.nuevoTipoIngreso, // Alta closes only
+      nuevoTipoIngreso: this.esEgreso ? 'Particular' : this.nuevoTipoIngreso(), // Alta closes only
       nuevoConvenioId: this.esEgreso ? null : this.nuevoConvenioId,
       usuarioTraslado: '', // Se sobreescribe en Backend
       esEgreso: this.esEgreso,
@@ -1058,7 +1086,7 @@ export class EnfermeriaComponent implements OnInit {
           if (this.esEgreso) {
             this.showSuccess('Paciente dado de alta administrativamente. La cuenta actual ha sido cerrada.');
           } else {
-            this.showSuccess(`Paciente trasladado exitosamente a la ubicación: ${this.nuevoTipoIngreso}.`);
+            this.showSuccess(`Paciente trasladado exitosamente a la ubicación: ${this.nuevoTipoIngreso()}.`);
           }
           this.selectedAccount.set(null);
           this.nursingHistory.set([]);

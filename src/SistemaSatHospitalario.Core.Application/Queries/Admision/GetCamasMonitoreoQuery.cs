@@ -50,6 +50,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var dto = new CamaMonitoreoDto
                 {
                     CamaId = cama.Id,
+                    SedeId = cama.SedeId,
                     Codigo = cama.Codigo,
                     Nombre = cama.Nombre,
                     SedeNombre = cama.Sede?.Nombre ?? "Sede General",

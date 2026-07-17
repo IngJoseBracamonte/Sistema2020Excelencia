@@ -135,10 +135,6 @@
                     <input type="text" [(ngModel)]="currentItem().descripcion" class="w-full bg-white/5 border border-white/5 p-3 rounded-xl text-white font-black text-xs outline-none focus:border-indigo-500">
                 </div>
 
-                <div class="flex items-center gap-2 px-1">
-                    <input type="checkbox" id="requiereInventario" [(ngModel)]="currentItem().requiereInventario" class="rounded border-white/10 bg-white/5 text-indigo-600 focus:ring-indigo-500" />
-                    <label for="requiereInventario" class="text-[10px] text-white font-bold uppercase tracking-wider">¿Requiere Control de Inventario? (BOM)</label>
-                </div>
 
                 <div class="grid gap-4" [ngClass]="currentItem().tipo === 'CONSULTA' ? 'grid-cols-1' : 'grid-cols-2'">
                     <div class="space-y-1">
@@ -181,83 +177,7 @@
                     </div>
                 </div>
 
-                <!-- BOM RECIPE COMPOSITION EDITOR (Midnight Blue V2.0) -->
-                <div *ngIf="currentItem().requiereInventario && currentItem().id" class="glass-panel rounded-[1.25rem] p-6 space-y-4">
-                    <div>
-                        <label class="text-[10px] font-black text-[#e11d48] uppercase tracking-widest px-1 font-Outfit">Composición del Combo (Receta BOM)</label>
-                        <span class="text-[8px] text-slate-500 uppercase font-bold px-1 block mt-0.5 font-Outfit">Defina qué insumos se rebajan de bodega al facturar/cargar este servicio</span>
-                    </div>
 
-                    <!-- Add Line Form (Premium) -->
-                    <div class="flex flex-wrap gap-3 items-end bg-[#1e293b]/30 p-4 rounded-xl border border-white/5">
-                        <div class="flex-1 min-w-[200px] space-y-1">
-                            <label class="text-[8px] text-slate-400 font-bold uppercase tracking-wider font-Outfit">Insumo de Bodega</label>
-                            <select [ngModel]="targetRecipeForm().insumoId" (ngModelChange)="targetRecipeForm().insumoId = $event"
-                                class="w-full bg-[#1e293b] border border-white/10 p-2.5 rounded-lg text-white font-bold text-[10px] outline-none focus:border-[#e11d48] transition-all">
-                                <option value="" disabled>Seleccione insumo...</option>
-                                <option *ngFor="let i of insumosList()" [value]="i.id">{{ i.nombre }} ({{ i.codigo }})</option>
-                            </select>
-                        </div>
-                        <div class="w-24 space-y-1">
-                            <label class="text-[8px] text-slate-400 font-bold uppercase tracking-wider font-Outfit">Cantidad</label>
-                            <input type="number" step="any" [ngModel]="targetRecipeForm().cantidad" (ngModelChange)="targetRecipeForm().cantidad = $event"
-                                class="w-full bg-[#1e293b] border border-white/10 p-2.5 rounded-lg text-white font-black text-[10px] outline-none text-center focus:border-[#e11d48] transition-all font-mono">
-                        </div>
-                        <div class="w-28 space-y-1">
-                            <label class="text-[8px] text-slate-400 font-bold uppercase tracking-wider font-Outfit">U.M. Consumo</label>
-                            <select [ngModel]="targetRecipeForm().unidadMedidaConsumo" (ngModelChange)="targetRecipeForm().unidadMedidaConsumo = $event"
-                                class="w-full bg-[#1e293b] border border-white/10 p-2.5 rounded-lg text-white font-bold text-[10px] outline-none focus:border-[#e11d48] transition-all">
-                                <option *ngFor="let u of unidadesMedida" [value]="u">{{ u }}</option>
-                            </select>
-                        </div>
-                        <button type="button" (click)="addRecipeLine()"
-                            class="px-5 py-2.5 bg-[#e11d48] hover:bg-[#be123c] text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all h-[38px] shadow-lg shadow-rose-500/20 active:scale-95">
-                            Agregar
-                        </button>
-                    </div>
-
-                    <!-- Items Table (Premium) -->
-                    <div class="overflow-x-auto border border-white/5 rounded-xl bg-black/25">
-                        <table class="w-full border-collapse text-left">
-                            <thead>
-                                <tr class="bg-white/5 border-b border-white/5 text-[8px] text-slate-400 font-black uppercase tracking-widest font-Outfit">
-                                    <th class="p-3">Insumo</th>
-                                    <th class="p-3 text-center">Cantidad</th>
-                                    <th class="p-3 text-center">U.M.</th>
-                                    <th class="p-3 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let r of getServiceRecipes(currentItem().id!)" 
-                                    class="border-b border-white/5 hover:bg-white/[0.02] transition-all text-[10px]">
-                                    <td class="p-3">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-white font-Outfit">{{ r.insumo?.nombre }}</span>
-                                            <span class="text-[7.5px] text-slate-500 font-mono tracking-wider">{{ r.insumo?.codigo }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-3 text-center font-mono font-bold text-emerald-400">
-                                        {{ r.cantidad | number:'1.2-4' }}
-                                    </td>
-                                    <td class="p-3 text-center font-mono font-bold text-slate-400">
-                                        {{ r.unidadMedidaConsumo }}
-                                    </td>
-                                    <td class="p-3 text-right">
-                                        <button type="button" (click)="removeRecipeLine(r.id)" 
-                                            class="p-2 bg-rose-500/10 hover:bg-[#e11d48] text-rose-500 hover:text-white rounded-lg transition-all shadow-sm">
-                                            <lucide-icon [name]="icons.Trash2" class="w-3.5 h-3.5"></lucide-icon>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="getServiceRecipes(currentItem().id!).length === 0">
-                                    <td colspan="4" class="p-8 text-center text-slate-500 italic text-[9px] font-Outfit uppercase tracking-wider">
-                                        Sin insumos configurados en el combo.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
                 <div class="flex gap-4 pt-2">
                     <button (click)="showModal.set(false)" class="flex-1 py-3 text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-all">CANCELAR</button>

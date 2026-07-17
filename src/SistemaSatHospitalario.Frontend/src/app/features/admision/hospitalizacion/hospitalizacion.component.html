@@ -53,10 +53,10 @@
     </div>
 
     <!-- METRICAS DE PLANTA -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl">
         
         <!-- Camas Disponibles -->
-        <div class="glass-panel p-4 rounded-xl border border-white/5">
+        <div class="glass-panel p-3.5 rounded-xl border border-white/5">
             <div>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Camas Disponibles</p>
                 <h3 class="text-xl font-black text-emerald-400 mt-1">{{ camasDisponiblesCount() }}</h3>
@@ -65,7 +65,7 @@
         </div>
 
         <!-- Camas Ocupadas -->
-        <div class="glass-panel p-4 rounded-xl border border-white/5">
+        <div class="glass-panel p-3.5 rounded-xl border border-white/5">
             <div>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pacientes Internados</p>
                 <h3 class="text-xl font-black text-rose-500 mt-1">{{ camasOcupadasCount() }}</h3>
@@ -74,7 +74,7 @@
         </div>
 
         <!-- Total de Camas -->
-        <div class="glass-panel p-4 rounded-xl border border-white/5">
+        <div class="glass-panel p-3.5 rounded-xl border border-white/5">
             <div>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Camas Activas</p>
                 <h3 class="text-xl font-black text-white mt-1">{{ totalCamas() }}</h3>
@@ -82,25 +82,18 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- CONTROL DE FILTROS POR SEDE -->
-    <div class="flex flex-wrap items-center justify-between gap-4 bg-surface-card p-4 rounded-[1.5rem] border border-white/5">
-        <div class="flex items-center space-x-2">
-            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-2">Filtrar Sede:</span>
-            <div class="flex flex-wrap gap-2">
-                <button (click)="selectedSedeFilter.set('all')"
-                    [class]="selectedSedeFilter() === 'all' ? 'bg-rose-600 text-white' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'"
-                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
-                    Todas las Sedes
-                </button>
-                <button *ngFor="let s of sedes()" (click)="selectedSedeFilter.set(s.nombre)"
-                    [class]="selectedSedeFilter() === s.nombre ? 'bg-rose-600 text-white' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'"
-                    class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all">
-                    {{ s.nombre }}
-                </button>
+        <!-- Filtrar Sede (Escrito) -->
+        <div class="glass-panel p-3.5 rounded-xl border border-white/5 flex flex-col justify-center">
+            <div>
+                <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Filtrar Sede</label>
+                <div class="relative">
+                    <input type="text" [ngModel]="selectedSedeFilter()" (ngModelChange)="selectedSedeFilter.set($event)"
+                        placeholder="Escriba la sede a buscar..."
+                        class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-[10px] font-black text-white outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-600">
+                </div>
             </div>
         </div>
+
     </div>
 
     <!-- GRILLA DE CAMAS FÍSICAS -->
@@ -122,7 +115,7 @@
             [class]="cama.estado === 'Disponible' 
                 ? 'border-emerald-500/20 bg-emerald-500/[0.01] hover:border-emerald-500/40 hover:bg-emerald-500/[0.03]' 
                 : 'border-rose-500/20 bg-rose-500/[0.01] hover:border-rose-500/40 hover:bg-rose-500/[0.03]'"
-            class="glass-panel p-6 rounded-[2rem] border transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[220px] group shadow-xl">
+            class="glass-panel p-4 rounded-[1.25rem] border transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[185px] group shadow-xl">
             
             <div class="absolute top-0 right-0 w-32 h-32 -z-10 blur-3xl opacity-20 transition-all group-hover:scale-125"
                  [ngClass]="cama.estado === 'Disponible' ? 'bg-emerald-500/10' : 'bg-rose-500/10'"></div>

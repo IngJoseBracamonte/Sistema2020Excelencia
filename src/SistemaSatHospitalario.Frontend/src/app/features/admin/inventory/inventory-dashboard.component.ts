@@ -2,15 +2,12 @@ import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
-import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
 import { MultiSedeService, Sede } from '../../../core/services/multi-sede.service';
 import { 
   Insumo, 
   MovimientoInsumo, 
-  ServicioInsumoReceta, 
   CreateInsumo, 
-  RecordMovement, 
-  CreateRecipe 
+  RecordMovement 
 } from '../../../core/models/inventory.model';
 import { 
   LucideAngularModule, 
@@ -36,7 +33,6 @@ import {
 })
 export class InventoryDashboardComponent implements OnInit {
   private inventoryService = inject(InventoryService);
-  private catalogService = inject(CatalogService);
   private multiSedeService = inject(MultiSedeService);
 
   // Lists
@@ -44,17 +40,14 @@ export class InventoryDashboardComponent implements OnInit {
   public selectedSede = signal<Sede | null>(null);
   public insumos = signal<Insumo[]>([]);
   public movements = signal<MovimientoInsumo[]>([]);
-  public recipes = signal<ServicioInsumoReceta[]>([]);
-  public services = signal<CatalogItem[]>([]);
 
   // State
-  public activeTab = signal<'stock' | 'movement' | 'closing' | 'audit' | 'recipes'>('stock');
+  public activeTab = signal<'stock' | 'movement' | 'closing' | 'audit'>('stock');
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
 
   // Search queries
   public searchQuery = signal<string>('');
-  public recipeSearchQuery = signal<string>('');
   public movementSearchQuery = signal<string>('');
 
   // Modals
@@ -78,13 +71,6 @@ export class InventoryDashboardComponent implements OnInit {
     cantidadOriginal: 0,
     unidadMedidaOriginal: 'UNIDAD',
     motivo: ''
-  });
-
-  public recipeForm = signal<CreateRecipe>({
-    servicioClinicoId: '',
-    insumoId: '',
-    cantidad: 0,
-    unidadMedidaConsumo: 'UNIDAD'
   });
 
   public physicalCounts = signal<Record<string, number>>({});
@@ -119,16 +105,7 @@ export class InventoryDashboardComponent implements OnInit {
     );
   });
 
-  public filteredRecipes = computed(() => {
-    const list = this.recipes();
-    const query = this.recipeSearchQuery().toLowerCase().trim();
-    if (!query) return list;
-    return list.filter(r => 
-      (r.insumo?.nombre || '').toLowerCase().includes(query) ||
-      (r.servicioClinico?.descripcion || '').toLowerCase().includes(query) ||
-      r.servicioCodigo.toLowerCase().includes(query)
-    );
-  });
+
 
   public filteredMovements = computed(() => {
     const list = this.movements();
@@ -232,23 +209,13 @@ export class InventoryDashboardComponent implements OnInit {
       error: (err) => console.error("Error loading movements", err)
     });
 
-    this.inventoryService.getRecetas().subscribe({
-      next: (res) => this.recipes.set(res),
-      error: (err) => console.error("Error loading recipes", err)
-    });
 
-    this.catalogService.getUnifiedCatalog().subscribe({
-      next: (res) => {
-        this.services.set(res.filter(s => s.activo));
-      },
-      error: (err) => console.error("Error loading services", err)
-    });
   }
 
   // Tabs Change
-  setTab(tab: 'stock' | 'movement' | 'closing' | 'audit' | 'recipes') {
+  setTab(tab: 'stock' | 'movement' | 'closing' | 'audit') {
     this.activeTab.set(tab);
-    if (tab === 'stock' || tab === 'audit' || tab === 'recipes') {
+    if (tab === 'stock' || tab === 'audit') {
       this.loadAllData();
     }
   }
@@ -337,35 +304,7 @@ export class InventoryDashboardComponent implements OnInit {
     });
   }
 
-  // Recipe (BOM)
-  saveRecipe() {
-    const form = this.recipeForm();
-    if (!form.servicioClinicoId || !form.insumoId || form.cantidad <= 0) return;
 
-    this.isSubmitting.set(true);
-    this.inventoryService.createOrUpdateRecipe(form).subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.recipeForm.set({
-          servicioClinicoId: '',
-          insumoId: '',
-          cantidad: 0,
-          unidadMedidaConsumo: 'UNIDAD'
-        });
-        this.loadAllData();
-      },
-      error: () => this.isSubmitting.set(false)
-    });
-  }
-
-  deleteRecipe(id: string) {
-    if (confirm('¿Está seguro de eliminar esta receta de consumo?')) {
-      this.inventoryService.deleteRecipe(id).subscribe({
-        next: () => this.loadAllData(),
-        error: (err) => console.error("Error deleting recipe", err)
-      });
-    }
-  }
 
   // Inventory closing
   setPhysicalCount(insumoId: string, event: Event) {

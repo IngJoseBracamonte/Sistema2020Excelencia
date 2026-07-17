@@ -53,7 +53,8 @@ describe('CierreCuentaComponent', () => {
 
   beforeEach(async () => {
     mockActivatedRoute = {
-      params: of({ type: 'Hospitalizacion' })
+      params: of({ type: 'Hospitalizacion' }),
+      queryParams: of({})
     };
 
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
@@ -77,6 +78,8 @@ describe('CierreCuentaComponent', () => {
     mockAuthService = {
       currentUser: signal({ id: 'user-1', username: 'admin', role: 'Administrador' }),
       isAdministrador: () => true,
+      isCajero: () => true,
+      isAdmin: () => true,
       isParticularAssistant: () => true,
       isInsuranceAssistant: () => true,
       isHospitalAssistant: () => true,
@@ -169,5 +172,21 @@ describe('CierreCuentaComponent', () => {
       usuarioCajero: 'admin',
       tasaCambio: 36.5
     }));
+  });
+
+  it('debe mostrar el panel de acciones de caja cuando el tipo es Hospitalizacion', () => {
+    component.type.set('Hospitalizacion');
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const actionsBox = compiled.querySelector('a[routerLink="/cxc"]');
+    expect(actionsBox).toBeTruthy();
+  });
+
+  it('debe ocultar el panel de acciones de caja cuando el tipo es Emergencia', () => {
+    component.type.set('Emergencia');
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const actionsBox = compiled.querySelector('a[routerLink="/cxc"]');
+    expect(actionsBox).toBeFalsy();
   });
 });

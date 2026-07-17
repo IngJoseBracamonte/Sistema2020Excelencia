@@ -73,7 +73,7 @@ export class HospitalizacionComponent implements OnInit {
   };
 
   // Filtros de Sede
-  public selectedSedeFilter = signal<string>('all');
+  public selectedSedeFilter = signal<string>('');
 
   ngOnInit() {
     this.cargarDatos();
@@ -111,9 +111,12 @@ export class HospitalizacionComponent implements OnInit {
   // Camas filtradas por sede seleccionada
   public camasFiltradas = computed(() => {
     const list = this.camas();
-    const filter = this.selectedSedeFilter();
-    if (filter === 'all') return list;
-    return list.filter(c => c.sedeNombre === filter || c.sedeId === filter);
+    const filter = this.selectedSedeFilter().toLowerCase().trim();
+    if (!filter) return list;
+    return list.filter(c => 
+      (c.sedeNombre || '').toLowerCase().includes(filter) || 
+      (c.sedeId || '').toLowerCase().includes(filter)
+    );
   });
 
   // Métricas rápidas
