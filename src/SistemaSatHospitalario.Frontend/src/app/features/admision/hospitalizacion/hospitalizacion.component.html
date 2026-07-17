@@ -22,7 +22,7 @@
                 <lucide-icon [name]="icons.RefreshCcw" class="w-4 h-4"></lucide-icon>
                 <span class="text-[9px] font-black uppercase tracking-wider">Refrescar</span>
             </button>
-            <button (click)="showCreateForm.set(true)" class="h-12 px-6 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center gap-2 transition-all active:scale-95">
+            <button *ngIf="isAdmin()" (click)="showCreateForm.set(true)" class="h-12 px-6 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center gap-2 transition-all active:scale-95">
                 <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
                 <span class="text-[9px] font-black uppercase tracking-wider">Crear Cama</span>
             </button>
@@ -164,16 +164,11 @@
             </div>
 
             <!-- Acciones -->
-            <div class="flex gap-2 pt-4 border-t border-white/5">
+            <div class="flex gap-2 pt-4 border-t border-white/5 w-full">
                 <button *ngIf="cama.estado === 'Ocupada'" (click)="verHistorialClinico(cama)"
-                    class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-wider border border-white/5 flex items-center justify-center gap-1.5 transition-all">
+                    class="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-wider border border-white/5 flex items-center justify-center gap-1.5 transition-all">
                     <lucide-icon [name]="icons.ClipboardList" class="w-3.5 h-3.5"></lucide-icon>
                     Clínica
-                </button>
-                <button *ngIf="cama.estado === 'Ocupada'" (click)="irAFacturacion(cama)"
-                    class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md">
-                    Facturar
-                    <lucide-icon [name]="icons.ArrowRight" class="w-3.5 h-3.5"></lucide-icon>
                 </button>
                 <div *ngIf="cama.estado === 'Disponible'" class="w-full text-center py-1 text-slate-500 text-[8px] font-black uppercase tracking-widest italic">
                     Sin pacientes asignados
@@ -184,7 +179,7 @@
     </div>
 
     <!-- MODAL DE ALTA RÁPIDA DE CAMAS -->
-    <div *ngIf="showCreateForm()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div *ngIf="showCreateForm() && isAdmin()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showCreateForm.set(false)"></div>
         <div class="relative bg-surface-card rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/5 animate-scale-in">
             

@@ -28,6 +28,12 @@
             <span class="font-bold">Cuentas Hospitalarias</span>
         </a>
 
+        <!-- Hospitalización Standalone Link -->
+        <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant() || isHospitalAssistant()" routerLink="/admision/hospitalizacion" routerLinkActive="active-link" class="nav-item flex items-center">
+            <lucide-icon [name]="icons.Bed" class="w-5 h-5 mr-3 text-sky-400"></lucide-icon>
+            <span class="font-bold">Hospitalización</span>
+        </a>
+
 
 
         <!-- Dropdown Gestión de Órdenes -->
@@ -47,7 +53,6 @@
                 <a *ngIf="permissionService.can('Permissions.Facturacion.Convenio')" routerLink="/facturacion" [queryParams]="{type: 'Seguro'}" routerLinkActive="active-sublink" class="nav-subitem">Seguros</a>
                 <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant()" routerLink="/cierre-cuenta/Hospitalizacion" routerLinkActive="active-sublink" class="nav-subitem">🏥 Hospitalaria</a>
                 <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant()" routerLink="/cierre-cuenta/Emergencia" routerLinkActive="active-sublink" class="nav-subitem">🚨 Emergencia</a>
-                <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant() || isHospitalAssistant()" routerLink="/admision/hospitalizacion" routerLinkActive="active-sublink" class="nav-subitem">🛏️ Hospitalización</a>
             </div>
         </div>
 

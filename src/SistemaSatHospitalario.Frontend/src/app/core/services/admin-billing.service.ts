@@ -32,6 +32,7 @@ export interface CuentaAdministrativaDto {
   numeroRecibo?: string;
   areaClinicaId?: string;
   areaClinicaNombre?: string;
+  subAreaClinica?: string;
   detalles: CuentaAdministrativaDetailDto[];
 }
 

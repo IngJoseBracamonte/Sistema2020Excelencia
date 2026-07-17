@@ -84,6 +84,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     NumeroRecibo = recibo?.NumeroRecibo,
                     AreaClinicaId = c.AreaClinicaId,
                     AreaClinicaNombre = c.AreaClinica?.Nombre,
+                    SubAreaClinica = c.SubAreaClinica,
                     Detalles = c.Detalles.Select(d => new CuentaAdministrativaDetailDto
                     {
                         Id = d.Id,

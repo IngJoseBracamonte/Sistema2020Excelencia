@@ -52,6 +52,7 @@ export interface CuentaAdministrativa {
   total?: number;
   areaClinicaId?: string;
   areaClinicaNombre?: string;
+  subAreaClinica?: string;
   [key: string]: any;
 }
 

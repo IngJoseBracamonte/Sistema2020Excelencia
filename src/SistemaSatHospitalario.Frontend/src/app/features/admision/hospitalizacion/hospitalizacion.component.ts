@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { MultiSedeService } from '../../../core/services/multi-sede.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { 
   LucideAngularModule, 
   Bed, 
@@ -33,6 +34,7 @@ export class HospitalizacionComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly sedeService = inject(MultiSedeService);
+  public readonly auth = inject(AuthService);
 
   readonly icons = {
     Bed,
@@ -74,6 +76,10 @@ export class HospitalizacionComponent implements OnInit {
 
   // Filtros de Sede
   public selectedSedeFilter = signal<string>('');
+
+  public isAdmin(): boolean {
+    return this.auth.isAdmin();
+  }
 
   ngOnInit() {
     this.cargarDatos();
