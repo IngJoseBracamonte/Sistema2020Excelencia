@@ -1,54 +1,46 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MultiSedeService, Sede, PedidoInterSede } from '../../../core/services/multi-sede.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo } from '../../../core/models/inventory.model';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-pedidos-inter-sede',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-6 space-y-6 animate-fade-in text-main">
+    <div class="p-6 space-y-6 animate-fade-in text-main relative z-10">
 
       <!-- Encabezado con patrón global del sistema -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/5">
+      <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-5 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -z-10 blur-3xl"></div>
+        <div class="flex items-center space-x-4">
+          <div class="h-10 w-10 bg-primary/10 text-primary border border-primary/20 rounded-xl flex items-center justify-center shadow-lg shadow-primary/5">
             <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
           </div>
           <div>
-            <h1 class="text-2xl font-black tracking-tight uppercase">Pedidos Inter-Sede</h1>
-            <p class="text-xs text-muted font-bold uppercase tracking-wider">Gestión de traslados de mercadería y reposición de inventario entre sucursales</p>
+            <h1 class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase">Pedidos</h1>
+            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">Gestión de traslados de mercadería y reposición de inventario entre sucursales</p>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Panel de Creación de Pedido -->
-        <div class="xl:col-span-1 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
+        <div class="lg:col-span-5 xl:col-span-5 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
           <h2 class="text-sm font-black uppercase tracking-widest text-muted">Solicitar Reposición</h2>
 
           <div class="space-y-3">
             <div>
               <label class="text-[10px] text-muted font-black uppercase tracking-wider">Sede Solicitante (Destino)</label>
-              <select [(ngModel)]="newPedido.sedeSolicitanteId"
-                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer">
-                <option *ngFor="let s of sedes" [value]="s.id">
-                  {{ s.nombre }} {{ s.esPrincipal ? '(Principal)' : '' }}
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Sede Proveedora (Origen)</label>
-              <select [(ngModel)]="newPedido.sedeProveedoraId"
-                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer">
-                <option *ngFor="let s of sedes" [value]="s.id" [disabled]="s.id === newPedido.sedeSolicitanteId">
+              <select [(ngModel)]="newPedido.sedeSolicitanteId" [disabled]="isOnlyEmergency()"
+                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                <option *ngFor="let s of filteredSedes" [value]="s.id">
                   {{ s.nombre }} {{ s.esPrincipal ? '(Principal)' : '' }}
                 </option>
               </select>
@@ -62,9 +54,9 @@ import { Insumo } from '../../../core/models/inventory.model';
                   <option *ngFor="let ins of insumos" [value]="ins.id">{{ ins.nombre }}</option>
                 </select>
                 <input type="number" [(ngModel)]="selectedCantidad" min="1"
-                  class="w-20 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main text-center focus:outline-none focus:border-primary/50 transition-all" />
+                  class="w-16 bg-surface-card border border-glass-border rounded-xl px-2 py-2 text-sm text-main text-center focus:outline-none focus:border-primary/50 transition-all" />
                 <button (click)="addLinea()"
-                  class="px-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/25 active:scale-95">
+                  class="px-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/25 active:scale-95 flex items-center justify-center shrink-0">
                   +
                 </button>
               </div>
@@ -77,7 +69,7 @@ import { Insumo } from '../../../core/models/inventory.model';
                 <span>Cant.</span>
               </div>
               <div *ngFor="let line of newPedido.lineas; let idx = index" class="flex justify-between items-center text-xs">
-                <span class="text-main/80 truncate max-w-[150px] font-medium">{{ getInsumoName(line.insumoId) }}</span>
+                <span class="text-main/80 truncate max-w-[180px] font-medium">{{ getInsumoName(line.insumoId) }}</span>
                 <div class="flex items-center gap-2">
                   <span class="font-black text-main">{{ line.cantidadSolicitada }}</span>
                   <button (click)="removeLinea(idx)" class="text-rose-400 hover:text-rose-300 font-black transition-colors">×</button>
@@ -103,7 +95,7 @@ import { Insumo } from '../../../core/models/inventory.model';
         </div>
 
         <!-- Panel de Pedidos Activos/Pendientes -->
-        <div class="xl:col-span-2 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
+        <div class="lg:col-span-7 xl:col-span-7 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
           <h2 class="text-sm font-black uppercase tracking-widest text-muted">Pedidos en Tránsito / Pendientes</h2>
 
           <div class="space-y-4" *ngIf="pedidos.length > 0; else noPedidos">
@@ -227,6 +219,7 @@ import { Insumo } from '../../../core/models/inventory.model';
 export class PedidosInterSedeComponent implements OnInit {
   public multiSedeService = inject(MultiSedeService);
   private inventoryService = inject(InventoryService);
+  private authService = inject(AuthService);
 
   public sedes: Sede[] = [];
   public insumos: Insumo[] = [];
@@ -247,6 +240,21 @@ export class PedidosInterSedeComponent implements OnInit {
   public selectedPedidoForRecepcion: PedidoInterSede | null = null;
   public discrepanciasForm: { [key: string]: number } = {};
 
+  public isOnlyEmergency = computed(() => {
+    const user = this.authService.currentUser();
+    const role = user?.role?.toLowerCase() || '';
+    const isAdmin = this.authService.isAdmin();
+    const isSupervisor = this.authService.isSupervisor();
+    return role.includes('emergencia') && !isAdmin && !isSupervisor;
+  });
+
+  get filteredSedes(): Sede[] {
+    if (this.isOnlyEmergency()) {
+      return this.sedes.filter(s => s.codigo?.toUpperCase() === 'EMERGENCIA' || s.id === '10000000-0000-0000-0000-000000000002');
+    }
+    return this.sedes;
+  }
+
   ngOnInit() {
     this.loadInitialData();
   }
@@ -257,7 +265,21 @@ export class PedidosInterSedeComponent implements OnInit {
       this.sedes = activeSedes;
       if (activeSedes.length > 0) {
         const principal = activeSedes.find(s => s.esPrincipal) || activeSedes[0];
-        this.newPedido.sedeSolicitanteId = principal.id;
+        
+        // La sede proveedora siempre es fija a la sede principal
+        this.newPedido.sedeProveedoraId = principal.id;
+
+        // La sede solicitante preseleccionada según el rol
+        if (this.isOnlyEmergency()) {
+          const emergencySede = activeSedes.find(s => s.codigo?.toUpperCase() === 'EMERGENCIA' || s.id === '10000000-0000-0000-0000-000000000002');
+          if (emergencySede) {
+            this.newPedido.sedeSolicitanteId = emergencySede.id;
+          } else {
+            this.newPedido.sedeSolicitanteId = principal.id;
+          }
+        } else {
+          this.newPedido.sedeSolicitanteId = principal.id;
+        }
       }
     });
     this.inventoryService.getInsumos(true).subscribe(res => {
@@ -306,9 +328,10 @@ export class PedidosInterSedeComponent implements OnInit {
       next: () => {
         this.loadPedidos();
         const prevSolicitante = this.newPedido.sedeSolicitanteId;
+        const prevProveedora = this.newPedido.sedeProveedoraId;
         this.newPedido = {
           sedeSolicitanteId: prevSolicitante,
-          sedeProveedoraId: '',
+          sedeProveedoraId: prevProveedora,
           observaciones: '',
           lineas: []
         };

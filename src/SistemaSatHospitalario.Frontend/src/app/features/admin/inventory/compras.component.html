@@ -1,6 +1,6 @@
-﻿<div class="space-y-6 animate-fade-in p-2 md:p-4 relative z-10">
+<div class="space-y-6 animate-fade-in p-2 md:p-4 relative z-10">
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== HEADER ========================================== -->
   <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-5 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl">
     <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -z-10 blur-3xl"></div>
     <div class="flex items-center space-x-4">
@@ -9,7 +9,7 @@
       </div>
       <div>
         <h1 class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase">Farmacia y Compras</h1>
-        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">GestiÃ³n centralizada de compras, catÃ¡logo de insumos y despacho a sedes</p>
+        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">Gestión centralizada de compras, catálogo de insumos y despacho a sedes</p>
       </div>
     </div>
     <div *ngIf="activeTab() === 'crud'" class="mt-4 md:mt-0">
@@ -20,14 +20,14 @@
     </div>
   </div>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TOASTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== TOASTS ========================================== -->
   <div class="fixed top-8 right-8 z-[110] space-y-4 max-w-sm pointer-events-none">
     <div *ngIf="successMessage()" class="pointer-events-auto bg-[#0a0f1d]/90 backdrop-blur-2xl p-5 rounded-[1.5rem] border border-emerald-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
       <div class="h-9 w-9 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg shrink-0">
         <lucide-icon [name]="icons.Check" class="w-5 h-5"></lucide-icon>
       </div>
       <div>
-        <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-70">OperaciÃ³n Exitosa</p>
+        <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-70">Operación Exitosa</p>
         <p class="text-sm font-black text-white leading-tight mt-0.5">{{ successMessage() }}</p>
       </div>
     </div>
@@ -36,13 +36,13 @@
         <lucide-icon [name]="icons.X" class="w-5 h-5"></lucide-icon>
       </div>
       <div>
-        <p class="text-[9px] font-black text-primary uppercase tracking-widest opacity-70">AtenciÃ³n</p>
+        <p class="text-[9px] font-black text-primary uppercase tracking-widest opacity-70">Atención</p>
         <p class="text-sm font-black text-white leading-tight mt-0.5">{{ errorMessage() }}</p>
       </div>
     </div>
   </div>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TABS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== TABS ========================================== -->
   <div class="flex border-b border-white/5 space-x-1 overflow-x-auto pb-px">
     <button (click)="activeTab.set('purchase')"
       [class]="activeTab() === 'purchase' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'"
@@ -61,11 +61,11 @@
       [class]="activeTab() === 'crud' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/5'"
       class="pb-3 pt-2 px-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center justify-center gap-2 cursor-pointer rounded-t-lg whitespace-nowrap">
       <lucide-icon [name]="icons.Settings" class="w-3.5 h-3.5"></lucide-icon>
-      GestiÃ³n de CatÃ¡logo (CRUD)
+      Gestión de Catálogo (CRUD)
     </button>
   </div>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 1: REGISTRAR COMPRA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== TAB 1: REGISTRAR COMPRA ========================================== -->
   <div *ngIf="activeTab() === 'purchase'" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     <!-- Formulario -->
@@ -89,7 +89,7 @@
           <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Buscar Producto</label>
           <div class="relative">
             <input type="text" [ngModel]="purchaseSearchTerm()" (ngModelChange)="onPurchaseSearchChange($event)"
-              placeholder="Escribe cÃ³digo, nombre o reactivo..."
+              placeholder="Escribe código, nombre o reactivo..."
               class="w-full pl-9 pr-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-xs font-bold placeholder-slate-600 text-white focus:outline-none focus:border-primary/50 transition-all" />
             <lucide-icon [name]="icons.Search" class="absolute left-3 top-2.5 text-slate-500 w-4 h-4"></lucide-icon>
           </div>
@@ -98,7 +98,7 @@
               class="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-b-0 transition-all">
               <div class="font-black text-xs text-white">{{ item.nombre }}</div>
               <div class="text-[10px] text-slate-500 mt-0.5 flex justify-between">
-                <span class="font-mono">CÃ³d: {{ item.codigo }}</span>
+                <span class="font-mono">Cód: {{ item.codigo }}</span>
                 <span *ngIf="item.reactivosCombinados" class="italic text-primary">{{ item.reactivosCombinados }}</span>
               </div>
             </div>
@@ -124,7 +124,7 @@
         <button (click)="addToCart()" [disabled]="!selectedInsumo()"
           class="w-full py-3 bg-primary hover:bg-primary/85 disabled:opacity-30 disabled:cursor-not-allowed text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95 mt-2">
           <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
-          AÃ±adir al Carrito
+          Añadir al Carrito
         </button>
       </div>
     </div>
@@ -138,28 +138,28 @@
             <div class="h-7 w-7 bg-primary/10 text-primary border border-primary/20 rounded-lg flex items-center justify-center">
               <lucide-icon [name]="icons.Package" class="w-4 h-4"></lucide-icon>
             </div>
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lista de Ãtems a Ingresar</span>
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lista de Ítems a Ingresar</span>
           </div>
-          <span class="bg-black/40 border border-white/10 text-slate-500 text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest">{{ cart().length }} Ãtems</span>
+          <span class="bg-black/40 border border-white/10 text-slate-500 text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest">{{ cart().length }} Ítems</span>
         </div>
         <div *ngIf="cart().length === 0" class="flex flex-col items-center justify-center py-20 text-slate-600">
           <div class="h-16 w-16 bg-white/3 border border-white/5 rounded-[1.5rem] flex items-center justify-center mb-4">
             <lucide-icon [name]="icons.Package" class="w-8 h-8"></lucide-icon>
           </div>
-          <p class="text-xs font-black text-slate-600 uppercase tracking-widest text-center">No hay Ã­tems en el carrito</p>
+          <p class="text-xs font-black text-slate-600 uppercase tracking-widest text-center">No hay ítems en el carrito</p>
           <p class="text-[10px] text-slate-700 mt-1 text-center">Utiliza el formulario de la izquierda para agregar.</p>
         </div>
         <div *ngIf="cart().length > 0" class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-white/5 text-slate-600 text-[9px] uppercase tracking-widest font-black">
-                <th class="py-3 px-3">CÃ³digo</th>
+                <th class="py-3 px-3">Código</th>
                 <th class="py-3 px-3">Producto</th>
                 <th class="py-3 px-3 text-right">Cant.</th>
                 <th class="py-3 px-3 text-right">Costo (USD)</th>
                 <th class="py-3 px-3 text-center">Vencimiento</th>
                 <th class="py-3 px-3 text-right">Total (USD)</th>
-                <th class="py-3 px-3 text-center">â€“</th>
+                <th class="py-3 px-3 text-center">–</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5 text-xs font-bold">
@@ -195,7 +195,7 @@
     </div>
   </div>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 2: APROBAR PEDIDOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== TAB 2: APROBAR PEDIDOS ========================================== -->
   <div *ngIf="activeTab() === 'pending'" class="bg-surface-card backdrop-blur-3xl p-6 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl min-h-[400px] space-y-5">
     <div class="absolute top-0 right-0 w-48 h-48 bg-primary/3 rounded-full -z-10 blur-3xl"></div>
     <div class="flex items-center gap-2 pb-3 border-b border-white/5">
@@ -208,7 +208,7 @@
       <div class="h-16 w-16 bg-white/3 border border-white/5 rounded-[1.5rem] flex items-center justify-center mb-4">
         <lucide-icon [name]="icons.FileText" class="w-8 h-8"></lucide-icon>
       </div>
-      <p class="text-xs font-black uppercase tracking-widest text-center">Sin pedidos pendientes de aprobaciÃ³n</p>
+      <p class="text-xs font-black uppercase tracking-widest text-center">Sin pedidos pendientes de aprobación</p>
     </div>
     <div *ngIf="pedidosPendientes().length > 0" class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
@@ -217,10 +217,10 @@
             <th class="py-3 px-4">Correlativo</th>
             <th class="py-3 px-4">Sede Solicitante</th>
             <th class="py-3 px-4">Sede Proveedora</th>
-            <th class="py-3 px-4">Fecha CreaciÃ³n</th>
-            <th class="py-3 px-4">Ãtems Solicitados</th>
+            <th class="py-3 px-4">Fecha Creación</th>
+            <th class="py-3 px-4">Ítems Solicitados</th>
             <th class="py-3 px-4">Observaciones</th>
-            <th class="py-3 px-4 text-center">AcciÃ³n</th>
+            <th class="py-3 px-4 text-center">Acción</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5 text-xs font-bold">
@@ -251,13 +251,13 @@
     </div>
   </div>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TAB 3: CRUD CATÃLOGO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== TAB 3: CRUD CATÁLOGO ========================================== -->
   <div *ngIf="activeTab() === 'crud'" class="bg-surface-card backdrop-blur-3xl p-6 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl min-h-[400px] space-y-5">
     <div class="absolute top-0 right-0 w-48 h-48 bg-primary/3 rounded-full -z-10 blur-3xl"></div>
     <div class="flex flex-col md:flex-row gap-4 items-center justify-between pb-3 border-b border-white/5">
       <div class="relative w-full md:w-96">
         <input type="text" [ngModel]="crudSearchTerm()" (ngModelChange)="crudSearchTerm.set($event)"
-          placeholder="Buscar por cÃ³digo, nombre o reactivo..."
+          placeholder="Buscar por código, nombre o reactivo..."
           class="w-full pl-9 pr-4 py-2.5 bg-black/30 border border-white/10 rounded-xl text-xs font-bold placeholder-slate-600 text-white focus:outline-none focus:border-primary/50 transition-all" />
         <lucide-icon [name]="icons.Search" class="absolute left-3 top-2.5 text-slate-500 w-4 h-4"></lucide-icon>
       </div>
@@ -275,13 +275,13 @@
           <tr class="border-b border-white/5 text-slate-600 text-[9px] uppercase tracking-widest font-black">
             <th class="py-3 px-3 text-center w-10">Img</th>
             <th class="py-3 px-3 text-center w-10">Pedir</th>
-            <th class="py-3 px-3">CÃ³digo</th>
+            <th class="py-3 px-3">Código</th>
             <th class="py-3 px-3 w-1/3">Nombre del Producto</th>
             <th class="py-3 px-3 text-center">U.M.</th>
             <th class="py-3 px-3 text-center">Vencimiento</th>
             <th class="py-3 px-3 text-right">Existencia</th>
             <th class="py-3 px-3 text-right">Costo (USD)</th>
-            <th class="py-3 px-3 text-center">Estado EnvÃ­os</th>
+            <th class="py-3 px-3 text-center">Estado Envíos</th>
             <th class="py-3 px-3 text-center">Acciones</th>
           </tr>
         </thead>
@@ -301,7 +301,7 @@
             <td class="py-3 px-3">
               <div class="font-black text-white text-sm">{{ item.nombre }}</div>
               <div *ngIf="item.reactivosCombinados" class="text-[9px] font-black tracking-wider uppercase text-primary mt-1 flex items-center gap-1">
-                <span class="bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded">FÃ³rmula: {{ item.reactivosCombinados }}</span>
+                <span class="bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded">Fórmula: {{ item.reactivosCombinados }}</span>
               </div>
               <div *ngIf="item.indicaciones" class="text-[10px] text-slate-500 mt-1 font-sans font-medium">{{ item.indicaciones }}</div>
             </td>
@@ -328,7 +328,7 @@
                 <button (click)="toggleInsumoOculto(item)"
                   [class]="item.ocultoEnTraslados ? 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10' : 'text-amber-500 hover:text-amber-400 hover:bg-amber-500/10'"
                   class="p-1.5 rounded-lg transition cursor-pointer"
-                  [title]="item.ocultoEnTraslados ? 'Restaurar para envÃ­os' : 'Ocultar para envÃ­os'">
+                  [title]="item.ocultoEnTraslados ? 'Restaurar para envíos' : 'Ocultar para envíos'">
                   <lucide-icon [name]="item.ocultoEnTraslados ? icons.Check : icons.Trash2" class="w-4 h-4"></lucide-icon>
                 </button>
               </div>
@@ -339,7 +339,7 @@
     </div>
   </div>
 
-  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MODAL CRUD â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!-- ========================================== MODAL CRUD ========================================== -->
   <div *ngIf="showCrudModal()" class="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="bg-surface-card border border-white/5 w-full max-w-xl p-6 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden animate-fade-in">
       <div class="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -z-10 blur-3xl"></div>
@@ -348,7 +348,7 @@
           <div class="h-8 w-8 bg-primary/10 text-primary border border-primary/20 rounded-xl flex items-center justify-center">
             <lucide-icon [name]="icons.Package" class="w-4 h-4"></lucide-icon>
           </div>
-          <h3 class="text-sm font-black text-white uppercase tracking-widest">{{ isEditingCrud() ? 'Editar Insumo MÃ©dico' : 'Crear Nuevo Insumo' }}</h3>
+          <h3 class="text-sm font-black text-white uppercase tracking-widest">{{ isEditingCrud() ? 'Editar Insumo Médico' : 'Crear Nuevo Insumo' }}</h3>
         </div>
         <button (click)="closeCrudModal()" class="text-slate-500 hover:text-white transition cursor-pointer p-1.5 rounded-lg hover:bg-white/5">
           <lucide-icon [name]="icons.X" class="w-4 h-4"></lucide-icon>
@@ -357,12 +357,12 @@
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">CÃ³digo del Insumo</label>
+            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Código del Insumo</label>
             <input type="text" [(ngModel)]="crudForm.codigo" [disabled]="isEditingCrud()" placeholder="Ej: PM-500"
               class="w-full bg-black/30 border border-white/10 rounded-xl text-xs font-black py-2.5 px-3 text-white focus:outline-none focus:border-primary/50 transition-all font-mono disabled:opacity-40 placeholder-slate-600" />
           </div>
           <div>
-            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">CategorÃ­a</label>
+            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Categoría</label>
             <select class="w-full bg-black/30 border border-white/10 rounded-xl text-xs font-bold py-2.5 px-3 text-white focus:outline-none focus:border-primary/50 transition-all appearance-none">
               <option *ngFor="let cat of categories" [value]="cat" class="bg-surface-card">{{ cat }}</option>
             </select>
@@ -400,9 +400,9 @@
           </div>
         </div>
         <div>
-          <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Principios Activos / Reactivos (FÃ³rmula)</label>
+          <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Principios Activos / Reactivos (Fórmula)</label>
           <input type="text" [(ngModel)]="crudForm.reactivosCombinados"
-            placeholder="Ej: AcetaminofÃ©n, Ibuprofeno (separados por coma)"
+            placeholder="Ej: Acetaminofén, Ibuprofeno (separados por coma)"
             class="w-full bg-black/30 border border-white/10 rounded-xl text-xs font-bold py-2.5 px-3 text-white focus:outline-none focus:border-primary/50 transition-all placeholder-slate-600" />
         </div>
         <div>
