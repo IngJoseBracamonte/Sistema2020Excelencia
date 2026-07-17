@@ -86,11 +86,11 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                var transaction = _context.Database == null
-                    ? await _context.BeginTransactionAsync(cancellationToken)
-                    : (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory"
-                        ? null
-                        : await _context.BeginTransactionAsync(cancellationToken));
+                var hasExistingTransaction = _context.Database?.CurrentTransaction != null;
+                var isInMemory = _context.Database?.ProviderName == "Microsoft.EntityFrameworkCore.InMemory";
+                var transaction = (hasExistingTransaction || isInMemory)
+                    ? null
+                    : await _context.BeginTransactionAsync(cancellationToken);
                 try
                 {
                     foreach (var recipe in recipes)

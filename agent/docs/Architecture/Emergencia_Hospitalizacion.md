@@ -118,6 +118,7 @@ La interfaz de enfermería en tablet muestra en la cabecera del paciente una eti
 Un botón de "Traslado Interno" despliega un modal interactivo:
 *   **Selector de Área**: Dropdown que permite alternar entre Emergencia, Hospitalización y UCI.
 *   **Selector de Camas Libres**: Carga de forma reactiva las ubicaciones de la base de datos que tengan `Disponible == true` filtrando por el área seleccionada.
+*   **Filtrado Dinámico Reactivo**: Tanto en la admisión como en los traslados, las camas y habitaciones se filtran dinámicamente en el frontend usando señales computadas (`camasDisponiblesIngreso`, `camasDisponiblesTraslado` y `camasDisponiblesFiltradas`) que asocian el tipo de ingreso con los IDs de Sede/Área fijos en la base de datos (`SeedConstants`).
 *   **Confirmación**: Al hacer clic en "Confirmar Traslado", envía el payload al API y recarga las señales de estado del paciente en el dashboard.
 
 ### 3. Tarjetas KPI de Antesala de Cierre (CierreCuentaComponent)

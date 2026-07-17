@@ -171,9 +171,7 @@
             <div *ngIf="dropdownsOpen().settings" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">General & Finanzas</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios</a>
-                <a *ngIf="isAdmin()" routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Seguridad & RBAC</a>
-                <a *ngIf="isAdmin()" routerLink="/settings" [queryParams]="{tab: 'instalacion'}" routerLinkActive="active-sublink" class="nav-subitem">Instalación de Pruebas</a>
-                <a *ngIf="isAdmin()" routerLink="/admin/health" routerLinkActive="active-sublink" class="nav-subitem">Integridad del Sistema</a>
+                <a *ngIf="isAdmin()" routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Usuarios y Roles</a>
                 <a *ngIf="isAdmin()" routerLink="/admin/reset-requests" routerLinkActive="active-sublink" class="nav-subitem">Solicitudes de Reset</a>
                 <a *ngIf="isAdmin()" routerLink="/tickets" routerLinkActive="active-sublink" class="nav-subitem text-rose-500 font-bold">Tickets de Error</a>
             </div>
