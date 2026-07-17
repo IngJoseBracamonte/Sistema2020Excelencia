@@ -10,21 +10,34 @@ import { Insumo } from '../../../core/models/inventory.model';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="space-y-6">
-      <div class="rounded-2xl border border-white/10 bg-surface/50 backdrop-blur-xl p-8 shadow-2xl">
-        <h1 class="text-3xl font-black tracking-tight text-foreground">Pedidos Inter-Sede</h1>
-        <p class="text-sm text-muted-foreground mt-1">Gestión de traslados de mercadería y reposición de inventario entre sucursales.</p>
+    <div class="p-6 space-y-6 animate-fade-in text-main">
+
+      <!-- Encabezado con patrón global del sistema -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/5">
+            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black tracking-tight uppercase">Pedidos Inter-Sede</h1>
+            <p class="text-xs text-muted font-bold uppercase tracking-wider">Gestión de traslados de mercadería y reposición de inventario entre sucursales</p>
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <!-- Panel de Creación de Pedido -->
-        <div class="xl:col-span-1 rounded-xl border border-white/5 bg-surface/30 p-6 space-y-4 shadow-md">
-          <h2 class="text-lg font-bold text-foreground">Solicitar Reposición</h2>
-          
+        <div class="xl:col-span-1 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
+          <h2 class="text-sm font-black uppercase tracking-widest text-muted">Solicitar Reposición</h2>
+
           <div class="space-y-3">
             <div>
-              <label class="text-xs text-muted-foreground font-semibold">Sede Solicitante (Destino)</label>
-              <select [(ngModel)]="newPedido.sedeSolicitanteId" class="w-full mt-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-indigo-500">
+              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Sede Solicitante (Destino)</label>
+              <select [(ngModel)]="newPedido.sedeSolicitanteId"
+                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer">
                 <option *ngFor="let s of sedes" [value]="s.id">
                   {{ s.nombre }} {{ s.esPrincipal ? '(Principal)' : '' }}
                 </option>
@@ -32,8 +45,9 @@ import { Insumo } from '../../../core/models/inventory.model';
             </div>
 
             <div>
-              <label class="text-xs text-muted-foreground font-semibold">Sede Proveedora (Origen)</label>
-              <select [(ngModel)]="newPedido.sedeProveedoraId" class="w-full mt-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-indigo-500">
+              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Sede Proveedora (Origen)</label>
+              <select [(ngModel)]="newPedido.sedeProveedoraId"
+                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer">
                 <option *ngFor="let s of sedes" [value]="s.id" [disabled]="s.id === newPedido.sedeSolicitanteId">
                   {{ s.nombre }} {{ s.esPrincipal ? '(Principal)' : '' }}
                 </option>
@@ -41,40 +55,47 @@ import { Insumo } from '../../../core/models/inventory.model';
             </div>
 
             <div>
-              <label class="text-xs text-muted-foreground font-semibold">Agregar Insumo</label>
+              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Agregar Insumo</label>
               <div class="flex gap-2 mt-1">
-                <select [(ngModel)]="selectedInsumoId" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-indigo-500">
+                <select [(ngModel)]="selectedInsumoId"
+                  class="flex-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer">
                   <option *ngFor="let ins of insumos" [value]="ins.id">{{ ins.nombre }}</option>
                 </select>
-                <input type="number" [(ngModel)]="selectedCantidad" min="1" class="w-20 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground text-center focus:outline-none focus:border-indigo-500" />
-                <button (click)="addLinea()" class="px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all">+</button>
+                <input type="number" [(ngModel)]="selectedCantidad" min="1"
+                  class="w-20 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main text-center focus:outline-none focus:border-primary/50 transition-all" />
+                <button (click)="addLinea()"
+                  class="px-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/25 active:scale-95">
+                  +
+                </button>
               </div>
             </div>
 
             <!-- Listado de Líneas Temporales -->
-            <div class="border border-white/5 rounded-lg p-3 space-y-2 bg-white/[0.01]" *ngIf="newPedido.lineas.length > 0">
-              <div class="flex justify-between items-center text-xs text-muted-foreground border-b border-white/5 pb-2">
+            <div class="border border-glass-border rounded-xl p-3 space-y-2 bg-surface-card/50" *ngIf="newPedido.lineas.length > 0">
+              <div class="flex justify-between items-center text-[10px] text-muted font-black uppercase tracking-widest border-b border-glass-border pb-2">
                 <span>Insumo</span>
                 <span>Cant.</span>
               </div>
               <div *ngFor="let line of newPedido.lineas; let idx = index" class="flex justify-between items-center text-xs">
-                <span class="text-foreground/80 truncate max-w-[150px]">{{ getInsumoName(line.insumoId) }}</span>
+                <span class="text-main/80 truncate max-w-[150px] font-medium">{{ getInsumoName(line.insumoId) }}</span>
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-foreground">{{ line.cantidadSolicitada }}</span>
-                  <button (click)="removeLinea(idx)" class="text-red-400 hover:text-red-300">x</button>
+                  <span class="font-black text-main">{{ line.cantidadSolicitada }}</span>
+                  <button (click)="removeLinea(idx)" class="text-rose-400 hover:text-rose-300 font-black transition-colors">×</button>
                 </div>
               </div>
             </div>
 
             <div>
-              <label class="text-xs text-muted-foreground font-semibold">Observaciones</label>
-              <textarea [(ngModel)]="newPedido.observaciones" rows="3" class="w-full mt-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-indigo-500"></textarea>
+              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Observaciones</label>
+              <textarea [(ngModel)]="newPedido.observaciones" rows="3"
+                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-sm text-main focus:outline-none focus:border-primary/50 transition-all resize-none">
+              </textarea>
             </div>
 
-            <button 
+            <button
               (click)="crearSolicitud()"
               [disabled]="newPedido.lineas.length === 0 || !newPedido.sedeProveedoraId"
-              class="w-full h-10 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 font-semibold text-white transition-all shadow-md text-xs"
+              class="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 font-black text-white transition-all shadow-lg shadow-primary/25 text-xs uppercase tracking-widest active:scale-[0.98]"
             >
               Enviar Requisición
             </button>
@@ -82,28 +103,28 @@ import { Insumo } from '../../../core/models/inventory.model';
         </div>
 
         <!-- Panel de Pedidos Activos/Pendientes -->
-        <div class="xl:col-span-2 rounded-xl border border-white/5 bg-surface/30 p-6 space-y-4 shadow-md">
-          <h2 class="text-lg font-bold text-foreground">Pedidos en Tránsito / Pendientes</h2>
+        <div class="xl:col-span-2 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
+          <h2 class="text-sm font-black uppercase tracking-widest text-muted">Pedidos en Tránsito / Pendientes</h2>
 
           <div class="space-y-4" *ngIf="pedidos.length > 0; else noPedidos">
-            <div 
-              *ngFor="let ped of pedidos" 
-              class="border border-white/5 rounded-xl p-4 bg-white/[0.01] hover:border-white/10 transition-all space-y-3"
+            <div
+              *ngFor="let ped of pedidos"
+              class="border border-glass-border rounded-xl p-4 bg-surface-card/50 hover:border-white/10 hover:bg-surface-card transition-all space-y-3"
             >
-              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border pb-3">
                 <div>
-                  <span class="text-xs font-black tracking-wider uppercase text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                  <span class="text-[10px] font-black tracking-widest uppercase text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-lg">
                     {{ ped.correlativo }}
                   </span>
-                  <span class="text-xs text-muted-foreground ml-2">
-                    De: {{ ped.sedeSolicitanteNombre }} -> Para: {{ ped.sedeProveedoraNombre }}
+                  <span class="text-xs text-muted ml-2 font-bold">
+                    De: {{ ped.sedeSolicitanteNombre }} → Para: {{ ped.sedeProveedoraNombre }}
                   </span>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider text-[10px]" [ngClass]="{
-                    'bg-yellow-500/20 text-yellow-400': ped.estado === 'Solicitado',
-                    'bg-blue-500/20 text-blue-400': ped.estado === 'Despachado',
-                    'bg-green-500/20 text-green-400': ped.estado === 'Recibido'
+                  <span class="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest" [ngClass]="{
+                    'bg-amber-500/10 text-amber-400 border border-amber-500/20': ped.estado === 'Solicitado',
+                    'bg-hospital-500/10 text-hospital-400 border border-hospital-500/20': ped.estado === 'Despachado',
+                    'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': ped.estado === 'Recibido'
                   }">
                     {{ ped.estado }}
                   </span>
@@ -113,10 +134,10 @@ import { Insumo } from '../../../core/models/inventory.model';
               <!-- Listado de Detalles de Items -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <h4 class="text-xs font-bold uppercase text-muted-foreground tracking-wider">Detalles de Insumos</h4>
-                  <div *ngFor="let det of ped.detalles" class="text-xs flex justify-between bg-white/[0.01] p-2 rounded">
-                    <span class="text-foreground/80 font-medium">{{ det.insumoNombre }}</span>
-                    <span class="text-foreground font-black">
+                  <h4 class="text-[10px] font-black uppercase text-muted tracking-widest">Detalles de Insumos</h4>
+                  <div *ngFor="let det of ped.detalles" class="text-xs flex justify-between bg-surface-card border border-glass-border p-2 rounded-lg">
+                    <span class="text-main/80 font-medium">{{ det.insumoNombre }}</span>
+                    <span class="text-main font-black">
                       Sol: {{ det.cantidadSolicitada }} | Desp: {{ det.cantidadDespachada }} | Rec: {{ det.cantidadRecibida }}
                     </span>
                   </div>
@@ -125,9 +146,9 @@ import { Insumo } from '../../../core/models/inventory.model';
                 <div class="flex flex-col justify-end gap-2" *ngIf="ped.estado !== 'Recibido'">
                   <!-- Acciones del Proveedor (Despacho) -->
                   <div class="flex justify-end gap-2" *ngIf="ped.estado === 'Solicitado' && isSedeProveedora(ped)">
-                    <button 
-                      (click)="despachar(ped.id)" 
-                      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white rounded-lg transition-colors"
+                    <button
+                      (click)="despachar(ped.id)"
+                      class="px-4 py-2 bg-primary hover:bg-primary/90 text-xs font-black text-white rounded-xl transition-all shadow-lg shadow-primary/25 uppercase tracking-widest active:scale-[0.98]"
                     >
                       Aprobar y Despachar
                     </button>
@@ -135,9 +156,9 @@ import { Insumo } from '../../../core/models/inventory.model';
 
                   <!-- Acciones del Solicitante (Recepción) -->
                   <div class="flex justify-end gap-2" *ngIf="ped.estado === 'Despachado' && isSedeSolicitante(ped)">
-                    <button 
-                      (click)="abrirRecepcionDialog(ped)" 
-                      class="px-4 py-2 bg-green-600 hover:bg-green-500 text-xs font-bold text-white rounded-lg transition-colors"
+                    <button
+                      (click)="abrirRecepcionDialog(ped)"
+                      class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white rounded-xl transition-all shadow-lg shadow-emerald-500/25 uppercase tracking-widest active:scale-[0.98]"
                     >
                       Confirmar Recepción
                     </button>
@@ -147,34 +168,56 @@ import { Insumo } from '../../../core/models/inventory.model';
             </div>
           </div>
           <ng-template #noPedidos>
-            <p class="text-sm text-muted-foreground italic text-center py-8">No hay solicitudes activas ni traslados en curso.</p>
+            <div class="text-center py-12">
+              <div class="w-12 h-12 bg-surface-card border border-glass-border rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+              <p class="text-sm text-muted font-bold uppercase tracking-wider">No hay solicitudes activas ni traslados en curso</p>
+            </div>
           </ng-template>
         </div>
       </div>
 
       <!-- Dialogo de Recepción con Discrepancias -->
-      <div *ngIf="showRecepcionDialog" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div class="w-full max-w-md rounded-2xl border border-white/10 bg-surface p-6 shadow-2xl space-y-4">
-          <h3 class="text-lg font-bold text-foreground">Confirmar Recepción de Pedido</h3>
-          <p class="text-xs text-muted-foreground">Especifique la cantidad real de mercadería recibida física en bodega (para control de mermas).</p>
-          
+      <div *ngIf="showRecepcionDialog" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="w-full max-w-md rounded-2xl border border-primary/20 bg-surface-card shadow-2xl shadow-black/50 space-y-4 p-6 animate-scale-in">
+          <div class="flex items-center gap-3 pb-2 border-b border-glass-border">
+            <div class="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-main uppercase tracking-widest">Confirmar Recepción</h3>
+              <p class="text-[10px] text-muted font-bold">Especifique la cantidad real de mercadería recibida en bodega.</p>
+            </div>
+          </div>
+
           <div class="space-y-3 max-h-60 overflow-y-auto">
-            <div *ngFor="let det of selectedPedidoForRecepcion?.detalles" class="flex items-center justify-between text-sm">
-              <span class="truncate max-w-[200px]">{{ det.insumoNombre }}</span>
+            <div *ngFor="let det of selectedPedidoForRecepcion?.detalles" class="flex items-center justify-between text-sm bg-surface-card/50 border border-glass-border rounded-lg px-3 py-2">
+              <span class="text-main font-medium truncate max-w-[200px]">{{ det.insumoNombre }}</span>
               <div class="flex items-center gap-2">
-                <span class="text-xs text-muted-foreground">(Despachado: {{ det.cantidadDespachada }})</span>
-                <input 
-                  type="number" 
+                <span class="text-[10px] text-muted font-black uppercase">(Despachado: {{ det.cantidadDespachada }})</span>
+                <input
+                  type="number"
                   [(ngModel)]="discrepanciasForm[det.insumoId]"
-                  class="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-center text-foreground focus:outline-none focus:border-indigo-500" 
+                  class="w-20 bg-surface-card border border-glass-border rounded-lg px-2 py-1 text-xs text-center text-main focus:outline-none focus:border-primary/50 transition-all"
                 />
               </div>
             </div>
           </div>
 
           <div class="flex justify-end gap-3 pt-2">
-            <button (click)="closeRecepcionDialog()" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-foreground font-medium transition-colors">Cancelar</button>
-            <button (click)="guardarRecepcion()" class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-xs text-white font-semibold transition-colors">Recibir Carga</button>
+            <button (click)="closeRecepcionDialog()"
+              class="px-4 py-2 rounded-xl bg-surface-card border border-glass-border hover:bg-white/5 text-xs text-main font-black uppercase tracking-widest transition-all">
+              Cancelar
+            </button>
+            <button (click)="guardarRecepcion()"
+              class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs text-white font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/25 active:scale-[0.98]">
+              Recibir Carga
+            </button>
           </div>
         </div>
       </div>

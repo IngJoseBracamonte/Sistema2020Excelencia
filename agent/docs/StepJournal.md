@@ -2,6 +2,31 @@
 
 Registro detallado de acciones atómicas y decisiones tomadas en tiempo real.
 
+## 🎨 2026-07-16 — Alineación de UI: Pedidos Inter-Sede y Gestión de Sede
+
+### Problema
+Los componentes `pedidos-inter-sede.component.ts` y `sede-management.component.ts` usaban
+un sistema de colores y clases inconsistente con el design system global (Rose/Crimson).
+
+### Diagnóstico (Desviaciones encontradas)
+| Elemento | Incorrecto (antes) | Correcto (sistema global) |
+|---|---|---|
+| Botones primarios | `bg-indigo-600`, `bg-blue-600` | `bg-primary` (Rose `#e11d48`) |
+| Texto principal | `text-foreground` | `text-main` |
+| Texto secundario | `text-muted-foreground` | `text-muted` |
+| Foco de inputs | `focus:border-indigo-500` | `focus:border-primary/50` |
+| Cards | `bg-surface/30 border-white/5` | `glass-card border border-glass-border` |
+| Badges "Principal" | `bg-indigo-500/20 text-indigo-400` | `bg-primary/10 text-primary border-primary/20` |
+| Correlativo pedido | `text-indigo-400 bg-indigo-500/10` | `text-primary bg-primary/10` |
+| Modal overlay | `bg-black/60` | `bg-black/70` |
+| Modal border | `border-white/10` | `border-primary/20` |
+| Encabezado | Sin ícono circular | Ícono en `bg-primary/10 border-primary/20 rounded-2xl` |
+
+### Acciones
+1. **`pedidos-inter-sede.component.ts`** — Reescritura completa de template alineando todos los tokens.
+2. **`sede-management.component.ts`** — Reescritura completa de template alineando todos los tokens.
+3. **`styles.css`** — Promovidas `.glass-card` y `.animate-scale-in` al scope global para uso por todos los componentes admin.
+
 ## 🗓️ 2026-03-24 (Fase de Telemetría e Inteligencia)
 ### 1. Corrección de Tipo en OpenTelemetry JS
 - **Acción**: Se refactorizó `telemetry.service.ts` para usar `resourceFromAttributes`.

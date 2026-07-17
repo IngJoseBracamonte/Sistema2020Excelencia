@@ -14,6 +14,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Guid PacienteId { get; set; }
         public string TipoIngreso { get; set; } = string.Empty;
         public int? ConvenioId { get; set; }
+        public string? OrigenCarga { get; set; } // "Enfermeria", "Hospitalizacion", "UCI", "Emergencia", etc.
         public List<ServicioMasivoItemDto> Items { get; set; } = new List<ServicioMasivoItemDto>();
     }
 
@@ -78,7 +79,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         PrecioModificado = item.PrecioModificado,
                         HonorarioModificado = item.HonorarioModificado,
                         SupervisorKey = item.SupervisorKey,
-                        IsPrivilegedUser = false
+                        IsPrivilegedUser = false,
+                        OrigenCarga = request.OrigenCarga // Propagar origen de carga
                     };
 
                     var res = await _singleHandler.Handle(singleCommand, cancellationToken);
