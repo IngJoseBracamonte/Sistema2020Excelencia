@@ -44,7 +44,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrEmpty(request.TipoIngreso))
             {
-                query = query.Where(c => c.TipoIngreso == request.TipoIngreso);
+                if (request.TipoIngreso == EstadoConstants.Hospitalizacion)
+                {
+                    query = query.Where(c => c.TipoIngreso == EstadoConstants.Hospitalizacion || c.TipoIngreso == SubAreas.UCI);
+                }
+                else
+                {
+                    query = query.Where(c => c.TipoIngreso == request.TipoIngreso);
+                }
             }
 
             if (!string.IsNullOrEmpty(request.Estado))

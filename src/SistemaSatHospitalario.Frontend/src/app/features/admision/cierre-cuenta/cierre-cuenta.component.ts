@@ -784,10 +784,11 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     const areas = this.areasClinicas();
     if (!areas || areas.length === 0) return;
 
-    // Buscar coincidencia basada en el tipo de ingreso de la cuenta o el tipo de pantalla actual (type)
+    // Buscar coincidencia basada en la sub-área, tipo de ingreso o el tipo de pantalla actual (type)
+    const subArea = (account.subAreaClinica || '').toLowerCase().trim();
     const screenType = (this.type() || '').toLowerCase().trim();
     const accountIngreso = (account.tipoIngreso || '').toLowerCase().trim();
-    const searchTerms = [accountIngreso, screenType];
+    const searchTerms = [subArea, accountIngreso, screenType];
 
     for (const term of searchTerms) {
       if (!term) continue;
