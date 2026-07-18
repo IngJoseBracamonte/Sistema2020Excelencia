@@ -60,8 +60,35 @@ En el sistema legacy, las órdenes y pacientes llevan un identificador secuencia
        FROM ordenes 
        WHERE DATE(Fecha) = CURDATE() 
        FOR UPDATE";
-       
-   var count = await connection.ExecuteScalarAsync<int>(sql, null, transaction);
-   var numeroDiaSiguiente = count + 1;
-   ```
+          var count = await connection.ExecuteScalarAsync<int>(sql, null, transaction);
+    var numeroDiaSiguiente = count + 1;
+    ```
 3. Este candado suspende los hilos concurrentes hasta que la transacción activa realiza el commit, garantizando correlativos únicos y atómicos.
+
+---
+
+## 🧠 4. Refactorización con Patrón Strategy (GoF) y Desacoplamiento de Carga Clínica
+
+Para evitar la deuda técnica del bloque condicional `if/else` gigante en el handler de carga de servicios (`CargarServicioACuentaCommandHandler`), se implementó una arquitectura basada en el patrón Strategy:
+
+```mermaid
+classDiagram
+    CargarServicioACuentaCommandHandler --> IServiceLoadingStrategyFactory : utiliza
+    IServiceLoadingStrategyFactory --> IServiceLoadingStrategy : resuelve
+    IServiceLoadingStrategy <|.. ConsultationLoadingStrategy
+    IServiceLoadingStrategy <|.. LegacyLabLoadingStrategy
+    IServiceLoadingStrategy <|.. ImagingLoadingStrategy
+    IServiceLoadingStrategy <|.. InventoryLoadingStrategy
+    IServiceLoadingStrategy <|.. OperatingRoomLoadingStrategy
+    IServiceLoadingStrategy <|.. FallbackLoadingStrategy
+```
+
+### Estrategias de Carga Especializadas
+1. **`ConsultationLoadingStrategy`**: Coordina las citas médicas para pacientes de consulta externa.
+2. **`LegacyLabLoadingStrategy`**: Ejecuta la sincronización bidireccional JIT e inmediata de laboratorio clínico cuando detecta ingresos clínicos (`Hospitalizacion`, `Emergencia`, o `UCI`) o un `origenCarga` explícito.
+3. **`ImagingLoadingStrategy`**: Envía órdenes automáticas de RX/Tomografía al PACS/RIS y autocompleta la orden de forma inmediata si se detecta un informe radiológico coincidente previo para el paciente.
+4. **`InventoryLoadingStrategy` & `OperatingRoomLoadingStrategy`**: Manejan la extensibilidad de cargas de insumos y salas quirúrgicas.
+
+> [!NOTE]
+> **Deducción de Inventario Universal**:
+> A diferencia de los flujos clínicos externos específicos, la deducción de inventario por recetas (BOM) se consolidó de manera universal en el coordinador (`CargarServicioACuentaCommandHandler`) después de ejecutar la estrategia correspondiente. Esto asegura que tanto las cirugías como los análisis de laboratorio y las consultas descuenten correctamente sus insumos médicos asociados del almacén clínico destino.

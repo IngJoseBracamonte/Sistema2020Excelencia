@@ -26,6 +26,15 @@ namespace SistemaSatHospitalario.Core.Application
             services.AddScoped<Common.Services.IHonorariumMapperService, Common.Services.HonorariumMapperService>();
             services.AddScoped<Common.Services.IInventoryService, Common.Services.InventoryService>();
 
+            // Strategies and Factory (GoF Pattern)
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.ConsultationLoadingStrategy>();
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.LegacyLabLoadingStrategy>();
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.ImagingLoadingStrategy>();
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.InventoryLoadingStrategy>();
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.OperatingRoomLoadingStrategy>();
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.FallbackLoadingStrategy>();
+            services.AddScoped<Common.Strategies.IServiceLoadingStrategyFactory, Common.Strategies.ServiceLoadingStrategyFactory>();
+
             return services;
         }
     }

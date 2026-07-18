@@ -62,6 +62,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IInventoryService _inventoryService;
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
+        private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
 
         public CargarServicioACuentaCommandHandler(
             IBillingRepository repository, 
@@ -70,7 +71,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             IHonorariumMapperService mapperService, 
             IInventoryService inventoryService,
             ILegacyLabRepository legacyRepository,
-            ILogger<CargarServicioACuentaCommandHandler> logger)
+            ILogger<CargarServicioACuentaCommandHandler> logger,
+            Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null)
         {
             _repository = repository;
             _externaService = externaService;
@@ -79,6 +81,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _inventoryService = inventoryService;
             _legacyRepository = legacyRepository;
             _logger = logger;
+            
+            if (strategyFactory != null)
+            {
+                _strategyFactory = strategyFactory;
+            }
+            else
+            {
+                var list = new global::System.Collections.Generic.List<Common.Strategies.IServiceLoadingStrategy>
+                {
+                    new Common.Strategies.ConsultationLoadingStrategy(repository, context),
+                    new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>()),
+                    new Common.Strategies.ImagingLoadingStrategy(externaService, context),
+                    new Common.Strategies.InventoryLoadingStrategy(inventoryService, context),
+                    new Common.Strategies.OperatingRoomLoadingStrategy(),
+                    new Common.Strategies.FallbackLoadingStrategy()
+                };
+                _strategyFactory = new Common.Strategies.ServiceLoadingStrategyFactory(list);
+            }
         }
 
         public async Task<CargarServicioResult> Handle(CargarServicioACuentaCommand request, CancellationToken cancellationToken)
@@ -107,43 +127,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 3. Asegurar cuenta activa usando el GUID local
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
-
-            // 3. Procesar lógica específica de Consultas/Citas
-            if (esConsulta)
-            {
-                bool requiresAppointmentTime = request.TipoIngreso == EstadoConstants.Particular || request.TipoIngreso == EstadoConstants.Seguro;
-                if (requiresAppointmentTime || (request.MedicoId.HasValue && request.HoraCita.HasValue))
-                {
-                    Guid? citaAreaClinicaId = request.AreaClinicaId;
-                    if (!string.IsNullOrEmpty(request.OrigenCarga) && request.OrigenCarga.StartsWith("ENFERMERIA", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var areaEnf = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Codigo == "ENFERMERIA", cancellationToken);
-                        if (areaEnf == null)
-                        {
-                            areaEnf = new AreaClinica(SeedConstants.SedeId_Principal, "ENFERMERIA", "Enfermería");
-                            _context.AreasClinicas.Add(areaEnf);
-                            await _context.SaveChangesAsync(cancellationToken);
-                        }
-                        citaAreaClinicaId = areaEnf.Id;
-                    }
-
-                    if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
-                        throw new InvalidOperationException("Los servicios de consulta requieren Médico y Hora de Cita.");
-
-                    var horaNormalizada = new DateTime(
-                        request.HoraCita.Value.Year, request.HoraCita.Value.Month, request.HoraCita.Value.Day,
-                        request.HoraCita.Value.Hour, request.HoraCita.Value.Minute, 0, 
-                        DateTimeKind.Unspecified);
-
-                    while (await _repository.ExisteCitaSimultaneaAsync(request.MedicoId.Value, horaNormalizada, cancellationToken))
-                    {
-                        horaNormalizada = horaNormalizada.AddMinutes(1);
-                    }
-
-                    var cita = new CitaMedica(request.MedicoId.Value, paciente.Id, cuenta.Id, horaNormalizada, null, citaAreaClinicaId);
-                    await _repository.AgregarCitaMedicaAsync(cita, cancellationToken);
-                }
-            }
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
@@ -274,85 +257,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 
-            // Generar Orden Inmediata de RX/TOMO si viene de un módulo de carga clínica (como enfermería, hospitalización, uci)
-            if (esRx && !string.IsNullOrEmpty(request.OrigenCarga))
-            {
-                string nombrePaciente = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-                if (request.TipoServicio == EstadoConstants.RX || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology))
-                {
-                    await _externaService.EnviarOrdenRXAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken);
-                }
-                else
-                {
-                    await _externaService.EnviarOrdenTomoAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken);
-                }
-            }
+            // Invocar la estrategia correspondiente mediante la Factory (GoF Pattern)
+            var strategy = _strategyFactory.GetStrategy(request.TipoServicio, baseService);
+            await strategy.ExecuteAsync(request, cuenta, paciente, detalle, baseService, cancellationToken);
 
-            // Generar Orden Inmediata de Laboratorio Legacy si viene de un módulo de carga clínica (como enfermería, hospitalización, uci)
-            if (esLab && !string.IsNullOrEmpty(request.OrigenCarga) && int.TryParse(legacyId, out int idPerfil))
-            {
-                _logger.LogInformation("[LEGACY-SYNC-IMMEDIATE] Generando orden de laboratorio legacy inmediata para perfil {PerfilId}...", idPerfil);
-                
-                if (!paciente.IdPacienteLegacy.HasValue || paciente.IdPacienteLegacy.Value == 0)
-                {
-                    var existingLegacy = await _legacyRepository.GetPatientByCedulaAsync(paciente.CedulaPasaporte, cancellationToken);
-                    if (existingLegacy != null)
-                    {
-                        paciente.VincularLegacy(existingLegacy.IdPersona);
-                    }
-                    else
-                    {
-                        var legacyPatient = new DatosPersonalesLegacy
-                        {
-                            Cedula = paciente.CedulaPasaporte,
-                            Nombre = paciente.NombreCorto,
-                            Apellidos = "",
-                            Sexo = "M",
-                            Fecha = DateTime.Now.AddYears(-20).ToString("yyyy-MM-dd"),
-                            Celular = paciente.TelefonoContact ?? "",
-                            Telefono = "",
-                            Correo = "",
-                            TipoCorreo = "@gmail.com",
-                            CodigoCelular = "0414",
-                            CodigoTelefono = "0212"
-                        };
-                        int newId = await _legacyRepository.CreatePatientLegacyAsync(legacyPatient, cancellationToken);
-                        if (newId > 0)
-                        {
-                            paciente.VincularLegacy(newId);
-                        }
-                    }
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-
-                if (paciente.IdPacienteLegacy.HasValue && paciente.IdPacienteLegacy.Value > 0)
-                {
-                    var perfilesFacturados = new List<PerfilesFacturadosLegacy>
-                    {
-                        new PerfilesFacturadosLegacy
-                        {
-                            IdOrden = 0,
-                            IdPersona = paciente.IdPacienteLegacy.Value,
-                            IdPerfil = idPerfil,
-                            PrecioPerfil = finalPrecio * finalCantidad
-                        }
-                    };
-
-                    var ordenLegacy = new OrdenLegacy
-                    {
-                        IdPersona = paciente.IdPacienteLegacy.Value,
-                        IDConvenio = request.ConvenioId ?? cuenta.ConvenioId ?? 1,
-                        Fecha = DateTime.Now,
-                        HoraIngreso = DateTime.Now.ToString("HH:mm:ss"),
-                        PrecioF = perfilesFacturados.Sum(p => p.PrecioPerfil)
-                    };
-
-                    var idOrdenLegacy = await _legacyRepository.GenerarOrdenLaboratorioAsync(ordenLegacy, perfilesFacturados, new List<ResultadosPacienteLegacy>(), cancellationToken);
-                    _logger.LogInformation("[LEGACY-SYNC-IMMEDIATE] Orden de laboratorio legacy generada exitosamente con ID: {IdOrden}", idOrdenLegacy);
-                }
-            }
-
-            // Deducir stock del almacén de la zona de origen si viene especificado
+            // Deducir stock del almacén de la zona de origen para cualquier servicio cargado (BOM/Receta)
             Guid? targetSedeId = null;
             if (!string.IsNullOrEmpty(request.OrigenCarga))
             {
@@ -384,7 +293,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     : SeedConstants.ResolveSedeInventario(cuenta.TipoIngreso, cuenta.SubAreaClinica);
             }
 
-            // Deduct stock for inventory items associated with this service
             await _inventoryService.DeductInventoryForServiceDetailAsync(
                 detalle.Id,
                 detalle.ServicioId,

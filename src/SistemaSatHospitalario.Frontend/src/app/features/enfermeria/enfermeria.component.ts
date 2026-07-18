@@ -1029,6 +1029,7 @@ export class EnfermeriaComponent implements OnInit {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
+      origenCarga: active.subAreaClinica || active.tipoIngreso,
       items: items.map(item => ({
         servicioId: item.servicioId,
         descripcion: item.descripcion,
