@@ -658,6 +658,18 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       error: (err) => console.error('[CIERRE-CUENTA] Error al cargar médicos:', err)
     });
 
+    // 5.1 Cargar áreas clínicas (Ubicaciones)
+    this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
+      next: (res) => {
+        const activeAreas = res.filter(a => a.activo);
+        this.areasClinicas.set(activeAreas);
+        if (this.selectedAccount()) {
+          this.autoSelectAreaClinicaForAccount(this.selectedAccount());
+        }
+      },
+      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar áreas clínicas:', err)
+    });
+
     // 6. Cargar áreas clínicas (camas)
     this.loadCamasDisponibles();
   }
@@ -761,6 +773,40 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     } else {
       this.convenioSeleccionadoId.set(null);
       this.nuevoPagoMetodo.set('Particular - Tarjeta de Crédito/Débito');
+    }
+
+    // Auto-seleccionar el área clínica de carga
+    this.autoSelectAreaClinicaForAccount(acc);
+  }
+
+  public autoSelectAreaClinicaForAccount(account: CuentaAdministrativaDto | null): void {
+    if (!account) return;
+    const areas = this.areasClinicas();
+    if (!areas || areas.length === 0) return;
+
+    // Buscar coincidencia basada en el tipo de ingreso de la cuenta o el tipo de pantalla actual (type)
+    const screenType = (this.type() || '').toLowerCase().trim();
+    const accountIngreso = (account.tipoIngreso || '').toLowerCase().trim();
+    const searchTerms = [accountIngreso, screenType];
+
+    for (const term of searchTerms) {
+      if (!term) continue;
+      
+      const matched = areas.find(a => {
+        const nameNorm = (a.nombre || '').toLowerCase().trim();
+        const codeNorm = (a.codigo || '').toLowerCase().trim();
+        return nameNorm.includes(term) || term.includes(nameNorm) || codeNorm === term;
+      });
+
+      if (matched) {
+        this.selectedAreaClinicaId.set(matched.id);
+        return;
+      }
+    }
+
+    // Fallback por defecto si no hay coincidencia
+    if (areas.length > 0) {
+      this.selectedAreaClinicaId.set(areas[0].id);
     }
   }
 
@@ -1538,7 +1584,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
-      origenCarga: active.subAreaClinica || active.tipoIngreso || this.type(),
+      origenCarga: active.subAreaClinica || this.type(),
       items: items.map(item => ({
         servicioId: item.servicioId,
         descripcion: item.descripcion,

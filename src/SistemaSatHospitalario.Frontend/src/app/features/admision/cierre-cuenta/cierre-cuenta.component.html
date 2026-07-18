@@ -11,13 +11,13 @@
                     {{ selectedAccount() ? 'Cierre de Cuenta' : ('Pacientes Activos - ' + type()) }}
                 </h1>
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">
-                    {{ selectedAccount() ? 'Revisión final y emisión de orden de egreso de episodio de atención' : (type() === 'Emergencia' ? 'Monitoreo y administración clínica de pacientes en urgencias' : 'Seleccione un registro para gestionar el cierre de cuenta') }}
+                    {{ selectedAccount() ? 'Revisión final y emisión de orden de egreso de episodio de atención' : (type() === 'Emergencia' || type() === 'Hospitalizacion' ? 'Monitoreo y administración clínica de pacientes en ' + (type() === 'Emergencia' ? 'urgencias' : 'hospitalización') : 'Seleccione un registro para gestionar el cierre de cuenta') }}
                 </p>
             </div>
         </div>
 
         <!-- Tasa de Cambio Section (Solo visible si no es Emergencia o es Cajero) -->
-        <div *ngIf="type() !== 'Emergencia' || canCollectAndClose()" class="flex items-center space-x-4 mt-6 md:mt-0 bg-black/30 p-4 rounded-[2rem] border border-white/5 backdrop-blur-xl">
+        <div *ngIf="(type() !== 'Emergencia' && type() !== 'Hospitalizacion') || canCollectAndClose()" class="flex items-center space-x-4 mt-6 md:mt-0 bg-black/30 p-4 rounded-[2rem] border border-white/5 backdrop-blur-xl">
              <div class="text-right">
                 <p *ngIf="!editandoTasa()" class="text-xl font-black text-primary font-mono tracking-tighter">Bs. {{ tasaCambioDia() | number:'1.2-2' }}</p>
                 <div *ngIf="editandoTasa()" class="flex items-center space-x-2 mt-1">
@@ -263,7 +263,7 @@
                     </button>
                     <button type="button" (click)="procesarIngreso()" [disabled]="isLoading()"
                             class="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
-                        {{ isLoading() ? 'PROCESANDO...' : (type() === 'Emergencia' ? 'SIGUIENTE: DATOS DE TRIAGE' : 'PROCESAR INGRESO CLÍNICO') }}
+                        {{ isLoading() ? 'PROCESANDO...' : (type() === 'Emergencia' || type() === 'Hospitalizacion' ? 'SIGUIENTE: DATOS DE TRIAGE' : 'PROCESAR INGRESO CLÍNICO') }}
                     </button>
                 </div>
 
@@ -578,7 +578,7 @@
     <div *ngIf="!selectedAccount()" class="space-y-6">
         
         <!-- KPI METRICS GRID ROW -->
-        <div class="grid grid-cols-1 gap-6" [ngClass]="type() === 'Emergencia' ? 'md:grid-cols-2' : 'md:grid-cols-3'">
+        <div class="grid grid-cols-1 gap-6" [ngClass]="(type() === 'Emergencia' || type() === 'Hospitalizacion') ? 'md:grid-cols-2' : 'md:grid-cols-3'">
             <!-- 1. Estado del Sistema / Capacidad (Scanline/Holographic background style) -->
             <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
                 <!-- Glowing effect -->
@@ -630,7 +630,7 @@
             </div>
 
             <!-- 3. Despachar Recurso / Nueva Admisión (Blue-grey slate style theme) -->
-            <div *ngIf="type() !== 'Emergencia'" class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
+            <div *ngIf="type() !== 'Emergencia' && type() !== 'Hospitalizacion'" class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
                 <div class="absolute -right-12 -top-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all"></div>
                 
                 <div>
@@ -865,8 +865,8 @@
                     </div>
 
                     <!-- Condición y Destino Final de Egreso de Urgencias -->
-                    <div *ngIf="type() === 'Emergencia'" class="flex flex-col gap-1.5 pt-4 border-t border-white/5 mt-2 animate-fade-in">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Condición y Destino Final de Egreso de Urgencias</span>
+                    <div *ngIf="type() === 'Emergencia' || type() === 'Hospitalizacion'" class="flex flex-col gap-1.5 pt-4 border-t border-white/5 mt-2 animate-fade-in">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Condición y Destino Final de Egreso Clínico</span>
                         <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider px-1">Destino del Paciente:</span>
                         <div class="mt-1">
                             <select [ngModel]="destinoPaciente()" (ngModelChange)="destinoPaciente.set($event)"
@@ -987,8 +987,8 @@
                 </div>
             </div>
 
-            <!-- Panel Clínico: Cargar Servicio, Consulta o Medicamento (Solo para Emergencia y accesible por Cajeros/Administrativos) -->
-            <div *ngIf="type() === 'Emergencia' && canCollectAndClose()" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6 relative overflow-visible">
+            <!-- Panel Clínico: Cargar Servicio, Consulta o Medicamento (Solo para Emergencia/Hospitalización y accesible por Cajeros/Administrativos) -->
+            <div *ngIf="(type() === 'Emergencia' || type() === 'Hospitalizacion') && canCollectAndClose()" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6 relative overflow-visible">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -z-10 blur-3xl"></div>
                 <div class="flex items-center justify-between pb-3 border-b border-white/5">
                     <div class="flex items-center space-x-3">
@@ -1292,7 +1292,7 @@
                         <!-- Si la cuenta está abierta, mostrar botón de cierre normal -->
                         <button *ngIf="selectedAccount()?.estado !== 'Facturada'" (click)="procesarCierre()" [disabled]="isLoading()"
                             class="w-full py-5 bg-primary hover:bg-rose-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 min-h-[58px] mt-4">
-                            {{ isLoading() ? 'Procesando...' : (type() === 'Emergencia' ? 'Procesar Cierre y Egreso' : 'Procesar Cobro y Cerrar') }}
+                            {{ isLoading() ? 'Procesando...' : (type() === 'Emergencia' || type() === 'Hospitalizacion' ? 'Procesar Cierre y Egreso' : 'Procesar Cobro y Cerrar') }}
                         </button>
 
                         <!-- Si la cuenta ya está facturada (checked-out), mostrar banners/reversión -->
@@ -1317,7 +1317,7 @@
                             <lucide-icon [name]="icons.Info" class="w-5 h-5"></lucide-icon>
                         </div>
                         <div>
-                            <h4 class="text-xs font-black text-white uppercase tracking-wider">Módulo de Carga Clínica (Emergencia)</h4>
+                            <h4 class="text-xs font-black text-white uppercase tracking-wider">Módulo de Carga Clínica ({{ type() === 'Emergencia' ? 'Emergencia' : 'Hospitalización' }})</h4>
                             <p class="text-[9px] text-slate-400 font-bold leading-normal mt-1 max-w-lg">
                                 Los servicios y medicamentos registrados se acumularán en la cuenta del paciente. El cobro final y la facturación de egreso serán procesados en ventanilla por el personal administrativo.
                             </p>
@@ -1329,7 +1329,7 @@
                     </div>
                 </div>
 
-                <div *ngIf="type() === 'Emergencia'" class="border-t border-white/5 pt-4 flex justify-end">
+                <div *ngIf="type() === 'Emergencia' || type() === 'Hospitalizacion'" class="border-t border-white/5 pt-4 flex justify-end">
                     <button (click)="procesarCierre()" [disabled]="isLoading()"
                         class="w-full md:w-auto px-8 py-4 bg-primary hover:bg-rose-600 text-white rounded-[1.2rem] font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 min-h-[48px]">
                         {{ isLoading() ? 'Procesando...' : 'Procesar Traslado y Egreso' }}
