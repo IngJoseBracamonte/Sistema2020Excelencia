@@ -1200,6 +1200,7 @@
                                 <select [ngModel]="nuevoTipoIngreso()" (ngModelChange)="nuevoTipoIngreso.set($event)" class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
                                     <option value="Hospitalizacion" class="bg-[#152035]">Hospitalización General</option>
                                     <option value="UCI" class="bg-[#152035]">Unidad de Cuidados Intensivos (UCI)</option>
+                                    <option value="Quirofano" class="bg-[#152035]">Quirófano / Cirugía</option>
                                     <option value="Emergencia" class="bg-[#152035]">Observación de Emergencia</option>
                                 </select>
                             </div>
@@ -1211,6 +1212,18 @@
                                     <option [value]="null" class="bg-[#152035]">PARTICULAR / SIN SEGURO</option>
                                     <option *ngFor="let c of convenios()" [value]="c.id" class="bg-[#152035]">{{ c.nombre | uppercase }}</option>
                                 </select>
+                            </div>
+
+                            <!-- Fecha Hora Egreso Efectiva -->
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Fecha/Hora Egreso Efectiva (Clínica)</label>
+                                <input type="datetime-local" [(ngModel)]="fechaHoraEgresoEfectiva" class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 text-white">
+                            </div>
+
+                            <!-- Monto de Sobrescritura Manual -->
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Sobrescribir Monto Acumulado (USD)</label>
+                                <input type="number" [(ngModel)]="montoSobrescrito" placeholder="Ej: 150.00" class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 text-white">
                             </div>
 
                             <!-- Selector de Cama Física Destino (Solo si no es Alta) -->

@@ -4,6 +4,6 @@ namespace SistemaSatHospitalario.Core.Domain.Enums
     {
         Disponible = 1,
         Ocupada = 2,
-        EnLimpieza = 3
+        RetencionQuirurgica = 3
     }
 }

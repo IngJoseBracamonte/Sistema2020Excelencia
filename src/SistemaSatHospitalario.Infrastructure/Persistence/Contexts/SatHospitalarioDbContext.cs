@@ -66,7 +66,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<PedidoInterSedeDetalle> PedidosInterSedeDetalles { get; set; }
         public DbSet<DetalleServicioMedicoResponsable> DetallesServicioMedicosResponsables { get; set; }
         public DbSet<ServicioIncluidoArea> ServiciosIncluidosAreas { get; set; }
-        public DbSet<HistorialLimpiezaCama> HistorialesLimpiezasCamas { get; set; }
         public DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
@@ -273,6 +272,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasOne(c => c.AreaClinica)
                       .WithMany()
                       .HasForeignKey(c => c.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.CamaRetenida)
+                      .WithMany()
+                      .HasForeignKey(c => c.CamaRetenidaId)
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(c => c.Medico)
@@ -782,20 +786,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(s => s.ServicioClinicoId)
                       .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            builder.Entity<HistorialLimpiezaCama>(entity =>
-            {
-                entity.ToTable("HistorialesLimpiezasCamas");
-                entity.HasKey(h => h.Id);
-
-                entity.HasOne(h => h.Cama)
-                      .WithMany()
-                      .HasForeignKey(h => h.CamaId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasIndex(h => new { h.CamaId, h.FechaFin });
-                entity.HasIndex(h => h.FechaFin);
             });
 
             builder.Entity<InsumoCirugiaPaciente>(entity =>

@@ -114,11 +114,13 @@
         <div *ngFor="let cama of camasFiltradas()" 
             [class]="cama.estado === 'Disponible' 
                 ? 'border-emerald-500/20 bg-emerald-500/[0.01] hover:border-emerald-500/40 hover:bg-emerald-500/[0.03]' 
+                : cama.estado === 'RetencionQuirurgica'
+                ? 'border-amber-500/20 bg-amber-500/[0.01] hover:border-amber-500/40 hover:bg-amber-500/[0.03]'
                 : 'border-rose-500/20 bg-rose-500/[0.01] hover:border-rose-500/40 hover:bg-rose-500/[0.03]'"
             class="glass-panel p-4 rounded-[1.25rem] border transition-all duration-300 relative overflow-hidden flex flex-col justify-between min-h-[185px] group shadow-xl">
             
             <div class="absolute top-0 right-0 w-32 h-32 -z-10 blur-3xl opacity-20 transition-all group-hover:scale-125"
-                 [ngClass]="cama.estado === 'Disponible' ? 'bg-emerald-500/10' : 'bg-rose-500/10'"></div>
+                 [ngClass]="cama.estado === 'Disponible' ? 'bg-emerald-500/10' : cama.estado === 'RetencionQuirurgica' ? 'bg-amber-500/10' : 'bg-rose-500/10'"></div>
 
             <!-- Camas Top Details -->
             <div>
@@ -126,9 +128,9 @@
                     <span class="px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-slate-400 font-mono tracking-wider">
                         {{ cama.codigo }}
                     </span>
-                    <span [class]="cama.estado === 'Disponible' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'"
+                    <span [class]="cama.estado === 'Disponible' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : cama.estado === 'RetencionQuirurgica' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'"
                           class="px-2.5 py-0.5 border rounded-lg text-[8px] font-black uppercase tracking-widest">
-                        {{ cama.estado | uppercase }}
+                        {{ (cama.estado === 'RetencionQuirurgica' ? 'En Quirófano' : cama.estado) | uppercase }}
                     </span>
                 </div>
 
@@ -136,10 +138,13 @@
                 <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1 italic">{{ cama.sedeNombre }}</p>
             </div>
 
-            <!-- Camas Mid Info (Paciente & Total si está ocupada) -->
-            <div class="my-4 pt-4 border-t border-white/5 space-y-3 flex-1" *ngIf="cama.estado === 'Ocupada'">
+            <!-- Camas Mid Info (Paciente & Total si está ocupada o retenida) -->
+            <div class="my-4 pt-4 border-t border-white/5 space-y-3 flex-1" *ngIf="cama.estado === 'Ocupada' || cama.estado === 'RetencionQuirurgica'">
                 <div>
-                    <span class="text-[8px] font-black text-rose-400 uppercase tracking-widest block">Paciente Internado</span>
+                    <span [class]="cama.estado === 'RetencionQuirurgica' ? 'text-amber-400' : 'text-rose-400'"
+                          class="text-[8px] font-black uppercase tracking-widest block">
+                        {{ cama.estado === 'RetencionQuirurgica' ? 'Reserva Quirúrgica' : 'Paciente Internado' }}
+                    </span>
                     <span class="text-xs font-black text-white uppercase block mt-1 leading-tight">{{ cama.pacienteNombre }}</span>
                     <span class="text-[9px] text-slate-400 font-mono block mt-0.5">C.I. {{ cama.pacienteCedula }}</span>
                 </div>
@@ -165,7 +170,7 @@
 
             <!-- Acciones -->
             <div class="flex gap-2 pt-4 border-t border-white/5 w-full">
-                <button *ngIf="cama.estado === 'Ocupada'" (click)="verHistorialClinico(cama)"
+                <button *ngIf="cama.estado === 'Ocupada' || cama.estado === 'RetencionQuirurgica'" (click)="verHistorialClinico(cama)"
                     class="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-wider border border-white/5 flex items-center justify-center gap-1.5 transition-all">
                     <lucide-icon [name]="icons.ClipboardList" class="w-3.5 h-3.5"></lucide-icon>
                     Clínica

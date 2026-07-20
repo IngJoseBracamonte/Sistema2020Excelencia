@@ -23,6 +23,7 @@ export class SignalrService {
   // Array Signal Reactivo
   public incomingTickets = signal<TicketUpdate[]>([]);
   public incomingNotifications = signal<any[]>([]);
+  public incomingCamaUpdates = signal<any | null>(null);
   public connectionStatus = signal<string>('Desconectado');
 
   constructor() { }
@@ -76,6 +77,10 @@ export class SignalrService {
   private addTicketUpdatesListener = () => {
     this.hubConnection?.on('ReceiveTicketUpdate', (data: TicketUpdate) => {
       this.incomingTickets.update(tickets => [data, ...tickets]);
+    });
+
+    this.hubConnection?.on('ReceiveCamaUpdate', (data: any) => {
+      this.incomingCamaUpdates.set(data);
     });
   }
 

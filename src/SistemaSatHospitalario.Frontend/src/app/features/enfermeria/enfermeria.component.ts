@@ -482,6 +482,8 @@ export class EnfermeriaComponent implements OnInit {
   public nuevoConvenioId: number | null = null;
   public esEgreso = false;
   public isSavingTransfer = signal<boolean>(false);
+  public fechaHoraEgresoEfectiva: string | null = null;
+  public montoSobrescrito: number | null = null;
 
   public camasDisponiblesIngreso = computed(() => {
     const camas = this.camasDisponibles();
@@ -1079,7 +1081,9 @@ export class EnfermeriaComponent implements OnInit {
       nuevoConvenioId: this.esEgreso ? null : this.nuevoConvenioId,
       usuarioTraslado: '', // Se sobreescribe en Backend
       esEgreso: this.esEgreso,
-      nuevaAreaClinicaId: this.esEgreso ? null : this.selectedCamaId()
+      nuevaAreaClinicaId: this.esEgreso ? null : this.selectedCamaId(),
+      fechaHoraEgresoEfectiva: this.fechaHoraEgresoEfectiva ? new Date(this.fechaHoraEgresoEfectiva).toISOString() : null,
+      montoSobrescrito: this.montoSobrescrito || null
     };
 
     this.http.post(`${environment.apiUrl}/api/Enfermeria/Traslado`, payload)
@@ -1092,6 +1096,8 @@ export class EnfermeriaComponent implements OnInit {
           }
           this.selectedAccount.set(null);
           this.nursingHistory.set([]);
+          this.fechaHoraEgresoEfectiva = null;
+          this.montoSobrescrito = null;
           this.refreshAccounts();
           this.isSavingTransfer.set(false);
         },

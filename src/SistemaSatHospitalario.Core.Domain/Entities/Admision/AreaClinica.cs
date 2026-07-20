@@ -51,14 +51,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Estado = EstadoUbicacion.Ocupada;
         }
 
-        public void MarcarEnLimpieza()
-        {
-            Estado = EstadoUbicacion.EnLimpieza;
-        }
-
         public void Liberar()
         {
             Estado = EstadoUbicacion.Disponible;
+        }
+
+        public void MarcarEnRetencionQuirurgica()
+        {
+            Estado = EstadoUbicacion.RetencionQuirurgica;
+        }
+
+        public void AsignarServicioTarifa(ServicioClinico? servicio)
+        {
+            ServicioTarifaBase = servicio;
+            ServicioTarifaBaseId = servicio?.Id;
         }
     }
 }

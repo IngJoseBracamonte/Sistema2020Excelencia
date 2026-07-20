@@ -4,9 +4,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Infrastructure.Hubs;
 using SistemaSatHospitalario.WebAPI.Infrastructure.Security;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
@@ -17,10 +19,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class EnfermeriaController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IHubContext<DashboardHub> _hubContext;
 
-        public EnfermeriaController(IMediator mediator)
+        public EnfermeriaController(IMediator mediator, IHubContext<DashboardHub> hubContext)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _hubContext = hubContext;
         }
 
         [HttpPost("Triage")]
@@ -83,6 +87,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 command.UsuarioTraslado = User.GetUserName();
                 var result = await _mediator.Send(command);
+
+                // Difundir la actualización de camas con la nueva versión del estado
+                await _hubContext.Clients.All.SendAsync("ReceiveCamaUpdate", new
+                {
+                    VersionEstado = GlobalStateVersion.Increment()
+                });
+
                 return Ok(result);
             }
             catch (Exception ex)

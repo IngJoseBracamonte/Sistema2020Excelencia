@@ -12,6 +12,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public bool EsEgreso { get; set; } // Si es true, representa el alta del paciente (no abre nueva cuenta)
         public Guid? NuevaAreaClinicaId { get; set; }
         public string? NuevaSubAreaClinica { get; set; }
+        public DateTime? FechaHoraEgresoEfectiva { get; set; }
+        public decimal? MontoSobrescrito { get; set; }
     }
 
     public class TrasladarPacienteResult

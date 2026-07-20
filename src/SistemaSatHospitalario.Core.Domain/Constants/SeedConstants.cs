@@ -107,4 +107,32 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         /// </summary>
         public const string UCI = "UCI";
     }
+
+    /// <summary>
+    /// Mantiene una versión global y secuencial del estado de ocupación de camas.
+    /// </summary>
+    public static class GlobalStateVersion
+    {
+        private static int _version = 1000;
+        private static readonly object _lock = new object();
+
+        public static int Increment()
+        {
+            lock (_lock)
+            {
+                return ++_version;
+            }
+        }
+
+        public static int Current
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _version;
+                }
+            }
+        }
+    }
 }

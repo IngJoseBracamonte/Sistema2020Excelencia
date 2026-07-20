@@ -152,11 +152,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear la columna 'AreaClinicaId' en CitasMedicas.");
                 }
 
-                // Self-healing: Ensure AreaClinicaId and SubAreaClinica columns exist in CuentasServicios table
+                // Self-healing: Ensure AreaClinicaId, SubAreaClinica and CamaRetenidaId columns exist in CuentasServicios table
                 try
                 {
                     bool hasAreaClinicaId = false;
                     bool hasSubAreaClinica = false;
+                    bool hasCamaRetenidaId = false;
                     var conn = _context.Database.GetDbConnection();
                     bool closeConnection = false;
                     if (conn.State != System.Data.ConnectionState.Open)
@@ -178,12 +179,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                                         hasAreaClinicaId = true;
                                     if (name.Equals("SubAreaClinica", StringComparison.OrdinalIgnoreCase))
                                         hasSubAreaClinica = true;
+                                    if (name.Equals("CamaRetenidaId", StringComparison.OrdinalIgnoreCase))
+                                        hasCamaRetenidaId = true;
                                 }
                             }
                         }
                         else
                         {
-                            cmd.CommandText = "SHOW COLUMNS FROM `CuentasServicios` WHERE Field IN ('AreaClinicaId', 'SubAreaClinica');";
+                            cmd.CommandText = "SHOW COLUMNS FROM `CuentasServicios` WHERE Field IN ('AreaClinicaId', 'SubAreaClinica', 'CamaRetenidaId');";
                             using (var reader = await cmd.ExecuteReaderAsync())
                             {
                                 while (await reader.ReadAsync())
@@ -193,6 +196,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                                         hasAreaClinicaId = true;
                                     if (field.Equals("SubAreaClinica", StringComparison.OrdinalIgnoreCase))
                                         hasSubAreaClinica = true;
+                                    if (field.Equals("CamaRetenidaId", StringComparison.OrdinalIgnoreCase))
+                                        hasCamaRetenidaId = true;
                                 }
                             }
                         }
@@ -213,6 +218,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                         await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `SubAreaClinica` VARCHAR(100) NULL;");
                     }
 
+                    if (!hasCamaRetenidaId)
+                    {
+                        _logger.LogInformation("La columna 'CamaRetenidaId' no existe en CuentasServicios. Ejecutando ALTER TABLE...");
+                        if (_context.Database.IsSqlite())
+                            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `CamaRetenidaId` TEXT NULL;");
+                        else
+                            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE `CuentasServicios` ADD COLUMN `CamaRetenidaId` CHAR(36) NULL;");
+                    }
+
                     if (closeConnection)
                     {
                         await conn.CloseAsync();
@@ -220,7 +234,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "No se pudo verificar/crear las columnas AreaClinicaId/SubAreaClinica en CuentasServicios.");
+                    _logger.LogWarning(ex, "No se pudo verificar/crear las columnas AreaClinicaId/SubAreaClinica/CamaRetenidaId en CuentasServicios.");
                 }
 
                 // Self-healing: Ensure PermiteFraccionamiento and UnidadMedida columns exist in ServiciosClinicos table

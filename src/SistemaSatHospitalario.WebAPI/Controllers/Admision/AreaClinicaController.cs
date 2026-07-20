@@ -3,8 +3,11 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
+using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Infrastructure.Hubs;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -14,10 +17,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class AreaClinicaController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IHubContext<DashboardHub> _hubContext;
 
-        public AreaClinicaController(IMediator mediator)
+        public AreaClinicaController(IMediator mediator, IHubContext<DashboardHub> hubContext)
         {
             _mediator = mediator;
+            _hubContext = hubContext;
         }
 
         [HttpGet]
@@ -39,6 +44,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             var id = await _mediator.Send(command);
             return Ok(id);
+        }
+
+        [HttpPost("traslado")]
+        public async Task<IActionResult> TrasladarPaciente([FromBody] TrasladarPacienteCommand command)
+        {
+            var result = await _mediator.Send(command);
+
+            // Emitir la notificación de actualización del estado de las camas
+            await _hubContext.Clients.All.SendAsync("ReceiveCamaUpdate", new
+            {
+                VersionEstado = GlobalStateVersion.Increment()
+            });
+
+            return Ok(result);
         }
 
         [HttpPut("{id}")]

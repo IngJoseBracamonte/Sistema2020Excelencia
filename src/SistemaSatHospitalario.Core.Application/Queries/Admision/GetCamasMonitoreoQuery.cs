@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -32,20 +33,27 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Where(a => a.Activo)
                 .ToListAsync(cancellationToken);
 
-            // 2. Obtener todas las cuentas abiertas vinculadas a alguna cama
+            // 2. Obtener todas las cuentas abiertas vinculadas a alguna cama (o retenidas)
             var cuentasAbiertas = await _context.CuentasServicios
                 .Include(c => c.Paciente)
                 .Include(c => c.Detalles)
-                .Where(c => c.Estado == "Abierta" && c.AreaClinicaId != null)
+                .Where(c => c.Estado == "Abierta" && (c.AreaClinicaId != null || c.CamaRetenidaId != null))
                 .ToListAsync(cancellationToken);
 
             var result = new List<CamaMonitoreoDto>();
+            int currentVersion = GlobalStateVersion.Current;
 
             foreach (var cama in camas)
             {
-                // Buscar si la cama está ocupada por una cuenta abierta
-                var cuentaAsociada = cuentasAbiertas.FirstOrDefault(c => c.AreaClinicaId == cama.Id);
+                // Buscar si la cama está ocupada o retenida por una cuenta abierta
+                var cuentaAsociada = cuentasAbiertas.FirstOrDefault(c => c.AreaClinicaId == cama.Id || c.CamaRetenidaId == cama.Id);
                 var estaOcupada = cuentaAsociada != null;
+
+                string estadoCama = "Disponible";
+                if (estaOcupada && cuentaAsociada != null)
+                {
+                    estadoCama = cuentaAsociada.CamaRetenidaId == cama.Id ? "RetencionQuirurgica" : "Ocupada";
+                }
 
                 var dto = new CamaMonitoreoDto
                 {
@@ -54,8 +62,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Codigo = cama.Codigo,
                     Nombre = cama.Nombre,
                     SedeNombre = cama.Sede?.Nombre ?? "Sede General",
-                    Estado = estaOcupada ? "Ocupada" : "Disponible",
-                    EsAreaAdmision = cama.EsAreaAdmision
+                    Estado = estadoCama,
+                    EsAreaAdmision = cama.EsAreaAdmision,
+                    VersionEstado = currentVersion
                 };
 
                 if (estaOcupada && cuentaAsociada != null)

@@ -37,25 +37,11 @@ namespace SistemaSatHospitalario.UnitTests.Application
         }
 
         [Fact]
-        public void AreaClinica_MarcarEnLimpieza_ShouldTransitionToEnLimpieza()
-        {
-            // Arrange
-            var area = new AreaClinica(Guid.NewGuid(), "AC01", "Cama 101");
-            area.MarcarComoOcupada();
-
-            // Act
-            area.MarcarEnLimpieza();
-
-            // Assert
-            Assert.Equal(EstadoUbicacion.EnLimpieza, area.Estado);
-        }
-
-        [Fact]
         public void AreaClinica_Liberar_ShouldTransitionToDisponible()
         {
             // Arrange
             var area = new AreaClinica(Guid.NewGuid(), "AC01", "Cama 101");
-            area.MarcarEnLimpieza();
+            area.MarcarComoOcupada();
 
             // Act
             area.Liberar();

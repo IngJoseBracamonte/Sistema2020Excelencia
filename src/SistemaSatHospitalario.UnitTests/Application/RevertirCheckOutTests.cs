@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
     public class RevertirCheckOutTests
     {
         [Fact]
-        public async Task Handle_ShouldReopenAccountAndRestoreBedToOcupadaAndRemoveActiveCleaning()
+        public async Task Handle_ShouldReopenAccountAndRestoreBedToOcupada()
         {
             // Arrange
             var mockContext = new Mock<IApplicationDbContext>();
@@ -33,16 +33,8 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var cuenta = new CuentaServicios(paciente.Id, "nurse_admin", "Hospitalizacion", null, cama.Id, null, null);
             cuenta.Facturar(); // Marks as Facturada and sets FechaCierre
 
-            // Bed was marked EnLimpieza when check-out occurred
-            cama.MarcarEnLimpieza();
-
-            // Active cleaning record was created
-            var activeCleaning = new HistorialLimpiezaCama(cama.Id, DateTime.UtcNow, "nurse_admin");
-            var cleaningsList = new List<HistorialLimpiezaCama> { activeCleaning };
-
             mockContext.Setup(c => c.CuentasServicios).Returns(new List<CuentaServicios> { cuenta }.BuildMockDbSet().Object);
             mockContext.Setup(c => c.AreasClinicas).Returns(new List<AreaClinica> { cama }.BuildMockDbSet().Object);
-            mockContext.Setup(c => c.HistorialesLimpiezasCamas).Returns(cleaningsList.BuildMockDbSet().Object);
 
             var command = new RevertirCheckOutCommand(cuenta.Id, "nurse_admin");
             var handler = new RevertirCheckOutCommandHandler(mockContext.Object, mockLogger.Object);
@@ -56,8 +48,6 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Null(cuenta.FechaCierre);
             Assert.Equal(EstadoUbicacion.Ocupada, cama.Estado);
 
-            // Verify active cleaning was removed
-            mockContext.Verify(c => c.HistorialesLimpiezasCamas.Remove(It.Is<HistorialLimpiezaCama>(h => h.Id == activeCleaning.Id)), Times.Once);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 

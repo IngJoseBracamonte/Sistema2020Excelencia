@@ -62,7 +62,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<PedidoInterSedeDetalle> PedidosInterSedeDetalles { get; }
         DbSet<DetalleServicioMedicoResponsable> DetallesServicioMedicosResponsables { get; }
         DbSet<ServicioIncluidoArea> ServiciosIncluidosAreas { get; }
-        DbSet<HistorialLimpiezaCama> HistorialesLimpiezasCamas { get; }
         DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);

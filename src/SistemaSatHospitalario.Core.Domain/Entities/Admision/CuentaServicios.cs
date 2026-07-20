@@ -22,11 +22,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? AreaClinicaId { get; private set; }
         public string? SubAreaClinica { get; private set; }
         public Guid? MedicoId { get; private set; }
+        public Guid? CamaRetenidaId { get; private set; }
  
         public virtual PacienteAdmision Paciente { get; private set; }
         public virtual SeguroConvenio Convenio { get; private set; }
         public virtual CuentaServicios? CuentaPrincipal { get; private set; }
         public virtual AreaClinica? AreaClinica { get; private set; }
+        public virtual AreaClinica? CamaRetenida { get; private set; }
         public virtual Medico? Medico { get; private set; }
  
         public virtual ICollection<TriageEnfermeria> Triages { get; private set; } = new List<TriageEnfermeria>();
@@ -64,6 +66,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             AreaClinicaId = areaClinicaId;
             SubAreaClinica = subAreaClinica;
+        }
+
+        public void AsignarCamaRetenida(Guid? camaRetenidaId)
+        {
+            CamaRetenidaId = camaRetenidaId;
+        }
+
+        public void ModificarFechaCargaParaPruebas(DateTime fecha)
+        {
+            FechaCarga = fecha;
         }
 
         public void AsignarMedico(Guid? medicoId)

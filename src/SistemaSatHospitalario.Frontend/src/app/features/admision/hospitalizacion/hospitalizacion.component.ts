@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { MultiSedeService } from '../../../core/services/multi-sede.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SignalrService } from '../../../core/services/signalr.service';
 import { 
   LucideAngularModule, 
   Bed, 
@@ -30,11 +31,38 @@ import {
   imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './hospitalizacion.component.html'
 })
-export class HospitalizacionComponent implements OnInit {
+export class HospitalizacionComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly sedeService = inject(MultiSedeService);
+  private readonly signalRService = inject(SignalrService);
   public readonly auth = inject(AuthService);
+
+  // State version control for network cut reconciliation
+  public currentStateVersion = signal<number>(0);
+
+  constructor() {
+    // Escuchar cambios reactivos de SignalR y manejar reconciliación de versión
+    effect(() => {
+      const update = this.signalRService.incomingCamaUpdates();
+      if (update) {
+        const localVer = this.currentStateVersion();
+        const remoteVer = update.versionEstado;
+        
+        console.log(`[HOSPITALIZACION] Actualización SignalR recibida. Local: ${localVer}, Remote: ${remoteVer}`);
+        
+        if (remoteVer === localVer + 1) {
+          // Incremento secuencial feliz, refrescamos silenciosamente
+          this.currentStateVersion.set(remoteVer);
+          this.refrescarCamasSilenciosamente();
+        } else if (remoteVer !== localVer) {
+          // Salto de versión detectado (micro-corte de red), reconciliamos todo con pull directo
+          console.warn(`[HOSPITALIZACION] Brecha de versión en SignalR (${localVer} -> ${remoteVer}). Reconciliando...`);
+          this.reconciliarEstadoCompleto();
+        }
+      }
+    }, { allowSignalWrites: true });
+  }
 
   readonly icons = {
     Bed,
@@ -82,7 +110,14 @@ export class HospitalizacionComponent implements OnInit {
   }
 
   ngOnInit() {
+    const token = this.auth.getToken() || '';
+    const role = this.auth.currentUser()?.role || '';
+    this.signalRService.startConnection(token, role);
     this.cargarDatos();
+  }
+
+  ngOnDestroy() {
+    this.signalRService.stopConnection();
   }
 
   public cargarDatos() {
@@ -93,6 +128,9 @@ export class HospitalizacionComponent implements OnInit {
     this.sedeService.getCamasMonitoreo().subscribe({
       next: (res) => {
         this.camas.set(res);
+        if (res && res.length > 0) {
+          this.currentStateVersion.set(res[0].versionEstado || 0);
+        }
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -111,6 +149,27 @@ export class HospitalizacionComponent implements OnInit {
         }
       },
       error: (err) => console.error('[HOSPITALIZACION] Error al cargar sedes:', err)
+    });
+  }
+
+  public refrescarCamasSilenciosamente() {
+    this.sedeService.getCamasMonitoreo().subscribe({
+      next: (res) => {
+        this.camas.set(res);
+      },
+      error: (err) => console.error('[HOSPITALIZACION] Error en refresco silencioso de camas:', err)
+    });
+  }
+
+  public reconciliarEstadoCompleto() {
+    this.sedeService.getCamasMonitoreo().subscribe({
+      next: (res) => {
+        this.camas.set(res);
+        if (res && res.length > 0) {
+          this.currentStateVersion.set(res[0].versionEstado || 0);
+        }
+      },
+      error: (err) => console.error('[HOSPITALIZACION] Error al reconciliar estado de camas:', err)
     });
   }
 

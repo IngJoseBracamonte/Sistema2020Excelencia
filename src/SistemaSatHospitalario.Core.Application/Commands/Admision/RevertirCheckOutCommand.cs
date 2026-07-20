@@ -50,7 +50,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 2. Reabrir la cuenta
             cuenta.Reabrir();
 
-            // 3. Rollback de la cama y del historial de limpieza
+            // 3. Rollback de la cama
             if (cuenta.AreaClinicaId.HasValue)
             {
                 var cama = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken);
@@ -58,16 +58,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 {
                     // Volver a marcar la cama como ocupada
                     cama.MarcarComoOcupada();
-
-                    // Buscar el historial de limpieza activo (FechaFin == null) para esa cama
-                    var activeCleaning = await _context.HistorialesLimpiezasCamas
-                        .FirstOrDefaultAsync(h => h.CamaId == cama.Id && h.FechaFin == null, cancellationToken);
-
-                    if (activeCleaning != null)
-                    {
-                        _logger.LogInformation("Cancelando y eliminando registro de limpieza activo (ID: {HistorialId}) para la cama {CamaCodigo}", activeCleaning.Id, cama.Codigo);
-                        _context.HistorialesLimpiezasCamas.Remove(activeCleaning);
-                    }
                 }
             }
 

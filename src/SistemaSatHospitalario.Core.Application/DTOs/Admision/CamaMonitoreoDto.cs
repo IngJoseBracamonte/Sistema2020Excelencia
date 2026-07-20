@@ -20,5 +20,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal TotalFacturado { get; set; }
         public List<CamaMonitoreoDetalleCargoDto> DetallesCargos { get; set; } = new();
         public List<CamaMonitoreoTriageDto> HistorialTriage { get; set; } = new();
+        public int VersionEstado { get; set; }
     }
 }
