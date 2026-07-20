@@ -1,11 +1,16 @@
 import { Component, signal, computed, output, input, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, LucideIconData } from 'lucide-angular';
-import { CatalogService } from '../../../../services/catalog.service';
-import { InventoryService } from '../../../../services/inventory.service';
-import { Insumo } from '../../../../models/inventory.model';
-import { CatalogItem, BasePricedItem } from '../../../../models/priced-item.model';
+import {
+  LucideAngularModule,
+  X, Save, Loader2, Search, Trash2, Check, Package,
+  FlaskConical, FileText, Stethoscope, Layers, Plus,
+  Microscope, TestTube2
+} from 'lucide-angular';
+import { CatalogService } from '../../../../core/services/catalog.service';
+import { InventoryService } from '../../../../core/services/inventory.service';
+import { Insumo } from '../../../../core/models/inventory.model';
+import { CatalogItem, BasePricedItem } from '../../../../core/models/priced-item.model';
 
 interface BOMLine {
   insumoId: string;
@@ -37,76 +42,20 @@ export class EditLaboratorioComponent implements OnInit {
 
   // ── Icons ───────────────────────────────────────────────────────────────
   protected readonly icons = {
-    X: LucideIconData.X,
-    Save: LucideIconData.Save,
-    Loader2: LucideIconData.Loader2,
-    Search: LucideIconData.Search,
-    Trash2: LucideIconData.Trash2,
-    Check: LucideIconData.Check,
-    Package: LucideIconData.Package,
-    FlaskConical: LucideIconData.FlaskConical,
-    FileText: LucideIconData.FileText,
-    Stethoscope: LucideIconData.Stethoscope,
-    UserCog: LucideIconData.UserCog,
-    Droplets: LucideIconData.Droplets,
-    TestTube: LucideIconData.TestTube,
-    Microscope: LucideIconData.Microscope,
-    AlertTriangle: LucideIconData.AlertTriangle,
-    Info: LucideIconData.Info,
-    Plus: LucideIconData.Plus,
-    Minus: LucideIconData.Minus,
-    Settings: LucideIconData.Settings,
-    Layers: LucideIconData.Layers,
-    Zap: LucideIconData.Zap,
-    HeartPulse: LucideIconData.HeartPulse,
-    Brain: LucideIconData.Brain,
-    Activity: LucideIconData.Activity,
-    Pill: LucideIconData.Pill,
-    Syringe: LucideIconData.Syringe,
-    Bone: LucideIconData.Bone,
-    Eye: LucideIconData.Eye,
-    Ear: LucideIconData.Ear,
-    Lungs: LucideIconData.Lungs,
-    Heart: LucideIconData.Heart,
-    Thermometer: LucideIconData.Thermometer,
-    Weight: LucideIconData.Weight,
-    Ruler: LucideIconData.Ruler,
-    Scissors: LucideIconData.Scissors,
-    Bandage: LucideIconData.Bandage,
-    Stethoscope: LucideIconData.Stethoscope,
-    Syringe: LucideIconData.Syringe,
-    Pill: LucideIconData.Pill,
-    Capsule: LucideIconData.Capsule,
-    Droplet: LucideIconData.Droplet,
-    Microscope: LucideIconData.Microscope,
-    TestTube2: LucideIconData.TestTube2,
-    FlaskConical: LucideIconData.FlaskConical,
-    Dna: LucideIconData.Dna,
-    Virus: LucideIconData.Virus,
-    Bacteria: LucideIconData.Bacteria,
-    Cell: LucideIconData.Cell,
-    DnaOff: LucideIconData.DnaOff,
-    Activity: LucideIconData.Activity,
-    HeartPulse: LucideIconData.HeartPulse,
-    Brain: LucideIconData.Brain,
-    Zap: LucideIconData.Zap,
-    Settings: LucideIconData.Settings,
-    Layers: LucideIconData.Layers,
-    Contrast: LucideIconData.Contrast,
-    ScanEye: LucideIconData.ScanEye,
-    ScanFace: LucideIconData.ScanFace,
-    ScanLine: LucideIconData.ScanLine,
-    ScanSearch: LucideIconData.ScanSearch,
-    ScanText: LucideIconData.ScanText,
-    ScanHeart: LucideIconData.ScanHeart,
-    ScanSmile: LucideIconData.ScanSmile,
-    ScanEye: LucideIconData.ScanEye,
-    ScanFace: LucideIconData.ScanFace,
-    ScanLine: LucideIconData.ScanLine,
-    ScanSearch: LucideIconData.ScanSearch,
-    ScanText: LucideIconData.ScanText,
-    ScanHeart: LucideIconData.ScanHeart,
-    ScanSmile: LucideIconData.ScanSmile,
+    X,
+    Save,
+    Loader2,
+    Search,
+    Trash2,
+    Check,
+    Package,
+    FlaskConical,
+    FileText,
+    Stethoscope,
+    Layers,
+    Plus,
+    Microscope,
+    TestTube2,
   } as const;
 
   // ── Form State (Signals) ────────────────────────────────────────────────
@@ -162,13 +111,20 @@ export class EditLaboratorioComponent implements OnInit {
   });
 
   // ── Lifecycle ───────────────────────────────────────────────────────────
-  ngOnInit() {
+  constructor() {
     this.loadInsumos();
     this.loadSugerencias();
 
-    if (this.isEditing() && this.itemId()) {
-      this.loadItem(this.itemId()!);
-    }
+    // React to itemId changes (for editing different items without destroying component)
+    effect(() => {
+      const id = this.itemId();
+      if (this.isEditing() && id) {
+        this.loadItem(id);
+      }
+    });
+  }
+
+  ngOnInit() {
   }
 
   private loadInsumos() {
@@ -322,6 +278,7 @@ export class EditLaboratorioComponent implements OnInit {
     }
 
     let completed = 0;
+    let hasErrors = false;
     const total = lines.length;
 
     lines.forEach(line => {
@@ -335,14 +292,22 @@ export class EditLaboratorioComponent implements OnInit {
           completed++;
           if (completed >= total) {
             this.isSaving.set(false);
-            this.saved.emit();
-            this.closed.emit();
+            if (!hasErrors) {
+              this.saved.emit();
+              this.closed.emit();
+            } else {
+              console.error('Algunas recetas no se guardaron correctamente');
+              this.isSaving.set(false);
+            }
           }
         },
-        error: () => {
+        error: (err) => {
+          hasErrors = true;
           completed++;
+          console.error('Error guardando receta para insumo:', line.insumoNombre, err);
           if (completed >= total) {
             this.isSaving.set(false);
+            // Aunque hubo errores en recetas, el servicio principal se guardó
             this.saved.emit();
             this.closed.emit();
           }

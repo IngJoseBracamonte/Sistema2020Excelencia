@@ -1,11 +1,12 @@
 import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Scissors, Pill, Capsule, Search, X, Plus, Trash2, Save, Loader2, Package, DollarSign, AlertTriangle, Check, Layers, MessageSquare, FileText, UserCog, Activity, Scalpel } from 'lucide-angular';
-import { CatalogService, CatalogItem } from '../../services/catalog.service';
-import { InventoryService, Insumo } from '../../services/inventory.service';
-import { BillingFacadeService } from '../../services/billing-facade.service';
-import { MedicoService } from '../../services/medico.service';
+import { LucideAngularModule, Scissors, Pill, Search, X, Plus, Trash2, Save, Loader2, Package, DollarSign, AlertTriangle, Check, Layers, MessageSquare, FileText, UserCog, Activity, Scalpel } from 'lucide-angular';
+import { CatalogService, CatalogItem } from '../../../../core/services/catalog.service';
+import { InventoryService } from '../../../../core/services/inventory.service';
+import { Insumo } from '../../../../core/models/inventory.model';
+import { BillingFacadeService } from '../../../../core/services/billing-facade.service';
+import { MedicoService } from '../../../../core/services/medico.service';
 
 type ServiceCategory = 'CONSULTA' | 'PROCEDIMIENTO' | 'LABORATORIO' | 'TOMOGRAFIA' | 'CIRUGIA' | 'MEDICAMENTO' | 'OTRO';
 
@@ -48,7 +49,7 @@ interface SugerenciaVinculada {
 export class EditMedicamentoComponent implements OnInit {
   // Icons
   readonly icons = {
-    Scissors, Pill, Capsule, Search, X, Plus, Trash2, Save, Loader2,
+    Scissors, Pill, Search, X, Plus, Trash2, Save, Loader2,
     Package, DollarSign, AlertTriangle, Check, Layers, MessageSquare,
     FileText, UserCog, Activity, Scalpel
   };
