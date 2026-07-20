@@ -20,6 +20,20 @@ export class CatalogService {
     );
   }
 
+  /** Returns all catalog items (admin management endpoint). */
+  getItems(): Observable<CatalogItem[]> {
+    return this.http.get<any[]>(this.apiUrl).pipe(
+      map(items => items.map(i => new CatalogItem(i)))
+    );
+  }
+
+  /** Returns a single catalog item by id. */
+  getItemById(id: string): Observable<CatalogItem> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map(i => new CatalogItem(i))
+    );
+  }
+
   getPaymentMethods(soloActivos: boolean = true): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/payment-methods?soloActivos=${soloActivos}`);
   }
@@ -46,22 +60,26 @@ export class CatalogService {
       requiereInventario: item.requiereInventario ?? true,
       sugerenciasIds: item.sugerenciasIds ?? [],
       honorariosMedicos: item.honorariosMedicos ?? [],
-      activo: item.activo ?? true
+      activo: item.activo ?? true,
+      requiereContraste: item.requiereContraste ?? false,
+      protocoloTecnico: item.protocoloTecnico ?? ''
     });
   }
 
-  updateItem(item: CatalogItem): Observable<boolean> {
+  updateItem(id: string, item: Partial<CatalogItem>): Observable<boolean> {
     return this.http.put<boolean>(this.apiUrl, {
-      id: item.id,
+      id,
       descripcion: item.descripcion,
       codigo: item.codigo,
-      precioUsd: item.precioUsd,
+      precioUsd: item.precioUsd ?? item.precioBaseUsd,
       tipo: item.tipo,
       honorarioBase: item.honorarioBase ?? 0,
       requiereInventario: item.requiereInventario ?? true,
       sugerenciasIds: item.sugerenciasIds ?? [],
       honorariosMedicos: item.honorariosMedicos ?? [],
-      activo: item.activo ?? true
+      activo: item.activo ?? true,
+      requiereContraste: item.requiereContraste ?? false,
+      protocoloTecnico: item.protocoloTecnico ?? ''
     });
   }
 

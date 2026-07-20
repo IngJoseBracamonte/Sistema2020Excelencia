@@ -257,7 +257,7 @@ export class EditTomografiaComponent implements OnInit {
         };
 
         if (this.isEditing() && this.itemId()) {
-            this.catalogService.updateItem(item as CatalogItem).subscribe({
+            this.catalogService.updateItem(this.itemId()!, item as CatalogItem).subscribe({
                 next: () => this.saveRecipes(this.itemId()!),
                 error: () => { this.isSaving.set(false); console.error('Error updating tomografia'); }
             });

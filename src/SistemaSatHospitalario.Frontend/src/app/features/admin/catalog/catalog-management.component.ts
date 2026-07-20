@@ -240,7 +240,7 @@ export class CatalogManagementComponent implements OnInit {
       }));
 
     if (this.isEditing() && item.id) {
-      this.catalogService.updateItem(item as CatalogItem).subscribe(() => {
+      this.catalogService.updateItem(item.id!, item as CatalogItem).subscribe(() => {
         this.showModal.set(false);
         this.refreshCatalog();
       });

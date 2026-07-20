@@ -246,7 +246,7 @@ export class EditProcedimientoComponent implements OnInit {
 
         if (this.isEditing() && this.itemId()) {
             // Update existing
-            this.catalogService.updateItem(item as CatalogItem).subscribe({
+            this.catalogService.updateItem(this.itemId()!, item as CatalogItem).subscribe({
                 next: () => {
                     this.saveRecipes(this.itemId()!);
                 },

@@ -21,6 +21,42 @@ export abstract class BasePricedItem {
   SugerenciasIds?: string[];
   honorariosMedicos?: { medicoId: string; medicoNombre?: string; honorario: number }[];
 
+  // Campos generales de precio base
+  precioBaseUsd?: number;
+  PrecioBaseUsd?: number;
+
+  // Campos quirúrgicos (CIRUGIA)
+  complejidad?: string;
+  Complejidad?: string;
+  duracionEstimadaMinutos?: number;
+  DuracionEstimadaMinutos?: number;
+  requiereAnestesia?: boolean;
+  RequiereAnestesia?: boolean;
+  tipoAnestesia?: string;
+  TipoAnestesia?: string;
+  clasificacionRiesgo?: string;
+  ClasificacionRiesgo?: string;
+  notasPreoperatorias?: string;
+  NotasPreoperatorias?: string;
+  notasPostoperatorias?: string;
+  NotasPostoperatorias?: string;
+  protocoloQuirurgico?: string;
+  ProtocoloQuirurgico?: string;
+  indicaciones?: string;
+  Indicaciones?: string;
+  contraindicaciones?: string;
+  Contraindicaciones?: string;
+  equipoQuirurgico?: { id: string; nombre: string; codigo: string; cantidad: number }[];
+  EquipoQuirurgico?: { id: string; nombre: string; codigo: string; cantidad: number }[];
+  honorariosEquipo?: { rol: string; honorarioUsd: number }[];
+  HonorariosEquipo?: { rol: string; honorarioUsd: number }[];
+
+  // Campos de Tomografía (TOMOGRAFIA)
+  requiereContraste?: boolean;
+  RequiereContraste?: boolean;
+  protocoloTecnico?: string;
+  ProtocoloTecnico?: string;
+
   // Datos para Citas y Sincronización
   medicoId?: string;
   medicoNombre?: string;
@@ -44,6 +80,27 @@ export abstract class BasePricedItem {
     this.requiereInventario = data.requiereInventario ?? data.RequiereInventario ?? false;
     this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
     this.honorariosMedicos = data.honorariosMedicos || data.HonorariosMedicos || [];
+
+    // Precio base USD (campo específico de servicios con precio base distinto al honorario)
+    this.precioBaseUsd = data.precioBaseUsd ?? data.PrecioBaseUsd;
+
+    // Campos quirúrgicos
+    this.complejidad = data.complejidad ?? data.Complejidad;
+    this.duracionEstimadaMinutos = data.duracionEstimadaMinutos ?? data.DuracionEstimadaMinutos;
+    this.requiereAnestesia = data.requiereAnestesia ?? data.RequiereAnestesia;
+    this.tipoAnestesia = data.tipoAnestesia ?? data.TipoAnestesia;
+    this.clasificacionRiesgo = data.clasificacionRiesgo ?? data.ClasificacionRiesgo;
+    this.notasPreoperatorias = data.notasPreoperatorias ?? data.NotasPreoperatorias;
+    this.notasPostoperatorias = data.notasPostoperatorias ?? data.NotasPostoperatorias;
+    this.protocoloQuirurgico = data.protocoloQuirurgico ?? data.ProtocoloQuirurgico;
+    this.indicaciones = data.indicaciones ?? data.Indicaciones;
+    this.contraindicaciones = data.contraindicaciones ?? data.Contraindicaciones;
+    this.equipoQuirurgico = data.equipoQuirurgico ?? data.EquipoQuirurgico ?? [];
+    this.honorariosEquipo = data.honorariosEquipo ?? data.HonorariosEquipo ?? [];
+
+    // Campos de tomografía
+    this.requiereContraste = data.requiereContraste ?? data.RequiereContraste;
+    this.protocoloTecnico = data.protocoloTecnico ?? data.ProtocoloTecnico;
 
     this.medicoId = data.medicoId ?? data.MedicoId;
     this.medicoNombre = data.medicoNombre ?? data.MedicoNombre;
