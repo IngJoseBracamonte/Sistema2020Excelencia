@@ -728,7 +728,7 @@
                                     {{ acc.pacienteNombre }}
                                 </h4>
                                 <p class="text-[9px] font-mono font-bold text-slate-500 mt-1 uppercase">
-                                    ID: {{ acc.pacienteCedula }} • Edad: {{ calcularEdad(patientDetailsMap()[acc.pacienteId]?.fechaNacimiento) }}
+                                    ID: {{ acc.pacienteCedula }} • Edad: {{ calcularEdad(patientDetailsMap()[acc.pacienteId] ? patientDetailsMap()[acc.pacienteId]!.fechaNacimiento : null) }}
                                 </p>
                             </div>
                         </div>

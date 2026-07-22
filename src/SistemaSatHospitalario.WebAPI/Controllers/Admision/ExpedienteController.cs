@@ -27,7 +27,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             { 
                 StartDate = startDate, 
                 EndDate = endDate, 
-                SearchTerm = searchTerm,
+                SearchTerm = searchTerm ?? string.Empty,
                 FilterType = filterType,
                 SoloCompromiso = soloCompromiso
             });

@@ -34,6 +34,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(result);
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<CatalogItemDto>> GetById(string id)
+        {
+            var catalog = await _mediator.Send(new GetUnifiedCatalogQuery());
+            var item = catalog.FirstOrDefault(i => i.Id.ToString() == id || string.Equals(i.Codigo, id, StringComparison.OrdinalIgnoreCase));
+            if (item == null) return NotFound(new { message = "Servicio no encontrado" });
+            return Ok(item);
+        }
+
         [HttpGet("payment-methods")]
         public async Task<ActionResult<List<PaymentMethodDto>>> GetPaymentMethods([FromQuery] bool soloActivos = true)
         {

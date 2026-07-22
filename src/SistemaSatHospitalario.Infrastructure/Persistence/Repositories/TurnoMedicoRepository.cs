@@ -11,14 +11,9 @@ using System.Linq;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 {
-    public class TurnoMedicoRepository : ITurnoMedicoRepository
+    public class TurnoMedicoRepository(SatHospitalarioDbContext context) : ITurnoMedicoRepository
     {
-        private readonly SatHospitalarioDbContext _context;
-
-        public TurnoMedicoRepository(SatHospitalarioDbContext context)
-        {
-            _context = context;
-        }
+        private readonly SatHospitalarioDbContext _context = context ?? throw new ArgumentNullException(nameof(context));
 
         public async Task AgregarAsync(TurnoMedico turno, CancellationToken cancellationToken)
         {
@@ -26,7 +21,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<IncidenciaHorario> ObtenerIncidenciaSolaParaHoraAsync(Guid medicoId, DateTime horaTarget, CancellationToken cancellationToken)
+        public async Task<IncidenciaHorario?> ObtenerIncidenciaSolaParaHoraAsync(Guid medicoId, DateTime horaTarget, CancellationToken cancellationToken)
         {
             return await _context.IncidenciasHorario
                 .FirstOrDefaultAsync(i => i.MedicoId == medicoId 
@@ -34,7 +29,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
                                        && i.Fin >= horaTarget, cancellationToken);
         }
 
-        public async Task<TurnoMedico> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<TurnoMedico?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _context.TurnosMedicos.FindAsync(new object[] { id }, cancellationToken);
         }

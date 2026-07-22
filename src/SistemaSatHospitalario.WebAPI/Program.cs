@@ -162,8 +162,8 @@ finally
 
 public class LogPayload {
     public string Level { get; set; } = "info";
-    public string Message { get; set; }
-    public object Context { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public object? Context { get; set; }
 }
 
 public partial class Program { }

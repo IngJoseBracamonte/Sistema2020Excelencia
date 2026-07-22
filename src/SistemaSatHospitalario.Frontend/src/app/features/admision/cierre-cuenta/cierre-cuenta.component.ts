@@ -111,7 +111,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   // State Signals
   public type = signal<string>('Hospitalizacion'); // 'Hospitalizacion' or 'Emergencia'
   public accounts = signal<CuentaAdministrativaDto[]>([]);
-  public patientDetailsMap = signal<Record<string, PatientRecord>>({});
+  public patientDetailsMap = signal<Record<string, PatientRecord | undefined>>({});
   public searchTerm = signal<string>('');
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);

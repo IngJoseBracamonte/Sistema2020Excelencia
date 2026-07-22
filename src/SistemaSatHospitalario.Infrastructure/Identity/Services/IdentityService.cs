@@ -40,8 +40,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 userDtos.Add(new UserDto
                 {
                     Id = user.Id,
-                    Username = user.UserName,
-                    Email = user.Email,
+                    Username = user.UserName ?? string.Empty,
+                    Email = user.Email ?? string.Empty,
                     FullName = $"{(user.NombreReal ?? "Usuario")} {(user.ApellidoReal ?? "Hospital")}".Trim(),
                     EsActivo = user.EsActivo,
                     Roles = roles.ToList(),
@@ -65,7 +65,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 dtos.Add(new RoleDto
                 {
                     Id = role.Id,
-                    Name = role.Name,
+                    Name = role.Name ?? string.Empty,
                     Permissions = claims.Where(c => c.Type == PermissionConstants.Type).Select(c => c.Value).ToList()
                 });
             }
@@ -74,7 +74,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
 
         public async Task<List<string>> GetRolesAsync()
         {
-            return await _roleManager.Roles.Select(r => r.Name).ToListAsync();
+            return await _roleManager.Roles.Select(r => r.Name!).Where(r => r != null).ToListAsync();
         }
 
         public async Task<bool> CreateUserAsync(string username, string email, string password, List<string> roles)

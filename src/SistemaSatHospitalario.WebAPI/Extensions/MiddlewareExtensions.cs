@@ -66,7 +66,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                     {
                         try
                         {
-                            var builderCon = new MySqlConnector.MySqlConnectionStringBuilder(context.Database.GetConnectionString());
+                            var builderCon = new MySqlConnector.MySqlConnectionStringBuilder(context.Database.GetConnectionString() ?? string.Empty);
                             logger.LogInformation("Intento {Attempt}/{Total}: Probando conexión a {Server} (DB: {Database})...", i, retries, builderCon.Server, builderCon.Database);
 
                             await context.Database.OpenConnectionAsync();

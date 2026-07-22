@@ -9,9 +9,9 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces
 {
     public interface ITurnoMedicoRepository
     {
-        Task<TurnoMedico> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken);
+        Task<TurnoMedico?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken);
         Task AgregarAsync(TurnoMedico turno, CancellationToken cancellationToken);
-        Task<IncidenciaHorario> ObtenerIncidenciaSolaParaHoraAsync(Guid medicoId, DateTime horaTarget, CancellationToken cancellationToken);
+        Task<IncidenciaHorario?> ObtenerIncidenciaSolaParaHoraAsync(Guid medicoId, DateTime horaTarget, CancellationToken cancellationToken);
         
         // Consultas para flujo de citas
         Task<List<Medico>> ListBySpecialtyAsync(string specialty, CancellationToken cancellationToken);

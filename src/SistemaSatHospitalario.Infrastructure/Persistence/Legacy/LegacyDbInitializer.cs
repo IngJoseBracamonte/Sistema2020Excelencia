@@ -83,7 +83,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    if (reader["name"].ToString().Equals("Direccion", StringComparison.OrdinalIgnoreCase))
+                                    var colName = reader["name"]?.ToString();
+                                    if (colName != null && colName.Equals("Direccion", StringComparison.OrdinalIgnoreCase))
                                     {
                                         hasDireccionLegacy = true;
                                         break;

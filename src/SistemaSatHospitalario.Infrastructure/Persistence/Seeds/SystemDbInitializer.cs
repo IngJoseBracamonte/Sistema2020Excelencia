@@ -53,7 +53,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    if (reader["name"].ToString().Equals("Direccion", StringComparison.OrdinalIgnoreCase))
+                                    var colName = reader["name"]?.ToString();
+                                    if (colName != null && colName.Equals("Direccion", StringComparison.OrdinalIgnoreCase))
                                     {
                                         hasDireccion = true;
                                         break;
@@ -109,7 +110,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    if (reader["name"].ToString().Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
+                                    var colName = reader["name"]?.ToString();
+                                    if (colName != null && colName.Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
                                     {
                                         hasAreaClinicaId = true;
                                         break;
@@ -174,7 +176,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    var name = reader["name"].ToString();
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
                                     if (name.Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
                                         hasAreaClinicaId = true;
                                     if (name.Equals("SubAreaClinica", StringComparison.OrdinalIgnoreCase))
@@ -191,7 +193,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    var field = reader["Field"].ToString();
+                                    var field = reader["Field"]?.ToString() ?? string.Empty;
                                     if (field.Equals("AreaClinicaId", StringComparison.OrdinalIgnoreCase))
                                         hasAreaClinicaId = true;
                                     if (field.Equals("SubAreaClinica", StringComparison.OrdinalIgnoreCase))
@@ -258,7 +260,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    var colName = reader["name"].ToString();
+                                    var colName = reader["name"]?.ToString() ?? string.Empty;
                                     if (colName.Equals("PermiteFraccionamiento", StringComparison.OrdinalIgnoreCase))
                                     {
                                         hasFraccionamiento = true;
@@ -277,7 +279,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    var field = reader["Field"].ToString();
+                                    var field = reader["Field"]?.ToString() ?? string.Empty;
                                     if (field.Equals("PermiteFraccionamiento", StringComparison.OrdinalIgnoreCase))
                                     {
                                         hasFraccionamiento = true;
@@ -709,9 +711,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     {
                         cmd.CommandText = "SELECT `Id` FROM `Sedes` WHERE `EsPrincipal` = 1 LIMIT 1;";
                         var val = await cmd.ExecuteScalarAsync();
-                        if (val != null && val != DBNull.Value)
+                        if (val != null && val != DBNull.Value && val.ToString() is string valStr && !string.IsNullOrEmpty(valStr))
                         {
-                            existingId = Guid.Parse(val.ToString());
+                            existingId = Guid.Parse(valStr);
                         }
                     }
                     if (closeConn) await conn.CloseAsync();
@@ -888,9 +890,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 {
                     cmd.CommandText = $"SELECT `Id` FROM `AreasClinicas` WHERE `Codigo` = '{def.Codigo}' LIMIT 1;";
                     var val = await cmd.ExecuteScalarAsync();
-                    if (val != null && val != DBNull.Value)
+                    if (val != null && val != DBNull.Value && val.ToString() is string valStr && !string.IsNullOrEmpty(valStr))
                     {
-                        existingId = Guid.Parse(val.ToString());
+                        existingId = Guid.Parse(valStr);
                     }
                 }
                 if (closeConnection) await conn.CloseAsync();
@@ -925,9 +927,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             {
                 cmd.CommandText = $"SELECT `Id` FROM `Sedes` WHERE `Codigo` = '{codigo}' LIMIT 1;";
                 var val = await cmd.ExecuteScalarAsync();
-                if (val != null && val != DBNull.Value)
+                if (val != null && val != DBNull.Value && val.ToString() is string valStr && !string.IsNullOrEmpty(valStr))
                 {
-                    id = Guid.Parse(val.ToString());
+                    id = Guid.Parse(valStr);
                 }
             }
             if (closeConnection) await conn.CloseAsync();

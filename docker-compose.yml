@@ -36,7 +36,7 @@ services:
   # âš™ï¸ WebAPI â€” .NET 10 Backend
   # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   api:
-    image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
+    # image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
     build:
       context: ./src
       dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
@@ -95,7 +95,7 @@ services:
   # ðŸŽ¨ Frontend â€” Angular PWA + Nginx Proxy
   # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   frontend:
-    image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
+    # image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
     build:
       context: ./src/SistemaSatHospitalario.Frontend
       dockerfile: Dockerfile
@@ -118,13 +118,17 @@ services:
   watchtower:
     image: containrrr/watchtower
     container_name: sat-watchtower
-    restart: unless-stopped
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=300
-      - DOCKER_API_VERSION=1.40
+      - WATCHTOWER_POLL_INTERVAL=60
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=true
+      - DOCKER_API_VERSION=1.41
+      - WATCHTOWER_LOG_LEVEL=info
       - WATCHTOWER_MONITOR_ONLY=${WATCHTOWER_MONITOR_ONLY:-false}
     networks:
       - sat-network

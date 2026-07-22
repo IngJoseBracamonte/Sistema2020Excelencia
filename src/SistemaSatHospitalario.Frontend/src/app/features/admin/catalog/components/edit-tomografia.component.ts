@@ -53,7 +53,7 @@ export class EditTomografiaComponent extends BaseCatalogEditComponent implements
     this.isLoading.set(true);
     this.catalogService.getUnifiedCatalog().subscribe({
       next: (res) => {
-        const item = res.find(i => i.id === id);
+        const item = res.find(i => i.id === id || i.codigo === id);
         if (item) {
           this.nombre.set(item.descripcion || '');
           this.codigo.set(item.codigo || '');

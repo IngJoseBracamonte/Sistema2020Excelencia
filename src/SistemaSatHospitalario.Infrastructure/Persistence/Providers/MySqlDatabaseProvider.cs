@@ -44,6 +44,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                     b => {
                         b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName);
                         b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
+                        b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                     }));
         }
 

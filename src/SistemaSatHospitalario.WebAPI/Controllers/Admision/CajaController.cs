@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                command.UsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? string.Empty;
                 command.NombreUsuario = User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? "Usuario";
 
                 var idCaja = await _mediator.Send(command);
@@ -59,7 +59,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                var usuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? string.Empty;
                 var result = await _mediator.Send(new CerrarCajaCommand { UsuarioId = usuarioId, Declaracion = declaracion });
                 return Ok(result);
             }
@@ -133,7 +133,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpGet("PersonalReport")]
         public async Task<ActionResult<DailyClosingDto>> GetPersonalReport([FromQuery] string? userId)
         {
-            var id = userId ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var id = userId ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? string.Empty;
             var query = new GetDailyClosingQuery { UserId = id, Fecha = DateTime.Today };
             var result = await _mediator.Send(query);
             return Ok(result);

@@ -5,8 +5,8 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Models
 {
     public class UsuarioHospital : IdentityUser<Guid>
     {
-        public string NombreReal { get; set; }
-        public string ApellidoReal { get; set; }
+        public string NombreReal { get; set; } = string.Empty;
+        public string ApellidoReal { get; set; } = string.Empty;
         
         // Relación opcional con CajeroId en la base de datos Legacy
         public int? LegacyCajeroId { get; set; }

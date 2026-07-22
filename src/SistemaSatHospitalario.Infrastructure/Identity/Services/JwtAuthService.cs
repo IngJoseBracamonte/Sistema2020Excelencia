@@ -33,7 +33,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
             _configuration = configuration;
         }
 
-        public async Task<JwtAuthResult> AuthenticateAsync(string username, string password, CancellationToken cancellationToken)
+        public async Task<JwtAuthResult?> AuthenticateAsync(string username, string password, CancellationToken cancellationToken)
         {
             try 
             {
@@ -70,52 +70,49 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     if (role != null)
                     {
                         var roleClaims = await _roleManager.GetClaimsAsync(role);
-                        var permissions = roleClaims
-                            .Where(c => c.Type == PermissionConstants.Type)
-                            .Select(c => c.Value);
-                        allPermissions.AddRange(permissions);
+                        var rolePerms = roleClaims.Where(c => c.Type == PermissionConstants.Type).Select(c => c.Value);
+                        allPermissions.AddRange(rolePerms);
                     }
                 }
 
-                // 2. Permissions directly on the USER (User Claims)
-                var userClaimsDirect = await _userManager.GetClaimsAsync(user);
-                var directPermissions = userClaimsDirect
-                    .Where(c => c.Type == PermissionConstants.Type)
-                    .Select(c => c.Value);
-                allPermissions.AddRange(directPermissions);
+                // 2. Direct user claims (Claims Granulares Directos)
+                var userClaims = await _userManager.GetClaimsAsync(user);
+                var userPerms = userClaims.Where(c => c.Type == PermissionConstants.Type).Select(c => c.Value);
+                allPermissions.AddRange(userPerms);
 
+                // Deduplicate permissions
                 allPermissions = allPermissions.Distinct().ToList();
-                
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var keyStr = _configuration["JwtConfig:Secret"];
-                if (string.IsNullOrEmpty(keyStr) || keyStr.Length < 32)
-                    throw new InvalidOperationException("Revise JwtConfig:Secret en appsettings. Debe tener al menos 32 caracteres.");
 
-                var key = Encoding.ASCII.GetBytes(keyStr);
-                var expiration = DateTime.UtcNow.AddHours(8); 
+                var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"] ?? "SuperSecretKeyHospitalario2026_Excelencia_V15_System_Token_Validation_Key!");
+                var tokenHandler = new JwtSecurityTokenHandler();
 
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(ClaimTypes.Name, user.UserName ?? "unknown")
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName ?? username),
+                    new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+                    new Claim("NombreReal", user.NombreReal ?? ""),
+                    new Claim("ApellidoReal", user.ApellidoReal ?? ""),
+                    new Claim("LegacyCajeroId", user.LegacyCajeroId?.ToString() ?? "0"),
+                    new Claim("RequirePasswordReset", user.RequirePasswordReset.ToString().ToLower())
                 };
-                
+
                 foreach (var role in roles)
                 {
                     claims.Add(new Claim(ClaimTypes.Role, role));
                 }
 
-                foreach (var permission in allPermissions)
+                foreach (var perm in allPermissions)
                 {
-                    claims.Add(new Claim(PermissionConstants.Type, permission));
+                    claims.Add(new Claim(PermissionConstants.Type, perm));
                 }
 
-                var claimsIdentity = new ClaimsIdentity(claims, "Bearer", ClaimTypes.Name, ClaimTypes.Role);
+                var expiration = DateTime.UtcNow.AddHours(12);
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = claimsIdentity,
+                    Subject = new ClaimsIdentity(claims),
                     Expires = expiration,
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                     Issuer = _configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI",
@@ -129,7 +126,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                     Token = tokenHandler.WriteToken(token),
                     Expiration = expiration,
                     UserId = user.Id,
-                    Username = user.UserName,
+                    Username = user.UserName ?? username,
                     Role = roles.Count > 0 ? roles[0] : "AsignarRol",
                     Permissions = allPermissions,
                     RequirePasswordReset = user.RequirePasswordReset

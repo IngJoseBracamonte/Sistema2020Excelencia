@@ -27,7 +27,7 @@ export class CatalogService {
 
   /** Returns a single catalog item by id. */
   getItemById(id: string): Observable<CatalogItem> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/${encodeURIComponent(id)}`).pipe(
       map(i => new CatalogItem(i))
     );
   }
