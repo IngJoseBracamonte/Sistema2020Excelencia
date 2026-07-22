@@ -25,6 +25,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             _logger = logger;
         }
 
+        [HttpGet]
         [HttpGet("unified")]
         public async Task<ActionResult<List<CatalogItemDto>>> GetUnifiedCatalog([FromQuery] int? convenioId)
         {

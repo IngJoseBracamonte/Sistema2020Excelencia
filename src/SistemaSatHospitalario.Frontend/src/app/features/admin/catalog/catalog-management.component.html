@@ -159,19 +159,17 @@
 
                         <!-- Columna 5: Botones de Acción -->
                         <td class="px-6 py-4 text-center">
-                            <div *ngIf="!s.esLegacy" class="flex items-center justify-center gap-2">
-                                <button (click)="openEdit(s)" 
-                                        class="h-9 px-3 bg-white/5 hover:bg-indigo-600 text-slate-300 hover:text-white border border-white/10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5">
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" (click)="openEdit(s)" 
+                                        class="h-9 px-3 bg-white/5 hover:bg-indigo-600 text-slate-300 hover:text-white border border-white/10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
                                     <lucide-icon [name]="icons.Edit" class="w-3.5 h-3.5"></lucide-icon>
                                     Editar
                                 </button>
-                                <button (click)="confirmDelete(s)" 
-                                        class="h-9 w-9 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl flex items-center justify-center transition-all active:scale-95">
+                                <button type="button" *ngIf="!s.esLegacy" (click)="confirmDelete(s)" 
+                                        class="h-9 w-9 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl flex items-center justify-center transition-all active:scale-95 cursor-pointer">
                                     <lucide-icon [name]="icons.Trash2" class="w-3.5 h-3.5"></lucide-icon>
                                 </button>
-                            </div>
-                            <div *ngIf="s.esLegacy">
-                                <span class="px-2.5 py-1 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black rounded-xl uppercase tracking-widest">
+                                <span *ngIf="s.esLegacy" class="px-2 py-1 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-[8px] font-black rounded-xl uppercase tracking-widest">
                                     LEGACY
                                 </span>
                             </div>

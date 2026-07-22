@@ -22,9 +22,7 @@ export class CatalogService {
 
   /** Returns all catalog items (admin management endpoint). */
   getItems(): Observable<CatalogItem[]> {
-    return this.http.get<any[]>(this.apiUrl).pipe(
-      map(items => items.map(i => new CatalogItem(i)))
-    );
+    return this.getUnifiedCatalog();
   }
 
   /** Returns a single catalog item by id. */
