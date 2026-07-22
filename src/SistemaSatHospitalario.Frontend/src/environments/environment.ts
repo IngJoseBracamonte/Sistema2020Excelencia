@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
   apiUrl: '', // Local development hits the Angular proxy via /api/ prefix in services
-  systemVersion: '1.3.10'
+  systemVersion: '3.1.12'
 };

@@ -160,12 +160,12 @@
                         <!-- Columna 5: Botones de Acción -->
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center gap-2">
-                                <button type="button" (click)="openEdit(s)" 
+                                <button type="button" (click)="openEdit(s); $event.stopPropagation()" 
                                         class="h-9 px-3 bg-white/5 hover:bg-indigo-600 text-slate-300 hover:text-white border border-white/10 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
                                     <lucide-icon [name]="icons.Edit" class="w-3.5 h-3.5"></lucide-icon>
                                     Editar
                                 </button>
-                                <button type="button" *ngIf="!s.esLegacy" (click)="confirmDelete(s)" 
+                                <button type="button" *ngIf="!s.esLegacy" (click)="confirmDelete(s); $event.stopPropagation()" 
                                         class="h-9 w-9 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl flex items-center justify-center transition-all active:scale-95 cursor-pointer">
                                     <lucide-icon [name]="icons.Trash2" class="w-3.5 h-3.5"></lucide-icon>
                                 </button>
@@ -195,7 +195,7 @@
     </div>
 
     <!-- Modal Form (Subcomponentes Especializados por Tipo) -->
-    <div *ngIf="showModal()" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div *ngIf="showModal()" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in" (click)="onEditorClosed()"></div>
         <div class="relative bg-[#0b1120] border border-white/5 w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-y-auto custom-scrollbar animate-scale-in">
             
