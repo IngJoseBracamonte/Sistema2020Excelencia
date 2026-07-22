@@ -1,11 +1,10 @@
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
 import { BillingFacadeService } from '../../../core/services/billing-facade.service';
-import { ActivatedRoute } from '@angular/router';
-import { MedicoService, Medico } from '../../../core/services/medico.service';
-import { InventoryService } from '../../../core/services/inventory.service';
 import { 
     LucideAngularModule, 
     Package, 
@@ -18,7 +17,13 @@ import {
     Scan,
     X,
     Check,
-    Clock
+    Clock,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    Filter,
+    List,
+    SlidersHorizontal
 } from 'lucide-angular';
 import { EditCirugiaComponent } from './components/edit-cirugia.component';
 import { EditConsultaComponent } from './components/edit-consulta.component';
@@ -26,7 +31,30 @@ import { EditLaboratorioComponent } from './components/edit-laboratorio.componen
 import { EditMedicamentoComponent } from './components/edit-medicamento.component';
 import { EditProcedimientoComponent } from './components/edit-procedimiento.component';
 import { EditTomografiaComponent } from './components/edit-tomografia.component';
-import { getTipoColor } from './models/catalog-edit.models';
+import { getTipoBadgeStyle } from './models/catalog-edit.models';
+
+export type SortOption = 'nombre-asc' | 'nombre-desc' | 'precio-desc' | 'precio-asc' | 'codigo-asc';
+
+export type CatalogEditorType = 'CONSULTA' | 'MEDICAMENTO' | 'TOMOGRAFIA' | 'PROCEDIMIENTO' | 'CIRUGIA' | 'LABORATORIO';
+
+const TIPO_MAP: Record<string, CatalogEditorType> = {
+  MEDICINA: 'MEDICAMENTO',
+  MEDICAMENTO: 'MEDICAMENTO',
+  INSUMO: 'MEDICAMENTO',
+  FARMACIA: 'MEDICAMENTO',
+  RX: 'TOMOGRAFIA',
+  TOMOGRAFIA: 'TOMOGRAFIA',
+  TOMO: 'TOMOGRAFIA',
+  RADIOGRAFIA: 'TOMOGRAFIA',
+  IMAGEN: 'TOMOGRAFIA',
+  CONSULTA: 'CONSULTA',
+  CITAS: 'CONSULTA',
+  MEDICO: 'CONSULTA',
+  LABORATORIO: 'LABORATORIO',
+  LAB: 'LABORATORIO',
+  CIRUGIA: 'CIRUGIA',
+  QUIRURGICO: 'CIRUGIA'
+};
 
 @Component({
   selector: 'app-catalog-management',
@@ -45,280 +73,176 @@ import { getTipoColor } from './models/catalog-edit.models';
   templateUrl: './catalog-management.component.html'
 })
 export class CatalogManagementComponent implements OnInit {
-  private catalogService = inject(CatalogService);
-  private billingFacade = inject(BillingFacadeService);
-  private route = inject(ActivatedRoute);
-  private medicoService = inject(MedicoService);
-  private inventoryService = inject(InventoryService);
+  private readonly catalogService = inject(CatalogService);
+  private readonly billingFacade = inject(BillingFacadeService);
+  private readonly route = inject(ActivatedRoute);
 
+  readonly tasaCambioDia = this.billingFacade.tasaCambioDia;
 
-
-  public tasaCambioDia = this.billingFacade.tasaCambioDia;
-
-  public catalog = signal<CatalogItem[]>([]);
-  public filteredCatalog = signal<CatalogItem[]>([]);
-  public isLoading = signal<boolean>(false);
-  public typeFilter = signal<string | null>(null);
-  // Tab State
-  public activeTab = signal<'general' | 'sugerencias'>('general');
-
-  // Modal State
-  public showModal = signal<boolean>(false);
-  public isEditing = signal<boolean>(false);
-  public searchQuery = signal<string>('');
-  public selectedItemId = signal<string | null>(null);
-  public activeEditorType = signal<string | null>(null);
+  // Estado del catálogo (Signals)
+  readonly catalog = signal<CatalogItem[]>([]);
+  readonly isLoading = signal<boolean>(false);
+  readonly selectedTypes = signal<string[]>([]);
+  readonly searchQuery = signal<string>('');
+  readonly sortOption = signal<SortOption>('nombre-asc');
   
-  // Médicos y honorarios específicos
-  public medicos = signal<Medico[]>([]);
-  public doctorSearchQuery = signal<string>('');
-  public honorariosLocales = signal<Record<string, number>>({});
+  // Estado de Modales y Edición Tipados Fuertemente
+  readonly showModal = signal<boolean>(false);
+  readonly isEditing = signal<boolean>(false);
+  readonly selectedItemId = signal<string | null>(null);
+  readonly activeEditorType = signal<CatalogEditorType | null>(null);
+  readonly itemToDelete = signal<CatalogItem | null>(null);
 
-  public filteredDoctors = computed(() => {
-    const query = this.doctorSearchQuery().toLowerCase().trim();
-    const list = this.medicos().filter(m => m.activo);
-    if (query) {
-      return list.filter(m => 
-        m.nombre.toLowerCase().includes(query) || 
-        (m.especialidad || '').toLowerCase().includes(query)
-      );
-    }
-    return list;
-  });
-
-  public activeDoctorHonorariosCount = computed(() => {
-    return Object.values(this.honorariosLocales()).filter(val => val > 0).length;
-  });
-
-  public getDoctorHonorario(medicoId: string | undefined): number {
-    if (!medicoId) return 0;
-    return this.honorariosLocales()[medicoId] || 0;
-  }
-
-  public setDoctorHonorario(medicoId: string | undefined, value: number) {
-    if (!medicoId) return;
-    this.honorariosLocales.update(prev => ({
-      ...prev,
-      [medicoId]: isNaN(value) ? 0 : value
-    }));
-  }
-
-  public currentItem = signal<Partial<CatalogItem>>({
-    codigo: '',
-    descripcion: '',
-    precioUsd: 0,
-    honorarioBase: 0,
-    tipo: 'CONSULTA',
-    activo: true,
-    sugerenciasIds: []
-  });
-
-  public tipos = ['CONSULTA', 'LABORATORIO', 'RX', 'PROCEDIMIENTO', 'MEDICINA', 'SERVICIO', 'MEDICAMENTO'];
+  readonly availableTypes = ['CONSULTA', 'MEDICAMENTO', 'RX', 'TOMOGRAFIA', 'PROCEDIMIENTO', 'CIRUGIA'];
 
   readonly icons = {
-    Package,
-    Search,
-    Plus,
-    Edit,
-    Trash2,
-    Database,
-    Stethoscope,
-    Scan,
-    X,
-    Check,
-    Clock
+    Package, Search, Plus, Edit, Trash2, Database, Stethoscope, Scan, X, Check, Clock,
+    ArrowUpDown, ArrowUp, ArrowDown, Filter, List, SlidersHorizontal
   };
 
-  ngOnInit() {
-    this.route.queryParams.subscribe((params: any) => {
-      this.typeFilter.set(params['type'] || null);
-      if (params['tab'] === 'sugerencias' || params['tab'] === 'general') {
-        this.activeTab.set(params['tab']);
+  // Computed Signal: Filtrado y ordenamiento reactivo declarativo (Estándar Senior)
+  readonly filteredCatalog = computed(() => {
+    let list = [...this.catalog()];
+    const selected = this.selectedTypes();
+    const query = this.searchQuery().trim().toLowerCase();
+    const sort = this.sortOption();
+
+    // 1. Filtro por tipos de servicio seleccionados (Normalización de Dominio Tipada)
+    if (selected.length > 0) {
+      const selectedNormalized = selected.map(t => this.getNormalizedEditorType(t));
+      list = list.filter(item => selectedNormalized.includes(this.getNormalizedEditorType(item.tipo)));
+    }
+
+    // 2. Búsqueda por descripción o código
+    if (query) {
+      list = list.filter(i => 
+        (i.descripcion || '').toLowerCase().includes(query) || 
+        (i.codigo || '').toLowerCase().includes(query)
+      );
+    }
+
+    // 3. Ordenamiento reactivo
+    return list.sort((a, b) => {
+      switch (sort) {
+        case 'nombre-asc': return (a.descripcion || '').localeCompare(b.descripcion || '');
+        case 'nombre-desc': return (b.descripcion || '').localeCompare(a.descripcion || '');
+        case 'precio-desc': return (b.precioUsd || 0) - (a.precioUsd || 0);
+        case 'precio-asc': return (a.precioUsd || 0) - (b.precioUsd || 0);
+        case 'codigo-asc': return (a.codigo || '').localeCompare(b.codigo || '');
+        default: return 0;
+      }
+    });
+  });
+
+  constructor() {
+    this.route.queryParams.pipe(takeUntilDestroyed()).subscribe(params => {
+      if (params['type']) {
+        this.selectedTypes.set([params['type'].toUpperCase()]);
       }
       this.refreshCatalog();
-      this.loadMedicos();
     });
   }
 
+  ngOnInit(): void {}
 
-
-  loadMedicos() {
-    this.medicoService.getAll().subscribe({
-      next: (res) => this.medicos.set(res),
-      error: () => console.error("Error al cargar médicos")
-    });
-  }
-
-  refreshCatalog() {
+  refreshCatalog(): void {
     this.isLoading.set(true);
     this.catalogService.getUnifiedCatalog().subscribe({
       next: (res: CatalogItem[]) => {
         this.catalog.set(res);
-        this.applyFilter();
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
     });
   }
 
-  applyFilter() {
-    let filtered = this.catalog();
-    const type = this.typeFilter();
-    const query = this.searchQuery().toLowerCase();
-    const tab = this.activeTab();
-
-    // Filtro por Tab (Desactivado para mostrar todo)
-    /* if (tab === 'sugerencias') {
-      filtered = filtered.filter(i => i.sugerenciasIds && i.sugerenciasIds.length > 0);
-    } */
-
-    // Filtro por Tipo
-    if (type) {
-      filtered = filtered.filter(i => i.tipo?.toUpperCase() === type.toUpperCase());
+  toggleTypeFilter(tipo: string): void {
+    if (tipo === 'TODOS') {
+      this.selectedTypes.set([]);
+      return;
     }
-
-    // Filtro por Búsqueda
-    if (query) {
-      filtered = filtered.filter(i => 
-        i.descripcion?.toLowerCase().includes(query) || 
-        i.codigo?.toLowerCase().includes(query)
-      );
-    }
-
-    this.filteredCatalog.set(filtered);
+    const current = this.selectedTypes();
+    this.selectedTypes.set(
+      current.includes(tipo) ? current.filter(t => t !== tipo) : [...current, tipo]
+    );
   }
 
-  onTabChange(tab: 'general' | 'sugerencias') {
-    this.activeTab.set(tab);
-    this.applyFilter();
+  isTypeSelected(tipo: string): boolean {
+    return tipo === 'TODOS' ? this.selectedTypes().length === 0 : this.selectedTypes().includes(tipo);
   }
 
-  toggleSugerencia(id: string) {
-    const item = this.currentItem();
-    const currentSugerencias = [...(item.sugerenciasIds || [])];
-    const index = currentSugerencias.indexOf(id);
-
-    if (index > -1) {
-      currentSugerencias.splice(index, 1);
-    } else {
-      currentSugerencias.push(id);
-    }
-
-    this.currentItem.set({ ...item, sugerenciasIds: currentSugerencias });
+  setSortOption(option: SortOption): void {
+    this.sortOption.set(option);
   }
 
-  isSugerenciaSelected(id: string): boolean {
-    return (this.currentItem().sugerenciasIds || []).includes(id);
+  clearAllFilters(): void {
+    this.searchQuery.set('');
+    this.selectedTypes.set([]);
+    this.sortOption.set('nombre-asc');
   }
 
-  public getNormalizedEditorType(rawType: string | null | undefined): string {
+  getNormalizedEditorType(rawType: string | null | undefined): CatalogEditorType {
     if (!rawType) return 'PROCEDIMIENTO';
-    const type = rawType.toUpperCase().trim();
-    if (type === 'MEDICINA' || type === 'MEDICAMENTO' || type === 'INSUMO' || type === 'FARMACIA') return 'MEDICAMENTO';
-    if (type === 'RX' || type === 'TOMOGRAFIA' || type === 'TOMO' || type === 'RADIOGRAFIA' || type === 'IMAGEN') return 'TOMOGRAFIA';
-    if (type === 'CONSULTA' || type === 'CITAS' || type === 'MEDICO') return 'CONSULTA';
-    if (type === 'LABORATORIO' || type === 'LAB') return 'LABORATORIO';
-    if (type === 'CIRUGIA' || type === 'QUIRURGICO') return 'CIRUGIA';
-    return 'PROCEDIMIENTO';
+    const key = rawType.toUpperCase().trim();
+    return TIPO_MAP[key] || 'PROCEDIMIENTO';
   }
 
-  openCreate() {
+  openCreate(): void {
     this.isEditing.set(false);
     this.selectedItemId.set(null);
-    
-    const filter = this.typeFilter();
-    const type = this.getNormalizedEditorType(filter);
-    
-    this.activeEditorType.set(type);
+    const selected = this.selectedTypes();
+    const firstType = selected.length > 0 ? selected[0] : null;
+    this.activeEditorType.set(this.getNormalizedEditorType(firstType));
     this.showModal.set(true);
   }
 
-  openEdit(item: CatalogItem) {
+  openEdit(item: CatalogItem): void {
     this.isEditing.set(true);
     this.selectedItemId.set(item.id || null);
-    
-    const type = this.getNormalizedEditorType(item.tipo);
-
-    this.activeEditorType.set(type);
+    this.activeEditorType.set(this.getNormalizedEditorType(item.tipo));
     this.showModal.set(true);
   }
 
-  onEditorSaved() {
-    this.showModal.set(false);
-    this.activeEditorType.set(null);
-    this.selectedItemId.set(null);
+  onEditorSaved(): void {
+    this.closeModal();
     this.refreshCatalog();
   }
 
-  onEditorClosed() {
+  onEditorClosed(): void {
+    this.closeModal();
+  }
+
+  private closeModal(): void {
     this.showModal.set(false);
     this.activeEditorType.set(null);
     this.selectedItemId.set(null);
   }
 
-  save() {
-    const item = { ...this.currentItem() };
-    
-    // Si es consulta, forzamos honorarioBase a 0 para evitar conflictos (User Request V2.0)
-    if (item.tipo === 'CONSULTA') {
-      item.honorarioBase = 0;
-    }
-
-    // Mapear honorarios locales a formato DTO
-    const localHons = this.honorariosLocales();
-    item.honorariosMedicos = Object.entries(localHons)
-      .filter(([_, value]) => value > 0)
-      .map(([medicoId, honorario]) => ({
-        medicoId,
-        honorario
-      }));
-
-    if (this.isEditing() && item.id) {
-      this.catalogService.updateItem(item.id!, item as CatalogItem).subscribe(() => {
-        this.showModal.set(false);
-        this.refreshCatalog();
-      });
-    } else {
-      this.catalogService.createItem(item).subscribe(() => {
-        this.showModal.set(false);
-        this.refreshCatalog();
-      });
-    }
-  }
-
-
-
-  itemToDelete = signal<any>(null);
-
-  confirmDelete(item: any) {
+  confirmDelete(item: CatalogItem): void {
     this.itemToDelete.set(item);
   }
 
-  executeDelete() {
+  executeDelete(): void {
     const item = this.itemToDelete();
-    if (!item || !item.id) return;
+    if (!item?.id) return;
     
     this.catalogService.deleteItem(item.id).subscribe({
-      next: (success) => {
+      next: () => {
         this.itemToDelete.set(null);
         this.refreshCatalog();
       },
       error: (err) => {
-        console.error('Error HTTP:', err);
+        console.error('Error HTTP al eliminar servicio del catálogo:', err);
         this.itemToDelete.set(null);
       }
     });
   }
 
-  cancelDelete() {
+  cancelDelete(): void {
     this.itemToDelete.set(null);
   }
 
-  getTipoColorPremium(tipo: string): string {
-    return getTipoColor(tipo);
-  }
-
-  getTipoColor(tipo: string): string {
-    return getTipoColor(tipo);
+  getTipoBadgeStyle(tipo?: string | null): string {
+    return getTipoBadgeStyle(tipo);
   }
 }

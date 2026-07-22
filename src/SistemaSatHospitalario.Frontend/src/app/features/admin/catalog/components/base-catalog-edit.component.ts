@@ -1,4 +1,4 @@
-import { Directive, input, output, signal, inject, effect } from '@angular/core';
+import { Directive, input, model, output, signal, inject, effect } from '@angular/core';
 import { CatalogService, CatalogItem } from '../../../../core/services/catalog.service';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { MedicoService } from '../../../../core/services/medico.service';
@@ -10,9 +10,9 @@ import { getTipoColor } from '../models/catalog-edit.models';
 
 @Directive()
 export abstract class BaseCatalogEditComponent {
-  // ── Inputs ──────────────────────────────────────────────────────────────
+  // ── Inputs & Models ────────────────────────────────────────────────────────
   public readonly itemId = input<string | null>(null);
-  public readonly isEditingInput = input<boolean>(false, { alias: 'isEditing' });
+  public readonly isEditing = model<boolean>(false);
 
   // ── Outputs ─────────────────────────────────────────────────────────────
   public readonly saved = output<void>();
@@ -30,7 +30,6 @@ export abstract class BaseCatalogEditComponent {
   public readonly sugerenciasHandler = new CatalogSugerenciasHandler();
 
   // ── Base Form Signals ───────────────────────────────────────────────────
-  public readonly isEditing = signal<boolean>(false);
   public readonly isSaving = signal<boolean>(false);
   public readonly currentItem = signal<CatalogItem | null>(null);
 
@@ -43,12 +42,9 @@ export abstract class BaseCatalogEditComponent {
   constructor() {
     effect(() => {
       const id = this.itemId();
-      const editingFlag = this.isEditingInput();
       if (id) {
-        this.isEditing.set(true);
         this.loadItem(id);
       } else {
-        this.isEditing.set(editingFlag);
         this.resetBaseForm();
       }
     });
