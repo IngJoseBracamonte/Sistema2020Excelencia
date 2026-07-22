@@ -100,6 +100,88 @@
             </div>
           </fieldset>
 
+          <!-- Honorarios Médicos Específicos -->
+          <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center justify-between">
+              <span class="flex items-center gap-2">
+                <lucide-icon [img]="icons.UserCog" [size]="16" class="text-rose-400" />
+                Honorarios Médicos Específicos
+              </span>
+              <span class="text-xs text-slate-500">{{ honorariosMedicos().length }} médico(s) asignado(s)</span>
+            </legend>
+
+            <!-- Search & Add Médico -->
+            <div class="relative mb-4">
+              <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                [(ngModel)]="medicoSearchQuery"
+                (focus)="showMedicoDropdown.set(true)"
+                (blur)="onMedicoBlur()"
+                (input)="showMedicoDropdown.set(true)"
+                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
+                placeholder="Buscar médico para asignar honorario específico..."
+              />
+              @if (showMedicoDropdown() && filteredMedicos().length > 0) {
+                <div class="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                  @for (medico of filteredMedicos(); track medico.id) {
+                    <button
+                      type="button"
+                      (click)="addMedicoToHonorarios(medico, honorarioBase())"
+                      class="w-full px-3 py-2 text-left hover:bg-slate-700/50 flex items-center justify-between border-b border-slate-700/50 last:border-0"
+                    >
+                      <div>
+                        <p class="text-sm font-medium text-slate-100">{{ medico.nombre }}</p>
+                        <p class="text-xs text-slate-500">{{ medico.especialidad || 'Especialista' }}</p>
+                      </div>
+                      <lucide-icon [img]="icons.Plus" [size]="16" class="text-slate-500" />
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- List of Assigned Doctor Fees -->
+            @if (honorariosMedicos().length > 0) {
+              <div class="space-y-2">
+                @for (h of honorariosMedicos(); track h.medicoId) {
+                  <div class="flex items-center justify-between p-3 bg-slate-900 border border-slate-700 rounded-lg">
+                    <div>
+                      <p class="text-sm font-medium text-slate-100">{{ h.medicoNombre }}</p>
+                      <p class="text-xs text-slate-500">Honorario Específico</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div class="relative w-32">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          [value]="h.honorarioUsd"
+                          (change)="updateHonorarioUsd(h.medicoId, $any($event.target).valueAsNumber)"
+                          class="w-full pl-6 pr-2 py-1.5 bg-slate-800 border border-slate-700 rounded text-slate-100 text-sm font-mono text-right focus:border-rose-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        (click)="removeHonorarioMedico(h.medicoId)"
+                        class="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                      >
+                        <lucide-icon [img]="icons.Trash2" [size]="16" />
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-6 text-slate-500 border border-dashed border-slate-700/50 rounded-lg">
+                <lucide-icon [img]="icons.UserCog" [size]="24" class="mx-auto text-slate-600 mb-2" />
+                <p class="text-xs">Sin honorarios específicos asignados a médicos individuales</p>
+                <p class="text-[10px] text-slate-600 mt-0.5">Se aplicará el Honorario Base predeterminado</p>
+              </div>
+            }
+          </fieldset>
+
           <!-- Notas y Preparación -->
           <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
             <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">

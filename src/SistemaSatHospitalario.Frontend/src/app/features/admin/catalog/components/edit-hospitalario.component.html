@@ -1,0 +1,157 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+  <div class="w-full max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl border border-slate-700/50 overflow-hidden flex flex-col shadow-2xl">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+          <lucide-icon [img]="icons.Building2" [size]="22" class="text-cyan-400" />
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-slate-100">{{ isEditing() ? 'Editar Servicio Hospitalario' : 'Nuevo Servicio Hospitalario' }}</h2>
+          <p class="text-xs text-slate-400">Configuración de tarifas por área (Emergencia, Hospitalización, UCI) y cargos por traslado</p>
+        </div>
+      </div>
+      <button type="button" (click)="close()" class="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
+        <lucide-icon [img]="icons.X" [size]="20" />
+      </button>
+    </header>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <!-- Información Básica -->
+      <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+        <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+          <lucide-icon [img]="icons.FileText" [size]="16" class="text-cyan-400" />
+          Información Básica del Cargo Hospitalario
+        </legend>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Nombre del Servicio *</label>
+            <input
+              type="text"
+              [(ngModel)]="nombre"
+              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+              placeholder="Ej: Cargo por Traslado a UCI"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Código de Tarifa *</label>
+            <input
+              type="text"
+              [(ngModel)]="codigo"
+              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+              placeholder="HOSP-UCI-001"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Precio Base USD *</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                [(ngModel)]="precioBaseUsd"
+                class="w-full pl-7 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+                placeholder="100.00"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Honorario Base USD</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                [(ngModel)]="honorarioBase"
+                class="w-full pl-7 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <div class="flex items-center gap-2 md:col-span-2 pt-2">
+            <input type="checkbox" id="activoHosp" [(ngModel)]="activo" class="w-4 h-4 rounded border-slate-600 text-cyan-500 focus:ring-cyan-500 bg-slate-900" />
+            <label for="activoHosp" class="text-sm text-slate-300 cursor-pointer">Servicio Activo en el Catálogo</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Vinculación de Área y Traslados -->
+      <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
+        <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+          <lucide-icon [img]="icons.Bed" [size]="16" class="text-cyan-400" />
+          Configuración de Área y Facturación por Traslado
+        </legend>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Área Asignada *</label>
+            <select
+              [(ngModel)]="areaVinculada"
+              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+            >
+              <option value="EMERGENCIA">Emergencia (EMG)</option>
+              <option value="HOSPITALIZACION">Hospitalización (HOS)</option>
+              <option value="UCI">Unidad de Cuidados Intensivos (UCI)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Modalidad de Cobro *</label>
+            <select
+              [(ngModel)]="modalidadCobro"
+              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
+            >
+              <option value="POR_TRASLADO">Por Evento de Traslado</option>
+              <option value="DIARIO_ESTANCIA">Diario / Estancia Cama</option>
+              <option value="FIJO">Cargo Único Fijo</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2 flex items-center justify-between p-3 bg-slate-900/60 rounded-lg border border-slate-700/50">
+            <div>
+              <p class="text-sm font-medium text-slate-200">Cobro Automático al Trasladar Paciente</p>
+              <p class="text-xs text-slate-500">Aplica este concepto de cobro al efectuar el traslado en el módulo de Enfermería/Hospitalario</p>
+            </div>
+            <input type="checkbox" [(ngModel)]="aplicaTraslado" class="w-5 h-5 rounded border-slate-600 text-cyan-500 focus:ring-cyan-500 bg-slate-800" />
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-slate-400 mb-1.5">Notas de Facturación y Protocolo</label>
+            <textarea
+              [(ngModel)]="notasFacturacion"
+              rows="3"
+              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition resize-none"
+              placeholder="Instrucciones especiales para el departamento de cobranza o contabilidad..."
+            ></textarea>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- Footer Actions -->
+    <footer class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
+      <button
+        type="button"
+        (click)="close()"
+        class="px-5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-slate-100 transition-colors font-medium text-sm"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        (click)="save()"
+        [disabled]="isSaving() || !nombre() || !codigo() || precioBaseUsd() <= 0"
+        class="px-5 py-2.5 rounded-lg bg-cyan-500 text-slate-950 font-semibold hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center gap-2"
+      >
+        @if (isSaving()) {
+          <lucide-icon [img]="icons.Loader2" [size]="18" class="animate-spin" />
+        } @else {
+          <lucide-icon [img]="icons.Save" [size]="18" />
+        }
+        {{ isEditing() ? 'Actualizar' : 'Crear' }}
+      </button>
+    </footer>
+  </div>
+</div>

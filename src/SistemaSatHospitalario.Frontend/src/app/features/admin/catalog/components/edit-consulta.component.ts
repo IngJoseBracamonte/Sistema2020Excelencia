@@ -13,7 +13,7 @@ import {
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
-import { BOMLine } from '../models/catalog-edit.models';
+import { BOMLine, MedicoOption } from '../models/catalog-edit.models';
 
 @Component({
   selector: 'app-edit-consulta',
@@ -48,6 +48,12 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
   public readonly bomLines = this.bomHandler.bomLines;
   public readonly filteredInsumos = this.bomHandler.filteredInsumos;
 
+  public readonly availableMedicos = this.honorariosHandler.availableMedicos;
+  public readonly medicoSearchQuery = this.honorariosHandler.medicoSearchQuery;
+  public readonly showMedicoDropdown = this.honorariosHandler.showMedicoDropdown;
+  public readonly honorariosMedicos = this.honorariosHandler.honorarios;
+  public readonly filteredMedicos = this.honorariosHandler.filteredMedicos;
+
   public readonly allSugerencias = this.sugerenciasHandler.allCatalogItems;
   public readonly sugerenciasSearchQuery = this.sugerenciasHandler.sugerenciasSearchQuery;
   public readonly selectedSugerenciasIds = this.sugerenciasHandler.sugerenciasIds;
@@ -56,6 +62,7 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
 
   ngOnInit(): void {
     this.loadInsumos();
+    this.loadMedicos();
     this.loadCatalogForSugerencias('CONSULTA');
   }
 
@@ -90,7 +97,17 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
     this.notasClinicas.set(itemAny.notasClinicas || '');
     this.preparacionPaciente.set(itemAny.preparacionPaciente || '');
 
-    // Load recipe/BOM
+    // Cargar honorarios de médicos asignados
+    if (item.honorariosMedicos && item.honorariosMedicos.length > 0) {
+      const mapped = item.honorariosMedicos.map(h => ({
+        medicoId: h.medicoId,
+        medicoNombre: h.medicoNombre || 'Médico Específico',
+        honorarioUsd: h.honorario ?? (h as any).honorarioUsd ?? 0
+      }));
+      this.honorariosMedicos.set(mapped);
+    }
+
+    // Cargar recetas/BOM si aplica
     this.inventoryService.getRecetas().subscribe({
       next: (recetas: any[]) => {
         const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
@@ -109,6 +126,23 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
     if (item.sugerenciasIds?.length) {
       this.selectedSugerenciasIds.set(item.sugerenciasIds);
     }
+  }
+
+  // ── Honorarios Médicos Actions ──────────────────────────────────────────
+  public addMedicoToHonorarios(medico: MedicoOption, honorarioUsd: number = 0): void {
+    this.honorariosHandler.addHonorario(medico, honorarioUsd);
+  }
+
+  public updateHonorarioUsd(medicoId: string, honorarioUsd: number): void {
+    this.honorariosHandler.updateHonorarioUsd(medicoId, honorarioUsd);
+  }
+
+  public removeHonorarioMedico(medicoId: string): void {
+    this.honorariosHandler.removeHonorario(medicoId);
+  }
+
+  public onMedicoBlur(): void {
+    this.honorariosHandler.onMedicoBlur();
   }
 
   // ── BOM Actions ─────────────────────────────────────────────────────────
@@ -168,6 +202,10 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
       requiereHistoriaPrevia: this.requiereHistoriaPrevia(),
       notasClinicas: this.notasClinicas(),
       preparacionPaciente: this.preparacionPaciente(),
+      honorariosMedicos: this.honorariosMedicos().map(h => ({
+        medicoId: h.medicoId,
+        honorario: h.honorarioUsd
+      })),
       sugerenciasIds: this.selectedSugerenciasIds(),
       requiereInventario: this.bomLines().length > 0
     };

@@ -1,3 +1,16 @@
+export type CatalogEditorType = 
+  | 'CONSULTA'
+  | 'MEDICAMENTO'
+  | 'TOMOGRAFIA'
+  | 'PROCEDIMIENTO'
+  | 'CIRUGIA'
+  | 'LABORATORIO'
+  | 'HOSPITALARIO';
+
+export type AreaHospitalaria = 'EMERGENCIA' | 'HOSPITALIZACION' | 'UCI';
+
+export type ModalidadCobroHospitalario = 'POR_TRASLADO' | 'DIARIO_ESTANCIA' | 'FIJO';
+
 export interface BOMLine {
   insumoId: string;
   insumoCodigo: string;
@@ -49,6 +62,10 @@ export function getTipoColor(tipo?: string | null): string {
       return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
     case 'CIRUGIA':
       return 'bg-red-500/10 text-red-400 border-red-500/20';
+    case 'HOSPITALARIO':
+    case 'HOSPITALIZACION':
+    case 'TRASLADO':
+      return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
     default:
       return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
   }
@@ -72,8 +89,11 @@ export function getTipoBadgeStyle(tipo?: string | null): string {
       return 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-amber-500/5';
     case 'CIRUGIA':
       return 'bg-red-500/10 text-red-400 border-red-500/30 shadow-red-500/5';
+    case 'HOSPITALARIO':
+    case 'HOSPITALIZACION':
+    case 'TRASLADO':
+      return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 shadow-cyan-500/5';
     default:
       return 'bg-slate-500/10 text-slate-400 border-slate-500/30 shadow-slate-500/5';
   }
 }
-

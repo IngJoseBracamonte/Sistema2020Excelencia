@@ -202,7 +202,7 @@
         <div class="relative bg-[#0b1120] border border-white/5 w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-y-auto custom-scrollbar animate-scale-in">
             
             <app-edit-consulta 
-                *ngIf="getNormalizedEditorType(activeEditorType()) === 'CONSULTA'"
+                *ngIf="activeEditorType() === 'CONSULTA'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
@@ -210,7 +210,7 @@
             </app-edit-consulta>
 
             <app-edit-laboratorio 
-                *ngIf="getNormalizedEditorType(activeEditorType()) === 'LABORATORIO'"
+                *ngIf="activeEditorType() === 'LABORATORIO'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
@@ -218,21 +218,21 @@
             </app-edit-laboratorio>
 
             <app-edit-tomografia 
-                *ngIf="getNormalizedEditorType(activeEditorType()) === 'TOMOGRAFIA'"
+                *ngIf="activeEditorType() === 'TOMOGRAFIA'"
                 [itemId]="selectedItemId()"
                 (saved)="onEditorSaved()"
                 (closed)="onEditorClosed()">
             </app-edit-tomografia>
 
             <app-edit-procedimiento 
-                *ngIf="getNormalizedEditorType(activeEditorType()) === 'PROCEDIMIENTO'"
+                *ngIf="activeEditorType() === 'PROCEDIMIENTO'"
                 [itemId]="selectedItemId()"
                 (saved)="onEditorSaved()"
                 (closed)="onEditorClosed()">
             </app-edit-procedimiento>
 
             <app-edit-cirugia 
-                *ngIf="getNormalizedEditorType(activeEditorType()) === 'CIRUGIA'"
+                *ngIf="activeEditorType() === 'CIRUGIA'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
@@ -240,12 +240,20 @@
             </app-edit-cirugia>
 
             <app-edit-medicamento 
-                *ngIf="getNormalizedEditorType(activeEditorType()) === 'MEDICAMENTO'"
+                *ngIf="activeEditorType() === 'MEDICAMENTO'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
                 (closed)="onEditorClosed()">
             </app-edit-medicamento>
+
+            <app-edit-hospitalario 
+                *ngIf="activeEditorType() === 'HOSPITALARIO'"
+                [itemId]="selectedItemId()"
+                [isEditing]="isEditing()"
+                (saved)="onEditorSaved()"
+                (closed)="onEditorClosed()">
+            </app-edit-hospitalario>
 
         </div>
     </div>
