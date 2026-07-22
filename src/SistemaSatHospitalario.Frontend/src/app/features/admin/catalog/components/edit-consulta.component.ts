@@ -1,199 +1,103 @@
-import { Component, signal, computed, output, input, inject, OnInit } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, X, Save, Loader2, Search, Trash2, Check, Package, Stethoscope, FileText, UserCog, Clock, Monitor, HeartPulse, Brain, Activity, Pill, Syringe, Bone, Eye, Ear, Lungs, Heart, Thermometer, Weight, Ruler, Scissors, Bandage, User, Users, MessageSquare, Video, Phone, Mail, Calendar, DollarSign, CreditCard, Receipt, Settings, Layers, Zap, Shield, Lock, Unlock, Key, Fingerprint, EyeOff, ScanEye, ScanFace, ScanLine, ScanSearch, ScanText, ScanHeart, ScanSmile, Plus } from 'lucide-angular';
-import { CatalogService } from '../../../../core/services/catalog.service';
-import { InventoryService } from '../../../../core/services/inventory.service';
+import {
+  LucideAngularModule, X, Save, Loader2, Search, Trash2, Check, Package,
+  Stethoscope, FileText, UserCog, Clock, Monitor, HeartPulse, Brain,
+  Activity, Pill, Syringe, Bone, Eye, Ear, Heart, Thermometer,
+  Weight, Ruler, Scissors, Bandage, User, Users, MessageSquare, Video,
+  Phone, Mail, Calendar, DollarSign, CreditCard, Receipt, Settings,
+  Layers, Zap, Shield, Lock, Unlock, Key, Fingerprint, EyeOff, ScanEye,
+  ScanFace, ScanLine, ScanSearch, ScanText, ScanHeart, Plus
+} from 'lucide-angular';
+import { BaseCatalogEditComponent } from './base-catalog-edit.component';
+import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
-import { CatalogItem } from '../../../../core/models/priced-item.model';
-
-interface BOMLine {
-  insumoId: string;
-  insumoNombre: string;
-  insumoCodigo: string;
-  cantidad: number;
-  unidadMedida: string;
-}
+import { BOMLine } from '../models/catalog-edit.models';
 
 @Component({
   selector: 'app-edit-consulta',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
-  templateUrl: './edit-consulta.component.html',
-  styleUrls: ['./edit-consulta.component.scss']
+  templateUrl: './edit-consulta.component.html'
 })
-export class EditConsultaComponent implements OnInit {
-  // ── Inputs ──────────────────────────────────────────────────────────────
-  public readonly itemId = input<string | null>(null);
-  public readonly isEditing = input<boolean>(false);
-
-  // ── Outputs ─────────────────────────────────────────────────────────────
-  public readonly saved = output<void>();
-  public readonly closed = output<void>();
-
-  // ── Services ────────────────────────────────────────────────────────────
-  private readonly catalogService = inject(CatalogService);
-  private readonly inventoryService = inject(InventoryService);
-
+export class EditConsultaComponent extends BaseCatalogEditComponent implements OnInit {
   // ── Icons ───────────────────────────────────────────────────────────────
   protected readonly icons = {
-    X,
-    Save,
-    Loader2,
-    Search,
-    Trash2,
-    Check,
-    Package,
-    Stethoscope,
-    FileText,
-    UserCog,
-    Clock,
-    Monitor,
-    HeartPulse,
-    Brain,
-    Activity,
-    Pill,
-    Syringe,
-    Bone,
-    Eye,
-    Ear,
-    Lungs,
-    Heart,
-    Thermometer,
-    Weight,
-    Ruler,
-    Scissors,
-    Bandage,
-    User,
-    Users,
-    MessageSquare,
-    Video,
-    Phone,
-    Mail,
-    Calendar,
-    DollarSign,
-    CreditCard,
-    Receipt,
-    Settings,
-    Layers,
-    Zap,
-    Shield,
-    Lock,
-    Unlock,
-    Key,
-    Fingerprint,
-    EyeOff,
-    ScanEye,
-    ScanFace,
-    ScanLine,
-    ScanSearch,
-    ScanText,
-    ScanHeart,
-    ScanSmile,
-    Plus,
+    X, Save, Loader2, Search, Trash2, Check, Package, Stethoscope, FileText,
+    UserCog, Clock, Monitor, HeartPulse, Brain, Activity, Pill, Syringe, Bone,
+    Eye, Ear, Heart, Thermometer, Weight, Ruler, Scissors, Bandage,
+    User, Users, MessageSquare, Video, Phone, Mail, Calendar, DollarSign,
+    CreditCard, Receipt, Settings, Layers, Zap, Shield, Lock, Unlock, Key,
+    Fingerprint, EyeOff, ScanEye, ScanFace, ScanLine, ScanSearch, ScanText,
+    ScanHeart, Plus
   } as const;
 
   // ── Form State (Signals) ────────────────────────────────────────────────
-  public readonly nombre = signal('');
-  public readonly codigo = signal('');
-  public readonly precioBaseUsd = signal(0);
-  public readonly honorarioBase = signal(0);
-  public readonly activo = signal(true);
-  public readonly especialidad = signal('');
-  public readonly duracionMinutos = signal(30);
-  public readonly permiteTelemedicina = signal(false);
-  public readonly requiereHistoriaPrevia = signal(false);
-  public readonly notasClinicas = signal('');
-  public readonly preparacionPaciente = signal('');
+  public readonly especialidad = signal<string>('');
+  public readonly duracionMinutos = signal<number>(30);
+  public readonly permiteTelemedicina = signal<boolean>(false);
+  public readonly requiereHistoriaPrevia = signal<boolean>(false);
+  public readonly notasClinicas = signal<string>('');
+  public readonly preparacionPaciente = signal<string>('');
 
-  // BOM / Receta (insumos para consulta: guantes, algodón, etc.)
-  public readonly bomLines = signal<BOMLine[]>([]);
-  public readonly insumoSearchQuery = signal('');
-  public readonly showInsumoDropdown = signal(false);
+  // Handlers & Compatibility Signals
+  public readonly availableInsumos = this.bomHandler.availableInsumos;
+  public readonly insumoSearchQuery = this.bomHandler.insumoSearchQuery;
+  public readonly showInsumoDropdown = this.bomHandler.showInsumoDropdown;
+  public readonly bomLines = this.bomHandler.bomLines;
+  public readonly filteredInsumos = this.bomHandler.filteredInsumos;
 
-  // Sugerencias vinculadas
-  public readonly sugerenciasSearchQuery = signal('');
-  public readonly selectedSugerenciasIds = signal<string[]>([]);
+  public readonly allSugerencias = this.sugerenciasHandler.allCatalogItems;
+  public readonly sugerenciasSearchQuery = this.sugerenciasHandler.sugerenciasSearchQuery;
+  public readonly selectedSugerenciasIds = this.sugerenciasHandler.sugerenciasIds;
+  public readonly filteredSugerencias = this.sugerenciasHandler.filteredSugerencias;
+  public readonly selectedSugerenciasCards = this.sugerenciasHandler.selectedSugerenciasCards;
 
-  // UI State
-  public readonly isSaving = signal(false);
-  public readonly allInsumos = signal<Insumo[]>([]);
-  public readonly allSugerencias = signal<CatalogItem[]>([]);
-
-  // ── Computed ────────────────────────────────────────────────────────────
-  public readonly filteredInsumos = computed(() => {
-    const q = this.insumoSearchQuery().toLowerCase().trim();
-    if (!q) return this.allInsumos().slice(0, 20);
-    return this.allInsumos().filter(i =>
-      i.nombre.toLowerCase().includes(q) ||
-      i.codigo.toLowerCase().includes(q)
-    ).slice(0, 20);
-  });
-
-  public readonly filteredSugerencias = computed(() => {
-    const q = this.sugerenciasSearchQuery().toLowerCase().trim();
-    const selected = new Set(this.selectedSugerenciasIds());
-    return this.allSugerencias()
-      .filter(s => !selected.has(s.id))
-      .filter(s => !q || s.descripcion.toLowerCase().includes(q) || s.codigo.toLowerCase().includes(q));
-  });
-
-  public readonly selectedSugerenciasCards = computed(() => {
-    const ids = new Set(this.selectedSugerenciasIds());
-    return this.allSugerencias().filter(s => ids.has(s.id));
-  });
-
-  // ── Lifecycle ───────────────────────────────────────────────────────────
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadInsumos();
-    this.loadSugerencias();
-
-    if (this.isEditing() && this.itemId()) {
-      this.loadItem(this.itemId()!);
-    }
+    this.loadCatalogForSugerencias('CONSULTA');
   }
 
-  private loadInsumos() {
-    this.inventoryService.getInsumos().subscribe({
-      next: (data) => this.allInsumos.set(data),
-      error: () => console.error('Error loading insumos')
-    });
-  }
-
-  private loadSugerencias() {
-    this.catalogService.getItems().subscribe({
-      next: (data) => this.allSugerencias.set(data.filter(i => i.tipo !== 'CONSULTA')),
-      error: () => console.error('Error loading sugerencias')
-    });
-  }
-
-  private loadItem(id: string) {
+  protected loadItem(id: string): void {
     this.catalogService.getItemById(id).subscribe({
       next: (item) => this.populateForm(item),
       error: () => console.error('Error loading consulta item')
     });
   }
 
-  private populateForm(item: CatalogItem) {
+  protected resetForm(): void {
+    this.resetBaseForm();
+    this.especialidad.set('');
+    this.duracionMinutos.set(30);
+    this.permiteTelemedicina.set(false);
+    this.requiereHistoriaPrevia.set(false);
+    this.notasClinicas.set('');
+    this.preparacionPaciente.set('');
+  }
+
+  private populateForm(item: CatalogItem): void {
+    const itemAny = item as any;
     this.nombre.set(item.descripcion || '');
     this.codigo.set(item.codigo || '');
-    this.precioBaseUsd.set(item.precioBaseUsd || 0);
+    this.precioBaseUsd.set(item.precioUsd ?? 0);
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo ?? true);
-    this.especialidad.set(item.especialidad || '');
-    this.duracionMinutos.set(item.duracionMinutos || 30);
-    this.permiteTelemedicina.set(item.permiteTelemedicina ?? false);
-    this.requiereHistoriaPrevia.set(item.requiereHistoriaPrevia ?? false);
-    this.notasClinicas.set(item.notasClinicas || '');
-    this.preparacionPaciente.set(item.preparacionPaciente || '');
+    this.especialidad.set(itemAny.especialidad || '');
+    this.duracionMinutos.set(itemAny.duracionMinutos || 30);
+    this.permiteTelemedicina.set(itemAny.permiteTelemedicina ?? false);
+    this.requiereHistoriaPrevia.set(itemAny.requiereHistoriaPrevia ?? false);
+    this.notasClinicas.set(itemAny.notasClinicas || '');
+    this.preparacionPaciente.set(itemAny.preparacionPaciente || '');
 
-    // Load BOM
-    this.inventoryService.getRecipe(item.id).subscribe({
-      next: (recipe) => {
-        const lines: BOMLine[] = recipe.map(r => ({
+    // Load recipe/BOM
+    this.inventoryService.getRecetas().subscribe({
+      next: (recetas: any[]) => {
+        const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
+        const lines: BOMLine[] = itemRecetas.map(r => ({
           insumoId: r.insumoId,
-          insumoNombre: r.insumoNombre,
-          insumoCodigo: r.insumoCodigo,
+          insumoNombre: r.insumoNombre || (r.insumo ? r.insumo.nombre : ''),
+          insumoCodigo: r.insumoCodigo || (r.insumo ? r.insumo.codigo : ''),
           cantidad: r.cantidad,
           unidadMedida: r.unidadMedidaConsumo
         }));
@@ -202,68 +106,59 @@ export class EditConsultaComponent implements OnInit {
       error: () => console.error('Error loading recipe')
     });
 
-    // Load sugerencias vinculadas
     if (item.sugerenciasIds?.length) {
       this.selectedSugerenciasIds.set(item.sugerenciasIds);
     }
   }
 
-  // ── BOM Handlers ────────────────────────────────────────────────────────
-  public addInsumoToBOM(insumo: Insumo) {
-    const exists = this.bomLines().some(l => l.insumoId === insumo.id);
-    if (exists) return;
-
-    this.bomLines.update(lines => [...lines, {
-      insumoId: insumo.id,
-      insumoNombre: insumo.nombre,
-      insumoCodigo: insumo.codigo,
-      cantidad: 1,
-      unidadMedida: insumo.unidadMedidaBase
-    }]);
-
-    this.insumoSearchQuery.set('');
-    this.showInsumoDropdown.set(false);
+  // ── BOM Actions ─────────────────────────────────────────────────────────
+  public addInsumoToBOM(insumo: Insumo): void {
+    this.bomHandler.addInsumo(insumo, 1);
   }
 
-  public updateBOMCantidad(index: number, value: number) {
-    this.bomLines.update(lines => {
-      const newLines = [...lines];
-      newLines[index] = { ...newLines[index], cantidad: Math.max(0, value) };
-      return newLines;
-    });
+  public updateBOMCantidad(index: number, value: number): void {
+    const line = this.bomLines()[index];
+    if (line) {
+      this.bomHandler.updateCantidad(line.insumoId, value);
+    }
   }
 
-  public removeBOMLine(index: number) {
-    this.bomLines.update(lines => lines.filter((_, i) => i !== index));
+  public removeBOMLine(index: number): void {
+    const line = this.bomLines()[index];
+    if (line) {
+      this.bomHandler.removeLine(line.insumoId);
+    }
   }
 
-  // ── Sugerencias Handlers ────────────────────────────────────────────────
-  public toggleSugerencia(id: string) {
-    this.selectedSugerenciasIds.update(ids => {
-      const set = new Set(ids);
-      if (set.has(id)) set.delete(id);
-      else set.add(id);
-      return Array.from(set);
-    });
+  public onInsumoBlur(): void {
+    this.bomHandler.onInsumoBlur();
+  }
+
+  // ── Sugerencias Actions ─────────────────────────────────────────────────
+  public toggleSugerencia(id: string): void {
+    this.sugerenciasHandler.toggleSugerencia(id);
   }
 
   public isSugerenciaSelected(id: string): boolean {
     return this.selectedSugerenciasIds().includes(id);
   }
 
-  public removeSugerencia(id: string) {
-    this.selectedSugerenciasIds.update(ids => ids.filter(i => i !== id));
+  public removeSugerencia(id: string): void {
+    this.sugerenciasHandler.removeSugerencia(id);
   }
 
-  // ── Save ────────────────────────────────────────────────────────────────
-  public save() {
+  public close(): void {
+    this.onClose();
+  }
+
+  public save(): void {
     if (!this.nombre() || !this.codigo() || this.precioBaseUsd() <= 0) return;
     this.isSaving.set(true);
 
-    const item: Partial<CatalogItem> = {
+    const item: any = {
       descripcion: this.nombre(),
       codigo: this.codigo(),
-      precioBaseUsd: this.precioBaseUsd(),
+      precioUsd: this.precioBaseUsd(),
       honorarioBase: this.honorarioBase(),
       tipo: 'CONSULTA',
       activo: this.activo(),
@@ -290,16 +185,17 @@ export class EditConsultaComponent implements OnInit {
     }
   }
 
-  private saveRecipes(servicioId: string) {
+  private saveRecipes(servicioId: string): void {
     const lines = this.bomLines();
     if (lines.length === 0) {
       this.isSaving.set(false);
       this.saved.emit();
-      this.closed.emit();
+      this.onClose();
       return;
     }
 
     let completed = 0;
+    let hasErrors = false;
     const total = lines.length;
 
     lines.forEach(line => {
@@ -313,38 +209,25 @@ export class EditConsultaComponent implements OnInit {
           completed++;
           if (completed >= total) {
             this.isSaving.set(false);
-            this.saved.emit();
-            this.closed.emit();
+            if (!hasErrors) {
+              this.saved.emit();
+              this.onClose();
+            } else {
+              console.error('Algunas recetas no se guardaron correctamente');
+            }
           }
         },
-        error: () => {
+        error: (err) => {
+          hasErrors = true;
           completed++;
+          console.error('Error guardando receta para insumo:', line.insumoNombre, err);
           if (completed >= total) {
             this.isSaving.set(false);
             this.saved.emit();
-            this.closed.emit();
+            this.onClose();
           }
         }
       });
     });
-  }
-
-  // ── Modal ───────────────────────────────────────────────────────────────
-  public close() {
-    this.closed.emit();
-  }
-
-  // ── Helpers ─────────────────────────────────────────────────────────────
-  public getTipoColor(tipo: string): string {
-    switch (tipo?.toUpperCase()) {
-      case 'CONSULTA': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-      case 'LABORATORIO': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'RX': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-      case 'PROCEDIMIENTO': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'TOMOGRAFIA': return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
-      case 'MEDICINA':
-      case 'MEDICAMENTO': return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
-      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-    }
   }
 }

@@ -1,150 +1,66 @@
-import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Scissors, Pill, Search, X, Plus, Trash2, Save, Loader2, Package, DollarSign, AlertTriangle, Check, Layers, MessageSquare, FileText, UserCog, Activity, Scalpel } from 'lucide-angular';
-import { CatalogService, CatalogItem } from '../../../../core/services/catalog.service';
-import { InventoryService } from '../../../../core/services/inventory.service';
+import {
+  LucideAngularModule,
+  Scissors, Pill, Search, X, Plus, Trash2, Save, Loader2, Package,
+  DollarSign, AlertTriangle, Check, Layers, MessageSquare, FileText,
+  UserCog, Activity
+} from 'lucide-angular';
+import { BaseCatalogEditComponent } from './base-catalog-edit.component';
+import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
-import { BillingFacadeService } from '../../../../core/services/billing-facade.service';
-import { MedicoService } from '../../../../core/services/medico.service';
-
-type ServiceCategory = 'CONSULTA' | 'PROCEDIMIENTO' | 'LABORATORIO' | 'TOMOGRAFIA' | 'CIRUGIA' | 'MEDICAMENTO' | 'OTRO';
-
-interface HonorarioMedico {
-  medicoId: string;
-  medicoNombre: string;
-  honorarioUsd: number;
-}
-
-interface BOMLine {
-  insumoId: string;
-  insumoCodigo: string;
-  insumoNombre: string;
-  cantidad: number;
-  unidadMedida: string;
-}
-
-interface EquipoQuirurgico {
-  id: string;
-  codigo: string;
-  nombre: string;
-  cantidad: number;
-}
-
-interface SugerenciaVinculada {
-  id: string;
-  codigo: string;
-  descripcion: string;
-  tipo: ServiceCategory;
-  precioUsd: number;
-}
+import { FormOption, HonorarioMedico } from '../models/catalog-edit.models';
 
 @Component({
   selector: 'app-edit-medicamento',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
-  templateUrl: './edit-medicamento.component.html',
-  styleUrls: ['./edit-medicamento.component.scss']
+  templateUrl: './edit-medicamento.component.html'
 })
-export class EditMedicamentoComponent implements OnInit {
-  // Icons
-  readonly icons = {
+export class EditMedicamentoComponent extends BaseCatalogEditComponent implements OnInit {
+  // ── Icons ───────────────────────────────────────────────────────────────
+  protected readonly icons = {
     Scissors, Pill, Search, X, Plus, Trash2, Save, Loader2,
     Package, DollarSign, AlertTriangle, Check, Layers, MessageSquare,
-    FileText, UserCog, Activity, Scalpel
-  };
+    FileText, UserCog, Activity, Capsule: Pill
+  } as const;
 
-  // Services
-  private catalogService = inject(CatalogService);
-  private inventoryService = inject(InventoryService);
-  private billingFacade = inject(BillingFacadeService);
-  private medicoService = inject(MedicoService);
+  // ── Medicamento Specific State (Signals) ────────────────────────────────
+  public readonly principioActivo = signal<string>('');
+  public readonly concentracion = signal<string>('');
+  public readonly formaFarmaceutica = signal<string>('TABLETA');
+  public readonly viaAdministracion = signal<string>('ORAL');
+  public readonly laboratorio = signal<string>('');
+  public readonly requiereReceta = signal<boolean>(true);
+  public readonly controlado = signal<boolean>(false);
+  public readonly stockMinimo = signal<number>(0);
+  public readonly stockMaximo = signal<number>(0);
+  public readonly lote = signal<string>('');
+  public readonly fechaVencimiento = signal<string>('');
+  public readonly showModal = signal<boolean>(false);
 
-  // Modal state
-  showModal = signal(false);
-  isEditing = signal(false);
-  isSaving = signal(false);
-  currentItem = signal<CatalogItem | null>(null);
+  // ── Handlers & Compatibility Signals ────────────────────────────────────
+  public readonly availableInsumos = this.bomHandler.availableInsumos;
+  public readonly insumoSearchQuery = this.bomHandler.insumoSearchQuery;
+  public readonly showInsumoDropdown = this.bomHandler.showInsumoDropdown;
+  public readonly bomLines = this.bomHandler.bomLines;
+  public readonly filteredInsumos = this.bomHandler.filteredInsumos;
 
-  // Form fields - Basic
-  nombre = signal('');
-  codigo = signal('');
-  precioBaseUsd = signal(0);
-  honorarioBase = signal(0);
-  activo = signal(true);
+  public readonly availableMedicos = this.honorariosHandler.availableMedicos;
+  public readonly medicoSearchQuery = this.honorariosHandler.medicoSearchQuery;
+  public readonly showMedicoDropdown = this.honorariosHandler.showMedicoDropdown;
+  public readonly honorariosMedicos = this.honorariosHandler.honorarios;
+  public readonly filteredMedicos = this.honorariosHandler.filteredMedicos;
 
-  // Form fields - Medicamento specific
-  principioActivo = signal('');
-  concentracion = signal('');
-  formaFarmaceutica = signal('TABLETA');
-  viaAdministracion = signal('ORAL');
-  laboratorio = signal('');
-  requiereReceta = signal(true);
-  controlado = signal(false);
-  stockMinimo = signal(0);
-  stockMaximo = signal(0);
-  lote = signal('');
-  fechaVencimiento = signal('');
+  public readonly allCatalogItems = this.sugerenciasHandler.allCatalogItems;
+  public readonly sugerenciasSearchQuery = this.sugerenciasHandler.sugerenciasSearchQuery;
+  public readonly sugerenciasIds = this.sugerenciasHandler.sugerenciasIds;
+  public readonly filteredSugerencias = this.sugerenciasHandler.filteredSugerencias;
+  public readonly selectedSugerenciasCards = this.sugerenciasHandler.selectedSugerenciasCards;
 
-  // BOM (Bill of Materials) - for excipients/packaging
-  bomLines = signal<BOMLine[]>([]);
-  insumoSearchQuery = signal('');
-  showInsumoDropdown = signal(false);
-  availableInsumos = signal<Insumo[]>([]);
-
-  // Honorarios Médicos
-  honorariosMedicos = signal<HonorarioMedico[]>([]);
-  medicoSearchQuery = signal('');
-  showMedicoDropdown = signal(false);
-  availableMedicos = signal<{ id: string; nombre: string; especialidad: string }[]>([]);
-
-  // Sugerencias Vinculadas
-  sugerenciasIds = signal<string[]>([]);
-  sugerenciasSearchQuery = signal('');
-  allCatalogItems = signal<CatalogItem[]>([]);
-
-  // Computed
-  filteredInsumos = computed(() => {
-    const query = this.insumoSearchQuery().toLowerCase();
-    if (!query) return this.availableInsumos().slice(0, 20);
-    return this.availableInsumos().filter(i =>
-      i.nombre.toLowerCase().includes(query) ||
-      i.codigo.toLowerCase().includes(query)
-    ).slice(0, 20);
-  });
-
-  filteredMedicos = computed(() => {
-    const query = this.medicoSearchQuery().toLowerCase();
-    if (!query) return this.availableMedicos().slice(0, 20);
-    return this.availableMedicos().filter(m =>
-      m.nombre.toLowerCase().includes(query) ||
-      m.especialidad.toLowerCase().includes(query)
-    ).slice(0, 20);
-  });
-
-  filteredSugerencias = computed(() => {
-    const query = this.sugerenciasSearchQuery().toLowerCase();
-    const excludedIds = new Set(this.sugerenciasIds());
-    const currentId = this.currentItem()?.id;
-    let items = this.allCatalogItems().filter(item =>
-      item.id !== currentId && !excludedIds.has(item.id)
-    );
-    if (query) {
-      items = items.filter(item =>
-        item.descripcion.toLowerCase().includes(query) ||
-        item.codigo.toLowerCase().includes(query)
-      );
-    }
-    return items.slice(0, 30);
-  });
-
-  selectedSugerenciasCards = computed(() => {
-    const selectedIds = new Set(this.sugerenciasIds());
-    return this.allCatalogItems().filter(item => selectedIds.has(item.id));
-  });
-
-  // Formas farmacéuticas
-  readonly formasFarmaceuticas = [
+  // ── Select Options ──────────────────────────────────────────────────────
+  readonly formasFarmaceuticas: FormOption[] = [
     { value: 'TABLETA', label: 'Tableta' },
     { value: 'CAPSULA', label: 'Cápsula' },
     { value: 'COMPRIMIDO', label: 'Comprimido' },
@@ -170,8 +86,7 @@ export class EditMedicamentoComponent implements OnInit {
     { value: 'OTRO', label: 'Otro' }
   ];
 
-  // Vías de administración
-  readonly viasAdministracion = [
+  readonly viasAdministracion: FormOption[] = [
     { value: 'ORAL', label: 'Oral' },
     { value: 'SUBLINGUAL', label: 'Sublingual' },
     { value: 'RECTAL', label: 'Rectal' },
@@ -190,63 +105,26 @@ export class EditMedicamentoComponent implements OnInit {
     { value: 'OTRO', label: 'Otra' }
   ];
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadInsumos();
     this.loadMedicos();
     this.loadCatalogForSugerencias();
   }
 
-  private loadInsumos() {
-    this.inventoryService.getInsumos().subscribe({
-      next: (insumos) => this.availableInsumos.set(insumos),
-      error: (err) => console.error('Error loading insumos:', err)
+  protected loadItem(id: string): void {
+    this.catalogService.getUnifiedCatalog().subscribe({
+      next: (items) => {
+        const item = items.find(i => i.id === id);
+        if (item) {
+          this.currentItem.set(item);
+          this.populateForm(item);
+        }
+      }
     });
   }
 
-  private loadMedicos() {
-    this.medicoService.getMedicos().subscribe({
-      next: (medicos) => this.availableMedicos.set(medicos.map(m => ({
-        id: m.id,
-        nombre: `${m.apellido}, ${m.nombre}`,
-        especialidad: m.especialidad
-      }))),
-      error: (err) => console.error('Error loading medicos:', err)
-    });
-  }
-
-  private loadCatalogForSugerencias() {
-    this.catalogService.getCatalog().subscribe({
-      next: (items) => this.allCatalogItems.set(items),
-      error: (err) => console.error('Error loading catalog:', err)
-    });
-  }
-
-  openCreate() {
-    this.resetForm();
-    this.isEditing.set(false);
-    this.currentItem.set(null);
-    this.showModal.set(true);
-  }
-
-  openEdit(item: CatalogItem) {
-    this.resetForm();
-    this.isEditing.set(true);
-    this.currentItem.set(item);
-    this.populateForm(item);
-    this.showModal.set(true);
-  }
-
-  close() {
-    this.showModal.set(false);
-    this.resetForm();
-  }
-
-  private resetForm() {
-    this.nombre.set('');
-    this.codigo.set('');
-    this.precioBaseUsd.set(0);
-    this.honorarioBase.set(0);
-    this.activo.set(true);
+  protected resetForm(): void {
+    this.resetBaseForm();
     this.principioActivo.set('');
     this.concentracion.set('');
     this.formaFarmaceutica.set('TABLETA');
@@ -258,148 +136,126 @@ export class EditMedicamentoComponent implements OnInit {
     this.stockMaximo.set(0);
     this.lote.set('');
     this.fechaVencimiento.set('');
-    this.bomLines.set([]);
-    this.honorariosMedicos.set([]);
-    this.sugerenciasIds.set([]);
-    this.insumoSearchQuery.set('');
-    this.medicoSearchQuery.set('');
-    this.sugerenciasSearchQuery.set('');
-    this.showInsumoDropdown.set(false);
-    this.showMedicoDropdown.set(false);
   }
 
-  private populateForm(item: CatalogItem) {
+  private populateForm(item: CatalogItem): void {
     this.nombre.set(item.descripcion || '');
     this.codigo.set(item.codigo || '');
     this.precioBaseUsd.set(item.precioUsd || 0);
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo !== false);
 
-    // Medicamento specific fields from extended properties
-    this.principioActivo.set(item.principioActivo || '');
-    this.concentracion.set(item.concentracion || '');
-    this.formaFarmaceutica.set(item.formaFarmaceutica || 'TABLETA');
-    this.viaAdministracion.set(item.viaAdministracion || 'ORAL');
-    this.laboratorio.set(item.laboratorio || '');
-    this.requiereReceta.set(item.requiereReceta !== false);
-    this.controlado.set(item.controlado === true);
-    this.stockMinimo.set(item.stockMinimo || 0);
-    this.stockMaximo.set(item.stockMaximo || 0);
-    this.lote.set(item.lote || '');
-    this.fechaVencimiento.set(item.fechaVencimiento || '');
+    const itemAny = item as any;
+    this.principioActivo.set(itemAny.principioActivo || '');
+    this.concentracion.set(itemAny.concentracion || '');
+    this.formaFarmaceutica.set(itemAny.formaFarmaceutica || 'TABLETA');
+    this.viaAdministracion.set(itemAny.viaAdministracion || 'ORAL');
+    this.laboratorio.set(itemAny.laboratorio || '');
+    this.requiereReceta.set(itemAny.requiereReceta !== false);
+    this.controlado.set(itemAny.controlado === true);
+    this.stockMinimo.set(itemAny.stockMinimo || 0);
+    this.stockMaximo.set(itemAny.stockMaximo || 0);
+    this.lote.set(itemAny.lote || '');
+    this.fechaVencimiento.set(itemAny.fechaVencimiento || '');
 
-    // BOM lines
-    if (item.bomLines && Array.isArray(item.bomLines)) {
-      this.bomLines.set(item.bomLines.map((line: any) => ({
-        insumoId: line.insumoId,
-        insumoCodigo: line.insumoCodigo,
-        insumoNombre: line.insumoNombre,
-        cantidad: line.cantidad,
-        unidadMedida: line.unidadMedida
-      })));
+    if (itemAny.bomLines && Array.isArray(itemAny.bomLines)) {
+      this.bomLines.set(itemAny.bomLines);
     }
-
-    // Honorarios médicos
     if (item.honorariosMedicos && Array.isArray(item.honorariosMedicos)) {
       this.honorariosMedicos.set(item.honorariosMedicos.map((h: any) => ({
         medicoId: h.medicoId,
-        medicoNombre: h.medicoNombre,
-        honorarioUsd: h.honorarioUsd
+        medicoNombre: h.medicoNombre || '',
+        honorarioUsd: h.honorarioUsd ?? h.honorario ?? 0
       })));
     }
-
-    // Sugerencias
     if (item.sugerenciasIds && Array.isArray(item.sugerenciasIds)) {
       this.sugerenciasIds.set(item.sugerenciasIds);
     }
   }
 
-  // BOM Methods
-  addInsumoToBOM(insumo: Insumo) {
-    const exists = this.bomLines().some(line => line.insumoId === insumo.id);
-    if (exists) return;
-
-    this.bomLines.update(lines => [...lines, {
-      insumoId: insumo.id,
-      insumoCodigo: insumo.codigo,
-      insumoNombre: insumo.nombre,
-      cantidad: 1,
-      unidadMedida: insumo.unidadMedidaBase
-    }]);
-    this.insumoSearchQuery.set('');
-    this.showInsumoDropdown.set(false);
+  // ── Template Actions ───────────────────────────────────────────────────
+  public addInsumoToBOM(insumo: Insumo): void {
+    this.bomHandler.addInsumo(insumo, 1);
   }
 
-  updateBOMCantidad(index: number, cantidad: number) {
-    this.bomLines.update(lines => {
-      const newLines = [...lines];
-      newLines[index] = { ...newLines[index], cantidad: Math.max(0, cantidad) };
-      return newLines;
-    });
+  public updateBOMCantidad(index: number, cantidad: number): void {
+    const line = this.bomLines()[index];
+    if (line) {
+      this.bomHandler.updateCantidad(line.insumoId, cantidad);
+    }
   }
 
-  removeBOMLine(index: number) {
-    this.bomLines.update(lines => lines.filter((_, i) => i !== index));
+  public removeBOMLine(index: number): void {
+    const line = this.bomLines()[index];
+    if (line) {
+      this.bomHandler.removeLine(line.insumoId);
+    }
   }
 
-  // Honorarios Médicos Methods
-  addHonorarioMedico() {
-    this.honorariosMedicos.update(arr => [...arr, {
-      medicoId: '',
-      medicoNombre: '',
-      honorarioUsd: 0
-    }]);
+  public addHonorarioMedico(): void {
+    this.honorariosMedicos.update(arr => [...arr, { medicoId: '', medicoNombre: '', honorarioUsd: 0 }]);
   }
 
-  updateHonorarioMedico(index: number, field: 'medicoId' | 'medicoNombre' | 'honorarioUsd', value: any) {
+  public updateHonorarioMedico(index: number, field: keyof HonorarioMedico, value: any): void {
     this.honorariosMedicos.update(arr => {
-      const newArr = [...arr];
-      newArr[index] = { ...newArr[index], [field]: value };
-      return newArr;
+      const copy = [...arr];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
     });
   }
 
-  removeHonorarioMedico(index: number) {
+  public removeHonorarioMedico(index: number): void {
     this.honorariosMedicos.update(arr => arr.filter((_, i) => i !== index));
   }
 
-  onMedicoSelect(medico: { id: string; nombre: string; especialidad: string }, index: number) {
+  public onMedicoSelect(medico: { id: string; nombre: string; especialidad: string }, index: number): void {
     this.updateHonorarioMedico(index, 'medicoId', medico.id);
     this.updateHonorarioMedico(index, 'medicoNombre', medico.nombre);
-    this.medicoSearchQuery.set('');
-    this.showMedicoDropdown.set(false);
+    this.honorariosHandler.medicoSearchQuery.set('');
+    this.honorariosHandler.showMedicoDropdown.set(false);
   }
 
-  // Sugerencias Methods
-  isSugerenciaSelected(id: string): boolean {
+  public isSugerenciaSelected(id: string): boolean {
     return this.sugerenciasIds().includes(id);
   }
 
-  toggleSugerencia(id: string) {
-    this.sugerenciasIds.update(ids =>
-      ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id]
-    );
+  public toggleSugerencia(id: string): void {
+    this.sugerenciasHandler.toggleSugerencia(id);
   }
 
-  removeSugerencia(id: string) {
-    this.sugerenciasIds.update(ids => ids.filter(i => i !== id));
+  public removeSugerencia(id: string): void {
+    this.sugerenciasHandler.removeSugerencia(id);
   }
 
-  getTipoColor(tipo: ServiceCategory): string {
-    const colors: Record<ServiceCategory, string> = {
-      CONSULTA: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-      PROCEDIMIENTO: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      LABORATORIO: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      TOMOGRAFIA: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      CIRUGIA: 'bg-red-500/20 text-red-400 border-red-500/30',
-      MEDICAMENTO: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-      OTRO: 'bg-slate-500/20 text-slate-400 border-slate-500/30'
-    };
-    return colors[tipo] || colors.OTRO;
+  public onInsumoBlur(): void {
+    this.bomHandler.onInsumoBlur();
   }
 
-  // Save
-  async save() {
+  public onMedicoBlur(): void {
+    this.honorariosHandler.onMedicoBlur();
+  }
+
+  public openCreate(): void {
+    this.resetForm();
+    this.isEditing.set(false);
+    this.showModal.set(true);
+  }
+
+  public openEdit(item: CatalogItem): void {
+    this.resetForm();
+    this.isEditing.set(true);
+    this.currentItem.set(item);
+    this.populateForm(item);
+    this.showModal.set(true);
+  }
+
+  public close(): void {
+    this.showModal.set(false);
+    this.resetForm();
+    this.onClose();
+  }
+
+  public async save(): Promise<void> {
     if (!this.nombre() || !this.codigo() || this.precioBaseUsd() <= 0) return;
     if (!this.principioActivo() || !this.concentracion()) return;
 
@@ -411,11 +267,12 @@ export class EditMedicamentoComponent implements OnInit {
       precioUsd: this.precioBaseUsd(),
       tipo: 'MEDICAMENTO' as const,
       honorarioBase: this.honorarioBase(),
-      requiereInventario: true, // Medicamentos siempre requieren inventario
+      requiereInventario: true,
       sugerenciasIds: this.sugerenciasIds(),
-      honorariosMedicos: this.honorariosMedicos().filter(h => h.medicoId && h.honorarioUsd > 0),
+      honorariosMedicos: this.honorariosMedicos()
+        .filter(h => h.medicoId && h.honorarioUsd > 0)
+        .map(h => ({ medicoId: h.medicoId, medicoNombre: h.medicoNombre, honorario: h.honorarioUsd })),
       activo: this.activo(),
-      // Medicamento specific fields
       principioActivo: this.principioActivo(),
       concentracion: this.concentracion(),
       formaFarmaceutica: this.formaFarmaceutica(),
@@ -432,10 +289,11 @@ export class EditMedicamentoComponent implements OnInit {
 
     try {
       if (this.isEditing() && this.currentItem()) {
-        await this.catalogService.updateItem(this.currentItem()!.id, payload).toPromise();
+        await this.catalogService.updateItem(this.currentItem()!.id, payload as any).toPromise();
       } else {
-        await this.catalogService.createItem(payload).toPromise();
+        await this.catalogService.createItem(payload as any).toPromise();
       }
+      this.saved.emit();
       this.close();
     } catch (error) {
       console.error('Error saving medicamento:', error);

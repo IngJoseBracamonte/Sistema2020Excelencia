@@ -20,11 +20,28 @@ import {
     Check,
     Clock
 } from 'lucide-angular';
+import { EditCirugiaComponent } from './components/edit-cirugia.component';
+import { EditConsultaComponent } from './components/edit-consulta.component';
+import { EditLaboratorioComponent } from './components/edit-laboratorio.component';
+import { EditMedicamentoComponent } from './components/edit-medicamento.component';
+import { EditProcedimientoComponent } from './components/edit-procedimiento.component';
+import { EditTomografiaComponent } from './components/edit-tomografia.component';
+import { getTipoColor } from './models/catalog-edit.models';
 
 @Component({
   selector: 'app-catalog-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule,
+    EditCirugiaComponent,
+    EditConsultaComponent,
+    EditLaboratorioComponent,
+    EditMedicamentoComponent,
+    EditProcedimientoComponent,
+    EditTomografiaComponent
+  ],
   templateUrl: './catalog-management.component.html'
 })
 export class CatalogManagementComponent implements OnInit {
@@ -49,6 +66,8 @@ export class CatalogManagementComponent implements OnInit {
   public showModal = signal<boolean>(false);
   public isEditing = signal<boolean>(false);
   public searchQuery = signal<string>('');
+  public selectedItemId = signal<string | null>(null);
+  public activeEditorType = signal<string | null>(null);
   
   // Médicos y honorarios específicos
   public medicos = signal<Medico[]>([]);
@@ -194,32 +213,40 @@ export class CatalogManagementComponent implements OnInit {
 
   openCreate() {
     this.isEditing.set(false);
-    this.currentItem.set({
-      codigo: '',
-      descripcion: '',
-      precioUsd: 0,
-      honorarioBase: 0,
-      tipo: 'CONSULTA',
-      activo: true,
-      sugerenciasIds: []
-    });
-    this.honorariosLocales.set({});
-    this.doctorSearchQuery.set('');
+    this.selectedItemId.set(null);
+    
+    const filter = this.typeFilter();
+    let type = filter ? filter.toUpperCase() : 'CONSULTA';
+    if (type === 'MEDICINA') type = 'MEDICAMENTO';
+    if (type === 'RX') type = 'TOMOGRAFIA';
+    
+    this.activeEditorType.set(type);
     this.showModal.set(true);
   }
 
   openEdit(item: CatalogItem) {
     this.isEditing.set(true);
-    this.currentItem.set({ ...item });
-    const localHons: Record<string, number> = {};
-    if (item.honorariosMedicos) {
-      item.honorariosMedicos.forEach(h => {
-        localHons[h.medicoId] = h.honorario;
-      });
-    }
-    this.honorariosLocales.set(localHons);
-    this.doctorSearchQuery.set('');
+    this.selectedItemId.set(item.id || null);
+    
+    let type = item.tipo ? item.tipo.toUpperCase() : 'CONSULTA';
+    if (type === 'MEDICINA') type = 'MEDICAMENTO';
+    if (type === 'RX') type = 'TOMOGRAFIA';
+
+    this.activeEditorType.set(type);
     this.showModal.set(true);
+  }
+
+  onEditorSaved() {
+    this.showModal.set(false);
+    this.activeEditorType.set(null);
+    this.selectedItemId.set(null);
+    this.refreshCatalog();
+  }
+
+  onEditorClosed() {
+    this.showModal.set(false);
+    this.activeEditorType.set(null);
+    this.selectedItemId.set(null);
   }
 
   save() {
@@ -281,17 +308,10 @@ export class CatalogManagementComponent implements OnInit {
   }
 
   getTipoColorPremium(tipo: string): string {
-    switch (tipo?.toUpperCase()) {
-      case 'CONSULTA': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-      case 'LABORATORIO': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'RX': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
-      case 'MEDICINA':
-      case 'MEDICAMENTO': return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
-      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-    }
+    return getTipoColor(tipo);
   }
 
   getTipoColor(tipo: string): string {
-    return this.getTipoColorPremium(tipo);
+    return getTipoColor(tipo);
   }
 }

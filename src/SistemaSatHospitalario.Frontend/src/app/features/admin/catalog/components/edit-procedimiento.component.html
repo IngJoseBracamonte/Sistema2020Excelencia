@@ -260,8 +260,7 @@
               <button
                 (click)="toggleSugerencia(service.id)"
                 class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors"
-                [class.bg-amber-500/10]="isSugerenciaSelected(service.id)"
-                [class.hover:bg-slate-800/50]="!isSugerenciaSelected(service.id)"
+                [ngClass]="isSugerenciaSelected(service.id) ? 'bg-amber-500/10' : 'hover:bg-slate-800/50'"
               >
                 <div class="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
                   [class]="getTipoColor(service.tipo)">

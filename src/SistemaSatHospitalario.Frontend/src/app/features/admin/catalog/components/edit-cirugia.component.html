@@ -118,7 +118,7 @@
                 type="text"
                 [(ngModel)]="equipoSearchQuery"
                 (focus)="showEquipoDropdown.set(true)"
-                (blur)="setTimeout(() => showEquipoDropdown.set(false), 200)"
+                (blur)="onEquipoBlur()"
                 (input)="showEquipoDropdown.set(true)"
                 class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition"
                 placeholder="Buscar equipo/instrumental (bisturí, pinzas, electrobisturí, etc.)..."
@@ -278,7 +278,7 @@
                 type="text"
                 [(ngModel)]="insumoSearchQuery"
                 (focus)="showInsumoDropdown.set(true)"
-                (blur)="setTimeout(() => showInsumoDropdown.set(false), 200)"
+                (blur)="onInsumoBlur()"
                 (input)="showInsumoDropdown.set(true)"
                 class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition"
                 placeholder="Buscar insumo (suturas, mallas, drenajes, gasas, etc.)..."
@@ -439,7 +439,7 @@
                             <lucide-icon [img]="icons.Check" [size]="8" class="text-violet-500" />
                           </div>
                         } @else {
-                          <div class="w-4 h-4 rounded border-2 border-slate-600" />
+                          <div class="w-4 h-4 rounded border-2 border-slate-600"></div>
                         }
                       </div>
                       <div class="flex-1 min-w-0">
