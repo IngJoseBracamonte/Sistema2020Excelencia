@@ -496,7 +496,8 @@ export class EnfermeriaComponent implements OnInit {
     } else if (activeFilter === 'Emergencia') {
       targetSedeId = '10000000-0000-0000-0000-000000000002';
     }
-    return targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+    const filtered = targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+    return (filtered && filtered.length > 0) ? filtered : camas;
   });
 
   public camasDisponiblesTraslado = computed(() => {
@@ -510,29 +511,38 @@ export class EnfermeriaComponent implements OnInit {
     } else if (dest === 'Emergencia') {
       targetSedeId = '10000000-0000-0000-0000-000000000002';
     }
-    return targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+    const filtered = targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
+    return (filtered && filtered.length > 0) ? filtered : camas;
   });
 
-  // Filtered active accounts computed list
+  // Filtered active accounts computed list con normalización de acentos
   public filteredAccounts = computed(() => {
     const list = this.activeAccounts();
     const term = this.searchTerm().trim().toLowerCase();
-    
-    // Filtro estricto de enfermería: Solo Emergencia, Hospitalizacion y UCI
-    const nursingList = list.filter(acc => 
-      acc.tipoIngreso === 'Emergencia' || 
-      acc.tipoIngreso === 'Hospitalizacion' || 
-      acc.tipoIngreso === 'UCI'
-    );
+    const currentTab = this.nursingAreaFilter();
 
-    // Filtro por área clínica seleccionada
-    const areaFiltered = nursingList.filter(acc => acc.tipoIngreso === this.nursingAreaFilter());
+    const normalize = (val: string | null | undefined): string => {
+      if (!val) return '';
+      return val.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    };
+
+    const targetTab = normalize(currentTab);
+
+    // Filtro por área clínica seleccionada en Enfermería
+    const areaFiltered = list.filter(acc => {
+      const tipo = normalize(acc.tipoIngreso);
+      if (targetTab === 'hospitalizacion') {
+        return tipo === 'hospitalizacion' || tipo === 'enfermeria';
+      }
+      return tipo === targetTab;
+    });
 
     if (!term) return areaFiltered;
+    const termNorm = normalize(term);
     return areaFiltered.filter(acc => 
-      acc.pacienteNombre.toLowerCase().includes(term) || 
-      acc.pacienteCedula.toLowerCase().includes(term) ||
-      acc.tipoIngreso.toLowerCase().includes(term)
+      normalize(acc.pacienteNombre).includes(termNorm) || 
+      normalize(acc.pacienteCedula).includes(termNorm) ||
+      normalize(acc.tipoIngreso).includes(termNorm)
     );
   });
 
@@ -1286,13 +1296,17 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   private abrirCuentaParaPaciente(pacienteId: string) {
-    this.facturacionService.abrirCuenta(pacienteId, this.type(), this.convenioIngresoId(), this.selectedCamaId()).subscribe({
+    const targetType = this.type();
+    this.facturacionService.abrirCuenta(pacienteId, targetType, this.convenioIngresoId(), this.selectedCamaId()).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.showIngresoModal.set(false);
-        this.actionMessage.set(`Paciente ingresado exitosamente a la sección de ${this.type()}.`);
+        this.actionMessage.set(`Paciente ingresado exitosamente a la sección de ${targetType}.`);
         setTimeout(() => this.actionMessage.set(null), 5000);
-        this.refreshAccounts(); // Refrescar lista de activos en Enfermería
+        if (targetType === 'Emergencia' || targetType === 'Hospitalizacion' || targetType === 'UCI') {
+          this.nursingAreaFilter.set(targetType as any);
+        }
+        this.refreshAccounts();
       },
       error: (err: any) => {
         this.isLoading.set(false);
@@ -1378,7 +1392,8 @@ export class EnfermeriaComponent implements OnInit {
             this.showIngresoModal.set(false);
             this.actionMessage.set(`Paciente ingresado y triage registrado exitosamente en Emergencia.`);
             setTimeout(() => this.actionMessage.set(null), 5000);
-            this.refreshAccounts(); // Refrescar lista de activos en Enfermería
+            this.nursingAreaFilter.set('Emergencia');
+            this.refreshAccounts();
           },
           error: (err: any) => {
             this.isLoading.set(false);
