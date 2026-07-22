@@ -211,14 +211,23 @@ export class CatalogManagementComponent implements OnInit {
     return (this.currentItem().sugerenciasIds || []).includes(id);
   }
 
+  public getNormalizedEditorType(rawType: string | null | undefined): string {
+    if (!rawType) return 'PROCEDIMIENTO';
+    const type = rawType.toUpperCase().trim();
+    if (type === 'MEDICINA' || type === 'MEDICAMENTO' || type === 'INSUMO' || type === 'FARMACIA') return 'MEDICAMENTO';
+    if (type === 'RX' || type === 'TOMOGRAFIA' || type === 'TOMO' || type === 'RADIOGRAFIA' || type === 'IMAGEN') return 'TOMOGRAFIA';
+    if (type === 'CONSULTA' || type === 'CITAS' || type === 'MEDICO') return 'CONSULTA';
+    if (type === 'LABORATORIO' || type === 'LAB') return 'LABORATORIO';
+    if (type === 'CIRUGIA' || type === 'QUIRURGICO') return 'CIRUGIA';
+    return 'PROCEDIMIENTO';
+  }
+
   openCreate() {
     this.isEditing.set(false);
     this.selectedItemId.set(null);
     
     const filter = this.typeFilter();
-    let type = filter ? filter.toUpperCase() : 'CONSULTA';
-    if (type === 'MEDICINA') type = 'MEDICAMENTO';
-    if (type === 'RX') type = 'TOMOGRAFIA';
+    const type = this.getNormalizedEditorType(filter);
     
     this.activeEditorType.set(type);
     this.showModal.set(true);
@@ -228,9 +237,7 @@ export class CatalogManagementComponent implements OnInit {
     this.isEditing.set(true);
     this.selectedItemId.set(item.id || null);
     
-    let type = item.tipo ? item.tipo.toUpperCase() : 'CONSULTA';
-    if (type === 'MEDICINA') type = 'MEDICAMENTO';
-    if (type === 'RX') type = 'TOMOGRAFIA';
+    const type = this.getNormalizedEditorType(item.tipo);
 
     this.activeEditorType.set(type);
     this.showModal.set(true);

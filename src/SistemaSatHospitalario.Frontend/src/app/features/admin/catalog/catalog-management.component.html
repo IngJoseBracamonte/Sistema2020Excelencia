@@ -106,7 +106,7 @@
         <div class="relative bg-[#0b1120] border border-white/5 w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-y-auto custom-scrollbar animate-scale-in">
             
             <app-edit-consulta 
-                *ngIf="activeEditorType() === 'CONSULTA'"
+                *ngIf="getNormalizedEditorType(activeEditorType()) === 'CONSULTA'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
@@ -114,7 +114,7 @@
             </app-edit-consulta>
 
             <app-edit-laboratorio 
-                *ngIf="activeEditorType() === 'LABORATORIO'"
+                *ngIf="getNormalizedEditorType(activeEditorType()) === 'LABORATORIO'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
@@ -122,21 +122,21 @@
             </app-edit-laboratorio>
 
             <app-edit-tomografia 
-                *ngIf="activeEditorType() === 'TOMOGRAFIA' || activeEditorType() === 'RX'"
+                *ngIf="getNormalizedEditorType(activeEditorType()) === 'TOMOGRAFIA'"
                 [itemId]="selectedItemId()"
                 (saved)="onEditorSaved()"
                 (closed)="onEditorClosed()">
             </app-edit-tomografia>
 
             <app-edit-procedimiento 
-                *ngIf="activeEditorType() === 'PROCEDIMIENTO'"
+                *ngIf="getNormalizedEditorType(activeEditorType()) === 'PROCEDIMIENTO'"
                 [itemId]="selectedItemId()"
                 (saved)="onEditorSaved()"
                 (closed)="onEditorClosed()">
             </app-edit-procedimiento>
 
             <app-edit-cirugia 
-                *ngIf="activeEditorType() === 'CIRUGIA'"
+                *ngIf="getNormalizedEditorType(activeEditorType()) === 'CIRUGIA'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
@@ -144,7 +144,7 @@
             </app-edit-cirugia>
 
             <app-edit-medicamento 
-                *ngIf="activeEditorType() === 'MEDICAMENTO' || activeEditorType() === 'MEDICINA'"
+                *ngIf="getNormalizedEditorType(activeEditorType()) === 'MEDICAMENTO'"
                 [itemId]="selectedItemId()"
                 [isEditing]="isEditing()"
                 (saved)="onEditorSaved()"
