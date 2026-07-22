@@ -15,6 +15,7 @@ import { MedicoService, Medico } from '../../core/services/medico.service';
 import { MultiSedeService, AreaClinica } from '../../core/services/multi-sede.service';
 import { PatientService, PatientRecord } from '../../core/services/patient.service';
 import { FacturacionService } from '../../core/services/facturacion.service';
+import { TIPO_INGRESO, TipoIngresoType, matchTipoIngreso, normalizeTipoIngreso } from '../../core/constants/tipo-ingreso.constants';
 import { 
   LucideAngularModule, 
   Search, 
@@ -240,6 +241,7 @@ export const DEFAULT_TRIAGE = {
   styleUrls: ['./enfermeria.component.css']
 })
 export class EnfermeriaComponent implements OnInit {
+  public readonly TIPO_INGRESO = TIPO_INGRESO;
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
   private readonly medicoService = inject(MedicoService);
@@ -417,7 +419,7 @@ export class EnfermeriaComponent implements OnInit {
   );
 
   public cartItemCount = computed(() => this.cartItems().length);
-  public nursingAreaFilter = signal<'Emergencia' | 'Hospitalizacion' | 'UCI'>('Emergencia');
+  public nursingAreaFilter = signal<TipoIngresoType>(TIPO_INGRESO.EMERGENCIA);
   public customPrecio = signal<number | null>(null);
   public customHonorario = signal<number | null>(null);
 
@@ -478,7 +480,7 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   // Transfer Area Form
-  public nuevoTipoIngreso = signal<string>('Hospitalizacion'); // UCI, Hospitalizacion, Emergencia, etc.
+  public nuevoTipoIngreso = signal<string>(TIPO_INGRESO.HOSPITALIZACION);
   public nuevoConvenioId: number | null = null;
   public esEgreso = false;
   public isSavingTransfer = signal<boolean>(false);
@@ -489,11 +491,11 @@ export class EnfermeriaComponent implements OnInit {
     const camas = this.camasDisponibles();
     const activeFilter = this.nursingAreaFilter();
     let targetSedeId = '';
-    if (activeFilter === 'Hospitalizacion') {
+    if (activeFilter === TIPO_INGRESO.HOSPITALIZACION) {
       targetSedeId = '10000000-0000-0000-0000-000000000003';
-    } else if (activeFilter === 'UCI') {
+    } else if (activeFilter === TIPO_INGRESO.UCI) {
       targetSedeId = '10000000-0000-0000-0000-000000000004';
-    } else if (activeFilter === 'Emergencia') {
+    } else if (activeFilter === TIPO_INGRESO.EMERGENCIA) {
       targetSedeId = '10000000-0000-0000-0000-000000000002';
     }
     const filtered = targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
@@ -504,45 +506,32 @@ export class EnfermeriaComponent implements OnInit {
     const camas = this.camasDisponibles();
     const dest = this.nuevoTipoIngreso();
     let targetSedeId = '';
-    if (dest === 'Hospitalizacion') {
+    if (dest === TIPO_INGRESO.HOSPITALIZACION) {
       targetSedeId = '10000000-0000-0000-0000-000000000003';
-    } else if (dest === 'UCI') {
+    } else if (dest === TIPO_INGRESO.UCI) {
       targetSedeId = '10000000-0000-0000-0000-000000000004';
-    } else if (dest === 'Emergencia') {
+    } else if (dest === TIPO_INGRESO.EMERGENCIA) {
       targetSedeId = '10000000-0000-0000-0000-000000000002';
     }
     const filtered = targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
     return (filtered && filtered.length > 0) ? filtered : camas;
   });
 
-  // Filtered active accounts computed list con normalización de acentos
+  // Filtered active accounts computed list con normalización de acentos y constantes estandarizadas
   public filteredAccounts = computed(() => {
     const list = this.activeAccounts();
-    const term = this.searchTerm().trim().toLowerCase();
+    const term = this.searchTerm().trim();
     const currentTab = this.nursingAreaFilter();
 
-    const normalize = (val: string | null | undefined): string => {
-      if (!val) return '';
-      return val.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-    };
-
-    const targetTab = normalize(currentTab);
-
-    // Filtro por área clínica seleccionada en Enfermería
-    const areaFiltered = list.filter(acc => {
-      const tipo = normalize(acc.tipoIngreso);
-      if (targetTab === 'hospitalizacion') {
-        return tipo === 'hospitalizacion' || tipo === 'enfermeria';
-      }
-      return tipo === targetTab;
-    });
+    // Filtro por área clínica seleccionada en Enfermería utilizando la regla unificada matchTipoIngreso
+    const areaFiltered = list.filter(acc => matchTipoIngreso(acc.tipoIngreso, currentTab));
 
     if (!term) return areaFiltered;
-    const termNorm = normalize(term);
+    const termNorm = normalizeTipoIngreso(term);
     return areaFiltered.filter(acc => 
-      normalize(acc.pacienteNombre).includes(termNorm) || 
-      normalize(acc.pacienteCedula).includes(termNorm) ||
-      normalize(acc.tipoIngreso).includes(termNorm)
+      normalizeTipoIngreso(acc.pacienteNombre).includes(termNorm) || 
+      normalizeTipoIngreso(acc.pacienteCedula).includes(termNorm) ||
+      normalizeTipoIngreso(acc.tipoIngreso).includes(termNorm)
     );
   });
 
@@ -1264,7 +1253,7 @@ export class EnfermeriaComponent implements OnInit {
       this.isLoading.set(true);
       this.patientService.createPatient(this.newPatientData).subscribe({
         next: (p: PatientRecord) => {
-          if (this.type() === 'Emergencia') {
+          if (this.type() === TIPO_INGRESO.EMERGENCIA) {
             this.isLoading.set(false);
             this.triageSelectedPatientId.set(p.id);
             this.ingresoStep.set(2);
@@ -1285,7 +1274,7 @@ export class EnfermeriaComponent implements OnInit {
         return;
       }
 
-      if (this.type() === 'Emergencia') {
+      if (this.type() === TIPO_INGRESO.EMERGENCIA) {
         this.triageSelectedPatientId.set(patient.id);
         this.ingresoStep.set(2);
       } else {
@@ -1303,8 +1292,8 @@ export class EnfermeriaComponent implements OnInit {
         this.showIngresoModal.set(false);
         this.actionMessage.set(`Paciente ingresado exitosamente a la sección de ${targetType}.`);
         setTimeout(() => this.actionMessage.set(null), 5000);
-        if (targetType === 'Emergencia' || targetType === 'Hospitalizacion' || targetType === 'UCI') {
-          this.nursingAreaFilter.set(targetType as any);
+        if (targetType === TIPO_INGRESO.EMERGENCIA || targetType === TIPO_INGRESO.HOSPITALIZACION || targetType === TIPO_INGRESO.UCI) {
+          this.nursingAreaFilter.set(targetType as TipoIngresoType);
         }
         this.refreshAccounts();
       },

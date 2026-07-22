@@ -556,18 +556,18 @@
 
         <!-- Selector de Área Clínica de Monitoreo -->
         <div class="flex bg-black/40 p-1.5 rounded-[1.5rem] border border-white/5 mt-4 md:mt-0 gap-1">
-            <button (click)="nursingAreaFilter.set('Emergencia'); refreshAccounts()"
-                    [class]="nursingAreaFilter() === 'Emergencia' ? 'bg-rose-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
+            <button (click)="nursingAreaFilter.set(TIPO_INGRESO.EMERGENCIA); refreshAccounts()"
+                    [class]="nursingAreaFilter() === TIPO_INGRESO.EMERGENCIA ? 'bg-rose-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
                     class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                 Emergencia
             </button>
-            <button (click)="nursingAreaFilter.set('Hospitalizacion'); refreshAccounts()"
-                    [class]="nursingAreaFilter() === 'Hospitalizacion' ? 'bg-indigo-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
+            <button (click)="nursingAreaFilter.set(TIPO_INGRESO.HOSPITALIZACION); refreshAccounts()"
+                    [class]="nursingAreaFilter() === TIPO_INGRESO.HOSPITALIZACION ? 'bg-indigo-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
                     class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                 Hospitalización
             </button>
-            <button (click)="nursingAreaFilter.set('UCI'); refreshAccounts()"
-                    [class]="nursingAreaFilter() === 'UCI' ? 'bg-amber-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
+            <button (click)="nursingAreaFilter.set(TIPO_INGRESO.UCI); refreshAccounts()"
+                    [class]="nursingAreaFilter() === TIPO_INGRESO.UCI ? 'bg-amber-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
                     class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                 UCI
             </button>

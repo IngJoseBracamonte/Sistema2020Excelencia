@@ -24,6 +24,8 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const string Seguro = "Seguro";
         public const string Hospitalizacion = "Hospitalizacion";
         public const string Emergencia = "Emergencia";
+        public const string UCI = "UCI";
+        public const string Enfermeria = "Enfermeria";
 
         // Tipos de Appointments / UI
         public const string TypeCita = "Cita";

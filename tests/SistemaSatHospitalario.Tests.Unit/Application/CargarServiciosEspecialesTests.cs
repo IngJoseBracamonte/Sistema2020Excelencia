@@ -13,6 +13,8 @@ using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Services;
 
@@ -42,6 +44,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 .ReturnsAsync((string type, Guid? id) => type);
 
             var mockInventory = new Mock<IInventoryService>();
+            var mockLegacyLab = new Mock<ILegacyLabRepository>();
 
             _handler = new CargarServicioACuentaCommandHandler(
                 _repository,
@@ -49,6 +52,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 _context,
                 _mapperServiceMock.Object,
                 mockInventory.Object,
+                mockLegacyLab.Object,
                 NullLogger<CargarServicioACuentaCommandHandler>.Instance
             );
         }
