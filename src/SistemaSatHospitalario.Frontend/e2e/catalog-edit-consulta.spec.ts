@@ -17,11 +17,11 @@ test.describe('Catálogo - Edición de Consulta con Honorarios de Médicos y Sug
     console.log('Autenticación E2E exitosa, navegando a Maestro de Servicios.');
 
     // 2. Navegar a Maestro de Servicios
-    await page.goto('/admin/catalog');
+    await page.goto('/catalog');
     await page.waitForLoadState('networkidle');
 
     // Verificar título del módulo
-    await expect(page.locator('h1, h2, div').filter({ hasText: 'MAESTRO DE SERVICIOS' }).first()).toBeVisible();
+    await expect(page.locator('h1, h2, div').filter({ hasText: /Maestro de/i }).first()).toBeVisible();
 
     // 3. Filtrar por tipo 'CONSULTA'
     const consultaFilterChip = page.locator('button', { hasText: 'CONSULTA' }).first();
@@ -42,7 +42,7 @@ test.describe('Catálogo - Edición de Consulta con Honorarios de Médicos y Sug
 
     // 5. Verificar que abre el modal de edición de consulta app-edit-consulta
     const modalEditor = page.locator('app-edit-consulta');
-    await expect(modalEditor).toBeVisible({ timeout: 10000 });
+    await expect(modalEditor.locator('h2').first()).toBeVisible({ timeout: 10000 });
     console.log('Modal app-edit-consulta desplegado correctamente.');
 
     // 6. Verificar y llenar datos de consulta (Nombre, Código, Precio USD)

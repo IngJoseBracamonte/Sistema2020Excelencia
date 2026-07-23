@@ -8,7 +8,7 @@
         </div>
         <div>
           <h2 class="text-lg font-semibold text-slate-100">{{ isEditing() ? 'Editar Consulta' : 'Nueva Consulta' }}</h2>
-          <p class="text-xs text-slate-500">Configuración de consulta médica, especialidad, duración y telemedicina</p>
+          <p class="text-xs text-slate-500">Configuración de consulta médica y tarifa base</p>
         </div>
       </div>
       <button type="button" (click)="close()" class="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
@@ -30,71 +30,24 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Nombre de la Consulta *</label>
-                <input type="text" [(ngModel)]="nombre" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="Ej: Consulta Cardiología" />
+                <input type="text" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="Ej: Consulta Cardiología" />
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Código *</label>
-                <input type="text" [(ngModel)]="codigo" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="CONS-CARD-001" />
+                <input type="text" [ngModel]="codigo()" (ngModelChange)="codigo.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="CONS-CARD-001" />
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Precio Base USD *</label>
-                <input type="number" step="0.01" min="0" [(ngModel)]="precioBaseUsd" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="50.00" />
+                <input type="number" step="0.01" min="0" [ngModel]="precioBaseUsd()" (ngModelChange)="precioBaseUsd.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="50.00" />
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Honorario Base USD</label>
-                <input type="number" step="0.01" min="0" [(ngModel)]="honorarioBase" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="0.00" />
+                <input type="number" step="0.01" min="0" [ngModel]="honorarioBase()" (ngModelChange)="honorarioBase.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" placeholder="0.00" />
               </div>
               <div class="flex items-end gap-4">
                 <div class="flex items-center gap-2">
-                  <input type="checkbox" id="activo" [(ngModel)]="activo" class="w-4 h-4 rounded border-slate-600 text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700" />
-                  <label for="activo" class="text-sm text-slate-300 cursor-pointer">Activo</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="telemedicina" [(ngModel)]="permiteTelemedicina" class="w-4 h-4 rounded border-slate-600 text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700" />
-                  <label for="telemedicina" class="text-sm text-slate-300 cursor-pointer">Telemedicina</label>
-                </div>
-              </div>
-            </div>
-          </fieldset>
-
-          <!-- Configuración Clínica -->
-          <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.UserCog" [size]="16" class="text-rose-400" />
-              Configuración Clínica
-            </legend>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Especialidad</label>
-                <select [(ngModel)]="especialidad" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition">
-                  <option value="">Seleccionar especialidad</option>
-                  <option value="CARDIOLOGIA">Cardiología</option>
-                  <option value="NEUROLOGIA">Neurología</option>
-                  <option value="NEUMOLOGIA">Neumología</option>
-                  <option value="GASTROENTEROLOGIA">Gastroenterología</option>
-                  <option value="ENDOCRINOLOGIA">Endocrinología</option>
-                  <option value="REUMATOLOGIA">Reumatología</option>
-                  <option value="HEMATOLOGIA">Hematología</option>
-                  <option value="ONCOLOGIA">Oncología</option>
-                  <option value="NEPROLOGIA">Nefrología</option>
-                  <option value="UROLOGIA">Urología</option>
-                  <option value="GINECOLOGIA">Ginecología</option>
-                  <option value="PEDIATRIA">Pediatría</option>
-                  <option value="GERIATRIA">Geriatría</option>
-                  <option value="MEDICINA_INTERNA">Medicina Interna</option>
-                  <option value="MEDICINA_FAMILIAR">Medicina Familiar</option>
-                  <option value="URGENCIAS">Urgencias</option>
-                  <option value="OTRA">Otra</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Duración (minutos)</label>
-                <input type="number" min="5" max="180" step="5" [(ngModel)]="duracionMinutos" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" />
-              </div>
-              <div class="flex items-end gap-4">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="historiaPrevia" [(ngModel)]="requiereHistoriaPrevia" class="w-4 h-4 rounded border-slate-600 text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700" />
-                  <label for="historiaPrevia" class="text-sm text-slate-300 cursor-pointer">Requiere Historia Previa</label>
+                  <input type="checkbox" id="activo-con" [ngModel]="activo()" (ngModelChange)="activo.set($event)" class="w-4 h-4 rounded border-slate-600 text-rose-500 focus:ring-rose-500 bg-slate-900 border-slate-700" />
+                  <label for="activo-con" class="text-sm text-slate-300 cursor-pointer">Activo</label>
                 </div>
               </div>
             </div>
@@ -115,7 +68,8 @@
               <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                [(ngModel)]="medicoSearchQuery"
+                [ngModel]="medicoSearchQuery()"
+                (ngModelChange)="medicoSearchQuery.set($event)"
                 (focus)="showMedicoDropdown.set(true)"
                 (blur)="onMedicoBlur()"
                 (input)="showMedicoDropdown.set(true)"
@@ -182,30 +136,12 @@
             }
           </fieldset>
 
-          <!-- Notas y Preparación -->
-          <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.MessageSquare" [size]="16" class="text-rose-400" />
-              Notas Clínicas y Preparación
-            </legend>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Notas Clínicas</label>
-                <textarea [(ngModel)]="notasClinicas" rows="3" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition resize-none" placeholder="Indicaciones especiales, criterios de derivación, protocolos específicos..."></textarea>
-              </div>
-              <div class="md:col-span-2">
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Preparación del Paciente</label>
-                <textarea [(ngModel)]="preparacionPaciente" rows="3" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition resize-none" placeholder="Traer estudios previos, ayuno si corresponde, medicación habitual..."></textarea>
-              </div>
-            </div>
-          </fieldset>
-
-          <!-- Receta de Insumos (BOM) - Opcional para consultas -->
+          <!-- Receta de Insumos (BOM) -->
           <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
             <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <lucide-icon [img]="icons.Package" [size]="16" class="text-rose-400" />
-                Receta de Insumos (Opcional)
+                Receta de Insumos (BOM)
               </span>
               <span class="text-xs text-slate-500">{{ bomLines().length }} insumo(s)</span>
             </legend>
@@ -215,12 +151,13 @@
               <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                [(ngModel)]="insumoSearchQuery"
+                [ngModel]="insumoSearchQuery()"
+                (ngModelChange)="insumoSearchQuery.set($event)"
                 (focus)="showInsumoDropdown.set(true)"
                 (blur)="onInsumoBlur()"
                 (input)="showInsumoDropdown.set(true)"
                 class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
-                placeholder="Buscar insumo (guantes, algodón, jeringas, etc.)..."
+                placeholder="Buscar insumo para agregar a la receta..."
               />
               @if (showInsumoDropdown() && filteredInsumos().length > 0) {
                 <div class="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
@@ -250,8 +187,8 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-slate-700/50">
-                      <th class="pb-2 w-24">Insumo</th>
-                      <th class="pb-2">Código</th>
+                      <th class="pb-2">Insumo</th>
+                      <th class="pb-2 w-28">Código</th>
                       <th class="pb-2 w-24 text-center">Cantidad</th>
                       <th class="pb-2 w-28 text-center">Unidad</th>
                       <th class="pb-2 w-12"></th>
@@ -298,8 +235,8 @@
             } @else {
               <div class="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700/50 rounded-lg">
                 <lucide-icon [img]="icons.Package" [size]="32" class="mx-auto mb-2 text-slate-600" />
-                <p class="text-sm">No hay insumos en la receta</p>
-                <p class="text-xs mt-1">Opcional: agregue guantes, algodón, jeringas, etc.</p>
+                <p class="text-sm">No hay insumos configurados para la consulta</p>
+                <p class="text-xs mt-1">Agregue guantes, bajalenguas, recetas u otros insumos requeridos</p>
               </div>
             }
           </fieldset>
@@ -309,7 +246,7 @@
         <aside class="lg:col-span-1 space-y-4">
           <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 sticky top-24">
             <h3 class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.Layers" [size]="16" class="text-violet-400" />
+              <lucide-icon [img]="icons.Stethoscope" [size]="16" class="text-rose-400" />
               Sugerencias Vinculadas
             </h3>
 
@@ -318,8 +255,9 @@
               <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                [(ngModel)]="sugerenciasSearchQuery"
-                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition"
+                [ngModel]="sugerenciasSearchQuery()"
+                (ngModelChange)="sugerenciasSearchQuery.set($event)"
+                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition"
                 placeholder="Buscar servicio..."
               />
             </div>
@@ -337,15 +275,15 @@
                     type="button"
                     (click)="toggleSugerencia(svc.id)"
                     [class]="isSugerenciaSelected(svc.id)
-                      ? 'bg-violet-500/10 border-violet-500/30'
+                      ? 'bg-rose-500/10 border-rose-500/30'
                       : 'bg-slate-900/50 border-slate-700/50'"
-                    class="w-full p-2.5 rounded-lg border transition-all text-left hover:border-violet-500/50"
+                    class="w-full p-2.5 rounded-lg border transition-all text-left hover:border-rose-500/50"
                   >
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 mt-0.5 flex-shrink-0">
                         @if (isSugerenciaSelected(svc.id)) {
-                          <div class="w-4 h-4 rounded border-2 border-violet-500 flex items-center justify-center">
-                            <lucide-icon [img]="icons.Check" [size]="8" class="text-violet-500" />
+                          <div class="w-4 h-4 rounded border-2 border-rose-500 flex items-center justify-center">
+                            <lucide-icon [img]="icons.Check" [size]="8" class="text-rose-500" />
                           </div>
                         } @else {
                           <div class="w-4 h-4 rounded border-2 border-slate-600"></div>
@@ -370,12 +308,12 @@
                 <h4 class="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">Seleccionados ({{ selectedSugerenciasCards().length }})</h4>
                 <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                   @for (svc of selectedSugerenciasCards(); track svc.id) {
-                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-violet-500/10 border border-violet-500/30 rounded-full text-xs">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-rose-500/10 border border-rose-500/30 rounded-full text-xs">
                       <span class="text-slate-100 truncate max-w-[100px]">{{ svc.descripcion }}</span>
                       <button
                         type="button"
                         (click)="removeSugerencia(svc.id)"
-                        class="text-violet-400 hover:text-violet-300 p-0.5"
+                        class="text-rose-400 hover:text-rose-300 p-0.5"
                         aria-label="Quitar sugerencia"
                       >
                         <lucide-icon [img]="icons.X" [size]="10" />

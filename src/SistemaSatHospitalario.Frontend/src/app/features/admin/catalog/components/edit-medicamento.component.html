@@ -1,14 +1,14 @@
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-  <div class="w-full max-w-7xl h-[90vh] max-h-[900px] bg-slate-900 rounded-2xl border border-slate-700/50 overflow-hidden flex flex-col shadow-2xl">
+  <div class="w-full max-w-6xl h-[90vh] max-h-[900px] bg-slate-900 rounded-2xl border border-slate-700/50 overflow-hidden flex flex-col shadow-2xl">
     <!-- Header -->
     <header class="flex items-center justify-between px-6 py-4 border-b border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-          <lucide-icon [img]="icons.Pill" [size]="22" class="text-violet-400" />
+        <div class="w-10 h-10 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center">
+          <lucide-icon [img]="icons.Pill" [size]="22" class="text-teal-400" />
         </div>
         <div>
           <h2 class="text-lg font-semibold text-slate-100">{{ isEditing() ? 'Editar Medicamento' : 'Nuevo Medicamento' }}</h2>
-          <p class="text-xs text-slate-500">Configuración de fármaco, principio activo, presentación, stock y trazabilidad</p>
+          <p class="text-xs text-slate-500">Configuración de producto farmacéutico y tarifa base</p>
         </div>
       </div>
       <button type="button" (click)="close()" class="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors">
@@ -24,126 +24,126 @@
           <!-- Información Básica -->
           <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
             <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.FileText" [size]="16" class="text-violet-400" />
+              <lucide-icon [img]="icons.FileText" [size]="16" class="text-teal-400" />
               Información Básica
             </legend>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Nombre Comercial *</label>
-                <input type="text" [(ngModel)]="nombre" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="Ej: Paracetamol 500mg" />
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Nombre del Medicamento *</label>
+                <input type="text" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition" placeholder="Ej: Paracetamol 500mg" />
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Código *</label>
-                <input type="text" [(ngModel)]="codigo" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="MED-PAR-500" />
+                <input type="text" [ngModel]="codigo()" (ngModelChange)="codigo.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition" placeholder="MED-PAR-500" />
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Precio Base USD *</label>
-                <input type="number" step="0.01" min="0" [(ngModel)]="precioBaseUsd" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="2.50" />
+                <input type="number" step="0.01" min="0" [ngModel]="precioBaseUsd()" (ngModelChange)="precioBaseUsd.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition" placeholder="5.00" />
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-400 mb-1.5">Honorario Base USD</label>
-                <input type="number" step="0.01" min="0" [(ngModel)]="honorarioBase" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="0.00" />
+                <input type="number" step="0.01" min="0" [ngModel]="honorarioBase()" (ngModelChange)="honorarioBase.set($event)" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition" placeholder="0.00" />
               </div>
               <div class="flex items-end gap-4">
                 <div class="flex items-center gap-2">
-                  <input type="checkbox" id="activo" [(ngModel)]="activo" class="w-4 h-4 rounded border-slate-600 text-violet-500 focus:ring-violet-500 bg-slate-900 border-slate-700" />
-                  <label for="activo" class="text-sm text-slate-300 cursor-pointer">Activo</label>
+                  <input type="checkbox" id="activo-med" [ngModel]="activo()" (ngModelChange)="activo.set($event)" class="w-4 h-4 rounded border-slate-600 text-teal-500 focus:ring-teal-500 bg-slate-900 border-slate-700" />
+                  <label for="activo-med" class="text-sm text-slate-300 cursor-pointer">Activo</label>
                 </div>
               </div>
             </div>
           </fieldset>
 
-          <!-- Información Farmacéutica -->
+          <!-- Honorarios Médicos Específicos -->
           <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.Capsule" [size]="16" class="text-violet-400" />
-              Información Farmacéutica
+            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center justify-between">
+              <span class="flex items-center gap-2">
+                <lucide-icon [img]="icons.UserCog" [size]="16" class="text-teal-400" />
+                Honorarios Médicos Específicos
+              </span>
+              <span class="text-xs text-slate-500">{{ honorariosMedicos().length }} médico(s) asignado(s)</span>
             </legend>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Principio Activo *</label>
-                <input type="text" [(ngModel)]="principioActivo" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="Ej: Paracetamol" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Concentración *</label>
-                <input type="text" [(ngModel)]="concentracion" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="Ej: 500mg, 1g/100ml, 10mg/ml" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Forma Farmacéutica *</label>
-                <select [(ngModel)]="formaFarmaceutica" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition">
-                  @for (forma of formasFarmaceuticas; track forma.value) {
-                    <option [value]="forma.value">{{ forma.label }}</option>
-                  }
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Vía de Administración *</label>
-                <select [(ngModel)]="viaAdministracion" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition">
-                  @for (via of viasAdministracion; track via.value) {
-                    <option [value]="via.value">{{ via.label }}</option>
-                  }
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Laboratorio / Fabricante</label>
-                <input type="text" [(ngModel)]="laboratorio" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="Ej: Laboratorio Chile, Pfizer, Genfar" />
-              </div>
-              <div class="flex items-end gap-4">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="requiereReceta" [(ngModel)]="requiereReceta" class="w-4 h-4 rounded border-slate-600 text-violet-500 focus:ring-violet-500 bg-slate-900 border-slate-700" />
-                  <label for="requiereReceta" class="text-sm text-slate-300 cursor-pointer">Requiere Receta</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="controlado" [(ngModel)]="controlado" class="w-4 h-4 rounded border-slate-600 text-red-500 focus:ring-red-500 bg-slate-900 border-slate-700" />
-                  <label for="controlado" class="text-sm text-slate-300 cursor-pointer text-red-400">Controlado (Estupefaciente/Psicotrópico)</label>
-                </div>
-              </div>
-            </div>
-          </fieldset>
 
-          <!-- Stock y Trazabilidad -->
-          <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.Package" [size]="16" class="text-violet-400" />
-              Stock y Trazabilidad
-            </legend>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Stock Mínimo</label>
-                <input type="number" min="0" [(ngModel)]="stockMinimo" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="10" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Stock Máximo</label>
-                <input type="number" min="0" [(ngModel)]="stockMaximo" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="500" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Lote</label>
-                <input type="text" [(ngModel)]="lote" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" placeholder="Ej: LOT-2024-001" />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Fecha Vencimiento</label>
-                <input type="date" [(ngModel)]="fechaVencimiento" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition" />
-              </div>
-            </div>
-            @if (controlado()) {
-              <div class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-3">
-                <lucide-icon [img]="icons.AlertTriangle" [size]="20" class="text-red-400 mt-0.5 flex-shrink-0" />
-                <div class="text-sm text-red-300">
-                  <p class="font-medium">Medicamento Controlado</p>
-                  <p class="mt-1">Este medicamento requiere control especial de estupefacientes/psicotrópicos. Asegúrese de cumplir con la normativa vigente (Ley 20.000, DFL 1, etc.) para su prescripción, dispensación y registro.</p>
+            <!-- Search & Add Médico -->
+            <div class="relative mb-4">
+              <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                [ngModel]="medicoSearchQuery()"
+                (ngModelChange)="medicoSearchQuery.set($event)"
+                (focus)="showMedicoDropdown.set(true)"
+                (blur)="onMedicoBlur()"
+                (input)="showMedicoDropdown.set(true)"
+                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+                placeholder="Buscar médico para asignar honorario específico..."
+              />
+              @if (showMedicoDropdown() && filteredMedicos().length > 0) {
+                <div class="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                  @for (medico of filteredMedicos(); track medico.id) {
+                    <button
+                      type="button"
+                      (click)="addMedicoToHonorarios(medico, honorarioBase())"
+                      class="w-full px-3 py-2 text-left hover:bg-slate-700/50 flex items-center justify-between border-b border-slate-700/50 last:border-0"
+                    >
+                      <div>
+                        <p class="text-sm font-medium text-slate-100">{{ medico.nombre }}</p>
+                        <p class="text-xs text-slate-500">{{ medico.especialidad || 'Especialista' }}</p>
+                      </div>
+                      <lucide-icon [img]="icons.Plus" [size]="16" class="text-slate-500" />
+                    </button>
+                  }
                 </div>
+              }
+            </div>
+
+            <!-- List of Assigned Doctor Fees -->
+            @if (honorariosMedicos().length > 0) {
+              <div class="space-y-2">
+                @for (h of honorariosMedicos(); track h.medicoId) {
+                  <div class="flex items-center justify-between p-3 bg-slate-900 border border-slate-700 rounded-lg">
+                    <div>
+                      <p class="text-sm font-medium text-slate-100">{{ h.medicoNombre }}</p>
+                      <p class="text-xs text-slate-500">Honorario Específico</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div class="relative w-32">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          [value]="h.honorarioUsd"
+                          (change)="updateHonorarioUsd(h.medicoId, $any($event.target).valueAsNumber)"
+                          class="w-full pl-6 pr-2 py-1.5 bg-slate-800 border border-slate-700 rounded text-slate-100 text-sm font-mono text-right focus:border-teal-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        (click)="removeHonorarioMedico(h.medicoId)"
+                        class="p-1.5 text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors"
+                      >
+                        <lucide-icon [img]="icons.Trash2" [size]="16" />
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-6 text-slate-500 border border-dashed border-slate-700/50 rounded-lg">
+                <lucide-icon [img]="icons.UserCog" [size]="24" class="mx-auto text-slate-600 mb-2" />
+                <p class="text-xs">Sin honorarios específicos asignados a médicos individuales</p>
+                <p class="text-[10px] text-slate-600 mt-0.5">Se aplicará el Honorario Base predeterminado</p>
               </div>
             }
           </fieldset>
 
-          <!-- Receta de Excipientes / Envases (BOM) -->
+          <!-- Receta de Insumos (BOM) -->
           <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
             <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center justify-between">
               <span class="flex items-center gap-2">
-                <lucide-icon [img]="icons.Package" [size]="16" class="text-violet-400" />
-                Receta de Excipientes y Materiales de Envase
+                <lucide-icon [img]="icons.Package" [size]="16" class="text-teal-400" />
+                Receta de Insumos (BOM)
               </span>
-              <span class="text-xs text-slate-500">{{ bomLines().length }} componente(s)</span>
+              <span class="text-xs text-slate-500">{{ bomLines().length }} insumo(s)</span>
             </legend>
 
             <!-- Search & Add -->
@@ -151,12 +151,13 @@
               <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                [(ngModel)]="insumoSearchQuery"
+                [ngModel]="insumoSearchQuery()"
+                (ngModelChange)="insumoSearchQuery.set($event)"
                 (focus)="showInsumoDropdown.set(true)"
                 (blur)="onInsumoBlur()"
                 (input)="showInsumoDropdown.set(true)"
-                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition"
-                placeholder="Buscar excipiente, frasco, blíster, tapa, etiqueta, caja..."
+                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
+                placeholder="Buscar insumo farmacéutico..."
               />
               @if (showInsumoDropdown() && filteredInsumos().length > 0) {
                 <div class="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
@@ -166,8 +167,8 @@
                       (click)="addInsumoToBOM(insumo)"
                       class="w-full px-3 py-2 text-left hover:bg-slate-700/50 flex items-center gap-3 border-b border-slate-700/50 last:border-0"
                     >
-                      <div class="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
-                        <lucide-icon [img]="icons.Package" [size]="16" class="text-violet-400" />
+                      <div class="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center flex-shrink-0">
+                        <lucide-icon [img]="icons.Package" [size]="16" class="text-teal-400" />
                       </div>
                       <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-slate-100 truncate">{{ insumo.nombre }}</p>
@@ -186,7 +187,7 @@
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-slate-700/50">
-                      <th class="pb-2">Componente / Excipiente</th>
+                      <th class="pb-2">Insumo</th>
                       <th class="pb-2 w-28">Código</th>
                       <th class="pb-2 w-24 text-center">Cantidad</th>
                       <th class="pb-2 w-28 text-center">Unidad</th>
@@ -198,8 +199,8 @@
                       <tr class="border-b border-slate-700/30 hover:bg-slate-700/30 transition-colors">
                         <td class="py-3">
                           <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                              <lucide-icon [img]="icons.Package" [size]="12" class="text-violet-400" />
+                            <div class="w-6 h-6 rounded bg-teal-500/10 border border-teal-500/20 flex items-center justify-center">
+                              <lucide-icon [img]="icons.Package" [size]="12" class="text-teal-400" />
                             </div>
                             <span class="text-slate-100 font-medium">{{ line.insumoNombre }}</span>
                           </div>
@@ -212,7 +213,7 @@
                             step="0.01"
                             [value]="line.cantidad"
                             (change)="updateBOMCantidad(i, $any($event.target).valueAsNumber)"
-                            class="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-slate-100 text-center focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                            class="w-20 px-2 py-1 bg-slate-900 border border-slate-700 rounded text-slate-100 text-center focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                           />
                         </td>
                         <td class="py-3 text-center text-slate-400 text-xs">{{ line.unidadMedida }}</td>
@@ -220,8 +221,8 @@
                           <button
                             type="button"
                             (click)="removeBOMLine(i)"
-                            class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                            aria-label="Eliminar componente"
+                            class="p-1.5 text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 rounded transition-colors"
+                            aria-label="Eliminar insumo"
                           >
                             <lucide-icon [img]="icons.Trash2" [size]="16" />
                           </button>
@@ -234,92 +235,8 @@
             } @else {
               <div class="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700/50 rounded-lg">
                 <lucide-icon [img]="icons.Package" [size]="32" class="mx-auto mb-2 text-slate-600" />
-                <p class="text-sm">No hay componentes en la receta</p>
-                <p class="text-xs mt-1">Agregue excipientes, frascos, blísteres, tapas, etiquetas, cajas...</p>
-              </div>
-            }
-          </fieldset>
-
-          <!-- Honorarios Médicos (Prescriptores) -->
-          <fieldset class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5">
-            <legend class="text-sm font-medium text-slate-300 mb-4 flex items-center justify-between">
-              <span class="flex items-center gap-2">
-                <lucide-icon [img]="icons.DollarSign" [size]="16" class="text-amber-400" />
-                Honorarios Médicos (Prescriptores Asociados)
-              </span>
-              <button type="button" (click)="addHonorarioMedico()" class="text-xs px-2 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded hover:bg-amber-500/20 transition-colors flex items-center gap-1">
-                <lucide-icon [img]="icons.Plus" [size]="12" />
-                Agregar Médico
-              </button>
-            </legend>
-
-            @if (honorariosMedicos().length > 0) {
-              <div class="space-y-3">
-                @for (hon of honorariosMedicos(); track $index; let i = $index) {
-                  <div class="flex items-center gap-3 p-3 bg-slate-900/50 border border-slate-700/50 rounded-lg">
-                    <div class="flex-1 relative">
-                      <label class="block text-xs font-medium text-slate-400 mb-1">Médico Prescriptor</label>
-                      <div class="relative">
-                        <lucide-icon [img]="icons.Search" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input
-                          type="text"
-                          [value]="hon.medicoNombre"
-                          (focus)="showMedicoDropdown.set(true)"
-                          (blur)="onMedicoBlur()"
-                          (input)="showMedicoDropdown.set(true)"
-                          class="w-full pl-10 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
-                          placeholder="Buscar médico..."
-                          readonly
-                        />
-                        @if (showMedicoDropdown() && filteredMedicos().length > 0) {
-                          <div class="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                            @for (med of filteredMedicos(); track med.id) {
-                              <button
-                                type="button"
-                                (click)="onMedicoSelect(med, i)"
-                                class="w-full px-3 py-2 text-left hover:bg-slate-700/50 flex items-center gap-3 border-b border-slate-700/50 last:border-0"
-                              >
-                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                                  <lucide-icon [img]="icons.UserCog" [size]="16" class="text-amber-400" />
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                  <p class="text-sm font-medium text-slate-100 truncate">{{ med.nombre }}</p>
-                                  <p class="text-xs text-slate-500">{{ med.especialidad }}</p>
-                                </div>
-                                <lucide-icon [img]="icons.Plus" [size]="16" class="text-slate-500" />
-                              </button>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </div>
-                    <div class="w-40">
-                      <label class="block text-xs font-medium text-slate-400 mb-1">Honorario USD</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        [value]="hon.honorarioUsd"
-                        (input)="updateHonorarioMedico(i, 'honorarioUsd', $any($event.target).valueAsNumber)"
-                        class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      (click)="removeHonorarioMedico(i)"
-                      class="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                      aria-label="Eliminar médico"
-                    >
-                      <lucide-icon [img]="icons.Trash2" [size]="18" />
-                    </button>
-                  </div>
-                }
-              </div>
-            } @else {
-              <div class="text-center py-6 text-slate-500 border-2 border-dashed border-slate-700/50 rounded-lg">
-                <lucide-icon [img]="icons.DollarSign" [size]="24" class="mx-auto mb-2 text-slate-600" />
-                <p class="text-sm">No hay médicos prescriptores asociados</p>
-                <p class="text-xs mt-1">Agregue médicos que frecuentemente prescriben este medicamento</p>
+                <p class="text-sm">No hay insumos configurados para el medicamento</p>
+                <p class="text-xs mt-1">Agregue insumos de dispensación u otros elementos requeridos</p>
               </div>
             }
           </fieldset>
@@ -329,7 +246,7 @@
         <aside class="lg:col-span-1 space-y-4">
           <div class="bg-slate-800/50 border border-slate-700/50 rounded-xl p-5 sticky top-24">
             <h3 class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-              <lucide-icon [img]="icons.Layers" [size]="16" class="text-violet-400" />
+              <lucide-icon [img]="icons.Pill" [size]="16" class="text-teal-400" />
               Sugerencias Vinculadas
             </h3>
 
@@ -338,8 +255,9 @@
               <lucide-icon [img]="icons.Search" [size]="18" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                [(ngModel)]="sugerenciasSearchQuery"
-                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition"
+                [ngModel]="sugerenciasSearchQuery()"
+                (ngModelChange)="sugerenciasSearchQuery.set($event)"
+                class="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder-slate-500 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
                 placeholder="Buscar servicio..."
               />
             </div>
@@ -357,15 +275,15 @@
                     type="button"
                     (click)="toggleSugerencia(svc.id)"
                     [class]="isSugerenciaSelected(svc.id)
-                      ? 'bg-violet-500/10 border-violet-500/30'
+                      ? 'bg-teal-500/10 border-teal-500/30'
                       : 'bg-slate-900/50 border-slate-700/50'"
-                    class="w-full p-2.5 rounded-lg border transition-all text-left hover:border-violet-500/50"
+                    class="w-full p-2.5 rounded-lg border transition-all text-left hover:border-teal-500/50"
                   >
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 mt-0.5 flex-shrink-0">
                         @if (isSugerenciaSelected(svc.id)) {
-                          <div class="w-4 h-4 rounded border-2 border-violet-500 flex items-center justify-center">
-                            <lucide-icon [img]="icons.Check" [size]="8" class="text-violet-500" />
+                          <div class="w-4 h-4 rounded border-2 border-teal-500 flex items-center justify-center">
+                            <lucide-icon [img]="icons.Check" [size]="8" class="text-teal-500" />
                           </div>
                         } @else {
                           <div class="w-4 h-4 rounded border-2 border-slate-600"></div>
@@ -390,12 +308,12 @@
                 <h4 class="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wide">Seleccionados ({{ selectedSugerenciasCards().length }})</h4>
                 <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                   @for (svc of selectedSugerenciasCards(); track svc.id) {
-                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-violet-500/10 border border-violet-500/30 rounded-full text-xs">
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-teal-500/10 border border-teal-500/30 rounded-full text-xs">
                       <span class="text-slate-100 truncate max-w-[100px]">{{ svc.descripcion }}</span>
                       <button
                         type="button"
                         (click)="removeSugerencia(svc.id)"
-                        class="text-violet-400 hover:text-violet-300 p-0.5"
+                        class="text-teal-400 hover:text-teal-300 p-0.5"
                         aria-label="Quitar sugerencia"
                       >
                         <lucide-icon [img]="icons.X" [size]="10" />
@@ -422,8 +340,8 @@
       <button
         type="button"
         (click)="save()"
-        [disabled]="isSaving() || !nombre() || !codigo() || precioBaseUsd() <= 0 || !principioActivo() || !concentracion()"
-        class="px-5 py-2.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+        [disabled]="isSaving() || !nombre() || !codigo() || precioBaseUsd() <= 0"
+        class="px-5 py-2.5 rounded-lg bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
       >
         @if (isSaving()) {
           <lucide-icon [img]="icons.Loader2" [size]="18" class="animate-spin" />

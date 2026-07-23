@@ -76,14 +76,4 @@ describe('EditLaboratorioComponent (Integration & Legacy Support)', () => {
     expect(component.precioBaseUsd()).toBe(15);
     expect(component.honorarioBase()).toBe(5);
   });
-
-  it('debería actualizar los parámetros específicos de muestra de laboratorio', () => {
-    component.tipoMuestra.set('Sangre Total (EDTA)');
-    component.requiereAyuno.set(true);
-    component.tiempoResultado.set('12 Horas');
-
-    expect(component.tipoMuestra()).toBe('Sangre Total (EDTA)');
-    expect(component.requiereAyuno()).toBeTrue();
-    expect(component.tiempoResultado()).toBe('12 Horas');
-  });
 });

@@ -68,15 +68,11 @@ describe('EditMedicamentoComponent (Pharma & Inventory Flow)', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debería configurar el principio activo, concentración y vía de administración', () => {
-    component.principioActivo.set('Ibuprofeno');
-    component.concentracion.set('400 mg');
-    component.formaFarmaceutica.set('TABLETA');
-    component.viaAdministracion.set('ORAL');
+  it('debería cargar el medicamento y poblar campos básicos', () => {
+    (component as any).loadItem('med-001');
 
-    expect(component.principioActivo()).toBe('Ibuprofeno');
-    expect(component.concentracion()).toBe('400 mg');
-    expect(component.formaFarmaceutica()).toBe('TABLETA');
-    expect(component.viaAdministracion()).toBe('ORAL');
+    expect(component.nombre()).toBe('Ibuprofeno 400mg Comprimidos');
+    expect(component.codigo()).toBe('MED-IBU-400');
+    expect(component.precioBaseUsd()).toBe(2.5);
   });
 });

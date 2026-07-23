@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule, X, Save, Loader2, Search, Trash2, Check, Package,
-  Scissors, FileText, Plus
+  Scissors, FileText, UserCog, Plus, Layers
 } from 'lucide-angular';
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
+import { BOMLine, MedicoOption } from '../models/catalog-edit.models';
 
 @Component({
   selector: 'app-edit-cirugia',
@@ -17,7 +18,8 @@ import { Insumo } from '../../../../core/models/inventory.model';
 })
 export class EditCirugiaComponent extends BaseCatalogEditComponent implements OnInit {
   protected readonly icons = {
-    X, Save, Loader2, Search, Trash2, Check, Package, Scissors, FileText, Plus
+    X, Save, Loader2, Search, Trash2, Check, Package, Scissors, FileText,
+    UserCog, Plus, Layers
   } as const;
 
   // Handlers & Compatibility Signals
@@ -27,6 +29,12 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
   public readonly bomLines = this.bomHandler.bomLines;
   public readonly filteredInsumos = this.bomHandler.filteredInsumos;
 
+  public readonly availableMedicos = this.honorariosHandler.availableMedicos;
+  public readonly medicoSearchQuery = this.honorariosHandler.medicoSearchQuery;
+  public readonly showMedicoDropdown = this.honorariosHandler.showMedicoDropdown;
+  public readonly honorariosMedicos = this.honorariosHandler.honorarios;
+  public readonly filteredMedicos = this.honorariosHandler.filteredMedicos;
+
   public readonly allSugerencias = this.sugerenciasHandler.allCatalogItems;
   public readonly sugerenciasSearchQuery = this.sugerenciasHandler.sugerenciasSearchQuery;
   public readonly selectedSugerenciasIds = this.sugerenciasHandler.sugerenciasIds;
@@ -35,6 +43,7 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
 
   ngOnInit(): void {
     this.loadInsumos();
+    this.loadMedicos();
     this.loadCatalogForSugerencias('CIRUGIA');
   }
 
@@ -56,6 +65,14 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo ?? true);
 
+    if (item.honorariosMedicos?.length) {
+      this.honorariosMedicos.set(item.honorariosMedicos.map((h: any) => ({
+        medicoId: h.medicoId,
+        medicoNombre: h.medicoNombre || 'Médico',
+        honorarioUsd: h.honorario
+      })));
+    }
+
     this.inventoryService.getRecetas().subscribe({
       next: (recetas: any[]) => {
         const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
@@ -75,6 +92,7 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     }
   }
 
+  // ── BOM Actions ──────────────────────────────────────────────────────────
   public addInsumoToBOM(insumo: Insumo): void {
     this.bomHandler.addInsumo(insumo, 1);
   }
@@ -97,6 +115,24 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     this.bomHandler.onInsumoBlur();
   }
 
+  // ── Honorarios Médicos Actions ───────────────────────────────────────────
+  public addMedicoToHonorarios(medico: MedicoOption, defaultFee: number): void {
+    this.honorariosHandler.addHonorario(medico, defaultFee);
+  }
+
+  public updateHonorarioUsd(medicoId: string, fee: number): void {
+    this.honorariosHandler.updateHonorarioUsd(medicoId, fee);
+  }
+
+  public removeHonorarioMedico(medicoId: string): void {
+    this.honorariosHandler.removeHonorario(medicoId);
+  }
+
+  public onMedicoBlur(): void {
+    this.honorariosHandler.onMedicoBlur();
+  }
+
+  // ── Sugerencias Actions ──────────────────────────────────────────────────
   public toggleSugerencia(id: string): void {
     this.sugerenciasHandler.toggleSugerencia(id);
   }
@@ -124,6 +160,10 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
       honorarioBase: this.honorarioBase(),
       tipo: 'CIRUGIA',
       activo: this.activo(),
+      honorariosMedicos: this.honorariosMedicos().map(h => ({
+        medicoId: h.medicoId,
+        honorario: h.honorarioUsd
+      })),
       sugerenciasIds: this.selectedSugerenciasIds(),
       requiereInventario: this.bomLines().length > 0
     };

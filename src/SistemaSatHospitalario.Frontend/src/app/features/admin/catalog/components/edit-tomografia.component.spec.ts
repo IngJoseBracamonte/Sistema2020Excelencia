@@ -25,7 +25,6 @@ describe('EditTomografiaComponent (Imaging & Contrast Flow)', () => {
     tipo: 'TOMOGRAFIA',
     activo: true,
     requiereContraste: true,
-    protocoloTecnico: 'Corte Helicoidal 1mm axial',
     sugerenciasIds: []
   } as unknown as CatalogItem;
 
@@ -78,19 +77,16 @@ describe('EditTomografiaComponent (Imaging & Contrast Flow)', () => {
     expect(component.precioBaseUsd()).toBe(120);
     expect(component.honorarioBase()).toBe(40);
     expect(component.requiereContraste()).toBeTrue();
-    expect(component.protocoloTecnico()).toBe('Corte Helicoidal 1mm axial');
   });
 
-  it('debería guardar la tomografía incluyendo requerimiento de contraste y protocolo técnico', () => {
+  it('debería guardar la tomografía incluyendo requerimiento de contraste', () => {
     (component as any).loadItem('tomo-001');
 
-    component.protocoloTecnico.set('Corte 0.5mm Reconstrucción 3D');
     component.save();
 
     expect(mockCatalogService.updateItem).toHaveBeenCalledWith('tomo-001', jasmine.objectContaining({
       tipo: 'TOMOGRAFIA',
-      requiereContraste: true,
-      protocoloTecnico: 'Corte 0.5mm Reconstrucción 3D'
+      requiereContraste: true
     }));
   });
 });

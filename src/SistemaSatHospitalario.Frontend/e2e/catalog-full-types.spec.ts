@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { CatalogPage, CatalogType } from './catalog.page';
 
 test.describe('Suite E2E Integrada - Registro y Validación de Catálogo por Tipo (8 Tipos)', () => {
+  test.describe.configure({ mode: 'serial' });
   let catalogPage: CatalogPage;
 
   test.beforeEach(async ({ page }) => {
@@ -84,7 +85,7 @@ test.describe('Suite E2E Integrada - Registro y Validación de Catálogo por Tip
 
       // 1. Apertura del Modal para el tipo actual
       const modal = await catalogPage.openCreateModalForType(itemSpec.type);
-      await expect(modal).toBeVisible();
+      await expect(modal.locator('h2').first()).toBeVisible();
 
       // 2. Diligenciar Campos Básicos Requeridos
       await catalogPage.fillBasicFields(modal, {

@@ -22,18 +22,18 @@ describe('EditHospitalarioComponent', () => {
     honorarioBase: 50,
     tipo: 'HOSPITALARIO',
     activo: true,
-    areaVinculada: 'UCI',
-    modalidadCobro: 'POR_TRASLADO',
-    aplicaTraslado: true
+    sugerenciasIds: []
   } as unknown as CatalogItem;
 
   beforeEach(async () => {
-    mockCatalogService = jasmine.createSpyObj('CatalogService', ['getItemById', 'createItem', 'updateItem']);
+    mockCatalogService = jasmine.createSpyObj('CatalogService', ['getItemById', 'createItem', 'updateItem', 'getItems', 'getUnifiedCatalog']);
     mockCatalogService.getItemById.and.returnValue(of(mockHospitalarioItem));
     mockCatalogService.updateItem.and.returnValue(of(true as any));
     mockCatalogService.createItem.and.returnValue(of('hosp-101'));
+    mockCatalogService.getItems.and.returnValue(of([]));
+    mockCatalogService.getUnifiedCatalog.and.returnValue(of([]));
 
-    mockInventoryService = jasmine.createSpyObj('InventoryService', ['getInsumos', 'getRecetas']);
+    mockInventoryService = jasmine.createSpyObj('InventoryService', ['getInsumos', 'getRecetas', 'createOrUpdateRecipe']);
     mockInventoryService.getInsumos.and.returnValue(of([]));
     mockInventoryService.getRecetas.and.returnValue(of([]));
 
@@ -59,20 +59,16 @@ describe('EditHospitalarioComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debería cargar y poblar los campos del servicio hospitalario (Área UCI, tarifa por traslado)', () => {
+  it('debería cargar y poblar los campos del servicio hospitalario', () => {
     (component as any).loadItem('hosp-101');
 
     expect(component.nombre()).toBe('Cargo por Estancia / Traslado a UCI');
     expect(component.codigo()).toBe('HOSP-UCI-001');
     expect(component.precioBaseUsd()).toBe(150);
-    expect(component.areaVinculada()).toBe('UCI');
-    expect(component.modalidadCobro()).toBe('POR_TRASLADO');
-    expect(component.aplicaTraslado()).toBe(true);
   });
 
   it('debería actualizar un cargo hospitalario y llamar a CatalogService.updateItem', () => {
     (component as any).loadItem('hosp-101');
-    component.areaVinculada.set('HOSPITALIZACION');
     component.precioBaseUsd.set(200);
 
     component.save();
@@ -80,7 +76,6 @@ describe('EditHospitalarioComponent', () => {
     expect(mockCatalogService.updateItem).toHaveBeenCalledWith('hosp-101', jasmine.objectContaining({
       descripcion: 'Cargo por Estancia / Traslado a UCI',
       tipo: 'HOSPITALARIO',
-      areaVinculada: 'HOSPITALIZACION',
       precioUsd: 200
     }));
   });

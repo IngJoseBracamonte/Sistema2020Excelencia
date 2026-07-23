@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule, Package, Search, Plus, Trash2, X, Check,
-  FlaskConical, Syringe, Stethoscope, Beaker, Save, Loader2,
-  Contrast, FileText, UserCog, Brain
+  Save, Loader2, Contrast, FileText, UserCog, Brain, Layers
 } from 'lucide-angular';
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
-import { BOMLine } from '../models/catalog-edit.models';
+import { BOMLine, MedicoOption } from '../models/catalog-edit.models';
 
 @Component({
   selector: 'app-edit-tomografia',
@@ -18,83 +17,86 @@ import { BOMLine } from '../models/catalog-edit.models';
   templateUrl: './edit-tomografia.component.html'
 })
 export class EditTomografiaComponent extends BaseCatalogEditComponent implements OnInit {
-  // ── Icons ───────────────────────────────────────────────────────────────
   protected readonly icons = {
     Package, Search, Plus, Trash2, X, Check,
-    FlaskConical, Syringe, Stethoscope, Beaker,
-    Save, Loader2, Contrast, FileText, UserCog, Brain
+    Save, Loader2, Contrast, FileText, UserCog, Brain, Layers
   } as const;
-
-  // State
-  public readonly isLoading = signal<boolean>(false);
-  public readonly requiereContraste = signal<boolean>(false);
-  public readonly protocoloTecnico = signal<string>('');
 
   // Handlers & Compatibility Signals
   public readonly availableInsumos = this.bomHandler.availableInsumos;
-  public readonly insumos = this.bomHandler.availableInsumos;
   public readonly insumoSearchQuery = this.bomHandler.insumoSearchQuery;
   public readonly showInsumoDropdown = this.bomHandler.showInsumoDropdown;
   public readonly bomLines = this.bomHandler.bomLines;
   public readonly filteredInsumos = this.bomHandler.filteredInsumos;
 
-  public readonly allServices = this.sugerenciasHandler.allCatalogItems;
+  public readonly availableMedicos = this.honorariosHandler.availableMedicos;
+  public readonly medicoSearchQuery = this.honorariosHandler.medicoSearchQuery;
+  public readonly showMedicoDropdown = this.honorariosHandler.showMedicoDropdown;
+  public readonly honorariosMedicos = this.honorariosHandler.honorarios;
+  public readonly filteredMedicos = this.honorariosHandler.filteredMedicos;
+
+  public readonly allSugerencias = this.sugerenciasHandler.allCatalogItems;
   public readonly sugerenciasSearchQuery = this.sugerenciasHandler.sugerenciasSearchQuery;
   public readonly selectedSugerenciasIds = this.sugerenciasHandler.sugerenciasIds;
   public readonly filteredSugerencias = this.sugerenciasHandler.filteredSugerencias;
   public readonly selectedSugerenciasCards = this.sugerenciasHandler.selectedSugerenciasCards;
 
+  public readonly requiereContraste = signal<boolean>(false);
+
   ngOnInit(): void {
     this.loadInsumos();
+    this.loadMedicos();
     this.loadCatalogForSugerencias('TOMOGRAFIA');
   }
 
   protected loadItem(id: string): void {
-    this.isLoading.set(true);
-    this.catalogService.getUnifiedCatalog().subscribe({
-      next: (res) => {
-        const item = res.find(i => i.id === id || i.codigo === id);
-        if (item) {
-          this.nombre.set(item.descripcion || '');
-          this.codigo.set(item.codigo || '');
-          this.precioBaseUsd.set(item.precioUsd ?? 0);
-          this.honorarioBase.set(item.honorarioBase ?? 0);
-          this.activo.set(item.activo ?? true);
-          this.requiereContraste.set(item.requiereContraste ?? false);
-          this.protocoloTecnico.set(item.protocoloTecnico ?? '');
-          this.selectedSugerenciasIds.set(item.sugerenciasIds ?? []);
-          this.loadExistingRecipe(id);
-        }
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false)
-    });
-  }
-
-  private loadExistingRecipe(servicioId: string): void {
-    this.inventoryService.getRecetas().subscribe({
-      next: (recetas) => {
-        const relevant = recetas.filter(r => r.servicioClinicoId === servicioId);
-        const lines: BOMLine[] = relevant.map(r => ({
-          insumoId: r.insumoId,
-          insumoNombre: r.insumo?.nombre ?? '',
-          insumoCodigo: r.insumo?.codigo ?? '',
-          cantidad: r.cantidad,
-          unidadMedida: r.unidadMedidaConsumo || r.insumo?.unidadMedidaBase || 'UNIDAD'
-        }));
-        this.bomLines.set(lines);
-      },
-      error: () => console.error('Error loading recipes')
+    this.catalogService.getItemById(id).subscribe({
+      next: (item) => this.populateForm(item),
+      error: () => console.error('Error loading tomografia item')
     });
   }
 
   protected resetForm(): void {
     this.resetBaseForm();
     this.requiereContraste.set(false);
-    this.protocoloTecnico.set('');
   }
 
-  // ── BOM Actions ─────────────────────────────────────────────────────────
+  private populateForm(item: CatalogItem): void {
+    this.nombre.set(item.descripcion || '');
+    this.codigo.set(item.codigo || '');
+    this.precioBaseUsd.set(item.precioUsd ?? 0);
+    this.honorarioBase.set(item.honorarioBase ?? 0);
+    this.activo.set(item.activo ?? true);
+    this.requiereContraste.set(item.requiereContraste ?? false);
+
+    if (item.honorariosMedicos?.length) {
+      this.honorariosMedicos.set(item.honorariosMedicos.map((h: any) => ({
+        medicoId: h.medicoId,
+        medicoNombre: h.medicoNombre || 'Médico',
+        honorarioUsd: h.honorario
+      })));
+    }
+
+    this.inventoryService.getRecetas().subscribe({
+      next: (recetas: any[]) => {
+        const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
+        this.bomLines.set(itemRecetas.map((r: any) => ({
+          insumoId: r.insumoId,
+          insumoNombre: r.insumoNombre || (r.insumo ? r.insumo.nombre : ''),
+          insumoCodigo: r.insumoCodigo || (r.insumo ? r.insumo.codigo : ''),
+          cantidad: r.cantidad,
+          unidadMedida: r.unidadMedidaConsumo
+        })));
+      },
+      error: () => console.error('Error loading recipe')
+    });
+
+    if (item.sugerenciasIds?.length) {
+      this.selectedSugerenciasIds.set(item.sugerenciasIds);
+    }
+  }
+
+  // ── BOM Actions ──────────────────────────────────────────────────────────
   public addInsumoToBOM(insumo: Insumo): void {
     this.bomHandler.addInsumo(insumo, 1);
   }
@@ -117,7 +119,24 @@ export class EditTomografiaComponent extends BaseCatalogEditComponent implements
     this.bomHandler.onInsumoBlur();
   }
 
-  // ── Sugerencias Actions ─────────────────────────────────────────────────
+  // ── Honorarios Médicos Actions ───────────────────────────────────────────
+  public addMedicoToHonorarios(medico: MedicoOption, defaultFee: number): void {
+    this.honorariosHandler.addHonorario(medico, defaultFee);
+  }
+
+  public updateHonorarioUsd(medicoId: string, fee: number): void {
+    this.honorariosHandler.updateHonorarioUsd(medicoId, fee);
+  }
+
+  public removeHonorarioMedico(medicoId: string): void {
+    this.honorariosHandler.removeHonorario(medicoId);
+  }
+
+  public onMedicoBlur(): void {
+    this.honorariosHandler.onMedicoBlur();
+  }
+
+  // ── Sugerencias Actions ──────────────────────────────────────────────────
   public toggleSugerencia(id: string): void {
     this.sugerenciasHandler.toggleSugerencia(id);
   }
@@ -135,9 +154,10 @@ export class EditTomografiaComponent extends BaseCatalogEditComponent implements
   }
 
   public save(): void {
+    if (!this.nombre() || !this.codigo() || this.precioBaseUsd() <= 0) return;
     this.isSaving.set(true);
-    const item: Partial<CatalogItem> = {
-      id: this.itemId() ?? undefined,
+
+    const itemData: any = {
       descripcion: this.nombre(),
       codigo: this.codigo(),
       precioUsd: this.precioBaseUsd(),
@@ -145,25 +165,28 @@ export class EditTomografiaComponent extends BaseCatalogEditComponent implements
       tipo: 'TOMOGRAFIA',
       activo: this.activo(),
       requiereContraste: this.requiereContraste(),
-      protocoloTecnico: this.protocoloTecnico(),
+      honorariosMedicos: this.honorariosMedicos().map(h => ({
+        medicoId: h.medicoId,
+        honorario: h.honorarioUsd
+      })),
       sugerenciasIds: this.selectedSugerenciasIds(),
       requiereInventario: this.bomLines().length > 0
     };
 
     if (this.isEditing() && this.itemId()) {
-      this.catalogService.updateItem(this.itemId()!, item as CatalogItem).subscribe({
-        next: () => this.saveRecipes(this.itemId()!),
+      this.catalogService.updateItem(this.itemId()!, itemData as CatalogItem).subscribe({
+        next: () => this.saveRecipeAndFinish(this.itemId()!),
         error: () => { this.isSaving.set(false); console.error('Error updating tomografia'); }
       });
     } else {
-      this.catalogService.createItem(item).subscribe({
-        next: (newId) => this.saveRecipes(newId),
+      this.catalogService.createItem(itemData).subscribe({
+        next: (newId: string) => this.saveRecipeAndFinish(newId),
         error: () => { this.isSaving.set(false); console.error('Error creating tomografia'); }
       });
     }
   }
 
-  private saveRecipes(servicioId: string): void {
+  private saveRecipeAndFinish(id: string): void {
     const lines = this.bomLines();
     if (lines.length === 0) {
       this.isSaving.set(false);
@@ -173,18 +196,16 @@ export class EditTomografiaComponent extends BaseCatalogEditComponent implements
     }
 
     let completed = 0;
-    const total = lines.length;
-
     lines.forEach(line => {
       this.inventoryService.createOrUpdateRecipe({
-        servicioClinicoId: servicioId,
+        servicioClinicoId: id,
         insumoId: line.insumoId,
         cantidad: line.cantidad,
         unidadMedidaConsumo: line.unidadMedida
       }).subscribe({
         next: () => {
           completed++;
-          if (completed >= total) {
+          if (completed >= lines.length) {
             this.isSaving.set(false);
             this.saved.emit();
             this.onClose();
@@ -192,7 +213,7 @@ export class EditTomografiaComponent extends BaseCatalogEditComponent implements
         },
         error: () => {
           completed++;
-          if (completed >= total) {
+          if (completed >= lines.length) {
             this.isSaving.set(false);
             this.saved.emit();
             this.onClose();

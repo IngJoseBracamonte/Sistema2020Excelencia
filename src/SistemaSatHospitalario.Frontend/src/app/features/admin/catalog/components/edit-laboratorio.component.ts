@@ -2,15 +2,13 @@ import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  LucideAngularModule,
-  X, Save, Loader2, Search, Trash2, Check, Package,
-  FlaskConical, FileText, Stethoscope, Layers, Plus,
-  Microscope, TestTube2
+  LucideAngularModule, X, Save, Loader2, Search, Trash2, Check, Package,
+  FlaskConical, FileText, UserCog, Plus, Layers
 } from 'lucide-angular';
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
-import { BOMLine } from '../models/catalog-edit.models';
+import { BOMLine, MedicoOption } from '../models/catalog-edit.models';
 
 @Component({
   selector: 'app-edit-laboratorio',
@@ -19,29 +17,23 @@ import { BOMLine } from '../models/catalog-edit.models';
   templateUrl: './edit-laboratorio.component.html'
 })
 export class EditLaboratorioComponent extends BaseCatalogEditComponent implements OnInit {
-  // ── Icons ───────────────────────────────────────────────────────────────
   protected readonly icons = {
-    X, Save, Loader2, Search, Trash2, Check, Package,
-    FlaskConical, FileText, Stethoscope, Layers, Plus,
-    Microscope, TestTube2
+    X, Save, Loader2, Search, Trash2, Check, Package, FlaskConical, FileText,
+    UserCog, Plus, Layers
   } as const;
 
-  // ── Laboratorio Specific State (Signals) ────────────────────────────────
-  public readonly requiereAyuno = signal<boolean>(false);
-  public readonly tipoMuestra = signal<string>('');
-  public readonly tiempoResultado = signal<string>('');
-  public readonly condicionesEspeciales = signal<string>('');
-  public readonly metodologia = signal<string>('');
-  public readonly unidadMedida = signal<string>('');
-  public readonly valoresReferencia = signal<string>('');
-  public readonly interpretacion = signal<string>('');
-
-  // ── Handlers & Compatibility Signals ────────────────────────────────────
+  // Handlers & Compatibility Signals
   public readonly availableInsumos = this.bomHandler.availableInsumos;
   public readonly insumoSearchQuery = this.bomHandler.insumoSearchQuery;
   public readonly showInsumoDropdown = this.bomHandler.showInsumoDropdown;
   public readonly bomLines = this.bomHandler.bomLines;
   public readonly filteredInsumos = this.bomHandler.filteredInsumos;
+
+  public readonly availableMedicos = this.honorariosHandler.availableMedicos;
+  public readonly medicoSearchQuery = this.honorariosHandler.medicoSearchQuery;
+  public readonly showMedicoDropdown = this.honorariosHandler.showMedicoDropdown;
+  public readonly honorariosMedicos = this.honorariosHandler.honorarios;
+  public readonly filteredMedicos = this.honorariosHandler.filteredMedicos;
 
   public readonly allSugerencias = this.sugerenciasHandler.allCatalogItems;
   public readonly sugerenciasSearchQuery = this.sugerenciasHandler.sugerenciasSearchQuery;
@@ -51,6 +43,7 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
 
   ngOnInit(): void {
     this.loadInsumos();
+    this.loadMedicos();
     this.loadCatalogForSugerencias('LABORATORIO');
   }
 
@@ -63,44 +56,33 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
 
   protected resetForm(): void {
     this.resetBaseForm();
-    this.requiereAyuno.set(false);
-    this.tipoMuestra.set('');
-    this.tiempoResultado.set('');
-    this.condicionesEspeciales.set('');
-    this.metodologia.set('');
-    this.unidadMedida.set('');
-    this.valoresReferencia.set('');
-    this.interpretacion.set('');
   }
 
   private populateForm(item: CatalogItem): void {
-    const itemAny = item as any;
     this.nombre.set(item.descripcion || '');
     this.codigo.set(item.codigo || '');
     this.precioBaseUsd.set(item.precioUsd ?? 0);
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo ?? true);
-    this.requiereAyuno.set(itemAny.requiereAyuno ?? false);
-    this.tipoMuestra.set(itemAny.tipoMuestra || '');
-    this.tiempoResultado.set(itemAny.tiempoResultado || '');
-    this.condicionesEspeciales.set(itemAny.condicionesEspeciales || '');
-    this.metodologia.set(itemAny.metodologia || '');
-    this.unidadMedida.set(itemAny.unidadMedida || '');
-    this.valoresReferencia.set(itemAny.valoresReferencia || '');
-    this.interpretacion.set(itemAny.interpretacion || '');
 
-    // Load recipe/BOM
+    if (item.honorariosMedicos?.length) {
+      this.honorariosMedicos.set(item.honorariosMedicos.map((h: any) => ({
+        medicoId: h.medicoId,
+        medicoNombre: h.medicoNombre || 'Médico',
+        honorarioUsd: h.honorario
+      })));
+    }
+
     this.inventoryService.getRecetas().subscribe({
       next: (recetas: any[]) => {
         const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
-        const lines: BOMLine[] = itemRecetas.map(r => ({
+        this.bomLines.set(itemRecetas.map((r: any) => ({
           insumoId: r.insumoId,
           insumoNombre: r.insumoNombre || (r.insumo ? r.insumo.nombre : ''),
           insumoCodigo: r.insumoCodigo || (r.insumo ? r.insumo.codigo : ''),
           cantidad: r.cantidad,
           unidadMedida: r.unidadMedidaConsumo
-        }));
-        this.bomLines.set(lines);
+        })));
       },
       error: () => console.error('Error loading recipe')
     });
@@ -110,7 +92,7 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
     }
   }
 
-  // ── BOM Actions ─────────────────────────────────────────────────────────
+  // ── BOM Actions ──────────────────────────────────────────────────────────
   public addInsumoToBOM(insumo: Insumo): void {
     this.bomHandler.addInsumo(insumo, 1);
   }
@@ -133,7 +115,24 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
     this.bomHandler.onInsumoBlur();
   }
 
-  // ── Sugerencias Actions ─────────────────────────────────────────────────
+  // ── Honorarios Médicos Actions ───────────────────────────────────────────
+  public addMedicoToHonorarios(medico: MedicoOption, defaultFee: number): void {
+    this.honorariosHandler.addHonorario(medico, defaultFee);
+  }
+
+  public updateHonorarioUsd(medicoId: string, fee: number): void {
+    this.honorariosHandler.updateHonorarioUsd(medicoId, fee);
+  }
+
+  public removeHonorarioMedico(medicoId: string): void {
+    this.honorariosHandler.removeHonorario(medicoId);
+  }
+
+  public onMedicoBlur(): void {
+    this.honorariosHandler.onMedicoBlur();
+  }
+
+  // ── Sugerencias Actions ──────────────────────────────────────────────────
   public toggleSugerencia(id: string): void {
     this.sugerenciasHandler.toggleSugerencia(id);
   }
@@ -154,39 +153,35 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
     if (!this.nombre() || !this.codigo() || this.precioBaseUsd() <= 0) return;
     this.isSaving.set(true);
 
-    const item: any = {
+    const itemData: any = {
       descripcion: this.nombre(),
       codigo: this.codigo(),
       precioUsd: this.precioBaseUsd(),
       honorarioBase: this.honorarioBase(),
       tipo: 'LABORATORIO',
       activo: this.activo(),
-      requiereAyuno: this.requiereAyuno(),
-      tipoMuestra: this.tipoMuestra(),
-      tiempoResultado: this.tiempoResultado(),
-      condicionesEspeciales: this.condicionesEspeciales(),
-      metodologia: this.metodologia(),
-      unidadMedida: this.unidadMedida(),
-      valoresReferencia: this.valoresReferencia(),
-      interpretacion: this.interpretacion(),
+      honorariosMedicos: this.honorariosMedicos().map(h => ({
+        medicoId: h.medicoId,
+        honorario: h.honorarioUsd
+      })),
       sugerenciasIds: this.selectedSugerenciasIds(),
       requiereInventario: this.bomLines().length > 0
     };
 
     if (this.isEditing() && this.itemId()) {
-      this.catalogService.updateItem(this.itemId()!, item as CatalogItem).subscribe({
-        next: () => this.saveRecipes(this.itemId()!),
-        error: () => { this.isSaving.set(false); console.error('Error updating laboratorio'); }
+      this.catalogService.updateItem(this.itemId()!, itemData as CatalogItem).subscribe({
+        next: () => this.saveRecipeAndFinish(this.itemId()!),
+        error: () => { this.isSaving.set(false); console.error('Error updating laboratorio item'); }
       });
     } else {
-      this.catalogService.createItem(item).subscribe({
-        next: (newId) => this.saveRecipes(newId),
-        error: () => { this.isSaving.set(false); console.error('Error creating laboratorio'); }
+      this.catalogService.createItem(itemData).subscribe({
+        next: (newId: string) => this.saveRecipeAndFinish(newId),
+        error: () => { this.isSaving.set(false); console.error('Error creating laboratorio item'); }
       });
     }
   }
 
-  private saveRecipes(servicioId: string): void {
+  private saveRecipeAndFinish(id: string): void {
     const lines = this.bomLines();
     if (lines.length === 0) {
       this.isSaving.set(false);
@@ -196,33 +191,24 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
     }
 
     let completed = 0;
-    let hasErrors = false;
-    const total = lines.length;
-
     lines.forEach(line => {
       this.inventoryService.createOrUpdateRecipe({
-        servicioClinicoId: servicioId,
+        servicioClinicoId: id,
         insumoId: line.insumoId,
         cantidad: line.cantidad,
         unidadMedidaConsumo: line.unidadMedida
       }).subscribe({
         next: () => {
           completed++;
-          if (completed >= total) {
+          if (completed >= lines.length) {
             this.isSaving.set(false);
-            if (!hasErrors) {
-              this.saved.emit();
-              this.onClose();
-            } else {
-              console.error('Algunas recetas no se guardaron correctamente');
-            }
+            this.saved.emit();
+            this.onClose();
           }
         },
-        error: (err) => {
-          hasErrors = true;
+        error: () => {
           completed++;
-          console.error('Error guardando receta para insumo:', line.insumoNombre, err);
-          if (completed >= total) {
+          if (completed >= lines.length) {
             this.isSaving.set(false);
             this.saved.emit();
             this.onClose();
