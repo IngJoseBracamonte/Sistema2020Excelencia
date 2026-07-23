@@ -37,63 +37,6 @@ import { getTipoBadgeStyle as getBadgeStyle, CatalogEditorType } from './models/
 
 export type SortOption = 'nombre-asc' | 'nombre-desc' | 'precio-desc' | 'precio-asc' | 'codigo-asc';
 
-const TIPO_MAP: Record<string, CatalogEditorType> = {
-  MEDICINA: 'MEDICAMENTO',
-  MEDICAMENTO: 'MEDICAMENTO',
-  INSUMO: 'MEDICAMENTO',
-  FARMACIA: 'MEDICAMENTO',
-  MATERIAL: 'MEDICAMENTO',
-  SOLUCION: 'MEDICAMENTO',
-  AMPOLLA: 'MEDICAMENTO',
-  TAB: 'MEDICAMENTO',
-  CAPSULA: 'MEDICAMENTO',
-  
-  RX: 'TOMOGRAFIA',
-  TOMOGRAFIA: 'TOMOGRAFIA',
-  TOMO: 'TOMOGRAFIA',
-  RADIOGRAFIA: 'TOMOGRAFIA',
-  IMAGEN: 'TOMOGRAFIA',
-  ECO: 'TOMOGRAFIA',
-  ECOGRAFIA: 'TOMOGRAFIA',
-  ULTRASONIDO: 'TOMOGRAFIA',
-  RESONANCIA: 'TOMOGRAFIA',
-  ESTUDIO: 'TOMOGRAFIA',
-  ESTUDIOS: 'TOMOGRAFIA',
-
-  CONSULTA: 'CONSULTA',
-  CITAS: 'CONSULTA',
-  MEDICO: 'CONSULTA',
-  EVALUACION: 'CONSULTA',
-
-  LABORATORIO: 'LABORATORIO',
-  LAB: 'LABORATORIO',
-  EXAMEN: 'LABORATORIO',
-  EXAMENES: 'LABORATORIO',
-  PERFIL: 'LABORATORIO',
-  ANALISIS: 'LABORATORIO',
-
-  CIRUGIA: 'CIRUGIA',
-  QUIRURGICO: 'CIRUGIA',
-  INTERVENCION: 'CIRUGIA',
-  PABELLON: 'CIRUGIA',
-
-  PROCEDIMIENTO: 'PROCEDIMIENTO',
-  PROCEDIMIENTOS: 'PROCEDIMIENTO',
-  TRATAMIENTO: 'PROCEDIMIENTO',
-  ENFERMERIA: 'PROCEDIMIENTO',
-  CURACION: 'PROCEDIMIENTO',
-
-  HOSPITALARIO: 'HOSPITALARIO',
-  HOSPITALIZACION: 'HOSPITALARIO',
-  EMERGENCIA: 'HOSPITALARIO',
-  UCI: 'HOSPITALARIO',
-  TRASLADO: 'HOSPITALARIO',
-  AREA: 'HOSPITALARIO',
-  CAMAS: 'HOSPITALARIO',
-  HABITACION: 'HOSPITALARIO',
-  ESTANCIA: 'HOSPITALARIO'
-};
-
 @Component({
   selector: 'app-catalog-management',
   standalone: true,
@@ -149,11 +92,8 @@ export class CatalogManagementComponent implements OnInit {
     // 1. Filtro por tipos de servicio seleccionados
     if (selected.length > 0) {
       list = list.filter(item => {
-        const normalizedItemType = this.getNormalizedEditorType(item.tipo);
-        return selected.some(targetType => {
-          const normalizedTarget = this.getNormalizedEditorType(targetType);
-          return normalizedItemType === normalizedTarget;
-        });
+        const itemType = (item.editorType || item.tipo || 'PROCEDIMIENTO').toUpperCase();
+        return selected.some(targetType => targetType.toUpperCase() === itemType);
       });
     }
 
@@ -199,12 +139,6 @@ export class CatalogManagementComponent implements OnInit {
     this.loadCatalog();
   }
 
-  getNormalizedEditorType(rawType: string | null | undefined): CatalogEditorType {
-    if (!rawType) return 'PROCEDIMIENTO';
-    const key = rawType.toUpperCase().trim();
-    return TIPO_MAP[key] || 'PROCEDIMIENTO';
-  }
-
   loadCatalog(): void {
     this.isLoading.set(true);
     this.catalogService.getItems().subscribe({
@@ -225,7 +159,7 @@ export class CatalogManagementComponent implements OnInit {
 
   isTypeSelected(type: string): boolean {
     if (type === 'TODOS') return this.selectedTypes().length === 0;
-    return this.selectedTypes().some(t => this.getNormalizedEditorType(t) === this.getNormalizedEditorType(type));
+    return this.selectedTypes().includes(type);
   }
 
   toggleTypeFilter(type: string): void {
@@ -251,19 +185,86 @@ export class CatalogManagementComponent implements OnInit {
     this.clearFilters();
   }
 
+  resolveEditorType(item: CatalogItem | null | undefined): CatalogEditorType {
+    if (!item) return 'PROCEDIMIENTO';
+    if (item.esLegacy) return 'LABORATORIO';
+
+    const rawType = (item.editorType || item.tipo || '').toUpperCase().trim();
+
+    switch (rawType) {
+      case 'CONSULTA':
+      case 'CITAS':
+      case 'MEDICO':
+      case 'EVALUACION':
+        return 'CONSULTA';
+
+      case 'LABORATORIO':
+      case 'LAB':
+      case 'EXAMEN':
+      case 'EXAMENES':
+      case 'PERFIL':
+      case 'ANALISIS':
+        return 'LABORATORIO';
+
+      case 'TOMOGRAFIA':
+      case 'TOMO':
+      case 'RX':
+      case 'RADIOGRAFIA':
+      case 'IMAGEN':
+      case 'ECO':
+      case 'ECOGRAFIA':
+      case 'ULTRASONIDO':
+      case 'RESONANCIA':
+      case 'ESTUDIO':
+      case 'ESTUDIOS':
+        return 'TOMOGRAFIA';
+
+      case 'MEDICAMENTO':
+      case 'MEDICINA':
+      case 'INSUMO':
+      case 'FARMACIA':
+      case 'MATERIAL':
+      case 'SOLUCION':
+      case 'AMPOLLA':
+      case 'TAB':
+      case 'CAPSULA':
+        return 'MEDICAMENTO';
+
+      case 'CIRUGIA':
+      case 'QUIRURGICO':
+      case 'INTERVENCION':
+      case 'PABELLON':
+        return 'CIRUGIA';
+
+      case 'HOSPITALARIO':
+      case 'HOSPITALIZACION':
+      case 'EMERGENCIA':
+      case 'UCI':
+      case 'TRASLADO':
+      case 'AREA':
+      case 'CAMAS':
+      case 'HABITACION':
+      case 'ESTANCIA':
+        return 'HOSPITALARIO';
+
+      default:
+        return 'PROCEDIMIENTO'; // Fallback defensivo garantizado para cualquier tipo genérico (incluyendo 'SERVICIO')
+    }
+  }
+
   openCreate(): void {
     this.isEditing.set(false);
     this.selectedItemId.set(null);
     const selected = this.selectedTypes();
-    const firstType = selected.length > 0 ? selected[0] : null;
-    this.activeEditorType.set(this.getNormalizedEditorType(firstType));
+    const firstType = selected.length > 0 ? selected[0] : 'PROCEDIMIENTO';
+    this.activeEditorType.set(this.resolveEditorType({ tipo: firstType } as any));
     this.showModal.set(true);
   }
 
   openEdit(item: CatalogItem): void {
     this.isEditing.set(true);
     this.selectedItemId.set(item.id || null);
-    this.activeEditorType.set(this.getNormalizedEditorType(item.tipo));
+    this.activeEditorType.set(this.resolveEditorType(item));
     this.showModal.set(true);
   }
 

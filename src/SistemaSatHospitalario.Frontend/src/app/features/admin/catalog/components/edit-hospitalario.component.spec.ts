@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { EditHospitalarioComponent } from './edit-hospitalario.component';
 import { CatalogService, CatalogItem } from '../../../../core/services/catalog.service';
 import { InventoryService } from '../../../../core/services/inventory.service';

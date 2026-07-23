@@ -60,12 +60,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // 3. Mapear servicios nativos (Asumimos PrecioBase en USD)
             foreach (var s in serviciosNativos)
             {
+                var editorType = ResolveEditorType(s.TipoServicio, false);
                 var item = new CatalogItemDto
                 {
                     Id = s.Id.ToString(),
                     Codigo = s.Codigo,
                     Descripcion = s.Descripcion,
-                    Tipo = string.IsNullOrWhiteSpace(s.TipoServicio) ? "SERVICIO" : s.TipoServicio.ToUpper(),
+                    Tipo = editorType,
+                    EditorType = editorType,
                     CategoryId = (int)s.Category,
                     EsLegacy = false,
                     Activo = s.Activo,
@@ -143,7 +145,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Id = p.IdPerfil.ToString(),
                     Codigo = EstadoConstants.PrefixLab + p.IdPerfil,
                     Descripcion = p.Descripcion,
-                    Tipo = EstadoConstants.Laboratorio,
+                    Tipo = "LABORATORIO",
+                    EditorType = "LABORATORIO",
                     CategoryId = (int)ServiceCategory.Laboratory,
                     EsLegacy = true,
                     Activo = true,
@@ -162,8 +165,74 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             return result;
+        }
 
-            return result;
+        private static string ResolveEditorType(string? rawTipo, bool esLegacy)
+        {
+            if (esLegacy) return "LABORATORIO";
+            if (string.IsNullOrWhiteSpace(rawTipo)) return "PROCEDIMIENTO";
+
+            var key = rawTipo.Trim().ToUpper();
+            switch (key)
+            {
+                case "CONSULTA":
+                case "CITAS":
+                case "MEDICO":
+                case "EVALUACION":
+                    return "CONSULTA";
+
+                case "LABORATORIO":
+                case "LAB":
+                case "EXAMEN":
+                case "EXAMENES":
+                case "PERFIL":
+                case "ANALISIS":
+                    return "LABORATORIO";
+
+                case "TOMOGRAFIA":
+                case "TOMO":
+                case "RX":
+                case "RADIOGRAFIA":
+                case "IMAGEN":
+                case "ECO":
+                case "ECOGRAFIA":
+                case "ULTRASONIDO":
+                case "RESONANCIA":
+                case "ESTUDIO":
+                case "ESTUDIOS":
+                    return "TOMOGRAFIA";
+
+                case "MEDICAMENTO":
+                case "MEDICINA":
+                case "INSUMO":
+                case "FARMACIA":
+                case "MATERIAL":
+                case "SOLUCION":
+                case "AMPOLLA":
+                case "TAB":
+                case "CAPSULA":
+                    return "MEDICAMENTO";
+
+                case "CIRUGIA":
+                case "QUIRURGICO":
+                case "INTERVENCION":
+                case "PABELLON":
+                    return "CIRUGIA";
+
+                case "HOSPITALARIO":
+                case "HOSPITALIZACION":
+                case "EMERGENCIA":
+                case "UCI":
+                case "TRASLADO":
+                case "AREA":
+                case "CAMAS":
+                case "HABITACION":
+                case "ESTANCIA":
+                    return "HOSPITALARIO";
+
+                default:
+                    return "PROCEDIMIENTO";
+            }
         }
     }
 }

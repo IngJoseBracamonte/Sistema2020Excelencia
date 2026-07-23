@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { EditLaboratorioComponent } from './edit-laboratorio.component';
+import { EditProcedimientoComponent } from './edit-procedimiento.component';
 import { CatalogService, CatalogItem } from '../../../../core/services/catalog.service';
 import { InventoryService } from '../../../../core/services/inventory.service';
 import { BillingFacadeService } from '../../../../core/services/billing-facade.service';
@@ -7,33 +7,33 @@ import { MedicoService } from '../../../../core/services/medico.service';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
-describe('EditLaboratorioComponent (Integration & Legacy Support)', () => {
-  let component: EditLaboratorioComponent;
-  let fixture: ComponentFixture<EditLaboratorioComponent>;
+describe('EditProcedimientoComponent (Fallback & General Procedure)', () => {
+  let component: EditProcedimientoComponent;
+  let fixture: ComponentFixture<EditProcedimientoComponent>;
 
   let mockCatalogService: any;
   let mockInventoryService: any;
   let mockBillingFacade: any;
   let mockMedicoService: any;
 
-  const mockLabItem: CatalogItem = {
-    id: 'lab-001',
-    codigo: 'LAB-HEM-01',
-    descripcion: 'Hematología Completa',
-    precioUsd: 15,
-    honorarioBase: 5,
-    tipo: 'LABORATORIO',
+  const mockProcItem: CatalogItem = {
+    id: 'proc-001',
+    codigo: 'PROC-CUR-01',
+    descripcion: 'Curación Mayor y Retiro de Puntos',
+    precioUsd: 25,
+    honorarioBase: 10,
+    tipo: 'PROCEDIMIENTO',
     activo: true,
-    esLegacy: true,
     sugerenciasIds: []
   } as unknown as CatalogItem;
 
   beforeEach(async () => {
     mockCatalogService = {
-      getItemById: jasmine.createSpy('getItemById').and.returnValue(of(mockLabItem)),
+      getItemById: jasmine.createSpy('getItemById').and.returnValue(of(mockProcItem)),
+      getUnifiedCatalog: jasmine.createSpy('getUnifiedCatalog').and.returnValue(of([mockProcItem])),
       getItems: jasmine.createSpy('getItems').and.returnValue(of([])),
       updateItem: jasmine.createSpy('updateItem').and.returnValue(of(true)),
-      createItem: jasmine.createSpy('createItem').and.returnValue(of('lab-001'))
+      createItem: jasmine.createSpy('createItem').and.returnValue(of('proc-001'))
     };
 
     mockInventoryService = {
@@ -50,7 +50,7 @@ describe('EditLaboratorioComponent (Integration & Legacy Support)', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [EditLaboratorioComponent],
+      imports: [EditProcedimientoComponent],
       providers: [
         { provide: CatalogService, useValue: mockCatalogService },
         { provide: InventoryService, useValue: mockInventoryService },
@@ -59,31 +59,20 @@ describe('EditLaboratorioComponent (Integration & Legacy Support)', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(EditLaboratorioComponent);
+    fixture = TestBed.createComponent(EditProcedimientoComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('debería instanciar el componente de laboratorio correctamente', () => {
+  it('debería instanciar el componente de procedimiento fallback', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debería poblar los Signals del laboratorio al cargar un examen', () => {
-    (component as any).loadItem('lab-001');
+  it('debería poblar el procedimiento base correctamente', () => {
+    (component as any).loadItem('proc-001');
 
-    expect(component.nombre()).toBe('Hematología Completa');
-    expect(component.codigo()).toBe('LAB-HEM-01');
-    expect(component.precioBaseUsd()).toBe(15);
-    expect(component.honorarioBase()).toBe(5);
-  });
-
-  it('debería actualizar los parámetros específicos de muestra de laboratorio', () => {
-    component.tipoMuestra.set('Sangre Total (EDTA)');
-    component.requiereAyuno.set(true);
-    component.tiempoResultado.set('12 Horas');
-
-    expect(component.tipoMuestra()).toBe('Sangre Total (EDTA)');
-    expect(component.requiereAyuno()).toBeTrue();
-    expect(component.tiempoResultado()).toBe('12 Horas');
+    expect(component.nombre()).toBe('Curación Mayor y Retiro de Puntos');
+    expect(component.codigo()).toBe('PROC-CUR-01');
+    expect(component.precioBaseUsd()).toBe(25);
   });
 });
