@@ -101,5 +101,51 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+
+        [HttpPost("CambioCama")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RegistrarCambioCama([FromBody] RegistrarCambioCamaCommand command)
+        {
+            try
+            {
+                command.UsuarioCarga = User.GetUserName();
+                var result = await _mediator.Send(command);
+
+                await _hubContext.Clients.All.SendAsync("ReceiveCamaUpdate", new
+                {
+                    VersionEstado = GlobalStateVersion.Increment()
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("TrasladoArea")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RegistrarTrasladoArea([FromBody] RegistrarTrasladoAreaCommand command)
+        {
+            try
+            {
+                command.UsuarioTraslado = User.GetUserName();
+                var result = await _mediator.Send(command);
+
+                await _hubContext.Clients.All.SendAsync("ReceiveCamaUpdate", new
+                {
+                    VersionEstado = GlobalStateVersion.Increment()
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
     }
 }

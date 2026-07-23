@@ -372,7 +372,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 new ServicioClinico("S004", "Consulta Ginecologica", 60.00m, "Consulta") { HonorariumCategory = "CONSULTA" },
                 new ServicioClinico("S005", "Citologia", 25.00m, "Citologia") { HonorariumCategory = "CITOLOGIA" },
                 new ServicioClinico("S006", "Eco Ginecologico", 40.00m, "Eco") { HonorariumCategory = "INFORME" },
-                new ServicioClinico("MED-01", "Ibuprofeno 600mg (Medicamento)", 5.00m, "Medicamento") { Category = ServiceCategory.Insumo, HonorariumCategory = "MEDICAMENTO" }
+                new ServicioClinico("MED-01", "Ibuprofeno 600mg (Medicamento)", 5.00m, "Medicamento") { Category = ServiceCategory.Insumo, HonorariumCategory = "MEDICAMENTO" },
+                new ServicioClinico("HOSP-EMG-01", "Cargo por Traslado / Estancia Emergencia", 300.00m, "Hospitalario") { HonorariumCategory = "HOSPITALARIO" },
+                new ServicioClinico("HOSP-HOS-01", "Cargo por Traslado / Estancia Hospitalización", 450.00m, "Hospitalario") { HonorariumCategory = "HOSPITALARIO" },
+                new ServicioClinico("HOSP-UCI-01", "Cargo por Traslado / Estancia Unidad de Cuidados Intensivos", 600.00m, "Hospitalario") { HonorariumCategory = "HOSPITALARIO" }
             };
 
             foreach (var s in defaults)

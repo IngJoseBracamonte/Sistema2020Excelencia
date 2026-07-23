@@ -1107,6 +1107,77 @@ export class EnfermeriaComponent implements OnInit {
       });
   }
 
+  // Traslado Inteligente Signals & Handlers
+  public modoTrasladoInteligente = signal<'CAMBIO_CAMA' | 'TRASLADO_AREA'>('CAMBIO_CAMA');
+  public areaDestinoInteligente = signal<string>('EMERGENCIA');
+  public cantidadHorasInteligente = signal<number>(1);
+  public cambiaMedicoTratanteInteligente = signal<boolean>(false);
+  public nuevoMedicoIdInteligente = signal<string | null>(null);
+  public observacionInteligente = signal<string>('');
+  public montoACobrarUsdInteligente = signal<number>(300);
+
+  public onAreaDestinoChange(area: string): void {
+    this.areaDestinoInteligente.set(area);
+    const defaultRate = area === 'UCI' ? 600 : area === 'HOSPITALIZACION' ? 450 : 300;
+    this.montoACobrarUsdInteligente.set(defaultRate);
+  }
+
+  public submitCambioCama(): void {
+    const active = this.selectedAccount();
+    if (!active) return;
+    if (!this.selectedCamaId()) {
+      alert('Debe seleccionar una cama destino para realizar el cambio de cama.');
+      return;
+    }
+    this.isSavingTransfer.set(true);
+    const payload = {
+      cuentaId: active.cuentaId,
+      camaDestinoId: this.selectedCamaId()
+    };
+    this.http.post(`${environment.apiUrl}/api/Enfermeria/CambioCama`, payload).subscribe({
+      next: () => {
+        this.showSuccess('Cambio de cama realizado exitosamente sin costo adicional.');
+        this.refreshAccounts();
+        this.isSavingTransfer.set(false);
+      },
+      error: (err) => {
+        alert('Error al realizar cambio de cama: ' + (err.error?.Error || err.message));
+        this.isSavingTransfer.set(false);
+      }
+    });
+  }
+
+  public submitTrasladoArea(): void {
+    const active = this.selectedAccount();
+    if (!active) return;
+    if (!this.selectedCamaId()) {
+      alert('Debe seleccionar una cama en el área destino.');
+      return;
+    }
+    this.isSavingTransfer.set(true);
+    const payload = {
+      cuentaId: active.cuentaId,
+      areaDestino: this.areaDestinoInteligente(),
+      camaDestinoId: this.selectedCamaId(),
+      cantidadHoras: this.cantidadHorasInteligente(),
+      cambiaMedicoTratante: this.cambiaMedicoTratanteInteligente(),
+      nuevoMedicoId: this.nuevoMedicoIdInteligente(),
+      observacion: this.observacionInteligente(),
+      montoACobrarUsd: this.montoACobrarUsdInteligente()
+    };
+    this.http.post(`${environment.apiUrl}/api/Enfermeria/TrasladoArea`, payload).subscribe({
+      next: () => {
+        this.showSuccess(`Traslado a ${this.areaDestinoInteligente()} procesado con éxito ($${this.montoACobrarUsdInteligente()} USD).`);
+        this.refreshAccounts();
+        this.isSavingTransfer.set(false);
+      },
+      error: (err) => {
+        alert('Error al realizar traslado de área: ' + (err.error?.Error || err.message));
+        this.isSavingTransfer.set(false);
+      }
+    });
+  }
+
   private showSuccess(msg: string): void {
     this.actionMessage.set(msg);
     setTimeout(() => this.actionMessage.set(null), 6000);
