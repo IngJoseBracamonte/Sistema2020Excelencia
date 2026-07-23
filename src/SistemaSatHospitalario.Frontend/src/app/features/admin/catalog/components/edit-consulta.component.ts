@@ -3,12 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule, X, Save, Loader2, Search, Trash2, Check, Package,
-  Stethoscope, FileText, UserCog, Clock, Monitor, HeartPulse, Brain,
-  Activity, Pill, Syringe, Bone, Eye, Ear, Heart, Thermometer,
-  Weight, Ruler, Scissors, Bandage, User, Users, MessageSquare, Video,
-  Phone, Mail, Calendar, DollarSign, CreditCard, Receipt, Settings,
-  Layers, Zap, Shield, Lock, Unlock, Key, Fingerprint, EyeOff, ScanEye,
-  ScanFace, ScanLine, ScanSearch, ScanText, ScanHeart, Plus
+  Stethoscope, FileText, UserCog, Plus
 } from 'lucide-angular';
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
@@ -22,24 +17,10 @@ import { BOMLine, MedicoOption } from '../models/catalog-edit.models';
   templateUrl: './edit-consulta.component.html'
 })
 export class EditConsultaComponent extends BaseCatalogEditComponent implements OnInit {
-  // ── Icons ───────────────────────────────────────────────────────────────
   protected readonly icons = {
     X, Save, Loader2, Search, Trash2, Check, Package, Stethoscope, FileText,
-    UserCog, Clock, Monitor, HeartPulse, Brain, Activity, Pill, Syringe, Bone,
-    Eye, Ear, Heart, Thermometer, Weight, Ruler, Scissors, Bandage,
-    User, Users, MessageSquare, Video, Phone, Mail, Calendar, DollarSign,
-    CreditCard, Receipt, Settings, Layers, Zap, Shield, Lock, Unlock, Key,
-    Fingerprint, EyeOff, ScanEye, ScanFace, ScanLine, ScanSearch, ScanText,
-    ScanHeart, Plus
+    UserCog, Plus
   } as const;
-
-  // ── Form State (Signals) ────────────────────────────────────────────────
-  public readonly especialidad = signal<string>('');
-  public readonly duracionMinutos = signal<number>(30);
-  public readonly permiteTelemedicina = signal<boolean>(false);
-  public readonly requiereHistoriaPrevia = signal<boolean>(false);
-  public readonly notasClinicas = signal<string>('');
-  public readonly preparacionPaciente = signal<string>('');
 
   // Handlers & Compatibility Signals
   public readonly availableInsumos = this.bomHandler.availableInsumos;
@@ -75,29 +56,15 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
 
   protected resetForm(): void {
     this.resetBaseForm();
-    this.especialidad.set('');
-    this.duracionMinutos.set(30);
-    this.permiteTelemedicina.set(false);
-    this.requiereHistoriaPrevia.set(false);
-    this.notasClinicas.set('');
-    this.preparacionPaciente.set('');
   }
 
   private populateForm(item: CatalogItem): void {
-    const itemAny = item as any;
     this.nombre.set(item.descripcion || '');
     this.codigo.set(item.codigo || '');
     this.precioBaseUsd.set(item.precioUsd ?? 0);
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo ?? true);
-    this.especialidad.set(itemAny.especialidad || '');
-    this.duracionMinutos.set(itemAny.duracionMinutos || 30);
-    this.permiteTelemedicina.set(itemAny.permiteTelemedicina ?? false);
-    this.requiereHistoriaPrevia.set(itemAny.requiereHistoriaPrevia ?? false);
-    this.notasClinicas.set(itemAny.notasClinicas || '');
-    this.preparacionPaciente.set(itemAny.preparacionPaciente || '');
 
-    // Cargar honorarios de médicos asignados
     if (item.honorariosMedicos && item.honorariosMedicos.length > 0) {
       const mapped = item.honorariosMedicos.map(h => ({
         medicoId: h.medicoId,
@@ -107,7 +74,6 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
       this.honorariosMedicos.set(mapped);
     }
 
-    // Cargar recetas/BOM si aplica
     this.inventoryService.getRecetas().subscribe({
       next: (recetas: any[]) => {
         const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
@@ -128,7 +94,6 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
     }
   }
 
-  // ── Honorarios Médicos Actions ──────────────────────────────────────────
   public addMedicoToHonorarios(medico: MedicoOption, honorarioUsd: number = 0): void {
     this.honorariosHandler.addHonorario(medico, honorarioUsd);
   }
@@ -145,7 +110,6 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
     this.honorariosHandler.onMedicoBlur();
   }
 
-  // ── BOM Actions ─────────────────────────────────────────────────────────
   public addInsumoToBOM(insumo: Insumo): void {
     this.bomHandler.addInsumo(insumo, 1);
   }
@@ -168,7 +132,6 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
     this.bomHandler.onInsumoBlur();
   }
 
-  // ── Sugerencias Actions ─────────────────────────────────────────────────
   public toggleSugerencia(id: string): void {
     this.sugerenciasHandler.toggleSugerencia(id);
   }
@@ -196,12 +159,6 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
       honorarioBase: this.honorarioBase(),
       tipo: 'CONSULTA',
       activo: this.activo(),
-      especialidad: this.especialidad(),
-      duracionMinutos: this.duracionMinutos(),
-      permiteTelemedicina: this.permiteTelemedicina(),
-      requiereHistoriaPrevia: this.requiereHistoriaPrevia(),
-      notasClinicas: this.notasClinicas(),
-      preparacionPaciente: this.preparacionPaciente(),
       honorariosMedicos: this.honorariosMedicos().map(h => ({
         medicoId: h.medicoId,
         honorario: h.honorarioUsd
@@ -233,7 +190,6 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
     }
 
     let completed = 0;
-    let hasErrors = false;
     const total = lines.length;
 
     lines.forEach(line => {
@@ -247,18 +203,12 @@ export class EditConsultaComponent extends BaseCatalogEditComponent implements O
           completed++;
           if (completed >= total) {
             this.isSaving.set(false);
-            if (!hasErrors) {
-              this.saved.emit();
-              this.onClose();
-            } else {
-              console.error('Algunas recetas no se guardaron correctamente');
-            }
+            this.saved.emit();
+            this.onClose();
           }
         },
-        error: (err) => {
-          hasErrors = true;
+        error: () => {
           completed++;
-          console.error('Error guardando receta para insumo:', line.insumoNombre, err);
           if (completed >= total) {
             this.isSaving.set(false);
             this.saved.emit();

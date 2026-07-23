@@ -210,6 +210,11 @@
 
     <!-- Modal Form (Renderizado directo de subcomponentes sin doble contenedor) -->
     <ng-container *ngIf="showModal()">
+        <app-edit-servicio
+            *ngIf="activeEditorType() === 'SERVICIO' || !['CONSULTA','LABORATORIO','TOMOGRAFIA','CIRUGIA','MEDICAMENTO','HOSPITALARIO','PROCEDIMIENTO'].includes(activeEditorType()!)"
+            [itemId]="selectedItemId()" [isEditing]="isEditing()" (saved)="onEditorSaved()" (closed)="onEditorClosed()">
+        </app-edit-servicio>
+
         <app-edit-consulta *ngIf="activeEditorType() === 'CONSULTA'" [itemId]="selectedItemId()"
             [isEditing]="isEditing()" (saved)="onEditorSaved()" (closed)="onEditorClosed()">
         </app-edit-consulta>
@@ -222,8 +227,7 @@
             (saved)="onEditorSaved()" (closed)="onEditorClosed()">
         </app-edit-tomografia>
 
-        <app-edit-procedimiento
-            *ngIf="activeEditorType() === 'PROCEDIMIENTO' || !['CONSULTA','LABORATORIO','TOMOGRAFIA','CIRUGIA','MEDICAMENTO','HOSPITALARIO'].includes(activeEditorType()!)"
+        <app-edit-procedimiento *ngIf="activeEditorType() === 'PROCEDIMIENTO'"
             [itemId]="selectedItemId()" (saved)="onEditorSaved()" (closed)="onEditorClosed()">
         </app-edit-procedimiento>
 

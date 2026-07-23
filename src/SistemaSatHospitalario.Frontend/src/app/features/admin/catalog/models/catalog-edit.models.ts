@@ -1,4 +1,5 @@
 export type CatalogEditorType = 
+  | 'SERVICIO'
   | 'CONSULTA'
   | 'MEDICAMENTO'
   | 'TOMOGRAFIA'
@@ -46,6 +47,8 @@ export interface FormOption {
 
 export function getTipoColor(tipo?: string | null): string {
   switch (tipo?.toUpperCase()) {
+    case 'SERVICIO':
+      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
     case 'CONSULTA':
       return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
     case 'MEDICINA':
@@ -73,6 +76,8 @@ export function getTipoColor(tipo?: string | null): string {
 
 export function getTipoBadgeStyle(tipo?: string | null): string {
   switch (tipo?.toUpperCase()?.trim()) {
+    case 'SERVICIO':
+      return 'bg-blue-500/10 text-blue-400 border-blue-500/30 shadow-blue-500/5';
     case 'CONSULTA':
       return 'bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-rose-500/5';
     case 'MEDICINA':

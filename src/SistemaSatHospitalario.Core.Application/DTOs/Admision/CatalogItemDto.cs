@@ -12,7 +12,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal PrecioUsd { get; set; }
         public decimal HonorarioBase { get; set; }
         public string Tipo { get; set; } // Legacy compatibility
-        public string EditorType { get; set; } = "PROCEDIMIENTO"; // Estandarizado para Frontend y Redis
+        public string EditorType { get; set; } = "SERVICIO"; // Estandarizado para Frontend y Redis
         public int CategoryId { get; set; } // Consultation=1, Lab=2, etc. (V5.2)
         public bool EsLegacy { get; set; }
         public bool Activo { get; set; }

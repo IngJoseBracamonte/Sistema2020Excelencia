@@ -1,22 +1,13 @@
-import { Component, signal, computed, OnInit } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  LucideAngularModule,
-  X, Save, Loader2, Search, Trash2, Check, Package,
-  Scissors, FileText, UserCog, Activity, Plus,
-  DollarSign, MessageSquare, Layers
+  LucideAngularModule, X, Save, Loader2, Search, Trash2, Check, Package,
+  Scissors, FileText, Plus
 } from 'lucide-angular';
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
 import { Insumo } from '../../../../core/models/inventory.model';
-
-interface EquipoQuirurgico {
-  id: string;
-  nombre: string;
-  codigo: string;
-  cantidad: number;
-}
 
 @Component({
   selector: 'app-edit-cirugia',
@@ -25,31 +16,9 @@ interface EquipoQuirurgico {
   templateUrl: './edit-cirugia.component.html'
 })
 export class EditCirugiaComponent extends BaseCatalogEditComponent implements OnInit {
-  // ── Icons ───────────────────────────────────────────────────────────────
   protected readonly icons = {
-    X, Save, Loader2, Search, Trash2, Check, Package,
-    Scissors, FileText, UserCog, Activity, Plus,
-    DollarSign, MessageSquare, Layers
+    X, Save, Loader2, Search, Trash2, Check, Package, Scissors, FileText, Plus
   } as const;
-
-  // ── Cirugía Specific Signals ─────────────────────────────────────────────
-  public readonly complejidad = signal<string>('MEDIA');
-  public readonly duracionEstimadaMinutos = signal<number>(120);
-  public readonly requiereAnestesia = signal<boolean>(true);
-  public readonly tipoAnestesia = signal<string>('GENERAL');
-  public readonly clasificacionRiesgo = signal<string>('II');
-  public readonly notasPreoperatorias = signal<string>('');
-  public readonly notasPostoperatorias = signal<string>('');
-  public readonly protocoloQuirurgico = signal<string>('');
-  public readonly indicaciones = signal<string>('');
-  public readonly contraindicaciones = signal<string>('');
-
-  // Equipo Quirúrgico
-  public readonly equipoQuirurgico = signal<EquipoQuirurgico[]>([]);
-  public readonly equipoSearchQuery = signal<string>('');
-  public readonly showEquipoDropdown = signal<boolean>(false);
-  public readonly honorariosEquipo = signal<Array<{ rol: string; honorarioUsd: number }>>([]);
-  public readonly allEquipos = signal<CatalogItem[]>([]);
 
   // Handlers & Compatibility Signals
   public readonly availableInsumos = this.bomHandler.availableInsumos;
@@ -64,26 +33,9 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
   public readonly filteredSugerencias = this.sugerenciasHandler.filteredSugerencias;
   public readonly selectedSugerenciasCards = this.sugerenciasHandler.selectedSugerenciasCards;
 
-  public readonly filteredEquipos = computed(() => {
-    const q = this.equipoSearchQuery().toLowerCase().trim();
-    const selected = new Set(this.equipoQuirurgico().map(e => e.id));
-    return this.allEquipos()
-      .filter(e => !selected.has(e.id))
-      .filter(e => !q || e.descripcion.toLowerCase().includes(q) || e.codigo.toLowerCase().includes(q))
-      .slice(0, 20);
-  });
-
   ngOnInit(): void {
     this.loadInsumos();
     this.loadCatalogForSugerencias('CIRUGIA');
-    this.loadEquipos();
-  }
-
-  private loadEquipos(): void {
-    this.catalogService.getItems().subscribe({
-      next: (data) => this.allEquipos.set(data.filter(i => i.tipo === 'EQUIPO' || i.tipo === 'INSTRUMENTAL')),
-      error: () => console.error('Error loading equipos')
-    });
   }
 
   protected loadItem(id: string): void {
@@ -95,18 +47,6 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
 
   protected resetForm(): void {
     this.resetBaseForm();
-    this.complejidad.set('MEDIA');
-    this.duracionEstimadaMinutos.set(120);
-    this.requiereAnestesia.set(true);
-    this.tipoAnestesia.set('GENERAL');
-    this.clasificacionRiesgo.set('II');
-    this.notasPreoperatorias.set('');
-    this.notasPostoperatorias.set('');
-    this.protocoloQuirurgico.set('');
-    this.indicaciones.set('');
-    this.contraindicaciones.set('');
-    this.equipoQuirurgico.set([]);
-    this.honorariosEquipo.set([]);
   }
 
   private populateForm(item: CatalogItem): void {
@@ -115,18 +55,7 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     this.precioBaseUsd.set(item.precioBaseUsd || item.precioUsd || 0);
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo ?? true);
-    this.complejidad.set(item.complejidad || 'MEDIA');
-    this.duracionEstimadaMinutos.set(item.duracionEstimadaMinutos || 120);
-    this.requiereAnestesia.set(item.requiereAnestesia ?? true);
-    this.tipoAnestesia.set(item.tipoAnestesia || 'GENERAL');
-    this.clasificacionRiesgo.set(item.clasificacionRiesgo || 'II');
-    this.notasPreoperatorias.set(item.notasPreoperatorias || '');
-    this.notasPostoperatorias.set(item.notasPostoperatorias || '');
-    this.protocoloQuirurgico.set(item.protocoloQuirurgico || '');
-    this.indicaciones.set(item.indicaciones || '');
-    this.contraindicaciones.set(item.contraindicaciones || '');
 
-    // Load recipe
     this.inventoryService.getRecetas().subscribe({
       next: (recetas: any[]) => {
         const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
@@ -146,7 +75,6 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     }
   }
 
-  // ── BOM Actions ─────────────────────────────────────────────────────────
   public addInsumoToBOM(insumo: Insumo): void {
     this.bomHandler.addInsumo(insumo, 1);
   }
@@ -169,41 +97,6 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     this.bomHandler.onInsumoBlur();
   }
 
-  // ── Equipo Quirúrgico Actions ───────────────────────────────────────────
-  public addEquipo(item: CatalogItem): void {
-    this.addEquipoToList(item);
-  }
-
-  public addEquipoToList(item: CatalogItem): void {
-    const exists = this.equipoQuirurgico().some(e => e.id === item.id);
-    if (exists) return;
-
-    this.equipoQuirurgico.update(eq => [...eq, {
-      id: item.id,
-      nombre: item.descripcion,
-      codigo: item.codigo,
-      cantidad: 1
-    }]);
-    this.equipoSearchQuery.set('');
-    this.showEquipoDropdown.set(false);
-  }
-
-  public updateEquipoCantidad(index: number, cantidad: number): void {
-    this.equipoQuirurgico.update(eq => {
-      const copy = [...eq];
-      copy[index] = { ...copy[index], cantidad: Math.max(1, cantidad) };
-      return copy;
-    });
-  }
-
-  public removeEquipo(index: number): void {
-    this.equipoQuirurgico.update(eq => eq.filter((_, i) => i !== index));
-  }
-
-  public onEquipoBlur(): void {
-    setTimeout(() => this.showEquipoDropdown.set(false), 200);
-  }
-
   public toggleSugerencia(id: string): void {
     this.sugerenciasHandler.toggleSugerencia(id);
   }
@@ -220,22 +113,6 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     this.onClose();
   }
 
-  public addHonorarioRol(): void {
-    this.honorariosEquipo.update(list => [...list, { rol: '', honorarioUsd: 0 }]);
-  }
-
-  public updateHonorarioRol(index: number, field: 'rol' | 'honorarioUsd', value: any): void {
-    this.honorariosEquipo.update(list => {
-      const copy = [...list];
-      copy[index] = { ...copy[index], [field]: value };
-      return copy;
-    });
-  }
-
-  public removeHonorarioRol(index: number): void {
-    this.honorariosEquipo.update(list => list.filter((_, i) => i !== index));
-  }
-
   public save(): void {
     if (!this.nombre() || !this.codigo() || this.precioBaseUsd() <= 0) return;
     this.isSaving.set(true);
@@ -243,21 +120,10 @@ export class EditCirugiaComponent extends BaseCatalogEditComponent implements On
     const itemData: any = {
       descripcion: this.nombre(),
       codigo: this.codigo(),
-      precioBaseUsd: this.precioBaseUsd(),
       precioUsd: this.precioBaseUsd(),
       honorarioBase: this.honorarioBase(),
       tipo: 'CIRUGIA',
       activo: this.activo(),
-      complejidad: this.complejidad(),
-      duracionEstimadaMinutos: this.duracionEstimadaMinutos(),
-      requiereAnestesia: this.requiereAnestesia(),
-      tipoAnestesia: this.tipoAnestesia(),
-      clasificacionRiesgo: this.clasificacionRiesgo(),
-      notasPreoperatorias: this.notasPreoperatorias(),
-      notasPostoperatorias: this.notasPostoperatorias(),
-      protocoloQuirurgico: this.protocoloQuirurgico(),
-      indicaciones: this.indicaciones(),
-      contraindicaciones: this.contraindicaciones(),
       sugerenciasIds: this.selectedSugerenciasIds(),
       requiereInventario: this.bomLines().length > 0
     };

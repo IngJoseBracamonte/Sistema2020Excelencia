@@ -2,13 +2,14 @@
 
 ## Contexto y Estándares de Diseño (Angular 19)
 
-El módulo de catálogo administrativo del Sistema Sat Hospitalario gestiona 6 tipos principales de servicios clínicos y catálogo:
-1. **MEDICAMENTO** (`edit-medicamento.component`)
-2. **LABORATORIO** (`edit-laboratorio.component`)
-3. **CIRUGIA** (`edit-cirugia.component`)
-4. **CONSULTA** (`edit-consulta.component`)
-5. **PROCEDIMIENTO** (`edit-procedimiento.component`)
-6. **TOMOGRAFIA** (`edit-tomografia.component`)
+El módulo de catálogo administrativo del Sistema Sat Hospitalario gestiona 7 tipos principales de servicios clínicos y catálogo:
+1. **SERVICIO** (`edit-servicio.component` - Catálogo base y fallback por defecto)
+2. **MEDICAMENTO** (`edit-medicamento.component`)
+3. **LABORATORIO** (`edit-laboratorio.component`)
+4. **CIRUGIA** (`edit-cirugia.component`)
+5. **CONSULTA** (`edit-consulta.component`)
+6. **PROCEDIMIENTO** (`edit-procedimiento.component`)
+7. **TOMOGRAFIA** (`edit-tomografia.component`)
 
 ### Principios SOLID & DRY Aplicados
 
@@ -23,6 +24,7 @@ src/app/features/admin/catalog/
 │   └── catalog-handlers.spec.ts       # Pruebas unitarias de handlers aislados
 └── components/
     ├── base-catalog-edit.component.ts # Clase abstracta base con Signals (itemId, isEditing, saved, closed)
+    ├── edit-servicio.component.ts / .spec.ts
     ├── edit-medicamento.component.ts / .spec.ts
     ├── edit-laboratorio.component.ts / .spec.ts
     ├── edit-cirugia.component.ts

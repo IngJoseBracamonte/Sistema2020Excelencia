@@ -170,11 +170,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         private static string ResolveEditorType(string? rawTipo, bool esLegacy)
         {
             if (esLegacy) return "LABORATORIO";
-            if (string.IsNullOrWhiteSpace(rawTipo)) return "PROCEDIMIENTO";
+            if (string.IsNullOrWhiteSpace(rawTipo)) return "SERVICIO";
 
             var key = rawTipo.Trim().ToUpper();
             switch (key)
             {
+                case "SERVICIO":
+                    return "SERVICIO";
+
                 case "CONSULTA":
                 case "CITAS":
                 case "MEDICO":
@@ -231,7 +234,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     return "HOSPITALARIO";
 
                 default:
-                    return "PROCEDIMIENTO";
+                    return "SERVICIO";
             }
         }
     }

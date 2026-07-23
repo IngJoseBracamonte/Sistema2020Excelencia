@@ -77,7 +77,7 @@ export abstract class BasePricedItem {
     this.precioBs = data.precioBs ?? data.PrecioBs;
     this.precioUsd = data.precioUsd ?? data.PrecioUsd;
     this.tipo = data.tipo || data.Tipo || '';
-    this.editorType = data.editorType || data.EditorType || data.tipo || data.Tipo || 'PROCEDIMIENTO';
+    this.editorType = data.editorType || data.EditorType || data.tipo || data.Tipo || 'SERVICIO';
     this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;
     this.activo = data.activo ?? data.Activo ?? true;

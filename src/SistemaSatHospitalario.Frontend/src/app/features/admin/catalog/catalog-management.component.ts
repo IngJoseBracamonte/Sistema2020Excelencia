@@ -33,6 +33,7 @@ import { EditMedicamentoComponent } from './components/edit-medicamento.componen
 import { EditProcedimientoComponent } from './components/edit-procedimiento.component';
 import { EditTomografiaComponent } from './components/edit-tomografia.component';
 import { EditHospitalarioComponent } from './components/edit-hospitalario.component';
+import { EditServicioComponent } from './components/edit-servicio.component';
 import { getTipoBadgeStyle as getBadgeStyle, CatalogEditorType } from './models/catalog-edit.models';
 
 export type SortOption = 'nombre-asc' | 'nombre-desc' | 'precio-desc' | 'precio-asc' | 'codigo-asc';
@@ -50,7 +51,8 @@ export type SortOption = 'nombre-asc' | 'nombre-desc' | 'precio-desc' | 'precio-
     EditMedicamentoComponent,
     EditProcedimientoComponent,
     EditTomografiaComponent,
-    EditHospitalarioComponent
+    EditHospitalarioComponent,
+    EditServicioComponent
   ],
   templateUrl: './catalog-management.component.html'
 })
@@ -75,7 +77,7 @@ export class CatalogManagementComponent implements OnInit {
   readonly activeEditorType = signal<CatalogEditorType | null>(null);
   readonly itemToDelete = signal<CatalogItem | null>(null);
 
-  readonly availableTypes = ['CONSULTA', 'MEDICAMENTO', 'RX', 'TOMOGRAFIA', 'PROCEDIMIENTO', 'CIRUGIA', 'LABORATORIO', 'HOSPITALARIO'];
+  readonly availableTypes = ['SERVICIO', 'CONSULTA', 'MEDICAMENTO', 'RX', 'TOMOGRAFIA', 'PROCEDIMIENTO', 'CIRUGIA', 'LABORATORIO', 'HOSPITALARIO'];
 
   readonly icons = {
     Package, Search, Plus, Edit, Trash2, Database, Stethoscope, Scan, X, Check, Clock,
@@ -92,7 +94,7 @@ export class CatalogManagementComponent implements OnInit {
     // 1. Filtro por tipos de servicio seleccionados
     if (selected.length > 0) {
       list = list.filter(item => {
-        const itemType = (item.editorType || item.tipo || 'PROCEDIMIENTO').toUpperCase();
+        const itemType = (item.editorType || item.tipo || 'SERVICIO').toUpperCase();
         return selected.some(targetType => targetType.toUpperCase() === itemType);
       });
     }
@@ -191,12 +193,13 @@ export class CatalogManagementComponent implements OnInit {
     this.clearFilters();
   }
   resolveEditorType(item: CatalogItem | null | undefined): CatalogEditorType {
-    if (!item) return 'PROCEDIMIENTO';
+    if (!item) return 'SERVICIO';
     if (item.esLegacy) return 'LABORATORIO';
 
     const type = (item.editorType || item.tipo || '').toUpperCase().trim();
 
     switch (type) {
+      case 'SERVICIO':
       case 'CONSULTA':
       case 'LABORATORIO':
       case 'TOMOGRAFIA':
@@ -207,7 +210,7 @@ export class CatalogManagementComponent implements OnInit {
         return type as CatalogEditorType;
 
       default:
-        return 'PROCEDIMIENTO'; // Fallback exclusivo para registros sin tipo asignado
+        return 'SERVICIO'; // Fallback exclusivo para registros sin tipo asignado (Servicio Base)
     }
   }
 
@@ -215,7 +218,7 @@ export class CatalogManagementComponent implements OnInit {
     this.isEditing.set(false);
     this.selectedItemId.set(null);
     const selected = this.selectedTypes();
-    const firstType = selected.length > 0 ? selected[0] : 'PROCEDIMIENTO';
+    const firstType = selected.length > 0 ? selected[0] : 'SERVICIO';
     this.activeEditorType.set(this.resolveEditorType({ tipo: firstType } as any));
     this.showModal.set(true);
   }
