@@ -6,25 +6,25 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogService, CatalogItem } from '../../../core/services/catalog.service';
 import { BillingFacadeService } from '../../../core/services/billing-facade.service';
 import {
-    LucideAngularModule,
-    Package,
-    Search,
-    Plus,
-    Edit,
-    Trash2,
-    Database,
-    Stethoscope,
-    Scan,
-    X,
-    Check,
-    Clock,
-    ArrowUpDown,
-    ArrowUp,
-    ArrowDown,
-    Filter,
-    List,
-    SlidersHorizontal,
-    Building2
+  LucideAngularModule,
+  Package,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Database,
+  Stethoscope,
+  Scan,
+  X,
+  Check,
+  Clock,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Filter,
+  List,
+  SlidersHorizontal,
+  Building2
 } from 'lucide-angular';
 import { EditCirugiaComponent } from './components/edit-cirugia.component';
 import { EditConsultaComponent } from './components/edit-consulta.component';
@@ -41,8 +41,8 @@ export type SortOption = 'nombre-asc' | 'nombre-desc' | 'precio-desc' | 'precio-
   selector: 'app-catalog-management',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
+    CommonModule,
+    FormsModule,
     LucideAngularModule,
     EditCirugiaComponent,
     EditConsultaComponent,
@@ -61,14 +61,14 @@ export class CatalogManagementComponent implements OnInit {
 
   readonly tasaCambioDia = this.billingFacade.tasaCambioDia;
 
-  // Estado del catálogo (Signals)
+  // ── Estado del catálogo (Signals) ─────────────────────────────────────────
   readonly catalog = signal<CatalogItem[]>([]);
   readonly isLoading = signal<boolean>(false);
   readonly selectedTypes = signal<string[]>([]);
   readonly searchQuery = signal<string>('');
   readonly sortOption = signal<SortOption>('nombre-asc');
-  
-  // Estado de Modales y Edición Tipados Fuertemente
+
+  // ── Estado de Modales y Edición Tipados Fuertemente ────────────────────────
   readonly showModal = signal<boolean>(false);
   readonly isEditing = signal<boolean>(false);
   readonly selectedItemId = signal<string | null>(null);
@@ -82,7 +82,7 @@ export class CatalogManagementComponent implements OnInit {
     ArrowUpDown, ArrowUp, ArrowDown, Filter, List, SlidersHorizontal, Building2
   };
 
-  // Computed Signal: Filtrado y ordenamiento reactivo declarativo (Estándar Senior)
+  // ── Computed Signal: Filtrado y ordenamiento reactivo declarativo ──────────
   readonly filteredCatalog = computed(() => {
     let list = [...this.catalog()];
     const selected = this.selectedTypes();
@@ -99,7 +99,7 @@ export class CatalogManagementComponent implements OnInit {
 
     // 2. Filtro por texto (Nombre o Código)
     if (query) {
-      list = list.filter(item => 
+      list = list.filter(item =>
         (item.descripcion || '').toLowerCase().includes(query) ||
         (item.codigo || '').toLowerCase().includes(query)
       );
@@ -141,12 +141,18 @@ export class CatalogManagementComponent implements OnInit {
 
   loadCatalog(): void {
     this.isLoading.set(true);
-    this.catalogService.getItems().subscribe({
-      next: (data) => {
+
+    // Fallback defensivo para método de servicio
+    const fetch$ = typeof this.catalogService.getItems === 'function'
+      ? this.catalogService.getItems()
+      : (this.catalogService as any).getUnifiedCatalog();
+
+    fetch$.subscribe({
+      next: (data: CatalogItem[]) => {
         this.catalog.set(data || []);
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error cargando catálogo:', err);
         this.isLoading.set(false);
       }
@@ -184,71 +190,24 @@ export class CatalogManagementComponent implements OnInit {
   clearAllFilters(): void {
     this.clearFilters();
   }
-
   resolveEditorType(item: CatalogItem | null | undefined): CatalogEditorType {
     if (!item) return 'PROCEDIMIENTO';
     if (item.esLegacy) return 'LABORATORIO';
 
-    const rawType = (item.editorType || item.tipo || '').toUpperCase().trim();
+    const type = (item.editorType || item.tipo || '').toUpperCase().trim();
 
-    switch (rawType) {
+    switch (type) {
       case 'CONSULTA':
-      case 'CITAS':
-      case 'MEDICO':
-      case 'EVALUACION':
-        return 'CONSULTA';
-
       case 'LABORATORIO':
-      case 'LAB':
-      case 'EXAMEN':
-      case 'EXAMENES':
-      case 'PERFIL':
-      case 'ANALISIS':
-        return 'LABORATORIO';
-
       case 'TOMOGRAFIA':
-      case 'TOMO':
-      case 'RX':
-      case 'RADIOGRAFIA':
-      case 'IMAGEN':
-      case 'ECO':
-      case 'ECOGRAFIA':
-      case 'ULTRASONIDO':
-      case 'RESONANCIA':
-      case 'ESTUDIO':
-      case 'ESTUDIOS':
-        return 'TOMOGRAFIA';
-
       case 'MEDICAMENTO':
-      case 'MEDICINA':
-      case 'INSUMO':
-      case 'FARMACIA':
-      case 'MATERIAL':
-      case 'SOLUCION':
-      case 'AMPOLLA':
-      case 'TAB':
-      case 'CAPSULA':
-        return 'MEDICAMENTO';
-
       case 'CIRUGIA':
-      case 'QUIRURGICO':
-      case 'INTERVENCION':
-      case 'PABELLON':
-        return 'CIRUGIA';
-
       case 'HOSPITALARIO':
-      case 'HOSPITALIZACION':
-      case 'EMERGENCIA':
-      case 'UCI':
-      case 'TRASLADO':
-      case 'AREA':
-      case 'CAMAS':
-      case 'HABITACION':
-      case 'ESTANCIA':
-        return 'HOSPITALARIO';
+      case 'PROCEDIMIENTO':
+        return type as CatalogEditorType;
 
       default:
-        return 'PROCEDIMIENTO'; // Fallback defensivo garantizado para cualquier tipo genérico (incluyendo 'SERVICIO')
+        return 'PROCEDIMIENTO'; // Fallback exclusivo para registros sin tipo asignado
     }
   }
 
@@ -262,8 +221,10 @@ export class CatalogManagementComponent implements OnInit {
   }
 
   openEdit(item: CatalogItem): void {
+    const idToUse = item.id || (item as any)._id || item.codigo || null;
+
     this.isEditing.set(true);
-    this.selectedItemId.set(item.id || null);
+    this.selectedItemId.set(idToUse);
     this.activeEditorType.set(this.resolveEditorType(item));
     this.showModal.set(true);
   }
@@ -278,11 +239,12 @@ export class CatalogManagementComponent implements OnInit {
 
   executeDelete(): void {
     const item = this.itemToDelete();
-    if (!item?.id) return;
+    const id = item?.id || (item as any)?._id;
+    if (!id) return;
 
-    this.catalogService.deleteItem(item.id).subscribe({
+    this.catalogService.deleteItem(id).subscribe({
       next: () => {
-        this.catalog.set(this.catalog().filter(i => i.id !== item.id));
+        this.catalog.set(this.catalog().filter(i => (i.id || (i as any)._id) !== id));
         this.itemToDelete.set(null);
       },
       error: (err) => console.error('Error eliminando ítem:', err)
@@ -290,12 +252,19 @@ export class CatalogManagementComponent implements OnInit {
   }
 
   onEditorSaved(): void {
-    this.showModal.set(false);
+    this.closeAndResetEditor();
     this.loadCatalog();
   }
 
   onEditorClosed(): void {
+    this.closeAndResetEditor();
+  }
+
+  private closeAndResetEditor(): void {
     this.showModal.set(false);
+    this.selectedItemId.set(null);
+    this.activeEditorType.set(null);
+    this.isEditing.set(false);
   }
 
   getTipoBadgeStyle(tipo?: string | null): string {
