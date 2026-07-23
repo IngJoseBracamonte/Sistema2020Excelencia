@@ -46,21 +46,25 @@ export class CatalogPage {
    * realiza la autenticación automática de prueba.
    */
   async gotoCatalog(): Promise<void> {
+    // 1. Ir a /login para asegurar sesión activa
+    await this.page.goto('/login');
+    await this.page.waitForLoadState('networkidle');
+
+    // 2. Realizar autenticación si el formulario de login está presente
+    const usernameInput = this.page.locator('input#username');
+    if (await usernameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await usernameInput.fill('admin');
+      await this.page.fill('input#password', 'Admin123*!');
+      await this.page.click('button[type="submit"]');
+      await this.page.waitForURL('**/dashboard', { timeout: 15_000 }).catch(() => {});
+    }
+
+    // 3. Navegar a /admin/catalog
     await this.page.goto('/admin/catalog');
     await this.page.waitForLoadState('networkidle');
 
-    // Manejo de autenticación si fue redirigido al Login
-    if (this.page.url().includes('/login') || (await this.page.locator('input#username').isVisible())) {
-      await this.page.fill('input#username', 'admin');
-      await this.page.fill('input#password', 'Admin123*!');
-      await this.page.click('button[type="submit"]');
-      await this.page.waitForURL('**/dashboard');
-      await this.page.goto('/admin/catalog');
-      await this.page.waitForLoadState('networkidle');
-    }
-
-    // Verificar presencia del contenedor principal
-    const titleLocator = this.page.locator('h1, h2, div').filter({ hasText: 'MAESTRO DE SERVICIOS' }).first();
+    // 4. Verificar presencia del título Maestro de Servicios
+    const titleLocator = this.page.locator('h1, h2, div').filter({ hasText: /maestro de\s+servicios/i }).first();
     await expect(titleLocator).toBeVisible({ timeout: 15_000 });
   }
 
