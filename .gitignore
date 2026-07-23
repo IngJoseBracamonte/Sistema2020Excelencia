@@ -411,3 +411,7 @@ src/SistemaSatHospitalario.UnitTests/Application/ServiceLoadingStrategyTests.cs
 # Logs de diagnóstico de los tests de BD
 **/scratch/traslado_uci_test_log.txt
 **/scratch/ef_log.txt
+
+# Sandbox E2E Tests (Aislados de Producción)
+tests/e2e-sandbox/
+

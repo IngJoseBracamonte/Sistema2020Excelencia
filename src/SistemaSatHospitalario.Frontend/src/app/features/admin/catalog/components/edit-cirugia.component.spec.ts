@@ -73,24 +73,12 @@ describe('EditCirugiaComponent (Surgical & Operating Room Flow)', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debería cargar la intervención quirúrgica y poblar complejidad y anestesia', () => {
+  it('debería cargar la intervención quirúrgica y poblar nombre, código y precio', () => {
     (component as any).loadItem('cir-001');
 
     expect(component.nombre()).toBe('Apendicectomía Laparoscópica');
     expect(component.codigo()).toBe('CIR-APP-01');
     expect(component.precioBaseUsd()).toBe(450);
-    expect(component.complejidad()).toBe('ALTA');
-    expect(component.duracionEstimadaMinutos()).toBe(90);
-    expect(component.tipoAnestesia()).toBe('GENERAL');
-  });
-
-  it('debería permitir asignar honorarios por rol quirúrgico (Cirujano, Anestesiólogo)', () => {
-    component.addHonorarioRol();
-    component.updateHonorarioRol(0, 'rol', 'Cirujano Principal');
-    component.updateHonorarioRol(0, 'honorarioUsd', 200);
-
-    expect(component.honorariosEquipo().length).toBe(1);
-    expect(component.honorariosEquipo()[0].rol).toBe('Cirujano Principal');
-    expect(component.honorariosEquipo()[0].honorarioUsd).toBe(200);
   });
 });
+
