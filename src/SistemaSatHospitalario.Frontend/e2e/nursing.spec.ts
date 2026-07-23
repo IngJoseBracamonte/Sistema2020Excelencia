@@ -55,7 +55,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Selected active patient.');
 
     // Verify triage title is visible
-    await expect(page.locator('h3:has-text("Triage y Signos Vitales")')).toBeVisible();
+    await expect(page.locator('button:has-text("Triage y Signos Vitales")')).toBeVisible();
 
     // If the "Nuevo Triage" button is visible (because patient already has history), click it to open the form
     const nuevoTriageBtn = page.locator('button:has-text("Nuevo Triage")');
@@ -177,14 +177,13 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.goto('/enfermeria');
     await page.waitForLoadState('networkidle');
 
-    // Click on the first active patient
-    const firstPatient = page.locator('.space-y-3.max-h-\\[600px\\] > div').first();
-    const countPatients = await firstPatient.count();
-    if (countPatients === 0) {
+    // Click on the first active patient card
+    const patientCards = page.locator('.space-y-3.max-h-\\[600px\\] > div[class*="cursor-pointer"]');
+    if ((await patientCards.count()) === 0) {
       console.log('No active patients found, skipping test.');
       return;
     }
-    await firstPatient.click();
+    await patientCards.first().click();
 
     // Go to "Carga de Insumos" (con el case exacto del HTML)
     await page.click('button:has-text("Carga de Insumos")');

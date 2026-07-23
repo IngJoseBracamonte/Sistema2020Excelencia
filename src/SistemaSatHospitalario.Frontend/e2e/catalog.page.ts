@@ -62,7 +62,7 @@ export class CatalogPage {
     }
 
     // 3. Navegar a /admin/catalog
-    await this.page.goto('/catalog');
+    await this.page.goto('/admin/catalog');
     await this.page.waitForLoadState('networkidle');
 
     // 4. Verificar presencia del título Maestro de Servicios
