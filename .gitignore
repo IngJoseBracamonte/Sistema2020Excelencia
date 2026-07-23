@@ -403,11 +403,14 @@ legacy_sync_log.txt
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Test de traslados, Hospitalización y UCI contra BD real
+src/SistemaSatHospitalario.UnitTests/Application/*DbDirectTests.cs
 src/SistemaSatHospitalario.UnitTests/Application/TrasladoHospitalizacionUCIDbDirectTests.cs
 src/SistemaSatHospitalario.UnitTests/Application/TrasladoInteligenteDbDirectTests.cs
+src/SistemaSatHospitalario.UnitTests/Application/FacturacionClinicaDbDirectTests.cs
 
-# Test de estrategias de carga
+# Test de estrategias de carga e integración
 src/SistemaSatHospitalario.UnitTests/Application/ServiceLoadingStrategyTests.cs
+src/SistemaSatHospitalario.IntegrationTests/
 
 # Logs de diagnóstico de los tests de BD
 **/scratch/traslado_uci_test_log.txt

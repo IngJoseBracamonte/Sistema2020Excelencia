@@ -60,7 +60,8 @@ export class TrasladoPage {
       if ((await patientCard.count()) > 0 && (await patientCard.isVisible())) {
         console.log(`[E2E TRASLADO] Selected active patient card in section '${filterText}'.`);
         await patientCard.click();
-        await this.page.waitForSelector('button:has-text("Traslados y Destino")', { timeout: 5000 });
+        await this.page.waitForSelector('h3:has-text("Triage y Signos Vitales")', { timeout: 10000 });
+        await this.page.waitForSelector('button:has-text("Traslados y Destino")', { timeout: 10000 });
         return true;
       }
     }
