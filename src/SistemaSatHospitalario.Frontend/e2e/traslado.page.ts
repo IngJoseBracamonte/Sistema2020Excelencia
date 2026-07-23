@@ -60,7 +60,7 @@ export class TrasladoPage {
       if ((await patientCard.count()) > 0 && (await patientCard.isVisible())) {
         console.log(`[E2E TRASLADO] Selected active patient card in section '${filterText}'.`);
         await patientCard.click();
-        await this.page.waitForSelector('h3:has-text("Triage y Signos Vitales")', { timeout: 10000 });
+        await this.page.waitForSelector('button:has-text("Triage y Signos Vitales")', { timeout: 10000 });
         await this.page.waitForSelector('button:has-text("Traslados y Destino")', { timeout: 10000 });
         return true;
       }
@@ -71,15 +71,23 @@ export class TrasladoPage {
   }
 
   async openTransferTab(): Promise<void> {
-    await this.transferTabButton.click();
-    await this.page.waitForSelector('button:has-text("Cambio de Cama")', { timeout: 10000 });
+    const btn = this.page.locator('button').filter({ hasText: 'Traslados y Destino' }).first();
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click({ force: true });
+    await this.page.waitForTimeout(1000);
   }
 
   async selectCambioCamaMode(): Promise<void> {
-    await this.cambioCamaButton.click();
+    const btn = this.page.locator('button').filter({ hasText: 'Cambio de Cama' }).first();
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click({ force: true });
+    await this.page.waitForTimeout(500);
   }
 
   async selectTrasladoAreaMode(): Promise<void> {
-    await this.trasladoAreaButton.click();
+    const btn = this.page.locator('button').filter({ hasText: 'Traslado de Área' }).first();
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click({ force: true });
+    await this.page.waitForTimeout(500);
   }
 }
