@@ -404,6 +404,7 @@ legacy_sync_log.txt
 
 # Test de traslados, Hospitalización y UCI contra BD real
 src/SistemaSatHospitalario.UnitTests/Application/TrasladoHospitalizacionUCIDbDirectTests.cs
+src/SistemaSatHospitalario.UnitTests/Application/TrasladoInteligenteDbDirectTests.cs
 
 # Test de estrategias de carga
 src/SistemaSatHospitalario.UnitTests/Application/ServiceLoadingStrategyTests.cs
@@ -414,4 +415,12 @@ src/SistemaSatHospitalario.UnitTests/Application/ServiceLoadingStrategyTests.cs
 
 # Sandbox E2E Tests (Aislados de Producción)
 tests/e2e-sandbox/
+
+# Test Execution Results, Artifacts and Reports
+test-results/
+playwright-report/
+blob-report/
+.playwright-artifacts-*/
+/coverage/
+*.trx
 
