@@ -9,6 +9,7 @@ import { StepDoctorSelectComponent } from './components/step-panels/step-doctor-
 import { StepLabRxPriceComponent } from './components/step-panels/step-lab-rx-price.component';
 import { StepQuantityComponent } from './components/step-panels/step-quantity.component';
 import { StepConfirmComponent } from './components/step-panels/step-confirm.component';
+import { TrasladosDestinoComponent } from './components/traslados-destino/traslados-destino.component';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
@@ -25,6 +26,7 @@ import {
   ChevronRight, 
   ChevronDown, 
   AlertCircle, 
+  AlertTriangle,
   Info, 
   Calendar, 
   User, 
@@ -51,6 +53,7 @@ export interface CuentaAdministrativa {
   convenioId: number | null;
   seguroNombre?: string;
   total?: number;
+  totalPagado?: number;
   areaClinicaId?: string;
   areaClinicaNombre?: string;
   subAreaClinica?: string;
@@ -235,7 +238,8 @@ export const DEFAULT_TRIAGE = {
     StepDoctorSelectComponent,
     StepLabRxPriceComponent,
     StepQuantityComponent,
-    StepConfirmComponent
+    StepConfirmComponent,
+    TrasladosDestinoComponent
   ],
   templateUrl: './enfermeria.component.html',
   styleUrls: ['./enfermeria.component.css']
@@ -257,6 +261,7 @@ export class EnfermeriaComponent implements OnInit {
     ChevronRight,
     ChevronDown,
     AlertCircle,
+    AlertTriangle,
     Info,
     Calendar,
     User,
@@ -276,6 +281,7 @@ export class EnfermeriaComponent implements OnInit {
 
   // Admission flow states (V1.2.92 Onboarding)
   public showIngresoModal = signal<boolean>(false);
+  public showAltaDropdown = signal<boolean>(false);
   public ingresoStep = signal<number>(1);
   public showNewPatientForm = signal<boolean>(false);
   public searchIngresoTerm = signal<string>('');
@@ -580,6 +586,23 @@ export class EnfermeriaComponent implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  public toggleAltaDropdown(): void {
+    this.showAltaDropdown.update(v => !v);
+  }
+
+  public onTransferOrDischargeCompleted(msg?: any): void {
+    const messageStr = typeof msg === 'string' ? msg : 'Operación de traslado / alta procesada exitosamente.';
+    this.actionMessage.set(messageStr);
+    this.refreshAccounts();
+    this.loadCamasDisponibles();
+    setTimeout(() => this.actionMessage.set(null), 4000);
+  }
+
+  public handleActionErrorMessage(msg: any): void {
+    const errorStr = typeof msg === 'string' ? msg : (msg?.detail || msg?.message || 'Error en la operación');
+    this.actionMessage.set(errorStr);
   }
 
   private loadCatalogAndConvenios(): void {
@@ -1116,6 +1139,87 @@ export class EnfermeriaComponent implements OnInit {
   public observacionInteligente = signal<string>('');
   public montoACobrarUsdInteligente = signal<number>(300);
 
+  // Alta Médica & Solvencia Signals & Handlers
+  public showAltaModal = signal<boolean>(false);
+  public showSolvenciaModal = signal<boolean>(false);
+  public tipoAltaSeleccionada = signal<number>(0);
+  public observacionesAlta = signal<string>('');
+  public confirmadoEnfermeriaSinSolvencia = signal<boolean>(false);
+  public isProcessingAlta = signal<boolean>(false);
+
+  public iniciarAltaMedica(tipo: number): void {
+    const active = this.selectedAccount();
+    if (!active) {
+      alert('Debe seleccionar un paciente de la lista.');
+      return;
+    }
+    this.tipoAltaSeleccionada.set(tipo);
+    this.observacionesAlta.set('');
+    this.confirmadoEnfermeriaSinSolvencia.set(false);
+
+    const total = active.total || 0;
+    const pagado = active['totalPagado'] || 0;
+    const saldo = active['saldoPendiente'] !== undefined ? active['saldoPendiente'] : Math.max(0, total - pagado);
+
+    if (saldo > 0) {
+      this.showSolvenciaModal.set(true);
+    } else {
+      this.showAltaModal.set(true);
+    }
+  }
+
+  public continuarAltaSinSolvencia(): void {
+    this.confirmadoEnfermeriaSinSolvencia.set(true);
+    this.showSolvenciaModal.set(false);
+    this.showAltaModal.set(true);
+  }
+
+  public procesarAltaPaciente(): void {
+    const active = this.selectedAccount();
+    if (!active) return;
+
+    this.isProcessingAlta.set(true);
+    const payload = {
+      pacienteId: active.pacienteId,
+      admisionId: active.cuentaId,
+      tipoAlta: this.tipoAltaSeleccionada(),
+      observaciones: this.observacionesAlta(),
+      confirmadoPorEnfermeriaSinSolvencia: this.confirmadoEnfermeriaSinSolvencia()
+    };
+
+    this.http.post(`${environment.apiUrl}/api/Enfermeria/Alta`, payload).subscribe({
+      next: (res: any) => {
+        this.isProcessingAlta.set(false);
+        this.showAltaModal.set(false);
+        this.showSuccess(res?.mensaje || 'Alta médica registrada exitosamente.');
+        this.refreshAccounts();
+      },
+      error: (err: any) => {
+        this.isProcessingAlta.set(false);
+        const rawBody = err.error;
+        const errorMsg = 
+          (typeof rawBody === 'string' ? rawBody : null) ||
+          rawBody?.error ||
+          rawBody?.Error ||
+          rawBody?.message ||
+          rawBody?.Message ||
+          err.message ||
+          'Error al registrar el alta médica.';
+
+        if (errorMsg.toLowerCase().includes('saldo pendiente') || errorMsg.toLowerCase().includes('solvencia')) {
+          this.showAltaModal.set(false);
+          this.showSolvenciaModal.set(true);
+        } else {
+          alert('Error al registrar el alta médica: ' + errorMsg);
+        }
+      }
+    });
+  }
+
+  public onTransferError(err: string): void {
+    alert(err);
+  }
+
   public onAreaDestinoChange(area: string): void {
     this.areaDestinoInteligente.set(area);
     const defaultRate = area === 'UCI' ? 600 : area === 'HOSPITALIZACION' ? 450 : 300;
@@ -1155,16 +1259,21 @@ export class EnfermeriaComponent implements OnInit {
       return;
     }
     this.isSavingTransfer.set(true);
+
+    const medicoIdRaw = this.nuevoMedicoIdInteligente();
+    const nuevoMedicoIdSaneado = (medicoIdRaw && medicoIdRaw.trim() !== '') ? medicoIdRaw.trim() : null;
+
     const payload = {
       cuentaId: active.cuentaId,
-      areaDestino: this.areaDestinoInteligente(),
+      areaDestino: this.areaDestinoInteligente() || 'HOSPITALIZACION',
       camaDestinoId: this.selectedCamaId(),
-      cantidadHoras: this.cantidadHorasInteligente(),
-      cambiaMedicoTratante: this.cambiaMedicoTratanteInteligente(),
-      nuevoMedicoId: this.nuevoMedicoIdInteligente(),
-      observacion: this.observacionInteligente(),
-      montoACobrarUsd: this.montoACobrarUsdInteligente()
+      cantidadHoras: Number(this.cantidadHorasInteligente()) || 1,
+      cambiaMedicoTratante: Boolean(this.cambiaMedicoTratanteInteligente()),
+      nuevoMedicoId: nuevoMedicoIdSaneado,
+      observacion: (this.observacionInteligente() || '').trim(),
+      montoACobrarUsd: Number(this.montoACobrarUsdInteligente()) || 0
     };
+
     this.http.post(`${environment.apiUrl}/api/Enfermeria/TrasladoArea`, payload).subscribe({
       next: () => {
         this.showSuccess(`Traslado a ${this.areaDestinoInteligente()} procesado con éxito ($${this.montoACobrarUsdInteligente()} USD).`);
@@ -1172,7 +1281,16 @@ export class EnfermeriaComponent implements OnInit {
         this.isSavingTransfer.set(false);
       },
       error: (err) => {
-        alert('Error al realizar traslado de área: ' + (err.error?.Error || err.message));
+        const rawBody = err.error;
+        const errorMsg = 
+          (typeof rawBody === 'string' ? rawBody : null) ||
+          rawBody?.error ||
+          rawBody?.Error ||
+          rawBody?.message ||
+          rawBody?.Message ||
+          err.message ||
+          'Error al realizar traslado de área.';
+        alert('Error al realizar traslado de área: ' + errorMsg);
         this.isSavingTransfer.set(false);
       }
     });

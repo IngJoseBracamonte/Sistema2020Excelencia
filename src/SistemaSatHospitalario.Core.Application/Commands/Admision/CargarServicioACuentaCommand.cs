@@ -40,6 +40,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public DateTime? HoraCita { get; set; }
         public Guid? AreaClinicaId { get; set; }
 
+        // Datos para Imagenología (RX / Tomografía con Informe opcional u obligatorio por Seguro)
+        public bool RequiereInforme { get; set; }
+        public Guid? MedicoInterpreteId { get; set; }
+
         // Datos para Cirugía/Procedimiento Complejo con Múltiples Médicos
         public global::System.Collections.Generic.List<MedicoRolInputDto>? MedicosRoles { get; set; }
     }
@@ -63,6 +67,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
+        private readonly IMediator? _mediator;
 
         public CargarServicioACuentaCommandHandler(
             IBillingRepository repository, 
@@ -72,7 +77,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             IInventoryService inventoryService,
             ILegacyLabRepository legacyRepository,
             ILogger<CargarServicioACuentaCommandHandler> logger,
-            Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null)
+            Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null,
+            IMediator? mediator = null)
         {
             _repository = repository;
             _externaService = externaService;
@@ -81,6 +87,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _inventoryService = inventoryService;
             _legacyRepository = legacyRepository;
             _logger = logger;
+            _mediator = mediator;
             
             if (strategyFactory != null)
             {
@@ -88,11 +95,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
             else
             {
+                var med = mediator ?? new NullMediator();
                 var list = new global::System.Collections.Generic.List<Common.Strategies.IServiceLoadingStrategy>
                 {
-                    new Common.Strategies.ConsultationLoadingStrategy(repository, context),
-                    new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>()),
-                    new Common.Strategies.ImagingLoadingStrategy(externaService, context),
+                    new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
+                    new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
+                    new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
                     new Common.Strategies.InventoryLoadingStrategy(inventoryService, context),
                     new Common.Strategies.OperatingRoomLoadingStrategy(),
                     new Common.Strategies.FallbackLoadingStrategy()
@@ -503,5 +511,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // Se mantiene la notificación de legado para trazabilidad financiera.
             await _externaService.EnviarOrdenLegacyAsync(request.Precio * request.Cantidad, 0, ct);
         }
+    }
+
+    internal class NullMediator : IMediator
+    {
+        public Task Publish(object notification, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification => Task.CompletedTask;
+        public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default) => Task.FromResult<TResponse>(default!);
+        public Task<object?> Send(object request, CancellationToken cancellationToken = default) => Task.FromResult<object?>(null);
+        public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : IRequest => Task.CompletedTask;
+        public global::System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken = default) => AsyncEnumerable.Empty<TResponse>();
+        public global::System.Collections.Generic.IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken = default) => AsyncEnumerable.Empty<object?>();
     }
 }

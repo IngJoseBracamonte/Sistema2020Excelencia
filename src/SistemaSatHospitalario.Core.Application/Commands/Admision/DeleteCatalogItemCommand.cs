@@ -9,6 +9,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class DeleteCatalogItemCommand : IRequest<bool>
     {
         public Guid Id { get; set; }
+        public string? UsuarioId { get; set; }
     }
 
     public class DeleteCatalogItemCommandHandler : IRequestHandler<DeleteCatalogItemCommand, bool>
@@ -25,8 +26,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var item = await _context.ServiciosClinicos.FindAsync(new object[] { request.Id }, cancellationToken);
             if (item == null) return false;
 
-            // Soft-Delete para preservar integridad referencial de facturación
-            item.Activo = false;
+            // Soft-Delete para preservar integridad referencial de facturación y auditoría
+            item.Desactivar(request.UsuarioId ?? "Sistema");
             
             await _context.SaveChangesAsync(cancellationToken);
             return true;

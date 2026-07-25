@@ -61,8 +61,8 @@ export class CatalogPage {
       await this.page.waitForURL('**/dashboard', { timeout: 15_000 }).catch(() => {});
     }
 
-    // 3. Navegar a /admin/catalog
-    await this.page.goto('/admin/catalog');
+    // 3. Navegar a /catalog
+    await this.page.goto('/catalog');
     await this.page.waitForLoadState('networkidle');
 
     // 4. Verificar presencia del título Maestro de Servicios

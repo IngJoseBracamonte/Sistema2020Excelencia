@@ -108,6 +108,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 detalleId = nuevoDetalle.Id;
             }
 
+            // Registrar Auditoría Inmutable (AuditLog)
+            var auditLog = new AuditLog
+            {
+                UserId = string.IsNullOrWhiteSpace(request.UsuarioTraslado) ? "Sistema" : request.UsuarioTraslado,
+                ActionType = "TRASLADO_AREA",
+                OldValue = $"AreaOrigen: {cuenta.SubAreaClinica ?? "N/A"}",
+                NewValue = $"AreaDestino: {request.AreaDestino}, Cama: {request.CamaDestinoId}, Monto: ${request.MontoACobrarUsd:F2}",
+                IpAddress = "127.0.0.1",
+                Timestamp = DateTime.UtcNow
+            };
+            await _context.AuditLogs.AddAsync(auditLog, cancellationToken);
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return new RegistrarTrasladoAreaResult

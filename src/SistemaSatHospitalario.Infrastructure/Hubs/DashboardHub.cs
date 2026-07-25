@@ -9,5 +9,21 @@ namespace SistemaSatHospitalario.Infrastructure.Hubs
         {
             await Clients.All.SendAsync("ReceiveTicketUpdate", ticketData);
         }
+
+        public async Task JoinGroup(string groupName)
+        {
+            if (!string.IsNullOrWhiteSpace(groupName))
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            }
+        }
+
+        public async Task LeaveGroup(string groupName)
+        {
+            if (!string.IsNullOrWhiteSpace(groupName))
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+            }
+        }
     }
 }

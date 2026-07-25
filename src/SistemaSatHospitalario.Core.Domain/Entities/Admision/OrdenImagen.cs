@@ -1,5 +1,4 @@
 using System;
-using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -27,6 +26,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? MedicoSolicitanteId { get; set; }
         public string? MedicoSolicitanteNombre { get; set; }
         public string? Informe { get; set; }
+
+        // Nuevos campos para informe de imagenología y trazabilidad técnica
+        public string? LinkInforme { get; set; }
+        public string? ObservacionesMedico { get; set; }
+        public Guid? MedicoInterpreteId { get; set; }
+        public bool RequiereInforme { get; set; } = false;
 
         public OrdenImagen() { }
 

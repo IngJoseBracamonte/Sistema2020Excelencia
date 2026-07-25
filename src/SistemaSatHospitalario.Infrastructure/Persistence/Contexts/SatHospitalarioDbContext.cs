@@ -39,6 +39,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; set; }
         public DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; set; }
         public DbSet<LogAuditoriaPrecio> AuditLogsPrecios { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; set; }
         public DbSet<OrdenImagen> OrdenesImagenes { get; set; }
         public DbSet<CatalogoMetodoPago> CatalogoMetodosPago { get; set; }
@@ -198,6 +199,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 .WithMany()
                 .HasForeignKey(d => d.MedicoResponsableId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.Entity<DetalleServicioCuenta>()
+                .HasOne(d => d.DetallePadre)
+                .WithMany()
+                .HasForeignKey(d => d.DetallePadreId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ServicioClinico>()
+                .HasOne(s => s.ServicioInforme)
+                .WithMany()
+                .HasForeignKey(s => s.ServicioInformeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
 
             builder.Entity<PacienteAdmision>(entity =>

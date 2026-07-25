@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
@@ -12,12 +14,15 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public decimal PrecioUsd { get; set; }
         public decimal HonorarioBase { get; set; }
         public string Tipo { get; set; } // Legacy compatibility
+        public int TipoServicioId { get; set; } // 1=Medico, 2=Laboratorio, 3=RX, 4=Tomo, 5=Insumo, 6=Informe
         public string EditorType { get; set; } = "SERVICIO"; // Estandarizado para Frontend y Redis
         public int CategoryId { get; set; } // Consultation=1, Lab=2, etc. (V5.2)
         public bool EsLegacy { get; set; }
         public bool Activo { get; set; }
         public string? HonorariumCategory { get; set; }
         public Guid? EspecialidadId { get; set; }
+        public Guid? ServicioInformeId { get; set; }
+        public bool EsServicioInforme { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioDto>();
         public string? UnidadMedida { get; set; }

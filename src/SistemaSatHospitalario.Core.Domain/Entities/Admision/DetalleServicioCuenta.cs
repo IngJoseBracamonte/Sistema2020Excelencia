@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal Precio { get; private set; }
         public decimal Honorario { get; private set; }
         public decimal Cantidad { get; private set; }
-        public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo
+        public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo, Informe
         public int TipoServicioId { get; private set; }
         public string UsuarioCarga { get; private set; }
         public DateTime FechaCarga { get; private set; }
@@ -19,6 +19,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? MedicoResponsableId { get; private set; }
         public string? CategoriaHonorario { get; private set; }
         public Guid? AreaClinicaId { get; private set; }
+
+        // Vínculo relacional Padre-Hijo (Informe vinculado a Estudio Base)
+        public Guid? DetallePadreId { get; private set; }
+        public virtual DetalleServicioCuenta? DetallePadre { get; private set; }
+
         public bool IncluidoEnTarifaBase { get; private set; }
         public decimal PrecioCatalogoHistorico { get; private set; }
         public virtual CuentaServicios CuentaServicio { get; private set; }
@@ -30,7 +35,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MedicosResponsables.Add(new DetalleServicioMedicoResponsable(Id, medicoId, rol, montoHonorario));
         }
 
-        // [PHASE-2] Courtesy / All-Inclusive methods
         public decimal ObtenerSubtotal() => IncluidoEnTarifaBase ? 0.00m : (Precio * Cantidad);
 
         public void MarcarComoIncluidoEnTarifaBase()
@@ -48,14 +52,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             IncluidoEnTarifaBase = false;
         }
 
-        // [PHASE-6] Technical Validation Fields (Senior Traceability)
         public bool Realizado { get; private set; }
         public DateTime? FechaRealizacion { get; private set; }
         public string? UsuarioTecnico { get; private set; }
 
         protected DetalleServicioCuenta() { }
 
-        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null)
+        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -67,10 +70,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             TipoServicio = tipoServicio ?? throw new ArgumentNullException(nameof(tipoServicio));
             TipoServicioId = MapearTipoServicioAId(tipoServicio);
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
-            LegacyMappingId = legacyMappingId; // V12.1 Fix: Assigning mapping ID for legacy sync
+            LegacyMappingId = legacyMappingId;
             FechaCarga = DateTime.UtcNow;
             Realizado = false;
             AreaClinicaId = areaClinicaId;
+            DetallePadreId = detallePadreId;
+        }
+
+        public void AsignarDetallePadre(Guid detallePadreId)
+        {
+            DetallePadreId = detallePadreId;
         }
 
         public void AsignarAreaClinica(Guid areaClinicaId)
@@ -97,6 +106,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             }
         }
 
+        public void LimpiarMedicoResponsable()
+        {
+            MedicoResponsableId = null;
+            Honorario = 0.00m;
+        }
+
         public void ModificarPreciosAdministrativos(decimal nuevoPrecio, decimal nuevoHonorario)
         {
             Precio = nuevoPrecio;
@@ -112,6 +127,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             if (string.IsNullOrWhiteSpace(tipoServicio)) return Constants.TipoServicioConstants.Insumo;
             var t = tipoServicio.ToUpperInvariant();
+            if (t == "INFORME" || t == "INFORME MEDICO" || t == "INFORME MÉDICO") return Constants.TipoServicioConstants.Informe;
             if (t == "LABORATORIO" || t == "LAB") return Constants.TipoServicioConstants.Laboratorio;
             if (t == "RX") return Constants.TipoServicioConstants.RX;
             if (t == "TOMO" || t == "TOMOGRAFIA" || t == "TOMOGRAFÍA") return Constants.TipoServicioConstants.Tomo;
@@ -120,4 +136,3 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         }
     }
 }
-

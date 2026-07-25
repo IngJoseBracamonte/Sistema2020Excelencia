@@ -45,6 +45,7 @@ export const routes: Routes = [
             { path: 'admin/audit/cuentas', loadComponent: () => import('./features/admision/auditing/auditing.component').then(m => m.AuditingComponent) },
             { path: 'admin/audit/modificar-cuenta', loadComponent: () => import('./features/admin/account-modification/account-modification.component').then(m => m.AccountModificationComponent) },
             { path: 'admin/imaging-monitor', loadComponent: () => import('./features/admin/imaging-monitor/imaging-monitor.component').then(m => m.ImagingMonitorComponent) },
+            { path: 'admin/reports/unprocessed-imaging', loadComponent: () => import('./features/admin/imaging-monitor/unprocessed-imaging-reports.component').then(m => m.UnprocessedImagingReportsComponent) },
             { path: 'especialidades', loadComponent: () => import('./features/admin/especialidades/especialidad-management.component').then(m => m.EspecialidadManagementComponent) },
             { path: 'admin/reset-requests', loadComponent: () => import('./features/admin/reset-requests/password-reset-requests.component').then(m => m.PasswordResetRequestsComponent) },
             { path: 'settings', loadComponent: () => import('./features/admin/settings/system-settings.component').then(m => m.SystemSettingsComponent) },

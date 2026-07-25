@@ -314,6 +314,153 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear las columnas 'PermiteFraccionamiento' y 'UnidadMedida' en ServiciosClinicos.");
                 }
 
+                // Self-healing: Ensure new imaging and soft-delete columns exist in ServiciosClinicos, DetalleServicioCuenta and OrdenesImagenes
+                try
+                {
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConnection = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConnection = true;
+                    }
+
+                    bool isSqlite = _context.Database.IsSqlite();
+
+                    // 1. ServiciosClinicos
+                    bool hasServicioInformeId = false;
+                    bool hasEsServicioInforme = false;
+                    bool hasDesactivadoPorUsuarioId = false;
+                    bool hasFechaDesactivacion = false;
+
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(ServiciosClinicos);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("ServicioInformeId", StringComparison.OrdinalIgnoreCase)) hasServicioInformeId = true;
+                                    if (name.Equals("EsServicioInforme", StringComparison.OrdinalIgnoreCase)) hasEsServicioInforme = true;
+                                    if (name.Equals("DesactivadoPorUsuarioId", StringComparison.OrdinalIgnoreCase)) hasDesactivadoPorUsuarioId = true;
+                                    if (name.Equals("FechaDesactivacion", StringComparison.OrdinalIgnoreCase)) hasFechaDesactivacion = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `ServiciosClinicos` WHERE Field IN ('ServicioInformeId', 'EsServicioInforme', 'DesactivadoPorUsuarioId', 'FechaDesactivacion');";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var field = reader["Field"]?.ToString() ?? string.Empty;
+                                    if (field.Equals("ServicioInformeId", StringComparison.OrdinalIgnoreCase)) hasServicioInformeId = true;
+                                    if (field.Equals("EsServicioInforme", StringComparison.OrdinalIgnoreCase)) hasEsServicioInforme = true;
+                                    if (field.Equals("DesactivadoPorUsuarioId", StringComparison.OrdinalIgnoreCase)) hasDesactivadoPorUsuarioId = true;
+                                    if (field.Equals("FechaDesactivacion", StringComparison.OrdinalIgnoreCase)) hasFechaDesactivacion = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!hasServicioInformeId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `ServiciosClinicos` ADD COLUMN `ServicioInformeId` TEXT NULL;" : "ALTER TABLE `ServiciosClinicos` ADD COLUMN `ServicioInformeId` CHAR(36) NULL;");
+                    if (!hasEsServicioInforme)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `ServiciosClinicos` ADD COLUMN `EsServicioInforme` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `ServiciosClinicos` ADD COLUMN `EsServicioInforme` TINYINT(1) NOT NULL DEFAULT 0;");
+                    if (!hasDesactivadoPorUsuarioId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `ServiciosClinicos` ADD COLUMN `DesactivadoPorUsuarioId` TEXT NULL;" : "ALTER TABLE `ServiciosClinicos` ADD COLUMN `DesactivadoPorUsuarioId` VARCHAR(255) NULL;");
+                    if (!hasFechaDesactivacion)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `ServiciosClinicos` ADD COLUMN `FechaDesactivacion` TEXT NULL;" : "ALTER TABLE `ServiciosClinicos` ADD COLUMN `FechaDesactivacion` DATETIME NULL;");
+
+                    // 2. DetalleServicioCuenta
+                    bool hasDetallePadreId = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(DetallesServicioCuenta);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("DetallePadreId", StringComparison.OrdinalIgnoreCase)) hasDetallePadreId = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `DetallesServicioCuenta` LIKE 'DetallePadreId';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync()) hasDetallePadreId = true;
+                            }
+                        }
+                    }
+                    if (!hasDetallePadreId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `DetallePadreId` TEXT NULL;" : "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `DetallePadreId` CHAR(36) NULL;");
+
+                    // 3. OrdenesImagenes
+                    bool hasLinkInforme = false;
+                    bool hasObservacionesMedico = false;
+                    bool hasMedicoInterpreteId = false;
+                    bool hasRequiereInforme = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(OrdenesImagenes);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("LinkInforme", StringComparison.OrdinalIgnoreCase)) hasLinkInforme = true;
+                                    if (name.Equals("ObservacionesMedico", StringComparison.OrdinalIgnoreCase)) hasObservacionesMedico = true;
+                                    if (name.Equals("MedicoInterpreteId", StringComparison.OrdinalIgnoreCase)) hasMedicoInterpreteId = true;
+                                    if (name.Equals("RequiereInforme", StringComparison.OrdinalIgnoreCase)) hasRequiereInforme = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `OrdenesImagenes` WHERE Field IN ('LinkInforme', 'ObservacionesMedico', 'MedicoInterpreteId', 'RequiereInforme');";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var field = reader["Field"]?.ToString() ?? string.Empty;
+                                    if (field.Equals("LinkInforme", StringComparison.OrdinalIgnoreCase)) hasLinkInforme = true;
+                                    if (field.Equals("ObservacionesMedico", StringComparison.OrdinalIgnoreCase)) hasObservacionesMedico = true;
+                                    if (field.Equals("MedicoInterpreteId", StringComparison.OrdinalIgnoreCase)) hasMedicoInterpreteId = true;
+                                    if (field.Equals("RequiereInforme", StringComparison.OrdinalIgnoreCase)) hasRequiereInforme = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!hasLinkInforme)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `OrdenesImagenes` ADD COLUMN `LinkInforme` TEXT NULL;" : "ALTER TABLE `OrdenesImagenes` ADD COLUMN `LinkInforme` VARCHAR(1000) NULL;");
+                    if (!hasObservacionesMedico)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `OrdenesImagenes` ADD COLUMN `ObservacionesMedico` TEXT NULL;" : "ALTER TABLE `OrdenesImagenes` ADD COLUMN `ObservacionesMedico` VARCHAR(2000) NULL;");
+                    if (!hasMedicoInterpreteId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `OrdenesImagenes` ADD COLUMN `MedicoInterpreteId` TEXT NULL;" : "ALTER TABLE `OrdenesImagenes` ADD COLUMN `MedicoInterpreteId` CHAR(36) NULL;");
+                    if (!hasRequiereInforme)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `OrdenesImagenes` ADD COLUMN `RequiereInforme` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `OrdenesImagenes` ADD COLUMN `RequiereInforme` TINYINT(1) NOT NULL DEFAULT 0;");
+
+                    if (closeConnection)
+                    {
+                        await conn.CloseAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear las columnas nuevas de imagenología y soft delete.");
+                }
+
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 
                 await SeedEspecialidadesAsync();

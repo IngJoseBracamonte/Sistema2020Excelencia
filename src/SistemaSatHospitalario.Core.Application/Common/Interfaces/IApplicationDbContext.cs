@@ -35,6 +35,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; }
         DbSet<ConvenioPerfilPrecio> ConvenioPerfilPrecios { get; }
         DbSet<LogAuditoriaPrecio> AuditLogsPrecios { get; }
+        DbSet<AuditLog> AuditLogs { get; set; }
         DbSet<HorarioAtencionMedico> HorariosAtencionMedicos { get; }
         DbSet<ServicioSugerencia> ServiciosSugerencias { get; }
         DbSet<OrdenImagen> OrdenesImagenes { get; set; }

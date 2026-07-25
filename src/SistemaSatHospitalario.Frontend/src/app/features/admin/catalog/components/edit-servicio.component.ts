@@ -1,9 +1,9 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule, Package, Search, Plus, Trash2, X, Check,
-  Stethoscope, Save, Loader2, Layers, FileText, UserCog
+  Stethoscope, Save, Loader2, Layers, FileText, UserCog, AlertCircle, FilePlus
 } from 'lucide-angular';
 import { BaseCatalogEditComponent } from './base-catalog-edit.component';
 import { CatalogItem } from '../../../../core/services/catalog.service';
@@ -19,8 +19,21 @@ import { BOMLine, MedicoOption } from '../models/catalog-edit.models';
 export class EditServicioComponent extends BaseCatalogEditComponent implements OnInit {
   protected readonly icons = {
     Package, Search, Plus, Trash2, X, Check,
-    Stethoscope, Save, Loader2, Layers, FileText, UserCog
+    Stethoscope, Save, Loader2, Layers, FileText, UserCog, AlertCircle, FilePlus
   } as const;
+
+  // Nuevas propiedades para Tipo de Servicio, Informes y Validaciones
+  public readonly tipoServicioId = signal<number>(1);
+  public readonly servicioInformeId = signal<string | null>(null);
+  public readonly availableInformes = signal<CatalogItem[]>([]);
+
+  public readonly esServicioInforme = computed(() => this.tipoServicioId() === 6);
+  public readonly isImagingService = computed(() => this.tipoServicioId() === 3 || this.tipoServicioId() === 4);
+  
+  // Validaciones reactivas en tiempo real (Invariante: PrecioBase >= HonorarioBase para Informes)
+  public readonly isPriceLessThanHonorarium = computed(() => {
+    return this.esServicioInforme() && (this.precioBaseUsd() < this.honorarioBase());
+  });
 
   // Handlers & Compatibility Signals
   public readonly availableInsumos = this.bomHandler.availableInsumos;
@@ -45,6 +58,17 @@ export class EditServicioComponent extends BaseCatalogEditComponent implements O
     this.loadInsumos();
     this.loadMedicos();
     this.loadCatalogForSugerencias('SERVICIO');
+    this.loadInformesCatalog();
+  }
+
+  private loadInformesCatalog(): void {
+    this.catalogService.getUnifiedCatalog().subscribe({
+      next: (items) => {
+        const informes = items.filter(i => i.esServicioInforme || i.tipoServicioId === 6 || (i.tipo && i.tipo.toUpperCase() === 'INFORME'));
+        this.availableInformes.set(informes);
+      },
+      error: (err) => console.error('Error loading informes catalog:', err)
+    });
   }
 
   protected loadItem(id: string): void {
@@ -56,6 +80,8 @@ export class EditServicioComponent extends BaseCatalogEditComponent implements O
 
   protected resetForm(): void {
     this.resetBaseForm();
+    this.tipoServicioId.set(1);
+    this.servicioInformeId.set(null);
   }
 
   private populateForm(item: CatalogItem): void {
@@ -64,6 +90,8 @@ export class EditServicioComponent extends BaseCatalogEditComponent implements O
     this.precioBaseUsd.set(item.precioUsd ?? 0);
     this.honorarioBase.set(item.honorarioBase || 0);
     this.activo.set(item.activo ?? true);
+    this.tipoServicioId.set(item.tipoServicioId || (item.esServicioInforme ? 6 : 1));
+    this.servicioInformeId.set(item.servicioInformeId || null);
 
     if (item.honorariosMedicos?.length) {
       this.honorariosMedicos.set(item.honorariosMedicos.map((h: any) => ({
@@ -90,6 +118,39 @@ export class EditServicioComponent extends BaseCatalogEditComponent implements O
     if (item.sugerenciasIds?.length) {
       this.selectedSugerenciasIds.set(item.sugerenciasIds);
     }
+  }
+
+  public crearInformeRapido(): void {
+    const baseName = this.nombre().trim();
+    if (!baseName) {
+      alert('Por favor ingrese primero el Nombre del Estudio Base.');
+      return;
+    }
+
+    const reportName = `Informe de ${baseName}`;
+    const reportCode = `INF-${this.codigo().trim() || 'NEW'}`;
+    const reportPrice = Math.round((this.precioBaseUsd() * 0.4) * 100) / 100 || 15.00;
+    const reportFee = Math.round((reportPrice * 0.7) * 100) / 100 || 10.00;
+
+    const reportData: any = {
+      descripcion: reportName,
+      codigo: reportCode,
+      precioUsd: reportPrice,
+      honorarioBase: reportFee,
+      tipo: 'INFORME',
+      tipoServicioId: 6,
+      esServicioInforme: true,
+      activo: true
+    };
+
+    this.catalogService.createItem(reportData).subscribe({
+      next: (newReportId: string) => {
+        alert(`Informe '${reportName}' creado y vinculado con éxito.`);
+        this.loadInformesCatalog();
+        this.servicioInformeId.set(newReportId);
+      },
+      error: (err) => alert('Error al crear el informe rápido: ' + (err.error?.message || err.message))
+    });
   }
 
   // ── BOM Actions ──────────────────────────────────────────────────────────
@@ -151,14 +212,27 @@ export class EditServicioComponent extends BaseCatalogEditComponent implements O
 
   public save(): void {
     if (!this.nombre() || !this.codigo() || this.precioBaseUsd() <= 0) return;
+    if (this.isPriceLessThanHonorarium()) {
+      alert(`El precio base del informe ($${this.precioBaseUsd()}) no puede ser inferior al honorario del médico ($${this.honorarioBase()}).`);
+      return;
+    }
+
     this.isSaving.set(true);
+
+    const mappedTipo = this.tipoServicioId() === 6 ? 'INFORME' : 
+                       (this.tipoServicioId() === 3 ? 'RX' : 
+                        (this.tipoServicioId() === 4 ? 'TOMOGRAFIA' : 
+                         (this.tipoServicioId() === 2 ? 'LABORATORIO' : 'SERVICIO')));
 
     const itemData: any = {
       descripcion: this.nombre(),
       codigo: this.codigo(),
       precioUsd: this.precioBaseUsd(),
       honorarioBase: this.honorarioBase(),
-      tipo: 'SERVICIO',
+      tipo: mappedTipo,
+      tipoServicioId: this.tipoServicioId(),
+      esServicioInforme: this.esServicioInforme(),
+      servicioInformeId: this.servicioInformeId(),
       activo: this.activo(),
       honorariosMedicos: this.honorariosMedicos().map(h => ({
         medicoId: h.medicoId,

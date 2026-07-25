@@ -74,6 +74,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .OrderByDescending(r => r.FechaEmision)
                     .FirstOrDefaultAsync(cancellationToken);
 
+                var totalPagado = await _context.RecibosFactura
+                    .AsNoTracking()
+                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .SumAsync(r => (decimal?)r.TotalFacturadoUSD, cancellationToken) ?? 0m;
+
+                var totalCuenta = c.CalcularTotal();
+                var saldoPendiente = Math.Max(0m, totalCuenta - totalPagado);
+
                 var dto = new CuentaAdministrativaDto
                 {
                     CuentaId = c.Id,
@@ -86,7 +94,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     TipoIngreso = c.TipoIngreso,
                     ConvenioId = c.ConvenioId,
                     SeguroNombre = c.Convenio?.Nombre ?? "PARTICULAR",
-                    Total = c.CalcularTotal(),
+                    Total = totalCuenta,
+                    TotalPagado = totalPagado,
+                    SaldoPendiente = saldoPendiente,
                     ReciboId = recibo?.Id,
                     NumeroRecibo = recibo?.NumeroRecibo,
                     AreaClinicaId = c.AreaClinicaId,

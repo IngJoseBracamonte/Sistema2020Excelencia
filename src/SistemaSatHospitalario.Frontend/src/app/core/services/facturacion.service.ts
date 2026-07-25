@@ -33,6 +33,8 @@ export interface CargarServicioACuentaRequest {
   medicoId?: string;
   horaCita?: string;
   comentario?: string;
+  requiereInforme?: boolean;
+  medicoInterpreteId?: string;
 }
 
 export interface ReservarTurnoRequest {
@@ -65,30 +67,35 @@ export interface SyncCarritoMasivoRequest {
     medicoId?: string;
     horaCita?: string;
     comentario?: string;
+    requiereInforme?: boolean;
+    medicoInterpreteId?: string;
   }>;
 }
 
-export interface DailyBilledPatient {
-  pacienteId: string;
-  cedula: string;
-  nombre: string;
-  apellidos: string;
-  totalFacturado: number;
-  cuentasCerradas: number;
-}
-
 export interface ReceiptPrintData {
-  id: string;
-  numeroRecibo: string;
+  facturaId: string;
+  numeroFactura: string;
   fechaEmision: string;
   pacienteNombre: string;
   pacienteCedula: string;
   tipoIngreso: string;
-  totalUSD: number;
-  totalBS: number;
-  tasaBcv: number;
-  detalles: Array<{ descripcion: string; cantidad: number; precioUnitario: number; subtotal: number }>;
-  pagos: Array<{ metodoPago: string; montoOriginal: number; equivalenteBase: number; referencia: string }>;
+  detalles: Array<{
+    descripcion: string;
+    cantidad: number;
+    precioUnitarioUsd: number;
+    subtotalUsd: number;
+    subtotalBs: number;
+  }>;
+  totalUsd: number;
+  tasaCambio: number;
+  totalBs: number;
+  pagos: Array<{
+    metodo: string;
+    referencia: string;
+    montoOriginal: number;
+    montoBs: number;
+  }>;
+  cajeroNombre: string;
 }
 
 @Injectable({
@@ -96,123 +103,42 @@ export interface ReceiptPrintData {
 })
 export class FacturacionService {
   private http = inject(HttpClient);
-  private billingUrl = `${environment.apiUrl}/api/Billing`;
-  private receiptUrl = `${environment.apiUrl}/api/ReciboFactura`;
-  private segurosUrl = `${environment.apiUrl}/api/Seguros`;
+  private apiUrl = `${environment.apiUrl}/api/Billing`;
 
-  generarGarantiaPdf(dto: any): Observable<Blob> {
-    return this.http.post(`${this.segurosUrl}/garantia-pago`, dto, { responseType: 'blob' });
+  abrirCuenta(pacienteId: string, usuarioCarga: string, tipoIngreso: string, convenioId?: number): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/abrir-cuenta`, {
+      pacienteId,
+      usuarioCarga,
+      tipoIngreso,
+      convenioId
+    });
   }
 
-  generarCompromisoPdf(dto: any): Observable<Blob> {
-    return this.http.post(`${this.segurosUrl}/compromiso-pago`, dto, { responseType: 'blob' });
+  cargarServicio(request: CargarServicioACuentaRequest): Observable<{ cuentaId: string; detalleId: string }> {
+    return this.http.post<{ cuentaId: string; detalleId: string }>(`${this.apiUrl}/cargar-servicio`, request);
   }
 
-  generarConformidadPdf(dto: any): Observable<Blob> {
-    return this.http.post(`${this.segurosUrl}/conformidad-servicios`, dto, { responseType: 'blob' });
+  syncCarritoMasivo(request: SyncCarritoMasivoRequest): Observable<{ cuentaId: string }> {
+    return this.http.post<{ cuentaId: string }>(`${this.apiUrl}/sync-carrito`, request);
   }
 
-  getGarantiasItems(cuentaPorCobrarId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.segurosUrl}/garantias-items/${cuentaPorCobrarId}`);
+  registrarReciboFactura(request: RegistrarReciboFacturaRequest): Observable<{ facturaId: string; numeroFactura: string }> {
+    return this.http.post<{ facturaId: string; numeroFactura: string }>(`${this.apiUrl}/recibo-factura`, request);
   }
 
-  guardarGarantiasItems(cuentaPorCobrarId: string, items: any[]): Observable<any> {
-    return this.http.post<any>(`${this.segurosUrl}/garantias-items/${cuentaPorCobrarId}`, items);
+  getFacturaPrintData(facturaId: string): Observable<ReceiptPrintData> {
+    return this.http.get<ReceiptPrintData>(`${this.apiUrl}/facturas/${facturaId}/print`);
   }
 
-  getOpenAccount(pacienteId: string, tipoIngreso?: string): Observable<any> {
-    let url = `${this.billingUrl}/OpenAccount/${pacienteId}`;
-    if (tipoIngreso) {
-      url += `?tipoIngreso=${tipoIngreso}`;
+  getReciboPrintData(reciboId: string): Observable<ReceiptPrintData> {
+    return this.http.get<ReceiptPrintData>(`${this.apiUrl}/recibos/${reciboId}/print`);
+  }
+
+  getExpedienteFacturacion(pacienteId: string, searchTerm?: string): Observable<any> {
+    let url = `${this.apiUrl}/expediente/${pacienteId}`;
+    if (searchTerm) {
+      url += `?searchTerm=${encodeURIComponent(searchTerm)}`;
     }
     return this.http.get<any>(url);
-  }
-
-  closeAccount(request: any): Observable<any> {
-    // Al cerrar cuenta, se espera cuentaId (Guid)
-    return this.http.post<any>(`${this.billingUrl}/CloseAccount`, request);
-  }
-
-  abrirCuenta(pacienteId: string, tipoIngreso: string, convenioId?: number | null, areaClinicaId?: string | null): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/AbrirCuenta`, { pacienteId, tipoIngreso, convenioId, areaClinicaId });
-  }
-
-  updateARMetadata(request: any): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/UpdateARMetadata`, request);
-  }
-
-  cargarServicio(payload: CargarServicioACuentaRequest, idempotencyKey?: string): Observable<any> {
-    let headers = new HttpHeaders();
-    if (idempotencyKey) {
-      headers = headers.set('X-Idempotency-Key', idempotencyKey);
-    }
-    return this.http.post<any>(`${this.billingUrl}/CargarServicio`, payload, { headers });
-  }
-
-  registrarPago(payload: RegistrarReciboFacturaRequest): Observable<any> {
-    return this.http.post<any>(`${this.receiptUrl}/RegistrarPagoMultidivisa`, payload);
-  }
-
-  quitarServicio(cuentaId: string, detalleId: string, medicoId?: string, hora?: string): Observable<any> {
-    let url = `${this.billingUrl}/RemoveServicio?cuentaId=${cuentaId}&detalleId=${detalleId}`;
-    if (medicoId) url += `&medicoId=${medicoId}`;
-    if (hora) url += `&horaCita=${encodeURIComponent(hora)}`;
-    return this.http.delete<any>(url);
-  }
-
-  getReceiptPrintData(reciboId: string): Observable<ReceiptPrintData> {
-    return this.http.get<ReceiptPrintData>(`${this.receiptUrl}/${reciboId}/Print`);
-  }
-
-  reservarTurno(payload: ReservarTurnoRequest): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/ReservarTurno`, payload);
-  }
-
-  liberarTurno(medicoId: string, horaPautada: string): Observable<any> {
-    return this.http.delete<any>(`${this.billingUrl}/LiberarTurno?medicoId=${medicoId}&horaPautada=${encodeURIComponent(horaPautada)}`);
-  }
-
-  bloquearHorario(payload: BloquearHorarioRequest): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/BloquearHorario`, payload);
-  }
-
-  syncBulk(payload: SyncCarritoMasivoRequest, idempotencyKey?: string): Observable<any> {
-    let headers = new HttpHeaders();
-    if (idempotencyKey) {
-      headers = headers.set('X-Idempotency-Key', idempotencyKey);
-    }
-    return this.http.post<any>(`${this.billingUrl}/SincronizarCarrito`, payload, { headers });
-  }
-
-  // Panel de Gestión Administrativa (Fase 10)
-  getDailyBilledPatients(fecha?: string): Observable<DailyBilledPatient[]> {
-    let url = `${this.billingUrl}/DailyBilledPatients`;
-    if (fecha) url += `?fecha=${fecha}`;
-    return this.http.get<DailyBilledPatient[]>(url);
-  }
-
-  getAppointments(fecha?: string, medicoId?: string): Observable<any[]> {
-    let url = `${this.billingUrl}/Appointments`;
-    const params = [];
-    if (fecha) params.push(`fecha=${fecha}`);
-    if (medicoId) params.push(`medicoId=${medicoId}`);
-    if (params.length > 0) url += `?${params.join('&')}`;
-    return this.http.get<any[]>(url);
-  }
-
-  cancelAppointment(appointmentId: string): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/CancelAppointment/${appointmentId}`, {});
-  }
-
-  validarCuenta(cuentaId: string): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/ValidarCuenta`, { cuentaId });
-  }
-
-  auditarCuenta(cuentaId: string): Observable<any> {
-    return this.http.post<any>(`${this.billingUrl}/AuditarCuenta`, { cuentaId });
-  }
-
-  emitirFactura(reciboId: string, nroControl: string): Observable<any> {
-    return this.http.post<any>(`${this.receiptUrl}/EmitirFactura`, { reciboId, nroControlFiscal: nroControl });
   }
 }

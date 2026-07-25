@@ -16,6 +16,8 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public int? ConvenioId { get; set; }
         public string? SeguroNombre { get; set; }
         public decimal Total { get; set; }
+        public decimal TotalPagado { get; set; }
+        public decimal SaldoPendiente { get; set; }
         public Guid? ReciboId { get; set; }
         public string? NumeroRecibo { get; set; }
         public Guid? AreaClinicaId { get; set; }

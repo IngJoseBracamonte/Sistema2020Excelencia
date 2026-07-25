@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -31,10 +32,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Codigo { get; set; }
         public decimal PrecioUsd { get; set; }
         public string Tipo { get; set; }
+        public int? TipoServicioId { get; set; }
         public bool Activo { get; set; }
         public decimal HonorarioBase { get; set; }
         public string? HonorariumCategory { get; set; }
         public bool RequiereInventario { get; set; }
+        public Guid? ServicioInformeId { get; set; }
+        public bool EsServicioInforme { get; set; } = false;
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
         public List<ServicioInsumoRecetaInputDto>? RecetaInsumos { get; set; }
@@ -65,6 +69,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             item.Activo = request.Activo;
             item.HonorariumCategory = request.HonorariumCategory;
             item.RequiereInventario = request.RequiereInventario;
+            item.ServicioInformeId = request.ServicioInformeId;
+            item.EsServicioInforme = request.EsServicioInforme || (request.TipoServicioId == TipoServicioConstants.Informe) || request.Tipo.Equals("INFORME", StringComparison.OrdinalIgnoreCase);
+
+            if (request.TipoServicioId.HasValue)
+            {
+                item.TipoServicioId = request.TipoServicioId.Value;
+            }
+
+            // Validar Invariantes de Dominio
+            item.ValidarInvariantes();
 
             // Actualizar sugerencias
             _context.ServiciosSugerencias.RemoveRange(item.Sugerencias);

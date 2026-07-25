@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Notifications;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
@@ -21,15 +23,18 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly IApplicationDbContext _context;
         private readonly ILogger<LegacyLabLoadingStrategy> _logger;
+        private readonly IMediator _mediator;
 
         public LegacyLabLoadingStrategy(
             ILegacyLabRepository legacyRepository, 
             IApplicationDbContext context, 
-            ILogger<LegacyLabLoadingStrategy> logger)
+            ILogger<LegacyLabLoadingStrategy> logger,
+            IMediator mediator)
         {
             _legacyRepository = legacyRepository;
             _context = context;
             _logger = logger;
+            _mediator = mediator;
         }
 
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
@@ -46,14 +51,17 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             ServicioClinico? baseService, 
             CancellationToken cancellationToken)
         {
-            // Regla de Negocio 1: Sistema Legacy - Conectarse y generar la orden en 'sistema2020'.
-            // Autodetección: Se genera si OrigenCarga está definido OR si es flujo clínico (Hospitalización, Emergencia, UCI).
             bool isClinical = !string.IsNullOrEmpty(request.OrigenCarga) || 
                               cuenta.TipoIngreso == EstadoConstants.Hospitalizacion || 
                               cuenta.TipoIngreso == EstadoConstants.Emergencia || 
                               cuenta.TipoIngreso == "UCI";
 
-            if (isClinical && int.TryParse(detalle.LegacyMappingId, out int idPerfil))
+            // Extracción robusta de LegacyMappingId con fallbacks
+            string? mappingString = !string.IsNullOrEmpty(detalle.LegacyMappingId)
+                ? detalle.LegacyMappingId
+                : (!string.IsNullOrEmpty(request.ServicioId) ? request.ServicioId : baseService?.LegacyMappingId);
+
+            if (isClinical && int.TryParse(mappingString, out int idPerfil))
             {
                 _logger.LogInformation("[LEGACY-SYNC-IMMEDIATE] Generando orden de laboratorio legacy inmediata para perfil {PerfilId}...", idPerfil);
 
@@ -115,6 +123,22 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                     _logger.LogInformation("[LEGACY-SYNC-IMMEDIATE] Orden de laboratorio legacy generada exitosamente con ID: {IdOrden}", idOrdenLegacy);
                 }
             }
+
+            // Emitir evento desacoplado vía MediatR
+            string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
+            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
+            var notification = new ServicioCargadoNotification(
+                "LAB",
+                request.OrigenCarga ?? request.TipoIngreso,
+                paciente.Id,
+                pNombre,
+                areaOrigen,
+                request.Descripcion,
+                request.MedicoId,
+                request.HoraCita
+            );
+
+            await _mediator.Publish(notification, cancellationToken);
         }
     }
 }

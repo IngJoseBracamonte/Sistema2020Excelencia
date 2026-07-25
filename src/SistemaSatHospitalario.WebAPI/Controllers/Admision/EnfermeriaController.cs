@@ -40,7 +40,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
 
@@ -57,7 +57,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
 
@@ -74,7 +74,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
 
@@ -98,7 +98,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
 
@@ -121,7 +121,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
 
@@ -144,7 +144,31 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+            }
+        }
+
+        [HttpPost("Alta")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RegistrarAltaPaciente([FromBody] RegistrarAltaPacienteCommand command)
+        {
+            try
+            {
+                command.UsuarioAlta = User.GetUserName();
+                command.IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                var result = await _mediator.Send(command);
+
+                await _hubContext.Clients.All.SendAsync("ReceiveCamaUpdate", new
+                {
+                    VersionEstado = GlobalStateVersion.Increment()
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
     }

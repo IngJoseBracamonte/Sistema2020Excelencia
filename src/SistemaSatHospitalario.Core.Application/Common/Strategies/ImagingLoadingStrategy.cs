@@ -2,9 +2,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Notifications;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities;
@@ -17,16 +19,18 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
     {
         private readonly IOrdenExternaService _externaService;
         private readonly IApplicationDbContext _context;
+        private readonly IMediator _mediator;
 
-        public ImagingLoadingStrategy(IOrdenExternaService externaService, IApplicationDbContext context)
+        public ImagingLoadingStrategy(IOrdenExternaService externaService, IApplicationDbContext context, IMediator mediator)
         {
             _externaService = externaService;
             _context = context;
+            _mediator = mediator;
         }
 
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
         {
-            return (baseService != null && (baseService.Category == ServiceCategory.Radiology || baseService.Category == ServiceCategory.Tomography)) || 
+            return (baseService != null && (baseService.Category == ServiceCategory.Radiology || baseService.Category == ServiceCategory.Tomography || baseService.TipoServicioId == 3 || baseService.TipoServicioId == 4)) || 
                    tipoServicio == EstadoConstants.RX || 
                    tipoServicio == EstadoConstants.TOMO;
         }
@@ -39,17 +43,73 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             ServicioClinico? baseService, 
             CancellationToken cancellationToken)
         {
-            // Autodetección: Se genera si OrigenCarga está definido OR si es flujo clínico (Hospitalización, Emergencia, UCI).
+            // REGLA 1: El estudio base de imagenología se registra SIN médico responsable ni honorario directo al técnico.
+            detalle.LimpiarMedicoResponsable();
+
+            // REGLA 2: Determinar si requiere informe (Por Toggle o por defecto en Seguros)
+            bool requiereInforme = request.RequiereInforme || 
+                                   cuenta.TipoIngreso.Equals("Seguro", StringComparison.OrdinalIgnoreCase) || 
+                                   (request.OrigenCarga ?? "").Equals("Seguros", StringComparison.OrdinalIgnoreCase);
+
+            if (requiereInforme)
+            {
+                ServicioClinico? reportService = null;
+                if (baseService?.ServicioInforme != null)
+                {
+                    reportService = baseService.ServicioInforme;
+                }
+                else if (baseService?.ServicioInformeId.HasValue == true)
+                {
+                    reportService = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == baseService.ServicioInformeId.Value, cancellationToken);
+                }
+
+                if (reportService == null)
+                {
+                    // Fallback a cualquier informe de imagenología activo catalogado
+                    reportService = await _context.ServiciosClinicos
+                        .FirstOrDefaultAsync(s => s.Activo && (s.EsServicioInforme || s.TipoServicioId == TipoServicioConstants.Informe || s.TipoServicio == "INFORME"), cancellationToken);
+                }
+
+                if (reportService != null)
+                {
+                    // Inyectar el detalle del Informe Médico vinculado al estudio base via DetallePadreId
+                    var reportDetail = cuenta.AgregarServicio(
+                        reportService.Id, 
+                        reportService.Descripcion, 
+                        reportService.PrecioBase, 
+                        reportService.HonorarioBase, 
+                        1, 
+                        "INFORME", 
+                        request.UsuarioCarga, 
+                        null, 
+                        request.AreaClinicaId);
+
+                    reportDetail.AsignarDetallePadre(detalle.Id);
+
+                    var medicoId = request.MedicoInterpreteId ?? request.MedicoId;
+                    if (medicoId.HasValue)
+                    {
+                        reportDetail.AsignarMedicoResponsable(medicoId.Value, "RADIOLOGIA", reportService.HonorarioBase);
+                    }
+
+                    if (_context.DetallesServicioCuenta != null)
+                    {
+                        _context.DetallesServicioCuenta.Add(reportDetail);
+                    }
+                }
+            }
+
             bool isClinical = !string.IsNullOrEmpty(request.OrigenCarga) || 
                               cuenta.TipoIngreso == EstadoConstants.Hospitalizacion || 
                               cuenta.TipoIngreso == EstadoConstants.Emergencia || 
                               cuenta.TipoIngreso == "UCI";
 
+            bool esRx = request.TipoServicio == EstadoConstants.RX || 
+                        (baseService != null && (baseService.Category == ServiceCategory.Radiology || baseService.TipoServicioId == 3));
+
             if (isClinical)
             {
                 string nombrePaciente = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-                bool esRx = request.TipoServicio == EstadoConstants.RX || 
-                            (baseService != null && baseService.Category == ServiceCategory.Radiology);
 
                 if (esRx)
                 {
@@ -60,7 +120,20 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                     await _externaService.EnviarOrdenTomoAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken);
                 }
 
-                // Regla de Negocio 2: Rx / Tomografía - Verificar si ya se ingresó un informe previo para marcarlo como completado de inmediato.
+                var orden = await _context.OrdenesImagenes
+                    .Where(o => o.CuentaId == cuenta.Id 
+                             && o.PacienteId == paciente.Id 
+                             && o.Estudio == request.Descripcion)
+                    .OrderByDescending(o => o.FechaCreacion)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (orden != null)
+                {
+                    orden.RequiereInforme = requiereInforme;
+                    orden.MedicoInterpreteId = request.MedicoInterpreteId ?? request.MedicoId;
+                }
+
+                // Verificar si ya se ingresó un informe previo para marcarlo como completado de inmediato.
                 var ordenConInforme = await _context.OrdenesImagenes
                     .Where(o => o.PacienteId == paciente.Id 
                              && o.Estudio == request.Descripcion 
@@ -68,25 +141,29 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                     .OrderByDescending(o => o.FechaCreacion)
                     .FirstOrDefaultAsync(cancellationToken);
 
-                if (ordenConInforme != null)
+                if (ordenConInforme != null && orden != null)
                 {
-                    // Buscar la orden que acabamos de crear y marcarla como completada/procesada
-                    var nuevaOrden = await _context.OrdenesImagenes
-                        .Where(o => o.CuentaId == cuenta.Id 
-                                 && o.PacienteId == paciente.Id 
-                                 && o.Estudio == request.Descripcion 
-                                 && o.Estado == "Pendiente")
-                        .OrderByDescending(o => o.FechaCreacion)
-                        .FirstOrDefaultAsync(cancellationToken);
-
-                    if (nuevaOrden != null)
-                    {
-                        nuevaOrden.MarcarComoProcesado("Sistema");
-                        nuevaOrden.Informe = ordenConInforme.Informe;
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
+                    orden.MarcarComoProcesado("Sistema");
+                    orden.Informe = ordenConInforme.Informe;
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
             }
+
+            // Emitir evento desacoplado vía MediatR para SignalR bandejas
+            string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
+            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
+            var notification = new ServicioCargadoNotification(
+                esRx ? "RX" : "TOMO",
+                request.OrigenCarga ?? request.TipoIngreso,
+                paciente.Id,
+                pNombre,
+                areaOrigen,
+                request.Descripcion,
+                request.MedicoId,
+                request.HoraCita
+            );
+
+            await _mediator.Publish(notification, cancellationToken);
         }
     }
 }

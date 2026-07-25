@@ -12,7 +12,6 @@ export class CatalogService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Catalog`;
 
-  // convenioId ahora es numérico para coincidir con Legacy
   getUnifiedCatalog(convenioId?: number | null): Observable<CatalogItem[]> {
     const url = convenioId ? `${this.apiUrl}/unified?convenioId=${convenioId}` : `${this.apiUrl}/unified`;
     return this.http.get<any[]>(url).pipe(
@@ -20,12 +19,10 @@ export class CatalogService {
     );
   }
 
-  /** Returns all catalog items (admin management endpoint). */
   getItems(): Observable<CatalogItem[]> {
     return this.getUnifiedCatalog();
   }
 
-  /** Returns a single catalog item by id. */
   getItemById(id: string): Observable<CatalogItem> {
     return this.http.get<any>(`${this.apiUrl}/${encodeURIComponent(id)}`).pipe(
       map(i => new CatalogItem(i))
@@ -54,8 +51,11 @@ export class CatalogService {
       codigo: item.codigo,
       precioUsd: item.precioUsd,
       tipo: item.tipo,
+      tipoServicioId: item.tipoServicioId,
       honorarioBase: item.honorarioBase ?? 0,
       requiereInventario: item.requiereInventario ?? true,
+      servicioInformeId: item.servicioInformeId,
+      esServicioInforme: item.esServicioInforme ?? false,
       sugerenciasIds: item.sugerenciasIds ?? [],
       honorariosMedicos: item.honorariosMedicos ?? [],
       activo: item.activo ?? true,
@@ -71,8 +71,11 @@ export class CatalogService {
       codigo: item.codigo,
       precioUsd: item.precioUsd ?? item.precioBaseUsd,
       tipo: item.tipo,
+      tipoServicioId: item.tipoServicioId,
       honorarioBase: item.honorarioBase ?? 0,
       requiereInventario: item.requiereInventario ?? true,
+      servicioInformeId: item.servicioInformeId,
+      esServicioInforme: item.esServicioInforme ?? false,
       sugerenciasIds: item.sugerenciasIds ?? [],
       honorariosMedicos: item.honorariosMedicos ?? [],
       activo: item.activo ?? true,

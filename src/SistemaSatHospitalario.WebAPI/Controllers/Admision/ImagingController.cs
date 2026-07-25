@@ -139,7 +139,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     FechaValidacion = o.FechaValidacion,
                                     MedicoSolicitanteId = o.MedicoSolicitanteId,
                                     MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
-                                    Informe = o.Informe
+                                    Informe = o.Informe,
+                                    LinkInforme = o.LinkInforme,
+                                    ObservacionesMedico = o.ObservacionesMedico,
+                                    MedicoInterpreteId = o.MedicoInterpreteId,
+                                    RequiereInforme = o.RequiereInforme
                                 })
                 .OrderByDescending(o => o.FechaCreacion)
                 .ToListAsync();
@@ -147,14 +151,63 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(orders);
         }
 
+        [HttpGet("unprocessed-reports")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
+        public async Task<IActionResult> GetUnprocessedReports()
+        {
+            var query = _context.OrdenesImagenes.AsNoTracking()
+                .Where(o => o.RequiereInforme && (string.IsNullOrEmpty(o.LinkInforme) || o.Estado == "Pendiente"));
+
+            var orders = await (from o in query
+                                join p in _context.PacientesAdmision on o.PacienteId equals p.Id into op
+                                from p in op.DefaultIfEmpty()
+                                select new
+                                {
+                                    Id = o.Id,
+                                    CuentaId = o.CuentaId,
+                                    PacienteId = o.PacienteId,
+                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
+                                    Estudio = o.Estudio,
+                                    TipoServicio = o.TipoServicio,
+                                    Estado = o.Estado,
+                                    FechaCreacion = o.FechaCreacion,
+                                    LinkInforme = o.LinkInforme,
+                                    ObservacionesMedico = o.ObservacionesMedico,
+                                    MedicoInterpreteId = o.MedicoInterpreteId,
+                                    RequiereInforme = o.RequiereInforme
+                                })
+                .OrderByDescending(o => o.FechaCreacion)
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        public class CompleteImagingOrderDto
+        {
+            public Guid? MedicoId { get; set; }
+            public string? LinkInforme { get; set; }
+            public string? ObservacionesMedico { get; set; }
+            public string? Informe { get; set; }
+        }
+
         [HttpPost("{id}/complete")]
-        public async Task<IActionResult> CompleteOrder(int id, [FromQuery] Guid? medicoId = null)
+        public async Task<IActionResult> CompleteOrder(int id, [FromBody] CompleteImagingOrderDto? dto = null, [FromQuery] Guid? medicoId = null)
         {
             var order = await _context.OrdenesImagenes.FindAsync(id);
             if (order == null) return NotFound(new { Message = "Orden no encontrada." });
 
             var usuario = User.Identity?.Name ?? "Sistema";
             order.MarcarComoProcesado(usuario);
+
+            var selectedMedicoId = dto?.MedicoId ?? medicoId;
+            if (dto != null)
+            {
+                if (!string.IsNullOrEmpty(dto.LinkInforme)) order.LinkInforme = dto.LinkInforme;
+                if (!string.IsNullOrEmpty(dto.ObservacionesMedico)) order.ObservacionesMedico = dto.ObservacionesMedico;
+                if (!string.IsNullOrEmpty(dto.Informe)) order.Informe = dto.Informe;
+                if (dto.MedicoId.HasValue) order.MedicoInterpreteId = dto.MedicoId.Value;
+            }
 
             // ═══ Cerrar ciclo de Honorarios: Marcar DetalleServicioCuenta como Realizado ═══
             // Buscar el detalle de facturación vinculado por CuentaId + Estudio (descripción).

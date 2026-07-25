@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -15,11 +16,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Descripcion { get; set; }
         public string Codigo { get; set; }
         public decimal PrecioUsd { get; set; }
-        public string Tipo { get; set; } // LABORATORIO, RX, CONSULTA, etc.
+        public string Tipo { get; set; } // LABORATORIO, RX, CONSULTA, INFORME, etc.
+        public int? TipoServicioId { get; set; }
         public bool Activo { get; set; } = true;
         public decimal HonorarioBase { get; set; }
         public string? HonorariumCategory { get; set; }
         public bool RequiereInventario { get; set; } = true;
+        public Guid? ServicioInformeId { get; set; }
+        public bool EsServicioInforme { get; set; } = false;
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
     }
@@ -40,8 +44,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 Activo = request.Activo,
                 HonorarioBase = request.HonorarioBase,
                 HonorariumCategory = request.HonorariumCategory,
-                RequiereInventario = request.RequiereInventario
+                RequiereInventario = request.RequiereInventario,
+                ServicioInformeId = request.ServicioInformeId,
+                EsServicioInforme = request.EsServicioInforme || (request.TipoServicioId == TipoServicioConstants.Informe) || request.Tipo.Equals("INFORME", StringComparison.OrdinalIgnoreCase)
             };
+
+            if (request.TipoServicioId.HasValue)
+            {
+                item.TipoServicioId = request.TipoServicioId.Value;
+            }
+
+            // Validar Invariantes de Dominio (ej: PrecioBase >= HonorarioBase para Informes)
+            item.ValidarInvariantes();
 
             await _context.ServiciosClinicos.AddAsync(item, cancellationToken);
             

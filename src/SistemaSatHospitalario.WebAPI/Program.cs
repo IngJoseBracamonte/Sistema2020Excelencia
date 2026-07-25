@@ -7,6 +7,8 @@ using SistemaSatHospitalario.WebAPI.Infrastructure;
 using System.IdentityModel.Tokens.Jwt;
 using Scalar.AspNetCore;
 
+using SistemaSatHospitalario.WebAPI.Infrastructure.Json;
+
 // [SEC-004] Standardize Claim Mapping (V14.1 Senior Patch)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -62,6 +64,7 @@ try
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+            options.JsonSerializerOptions.Converters.Add(new NullableGuidJsonConverter());
         });
 
     // Business & Data Layers

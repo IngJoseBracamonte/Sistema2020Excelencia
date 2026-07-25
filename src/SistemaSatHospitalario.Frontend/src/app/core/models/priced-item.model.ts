@@ -7,12 +7,15 @@ export abstract class BasePricedItem {
   precioUsd?: number;
   honorarioUsd?: number;
   tipo: string;
+  tipoServicioId?: number;
   editorType?: string;
   categoryId: number; // V5.2 structural classification
   esLegacy: boolean;
   activo?: boolean;
   honorarioBase?: number;
   requiereInventario?: boolean;
+  servicioInformeId?: string;
+  esServicioInforme?: boolean;
   sugerenciasIds?: string[];
   honorariosMedicos?: { medicoId: string; medicoNombre?: string; honorario: number }[];
 
@@ -52,6 +55,8 @@ export abstract class BasePricedItem {
   get HonorarioUsd(): number | undefined { return this.honorarioUsd; }
   get HonorarioBase(): number | undefined { return this.honorarioBase; }
   get RequiereInventario(): boolean | undefined { return this.requiereInventario; }
+  get ServicioInformeId(): string | undefined { return this.servicioInformeId; }
+  get EsServicioInforme(): boolean | undefined { return this.esServicioInforme; }
   get PrecioBaseUsd(): number | undefined { return this.precioBaseUsd; }
   get Complejidad(): string | undefined { return this.complejidad; }
   get DuracionEstimadaMinutos(): number | undefined { return this.duracionEstimadaMinutos; }
@@ -77,12 +82,15 @@ export abstract class BasePricedItem {
     this.precioBs = data.precioBs ?? data.PrecioBs;
     this.precioUsd = data.precioUsd ?? data.PrecioUsd;
     this.tipo = data.tipo || data.Tipo || '';
+    this.tipoServicioId = data.tipoServicioId ?? data.TipoServicioId;
     this.editorType = data.editorType || data.EditorType || data.tipo || data.Tipo || 'SERVICIO';
     this.categoryId = data.categoryId ?? data.CategoryId ?? 0;
     this.esLegacy = data.esLegacy ?? data.EsLegacy ?? false;
     this.activo = data.activo ?? data.Activo ?? true;
     this.honorarioBase = data.honorarioBase ?? data.HonorarioBase ?? 0;
     this.requiereInventario = data.requiereInventario ?? data.RequiereInventario ?? false;
+    this.servicioInformeId = data.servicioInformeId ?? data.ServicioInformeId;
+    this.esServicioInforme = data.esServicioInforme ?? data.EsServicioInforme ?? false;
     this.sugerenciasIds = data.sugerenciasIds ?? data.SugerenciasIds ?? [];
     this.honorariosMedicos = data.honorariosMedicos || data.HonorariosMedicos || [];
 
@@ -131,18 +139,12 @@ export abstract class BasePricedItem {
     }
   }
 
-  /**
-   * Obtiene el precio formateado en Bs basado en la tasa actual
-   */
   getFormattedBs(tasa: number): string {
     const val = (this.precioUsd ?? 0) * tasa;
     const finalVal = val > 0 ? val : (this.precioBs ?? this.precio);
     return finalVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  /**
-   * Obtiene el valor numérico en Bs basado en la tasa actual
-   */
   getRawBs(tasa: number): number {
     const val = (this.precioUsd ?? 0) * tasa;
     return val > 0 ? val : (this.precioBs ?? this.precio);
@@ -163,7 +165,7 @@ export abstract class BasePricedItem {
   }
 
   get isConsultation(): boolean {
-    if (this.categoryId === 1) return true; // ServiceCategory.Consultation
+    if (this.categoryId === 1) return true;
     if (!this.tipo) return false;
     const t = this.tipo.toUpperCase();
     if (t.includes('MEDICINA') || t.includes('MEDICAMENTO') || t.includes('INSUMO')) return false;

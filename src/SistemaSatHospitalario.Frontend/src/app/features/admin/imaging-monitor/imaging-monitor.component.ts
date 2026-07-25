@@ -36,6 +36,10 @@ export interface ImagingOrder {
   fechaCreacion: string;
   procesadoPor?: string;
   fechaProcesado?: string;
+  linkInforme?: string;
+  observacionesMedico?: string;
+  medicoInterpreteId?: string;
+  requiereInforme?: boolean;
 }
 
 @Component({

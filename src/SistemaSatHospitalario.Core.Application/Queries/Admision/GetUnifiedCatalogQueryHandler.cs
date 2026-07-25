@@ -67,6 +67,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Codigo = s.Codigo,
                     Descripcion = s.Descripcion,
                     Tipo = editorType,
+                    TipoServicioId = s.TipoServicioId > 0 ? s.TipoServicioId : TipoServicioConstants.Insumo,
                     EditorType = editorType,
                     CategoryId = (int)s.Category,
                     EsLegacy = false,
@@ -75,6 +76,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     HonorarioBase = s.HonorarioBase,
                     HonorariumCategory = s.HonorariumCategory,
                     EspecialidadId = s.EspecialidadId,
+                    ServicioInformeId = s.ServicioInformeId,
+                    EsServicioInforme = s.EsServicioInforme || s.TipoServicioId == TipoServicioConstants.Informe,
                     SugerenciasIds = s.Sugerencias.Select(sg => sg.ServicioSugeridoId.ToString()).ToList(),
                     HonorariosMedicos = s.HonorariosMedicos.Select(hm => new DoctorHonorarioDto
                     {
@@ -177,6 +180,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 case "SERVICIO":
                     return "SERVICIO";
+
+                case "INFORME":
+                case "INFORME MEDICO":
+                case "INFORME MÉDICO":
+                    return "INFORME";
 
                 case "CONSULTA":
                 case "CITAS":

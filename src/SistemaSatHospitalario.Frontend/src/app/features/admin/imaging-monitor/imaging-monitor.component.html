@@ -206,15 +206,23 @@
                                 'opacity-60': order.estado === 'Anulado'
                             }">
                             
-                            <!-- Servicio (Badge de RX / TOMO) -->
+                            <!-- Servicio (Badge de RX / TOMO y CON / SIN INFORME) -->
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all"
-                                    [ngClass]="{
-                                        'bg-rose-500/10 border border-rose-500/20 text-rose-400': order.tipoServicio === 'RX',
-                                        'bg-sky-500/10 border border-sky-500/20 text-sky-400': order.tipoServicio === 'TOMO'
-                                    }">
-                                    {{ order.tipoServicio }}
-                                </span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all"
+                                        [ngClass]="{
+                                            'bg-rose-500/10 border border-rose-500/20 text-rose-400': order.tipoServicio === 'RX',
+                                            'bg-sky-500/10 border border-sky-500/20 text-sky-400': order.tipoServicio === 'TOMO'
+                                        }">
+                                        {{ order.tipoServicio }}
+                                    </span>
+                                    <span *ngIf="order.requiereInforme" class="inline-flex items-center px-2 py-0.5 rounded-lg text-[8px] font-black tracking-widest uppercase bg-purple-500/10 border border-purple-500/20 text-purple-300">
+                                        CON INFORME
+                                    </span>
+                                    <span *ngIf="!order.requiereInforme" class="inline-flex items-center px-2 py-0.5 rounded-lg text-[8px] font-black tracking-widest uppercase bg-slate-500/10 border border-slate-500/20 text-slate-500">
+                                        SIN INFORME
+                                    </span>
+                                </div>
                             </td>
 
                             <!-- Fecha de Creación -->
@@ -333,6 +341,20 @@
                                                     ANULADO SIN EFECTO
                                                 </span>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Panel de Informe Médico / PACS Link -->
+                                    <div *ngIf="order.requiereInforme" class="mt-4 p-4 bg-purple-500/5 border border-purple-500/20 rounded-2xl">
+                                        <div class="flex items-center justify-between gap-4">
+                                            <div>
+                                                <span class="text-[8px] font-black text-purple-400 uppercase tracking-widest block mb-0.5">Informe Médico Radiológico</span>
+                                                <p class="text-xs text-slate-200 font-medium" *ngIf="order.observacionesMedico">{{ order.observacionesMedico }}</p>
+                                                <p class="text-[11px] text-slate-500 italic" *ngIf="!order.observacionesMedico">Sin observaciones escritas adjuntas.</p>
+                                            </div>
+                                            <a *ngIf="order.linkInforme" [href]="order.linkInforme" target="_blank" class="px-3.5 py-2 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/40 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all flex items-center gap-1.5 shadow-lg shadow-purple-500/5">
+                                                Ver Informe PACS 🔗
+                                            </a>
                                         </div>
                                     </div>
                                 </div>

@@ -1,9 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Notifications;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities;
@@ -16,11 +18,13 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
     {
         private readonly IBillingRepository _repository;
         private readonly IApplicationDbContext _context;
+        private readonly IMediator _mediator;
 
-        public ConsultationLoadingStrategy(IBillingRepository repository, IApplicationDbContext context)
+        public ConsultationLoadingStrategy(IBillingRepository repository, IApplicationDbContext context, IMediator mediator)
         {
             _repository = repository;
             _context = context;
+            _mediator = mediator;
         }
 
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
@@ -37,29 +41,22 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             ServicioClinico? baseService, 
             CancellationToken cancellationToken)
         {
-            // Regla de Negocio 3: Consulta - Evaluar si requiere o no la asignación de un horario en la agenda médica.
-            bool requiresAppointmentTime = request.TipoIngreso == EstadoConstants.Particular || request.TipoIngreso == EstadoConstants.Seguro;
-            
-            if (requiresAppointmentTime || (request.MedicoId.HasValue && request.HoraCita.HasValue))
+            Guid? citaAreaClinicaId = request.AreaClinicaId;
+            if (!string.IsNullOrEmpty(request.OrigenCarga) && request.OrigenCarga.StartsWith("ENFERMERIA", StringComparison.OrdinalIgnoreCase))
             {
-                Guid? citaAreaClinicaId = request.AreaClinicaId;
-                if (!string.IsNullOrEmpty(request.OrigenCarga) && request.OrigenCarga.StartsWith("ENFERMERIA", StringComparison.OrdinalIgnoreCase))
+                var areaEnf = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Codigo == "ENFERMERIA", cancellationToken);
+                if (areaEnf == null)
                 {
-                    var areaEnf = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Codigo == "ENFERMERIA", cancellationToken);
-                    if (areaEnf == null)
-                    {
-                        areaEnf = new AreaClinica(SeedConstants.SedeId_Principal, "ENFERMERIA", "Enfermería");
-                        _context.AreasClinicas.Add(areaEnf);
-                        await _context.SaveChangesAsync(cancellationToken);
-                    }
-                    citaAreaClinicaId = areaEnf.Id;
+                    areaEnf = new AreaClinica(SeedConstants.SedeId_Principal, "ENFERMERIA", "Enfermería");
+                    _context.AreasClinicas.Add(areaEnf);
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
+                citaAreaClinicaId = areaEnf.Id;
+            }
 
-                if (!request.MedicoId.HasValue || !request.HoraCita.HasValue)
-                {
-                    throw new InvalidOperationException("Los servicios de consulta requieren Médico y Hora de Cita.");
-                }
-
+            // Bifurcación: Facturación (HoraCita programada) vs Enfermería/Demanda (HoraCita == null)
+            if (request.HoraCita.HasValue && request.MedicoId.HasValue)
+            {
                 var horaNormalizada = new DateTime(
                     request.HoraCita.Value.Year, request.HoraCita.Value.Month, request.HoraCita.Value.Day,
                     request.HoraCita.Value.Hour, request.HoraCita.Value.Minute, 0, 
@@ -73,6 +70,32 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                 var cita = new CitaMedica(request.MedicoId.Value, paciente.Id, cuenta.Id, horaNormalizada, null, citaAreaClinicaId);
                 await _repository.AgregarCitaMedicaAsync(cita, cancellationToken);
             }
+            else if (request.MedicoId.HasValue)
+            {
+                // Desde Enfermería o atención interna sin bloque de hora prefijado: se registra CitaMedica activa con hora actual para cola de evaluación médica
+                var cita = new CitaMedica(request.MedicoId.Value, paciente.Id, cuenta.Id, DateTime.Now, "Atención Interna / Por Demanda", citaAreaClinicaId);
+                await _repository.AgregarCitaMedicaAsync(cita, cancellationToken);
+            }
+            else if (request.TipoIngreso == EstadoConstants.Particular || request.TipoIngreso == EstadoConstants.Seguro)
+            {
+                throw new InvalidOperationException("Los servicios de consulta requieren asignación de Médico.");
+            }
+
+            // Notificación MediatR desacoplada
+            string nombrePaciente = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
+            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
+            var notification = new ServicioCargadoNotification(
+                "CONSULTA",
+                request.OrigenCarga ?? request.TipoIngreso,
+                paciente.Id,
+                nombrePaciente,
+                areaOrigen,
+                request.Descripcion,
+                request.MedicoId,
+                request.HoraCita
+            );
+
+            await _mediator.Publish(notification, cancellationToken);
         }
     }
 }

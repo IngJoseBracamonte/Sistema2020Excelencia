@@ -44,14 +44,14 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     console.log('Active patients panel loaded.');
 
     // Click on the first active patient if any are listed
-    const firstPatient = page.locator('.space-y-3.max-h-\\[600px\\] > div').first();
-    const countPatients = await firstPatient.count();
-    if (countPatients === 0) {
+    const patientCards = page.locator('.space-y-3.max-h-\\[600px\\] > div[class*="cursor-pointer"]');
+    if ((await patientCards.count()) === 0) {
       console.log('No active patients found, skipping clinical operations test.');
       return;
     }
 
-    await firstPatient.click();
+    await patientCards.first().click();
+    await page.waitForTimeout(1000);
     console.log('Selected active patient.');
 
     // Verify triage title is visible

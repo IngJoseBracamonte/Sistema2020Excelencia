@@ -111,6 +111,7 @@ namespace SistemaSatHospitalario.Infrastructure
 
             // [PRO-FEATURES] Real-time & Persistent Notifications
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddTransient<MediatR.INotificationHandler<SistemaSatHospitalario.Core.Application.Common.Notifications.ServicioCargadoNotification>, ServicioCargadoNotificationHandler>();
             
             return services;
 

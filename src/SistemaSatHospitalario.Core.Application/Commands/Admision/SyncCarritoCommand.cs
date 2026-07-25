@@ -44,10 +44,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public int Cantidad { get; set; } = 1;
         public string TipoServicio { get; set; } = string.Empty;
         
-        // Datos para Citas
+        // Datos para Citas e Informes
         public Guid? MedicoId { get; set; }
         public DateTime? HoraCita { get; set; }
         public string? Comentario { get; set; }
+        public bool RequiereInforme { get; set; }
+        public Guid? MedicoInterpreteId { get; set; }
     }
 
     public record SyncCarritoResult(Guid CuentaId, List<DetalleSyncDto> Detalles);
@@ -61,6 +63,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IHonorariumMapperService _mapperService;
         private readonly IInventoryService _inventoryService;
         private readonly ILogger<SyncCarritoCommandHandler> _logger;
+        private readonly Common.Strategies.IServiceLoadingStrategyFactory? _strategyFactory;
 
         public SyncCarritoCommandHandler(
             IBillingRepository repository, 
@@ -68,7 +71,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             ILegacyLabRepository legacyRepository,
             IHonorariumMapperService mapperService,
             IInventoryService inventoryService,
-            ILogger<SyncCarritoCommandHandler> logger)
+            ILogger<SyncCarritoCommandHandler> logger,
+            Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null)
         {
             _repository = repository;
             _context = context;
@@ -76,6 +80,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _mapperService = mapperService;
             _inventoryService = inventoryService;
             _logger = logger;
+            _strategyFactory = strategyFactory;
         }
 
         public async Task<SyncCarritoResult> Handle(SyncCarritoCommand request, CancellationToken ct)
@@ -418,6 +423,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     if (_context.DetallesServicioCuenta != null)
                     {
                         _context.DetallesServicioCuenta.Add(detalle);
+                    }
+
+                    // Ejecución de Estrategias Específicas de Carga (ej: ImagingLoadingStrategy para Informes de RX/Tomo)
+                    if (_strategyFactory != null)
+                    {
+                        var strategy = _strategyFactory.GetStrategy(item.TipoServicio, baseService);
+                        if (strategy != null)
+                        {
+                            var itemRequest = new CargarServicioACuentaCommand
+                            {
+                                PacienteId = paciente.Id,
+                                TipoIngreso = request.TipoIngreso,
+                                ConvenioId = request.ConvenioId,
+                                ServicioId = item.ServicioId,
+                                Descripcion = item.Descripcion,
+                                Precio = item.Precio,
+                                Honorario = item.Honorario,
+                                Cantidad = item.Cantidad,
+                                TipoServicio = item.TipoServicio,
+                                UsuarioCarga = request.UsuarioCarga,
+                                MedicoId = item.MedicoId,
+                                HoraCita = item.HoraCita,
+                                RequiereInforme = item.RequiereInforme,
+                                MedicoInterpreteId = item.MedicoInterpreteId
+                            };
+                            await strategy.ExecuteAsync(itemRequest, cuenta, paciente, detalle, baseService, ct);
+                        }
                     }
 
                     // Deduct stock for inventory items associated with this synced service

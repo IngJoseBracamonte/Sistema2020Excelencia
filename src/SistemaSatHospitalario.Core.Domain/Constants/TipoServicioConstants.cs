@@ -9,5 +9,6 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const int RX = 3;
         public const int Tomo = 4;
         public const int Insumo = 5;
+        public const int Informe = 6;
     }
 }

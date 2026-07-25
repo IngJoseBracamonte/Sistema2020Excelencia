@@ -21,7 +21,7 @@ test.describe('Suite E2E - Módulo de Traslado Inteligente de Pacientes', () => 
     await trasladoPage.selectCambioCamaMode();
 
     // Verify mode button active styles & text
-    await expect(page.locator('button:has-text("Cambio de Cama ($0 USD)")')).toBeVisible();
+    await expect(page.locator('button:has-text("CAMBIO DE CAMA")')).toBeVisible();
 
     // Intercept CambioCama API Request
     const requestPromise = page.waitForRequest(
