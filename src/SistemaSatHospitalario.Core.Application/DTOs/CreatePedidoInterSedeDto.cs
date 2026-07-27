@@ -16,4 +16,14 @@ namespace SistemaSatHospitalario.Core.Application.DTOs
         public Guid InsumoId { get; set; }
         public decimal CantidadSolicitada { get; set; }
     }
+
+    public class DespacharPedidoDto
+    {
+        public Dictionary<Guid, decimal>? CantidadesAprobadas { get; set; }
+    }
+
+    public class RechazarPedidoDto
+    {
+        public string Motivo { get; set; } = string.Empty;
+    }
 }

@@ -6,6 +6,7 @@ namespace SistemaSatHospitalario.Core.Domain.Enums
         Aprobado = 2,
         Despachado = 3,
         Recibido = 4,
-        Rechazado = 5
+        Rechazado = 5,
+        Cancelado = 5
     }
 }

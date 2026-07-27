@@ -289,11 +289,126 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         public async Task DispatchPedidoAsync(
             Guid pedidoId,
             string usuario,
-            CancellationToken cancellationToken)
+            Dictionary<Guid, decimal>? cantidadesAprobadas = null,
+            CancellationToken cancellationToken = default)
+        {
+            int retries = 0;
+            const int maxRetries = 3;
+
+            while (true)
+            {
+                try
+                {
+                    var pedido = await _context.PedidosInterSede
+                        .Include(p => p.Detalles)
+                            .ThenInclude(d => d.Insumo)
+                        .FirstOrDefaultAsync(p => p.Id == pedidoId, cancellationToken);
+
+                    if (pedido == null)
+                    {
+                        throw new KeyNotFoundException($"No se encontró el pedido inter-sede con ID {pedidoId}");
+                    }
+
+                    if (pedido.Estado != EstadoPedidoInterSede.Solicitado)
+                    {
+                        throw new InvalidOperationException("El pedido no está en un estado que permita despacho.");
+                    }
+
+                    bool esGastoInterno = !string.IsNullOrEmpty(pedido.Observaciones) && 
+                        pedido.Observaciones.Contains("[GASTO_INTERNO_LABORATORIO]", StringComparison.OrdinalIgnoreCase);
+
+                    // Validar stock disponible en la sede proveedora y descontar stock
+                    foreach (var detalle in pedido.Detalles)
+                    {
+                        var stockSede = await _context.StocksSedes
+                            .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeProveedoraId, cancellationToken);
+
+                        if (stockSede == null)
+                        {
+                            _logger.LogInformation("Inicializando stock JIT para despacho en Sede Proveedora {SedeId} para Insumo {InsumoId}", pedido.SedeProveedoraId, detalle.InsumoId);
+                            stockSede = new StockSede(detalle.InsumoId, pedido.SedeProveedoraId, 0);
+                            _context.StocksSedes.Add(stockSede);
+                        }
+
+                        decimal cantidadADespachar = detalle.CantidadSolicitada;
+                        if (cantidadesAprobadas != null && cantidadesAprobadas.TryGetValue(detalle.Id, out var cap))
+                        {
+                            cantidadADespachar = cap;
+                        }
+
+                        if (cantidadADespachar < 0) cantidadADespachar = 0;
+
+                        var stockActual = stockSede.StockActual;
+                        if (stockActual < cantidadADespachar)
+                        {
+                            throw new InvalidOperationException($"Stock insuficiente de '{detalle.Insumo.Nombre}' en la sede proveedora. Aprobado: {cantidadADespachar}, Disponible: {stockActual}");
+                        }
+
+                        if (cantidadADespachar > 0)
+                        {
+                            // Descuenta stock
+                            stockSede.RegistrarMovimientoStock(-cantidadADespachar, detalle.Insumo.PermiteFraccionamiento);
+                            _logger.LogInformation("Stock transferido desde Sede Proveedora {SedeId}. Insumo: {InsumoId}, Cantidad: {Cantidad}", pedido.SedeProveedoraId, detalle.InsumoId, cantidadADespachar);
+                            detalle.SetDespachado(cantidadADespachar);
+
+                            if (esGastoInterno)
+                            {
+                                detalle.SetRecibido(cantidadADespachar);
+                            }
+
+                            // Registrar movimiento de salida o consumo interno
+                            var tipoMov = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
+                            var motivoTxt = esGastoInterno 
+                                ? $"Nota de Entrega por Consumo Interno de Laboratorio/Mantenimiento ({pedido.Correlativo})"
+                                : $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante (Cant. Aprobada: {cantidadADespachar})";
+
+                            var movimiento = new MovimientoInsumo(
+                                detalle.InsumoId,
+                                pedido.SedeProveedoraId,
+                                tipoMov,
+                                -cantidadADespachar,
+                                detalle.Insumo.UnidadMedidaBase,
+                                cantidadADespachar,
+                                usuario,
+                                motivoTxt
+                            );
+                            _context.MovimientosInsumo.Add(movimiento);
+                        }
+                    }
+
+                    if (esGastoInterno)
+                    {
+                        pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
+                    }
+                    else
+                    {
+                        pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
+                    }
+
+                    await _context.SaveChangesAsync(cancellationToken);
+                    break;
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    retries++;
+                    if (retries >= maxRetries)
+                    {
+                        _logger.LogError(ex, "Excedido el número máximo de reintentos por concurrencia al despachar pedido {PedidoId}", pedidoId);
+                        throw;
+                    }
+                    _logger.LogWarning("Conflicto de concurrencia al despachar pedido {PedidoId}. Reintento {Retry}/{MaxRetries}", pedidoId, retries, maxRetries);
+                    await Task.Delay(100 * retries, cancellationToken);
+                }
+            }
+        }
+
+        public async Task RejectPedidoAsync(
+            Guid pedidoId,
+            string usuario,
+            string motivo,
+            CancellationToken cancellationToken = default)
         {
             var pedido = await _context.PedidosInterSede
-                .Include(p => p.Detalles)
-                    .ThenInclude(d => d.Insumo)
                 .FirstOrDefaultAsync(p => p.Id == pedidoId, cancellationToken);
 
             if (pedido == null)
@@ -303,68 +418,13 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             if (pedido.Estado != EstadoPedidoInterSede.Solicitado)
             {
-                throw new InvalidOperationException("El pedido no está en un estado que permita despacho.");
+                throw new InvalidOperationException("Solo se pueden rechazar pedidos que se encuentren en estado Solicitado.");
             }
 
-            bool esGastoInterno = !string.IsNullOrEmpty(pedido.Observaciones) && 
-                pedido.Observaciones.Contains("[GASTO_INTERNO_LABORATORIO]", StringComparison.OrdinalIgnoreCase);
+            pedido.CambiarEstado(EstadoPedidoInterSede.Cancelado);
+            pedido.SetObservaciones($"{pedido.Observaciones} | [RECHAZADO por {usuario}: {motivo}]".Trim());
 
-            // Validar stock disponible en la sede proveedora y descontar stock
-            foreach (var detalle in pedido.Detalles)
-            {
-                var stockSede = await _context.StocksSedes
-                    .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeProveedoraId, cancellationToken);
-
-                if (stockSede == null)
-                {
-                    _logger.LogInformation("Inicializando stock JIT para despacho en Sede Proveedora {SedeId} para Insumo {InsumoId}", pedido.SedeProveedoraId, detalle.InsumoId);
-                    stockSede = new StockSede(detalle.InsumoId, pedido.SedeProveedoraId, 0);
-                    _context.StocksSedes.Add(stockSede);
-                }
-
-                var stockActual = stockSede.StockActual;
-                if (stockActual < detalle.CantidadSolicitada)
-                {
-                    throw new InvalidOperationException($"Stock insuficiente de '{detalle.Insumo.Nombre}' en la sede proveedora. Solicitado: {detalle.CantidadSolicitada}, Disponible: {stockActual}");
-                }
-
-                // Descuenta stock
-                stockSede.RegistrarMovimientoStock(-detalle.CantidadSolicitada, detalle.Insumo.PermiteFraccionamiento);
-                _logger.LogInformation("Stock transferido desde Sede Proveedora {SedeId}. Insumo: {InsumoId}, Cantidad: {Cantidad}", pedido.SedeProveedoraId, detalle.InsumoId, detalle.CantidadSolicitada);
-                detalle.SetDespachado(detalle.CantidadSolicitada);
-
-                if (esGastoInterno)
-                {
-                    detalle.SetRecibido(detalle.CantidadSolicitada);
-                }
-
-                // Registrar movimiento de salida o consumo interno
-                var tipoMov = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
-                var motivoTxt = esGastoInterno 
-                    ? $"Nota de Entrega por Consumo Interno de Laboratorio/Mantenimiento ({pedido.Correlativo})"
-                    : $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante";
-
-                var movimiento = new MovimientoInsumo(
-                    detalle.InsumoId,
-                    pedido.SedeProveedoraId,
-                    tipoMov,
-                    -detalle.CantidadSolicitada,
-                    detalle.Insumo.UnidadMedidaBase,
-                    detalle.CantidadSolicitada,
-                    usuario,
-                    motivoTxt
-                );
-                _context.MovimientosInsumo.Add(movimiento);
-            }
-
-            if (esGastoInterno)
-            {
-                pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
-            }
-            else
-            {
-                pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
-            }
+            _logger.LogInformation("Pedido inter-sede {Correlativo} rechazada por {Usuario}. Motivo: {Motivo}", pedido.Correlativo, usuario, motivo);
 
             await _context.SaveChangesAsync(cancellationToken);
         }

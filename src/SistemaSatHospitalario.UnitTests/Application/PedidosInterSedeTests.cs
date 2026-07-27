@@ -104,7 +104,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var inventoryService = new SistemaSatHospitalario.Core.Application.Common.Services.InventoryService(mockContext.Object, loggerMock.Object);
 
             // Act
-            await inventoryService.DispatchPedidoAsync(pedido.Id, "Admin", CancellationToken.None);
+            await inventoryService.DispatchPedidoAsync(pedido.Id, "Admin", cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.Equal(30, stockProveedora.StockActual); // 50 - 20
@@ -149,7 +149,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                inventoryService.DispatchPedidoAsync(pedido.Id, "Admin", CancellationToken.None)
+                inventoryService.DispatchPedidoAsync(pedido.Id, "Admin", cancellationToken: CancellationToken.None)
             );
             Assert.Contains("Stock insuficiente", ex.Message);
         }
@@ -208,6 +208,84 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
             Assert.Equal(18, detalle.CantidadRecibida);
             mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == "TransferenciaEntrada" && m.CantidadBase == 18)), Times.Once);
+            mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DispatchPedido_WithAdjustedQuantities_ShouldDeductAdjustedAmount()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<SistemaSatHospitalario.Core.Application.Common.Services.InventoryService>>();
+            
+            var insumo = new Insumo("I01", "Insumo 1", 100, UnidadMedida.UNIDAD, 1.50m);
+            var sedeSolicitante = new Sede("S01", "Sede Solicitante", false);
+            var sedeProveedora = new Sede("S02", "Sede Proveedora", true);
+
+            var stockProveedora = new StockSede(insumo.Id, sedeProveedora.Id, 50);
+            insumo.StocksPorSede.Add(stockProveedora);
+
+            var pedido = new PedidoInterSede("PED-2026-0002", sedeSolicitante.Id, sedeProveedora.Id, "Enfermera", "Requerido 20");
+            var detalle = new PedidoInterSedeDetalle(insumo, 20);
+            pedido.AgregarDetalle(detalle);
+
+            var stocksList = new List<StockSede> { stockProveedora };
+            var stocksMock = stocksList.BuildMockDbSet<StockSede>();
+
+            var pedidosList = new List<PedidoInterSede> { pedido };
+            var pedidosMock = pedidosList.BuildMockDbSet<PedidoInterSede>();
+
+            var movimientosList = new List<MovimientoInsumo>();
+            var movimientosMock = movimientosList.BuildMockDbSet<MovimientoInsumo>();
+
+            var insumosList = new List<Insumo> { insumo };
+            var insumosMock = insumosList.BuildMockDbSet<Insumo>();
+
+            mockContext.Setup(c => c.StocksSedes).Returns(stocksMock.Object);
+            mockContext.Setup(c => c.PedidosInterSede).Returns(pedidosMock.Object);
+            mockContext.Setup(c => c.MovimientosInsumo).Returns(movimientosMock.Object);
+            mockContext.Setup(c => c.Insumos).Returns(insumosMock.Object);
+
+            var inventoryService = new SistemaSatHospitalario.Core.Application.Common.Services.InventoryService(mockContext.Object, loggerMock.Object);
+
+            // Supervisor aprueba únicamente 12 unidades de las 20 solicitadas
+            var cantidadesAprobadas = new Dictionary<Guid, decimal>
+            {
+                { detalle.Id, 12 }
+            };
+
+            // Act
+            await inventoryService.DispatchPedidoAsync(pedido.Id, "Supervisor", cantidadesAprobadas, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(38, stockProveedora.StockActual); // 50 - 12
+            Assert.Equal(EstadoPedidoInterSede.Despachado, pedido.Estado);
+            Assert.Equal(12, detalle.CantidadDespachada);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.CantidadBase == -12)), Times.Once);
+            mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task RejectPedido_ShouldCancelOrderAndAppendAuditMotivo()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<SistemaSatHospitalario.Core.Application.Common.Services.InventoryService>>();
+
+            var pedido = new PedidoInterSede("PED-2026-0003", Guid.NewGuid(), Guid.NewGuid(), "Usuario", "Justificacion original");
+            var pedidosList = new List<PedidoInterSede> { pedido };
+            var pedidosMock = pedidosList.BuildMockDbSet<PedidoInterSede>();
+
+            mockContext.Setup(c => c.PedidosInterSede).Returns(pedidosMock.Object);
+
+            var inventoryService = new SistemaSatHospitalario.Core.Application.Common.Services.InventoryService(mockContext.Object, loggerMock.Object);
+
+            // Act
+            await inventoryService.RejectPedidoAsync(pedido.Id, "SupervisorAudit", "Falta de justificación médica", CancellationToken.None);
+
+            // Assert
+            Assert.Equal(EstadoPedidoInterSede.Cancelado, pedido.Estado);
+            Assert.Contains("RECHAZADO por SupervisorAudit: Falta de justificación médica", pedido.Observaciones);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }

@@ -25,13 +25,22 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
           </div>
           <div>
             <h1 class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase">Solicitudes de Despacho y Reposición</h1>
-            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">Requisiciones de insumos hacia el Almacén Principal / Farmacia Central</p>
+            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">
+              Control Unidireccional & Segregación de Roles (Enfermería / Supervisor)
+            </p>
           </div>
+        </div>
+
+        <div class="mt-4 md:mt-0 flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-white/10"
+            [ngClass]="isSupervisorOrAdmin() ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-primary/10 text-primary border-primary/20'">
+            {{ isSupervisorOrAdmin() ? '👑 Rol: Supervisor / Admin (Facultad de Aprobación/Ajuste/Rechazo)' : '👩‍⚕️ Rol: Personal Operativo (Enfermería)' }}
+          </span>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Panel de Creación de Solicitud -->
+        <!-- Panel de Creación de Solicitud (Enfermería / Asistentes) -->
         <div class="lg:col-span-5 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
           <h2 class="text-sm font-black uppercase tracking-widest text-muted">Nueva Requisición</h2>
 
@@ -63,13 +72,21 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
               </select>
             </div>
 
-            <!-- Agregar Insumo con Buscador -->
+            <!-- Agregar Insumo con Muestreo de Stock Central -->
             <div class="space-y-2">
-              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Insumo Requerido</label>
+              <div class="flex justify-between items-center">
+                <label class="text-[10px] text-muted font-black uppercase tracking-wider">Insumo Requerido</label>
+                <span *ngIf="selectedInsumoObj" class="text-[10px] font-black uppercase px-2 py-0.5 rounded"
+                  [ngClass]="selectedInsumoObj.stockActual > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'">
+                  Stock Principal: {{ selectedInsumoObj.stockActual }} {{ selectedInsumoObj.unidadMedidaBase }}
+                </span>
+              </div>
               <div class="flex gap-2">
                 <select [(ngModel)]="selectedInsumoId"
                   class="flex-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-xs font-bold text-main focus:outline-none focus:border-primary/50 transition-all">
-                  <option *ngFor="let ins of insumos" [value]="ins.id">{{ ins.nombre }} (Cód: {{ ins.codigo }})</option>
+                  <option *ngFor="let ins of insumos" [value]="ins.id">
+                    {{ ins.nombre }} (Stock: {{ ins.stockActual }})
+                  </option>
                 </select>
                 <input type="number" [(ngModel)]="selectedCantidad" min="1"
                   class="w-16 bg-surface-card border border-glass-border rounded-xl px-2 py-2 text-xs text-main font-bold text-center focus:outline-none focus:border-primary/50" />
@@ -110,9 +127,9 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
           </div>
         </div>
 
-        <!-- Panel de Solicitudes en Tránsito / Pendientes -->
+        <!-- Panel de Solicitudes en Tránsito / Pendientes (Matriz SoD) -->
         <div class="lg:col-span-7 glass-card border border-glass-border rounded-2xl p-6 space-y-4 shadow-md">
-          <h2 class="text-sm font-black uppercase tracking-widest text-muted">Estado de Solicitudes</h2>
+          <h2 class="text-sm font-black uppercase tracking-widest text-muted">Bandeja de Requisiciones</h2>
 
           <div class="space-y-4" *ngIf="pedidos.length > 0; else noPedidos">
             <div *ngFor="let ped of pedidos"
@@ -129,26 +146,72 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
                 <span class="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest" [ngClass]="{
                   'bg-amber-500/10 text-amber-400 border border-amber-500/20': ped.estado === 'Solicitado',
                   'bg-hospital-500/10 text-hospital-400 border border-hospital-500/20': ped.estado === 'Despachado',
-                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': ped.estado === 'Recibido'
+                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': ped.estado === 'Recibido',
+                  'bg-rose-500/10 text-rose-400 border border-rose-500/20': ped.estado === 'Cancelado'
                 }">
                   {{ ped.estado }}
                 </span>
               </div>
 
-              <!-- Ítems -->
-              <div class="space-y-1">
-                <div *ngFor="let det of ped.detalles" class="text-xs flex justify-between bg-surface-card border border-glass-border p-2 rounded-lg">
-                  <span class="text-main/80 font-medium">{{ det.insumoNombre }}</span>
-                  <span class="text-main font-black">Cant: {{ det.cantidadSolicitada }}</span>
+              <!-- Lista de Detalles con Muestreo de Stock Central y Cantidades Ajustables -->
+              <div class="space-y-2">
+                <div *ngFor="let det of ped.detalles" class="text-xs flex flex-wrap items-center justify-between bg-surface-card border border-glass-border p-2.5 rounded-lg gap-2">
+                  <div>
+                    <div class="font-bold text-main/90">{{ det.insumoNombre }}</div>
+                    <div class="text-[10px] text-muted">
+                      Stock Central Disp: 
+                      <span class="font-black" [ngClass]="getStockDisponible(det.insumoId) > 0 ? 'text-emerald-400' : 'text-rose-400'">
+                        {{ getStockDisponible(det.insumoId) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-black text-muted uppercase">Pedida: {{ det.cantidadSolicitada }}</span>
+                    
+                    <!-- Edición de Cantidad para Supervisor -->
+                    <div *ngIf="ped.estado === 'Solicitado' && isSupervisorOrAdmin()" class="flex items-center gap-1">
+                      <span class="text-[10px] font-black text-amber-400 uppercase">Aprobar:</span>
+                      <input type="number" 
+                        [ngModel]="getCantidadAprobada(ped.id, det.id, det.cantidadSolicitada)"
+                        (ngModelChange)="setCantidadAprobada(ped.id, det.id, $event)"
+                        min="0" [max]="getStockDisponible(det.insumoId)"
+                        class="w-16 bg-black/40 border border-amber-500/30 rounded-lg px-1.5 py-1 text-xs text-amber-300 font-bold text-center focus:outline-none focus:border-amber-400" />
+                    </div>
+
+                    <span *ngIf="ped.estado !== 'Solicitado'" class="font-black text-primary">
+                      Despachada: {{ det.cantidadDespachada }}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Acciones según perfil -->
-              <div class="flex justify-end pt-2" *ngIf="ped.estado === 'Solicitado'">
-                <button (click)="despachar(ped.id)"
-                  class="px-4 py-2 bg-primary hover:bg-primary/90 text-xs font-black text-white rounded-xl transition-all shadow-lg uppercase tracking-widest">
-                  Aprobar y Despachar
-                </button>
+              <!-- Observaciones -->
+              <div *ngIf="ped.observaciones" class="text-[11px] italic text-muted bg-black/20 p-2 rounded-lg border border-glass-border">
+                💬 {{ ped.observaciones }}
+              </div>
+
+              <!-- Botones de Acción según Matriz de Permisos (SoD) -->
+              <div class="flex flex-wrap justify-end gap-2 pt-2 border-t border-glass-border">
+                <!-- Acciones del Supervisor / Admin -->
+                <ng-container *ngIf="ped.estado === 'Solicitado' && isSupervisorOrAdmin()">
+                  <button (click)="openRechazoModal(ped)"
+                    class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-black rounded-xl transition-all uppercase tracking-widest">
+                    ✕ Rechazar
+                  </button>
+                  <button (click)="despacharAjustado(ped.id)"
+                    class="px-4 py-1.5 bg-primary hover:bg-primary/90 text-xs font-black text-white rounded-xl transition-all shadow-lg uppercase tracking-widest active:scale-95">
+                    ✓ Aprobar y Despachar
+                  </button>
+                </ng-container>
+
+                <!-- Acciones del Personal Operativo (Enfermería / Receptor) -->
+                <ng-container *ngIf="ped.estado === 'Despachado'">
+                  <button (click)="confirmarRecepcion(ped.id)"
+                    class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white rounded-xl transition-all shadow-lg uppercase tracking-widest active:scale-95">
+                    📥 Confirmar Recepción
+                  </button>
+                </ng-container>
               </div>
             </div>
           </div>
@@ -159,6 +222,34 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
           </ng-template>
         </div>
       </div>
+
+      <!-- Modal de Rechazo de Requisición -->
+      <div *ngIf="showRechazoModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div class="bg-surface-card border border-glass-border rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+          <div class="flex justify-between items-center border-b border-glass-border pb-3">
+            <h3 class="text-sm font-black uppercase text-rose-400 tracking-wider">Rechazar Requisición {{ selectedPedidoRechazar?.correlativo }}</h3>
+            <button (click)="showRechazoModal = false" class="text-muted hover:text-white font-black text-lg">×</button>
+          </div>
+          <div>
+            <label class="text-[10px] text-muted font-black uppercase tracking-wider">Motivo de Rechazo (Auditoría Obligatoria)</label>
+            <textarea [(ngModel)]="motivoRechazo" rows="3"
+              placeholder="Indique la razón del rechazo..."
+              class="w-full mt-1 bg-black/40 border border-glass-border rounded-xl p-3 text-xs text-main focus:outline-none focus:border-rose-500 transition-all resize-none">
+            </textarea>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button (click)="showRechazoModal = false"
+              class="px-4 py-2 bg-surface-card border border-glass-border text-xs font-bold rounded-xl hover:bg-white/5 transition-all">
+              Cancelar
+            </button>
+            <button (click)="confirmarRechazo()" [disabled]="!motivoRechazo.trim()"
+              class="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-xs font-black text-white rounded-xl transition-all shadow-lg uppercase tracking-widest">
+              Confirmar Rechazo
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -183,6 +274,18 @@ export class PedidosInterSedeComponent implements OnInit {
   public selectedInsumoId = '';
   public selectedCantidad = 1;
 
+  // Mapa local para edición de cantidades aprobadas: { [pedidoId]: { [detalleId]: cantidad } }
+  public cantidadesAprobadasMap: { [pedidoId: string]: { [detalleId: string]: number } } = {};
+
+  // Modal Rechazo
+  public showRechazoModal = false;
+  public selectedPedidoRechazar: PedidoInterSede | null = null;
+  public motivoRechazo = '';
+
+  public isSupervisorOrAdmin = computed(() => {
+    return this.authService.isAdmin() || this.authService.isSupervisor();
+  });
+
   public isOnlyEmergency = computed(() => {
     const user = this.authService.currentUser();
     const role = user?.role?.toLowerCase() || '';
@@ -194,6 +297,10 @@ export class PedidosInterSedeComponent implements OnInit {
       return this.sedes.filter(s => s.codigo?.toUpperCase() === 'EMERGENCIA' || s.id === '10000000-0000-0000-0000-000000000002');
     }
     return this.sedes;
+  }
+
+  get selectedInsumoObj(): Insumo | undefined {
+    return this.insumos.find(i => i.id === this.selectedInsumoId);
   }
 
   ngOnInit() {
@@ -221,7 +328,9 @@ export class PedidosInterSedeComponent implements OnInit {
   }
 
   loadPedidos() {
-    this.multiSedeService.getPedidosPendientes().subscribe(res => this.pedidos = res);
+    this.multiSedeService.getPedidosPendientes().subscribe(res => {
+      this.pedidos = res;
+    });
   }
 
   onTipoDestinoChange() {
@@ -253,6 +362,27 @@ export class PedidosInterSedeComponent implements OnInit {
     return this.insumos.find(i => i.id === id)?.nombre || 'Insumo Desconocido';
   }
 
+  getStockDisponible(insumoId: string): number {
+    return this.insumos.find(i => i.id === insumoId)?.stockActual ?? 0;
+  }
+
+  getCantidadAprobada(pedidoId: string, detalleId: string, defaultVal: number): number {
+    if (!this.cantidadesAprobadasMap[pedidoId]) {
+      this.cantidadesAprobadasMap[pedidoId] = {};
+    }
+    if (this.cantidadesAprobadasMap[pedidoId][detalleId] === undefined) {
+      this.cantidadesAprobadasMap[pedidoId][detalleId] = defaultVal;
+    }
+    return this.cantidadesAprobadasMap[pedidoId][detalleId];
+  }
+
+  setCantidadAprobada(pedidoId: string, detalleId: string, val: number) {
+    if (!this.cantidadesAprobadasMap[pedidoId]) {
+      this.cantidadesAprobadasMap[pedidoId] = {};
+    }
+    this.cantidadesAprobadasMap[pedidoId][detalleId] = Math.max(0, val);
+  }
+
   crearSolicitud() {
     if (!this.newPedido.sedeSolicitanteId || !this.newPedido.sedeProveedoraId) return;
 
@@ -271,10 +401,40 @@ export class PedidosInterSedeComponent implements OnInit {
     });
   }
 
-  despachar(id: string) {
-    this.multiSedeService.despacharPedido(id).subscribe({
+  despacharAjustado(pedidoId: string) {
+    const mapaLineas = this.cantidadesAprobadasMap[pedidoId] || {};
+    this.multiSedeService.despacharPedido(pedidoId, mapaLineas).subscribe({
+      next: () => {
+        this.loadPedidos();
+        this.inventoryService.getInsumos(true).subscribe(res => this.insumos = res);
+      },
+      error: (err: any) => alert(err.error?.message || 'Error al despachar el pedido')
+    });
+  }
+
+  openRechazoModal(ped: PedidoInterSede) {
+    this.selectedPedidoRechazar = ped;
+    this.motivoRechazo = '';
+    this.showRechazoModal = true;
+  }
+
+  confirmarRechazo() {
+    if (!this.selectedPedidoRechazar || !this.motivoRechazo.trim()) return;
+
+    this.multiSedeService.rechazarPedido(this.selectedPedidoRechazar.id, this.motivoRechazo.trim()).subscribe({
+      next: () => {
+        this.showRechazoModal = false;
+        this.selectedPedidoRechazar = null;
+        this.loadPedidos();
+      },
+      error: (err: any) => alert(err.error?.message || 'Error al rechazar el pedido')
+    });
+  }
+
+  confirmarRecepcion(pedidoId: string) {
+    this.multiSedeService.recibirPedido(pedidoId, {}).subscribe({
       next: () => this.loadPedidos(),
-      error: (err: any) => alert(err.error?.message || 'Error al despachar pedido')
+      error: (err: any) => alert(err.error?.message || 'Error al confirmar recepción del pedido')
     });
   }
 }

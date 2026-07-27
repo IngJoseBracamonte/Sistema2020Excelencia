@@ -133,8 +133,13 @@ export class MultiSedeService {
     return this.http.get<PedidoInterSede[]>(`${environment.apiUrl}/api/PedidoInterSede/pendientes`);
   }
 
-  despacharPedido(id: string): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/api/PedidoInterSede/${id}/despachar`, {});
+  despacharPedido(id: string, cantidadesAprobadas?: { [key: string]: number }): Observable<any> {
+    const payload = cantidadesAprobadas ? { cantidadesAprobadas } : {};
+    return this.http.put(`${environment.apiUrl}/api/PedidoInterSede/${id}/despachar`, payload);
+  }
+
+  rechazarPedido(id: string, motivo: string): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/api/PedidoInterSede/${id}/rechazar`, { motivo });
   }
 
   recibirPedido(id: string, discrepancias: { [key: string]: number }): Observable<any> {

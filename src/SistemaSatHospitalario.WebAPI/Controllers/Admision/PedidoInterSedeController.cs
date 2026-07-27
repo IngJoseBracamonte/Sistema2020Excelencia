@@ -43,13 +43,27 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPut("{id}/despachar")]
-        public async Task<IActionResult> Dispatch(Guid id)
+        public async Task<IActionResult> Dispatch(Guid id, [FromBody] DespacharPedidoDto? dto = null)
         {
             var usuario = User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name ?? "Sistema";
             await _mediator.Send(new DispatchPedidoInterSedeCommand
             {
                 PedidoId = id,
-                Usuario = usuario
+                Usuario = usuario,
+                CantidadesAprobadas = dto?.CantidadesAprobadas
+            });
+            return NoContent();
+        }
+
+        [HttpPut("{id}/rechazar")]
+        public async Task<IActionResult> Reject(Guid id, [FromBody] RechazarPedidoDto dto)
+        {
+            var usuario = User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name ?? "Sistema";
+            await _mediator.Send(new RechazarPedidoInterSedeCommand
+            {
+                PedidoId = id,
+                Usuario = usuario,
+                Motivo = dto?.Motivo ?? "Sin motivo especificado"
             });
             return NoContent();
         }

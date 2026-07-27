@@ -53,6 +53,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             }
         }
 
+        public void SetObservaciones(string observaciones)
+        {
+            Observaciones = observaciones ?? string.Empty;
+        }
+
         public void AgregarDetalle(PedidoInterSedeDetalle detalle)
         {
             Detalles.Add(detalle);

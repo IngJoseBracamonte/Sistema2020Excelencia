@@ -37,13 +37,20 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         Task DispatchPedidoAsync(
             Guid pedidoId,
             string usuario,
-            CancellationToken cancellationToken);
+            System.Collections.Generic.Dictionary<Guid, decimal>? cantidadesAprobadas = null,
+            CancellationToken cancellationToken = default);
+
+        Task RejectPedidoAsync(
+            Guid pedidoId,
+            string usuario,
+            string motivo,
+            CancellationToken cancellationToken = default);
 
         Task ReceivePedidoAsync(
             Guid pedidoId,
             string usuario,
             System.Collections.Generic.Dictionary<Guid, decimal> discrepancias,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken = default);
     }
 
     public record CierreDetalleInputDto(Guid InsumoId, decimal StockReal);
