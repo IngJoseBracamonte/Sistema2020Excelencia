@@ -41,5 +41,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             CantidadDevuelta += cantidadARestar;
         }
+
+        public void AdicionarEntregada(decimal cantidad)
+        {
+            if (cantidad <= 0)
+            {
+                throw new ArgumentException("La cantidad a adicionar debe ser mayor a cero.", nameof(cantidad));
+            }
+            CantidadEntregada += cantidad;
+        }
     }
 }

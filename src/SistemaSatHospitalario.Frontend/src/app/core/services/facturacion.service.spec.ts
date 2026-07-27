@@ -35,16 +35,16 @@ describe('FacturacionService', () => {
         };
 
         service.cargarServicio(payload).subscribe(response => {
-            expect(response.success).toBeTrue();
+            expect(response.cuentaId).toBe('c1');
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/CargarServicio`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/cargar-servicio`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(payload);
-        req.flush({ success: true });
+        req.flush({ cuentaId: 'c1', detalleId: 'd1' });
     });
 
-    it('debe registrar el pago multidivisa', () => {
+    it('debe registrar el recibo factura correctamente', () => {
         const payload: RegistrarReciboFacturaRequest = {
             cuentaServicioId: 'guid-cuenta',
             pacienteId: '1',
@@ -53,20 +53,59 @@ describe('FacturacionService', () => {
             pagosMultidivisa: []
         };
 
-        service.registrarPago(payload).subscribe();
+        service.registrarReciboFactura(payload).subscribe(res => {
+            expect(res.facturaId).toBe('fac-123');
+        });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/api/ReciboFactura/RegistrarPagoMultidivisa`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/recibo-factura`);
         expect(req.request.method).toBe('POST');
-        req.flush({ id: 'recibo-123' });
+        req.flush({ facturaId: 'fac-123', numeroFactura: 'REC-001' });
     });
 
     it('debe obtener datos de impresión correctamente', () => {
-        service.getReceiptPrintData('recibo-id').subscribe(data => {
-            expect(data.numeroRecibo).toBe('REC-001');
+        service.getReciboPrintData('recibo-id').subscribe((data: any) => {
+            expect(data.numeroFactura).toBe('REC-001');
         });
 
-        const req = httpMock.expectOne(`${environment.apiUrl}/api/ReciboFactura/recibo-id/Print`);
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/recibos/recibo-id/print`);
         expect(req.request.method).toBe('GET');
-        req.flush({ numeroRecibo: 'REC-001' });
+        req.flush({ numeroFactura: 'REC-001' });
+    });
+
+    it('debe enviar la apertura de cuenta correctamente con tipoIngreso, convenioId y camaId', () => {
+        service.abrirCuenta('pac-123', 'Emergencia', 5, 'cama-12').subscribe(response => {
+            expect(response.cuentaId).toBe('acc-789');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/abrir-cuenta`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual({
+            pacienteId: 'pac-123',
+            tipoIngreso: 'Emergencia',
+            convenioId: 5,
+            camaId: 'cama-12'
+        });
+        req.flush({ cuentaId: 'acc-789', message: 'Cuenta clínica abierta exitosamente.' });
+    });
+
+    it('debe enviar el cierre de cuenta correctamente', () => {
+        const payload: any = {
+            cuentaId: 'acc-123',
+            usuarioCajero: 'cajero1',
+            usuarioId: 'usr-1',
+            tasaCambio: 45.0,
+            pagos: []
+        };
+
+        service.closeAccount(payload).subscribe(response => {
+            expect(response.reciboId).toBe('rec-123');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/CloseAccount`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(payload);
+        req.flush({ reciboId: 'rec-123', id: 'rec-123' });
     });
 });
+
+

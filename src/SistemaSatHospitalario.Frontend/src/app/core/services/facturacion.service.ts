@@ -98,6 +98,17 @@ export interface ReceiptPrintData {
   cajeroNombre: string;
 }
 
+export interface CloseAccountRequest {
+  cuentaId: string;
+  tasaCambio: number;
+  usuarioCajero: string;
+  usuarioId: string;
+  pagos: DetallePagoDto[];
+  consolidar?: boolean;
+  destinoPaciente?: string;
+  personalRelevo?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -105,13 +116,92 @@ export class FacturacionService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Billing`;
 
-  abrirCuenta(pacienteId: string, usuarioCarga: string, tipoIngreso: string, convenioId?: number): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/abrir-cuenta`, {
+  abrirCuenta(pacienteId: string, tipoIngreso: string, convenioId?: number | null, camaId?: string | number | null): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/abrir-cuenta`, {
       pacienteId,
-      usuarioCarga,
       tipoIngreso,
-      convenioId
+      convenioId: convenioId ?? null,
+      camaId: camaId ?? null
     });
+  }
+
+  closeAccount(request: CloseAccountRequest): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/CloseAccount`, request);
+  }
+
+  quitarServicio(cuentaId: string, detalleId: string, medicoId?: string, horaCita?: string): Observable<any> {
+    let url = `${this.apiUrl}/RemoveServicio?cuentaId=${cuentaId}&detalleId=${detalleId}`;
+    if (medicoId) url += `&medicoId=${medicoId}`;
+    if (horaCita) url += `&horaCita=${encodeURIComponent(horaCita)}`;
+    return this.http.delete<any>(url);
+  }
+
+  liberarTurno(medicoId: string, horaPautada: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/LiberarTurno?medicoId=${medicoId}&horaPautada=${encodeURIComponent(horaPautada)}`);
+  }
+
+  getOpenAccount(pacienteId: string, tipoIngreso?: string): Observable<any> {
+    let url = `${this.apiUrl}/OpenAccount/${pacienteId}`;
+    if (tipoIngreso) {
+      url += `?tipoIngreso=${encodeURIComponent(tipoIngreso)}`;
+    }
+    return this.http.get<any>(url);
+  }
+
+  syncBulk(payload: any, idempotencyKey?: string): Observable<any> {
+    let headers = new HttpHeaders();
+    if (idempotencyKey) {
+      headers = headers.set('X-Idempotency-Key', idempotencyKey);
+    }
+    return this.http.post<any>(`${this.apiUrl}/SincronizarCarrito`, payload, { headers });
+  }
+
+  reservarTurno(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/ReservarTurno`, payload);
+  }
+
+  bloquearHorario(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/BloquearHorario`, payload);
+  }
+
+  getAppointments(fecha?: string): Observable<any> {
+    let url = `${this.apiUrl}/Appointments`;
+    if (fecha) url += `?fecha=${encodeURIComponent(fecha)}`;
+    return this.http.get<any>(url);
+  }
+
+  cancelAppointment(appointmentId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/CancelAppointment/${appointmentId}`, {});
+  }
+
+  getDailyBilledPatients(fecha?: string): Observable<any> {
+    let url = `${this.apiUrl}/DailyBilledPatients`;
+    if (fecha) url += `?fecha=${encodeURIComponent(fecha)}`;
+    return this.http.get<any>(url);
+  }
+
+  updateARMetadata(dto: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/UpdateARMetadata`, dto);
+  }
+
+  getGarantiasItems(arId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/api/Seguros/garantias-items/${arId}`);
+  }
+
+  guardarGarantiasItems(cuentaPorCobrarId: string, items: any[]): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/api/Seguros/garantias-items`, { cuentaPorCobrarId, items });
+  }
+
+  generarCompromisoPdf(dto: any): Observable<Blob> {
+    return this.http.post(`${environment.apiUrl}/api/Seguros/compromiso-pago`, dto, { responseType: 'blob' });
+  }
+
+  generarConformidadPdf(dto: any): Observable<Blob> {
+    return this.http.post(`${environment.apiUrl}/api/Seguros/conformidad-servicios`, dto, { responseType: 'blob' });
+  }
+
+  generarGarantiaPdf(dto: any): Observable<Blob> {
+    return this.http.post(`${environment.apiUrl}/api/Seguros/garantia-prendaria`, dto, { responseType: 'blob' });
   }
 
   cargarServicio(request: CargarServicioACuentaRequest): Observable<{ cuentaId: string; detalleId: string }> {
@@ -142,3 +232,5 @@ export class FacturacionService {
     return this.http.get<any>(url);
   }
 }
+
+

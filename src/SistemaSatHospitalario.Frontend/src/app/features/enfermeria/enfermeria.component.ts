@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -22,6 +22,7 @@ import {
   Search, 
   RefreshCcw, 
   Check, 
+  CheckCircle,
   X, 
   ChevronRight, 
   ChevronDown, 
@@ -252,11 +253,13 @@ export class EnfermeriaComponent implements OnInit {
   public readonly multiSedeService = inject(MultiSedeService);
   private readonly patientService = inject(PatientService);
   private readonly facturacionService = inject(FacturacionService);
+  private readonly elementRef = inject(ElementRef);
 
   readonly icons = {
     Search,
     RefreshCcw,
     Check,
+    CheckCircle,
     X,
     ChevronRight,
     ChevronDown,
@@ -353,6 +356,14 @@ export class EnfermeriaComponent implements OnInit {
   
   // Selected Patient / Timeline
   public selectedAccount = signal<CuentaAdministrativa | null>(null);
+  public isAccountSolvent = computed<boolean>(() => {
+    const active = this.selectedAccount();
+    if (!active) return true;
+    const total = active.total || 0;
+    const pagado = active['totalPagado'] || 0;
+    const saldo = active['saldoPendiente'] !== undefined ? active['saldoPendiente'] : Math.max(0, total - pagado);
+    return saldo <= 0;
+  });
   public nursingHistory = signal<TriageRecord[]>([]);
   
   // Tab / Filter UI
@@ -586,10 +597,6 @@ export class EnfermeriaComponent implements OnInit {
           this.isLoading.set(false);
         }
       });
-  }
-
-  public toggleAltaDropdown(): void {
-    this.showAltaDropdown.update(v => !v);
   }
 
   public onTransferOrDischargeCompleted(msg?: any): void {
@@ -1140,6 +1147,7 @@ export class EnfermeriaComponent implements OnInit {
   public montoACobrarUsdInteligente = signal<number>(300);
 
   // Alta Médica & Solvencia Signals & Handlers
+  public isAltaDropdownOpen = signal<boolean>(false);
   public showAltaModal = signal<boolean>(false);
   public showSolvenciaModal = signal<boolean>(false);
   public tipoAltaSeleccionada = signal<number>(0);
@@ -1147,7 +1155,27 @@ export class EnfermeriaComponent implements OnInit {
   public confirmadoEnfermeriaSinSolvencia = signal<boolean>(false);
   public isProcessingAlta = signal<boolean>(false);
 
+  @HostListener('document:click', ['$event'])
+  public onDocumentClick(event: MouseEvent): void {
+    if (this.isAltaDropdownOpen()) {
+      const target = event.target as HTMLElement;
+      if (this.elementRef?.nativeElement && !this.elementRef.nativeElement.querySelector('.alta-dropdown-container')?.contains(target)) {
+        this.isAltaDropdownOpen.set(false);
+      }
+    }
+  }
+
+  public toggleAltaDropdown(event?: Event): void {
+    event?.stopPropagation();
+    this.isAltaDropdownOpen.update(prev => !prev);
+  }
+
+  public closeAltaDropdown(): void {
+    this.isAltaDropdownOpen.set(false);
+  }
+
   public iniciarAltaMedica(tipo: number): void {
+    this.isAltaDropdownOpen.set(false);
     const active = this.selectedAccount();
     if (!active) {
       alert('Debe seleccionar un paciente de la lista.');

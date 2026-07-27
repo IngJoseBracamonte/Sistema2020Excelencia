@@ -68,6 +68,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<DetalleServicioMedicoResponsable> DetallesServicioMedicosResponsables { get; set; }
         public DbSet<ServicioIncluidoArea> ServiciosIncluidosAreas { get; set; }
         public DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; set; }
+        public DbSet<OrdenCirugia> OrdenesCirugia { get; set; }
+        public DbSet<CirugiaLog> CirugiaLogs { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -923,6 +925,52 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                     new TipoServicio(4, "Tomo", "TOMO"),
                     new TipoServicio(5, "Insumo", "INS")
                 );
+            });
+
+            builder.Entity<OrdenCirugia>(entity =>
+            {
+                entity.ToTable("OrdenesCirugia");
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.DescripcionCirugia).IsRequired().HasMaxLength(500);
+                entity.Property(o => o.PrecioBaseUsd).HasPrecision(18, 2);
+                entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
+                entity.Property(o => o.MotivoCancelacion).HasMaxLength(500);
+                entity.Property(o => o.UsuarioCreacion).IsRequired().HasMaxLength(100);
+
+                entity.HasOne(o => o.CuentaServicio)
+                      .WithMany()
+                      .HasForeignKey(o => o.CuentaServicioId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(o => o.Paciente)
+                      .WithMany()
+                      .HasForeignKey(o => o.PacienteId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(o => o.Medico)
+                      .WithMany()
+                      .HasForeignKey(o => o.MedicoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(o => o.Logs)
+                      .WithOne(l => l.OrdenCirugia)
+                      .HasForeignKey(l => l.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(o => o.FechaHoraProgramada);
+                entity.HasIndex(o => o.Estado);
+            });
+
+            builder.Entity<CirugiaLog>(entity =>
+            {
+                entity.ToTable("CirugiaLogs");
+                entity.HasKey(l => l.Id);
+                entity.Property(l => l.UsuarioId).IsRequired().HasMaxLength(100);
+                entity.Property(l => l.Evento).IsRequired().HasMaxLength(50);
+                entity.Property(l => l.Detalle).HasMaxLength(1000);
+
+                entity.HasIndex(l => l.OrdenCirugiaId);
+                entity.HasIndex(l => l.Timestamp);
             });
         }
 

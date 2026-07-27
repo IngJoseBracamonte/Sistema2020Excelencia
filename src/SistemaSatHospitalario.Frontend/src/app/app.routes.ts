@@ -54,6 +54,7 @@ export const routes: Routes = [
             { path: 'admin/seguros/gerencia', loadComponent: () => import('./features/admin/seguros-gerencia/management-insurance-dashboard.component').then(m => m.ManagementInsuranceDashboardComponent) },
             { path: 'github-test', loadComponent: () => import('./features/github-test/github-test.component').then(m => m.GithubTestComponent) },
             { path: 'enfermeria', loadComponent: () => import('./features/enfermeria/enfermeria.component').then(m => m.EnfermeriaComponent) },
+            { path: 'pabellon/gestion', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
 
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]

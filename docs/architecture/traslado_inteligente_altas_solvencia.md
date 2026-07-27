@@ -38,4 +38,11 @@ Para garantizar trazabilidad e inmutabilidad en la gestión de cuentas y traslad
   - 🟢 Alta Normal
   - 🟠 Alta Voluntaria
   - 🔴 Alta Por Defunción
+- **UX & Persistencia de Desplegable**:
+  - Para evitar cierres indeseados al desplazar el cursor, el contenedor implementa un puente de hover continuo (`top-full pt-2` con `before:content-[''] before:-top-2`).
+  - Soporte de toggle por clic (`isAltaDropdownOpen` signal + `@HostListener` click-outside) para permitir interacción sin requerir precisión milimétrica de puntero.
+- **Indicador de Solvencia en Cabecera**:
+  - Ubicación: Inmediatamente después de `Seguro: PARTICULAR` con separador de viñeta (`•`).
+  - Estado `Solvente` (`saldoPendiente <= 0`): Icono `CheckCircle` + texto **Solvente** en verde esmeralda (`text-emerald-400`).
+  - Estado `Pendiente` (`saldoPendiente > 0`): Icono `AlertTriangle` + texto **Pendiente** en amarillo/ámbar (`text-amber-400`).
 - Modal Interyector: Mensaje estandarizado: `"El paciente registra un saldo pendiente de $X USD. ¿Desea continuar de todos modos?"` con botones `[No, Cancelar]` / `[Sí, Continuar]`.
