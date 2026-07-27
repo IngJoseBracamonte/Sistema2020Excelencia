@@ -91,10 +91,10 @@ export class ExpedienteFacturacionComponent implements OnInit {
 
     this.isGeneratingPdf.set(true);
     this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
-      next: (items) => {
-        const filteredItems = (items || []).filter(i => i.descripcion && i.descripcion.trim() !== '');
-        const totalItemsVal = filteredItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
-        const descItemsVal = filteredItems.map(i => i.descripcion).join(', ') || '';
+      next: (items: any[]) => {
+        const filteredItems = (items || []).filter((i: any) => i.descripcion && i.descripcion.trim() !== '');
+        const totalItemsVal = filteredItems.reduce((acc: number, curr: any) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = filteredItems.map((i: any) => i.descripcion).join(', ') || '';
 
         const dto = {
           cuentaPorCobrarId: row.cuentaPorCobrarId,
@@ -195,10 +195,10 @@ export class ExpedienteFacturacionComponent implements OnInit {
     if (!row.cuentaPorCobrarId) return;
     this.isGeneratingPdf.set(true);
     this.facturacionService.getGarantiasItems(row.cuentaPorCobrarId).subscribe({
-      next: (items) => {
-        const filteredItems = (items || []).filter(i => i.descripcion && i.descripcion.trim() !== '');
-        const totalItemsVal = filteredItems.reduce((acc, curr) => acc + (curr.valorEstimado || 0), 0) || 0;
-        const descItemsVal = filteredItems.map(i => i.descripcion).join(', ') || '';
+      next: (items: any[]) => {
+        const filteredItems = (items || []).filter((i: any) => i.descripcion && i.descripcion.trim() !== '');
+        const totalItemsVal = filteredItems.reduce((acc: number, curr: any) => acc + (curr.valorEstimado || 0), 0) || 0;
+        const descItemsVal = filteredItems.map((i: any) => i.descripcion).join(', ') || '';
 
         const dto = {
           cuentaPorCobrarId: row.cuentaPorCobrarId,

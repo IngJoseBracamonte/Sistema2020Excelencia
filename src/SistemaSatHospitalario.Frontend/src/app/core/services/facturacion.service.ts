@@ -72,9 +72,27 @@ export interface SyncCarritoMasivoRequest {
   }>;
 }
 
+export interface DailyBilledPatient {
+  cuentaId: string;
+  pacienteId: string;
+  cedula: string;
+  nombre: string;
+  apellidos: string;
+  tipoIngreso: string;
+  montoTotalUsd: number;
+  totalFacturado?: number;
+  cuentasCerradas?: number;
+  fechaIngreso: string;
+  fechaCierre?: string;
+  estadoCuenta: string;
+}
+
 export interface ReceiptPrintData {
-  facturaId: string;
-  numeroFactura: string;
+  id?: string;
+  reciboId?: string;
+  numeroRecibo?: string;
+  facturaId?: string;
+  numeroFactura?: string;
   fechaEmision: string;
   pacienteNombre: string;
   pacienteCedula: string;
@@ -82,20 +100,27 @@ export interface ReceiptPrintData {
   detalles: Array<{
     descripcion: string;
     cantidad: number;
-    precioUnitarioUsd: number;
-    subtotalUsd: number;
-    subtotalBs: number;
+    precioUnitarioUsd?: number;
+    precioUnitario?: number;
+    subtotalUsd?: number;
+    subtotalBs?: number;
+    subtotal?: number;
   }>;
-  totalUsd: number;
-  tasaCambio: number;
-  totalBs: number;
+  totalUsd?: number;
+  totalUSD?: number;
+  tasaCambio?: number;
+  tasaBcv?: number;
+  totalBs?: number;
+  totalBS?: number;
   pagos: Array<{
-    metodo: string;
+    metodo?: string;
+    metodoPago?: string;
     referencia: string;
     montoOriginal: number;
-    montoBs: number;
+    montoBs?: number;
+    equivalenteBase?: number;
   }>;
-  cajeroNombre: string;
+  cajeroNombre?: string;
 }
 
 export interface CloseAccountRequest {
@@ -204,8 +229,12 @@ export class FacturacionService {
     return this.http.post(`${environment.apiUrl}/api/Seguros/garantia-prendaria`, dto, { responseType: 'blob' });
   }
 
-  cargarServicio(request: CargarServicioACuentaRequest): Observable<{ cuentaId: string; detalleId: string }> {
-    return this.http.post<{ cuentaId: string; detalleId: string }>(`${this.apiUrl}/cargar-servicio`, request);
+  cargarServicio(request: CargarServicioACuentaRequest, idempotencyKey?: string): Observable<{ cuentaId: string; detalleId: string }> {
+    let headers = new HttpHeaders();
+    if (idempotencyKey) {
+      headers = headers.set('Idempotency-Key', idempotencyKey);
+    }
+    return this.http.post<{ cuentaId: string; detalleId: string }>(`${this.apiUrl}/cargar-servicio`, request, { headers });
   }
 
   syncCarritoMasivo(request: SyncCarritoMasivoRequest): Observable<{ cuentaId: string }> {
@@ -222,6 +251,10 @@ export class FacturacionService {
 
   getReciboPrintData(reciboId: string): Observable<ReceiptPrintData> {
     return this.http.get<ReceiptPrintData>(`${this.apiUrl}/recibos/${reciboId}/print`);
+  }
+
+  getReceiptPrintData(reciboId: string): Observable<ReceiptPrintData> {
+    return this.getReciboPrintData(reciboId);
   }
 
   getExpedienteFacturacion(pacienteId: string, searchTerm?: string): Observable<any> {

@@ -202,9 +202,32 @@ export class PatientHistoryComponent implements OnInit {
 
   reimprimirRecibo(reciboId: string) {
     this.facturacionService.getReceiptPrintData(reciboId).subscribe({
-      next: (data) => {
-        const content = this.printService.generateReceiptHtml(data);
-        this.printService.print(content, `Reimpresion ${data.numeroRecibo}`);
+      next: (data: any) => {
+        const printData = {
+          id: data.reciboId || data.id || reciboId,
+          numeroRecibo: data.numeroRecibo || data.numeroFactura || '',
+          fechaEmision: data.fechaEmision,
+          pacienteNombre: data.pacienteNombre,
+          pacienteCedula: data.pacienteCedula,
+          tipoIngreso: data.tipoIngreso,
+          totalUSD: data.totalUSD ?? data.totalUsd ?? 0,
+          totalBS: data.totalBS ?? data.totalBs ?? 0,
+          tasaBcv: data.tasaBcv ?? data.tasaCambio ?? 0,
+          detalles: (data.detalles || []).map((d: any) => ({
+            descripcion: d.descripcion,
+            cantidad: d.cantidad,
+            precioUnitario: d.precioUnitarioUsd ?? d.precioUnitario ?? 0,
+            subtotal: d.subtotalUsd ?? d.subtotal ?? 0
+          })),
+          pagos: (data.pagos || []).map((p: any) => ({
+            metodoPago: p.metodo || p.metodoPago || '',
+            montoOriginal: p.montoOriginal || 0,
+            equivalenteBase: p.montoBs || p.equivalenteBase || 0,
+            referencia: p.referencia || ''
+          }))
+        };
+        const content = this.printService.generateReceiptHtml(printData);
+        this.printService.print(content, `Reimpresión ${printData.numeroRecibo}`);
       }
     });
   }
