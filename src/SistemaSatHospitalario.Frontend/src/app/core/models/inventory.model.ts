@@ -11,12 +11,21 @@ export interface Insumo {
   ocultoEnTraslados?: boolean;
 }
 
+export type TipoMovimientoInsumo = 
+  | 'Ingreso'             // Compra a Proveedor -> Almacén Principal
+  | 'Transferencia'       // Almacén Principal -> Emergencia / Hospitalización (Crea Stock Local)
+  | 'ConsumoInterno'      // Almacén Principal -> Laboratorio (Nota de Entrega / Descarte Inmediato)
+  | 'DespachoQuirurgico'  // Almacén Principal -> Quirófano (Tránsito / Kit)
+  | 'DevolucionQuirurgica'// Quirófano -> Almacén Principal (Reingreso)
+  | 'Descarte'            // Vencimiento o Daño
+  | 'AjusteCierre';       // Auditoría Física
+
 export interface MovimientoInsumo {
   id: string;
   insumoId: string;
   insumo?: Insumo;
   sedeId: string;
-  tipoMovimiento: string; // 'Ingreso', 'Descarte', 'Consumo', 'AjusteCierre'
+  tipoMovimiento: TipoMovimientoInsumo | string;
   cantidadBase: number;
   unidadMedidaOriginal: string;
   cantidadOriginal: number;

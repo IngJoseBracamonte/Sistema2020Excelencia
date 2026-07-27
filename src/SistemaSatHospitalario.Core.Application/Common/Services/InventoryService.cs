@@ -306,6 +306,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new InvalidOperationException("El pedido no está en un estado que permita despacho.");
             }
 
+            bool esGastoInterno = !string.IsNullOrEmpty(pedido.Observaciones) && 
+                pedido.Observaciones.Contains("[GASTO_INTERNO_LABORATORIO]", StringComparison.OrdinalIgnoreCase);
+
             // Validar stock disponible en la sede proveedora y descontar stock
             foreach (var detalle in pedido.Detalles)
             {
@@ -330,21 +333,39 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 _logger.LogInformation("Stock transferido desde Sede Proveedora {SedeId}. Insumo: {InsumoId}, Cantidad: {Cantidad}", pedido.SedeProveedoraId, detalle.InsumoId, detalle.CantidadSolicitada);
                 detalle.SetDespachado(detalle.CantidadSolicitada);
 
-                // Registrar movimiento de salida
+                if (esGastoInterno)
+                {
+                    detalle.SetRecibido(detalle.CantidadSolicitada);
+                }
+
+                // Registrar movimiento de salida o consumo interno
+                var tipoMov = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
+                var motivoTxt = esGastoInterno 
+                    ? $"Nota de Entrega por Consumo Interno de Laboratorio/Mantenimiento ({pedido.Correlativo})"
+                    : $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante";
+
                 var movimiento = new MovimientoInsumo(
                     detalle.InsumoId,
                     pedido.SedeProveedoraId,
-                    "TransferenciaSalida",
+                    tipoMov,
                     -detalle.CantidadSolicitada,
                     detalle.Insumo.UnidadMedidaBase,
                     detalle.CantidadSolicitada,
                     usuario,
-                    $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante"
+                    motivoTxt
                 );
                 _context.MovimientosInsumo.Add(movimiento);
             }
 
-            pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
+            if (esGastoInterno)
+            {
+                pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
+            }
+            else
+            {
+                pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
         }
 
