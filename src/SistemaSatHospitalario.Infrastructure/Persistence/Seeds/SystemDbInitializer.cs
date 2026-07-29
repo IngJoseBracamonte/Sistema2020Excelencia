@@ -461,6 +461,117 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear las columnas nuevas de imagenología y soft delete.");
                 }
 
+                // Self-healing: Ensure PrincipiosActivos and InsumosPrincipiosActivos tables exist and Insumos has IsDeleted/FechaInactivacion columns
+                try
+                {
+                    var conn = _context.Database.GetDbConnection();
+                    bool closeConnection = false;
+                    if (conn.State != System.Data.ConnectionState.Open)
+                    {
+                        await conn.OpenAsync();
+                        closeConnection = true;
+                    }
+
+                    bool isSqlite = _context.Database.IsSqlite();
+
+                    // 1. Crear tabla PrincipiosActivos si no existe
+                    if (isSqlite)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            CREATE TABLE IF NOT EXISTS `PrincipiosActivos` (
+                                `Id` TEXT NOT NULL PRIMARY KEY,
+                                `Nombre` TEXT NOT NULL,
+                                `Activo` INTEGER NOT NULL DEFAULT 1
+                            );
+                            CREATE UNIQUE INDEX IF NOT EXISTS `IX_PrincipiosActivos_Nombre` ON `PrincipiosActivos` (`Nombre`);
+                        ");
+                    }
+                    else
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            CREATE TABLE IF NOT EXISTS `PrincipiosActivos` (
+                                `Id` CHAR(36) NOT NULL,
+                                `Nombre` VARCHAR(200) NOT NULL,
+                                `Activo` TINYINT(1) NOT NULL DEFAULT 1,
+                                PRIMARY KEY (`Id`),
+                                UNIQUE KEY `IX_PrincipiosActivos_Nombre` (`Nombre`)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                        ");
+                    }
+
+                    // 2. Crear tabla InsumosPrincipiosActivos si no existe
+                    if (isSqlite)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            CREATE TABLE IF NOT EXISTS `InsumosPrincipiosActivos` (
+                                `InsumoId` TEXT NOT NULL,
+                                `PrincipioActivoId` TEXT NOT NULL,
+                                `Concentracion` TEXT NULL,
+                                PRIMARY KEY (`InsumoId`, `PrincipioActivoId`)
+                            );
+                        ");
+                    }
+                    else
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            CREATE TABLE IF NOT EXISTS `InsumosPrincipiosActivos` (
+                                `InsumoId` CHAR(36) NOT NULL,
+                                `PrincipioActivoId` CHAR(36) NOT NULL,
+                                `Concentracion` VARCHAR(100) NULL,
+                                PRIMARY KEY (`InsumoId`, `PrincipioActivoId`)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                        ");
+                    }
+
+                    // 3. Verificar/crear columnas IsDeleted y FechaInactivacion en Insumos
+                    bool hasIsDeleted = false;
+                    bool hasFechaInactivacion = false;
+
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(Insumos);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("IsDeleted", StringComparison.OrdinalIgnoreCase)) hasIsDeleted = true;
+                                    if (name.Equals("FechaInactivacion", StringComparison.OrdinalIgnoreCase)) hasFechaInactivacion = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `Insumos` WHERE Field IN ('IsDeleted', 'FechaInactivacion');";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var field = reader["Field"]?.ToString() ?? string.Empty;
+                                    if (field.Equals("IsDeleted", StringComparison.OrdinalIgnoreCase)) hasIsDeleted = true;
+                                    if (field.Equals("FechaInactivacion", StringComparison.OrdinalIgnoreCase)) hasFechaInactivacion = true;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!hasIsDeleted)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Insumos` ADD COLUMN `IsDeleted` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `Insumos` ADD COLUMN `IsDeleted` TINYINT(1) NOT NULL DEFAULT 0;");
+                    if (!hasFechaInactivacion)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Insumos` ADD COLUMN `FechaInactivacion` TEXT NULL;" : "ALTER TABLE `Insumos` ADD COLUMN `FechaInactivacion` DATETIME NULL;");
+
+                    if (closeConnection)
+                    {
+                        await conn.CloseAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo verificar/crear las tablas de PrincipiosActivos y columnas de soft delete en Insumos.");
+                }
+
                 _logger.LogInformation("Poblando System Database con datos de prueba...");
 
                 await SeedEspecialidadesAsync();
