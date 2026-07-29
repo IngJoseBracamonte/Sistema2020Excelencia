@@ -51,6 +51,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<HonorariumMappingRule> HonorariumMappingRules { get; set; }
         public DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; set; }
         public DbSet<GarantiaItem> GarantiasItems { get; set; }
+        public DbSet<CompromisoPago> CompromisosPago { get; set; }
         public DbSet<HistorialModificacionCuenta> HistorialModificacionCuentas { get; set; }
         public DbSet<TriageEnfermeria> TriagesEnfermeria { get; set; }
         public DbSet<ValoracionFisica> ValoracionesFisicas { get; set; }

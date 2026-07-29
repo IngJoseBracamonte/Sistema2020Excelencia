@@ -80,6 +80,14 @@ import {
         <!-- Content Body -->
         <div class="p-6 overflow-y-auto flex-1 space-y-4">
 
+          <!-- Guard de Estado: Advertencia si no está EnProceso -->
+          <div *ngIf="detalle() && detalle()?.estado !== 'EnProceso'" class="bg-amber-950/40 border border-amber-800/50 rounded-lg p-3 text-xs text-amber-300 flex items-start gap-2">
+            <lucide-icon name="alert-circle" class="w-4 h-4 mt-0.5 shrink-0 text-amber-400"></lucide-icon>
+            <span>
+              <strong>Advertencia de Invariante de Dominio:</strong> Esta cirugía se encuentra en estado <strong>{{ detalle()?.estado }}</strong>. Solo se pueden anexar cargos extras o procesar devoluciones cuando la cirugía está <strong>EnProceso</strong>.
+            </span>
+          </div>
+
           <!-- TAB 1: Devolución a Sede Principal -->
           <div *ngIf="activeTab() === 'devolucion'" class="space-y-4">
             <div class="bg-sky-950/30 border border-sky-800/40 rounded-lg p-3 text-xs text-sky-300 flex items-start gap-2">
@@ -113,9 +121,10 @@ import {
                     <input 
                       type="number" 
                       min="0" 
+                      [disabled]="detalle()?.estado !== 'EnProceso'"
                       [max]="item.cantidadEntregada - item.cantidadDevuelta"
                       [(ngModel)]="item.cantidadUsada" 
-                      class="w-20 bg-gray-950 border border-gray-700 rounded px-2 py-1 text-center text-xs font-mono text-white focus:border-sky-500 focus:outline-none">
+                      class="w-20 bg-gray-950 border border-gray-700 rounded px-2 py-1 text-center text-xs font-mono text-white focus:border-sky-500 focus:outline-none disabled:opacity-50">
                   </td>
                   <td class="py-2.5 px-3 text-center font-mono font-bold" [class.text-emerald-400]="getCantidadADevolver(item) > 0" [class.text-gray-500]="getCantidadADevolver(item) <= 0">
                     {{ getCantidadADevolver(item) }}
@@ -127,7 +136,7 @@ import {
             <div class="flex justify-end pt-2">
               <button 
                 (click)="ejecutarDevolucionMasiva()"
-                [disabled]="procesando()"
+                [disabled]="procesando() || detalle()?.estado !== 'EnProceso'"
                 class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-lg transition flex items-center gap-2 disabled:opacity-50">
                 <lucide-icon name="check-circle-2" class="w-4 h-4"></lucide-icon>
                 Confirmar Devolución a Sede Principal
@@ -183,7 +192,7 @@ import {
                 </div>
                 <button 
                   (click)="agregarCargoExtra()"
-                  [disabled]="!cargoForm.descripcion || cargoForm.cantidad <= 0 || procesando()"
+                  [disabled]="!cargoForm.descripcion || cargoForm.cantidad <= 0 || procesando() || detalle()?.estado !== 'EnProceso'"
                   class="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs py-2 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50">
                   <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
                   Anexar a la Cuenta de Cirugía

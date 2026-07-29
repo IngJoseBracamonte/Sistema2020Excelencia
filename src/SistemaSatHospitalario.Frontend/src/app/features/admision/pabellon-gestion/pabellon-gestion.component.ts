@@ -81,15 +81,16 @@ import {
         <div class="relative flex-1 min-w-[200px]">
           <input 
             type="text" 
-            [(ngModel)]="filtroTexto" 
+            [ngModel]="filtroTexto()" 
+            (ngModelChange)="filtroTexto.set($event)"
             placeholder="Buscar por paciente, cédula o cirugía..." 
             class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white pl-8 focus:border-sky-500 focus:outline-none">
           <lucide-icon name="search" class="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-2.5"></lucide-icon>
         </div>
 
         <select 
-          [(ngModel)]="filtroEstado" 
-          (change)="cargarOrdenes()"
+          [ngModel]="filtroEstado()" 
+          (ngModelChange)="onFiltroEstadoChange($event)"
           class="bg-gray-950 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-sky-500 focus:outline-none">
           <option value="">Todos los Estados</option>
           <option value="PendienteEjecucion">Pendiente de Ejecución</option>
@@ -317,6 +318,45 @@ import {
         </div>
       </div>
 
+      <!-- Modal Confirmar Cancelación Cirugía -->
+      <div *ngIf="modalCancelacionOrden()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4 text-white">
+          <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+            <h3 class="text-base font-bold text-red-400 flex items-center gap-2">
+              <lucide-icon name="alert-triangle" class="w-5 h-5"></lucide-icon>
+              Cancelar Cirugía
+            </h3>
+            <button (click)="modalCancelacionOrden.set(null)" class="text-gray-400 hover:text-white">
+              <lucide-icon name="x-circle" class="w-5 h-5"></lucide-icon>
+            </button>
+          </div>
+
+          <p class="text-xs text-gray-300">
+            Está a punto de cancelar la cirugía <strong class="text-white">'{{ modalCancelacionOrden()?.descripcionCirugia }}'</strong>. Por favor especifique el motivo de auditoría:
+          </p>
+
+          <div>
+            <label class="text-[11px] text-gray-400 mb-1 block">Motivo de Cancelación *</label>
+            <textarea 
+              [ngModel]="motivoCancelacionTexto()" 
+              (ngModelChange)="motivoCancelacionTexto.set($event)"
+              rows="3" 
+              placeholder="Ingrese la razón justificada..."
+              class="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"></textarea>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2 border-t border-gray-800">
+            <button (click)="modalCancelacionOrden.set(null)" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-4 py-2 rounded-lg">Volver</button>
+            <button 
+              (click)="confirmarCancelacion()"
+              [disabled]="!motivoCancelacionTexto().trim()"
+              class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-lg disabled:opacity-50 transition">
+              Confirmar Cancelación
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `
 })
@@ -326,12 +366,14 @@ export class PabellonGestionComponent implements OnInit {
 
   public vistaModo = signal<'calendario' | 'lista'>('calendario');
   public ordenes = signal<OrdenCirugia[]>([]);
-  public medicos = signal<any[]>([]);
-  public filtroTexto = '';
-  public filtroEstado = '';
+  public medicos = signal<{ id: string; nombre: string; especialidad?: string }[]>([]);
+  public filtroTexto = signal<string>('');
+  public filtroEstado = signal<string>('');
 
   public modalConsumoOrdenId = signal<string | null>(null);
   public modalNuevaCirugiaVisible = signal<boolean>(false);
+  public modalCancelacionOrden = signal<OrdenCirugia | null>(null);
+  public motivoCancelacionTexto = signal<string>('');
 
   public nuevaCirugiaForm: CrearOrdenCirugiaRequest = {
     cuentaServicioId: '',
@@ -347,8 +389,13 @@ export class PabellonGestionComponent implements OnInit {
     this.cargarMedicos();
   }
 
+  onFiltroEstadoChange(val: string): void {
+    this.filtroEstado.set(val);
+    this.cargarOrdenes();
+  }
+
   cargarOrdenes(): void {
-    this.pabellonService.getOrdenes(undefined, undefined, this.filtroEstado || undefined).subscribe({
+    this.pabellonService.getOrdenes(undefined, undefined, this.filtroEstado() || undefined).subscribe({
       next: (res) => this.ordenes.set(res || [])
     });
   }
@@ -361,8 +408,8 @@ export class PabellonGestionComponent implements OnInit {
 
   public ordenesFiltradas = computed(() => {
     const list = this.ordenes();
-    if (!this.filtroTexto.trim()) return list;
-    const txt = this.filtroTexto.toLowerCase();
+    const txt = this.filtroTexto().trim().toLowerCase();
+    if (!txt) return list;
     return list.filter(o => 
       o.pacienteNombre?.toLowerCase().includes(txt) ||
       o.pacienteCedula?.toLowerCase().includes(txt) ||
@@ -416,9 +463,16 @@ export class PabellonGestionComponent implements OnInit {
   }
 
   solicitarCancelacion(orden: OrdenCirugia): void {
-    const motivo = prompt(`Motivo de cancelación para la cirugía '${orden.descripcionCirugia}':`);
-    if (motivo) {
+    this.motivoCancelacionTexto.set('');
+    this.modalCancelacionOrden.set(orden);
+  }
+
+  confirmarCancelacion(): void {
+    const orden = this.modalCancelacionOrden();
+    const motivo = this.motivoCancelacionTexto().trim();
+    if (orden && motivo) {
       this.cambiarEstado(orden.id, 'Cancelada', motivo);
+      this.modalCancelacionOrden.set(null);
     }
   }
 }

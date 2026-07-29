@@ -419,6 +419,7 @@ src/SistemaSatHospitalario.UnitTests/Application/InventarioDbDirectTests.cs
 src/SistemaSatHospitalario.UnitTests/Application/InventarioE2EDbDirectTests.cs
 db_direct_tests_log.txt
 db_e2e_tests_log.txt
+admision_quirofano_e2e_log.txt
 
 # Sandbox E2E Tests (Aislados de Producción)
 tests/e2e-sandbox/

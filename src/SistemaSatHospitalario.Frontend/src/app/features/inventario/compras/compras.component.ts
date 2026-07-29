@@ -1,8 +1,9 @@
-import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo, RecordPurchase, PurchaseItem, PrincipioActivo } from '../../../core/models/inventory.model';
+import { SearchFocusDirective } from '../../../shared/directives/search-focus.directive';
 import { 
   LucideAngularModule, 
   ShoppingCart, 
@@ -28,35 +29,14 @@ interface CartItem {
 @Component({
   selector: 'app-compras',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, SearchFocusDirective],
   templateUrl: './compras.component.html'
 })
 export class ComprasComponent implements OnInit {
   private inventoryService = inject(InventoryService);
 
-  @ViewChild('purchaseSearchInput') purchaseSearchInput!: ElementRef<HTMLInputElement>;
-
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
-
-  @HostListener('window:keydown', ['$event'])
-  handleKeyDown(event: KeyboardEvent) {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-      const target = event.target as HTMLElement;
-      if (target && (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.id !== 'purchaseSearchInput'))) {
-        return;
-      }
-      event.preventDefault();
-      this.focusSearchInput();
-    }
-  }
-
-  focusSearchInput() {
-    if (this.purchaseSearchInput?.nativeElement) {
-      this.purchaseSearchInput.nativeElement.focus();
-      this.purchaseSearchInput.nativeElement.select();
-    }
-  }
 
   // Búsqueda e Insumo Seleccionado
   public purchaseSearchTerm = signal<string>('');
