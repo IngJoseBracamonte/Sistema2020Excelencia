@@ -415,6 +415,8 @@ src/SistemaSatHospitalario.IntegrationTests/
 # Logs de diagnóstico de los tests de BD
 **/scratch/traslado_uci_test_log.txt
 **/scratch/ef_log.txt
+src/SistemaSatHospitalario.UnitTests/Application/InventarioDbDirectTests.cs
+db_direct_tests_log.txt
 
 # Sandbox E2E Tests (Aislados de Producción)
 tests/e2e-sandbox/

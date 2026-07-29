@@ -4,7 +4,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
     public class InsumoPrincipioActivo
     {
-        public Guid Id { get; private set; }
         public Guid InsumoId { get; private set; }
         public virtual Insumo Insumo { get; private set; }
         public Guid PrincipioActivoId { get; private set; }
@@ -15,7 +14,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public InsumoPrincipioActivo(Guid insumoId, Guid principioActivoId, string concentracion)
         {
-            Id = Guid.NewGuid();
             InsumoId = insumoId;
             PrincipioActivoId = principioActivoId;
             Concentracion = concentracion?.Trim() ?? string.Empty;
@@ -23,7 +21,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public InsumoPrincipioActivo(Insumo insumo, PrincipioActivo principioActivo, string concentracion)
         {
-            Id = Guid.NewGuid();
             InsumoId = insumo?.Id ?? Guid.Empty;
             Insumo = insumo!;
             PrincipioActivoId = principioActivo?.Id ?? Guid.Empty;

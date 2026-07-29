@@ -71,7 +71,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     i.OcultoEnTraslados,
                     PrincipiosActivos = i.PrincipiosActivos.Select(pa => new
                     {
-                        pa.Id,
                         pa.PrincipioActivoId,
                         Nombre = pa.PrincipioActivo.Nombre,
                         pa.Concentracion
@@ -107,7 +106,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.OcultoEnTraslados,
                 PrincipiosActivos = insumo.PrincipiosActivos.Select(pa => new
                 {
-                    pa.Id,
                     pa.PrincipioActivoId,
                     Nombre = pa.PrincipioActivo.Nombre,
                     pa.Concentracion
