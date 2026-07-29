@@ -20,6 +20,7 @@ namespace SistemaSatHospitalario.Core.Application.DTOs
     public class DespacharPedidoDto
     {
         public Dictionary<Guid, decimal>? CantidadesAprobadas { get; set; }
+        public Dictionary<Guid, string>? ObservacionesPorDetalle { get; set; }
     }
 
     public class RechazarPedidoDto

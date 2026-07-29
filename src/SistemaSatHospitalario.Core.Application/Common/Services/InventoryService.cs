@@ -35,7 +35,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         {
             if (cantidadServicio <= 0) return;
 
-            // [PHASE-6] Check if the service requires inventory deduction
+            // Check if the service requires inventory deduction
             var baseService = await _context.ServiciosClinicos
                 .FirstOrDefaultAsync(s => s.Id == serviceId || s.Codigo == serviceCodigo, cancellationToken);
             if (baseService != null && !baseService.RequiereInventario)
@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 return; // Omit inventory deduction as requested
             }
 
-            // 1. Fetch recipes matching this service (by ID or Code)
+            // Fetch recipes matching this service
             var recipes = await _context.ServiciosInsumoRecetas
                 .Include(r => r.Insumo)
                 .Where(r => (serviceId != Guid.Empty && r.ServicioClinicoId == serviceId) ||
@@ -52,7 +52,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             if (recipes == null || !recipes.Any())
             {
-                return; // No recipe mapping for this service, skip inventory deduction
+                return;
             }
 
             var targetSedeId = sedeId;
@@ -61,7 +61,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 var cuenta = await _context.CuentasServicios
                     .Include(c => c.AreaClinica)
                     .FirstOrDefaultAsync(c => c.Id == cuentaId, cancellationToken);
-                
+
                 if (cuenta != null)
                 {
                     if (cuenta.AreaClinica != null)
@@ -80,10 +80,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 }
             }
 
-            // [PHASE-3] Wrap recipe deduction in atomic database transaction with optimistic concurrency retry loop
             int maxRetries = 3;
             int delayMs = 100;
-            
+
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
                 var hasExistingTransaction = _context.Database?.CurrentTransaction != null;
@@ -146,7 +145,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     {
                         await transaction.CommitAsync(cancellationToken);
                     }
-                    break; // Success, exit retry loop
+                    break;
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -198,7 +197,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 qtyBase = -qtyBase;
             }
 
-            // Find or create StockSede JIT
             var stockSede = await _context.StocksSedes
                 .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == sedeId, cancellationToken);
             if (stockSede == null)
@@ -231,6 +229,55 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task RecordDiscardAsync(
+            Guid insumoId,
+            decimal cantidad,
+            string motivo,
+            string usuario,
+            CancellationToken cancellationToken = default)
+        {
+            if (cantidad <= 0)
+            {
+                throw new ArgumentException("La cantidad a descartar debe ser mayor a cero.", nameof(cantidad));
+            }
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                throw new ArgumentException("El motivo de descarte es obligatorio para auditoría.", nameof(motivo));
+            }
+
+            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == insumoId, cancellationToken);
+            if (insumo == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el insumo con ID {insumoId}");
+            }
+
+            var principalSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+            var stockSede = await _context.StocksSedes
+                .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == principalSedeId, cancellationToken);
+
+            if (stockSede == null || stockSede.StockActual < cantidad)
+            {
+                var disponible = stockSede?.StockActual ?? 0;
+                throw new InvalidOperationException($"Stock insuficiente en Almacén Central para descarte. Solicitado: {cantidad}, Disponible: {disponible}");
+            }
+
+            stockSede.RegistrarMovimientoStock(-cantidad, insumo.PermiteFraccionamiento);
+
+            var movimiento = new MovimientoInsumo(
+                insumoId,
+                principalSedeId,
+                "Descarte",
+                -cantidad,
+                insumo.UnidadMedidaBase,
+                cantidad,
+                usuario,
+                motivo.Trim()
+            );
+
+            _context.MovimientosInsumo.Add(movimiento);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task PerformClosingAsync(
             Guid sedeId,
             string usuario,
@@ -246,7 +293,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == item.InsumoId, cancellationToken);
                 if (insumo == null) continue;
 
-                // Find or create StockSede JIT
                 var stockSede = await _context.StocksSedes
                     .FirstOrDefaultAsync(s => s.InsumoId == item.InsumoId && s.SedeId == sedeId, cancellationToken);
                 if (stockSede == null)
@@ -290,6 +336,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid pedidoId,
             string usuario,
             Dictionary<Guid, decimal>? cantidadesAprobadas = null,
+            Dictionary<Guid, string>? observacionesPorDetalle = null,
             CancellationToken cancellationToken = default)
         {
             int retries = 0;
@@ -338,6 +385,24 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
                         if (cantidadADespachar < 0) cantidadADespachar = 0;
 
+                        // Regla de observación obligatoria cuando cantidad enviada < cantidad solicitada
+                        if (cantidadADespachar < detalle.CantidadSolicitada)
+                        {
+                            string? obs = null;
+                            observacionesPorDetalle?.TryGetValue(detalle.Id, out obs);
+
+                            if (string.IsNullOrWhiteSpace(obs))
+                            {
+                                throw new InvalidOperationException($"Debe justificar mediante una observación el ajuste de cantidad enviada para el ítem '{detalle.Insumo.Nombre}' (Solicitada: {detalle.CantidadSolicitada}, Aenviar: {cantidadADespachar}).");
+                            }
+
+                            detalle.SetObservacionDespacho(obs);
+                        }
+                        else if (observacionesPorDetalle != null && observacionesPorDetalle.TryGetValue(detalle.Id, out var obsOpcional))
+                        {
+                            detalle.SetObservacionDespacho(obsOpcional);
+                        }
+
                         var stockActual = stockSede.StockActual;
                         if (stockActual < cantidadADespachar)
                         {
@@ -356,7 +421,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                 detalle.SetRecibido(cantidadADespachar);
                             }
 
-                            // Registrar movimiento de salida o consumo interno
+                            // Registrar movimiento
                             var tipoMov = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
                             var motivoTxt = esGastoInterno 
                                 ? $"Nota de Entrega por Consumo Interno de Laboratorio/Mantenimiento ({pedido.Correlativo})"
@@ -421,7 +486,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new InvalidOperationException("Solo se pueden rechazar pedidos que se encuentren en estado Solicitado.");
             }
 
-            pedido.CambiarEstado(EstadoPedidoInterSede.Cancelado);
+            pedido.CambiarEstado(EstadoPedidoInterSede.Rechazado);
             pedido.SetObservaciones($"{pedido.Observaciones} | [RECHAZADO por {usuario}: {motivo}]".Trim());
 
             _logger.LogInformation("Pedido inter-sede {Correlativo} rechazada por {Usuario}. Motivo: {Motivo}", pedido.Correlativo, usuario, motivo);
@@ -452,17 +517,15 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             foreach (var detalle in pedido.Detalles)
             {
-                // Determinar la cantidad realmente recibida (se permite discrepancia/recepción parcial)
                 decimal cantidadRecibida = detalle.CantidadDespachada;
                 if (discrepancias != null && discrepancias.TryGetValue(detalle.InsumoId, out decimal cantDiscrepancia))
                 {
                     cantidadRecibida = cantDiscrepancia;
                 }
 
-                // Incrementa stock en la sede solicitante (destino)
                 var stockSede = await _context.StocksSedes
                     .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeSolicitanteId, cancellationToken);
-                
+
                 if (stockSede == null)
                 {
                     stockSede = new StockSede(detalle.InsumoId, pedido.SedeSolicitanteId, 0);
@@ -472,7 +535,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 stockSede.RegistrarMovimientoStock(cantidadRecibida, detalle.Insumo.PermiteFraccionamiento);
                 detalle.SetRecibido(cantidadRecibida);
 
-                // Registrar movimiento de entrada
                 var movimiento = new MovimientoInsumo(
                     detalle.InsumoId,
                     pedido.SedeSolicitanteId,
@@ -484,9 +546,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     $"Recepción de pedido inter-sede {pedido.Correlativo}"
                 );
                 _context.MovimientosInsumo.Add(movimiento);
-
-                // Si hay discrepancia, se podría devolver el stock no entregado/perdido al proveedor o registrar merma/ajuste
-                // De acuerdo a las especificaciones, solo se anota la discrepancia en la cantidad recibida
             }
 
             pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
@@ -497,11 +556,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         {
             if (origen == destino) return 1.0m;
 
-            // Volume conversions: L to ML and vice-versa
             if (origen == UnidadMedida.L && destino == UnidadMedida.ML) return 1000m;
             if (origen == UnidadMedida.ML && destino == UnidadMedida.L) return 0.001m;
 
-            // Mass conversions: KG, G, DG, MG to Grams (G)
             decimal origenEnGramos = origen switch
             {
                 UnidadMedida.KG => 1000m,
@@ -528,7 +585,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 return origenEnGramos * gramosADestino;
             }
 
-            // Default fallback
             return 1.0m;
         }
     }

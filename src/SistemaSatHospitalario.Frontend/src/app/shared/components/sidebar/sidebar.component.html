@@ -16,11 +16,24 @@
             <span class="font-bold">Panel de Control</span>
         </a>
 
-        <!-- Módulo de Enfermería -->
-        <a *ngIf="isAdmin() || isEmergencyAssistant() || permissionService.can('Permissions.Facturacion.View')" routerLink="/enfermeria" routerLinkActive="active-link" class="nav-item flex items-center">
-            <lucide-icon [name]="icons.Enfermeria" class="w-5 h-5 mr-3 text-rose-500"></lucide-icon>
-            <span class="font-bold">Módulo Enfermería</span>
-        </a>
+        <!-- Enfermería Dropdown -->
+        <div *ngIf="isAdmin() || isEmergencyAssistant() || isHospitalAssistant() || permissionService.can('Permissions.Facturacion.View')" class="space-y-1">
+            <button (click)="toggleDropdown('enfermeria')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().enfermeria }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Enfermeria" class="w-5 h-5 mr-3 text-rose-500"></lucide-icon>
+                    <span class="font-bold">Enfermería</span>
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().enfermeria"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().enfermeria" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/enfermeria" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active-sublink" class="nav-subitem font-bold">Triage y Cuentas</a>
+                <a routerLink="/admin/inventory/pedidos" routerLinkActive="active-sublink" class="nav-subitem">Requisición de Stock</a>
+                <a routerLink="/enfermeria" [queryParams]="{tab: 'stock'}" routerLinkActive="active-sublink" class="nav-subitem">Stock Local & Acta</a>
+            </div>
+        </div>
 
         <!-- Enlace Directo a Cuentas Hospitalarias para Hospital Assistant -->
         <a *ngIf="isHospitalAssistant() && !isAdmin() && !isParticularAssistant() && !isInsuranceAssistant() && !isSupervisor()" routerLink="/cierre-cuenta/Hospitalizacion" routerLinkActive="active-link" class="nav-item flex items-center">
@@ -82,16 +95,25 @@
         <!-- Operativo / Gestión -->
         <div *ngIf="!isRxAssistant() || isAdmin()" class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
         
-        <!-- Supervisor de Inventario -->
+        <!-- Grupo Inventario -->
         <div *ngIf="auth.isInventorySupervisor() || isAdmin()" class="space-y-1">
-            <a routerLink="/admin/inventory" routerLinkActive="active-link" class="nav-item flex items-center">
-                <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3 text-indigo-400"></lucide-icon>
-                <span class="font-bold">Supervisor Inventario</span>
-            </a>
-            <div class="pl-8 space-y-1">
-                <a routerLink="/admin/inventory/sedes" routerLinkActive="active-sublink" class="nav-subitem">Gestión de Sedes</a>
-                <a routerLink="/admin/inventory/pedidos" routerLinkActive="active-sublink" class="nav-subitem">Pedidos</a>
-                <a routerLink="/admin/inventory/compras" routerLinkActive="active-sublink" class="nav-subitem">Farmacia & Compras</a>
+            <div class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] px-3 mt-4 mb-2 opacity-80 flex items-center gap-1.5">
+                <lucide-icon [name]="icons.Catalog" class="w-3.5 h-3.5"></lucide-icon>
+                <span>Inventario</span>
+            </div>
+            <div class="pl-3 space-y-1 border-l border-indigo-500/20 ml-3">
+                <a routerLink="/inventario/compras" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
+                    Compras & Entradas
+                </a>
+                <a routerLink="/inventario/pedidos" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
+                    Aprobación de Pedidos
+                </a>
+                <a routerLink="/inventario/catalogo" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
+                    Catálogo & Principios Activos (CRUD)
+                </a>
+                <a routerLink="/inventario/descarte" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
+                    Descarte & Bajas
+                </a>
             </div>
         </div>
         

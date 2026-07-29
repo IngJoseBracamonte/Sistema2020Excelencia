@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Common.Services
 {
@@ -22,22 +24,30 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid sedeId,
             string tipoMovimiento, // Ingreso, Descarte
             decimal cantidadOriginal,
-            SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida unidadMedidaOriginal,
+            UnidadMedida unidadMedidaOriginal,
             string usuario,
             string motivo,
             CancellationToken cancellationToken);
+
+        Task RecordDiscardAsync(
+            Guid insumoId,
+            decimal cantidad,
+            string motivo,
+            string usuario,
+            CancellationToken cancellationToken = default);
 
         Task PerformClosingAsync(
             Guid sedeId,
             string usuario,
             string observaciones,
-            System.Collections.Generic.List<CierreDetalleInputDto> detalles,
+            List<CierreDetalleInputDto> detalles,
             CancellationToken cancellationToken);
 
         Task DispatchPedidoAsync(
             Guid pedidoId,
             string usuario,
-            System.Collections.Generic.Dictionary<Guid, decimal>? cantidadesAprobadas = null,
+            Dictionary<Guid, decimal>? cantidadesAprobadas = null,
+            Dictionary<Guid, string>? observacionesPorDetalle = null,
             CancellationToken cancellationToken = default);
 
         Task RejectPedidoAsync(
@@ -49,7 +59,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
         Task ReceivePedidoAsync(
             Guid pedidoId,
             string usuario,
-            System.Collections.Generic.Dictionary<Guid, decimal> discrepancias,
+            Dictionary<Guid, decimal> discrepancias,
             CancellationToken cancellationToken = default);
     }
 

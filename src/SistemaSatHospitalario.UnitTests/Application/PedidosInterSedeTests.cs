@@ -253,9 +253,13 @@ namespace SistemaSatHospitalario.UnitTests.Application
             {
                 { detalle.Id, 12 }
             };
+            var observaciones = new Dictionary<Guid, string>
+            {
+                { detalle.Id, "Stock insuficiente en almacén central" }
+            };
 
             // Act
-            await inventoryService.DispatchPedidoAsync(pedido.Id, "Supervisor", cantidadesAprobadas, CancellationToken.None);
+            await inventoryService.DispatchPedidoAsync(pedido.Id, "Supervisor", cantidadesAprobadas, observaciones, CancellationToken.None);
 
             // Assert
             Assert.Equal(38, stockProveedora.StockActual); // 50 - 12

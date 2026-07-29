@@ -133,8 +133,11 @@ export class MultiSedeService {
     return this.http.get<PedidoInterSede[]>(`${environment.apiUrl}/api/PedidoInterSede/pendientes`);
   }
 
-  despacharPedido(id: string, cantidadesAprobadas?: { [key: string]: number }): Observable<any> {
-    const payload = cantidadesAprobadas ? { cantidadesAprobadas } : {};
+  despacharPedido(id: string, cantidadesAprobadas?: { [key: string]: number }, observacionesPorDetalle?: { [key: string]: string }): Observable<any> {
+    const payload = {
+      cantidadesAprobadas: cantidadesAprobadas || {},
+      observacionesPorDetalle: observacionesPorDetalle || {}
+    };
     return this.http.put(`${environment.apiUrl}/api/PedidoInterSede/${id}/despachar`, payload);
   }
 

@@ -1,3 +1,17 @@
+export interface PrincipioActivo {
+  id: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface InsumoPrincipioActivo {
+  id: string;
+  insumoId: string;
+  principioActivoId: string;
+  nombre?: string;
+  concentracion: string;
+}
+
 export interface Insumo {
   id: string;
   codigo: string;
@@ -5,10 +19,12 @@ export interface Insumo {
   stockActual: number;
   unidadMedidaBase: string;
   costoUnitarioBaseUSD: number;
-  reactivosCombinados?: string;
-  indicaciones?: string;
-  fechaVencimiento?: string;
+  permiteFraccionamiento?: boolean;
+  categoria?: string;
+  isDeleted?: boolean;
+  fechaInactivacion?: string;
   ocultoEnTraslados?: boolean;
+  principiosActivos?: InsumoPrincipioActivo[];
 }
 
 export type TipoMovimientoInsumo = 
@@ -17,7 +33,7 @@ export type TipoMovimientoInsumo =
   | 'ConsumoInterno'      // Almacén Principal -> Laboratorio (Nota de Entrega / Descarte Inmediato)
   | 'DespachoQuirurgico'  // Almacén Principal -> Quirófano (Tránsito / Kit)
   | 'DevolucionQuirurgica'// Quirófano -> Almacén Principal (Reingreso)
-  | 'Descarte'            // Vencimiento o Daño
+  | 'Descarte'            // Deterioro o Merma
   | 'AjusteCierre';       // Auditoría Física
 
 export interface MovimientoInsumo {
@@ -74,17 +90,16 @@ export interface CreateInsumo {
   stockInicial: number;
   unidadMedidaBase: string;
   costoUnitarioBaseUSD: number;
-  reactivosCombinados?: string;
-  indicaciones?: string;
-  fechaVencimiento?: string;
+  permiteFraccionamiento?: boolean;
+  categoria?: string;
 }
 
 export interface UpdateInsumo {
   nombre: string;
+  unidadMedidaBase: string;
   costoUnitarioBaseUSD: number;
-  reactivosCombinados?: string;
-  indicaciones?: string;
-  fechaVencimiento?: string;
+  permiteFraccionamiento?: boolean;
+  categoria?: string;
 }
 
 export interface RecordMovement {
@@ -94,6 +109,12 @@ export interface RecordMovement {
   cantidadOriginal: number;
   unidadMedidaOriginal: string;
   usuario?: string;
+  motivo: string;
+}
+
+export interface DescarteRequest {
+  insumoId: string;
+  cantidad: number;
   motivo: string;
 }
 
@@ -115,10 +136,9 @@ export interface PurchaseItem {
   insumoId: string;
   cantidad: number;
   precioCostoUSD: number;
-  fechaVencimiento?: string;
 }
 
 export interface RecordPurchase {
-  sedeId: string;
+  sedeId?: string;
   items: PurchaseItem[];
 }

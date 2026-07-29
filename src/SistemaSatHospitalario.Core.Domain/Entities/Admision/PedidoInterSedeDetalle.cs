@@ -13,6 +13,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CantidadSolicitada { get; private set; }
         public decimal CantidadDespachada { get; private set; }
         public decimal CantidadRecibida { get; private set; }
+        public string? ObservacionDespacho { get; private set; }
 
         private PedidoInterSedeDetalle() { }
 
@@ -29,7 +30,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             Id = Guid.NewGuid();
             InsumoId = insumo?.Id ?? Guid.Empty;
-            Insumo = insumo;
+            Insumo = insumo!;
             CantidadSolicitada = cantidadSolicitada;
             CantidadDespachada = 0;
             CantidadRecibida = 0;
@@ -43,6 +44,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void SetRecibido(decimal cantidad)
         {
             CantidadRecibida = cantidad;
+        }
+
+        public void SetObservacionDespacho(string observacion)
+        {
+            ObservacionDespacho = observacion?.Trim();
         }
     }
 }

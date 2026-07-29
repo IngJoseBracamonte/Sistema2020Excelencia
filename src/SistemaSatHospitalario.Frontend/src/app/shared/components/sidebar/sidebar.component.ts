@@ -44,7 +44,8 @@ export class SidebarComponent implements OnInit {
         reportes: false,
         medica: false,
         settings: false,
-        facturacion: false
+        facturacion: false,
+        enfermeria: false
     });
 
     ngOnInit() {
@@ -63,6 +64,9 @@ export class SidebarComponent implements OnInit {
         }
         if (url.includes('/facturacion')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), facturacion: true });
+        }
+        if (url.includes('/enfermeria')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), enfermeria: true });
         }
     }
 
@@ -90,7 +94,7 @@ export class SidebarComponent implements OnInit {
         Bed: Bed
     };
 
-    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion') {
+    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion' | 'enfermeria') {
         this.dropdownsOpen.update(prev => ({
             ...prev,
             [key]: !prev[key as keyof typeof prev]

@@ -55,6 +55,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<TriageEnfermeria> TriagesEnfermeria { get; set; }
         public DbSet<ValoracionFisica> ValoracionesFisicas { get; set; }
         public DbSet<Insumo> Insumos { get; set; }
+        public DbSet<PrincipioActivo> PrincipiosActivos { get; set; }
+        public DbSet<InsumoPrincipioActivo> InsumosPrincipiosActivos { get; set; }
         public DbSet<ServicioInsumoReceta> ServiciosInsumoRecetas { get; set; }
         public DbSet<ConsumoServicioRealizado> ConsumosServiciosRealizados { get; set; }
         public DbSet<MovimientoInsumo> MovimientosInsumo { get; set; }
@@ -659,11 +661,40 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
                 entity.Property(i => i.PermiteFraccionamiento).IsRequired().HasDefaultValue(true);
                 entity.Property(i => i.Categoria).HasMaxLength(50).HasDefaultValue("Medicamento");
+                entity.Property(i => i.IsDeleted).IsRequired().HasDefaultValue(false);
+                entity.Property(i => i.FechaInactivacion);
+                entity.Property(i => i.OcultoEnTraslados).IsRequired().HasDefaultValue(false);
                 entity.Property(i => i.ReactivosCombinados).HasMaxLength(500);
                 entity.Property(i => i.Indicaciones);
                 entity.Property(i => i.FechaVencimiento);
-                entity.Property(i => i.OcultoEnTraslados).IsRequired().HasDefaultValue(false);
                 entity.HasIndex(i => i.Codigo).IsUnique();
+            });
+
+            builder.Entity<PrincipioActivo>(entity =>
+            {
+                entity.ToTable("PrincipiosActivos");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.Nombre).IsRequired().HasMaxLength(150);
+                entity.HasIndex(p => p.Nombre).IsUnique();
+            });
+
+            builder.Entity<InsumoPrincipioActivo>(entity =>
+            {
+                entity.ToTable("InsumosPrincipiosActivos");
+                entity.HasKey(ipa => ipa.Id);
+                entity.Property(ipa => ipa.Concentracion).HasMaxLength(100);
+
+                entity.HasOne(ipa => ipa.Insumo)
+                      .WithMany(i => i.PrincipiosActivos)
+                      .HasForeignKey(ipa => ipa.InsumoId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ipa => ipa.PrincipioActivo)
+                      .WithMany(pa => pa.Insumos)
+                      .HasForeignKey(ipa => ipa.PrincipioActivoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(ipa => new { ipa.InsumoId, ipa.PrincipioActivoId }).IsUnique();
             });
 
             builder.Entity<ServicioInsumoReceta>(entity =>
@@ -871,6 +902,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(d => d.CantidadSolicitada).HasPrecision(18, 4);
                 entity.Property(d => d.CantidadDespachada).HasPrecision(18, 4);
                 entity.Property(d => d.CantidadRecibida).HasPrecision(18, 4);
+                entity.Property(d => d.ObservacionDespacho).HasMaxLength(500);
 
                 entity.HasOne(d => d.PedidoInterSede)
                       .WithMany(p => p.Detalles)

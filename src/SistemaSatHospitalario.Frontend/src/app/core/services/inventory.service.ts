@@ -11,7 +11,9 @@ import {
   RecordMovement, 
   PerformClosing, 
   CreateRecipe,
-  RecordPurchase
+  RecordPurchase,
+  PrincipioActivo,
+  DescarteRequest
 } from '../models/inventory.model';
 
 @Injectable({ providedIn: 'root' })
@@ -30,8 +32,16 @@ export class InventoryService {
     return this.http.get<Insumo[]>(`${this.apiUrl}/insumos`, { params });
   }
 
+  getInsumoById(id: string): Observable<Insumo> {
+    return this.http.get<Insumo>(`${this.apiUrl}/insumos/${id}`);
+  }
+
   getStockPorSede(sedeId: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/stock-por-sede`, { params: { sedeId } });
+  }
+
+  getStockSedeById(sedeId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/stock-sede/${sedeId}`);
   }
 
   createInsumo(dto: CreateInsumo): Observable<Insumo> {
@@ -40,6 +50,45 @@ export class InventoryService {
 
   updateInsumo(id: string, dto: UpdateInsumo): Observable<Insumo> {
     return this.http.put<Insumo>(`${this.apiUrl}/insumos/${id}`, dto);
+  }
+
+  deleteInsumo(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/insumos/${id}`);
+  }
+
+  restoreInsumo(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/insumos/${id}/restaurar`, {});
+  }
+
+  // --- Principios Activos ---
+
+  getPrincipiosActivos(): Observable<PrincipioActivo[]> {
+    return this.http.get<PrincipioActivo[]>(`${this.apiUrl}/principios-activos`);
+  }
+
+  createPrincipioActivo(nombre: string): Observable<PrincipioActivo> {
+    return this.http.post<PrincipioActivo>(`${this.apiUrl}/principios-activos`, { nombre });
+  }
+
+  vincularPrincipioActivo(insumoId: string, principioActivoId: string, concentracion: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/insumos/${insumoId}/principios-activos`, {
+      principioActivoId,
+      concentracion
+    });
+  }
+
+  desvincularPrincipioActivo(insumoId: string, paId: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/insumos/${insumoId}/principios-activos/${paId}`);
+  }
+
+  // --- Operaciones ---
+
+  recordPurchase(dto: RecordPurchase): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/compras`, dto);
+  }
+
+  registrarDescarte(dto: DescarteRequest): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/descarte`, dto);
   }
 
   recordMovement(dto: RecordMovement): Observable<any> {
@@ -63,18 +112,6 @@ export class InventoryService {
   }
 
   deleteRecipe(id: string): Observable<any> {
-    return this.http.delete<any>(`${`${this.apiUrl}/recetas`}/${id}`);
-  }
-
-  deleteInsumo(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/insumos/${id}`);
-  }
-
-  restoreInsumo(id: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/insumos/${id}/restaurar`, {});
-  }
-
-  recordPurchase(dto: RecordPurchase): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/compras`, dto);
+    return this.http.delete<any>(`${this.apiUrl}/recetas/${id}`);
   }
 }

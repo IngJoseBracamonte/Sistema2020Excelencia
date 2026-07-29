@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -8,16 +10,25 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public string Codigo { get; private set; }
         public string Nombre { get; private set; }
-        public virtual System.Collections.Generic.ICollection<StockSede> StocksPorSede { get; private set; } = new System.Collections.Generic.List<StockSede>();
-        public decimal StockActual => System.Linq.Enumerable.Sum(StocksPorSede, s => s.StockActual);
+        public virtual ICollection<StockSede> StocksPorSede { get; private set; } = new List<StockSede>();
+        public decimal StockActual => Enumerable.Sum(StocksPorSede, s => s.StockActual);
         public UnidadMedida UnidadMedidaBase { get; private set; }
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
         public string Categoria { get; private set; }
+
+        // Borrado Lógico (Soft Delete)
+        public bool IsDeleted { get; private set; }
+        public DateTime? FechaInactivacion { get; private set; }
+        public bool OcultoEnTraslados { get; private set; }
+
+        // Relación N:M Principios Activos
+        public virtual ICollection<InsumoPrincipioActivo> PrincipiosActivos { get; private set; } = new List<InsumoPrincipioActivo>();
+
+        // Propiedades deprecadas/compatibilidad (eliminadas de la lógica de negocio activa)
         public string? ReactivosCombinados { get; private set; }
         public string? Indicaciones { get; private set; }
         public DateTime? FechaVencimiento { get; private set; }
-        public bool OcultoEnTraslados { get; private set; }
 
         protected Insumo() { }
 
@@ -31,7 +42,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             PermiteFraccionamiento = permiteFraccionamiento;
             Categoria = categoria;
             OcultoEnTraslados = false;
-            
+            IsDeleted = false;
+            FechaInactivacion = null;
+
             if (stockActual > 0)
             {
                 StocksPorSede.Add(new StockSede(Id, Guid.Empty, stockActual));
@@ -40,8 +53,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RegistrarMovimientoStock(decimal cantidadBase)
         {
-            // RegistrarMovimientoStock legacy/fallback (e.g. for default principal sede if no sede specified, or throws)
-            // But we will have a new method/overload, or update this to be a no-op / warning
         }
 
         public void EstablecerStockCierre(decimal stockFisicoReal)
@@ -54,21 +65,69 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CostoUnitarioBaseUSD = costoUSD;
         }
 
-        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria, string? reactivos, string? indicaciones, DateTime? vencimiento)
+        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria)
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             UnidadMedidaBase = unidadMedidaBase;
             CostoUnitarioBaseUSD = costoUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
             Categoria = categoria;
+        }
+
+        // Overload para compatibilidad legacy mientras se completa migración total
+        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria, string? reactivos, string? indicaciones, DateTime? vencimiento)
+        {
+            ActualizarDetalles(nombre, unidadMedidaBase, costoUSD, permiteFraccionamiento, categoria);
             ReactivosCombinados = reactivos;
             Indicaciones = indicaciones;
             FechaVencimiento = vencimiento;
         }
 
+        public void SoftDelete()
+        {
+            IsDeleted = true;
+            FechaInactivacion = DateTime.UtcNow;
+            OcultoEnTraslados = true;
+        }
+
+        public void Restaurar()
+        {
+            IsDeleted = false;
+            FechaInactivacion = null;
+            OcultoEnTraslados = false;
+        }
+
         public void AlternarOcultoEnTraslados(bool ocultar)
         {
-            OcultoEnTraslados = ocultar;
+            if (ocultar)
+            {
+                SoftDelete();
+            }
+            else
+            {
+                Restaurar();
+            }
+        }
+
+        public void AgregarPrincipioActivo(PrincipioActivo principioActivo, string concentracion)
+        {
+            if (principioActivo == null) throw new ArgumentNullException(nameof(principioActivo));
+
+            if (PrincipiosActivos.Any(p => p.PrincipioActivoId == principioActivo.Id))
+            {
+                throw new InvalidOperationException($"El principio activo {principioActivo.Nombre} ya está asociado a este insumo.");
+            }
+
+            PrincipiosActivos.Add(new InsumoPrincipioActivo(this, principioActivo, concentracion));
+        }
+
+        public void RemoverPrincipioActivo(Guid principioActivoId)
+        {
+            var item = PrincipiosActivos.FirstOrDefault(p => p.PrincipioActivoId == principioActivoId);
+            if (item != null)
+            {
+                PrincipiosActivos.Remove(item);
+            }
         }
     }
 }

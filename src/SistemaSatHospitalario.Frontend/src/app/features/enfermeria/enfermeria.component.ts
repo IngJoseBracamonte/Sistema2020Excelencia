@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed, HostListener, ElementRef }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { DynamicStepperComponent } from './components/dynamic-stepper/dynamic-stepper.component';
 import { NursingCartComponent } from './components/nursing-cart/nursing-cart.component';
 import { StepCatalogSearchComponent } from './components/step-panels/step-catalog-search.component';
@@ -10,6 +11,8 @@ import { StepLabRxPriceComponent } from './components/step-panels/step-lab-rx-pr
 import { StepQuantityComponent } from './components/step-panels/step-quantity.component';
 import { StepConfirmComponent } from './components/step-panels/step-confirm.component';
 import { TrasladosDestinoComponent } from './components/traslados-destino/traslados-destino.component';
+import { PedidosInterSedeComponent } from '../admin/inventory/pedidos-inter-sede.component';
+import { StockLocalAreaComponent } from './components/stock-local-area/stock-local-area.component';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
@@ -240,7 +243,9 @@ export const DEFAULT_TRIAGE = {
     StepLabRxPriceComponent,
     StepQuantityComponent,
     StepConfirmComponent,
-    TrasladosDestinoComponent
+    TrasladosDestinoComponent,
+    PedidosInterSedeComponent,
+    StockLocalAreaComponent
   ],
   templateUrl: './enfermeria.component.html',
   styleUrls: ['./enfermeria.component.css']
@@ -254,6 +259,7 @@ export class EnfermeriaComponent implements OnInit {
   private readonly patientService = inject(PatientService);
   private readonly facturacionService = inject(FacturacionService);
   private readonly elementRef = inject(ElementRef);
+  private readonly route = inject(ActivatedRoute);
 
   readonly icons = {
     Search,
@@ -283,7 +289,10 @@ export class EnfermeriaComponent implements OnInit {
   };
 
   // Admission flow states (V1.2.92 Onboarding)
+  public moduleTab = signal<'triage' | 'pedidos' | 'stock'>('triage');
   public showIngresoModal = signal<boolean>(false);
+  public showPedidosModal = signal<boolean>(false);
+  public showStockModal = signal<boolean>(false);
   public showAltaDropdown = signal<boolean>(false);
   public ingresoStep = signal<number>(1);
   public showNewPatientForm = signal<boolean>(false);
@@ -367,7 +376,7 @@ export class EnfermeriaComponent implements OnInit {
   public nursingHistory = signal<TriageRecord[]>([]);
   
   // Tab / Filter UI
-  public activeTab = signal<string>('triage'); // triage, fast-charge, transfer
+  public activeTab = signal<'triage' | 'fast-charge' | 'transfer'>('triage'); // triage, fast-charge, transfer
   public searchTerm = signal<string>('');
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
@@ -563,6 +572,16 @@ export class EnfermeriaComponent implements OnInit {
     this.refreshAccounts();
     this.loadCatalogAndConvenios();
     this.loadCamasDisponibles();
+
+    this.route.queryParams.subscribe(params => {
+      if (params['tab'] === 'stock' || params['action'] === 'stock') {
+        this.moduleTab.set('stock');
+      } else if (params['tab'] === 'pedidos' || params['action'] === 'pedidos') {
+        this.moduleTab.set('pedidos');
+      } else {
+        this.moduleTab.set('triage');
+      }
+    });
   }
 
   public loadCamasDisponibles() {

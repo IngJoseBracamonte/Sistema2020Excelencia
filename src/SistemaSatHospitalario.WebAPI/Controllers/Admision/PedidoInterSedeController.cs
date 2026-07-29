@@ -50,7 +50,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 PedidoId = id,
                 Usuario = usuario,
-                CantidadesAprobadas = dto?.CantidadesAprobadas
+                CantidadesAprobadas = dto?.CantidadesAprobadas,
+                ObservacionesPorDetalle = dto?.ObservacionesPorDetalle
             });
             return NoContent();
         }

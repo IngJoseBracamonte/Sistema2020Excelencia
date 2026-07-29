@@ -16,7 +16,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task Handle(DispatchPedidoInterSedeCommand request, CancellationToken cancellationToken)
         {
-            await _inventoryService.DispatchPedidoAsync(request.PedidoId, request.Usuario, request.CantidadesAprobadas, cancellationToken);
+            await _inventoryService.DispatchPedidoAsync(
+                request.PedidoId, 
+                request.Usuario, 
+                request.CantidadesAprobadas, 
+                request.ObservacionesPorDetalle, 
+                cancellationToken);
         }
     }
 }

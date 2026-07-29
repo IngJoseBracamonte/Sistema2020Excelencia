@@ -554,8 +554,8 @@
             </div>
         </div>
 
-        <!-- Selector de Área Clínica de Monitoreo -->
-        <div class="flex bg-black/40 p-1.5 rounded-[1.5rem] border border-white/5 mt-4 md:mt-0 gap-1">
+        <!-- Selector de Área Clínica de Monitoreo & Solicitud de Stock -->
+        <div class="flex flex-wrap items-center bg-black/40 p-1.5 rounded-[1.5rem] border border-white/5 mt-4 md:mt-0 gap-1">
             <button (click)="nursingAreaFilter.set(TIPO_INGRESO.EMERGENCIA); refreshAccounts()"
                     [class]="nursingAreaFilter() === TIPO_INGRESO.EMERGENCIA ? 'bg-rose-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
                     class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
@@ -574,8 +574,8 @@
         </div>
     </div>
 
-    <!-- MAIN COLUMNS LAYOUT -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- MAIN CONTENT VIEW AREA ACCORDING TO MODULETAB -->
+    <div *ngIf="moduleTab() === 'triage'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-fade-in">
         
         <!-- LEFT COLUMN (4/12): ACTIVE PATIENT ACCORDION DIRECTORY -->
         <div class="lg:col-span-4 space-y-6">
@@ -1321,6 +1321,16 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- SECCIÓN FULL PAGE: REQUISICIONES DE STOCK -->
+    <div *ngIf="moduleTab() === 'pedidos'" class="animate-fade-in space-y-4">
+        <app-pedidos-inter-sede></app-pedidos-inter-sede>
+    </div>
+
+    <!-- SECCIÓN FULL PAGE: STOCK LOCAL Y ACTA DE TURNO -->
+    <div *ngIf="moduleTab() === 'stock'" class="animate-fade-in space-y-4">
+        <app-stock-local-area [areaNombre]="nursingAreaFilter()"></app-stock-local-area>
     </div>
 
 </div>

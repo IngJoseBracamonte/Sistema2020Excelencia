@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
+using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
@@ -20,21 +22,26 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     {
         private readonly IApplicationDbContext _context;
         private readonly IInventoryService _inventoryService;
+        private readonly IMediator _mediator;
 
-        public InventoryController(IApplicationDbContext context, IInventoryService inventoryService)
+        public InventoryController(IApplicationDbContext context, IInventoryService inventoryService, IMediator mediator)
         {
             _context = context;
             _inventoryService = inventoryService;
+            _mediator = mediator;
         }
 
         [HttpGet("insumos")]
         public async Task<IActionResult> GetInsumos([FromQuery] bool? excludeHidden, [FromQuery] string? search, CancellationToken ct)
         {
-            var query = _context.Insumos.AsQueryable();
+            var query = _context.Insumos
+                .Include(i => i.PrincipiosActivos)
+                    .ThenInclude(pa => pa.PrincipioActivo)
+                .AsQueryable();
 
             if (excludeHidden == true)
             {
-                query = query.Where(i => !i.OcultoEnTraslados);
+                query = query.Where(i => !i.IsDeleted && !i.OcultoEnTraslados);
             }
 
             if (!string.IsNullOrEmpty(search))
@@ -42,15 +49,70 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 var searchLower = search.ToLower();
                 query = query.Where(i => 
                     i.Nombre.ToLower().Contains(searchLower) || 
-                    i.Codigo.ToLower().Contains(searchLower) || 
-                    (i.ReactivosCombinados != null && i.ReactivosCombinados.ToLower().Contains(searchLower))
+                    i.Codigo.ToLower().Contains(searchLower) ||
+                    i.PrincipiosActivos.Any(pa => pa.PrincipioActivo.Nombre.ToLower().Contains(searchLower))
                 );
             }
 
             var insumos = await query
                 .OrderBy(i => i.Nombre)
+                .Select(i => new
+                {
+                    i.Id,
+                    i.Codigo,
+                    i.Nombre,
+                    i.StockActual,
+                    UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
+                    i.CostoUnitarioBaseUSD,
+                    i.PermiteFraccionamiento,
+                    i.Categoria,
+                    i.IsDeleted,
+                    i.FechaInactivacion,
+                    i.OcultoEnTraslados,
+                    PrincipiosActivos = i.PrincipiosActivos.Select(pa => new
+                    {
+                        pa.Id,
+                        pa.PrincipioActivoId,
+                        Nombre = pa.PrincipioActivo.Nombre,
+                        pa.Concentracion
+                    })
+                })
                 .ToListAsync(ct);
+
             return Ok(insumos);
+        }
+
+        [HttpGet("insumos/{id}")]
+        public async Task<IActionResult> GetInsumoById(Guid id, CancellationToken ct)
+        {
+            var insumo = await _context.Insumos
+                .Include(i => i.PrincipiosActivos)
+                    .ThenInclude(pa => pa.PrincipioActivo)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (insumo == null) return NotFound();
+
+            return Ok(new
+            {
+                insumo.Id,
+                insumo.Codigo,
+                insumo.Nombre,
+                insumo.StockActual,
+                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                insumo.CostoUnitarioBaseUSD,
+                insumo.PermiteFraccionamiento,
+                insumo.Categoria,
+                insumo.IsDeleted,
+                insumo.FechaInactivacion,
+                insumo.OcultoEnTraslados,
+                PrincipiosActivos = insumo.PrincipiosActivos.Select(pa => new
+                {
+                    pa.Id,
+                    pa.PrincipioActivoId,
+                    Nombre = pa.PrincipioActivo.Nombre,
+                    pa.Concentracion
+                })
+            });
         }
 
         [HttpGet("stock-por-sede")]
@@ -58,17 +120,41 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         {
             var stocks = await _context.StocksSedes
                 .Include(s => s.Insumo)
-                .Where(s => s.SedeId == sedeId)
+                .Where(s => s.SedeId == sedeId && !s.Insumo.IsDeleted)
                 .Select(s => new
                 {
                     s.InsumoId,
                     InsumoCodigo = s.Insumo.Codigo,
                     InsumoNombre = s.Insumo.Nombre,
+                    UnidadMedidaBase = s.Insumo.UnidadMedidaBase.ToString(),
                     s.StockActual,
                     s.StockMinimo,
                     s.StockMaximo
                 })
+                .OrderBy(s => s.InsumoNombre)
                 .ToListAsync(ct);
+            return Ok(stocks);
+        }
+
+        [HttpGet("stock-sede/{sedeId}")]
+        public async Task<IActionResult> GetStockSedeById(Guid sedeId, CancellationToken ct)
+        {
+            var stocks = await _context.StocksSedes
+                .Include(s => s.Insumo)
+                .Where(s => s.SedeId == sedeId && !s.Insumo.IsDeleted)
+                .Select(s => new
+                {
+                    InsumoId = s.InsumoId,
+                    Codigo = s.Insumo.Codigo,
+                    Nombre = s.Insumo.Nombre,
+                    UnidadMedidaBase = s.Insumo.UnidadMedidaBase.ToString(),
+                    StockActual = s.StockActual,
+                    StockMinimo = s.StockMinimo,
+                    StockMaximo = s.StockMaximo
+                })
+                .OrderBy(s => s.Nombre)
+                .ToListAsync(ct);
+
             return Ok(stocks);
         }
 
@@ -80,23 +166,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 return BadRequest(new { Message = $"Ya existe un insumo con el código {dto.Codigo}." });
             }
 
-            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD);
-            insumo.ActualizarDetalles(
-                dto.Nombre, 
-                dto.UnidadMedidaBase, 
-                dto.CostoUnitarioBaseUSD, 
-                insumo.PermiteFraccionamiento, 
-                insumo.Categoria, 
-                dto.ReactivosCombinados, 
-                dto.Indicaciones, 
-                dto.FechaVencimiento
-            );
+            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
             _context.Insumos.Add(insumo);
 
             if (dto.StockInicial != 0)
             {
                 var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, ct);
-                var targetSedeId = principalSede?.Id ?? Guid.Empty;
+                var targetSedeId = principalSede?.Id ?? SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
 
                 var stockSede = new StockSede(insumo.Id, targetSedeId, dto.StockInicial);
                 _context.StocksSedes.Add(stockSede);
@@ -126,16 +202,109 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
             insumo.ActualizarDetalles(
                 dto.Nombre, 
-                insumo.UnidadMedidaBase, 
+                dto.UnidadMedidaBase, 
                 dto.CostoUnitarioBaseUSD, 
-                insumo.PermiteFraccionamiento, 
-                insumo.Categoria, 
-                dto.ReactivosCombinados, 
-                dto.Indicaciones, 
-                dto.FechaVencimiento
+                dto.PermiteFraccionamiento, 
+                dto.Categoria
             );
             await _context.SaveChangesAsync(ct);
             return Ok(insumo);
+        }
+
+        // --- Principios Activos CRUD & Vinculación ---
+
+        [HttpGet("principios-activos")]
+        public async Task<IActionResult> GetPrincipiosActivos(CancellationToken ct)
+        {
+            var pas = await _context.PrincipiosActivos
+                .Where(p => p.Activo)
+                .OrderBy(p => p.Nombre)
+                .ToListAsync(ct);
+            return Ok(pas);
+        }
+
+        [HttpPost("principios-activos")]
+        public async Task<IActionResult> CreatePrincipioActivo([FromBody] CreatePrincipioActivoDto dto, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+            {
+                return BadRequest(new { Message = "El nombre del principio activo es obligatorio." });
+            }
+
+            var existing = await _context.PrincipiosActivos
+                .FirstOrDefaultAsync(p => p.Nombre.ToLower() == dto.Nombre.Trim().ToLower(), ct);
+
+            if (existing != null)
+            {
+                return Ok(existing);
+            }
+
+            var pa = new PrincipioActivo(dto.Nombre);
+            _context.PrincipiosActivos.Add(pa);
+            await _context.SaveChangesAsync(ct);
+            return Ok(pa);
+        }
+
+        [HttpPost("insumos/{id}/principios-activos")]
+        public async Task<IActionResult> VincularPrincipioActivo(Guid id, [FromBody] VincularPrincipioActivoDto dto, CancellationToken ct)
+        {
+            var insumo = await _context.Insumos
+                .Include(i => i.PrincipiosActivos)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (insumo == null) return NotFound(new { Message = "Insumo no encontrado." });
+
+            var pa = await _context.PrincipiosActivos.FirstOrDefaultAsync(p => p.Id == dto.PrincipioActivoId, ct);
+            if (pa == null) return BadRequest(new { Message = "Principio activo no encontrado." });
+
+            try
+            {
+                insumo.AgregarPrincipioActivo(pa, dto.Concentracion);
+                await _context.SaveChangesAsync(ct);
+                return Ok(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        [HttpDelete("insumos/{id}/principios-activos/{paId}")]
+        public async Task<IActionResult> DesvincularPrincipioActivo(Guid id, Guid paId, CancellationToken ct)
+        {
+            var insumo = await _context.Insumos
+                .Include(i => i.PrincipiosActivos)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
+
+            if (insumo == null) return NotFound();
+
+            insumo.RemoverPrincipioActivo(paId);
+            await _context.SaveChangesAsync(ct);
+            return NoContent();
+        }
+
+        // --- Operaciones Transaccionales puro ---
+
+        [HttpPost("descarte")]
+        public async Task<IActionResult> RegistrarDescarte([FromBody] RegistrarDescarteRequestDto dto, CancellationToken ct)
+        {
+            try
+            {
+                var command = new RegistrarDescarteCommand
+                {
+                    InsumoId = dto.InsumoId,
+                    Cantidad = dto.Cantidad,
+                    Motivo = dto.Motivo,
+                    Usuario = User.Identity?.Name ?? "System"
+                };
+
+                await _mediator.Send(command, ct);
+                return Ok(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("movimientos")]
@@ -179,61 +348,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             return Ok(new { Success = true });
         }
 
-        [HttpGet("recetas")]
-        public async Task<IActionResult> GetRecetas(CancellationToken ct)
-        {
-            var recetas = await _context.ServiciosInsumoRecetas
-                .Include(r => r.ServicioClinico)
-                .Include(r => r.Insumo)
-                .OrderBy(r => r.ServicioClinico.Descripcion)
-                .ToListAsync(ct);
-            return Ok(recetas);
-        }
-
-        [HttpPost("recetas")]
-        public async Task<IActionResult> CreateOrUpdateRecipe([FromBody] CreateRecipeDto dto, CancellationToken ct)
-        {
-            var service = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == dto.ServicioClinicoId, ct);
-            if (service == null) return BadRequest(new { Message = "El servicio clínico seleccionado no existe." });
-
-            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == dto.InsumoId, ct);
-            if (insumo == null) return BadRequest(new { Message = "El insumo seleccionado no existe." });
-
-            var existing = await _context.ServiciosInsumoRecetas
-                .FirstOrDefaultAsync(r => r.ServicioClinicoId == dto.ServicioClinicoId && r.InsumoId == dto.InsumoId, ct);
-
-            if (existing != null)
-            {
-                existing.ActualizarReceta(dto.Cantidad, dto.UnidadMedidaConsumo);
-            }
-            else
-            {
-                var receta = new ServicioInsumoReceta(dto.ServicioClinicoId, service.Codigo, dto.InsumoId, dto.Cantidad, dto.UnidadMedidaConsumo);
-                _context.ServiciosInsumoRecetas.Add(receta);
-            }
-
-            await _context.SaveChangesAsync(ct);
-            return Ok(new { Success = true });
-        }
-
-        [HttpDelete("recetas/{id}")]
-        public async Task<IActionResult> DeleteRecipe(Guid id, CancellationToken ct)
-        {
-            var recipe = await _context.ServiciosInsumoRecetas.FirstOrDefaultAsync(r => r.Id == id, ct);
-            if (recipe == null) return NotFound();
-
-            _context.ServiciosInsumoRecetas.Remove(recipe);
-            await _context.SaveChangesAsync(ct);
-            return NoContent();
-        }
-
         [HttpDelete("insumos/{id}")]
         public async Task<IActionResult> DeleteInsumo(Guid id, CancellationToken ct)
         {
             var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == id, ct);
             if (insumo == null) return NotFound();
 
-            insumo.AlternarOcultoEnTraslados(true);
+            insumo.SoftDelete();
             await _context.SaveChangesAsync(ct);
             return NoContent();
         }
@@ -244,7 +365,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == id, ct);
             if (insumo == null) return NotFound();
 
-            insumo.AlternarOcultoEnTraslados(false);
+            insumo.Restaurar();
             await _context.SaveChangesAsync(ct);
             return Ok(insumo);
         }
@@ -258,6 +379,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             }
 
             var username = User.Identity?.Name ?? "System";
+            var principalSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
 
             foreach (var item in dto.Items)
             {
@@ -267,39 +389,33 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     return BadRequest(new { Message = $"No se encontró el insumo con ID {item.InsumoId}." });
                 }
 
-                // Update Cost Price and Expiration (No Lote!)
                 insumo.ActualizarDetalles(
                     insumo.Nombre,
                     insumo.UnidadMedidaBase,
                     item.PrecioCostoUSD,
                     insumo.PermiteFraccionamiento,
-                    insumo.Categoria,
-                    insumo.ReactivosCombinados,
-                    insumo.Indicaciones,
-                    item.FechaVencimiento ?? insumo.FechaVencimiento
+                    insumo.Categoria
                 );
 
-                // Find or create StockSede JIT
                 var stockSede = await _context.StocksSedes
-                    .FirstOrDefaultAsync(s => s.InsumoId == item.InsumoId && s.SedeId == dto.SedeId, ct);
+                    .FirstOrDefaultAsync(s => s.InsumoId == item.InsumoId && s.SedeId == principalSedeId, ct);
                 if (stockSede == null)
                 {
-                    stockSede = new StockSede(item.InsumoId, dto.SedeId, 0);
+                    stockSede = new StockSede(item.InsumoId, principalSedeId, 0);
                     _context.StocksSedes.Add(stockSede);
                 }
 
-                // Register Movement and Stock
                 stockSede.RegistrarMovimientoStock(item.Cantidad, insumo.PermiteFraccionamiento);
 
                 var mov = new MovimientoInsumo(
                     item.InsumoId,
-                    dto.SedeId,
+                    principalSedeId,
                     "Ingreso",
                     item.Cantidad,
                     insumo.UnidadMedidaBase,
                     item.Cantidad,
                     username,
-                    $"Compra registrada en Farmacia a costo unitario ${item.PrecioCostoUSD} USD."
+                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD."
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
@@ -316,23 +432,40 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public decimal StockInicial { get; set; }
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
-        public string? ReactivosCombinados { get; set; }
-        public string? Indicaciones { get; set; }
-        public DateTime? FechaVencimiento { get; set; }
+        public bool PermiteFraccionamiento { get; set; } = true;
+        public string Categoria { get; set; } = "Medicamento";
     }
 
     public class UpdateInsumoDto
     {
         public string Nombre { get; set; } = string.Empty;
+        public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
-        public string? ReactivosCombinados { get; set; }
-        public string? Indicaciones { get; set; }
-        public DateTime? FechaVencimiento { get; set; }
+        public bool PermiteFraccionamiento { get; set; } = true;
+        public string Categoria { get; set; } = "Medicamento";
+    }
+
+    public class CreatePrincipioActivoDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+    }
+
+    public class VincularPrincipioActivoDto
+    {
+        public Guid PrincipioActivoId { get; set; }
+        public string Concentracion { get; set; } = string.Empty;
+    }
+
+    public class RegistrarDescarteRequestDto
+    {
+        public Guid InsumoId { get; set; }
+        public decimal Cantidad { get; set; }
+        public string Motivo { get; set; } = string.Empty;
     }
 
     public class RecordPurchaseDto
     {
-        public Guid SedeId { get; set; }
+        public Guid? SedeId { get; set; }
         public List<PurchaseItemDto> Items { get; set; } = new();
     }
 
@@ -341,7 +474,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public Guid InsumoId { get; set; }
         public decimal Cantidad { get; set; }
         public decimal PrecioCostoUSD { get; set; }
-        public DateTime? FechaVencimiento { get; set; }
     }
 
     public class RecordMovementDto
@@ -361,13 +493,5 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public string? Usuario { get; set; }
         public string Observaciones { get; set; } = string.Empty;
         public List<CierreDetalleInputDto> Detalles { get; set; } = new();
-    }
-
-    public class CreateRecipeDto
-    {
-        public Guid ServicioClinicoId { get; set; }
-        public Guid InsumoId { get; set; }
-        public decimal Cantidad { get; set; }
-        public UnidadMedida UnidadMedidaConsumo { get; set; }
     }
 }
