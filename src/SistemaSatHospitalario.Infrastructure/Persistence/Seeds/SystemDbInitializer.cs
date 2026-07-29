@@ -562,6 +562,35 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     if (!hasFechaInactivacion)
                         await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Insumos` ADD COLUMN `FechaInactivacion` TEXT NULL;" : "ALTER TABLE `Insumos` ADD COLUMN `FechaInactivacion` DATETIME NULL;");
 
+                    // 4. Verificar/crear columna ObservacionDespacho en PedidosInterSedeDetalles
+                    bool hasObservacionDespacho = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(PedidosInterSedeDetalles);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("ObservacionDespacho", StringComparison.OrdinalIgnoreCase)) hasObservacionDespacho = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `PedidosInterSedeDetalles` WHERE Field = 'ObservacionDespacho';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync()) hasObservacionDespacho = true;
+                            }
+                        }
+                    }
+
+                    if (!hasObservacionDespacho)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `PedidosInterSedeDetalles` ADD COLUMN `ObservacionDespacho` TEXT NULL;" : "ALTER TABLE `PedidosInterSedeDetalles` ADD COLUMN `ObservacionDespacho` VARCHAR(500) NULL;");
+
                     if (closeConnection)
                     {
                         await conn.CloseAsync();
@@ -1311,49 +1340,78 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedInsumosYRecetasTestAsync()
         {
-            _logger.LogInformation("Sembrando Insumos y Recetas de prueba para E2E...");
+            _logger.LogInformation("Sembrando Catálogo Extendido de Medicamentos e Insumos con Múltiples Unidades de Medida...");
 
             var med01 = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "MED-01");
-            if (med01 == null) return;
 
-            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Codigo == "INS-01");
-            if (insumo == null)
+            // Definición de catálogo realista con diferentes unidades de medida
+            var catalogoReal = new List<(string Codigo, string Nombre, UnidadMedida Unidad, decimal Costo, bool Fraccionable, string Categoria, string PA, string Concentracion)>
             {
-                insumo = new Insumo("INS-01", "Ibuprofeno 600mg (Medicamento)", 0.00m, UnidadMedida.UNIDAD, 1.00m, true, "Medicamento");
-                _context.Insumos.Add(insumo);
-                await _context.SaveChangesAsync();
-            }
+                ("INS-01", "Ibuprofeno 600mg (Medicamento)", UnidadMedida.UNIDAD, 1.50m, false, "Medicamento", "Ibuprofeno", "600mg"),
+                ("INS-02", "Dexametasona 4mg/2ml (Ampolla 2ml)", UnidadMedida.ML, 2.80m, true, "Medicamento", "Dexametasona", "4mg/2ml"),
+                ("INS-03", "Omeprazol 40mg (Vial Liofilizado)", UnidadMedida.UNIDAD, 4.50m, false, "Medicamento", "Omeprazol", "40mg"),
+                ("INS-04", "Salbutamol Jarabe 2mg/5ml (Frasco 120ml)", UnidadMedida.ML, 3.20m, true, "Medicamento", "Salbutamol", "2mg/5ml"),
+                ("INS-05", "Sulfadiazina de Plata 1% (Tubo 30g)", UnidadMedida.G, 5.10m, true, "Medicamento", "Sulfadiazina de Plata", "1%"),
+                ("INS-06", "Solución Fisiológica 0.9% (Bolsa 500ml)", UnidadMedida.ML, 1.80m, false, "Material Medico", "Cloruro de Sodio", "0.9%"),
+                ("INS-07", "Losartán Potásico 50mg (Comprimidos)", UnidadMedida.UNIDAD, 0.75m, false, "Medicamento", "Losartán Potásico", "50mg"),
+                ("INS-08", "Guantes Quirúrgicos Estériles Talla 7.5 (Caja)", UnidadMedida.UNIDAD, 12.00m, false, "Material Medico", "Látex", "7.5")
+            };
 
-            var receta = await _context.ServiciosInsumoRecetas.FirstOrDefaultAsync(r => r.ServicioClinicoId == med01.Id && r.InsumoId == insumo.Id);
-            if (receta == null)
+            foreach (var item in catalogoReal)
             {
-                receta = new ServicioInsumoReceta(med01.Id, med01.Codigo, insumo.Id, 1.00m, UnidadMedida.UNIDAD);
-                _context.ServiciosInsumoRecetas.Add(receta);
-                await _context.SaveChangesAsync();
-            }
+                var insumo = await _context.Insumos.Include(i => i.PrincipiosActivos).FirstOrDefaultAsync(i => i.Codigo == item.Codigo);
+                if (insumo == null)
+                {
+                    insumo = new Insumo(item.Codigo, item.Nombre, 100.00m, item.Unidad, item.Costo, item.Fraccionable, item.Categoria);
+                    _context.Insumos.Add(insumo);
+                    await _context.SaveChangesAsync();
+                }
 
-            // Sembrar Stock para UCI
-            var stockUci = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI);
-            if (stockUci == null)
-            {
-                stockUci = new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, 5.00m);
-                _context.StocksSedes.Add(stockUci);
-            }
-            else
-            {
-                stockUci.RegistrarMovimientoStock(5.00m - stockUci.StockActual, true); // Restablecer a 5
-            }
+                // Crear y vincular Principio Activo si aplica
+                if (!string.IsNullOrEmpty(item.PA))
+                {
+                    var pa = await _context.PrincipiosActivos.FirstOrDefaultAsync(p => p.Nombre == item.PA);
+                    if (pa == null)
+                    {
+                        pa = new PrincipioActivo(item.PA);
+                        _context.PrincipiosActivos.Add(pa);
+                        await _context.SaveChangesAsync();
+                    }
 
-            // Sembrar Stock para Hospitalización
-            var stockHos = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion);
-            if (stockHos == null)
-            {
-                stockHos = new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, 10.00m);
-                _context.StocksSedes.Add(stockHos);
-            }
-            else
-            {
-                stockHos.RegistrarMovimientoStock(10.00m - stockHos.StockActual, true); // Restablecer a 10
+                    if (!insumo.PrincipiosActivos.Any(r => r.PrincipioActivoId == pa.Id))
+                    {
+                        insumo.AgregarPrincipioActivo(pa, item.Concentracion);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                // Asegurar Stock Sede Principal (Almacén Central)
+                var stockPrincipal = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal);
+                if (stockPrincipal == null)
+                {
+                    _context.StocksSedes.Add(new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, 250.00m));
+                }
+                else if (stockPrincipal.StockActual < 20.00m)
+                {
+                    stockPrincipal.EstablecerStockCierre(250.00m);
+                }
+
+                // Asegurar Stock UCI
+                var stockUci = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI);
+                if (stockUci == null)
+                {
+                    _context.StocksSedes.Add(new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, 20.00m));
+                }
+
+                // Receta para MED-01 si aplica
+                if (med01 != null && item.Codigo == "INS-01")
+                {
+                    var receta = await _context.ServiciosInsumoRecetas.FirstOrDefaultAsync(r => r.ServicioClinicoId == med01.Id && r.InsumoId == insumo.Id);
+                    if (receta == null)
+                    {
+                        _context.ServiciosInsumoRecetas.Add(new ServicioInsumoReceta(med01.Id, med01.Codigo, insumo.Id, 1.00m, item.Unidad));
+                    }
+                }
             }
 
             await _context.SaveChangesAsync();

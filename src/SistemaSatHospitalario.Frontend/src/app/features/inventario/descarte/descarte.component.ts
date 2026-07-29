@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
@@ -23,10 +23,31 @@ import {
 export class DescarteComponent implements OnInit {
   private inventoryService = inject(InventoryService);
 
+  @ViewChild('descarteSearchInput') descarteSearchInput!: ElementRef<HTMLInputElement>;
+
   public insumos = signal<Insumo[]>([]);
   public descartesHistory = signal<MovimientoInsumo[]>([]);
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      const target = event.target as HTMLElement;
+      // No interrumpir si el usuario está escribiendo en un textarea o input de formulario que no sea el buscador
+      if (target && target.tagName === 'TEXTAREA') return;
+
+      event.preventDefault();
+      this.focusSearchInput();
+    }
+  }
+
+  focusSearchInput() {
+    if (this.descarteSearchInput?.nativeElement) {
+      this.descarteSearchInput.nativeElement.focus();
+      this.descarteSearchInput.nativeElement.select();
+    }
+  }
 
   // Formulario de Descarte
   public descarteSearchTerm = signal<string>('');
@@ -80,7 +101,8 @@ export class DescarteComponent implements OnInit {
       this.filteredInsumos.set(
         this.insumos().filter(i => 
           i.nombre.toLowerCase().includes(term) || 
-          i.codigo.toLowerCase().includes(term)
+          i.codigo.toLowerCase().includes(term) ||
+          (i.principiosActivos && i.principiosActivos.some(pa => (pa.nombre || '').toLowerCase().includes(term)))
         )
       );
     } else {
@@ -107,6 +129,11 @@ export class DescarteComponent implements OnInit {
 
     if (cant <= 0) {
       this.showError('La cantidad a descartar debe ser mayor a cero.');
+      return;
+    }
+
+    if (!item.permiteFraccionamiento && !Number.isInteger(cant)) {
+      this.showError(`El insumo '${item.nombre}' es de Dosis Entera y no permite fraccionamiento (ej. ${cant}). Ingrese un número entero.`);
       return;
     }
 

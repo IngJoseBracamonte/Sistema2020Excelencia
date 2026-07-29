@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
@@ -26,10 +26,31 @@ import {
 export class CatalogoComponent implements OnInit {
   private inventoryService = inject(InventoryService);
 
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.id !== 'catalogoSearchInput'))) {
+        return;
+      }
+      event.preventDefault();
+      this.focusSearchInput();
+    }
+  }
+
+  focusSearchInput() {
+    if (this.searchInput?.nativeElement) {
+      this.searchInput.nativeElement.focus();
+      this.searchInput.nativeElement.select();
+    }
+  }
 
   // Búsqueda
   public searchQuery = signal<string>('');

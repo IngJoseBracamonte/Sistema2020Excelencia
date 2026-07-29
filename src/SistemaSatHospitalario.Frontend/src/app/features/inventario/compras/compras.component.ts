@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
@@ -34,8 +34,29 @@ interface CartItem {
 export class ComprasComponent implements OnInit {
   private inventoryService = inject(InventoryService);
 
+  @ViewChild('purchaseSearchInput') purchaseSearchInput!: ElementRef<HTMLInputElement>;
+
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.id !== 'purchaseSearchInput'))) {
+        return;
+      }
+      event.preventDefault();
+      this.focusSearchInput();
+    }
+  }
+
+  focusSearchInput() {
+    if (this.purchaseSearchInput?.nativeElement) {
+      this.purchaseSearchInput.nativeElement.focus();
+      this.purchaseSearchInput.nativeElement.select();
+    }
+  }
 
   // Búsqueda e Insumo Seleccionado
   public purchaseSearchTerm = signal<string>('');
@@ -118,6 +139,11 @@ export class ComprasComponent implements OnInit {
 
     if (this.purchaseQty() <= 0) {
       this.showError('La cantidad debe ser mayor a cero.');
+      return;
+    }
+
+    if (!item.permiteFraccionamiento && !Number.isInteger(Number(this.purchaseQty()))) {
+      this.showError(`El insumo '${item.nombre}' es de Dosis Entera y no permite fraccionamiento. Ingrese un valor entero.`);
       return;
     }
 

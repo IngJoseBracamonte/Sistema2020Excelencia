@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MultiSedeService, PedidoInterSede } from '../../../core/services/multi-sede.service';
@@ -26,10 +26,31 @@ export class PedidosAprobacionComponent implements OnInit {
   private multiSedeService = inject(MultiSedeService);
   private inventoryService = inject(InventoryService);
 
+  @ViewChild('aprobacionSearchInput') aprobacionSearchInput!: ElementRef<HTMLInputElement>;
+
   public pedidos = signal<PedidoInterSede[]>([]);
   public insumos = signal<Insumo[]>([]);
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      const target = event.target as HTMLElement;
+      if (target && (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.id !== 'aprobacionSearchInput'))) {
+        return;
+      }
+      event.preventDefault();
+      this.focusSearchInput();
+    }
+  }
+
+  focusSearchInput() {
+    if (this.aprobacionSearchInput?.nativeElement) {
+      this.aprobacionSearchInput.nativeElement.focus();
+      this.aprobacionSearchInput.nativeElement.select();
+    }
+  }
 
   // Mapa local para edición de cantidades enviadas: { [pedidoId]: { [detalleId]: cantidad } }
   public cantidadesAEnviarMap = signal<Record<string, Record<string, number>>>({});

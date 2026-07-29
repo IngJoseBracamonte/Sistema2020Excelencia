@@ -47,7 +47,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             if (stockActual > 0)
             {
-                StocksPorSede.Add(new StockSede(Id, Guid.Empty, stockActual));
+                StocksPorSede.Add(new StockSede(Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, stockActual));
             }
         }
 

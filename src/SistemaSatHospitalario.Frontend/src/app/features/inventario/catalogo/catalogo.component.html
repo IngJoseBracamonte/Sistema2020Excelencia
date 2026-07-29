@@ -162,15 +162,25 @@
     <div class="lg:col-span-8 bg-surface-card/60 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 space-y-4 shadow-xl">
       
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-4">
-        <div class="relative flex-1 w-full">
+        <div class="relative flex-1 w-full flex items-center">
           <input 
+            #searchInput
             type="text" 
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
             placeholder="Buscar por código, nombre o principio activo..."
-            class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
+            class="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-24 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
           />
-          <lucide-icon [name]="icons.Search" class="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></lucide-icon>
+          <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            <button 
+              type="button"
+              (click)="focusSearchInput()"
+              title="Presiona Ctrl + K (o presiona aquí) para enfocar el buscador dinámico por nombre, código o principio activo."
+              class="px-2 py-0.5 bg-white/5 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 border border-white/10 hover:border-indigo-500/30 rounded-lg text-[10px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer">
+              <lucide-icon [name]="icons.Search" class="w-3 h-3 text-indigo-400"></lucide-icon>
+              <kbd class="font-sans font-extrabold text-[9px] uppercase bg-black/40 px-1 py-0.2 rounded border border-white/10">Ctrl</kbd>+<kbd class="font-sans font-extrabold text-[9px] uppercase bg-black/40 px-1 py-0.2 rounded border border-white/10">K</kbd>
+            </button>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -195,16 +205,43 @@
           
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-2">
             <div>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-xs font-black text-white">{{ item.nombre }}</span>
                 <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-white/5 text-slate-400 border border-white/5">
                   {{ item.codigo }}
                 </span>
+
+                <!-- Badge Fraccionamiento con Tooltip -->
+                <span 
+                  *ngIf="item.permiteFraccionamiento" 
+                  title="Permite fraccionamiento de dosis (ej. 0.5 ml / 0.25 g)" 
+                  class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 cursor-help flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  Fraccionable
+                </span>
+                <span 
+                  *ngIf="!item.permiteFraccionamiento" 
+                  title="Dosis entera única (sin fraccionamiento)" 
+                  class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-help">
+                  Dosis Entera
+                </span>
+
                 <span *ngIf="item.isDeleted" class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                   Inhabilitado
                 </span>
               </div>
-              <div class="text-[10px] text-slate-400 font-bold mt-0.5">
+
+              <!-- Principios Activos asignados -->
+              <div *ngIf="item.principiosActivos && item.principiosActivos.length > 0" class="flex flex-wrap gap-1 mt-1.5">
+                <span 
+                  *ngFor="let pa of item.principiosActivos" 
+                  class="text-[9px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center gap-1">
+                  <lucide-icon [name]="icons.Dna" class="w-2.5 h-2.5 text-indigo-400"></lucide-icon>
+                  {{ pa.nombre }} {{ pa.concentracion ? '(' + pa.concentracion + ')' : '' }}
+                </span>
+              </div>
+
+              <div class="text-[10px] text-slate-400 font-bold mt-1">
                 Categoría: {{ item.categoria || 'Medicamento' }} | U.M: {{ item.unidadMedidaBase }} | Stock: <strong class="text-emerald-400">{{ item.stockActual }}</strong>
               </div>
             </div>
