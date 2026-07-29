@@ -30,7 +30,7 @@
             </button>
             <div *ngIf="dropdownsOpen().enfermeria" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/enfermeria" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active-sublink" class="nav-subitem font-bold">Triage y Cuentas</a>
-                <a routerLink="/admin/inventory/pedidos" routerLinkActive="active-sublink" class="nav-subitem">Requisición de Stock</a>
+                <a routerLink="/enfermeria" [queryParams]="{tab: 'pedidos'}" routerLinkActive="active-sublink" class="nav-subitem">Requisición de Stock</a>
                 <a routerLink="/enfermeria" [queryParams]="{tab: 'stock'}" routerLinkActive="active-sublink" class="nav-subitem">Stock Local & Acta</a>
             </div>
         </div>

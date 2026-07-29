@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MultiSedeService, Sede, PedidoInterSede } from '../../../core/services/multi-sede.service';
@@ -254,6 +254,19 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
   `
 })
 export class PedidosInterSedeComponent implements OnInit {
+  @Input() set areaNombre(val: string) {
+    if (val) this.areaNombreContext = val;
+  }
+  @Input() set sedeId(val: string) {
+    if (val) {
+      this.overrideSedeSolicitanteId = val;
+      this.newPedido.sedeSolicitanteId = val;
+    }
+  }
+
+  public areaNombreContext: string = '';
+  public overrideSedeSolicitanteId: string = '';
+
   public multiSedeService = inject(MultiSedeService);
   private inventoryService = inject(InventoryService);
   private authService = inject(AuthService);
@@ -315,7 +328,11 @@ export class PedidosInterSedeComponent implements OnInit {
         const principal = activeSedes.find(s => s.esPrincipal) || activeSedes[0];
         // Sede proveedora FIJA a Almacén Principal
         this.newPedido.sedeProveedoraId = principal.id;
-        this.newPedido.sedeSolicitanteId = activeSedes.find(s => !s.esPrincipal)?.id || principal.id;
+        if (this.overrideSedeSolicitanteId) {
+          this.newPedido.sedeSolicitanteId = this.overrideSedeSolicitanteId;
+        } else {
+          this.newPedido.sedeSolicitanteId = activeSedes.find(s => !s.esPrincipal)?.id || principal.id;
+        }
       }
     });
 

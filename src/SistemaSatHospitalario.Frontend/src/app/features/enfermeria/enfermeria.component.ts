@@ -356,6 +356,18 @@ export class EnfermeriaComponent implements OnInit {
   // Determinar dinámicamente el tipo de ingreso según el área clínica activa en Enfermería
   public type = computed(() => this.nursingAreaFilter());
 
+  // Mapeo dinámico de Sede ID del Depósito Clínico activo según nursingAreaFilter
+  public currentAreaSedeId = computed<string>(() => {
+    const filter = (this.nursingAreaFilter() || '').toUpperCase();
+    if (filter.includes('HOSPITALIZACION')) {
+      return '10000000-0000-0000-0000-000000000003';
+    }
+    if (filter.includes('UCI')) {
+      return '10000000-0000-0000-0000-000000000004';
+    }
+    return '10000000-0000-0000-0000-000000000002'; // EMERGENCIA por defecto
+  });
+
 
   // State Lists
   public activeAccounts = signal<CuentaAdministrativa[]>([]);

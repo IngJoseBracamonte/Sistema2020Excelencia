@@ -25,11 +25,28 @@ export interface StockSedeItem {
 })
 export class StockLocalAreaComponent implements OnInit {
   @Input() set areaNombre(val: string) {
-    this.areaNombreSignal.set(val || 'EMERGENCIA');
+    const norm = (val || 'EMERGENCIA').toUpperCase().trim();
+    this.areaNombreSignal.set(norm);
+
+    let resolvedId = '';
+    if (norm.includes('EMERGENCIA')) {
+      resolvedId = '10000000-0000-0000-0000-000000000002';
+    } else if (norm.includes('HOSPITALIZACION') || norm.includes('HOSPITALARIA')) {
+      resolvedId = '10000000-0000-0000-0000-000000000003';
+    } else if (norm.includes('UCI')) {
+      resolvedId = '10000000-0000-0000-0000-000000000004';
+    }
+
+    if (resolvedId && resolvedId !== this.sedeIdSignal()) {
+      this.sedeIdSignal.set(resolvedId);
+      this.cargarStock();
+    }
   }
+
   @Input() set sedeId(val: string) {
-    if (val) {
+    if (val && val !== this.sedeIdSignal()) {
       this.sedeIdSignal.set(val);
+      this.cargarStock();
     }
   }
 

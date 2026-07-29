@@ -1325,12 +1325,12 @@
 
     <!-- SECCIÓN FULL PAGE: REQUISICIONES DE STOCK -->
     <div *ngIf="moduleTab() === 'pedidos'" class="animate-fade-in space-y-4">
-        <app-pedidos-inter-sede></app-pedidos-inter-sede>
+        <app-pedidos-inter-sede [areaNombre]="nursingAreaFilter()" [sedeId]="currentAreaSedeId()"></app-pedidos-inter-sede>
     </div>
 
     <!-- SECCIÓN FULL PAGE: STOCK LOCAL Y ACTA DE TURNO -->
     <div *ngIf="moduleTab() === 'stock'" class="animate-fade-in space-y-4">
-        <app-stock-local-area [areaNombre]="nursingAreaFilter()"></app-stock-local-area>
+        <app-stock-local-area [areaNombre]="nursingAreaFilter()" [sedeId]="currentAreaSedeId()"></app-stock-local-area>
     </div>
 
 </div>
