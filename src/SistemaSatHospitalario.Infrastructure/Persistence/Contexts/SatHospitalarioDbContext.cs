@@ -1004,6 +1004,31 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(l => l.OrdenCirugiaId);
                 entity.HasIndex(l => l.Timestamp);
             });
+
+            builder.Entity<PrincipioActivo>(entity =>
+            {
+                entity.ToTable("PrincipiosActivos");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(200);
+                entity.HasIndex(e => e.Nombre).IsUnique();
+            });
+
+            builder.Entity<InsumoPrincipioActivo>(entity =>
+            {
+                entity.ToTable("InsumosPrincipiosActivos");
+                entity.HasKey(e => new { e.InsumoId, e.PrincipioActivoId });
+                entity.Property(e => e.Concentracion).HasMaxLength(100);
+
+                entity.HasOne(e => e.Insumo)
+                      .WithMany(i => i.PrincipiosActivos)
+                      .HasForeignKey(e => e.InsumoId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.PrincipioActivo)
+                      .WithMany()
+                      .HasForeignKey(e => e.PrincipioActivoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
         }
 
     }
