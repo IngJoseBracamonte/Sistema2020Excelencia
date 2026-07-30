@@ -736,21 +736,26 @@
                 </div>
 
                 <!-- CLINICAL TABS CONTROL -->
-                <div class="flex border-b border-white/5 gap-2">
-                    <button (click)="activeTab.set('triage')"
-                            [class]="activeTab() === 'triage' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer">
-                        Triage y Signos Vitales
-                    </button>
+                <div class="flex border-b border-white/5 gap-2 overflow-x-auto">
                     <button (click)="activeTab.set('fast-charge')"
                             [class]="activeTab() === 'fast-charge' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer">
+                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
                         Carga de Insumos
+                    </button>
+                    <button (click)="activeTab.set('triage')"
+                            [class]="activeTab() === 'triage' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
+                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
+                        Triage y Signos Vitales
                     </button>
                     <button (click)="activeTab.set('transfer')"
                             [class]="activeTab() === 'transfer' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer">
+                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
                         Traslados y Destino
+                    </button>
+                    <button (click)="activeTab.set('history')"
+                            [class]="activeTab() === 'history' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
+                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
+                        ✦ Historial Completo
                     </button>
                 </div>
 
@@ -1223,6 +1228,104 @@
                         (dischargeCompleted)="onTransferOrDischargeCompleted($event)"
                         (actionErrorMessage)="handleActionErrorMessage($event)">
                     </app-traslados-destino>
+                </div>
+
+                <!-- TAB 4: HISTORIAL COMPLETO (Insumos con Costo, Traslados, Cirugías y Triage) -->
+                <div *ngIf="activeTab() === 'history'" class="space-y-6 animate-fade-in">
+                    
+                    <!-- Resumen de Cargos e Insumos -->
+                    <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                    <lucide-icon [name]="icons.Clipboard" class="w-4 h-4 text-rose-500"></lucide-icon>
+                                    Historial Clínico y Cargos de la Cuenta
+                                </h3>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                    Detalle acumulado de insumos, medicamentos, estudios, cirugías y traslados
+                                </p>
+                            </div>
+                            <span class="px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[9px] font-black uppercase tracking-widest font-mono">
+                                {{ selectedAccount()?.detalles?.length || 0 }} REGISTROS EN CUENTA
+                            </span>
+                        </div>
+
+                        <!-- TABLA DE CARGOS / INSUMOS CON COSTO -->
+                        <div class="bg-black/30 border border-white/5 rounded-2xl overflow-hidden shadow-inner">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-white/[0.02] border-b border-white/5">
+                                        <th class="p-3.5">Descripción del Cargo / Insumo / Cirugía</th>
+                                        <th class="p-3.5">Tipo</th>
+                                        <th class="p-3.5 text-center">Cantidad</th>
+                                        <th class="p-3.5 text-right">Precio Unit. ($)</th>
+                                        <th class="p-3.5 text-right">Subtotal ($)</th>
+                                        <th class="p-3.5 text-center">Fecha Carga</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5 text-xs font-medium">
+                                    <tr *ngFor="let det of selectedAccount()?.detalles" class="hover:bg-white/[0.02] transition-colors">
+                                        <td class="p-3.5">
+                                            <span class="font-bold text-white uppercase block">{{ det.descripcion }}</span>
+                                            <span *ngIf="det.incluidoEnTarifaBase" class="text-[8px] text-emerald-400 font-black uppercase tracking-widest block">✦ Incluido en Tarifa Base</span>
+                                        </td>
+                                        <td class="p-3.5">
+                                            <span class="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider"
+                                                  [ngClass]="{
+                                                    'bg-purple-500/20 text-purple-300 border border-purple-500/30': det.tipoServicio === 'Cirugia' || det.tipoServicio === 'Procedimiento' || det.tipoServicio === 'Quirofano',
+                                                    'bg-blue-500/20 text-blue-300 border border-blue-500/30': det.tipoServicio === 'Medicamento' || det.tipoServicio === 'Insumo',
+                                                    'bg-rose-500/20 text-rose-300 border border-rose-500/30': det.tipoServicio === 'RX' || det.tipoServicio === 'Laboratorio' || det.tipoServicio === 'TOMO',
+                                                    'bg-slate-500/20 text-slate-300 border border-slate-500/30': !det.tipoServicio
+                                                  }">
+                                                {{ det.tipoServicio || 'General' }}
+                                            </span>
+                                        </td>
+                                        <td class="p-3.5 text-center font-mono font-bold text-slate-300">{{ det.cantidad }}</td>
+                                        <td class="p-3.5 text-right font-mono text-slate-400">$ {{ det.precio | number:'1.2-2' }}</td>
+                                        <td class="p-3.5 text-right font-mono font-bold text-emerald-400">$ {{ (det.precio * det.cantidad) | number:'1.2-2' }}</td>
+                                        <td class="p-3.5 text-center font-mono text-[10px] text-slate-500">{{ det.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</td>
+                                    </tr>
+                                    <tr *ngIf="!selectedAccount()?.detalles || selectedAccount()?.detalles?.length === 0">
+                                        <td colspan="6" class="p-8 text-center text-slate-500 text-xs font-bold uppercase tracking-wider">
+                                            No se han registrado cargos o insumos en esta cuenta aún.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- TOTALIZADOR -->
+                        <div class="flex justify-between items-center bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto Total Acumulado en Historia</span>
+                            <span class="text-xl font-black text-emerald-400 font-mono">$ {{ selectedAccount()?.total | number:'1.2-2' }} USD</span>
+                        </div>
+                    </div>
+
+                    <!-- HISTORIAL DE CONSTANTES VITALES Y TRIAGE -->
+                    <div *ngIf="nursingHistory().length > 0" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
+                        <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                            <lucide-icon [name]="icons.Activity" class="w-4 h-4 text-emerald-400"></lucide-icon>
+                            Historial de Triage y Signos Vitales
+                        </h3>
+                        <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+                            <div *ngFor="let h of nursingHistory()" class="p-4 bg-white/[0.01] border border-white/5 rounded-2xl space-y-2 text-xs">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-black text-rose-400 text-[9px] uppercase tracking-widest">{{ h.clasificacion || 'Nivel de Triage' }}</span>
+                                    <span class="text-slate-500 font-mono text-[10px]">{{ h.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-mono text-slate-300">
+                                    <div><span class="text-slate-500 font-bold">T.A.:</span> {{ h.tensionArterial || 'N/A' }}</div>
+                                    <div><span class="text-slate-500 font-bold">F.C.:</span> {{ h.frecuenciaCardiaca || 0 }} bpm</div>
+                                    <div><span class="text-slate-500 font-bold">Temp:</span> {{ h.temperatura || 0 }} °C</div>
+                                    <div><span class="text-slate-500 font-bold">SatO2:</span> {{ h.saturacionO2 || 0 }} %</div>
+                                </div>
+                                <div *ngIf="h.motivoConsulta" class="text-[10px] text-slate-400 italic">
+                                    "{{ h.motivoConsulta }}"
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>

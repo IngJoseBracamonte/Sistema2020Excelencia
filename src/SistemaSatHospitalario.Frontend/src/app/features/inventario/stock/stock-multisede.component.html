@@ -1,0 +1,163 @@
+<div class="p-6 space-y-6 animate-fade-in text-main relative z-10">
+
+    <!-- HEADER DE INVENTARIO MULTI-SEDE -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-5 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full -z-10 blur-3xl"></div>
+        
+        <div class="flex items-center space-x-5">
+            <div class="h-12 w-12 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                <lucide-icon [name]="icons.Building" class="w-6 h-6"></lucide-icon>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black text-white tracking-tighter uppercase">
+                    Stock por Sedes & Áreas Clínicas
+                </h1>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">
+                    Control de existencias y Kárdex multisede para Supervisores & Administración
+                </p>
+            </div>
+        </div>
+
+        <!-- COMBOBOX DE SELECCIÓN DE SEDE / ÁREA -->
+        <div class="mt-4 md:mt-0 flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-black/40 p-2 rounded-2xl border border-white/10 shadow-inner">
+                <lucide-icon [name]="icons.Filter" class="w-4 h-4 text-indigo-400 ml-1"></lucide-icon>
+                <select [ngModel]="selectedSedeId()" (ngModelChange)="onSedeChange($event)"
+                        class="bg-transparent text-xs font-black text-white uppercase tracking-wider outline-none cursor-pointer pr-4">
+                    <option value="TODAS" class="bg-slate-900 text-white font-bold">🌐 Todas las Sedes (Consolidado)</option>
+                    <option *ngFor="let s of sedes()" [value]="s.id" class="bg-slate-900 text-white font-bold">
+                        {{ s.esPrincipal ? '🏢 ' : '📍 ' }}{{ s.nombre }}
+                    </option>
+                </select>
+            </div>
+
+            <button (click)="imprimirReporte()" 
+                    class="h-10 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-xl flex items-center gap-2 font-black uppercase text-[9px] tracking-widest transition-all active:scale-95 shadow-md">
+                <lucide-icon [name]="icons.Printer" class="w-3.5 h-3.5"></lucide-icon>
+                <span class="hidden sm:inline">Imprimir Reporte</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE RESUMEN DE EXISTENCIAS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Total Insumos -->
+        <div class="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Insumos Registrados</p>
+                <h3 class="text-2xl font-black text-white mt-1">{{ totalInsumos() }}</h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.Package" class="w-5 h-5"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Insumos Disponibles -->
+        <div class="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Stock Disponible</p>
+                <h3 class="text-2xl font-black text-emerald-400 mt-1">{{ insumosDisponibles() }}</h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.CheckCircle" class="w-5 h-5"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Stock Bajo / Alerta -->
+        <div class="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-amber-400 uppercase tracking-widest">Stock Bajo / Crítico</p>
+                <h3 class="text-2xl font-black text-amber-400 mt-1">{{ insumosStockBajo() }}</h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.AlertTriangle" class="w-5 h-5"></lucide-icon>
+            </div>
+        </div>
+
+        <!-- Insumos Agotados -->
+        <div class="glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div>
+                <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest">Insumos Agotados</p>
+                <h3 class="text-2xl font-black text-rose-400 mt-1">{{ insumosAgotados() }}</h3>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center">
+                <lucide-icon [name]="icons.XCircle" class="w-5 h-5"></lucide-icon>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUSCADOR & TABLA DE INVENTARIO -->
+    <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="relative w-full sm:w-80">
+                <lucide-icon [name]="icons.Search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></lucide-icon>
+                <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+                       placeholder="Filtrar insumo por código o nombre..."
+                       class="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-indigo-500/50 transition-all" />
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button (click)="cargarStock()" [disabled]="isLoading()"
+                        class="h-9 px-3.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl flex items-center gap-2 font-black uppercase text-[9px] tracking-widest transition-all">
+                    <lucide-icon [name]="icons.RefreshCcw" class="w-3.5 h-3.5" [class.animate-spin]="isLoading()"></lucide-icon>
+                    <span>Actualizar Kárdex</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TABLA DE EXISTENCIAS -->
+        <div class="overflow-x-auto rounded-2xl border border-white/5 bg-black/20 custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-white/5 bg-white/[0.02] text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <th class="p-4">Código</th>
+                        <th class="p-4">Nombre del Insumo / Material</th>
+                        <th class="p-4">Medida</th>
+                        <th class="p-4">Ubicación / Sede</th>
+                        <th class="p-4 text-right">Stock Actual</th>
+                        <th class="p-4 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 text-xs text-slate-300">
+                    <tr *ngFor="let item of filteredStock()" class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-4 font-mono font-bold text-slate-400">{{ item.codigo }}</td>
+                        <td class="p-4 font-bold text-white max-w-xs truncate">{{ item.nombre }}</td>
+                        <td class="p-4 text-slate-400 font-bold uppercase text-[10px]">{{ item.unidadMedidaBase }}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-black uppercase tracking-wider">
+                                {{ item.sedeNombre || 'Sede' }}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right font-black text-sm"
+                            [ngClass]="{
+                                'text-emerald-400': item.stockActual > (item.stockMinimo || 5),
+                                'text-amber-400': item.stockActual > 0 && item.stockActual <= (item.stockMinimo || 5),
+                                'text-rose-400': item.stockActual <= 0
+                            }">
+                            {{ item.stockActual }}
+                        </td>
+                        <td class="p-4 text-center">
+                            <span *ngIf="item.stockActual > (item.stockMinimo || 5)" 
+                                  class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Disponible
+                            </span>
+                            <span *ngIf="item.stockActual > 0 && item.stockActual <= (item.stockMinimo || 5)" 
+                                  class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Stock Bajo
+                            </span>
+                            <span *ngIf="item.stockActual <= 0" 
+                                  class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                Agotado
+                            </span>
+                        </td>
+                    </tr>
+                    <tr *ngIf="filteredStock().length === 0 && !isLoading()">
+                        <td colspan="6" class="p-8 text-center text-slate-500 font-bold italic">
+                            No se encontraron existencias de inventario para la sede seleccionada.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

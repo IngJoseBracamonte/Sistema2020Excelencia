@@ -864,34 +864,7 @@
                         <p *ngIf="!canCollectAndClose()" class="text-white text-[11px] font-bold uppercase bg-black/25 border border-white/5 px-3 py-2 rounded-xl min-h-[40px]">{{ diagnostico() }}</p>
                     </div>
 
-                    <!-- Condición y Destino Final de Egreso de Urgencias -->
-                    <div *ngIf="type() === 'Emergencia' || type() === 'Hospitalizacion'" class="flex flex-col gap-1.5 pt-4 border-t border-white/5 mt-2 animate-fade-in">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Condición y Destino Final de Egreso Clínico</span>
-                        <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider px-1">Destino del Paciente:</span>
-                        <div class="mt-1">
-                            <select [ngModel]="destinoPaciente()" (ngModelChange)="destinoPaciente.set($event)"
-                                class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white min-h-[44px] focus:border-primary outline-none uppercase tracking-wider">
-                                <option *ngFor="let dest of ['Alta Médica', 'Hospitalización (Piso)', 'Quirófano', 'UCI', 'Traslado Externo', 'Alta Voluntaria']" [value]="dest">
-                                    {{ dest | uppercase }}
-                                </option>
-                            </select>
-                        </div>
 
-                        <!-- Personal de Relevo / Piso que Recibe -->
-                        <div class="flex flex-col gap-1.5 mt-3 px-1">
-                            <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Personal de Relevo / Piso que Recibe:</span>
-                            <input type="text" [ngModel]="personalRelevo()" (ngModelChange)="personalRelevo.set($event)" placeholder="Escriba el nombre del personal que recibe..."
-                                class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-[10px] font-black text-white outline-none focus:border-primary uppercase">
-                        </div>
-
-                        <!-- Botón Imprimir Reporte de Egreso -->
-                        <div class="mt-4 px-1">
-                            <button (click)="imprimirReporteEgreso()" type="button"
-                                class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border border-blue-500/30 rounded-xl font-black uppercase text-[9px] tracking-widest shadow-lg shadow-indigo-600/10 active:scale-95 transition-all">
-                                Imprimir Reporte de Egreso
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

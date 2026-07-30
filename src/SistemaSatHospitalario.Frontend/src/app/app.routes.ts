@@ -21,6 +21,7 @@ export const routes: Routes = [
             { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
             
             // --- Módulo Inventario v2 ---
+            { path: 'inventario/stock', loadComponent: () => import('./features/inventario/stock/stock-multisede.component').then(m => m.StockMultisedeComponent) },
             { path: 'inventario/compras', loadComponent: () => import('./features/inventario/compras/compras.component').then(m => m.ComprasComponent) },
             { path: 'inventario/pedidos', loadComponent: () => import('./features/inventario/pedidos/pedidos-aprobacion.component').then(m => m.PedidosAprobacionComponent) },
             { path: 'inventario/catalogo', loadComponent: () => import('./features/inventario/catalogo/catalogo.component').then(m => m.CatalogoComponent) },

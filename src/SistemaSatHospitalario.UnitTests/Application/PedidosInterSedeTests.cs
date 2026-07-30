@@ -288,7 +288,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             await inventoryService.RejectPedidoAsync(pedido.Id, "SupervisorAudit", "Falta de justificación médica", CancellationToken.None);
 
             // Assert
-            Assert.Equal(EstadoPedidoInterSede.Cancelado, pedido.Estado);
+            Assert.Equal(EstadoPedidoInterSede.Rechazado, pedido.Estado);
             Assert.Contains("RECHAZADO por SupervisorAudit: Falta de justificación médica", pedido.Observaciones);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }

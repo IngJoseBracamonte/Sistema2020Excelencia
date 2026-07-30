@@ -403,13 +403,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             foreach (var item in items)
             {
+                bool requiereInforme = item.MedicoResponsableId.HasValue;
                 if (item.TipoServicio == EstadoConstants.RX)
                 {
-                    await _ordenExternaService.EnviarOrdenRXAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct);
+                    await _ordenExternaService.EnviarOrdenRXAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct, requiereInforme, item.MedicoResponsableId);
                 }
                 else if (item.TipoServicio == EstadoConstants.TOMO)
                 {
-                    await _ordenExternaService.EnviarOrdenTomoAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct);
+                    await _ordenExternaService.EnviarOrdenTomoAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct, requiereInforme, item.MedicoResponsableId);
                 }
             }
         }

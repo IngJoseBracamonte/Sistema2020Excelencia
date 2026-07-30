@@ -67,7 +67,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     FechaValidacion = o.FechaValidacion,
                                     MedicoSolicitanteId = o.MedicoSolicitanteId,
                                     MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
-                                    Informe = o.Informe
+                                    Informe = o.Informe,
+                                    LinkInforme = o.LinkInforme,
+                                    ObservacionesMedico = o.ObservacionesMedico,
+                                    MedicoInterpreteId = o.MedicoInterpreteId,
+                                    RequiereInforme = o.RequiereInforme
                                 })
                 .OrderByDescending(o => o.FechaCreacion)
                 .ToListAsync();

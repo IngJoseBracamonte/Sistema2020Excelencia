@@ -61,6 +61,7 @@ export interface CuentaAdministrativa {
   areaClinicaId?: string;
   areaClinicaNombre?: string;
   subAreaClinica?: string;
+  detalles?: any[];
   [key: string]: any;
 }
 
@@ -107,6 +108,7 @@ export interface Convenio {
 export interface TriageRecord {
   triageId?: string;
   valoracionId?: string;
+  clasificacion?: string;
   motivoConsulta?: string;
   tensionArterial?: string;
   frecuenciaCardiaca?: number;
@@ -388,7 +390,7 @@ export class EnfermeriaComponent implements OnInit {
   public nursingHistory = signal<TriageRecord[]>([]);
   
   // Tab / Filter UI
-  public activeTab = signal<'triage' | 'fast-charge' | 'transfer'>('triage'); // triage, fast-charge, transfer
+  public activeTab = signal<'fast-charge' | 'triage' | 'transfer' | 'history'>('fast-charge'); // fast-charge, triage, transfer, history
   public searchTerm = signal<string>('');
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
@@ -705,7 +707,7 @@ export class EnfermeriaComponent implements OnInit {
     this.selectedAccount.set(account);
     this.loadTriageHistory(account.cuentaId);
     this.resetTriageForm();
-    this.activeTab.set('triage');
+    this.activeTab.set('fast-charge');
     
     // Auto-set the current convenio for transfer panel
     this.nuevoConvenioId = account.convenioId;

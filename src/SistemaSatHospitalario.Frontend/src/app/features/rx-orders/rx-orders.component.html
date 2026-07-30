@@ -197,11 +197,11 @@
 
                             <!-- Informe Badge -->
                             <td class="px-6 py-4 text-center">
-                                <span *ngIf="order.informe"
-                                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                    CON INFORME
+                                <span *ngIf="order.requiereInforme || order.informe"
+                                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-[8px] font-black uppercase tracking-widest font-bold">
+                                    ✦ CON INFORME
                                 </span>
-                                <span *ngIf="!order.informe"
+                                <span *ngIf="!order.requiereInforme && !order.informe"
                                       class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 border border-white/10 text-slate-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
                                     SIN INFORME
                                 </span>
@@ -261,6 +261,16 @@
                                             <div class="flex justify-between text-xs">
                                                 <span class="text-slate-500 font-bold">Origen de Carga:</span>
                                                 <span class="text-white font-bold">{{ order.esDirecta ? 'ASISTENTE ESTACIÓN (DIRECTA)' : 'FACTURACIÓN / ADMISIÓN' }}</span>
+                                            </div>
+                                            <div class="h-px bg-white/5"></div>
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-bold">Tipo de Procesamiento:</span>
+                                                <span *ngIf="order.requiereInforme || order.informe" class="text-purple-400 font-black tracking-wider uppercase bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-lg">
+                                                    ✦ REQUIERE INFORME MÉDICO
+                                                </span>
+                                                <span *ngIf="!order.requiereInforme && !order.informe" class="text-slate-400 font-bold tracking-wider uppercase bg-slate-500/10 border border-white/10 px-2.5 py-1 rounded-lg">
+                                                    ⚪ ESTUDIO TÉCNICO (SIN INFORME)
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

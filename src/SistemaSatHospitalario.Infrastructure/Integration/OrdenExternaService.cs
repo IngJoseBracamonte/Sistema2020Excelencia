@@ -25,11 +25,15 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
             _context = context;
         }
 
-        public async Task EnviarOrdenRXAsync(Guid cuentaId, Guid pacienteId, string estudio, string paciente, CancellationToken cancellationToken)
+        public async Task EnviarOrdenRXAsync(Guid cuentaId, Guid pacienteId, string estudio, string paciente, CancellationToken cancellationToken, bool requiereInforme = false, Guid? medicoInterpreteId = null)
         {
-            _logger.LogInformation("TRIGGER RX: Registrando orden de {Estudio} para el paciente {Paciente}.", estudio, paciente);
+            _logger.LogInformation("TRIGGER RX: Registrando orden de {Estudio} para el paciente {Paciente} (RequiereInforme: {RequiereInforme}).", estudio, paciente, requiereInforme);
             
-            var orden = new OrdenImagen(cuentaId, pacienteId, paciente, estudio, "RX");
+            var orden = new OrdenImagen(cuentaId, pacienteId, paciente, estudio, "RX")
+            {
+                RequiereInforme = requiereInforme,
+                MedicoInterpreteId = medicoInterpreteId
+            };
             _context.OrdenesImagenes.Add(orden);
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -46,15 +50,20 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
                 patientCedula = patientCedula,
                 servicioNombre = orden.Estudio,
                 tipoServicio = orden.TipoServicio,
-                informe = orden.Informe
+                informe = orden.Informe,
+                requiereInforme = orden.RequiereInforme
             }, cancellationToken);
         }
 
-        public async Task EnviarOrdenTomoAsync(Guid cuentaId, Guid pacienteId, string estudio, string paciente, CancellationToken cancellationToken)
+        public async Task EnviarOrdenTomoAsync(Guid cuentaId, Guid pacienteId, string estudio, string paciente, CancellationToken cancellationToken, bool requiereInforme = false, Guid? medicoInterpreteId = null)
         {
-            _logger.LogInformation("TRIGGER TOMO: Registrando orden de {Estudio} para el paciente {Paciente}.", estudio, paciente);
+            _logger.LogInformation("TRIGGER TOMO: Registrando orden de {Estudio} para el paciente {Paciente} (RequiereInforme: {RequiereInforme}).", estudio, paciente, requiereInforme);
             
-            var orden = new OrdenImagen(cuentaId, pacienteId, paciente, estudio, "TOMO");
+            var orden = new OrdenImagen(cuentaId, pacienteId, paciente, estudio, "TOMO")
+            {
+                RequiereInforme = requiereInforme,
+                MedicoInterpreteId = medicoInterpreteId
+            };
             _context.OrdenesImagenes.Add(orden);
             await _context.SaveChangesAsync(cancellationToken);
 

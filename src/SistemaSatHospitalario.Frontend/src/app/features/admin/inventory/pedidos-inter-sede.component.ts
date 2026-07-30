@@ -30,13 +30,6 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
             </p>
           </div>
         </div>
-
-        <div class="mt-4 md:mt-0 flex items-center gap-2">
-          <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-white/10"
-            [ngClass]="isSupervisorOrAdmin() ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-primary/10 text-primary border-primary/20'">
-            {{ isSupervisorOrAdmin() ? '👑 Rol: Supervisor / Admin (Facultad de Aprobación/Ajuste/Rechazo)' : '👩‍⚕️ Rol: Personal Operativo (Enfermería)' }}
-          </span>
-        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -45,7 +38,7 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
           <h2 class="text-sm font-black uppercase tracking-widest text-muted">Nueva Requisición</h2>
 
           <div class="space-y-4">
-            <!-- Proveedor Fijo -->
+            <!-- Sede Proveedora Fija -->
             <div class="flex items-center justify-between bg-surface-card/60 p-3 rounded-xl border border-glass-border">
               <span class="text-[10px] text-muted font-black uppercase">Sede Proveedora</span>
               <span class="bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-lg font-black text-[10px] uppercase">
@@ -53,45 +46,63 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
               </span>
             </div>
 
-            <!-- Tipo de Destino / Propósito -->
-            <div>
-              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Tipo de Destino</label>
-              <select [(ngModel)]="tipoDestino" (change)="onTipoDestinoChange()"
-                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-xs font-bold text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer">
-                <option value="DEPÓSITO_OPERATIVO">Depósito con Stock Local (Emergencia / Hospitalización)</option>
-                <option value="GASTO_INTERNO_LABORATORIO">Consumo Directo / Nota de Entrega (Laboratorio / Mantenimiento)</option>
-              </select>
+            <!-- Sede Solicitante (Destino) derivado del Área Activa -->
+            <div class="flex items-center justify-between bg-surface-card/60 p-3 rounded-xl border border-glass-border">
+              <span class="text-[10px] text-muted font-black uppercase">Área / Sede Solicitante (Destino)</span>
+              <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-lg font-black text-[10px] uppercase">
+                📍 {{ getSedeNombre(newPedido.sedeSolicitanteId) || areaNombreContext || 'Área de Emergencia' }}
+              </span>
             </div>
 
-            <!-- Seleccionar Sede o Área Solicitante -->
-            <div>
-              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Área / Sede Solicitante</label>
-              <select [(ngModel)]="newPedido.sedeSolicitanteId" [disabled]="isOnlyEmergency()"
-                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-xs font-bold text-main focus:outline-none focus:border-primary/50 transition-all cursor-pointer disabled:opacity-60">
-                <option *ngFor="let s of filteredSedes" [value]="s.id">{{ s.nombre }}</option>
-              </select>
-            </div>
-
-            <!-- Agregar Insumo con Muestreo de Stock Central -->
-            <div class="space-y-2">
+            <!-- Agregar Insumo con Buscador por Nombre, Código o Principio Activo -->
+            <div class="space-y-2 relative">
               <div class="flex justify-between items-center">
-                <label class="text-[10px] text-muted font-black uppercase tracking-wider">Insumo Requerido</label>
+                <label class="text-[10px] text-muted font-black uppercase tracking-wider">Buscar Insumo Requerido</label>
                 <span *ngIf="selectedInsumoObj" class="text-[10px] font-black uppercase px-2 py-0.5 rounded"
                   [ngClass]="selectedInsumoObj.stockActual > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'">
                   Stock Principal: {{ selectedInsumoObj.stockActual }} {{ selectedInsumoObj.unidadMedidaBase }}
                 </span>
               </div>
-              <div class="flex gap-2">
-                <select [(ngModel)]="selectedInsumoId"
-                  class="flex-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-xs font-bold text-main focus:outline-none focus:border-primary/50 transition-all">
-                  <option *ngFor="let ins of insumos" [value]="ins.id">
-                    {{ ins.nombre }} (Stock: {{ ins.stockActual }})
-                  </option>
-                </select>
+
+              <div class="flex items-center gap-2 w-full">
+                <div class="relative flex-1 min-w-0">
+                  <input type="text"
+                    [ngModel]="insumoSearchTerm()"
+                    (ngModelChange)="onSearchTermChange($event)"
+                    (focus)="showInsumoDropdown.set(true)"
+                    placeholder="Buscar por nombre, código o principio activo..."
+                    class="w-full bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-xs font-bold text-main focus:outline-none focus:border-primary/50 transition-all truncate" />
+
+                  <!-- Autocomplete Dropdown -->
+                  <div *ngIf="showInsumoDropdown() && filteredInsumosList().length > 0"
+                       class="absolute z-50 left-0 right-0 top-full mt-1 bg-[#0f172a] border border-white/10 rounded-xl shadow-2xl max-h-56 overflow-y-auto custom-scrollbar">
+                    <div *ngFor="let ins of filteredInsumosList()"
+                         (click)="selectInsumo(ins)"
+                         class="p-2.5 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-b-0 transition-all">
+                      <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-white truncate max-w-[200px]">{{ ins.nombre }}</span>
+                        <span class="text-[9px] font-mono text-slate-400 bg-white/5 px-1.5 py-0.5 rounded">{{ ins.codigo }}</span>
+                      </div>
+                      <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                        <span *ngIf="ins.principiosActivos && ins.principiosActivos.length > 0" class="text-indigo-400 italic truncate max-w-[180px]">
+                          🧬 {{ getPAString(ins) }}
+                        </span>
+                        <span *ngIf="!ins.principiosActivos || ins.principiosActivos.length === 0" class="italic text-slate-500">
+                          Sin P.A.
+                        </span>
+                        <span class="font-black" [ngClass]="ins.stockActual > 0 ? 'text-emerald-400' : 'text-rose-400'">
+                          Stock: {{ ins.stockActual }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <input type="number" [(ngModel)]="selectedCantidad" min="1"
-                  class="w-16 bg-surface-card border border-glass-border rounded-xl px-2 py-2 text-xs text-main font-bold text-center focus:outline-none focus:border-primary/50" />
-                <button (click)="addLinea()"
-                  class="px-3 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 shrink-0">
+                  class="w-14 shrink-0 bg-surface-card border border-glass-border rounded-xl px-2 py-2 text-xs text-main font-bold text-center focus:outline-none focus:border-primary/50" />
+
+                <button (click)="addLinea()" [disabled]="!selectedInsumoId"
+                  class="px-3.5 py-2 shrink-0 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center">
                   +
                 </button>
               </div>
@@ -112,17 +123,9 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
               </div>
             </div>
 
-            <div>
-              <label class="text-[10px] text-muted font-black uppercase tracking-wider">Observaciones / Justificación</label>
-              <textarea [(ngModel)]="newPedido.observaciones" rows="2"
-                placeholder="Ej: Insumos para pruebas de laboratorio rutinarias..."
-                class="w-full mt-1 bg-surface-card border border-glass-border rounded-xl px-3 py-2 text-xs text-main focus:outline-none focus:border-primary/50 transition-all resize-none">
-              </textarea>
-            </div>
-
             <button (click)="crearSolicitud()" [disabled]="newPedido.lineas.length === 0"
               class="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 font-black text-white transition-all shadow-lg shadow-primary/25 text-xs uppercase tracking-widest active:scale-[0.98]">
-              {{ tipoDestino === 'GASTO_INTERNO_LABORATORIO' ? 'Solicitar Nota de Entrega Directa' : 'Solicitar Reposición de Stock' }}
+              Solicitar Reposición de Stock
             </button>
           </div>
         </div>
@@ -287,6 +290,45 @@ export class PedidosInterSedeComponent implements OnInit {
   public selectedInsumoId = '';
   public selectedCantidad = 1;
 
+  // Autocompletado de Insumos (Buscador por Nombre, Código y Principio Activo)
+  public insumoSearchTerm = signal<string>('');
+  public showInsumoDropdown = signal<boolean>(false);
+
+  public filteredInsumosList = computed(() => {
+    const term = this.insumoSearchTerm().toLowerCase().trim();
+    if (!term) return this.insumos.slice(0, 15);
+    return this.insumos.filter(i => {
+      const matchNombre = (i.nombre || '').toLowerCase().includes(term);
+      const matchCodigo = (i.codigo || '').toLowerCase().includes(term);
+      const matchPA = i.principiosActivos?.some(pa => 
+        (pa.nombre || '').toLowerCase().includes(term) || 
+        (pa.concentracion || '').toLowerCase().includes(term)
+      );
+      return matchNombre || matchCodigo || matchPA;
+    }).slice(0, 20);
+  });
+
+  public onSearchTermChange(term: string) {
+    this.insumoSearchTerm.set(term);
+    this.showInsumoDropdown.set(true);
+  }
+
+  public selectInsumo(insumo: Insumo) {
+    this.selectedInsumoId = insumo.id;
+    this.insumoSearchTerm.set(insumo.nombre);
+    this.showInsumoDropdown.set(false);
+  }
+
+  public getPAString(insumo: Insumo): string {
+    if (!insumo.principiosActivos || insumo.principiosActivos.length === 0) return '';
+    return insumo.principiosActivos.map(pa => `${pa.nombre} ${pa.concentracion ? '(' + pa.concentracion + ')' : ''}`).join(', ');
+  }
+
+  public getSedeNombre(sedeId: string): string {
+    const s = this.sedes.find(x => x.id === sedeId);
+    return s ? s.nombre : '';
+  }
+
   // Mapa local para edición de cantidades aprobadas: { [pedidoId]: { [detalleId]: cantidad } }
   public cantidadesAprobadasMap: { [pedidoId: string]: { [detalleId: string]: number } } = {};
 
@@ -338,7 +380,6 @@ export class PedidosInterSedeComponent implements OnInit {
 
     this.inventoryService.getInsumos(true).subscribe(res => {
       this.insumos = res;
-      if (res.length > 0) this.selectedInsumoId = res[0].id;
     });
 
     this.loadPedidos();
@@ -406,15 +447,17 @@ export class PedidosInterSedeComponent implements OnInit {
     this.multiSedeService.createPedido({
       sedeSolicitanteId: this.newPedido.sedeSolicitanteId,
       sedeProveedoraId: this.newPedido.sedeProveedoraId,
-      observaciones: `[${this.tipoDestino}] ${this.newPedido.observaciones}`,
+      observaciones: `Solicitud de Reposición desde ${this.areaNombreContext || 'Enfermería'}`,
       lineas: this.newPedido.lineas
     }).subscribe({
       next: () => {
-        this.loadPedidos();
         this.newPedido.lineas = [];
         this.newPedido.observaciones = '';
+        this.insumoSearchTerm.set('');
+        this.selectedInsumoId = '';
+        this.loadPedidos();
       },
-      error: (err: any) => alert(err.error?.message || 'Error al enviar la requisición')
+      error: (err) => console.error('Error al crear solicitud:', err)
     });
   }
 

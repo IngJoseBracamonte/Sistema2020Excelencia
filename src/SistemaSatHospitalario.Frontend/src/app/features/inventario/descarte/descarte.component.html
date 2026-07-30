@@ -56,18 +56,15 @@
             [ngModel]="descarteSearchTerm()"
             (ngModelChange)="onSearchChange($event)"
             placeholder="Ingrese código, nombre o principio activo..."
-            class="w-full bg-black/40 border border-white/10 rounded-2xl pl-4 pr-24 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500/50 transition-all"
+            class="w-full bg-black/40 border border-white/10 rounded-2xl pl-4 pr-10 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500/50 transition-all"
           />
           <div class="absolute inset-y-0 right-2 my-auto flex items-center">
             <button 
               type="button"
               (click)="focusSearchInput()"
-              title="Presiona Ctrl + K (o presiona aquí) para enfocar el buscador dinámico por nombre, código o principio activo."
-              class="px-2.5 py-1 bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 rounded-xl text-[10px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer">
-              <lucide-icon [name]="icons.Search" class="w-3.5 h-3.5 text-rose-400 shrink-0 flex items-center justify-center"></lucide-icon>
-              <span class="flex items-center gap-0.5">
-                <kbd class="font-sans font-extrabold text-[9px] uppercase bg-black/40 px-1 py-0.5 rounded border border-white/10">Ctrl</kbd>+<kbd class="font-sans font-extrabold text-[9px] uppercase bg-black/40 px-1 py-0.5 rounded border border-white/10">K</kbd>
-              </span>
+              title="Ctrl + K"
+              class="p-1.5 bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 rounded-xl transition-all flex items-center justify-center cursor-pointer">
+              <lucide-icon [name]="icons.Search" class="w-3.5 h-3.5 text-rose-400 shrink-0"></lucide-icon>
             </button>
           </div>
         </div>

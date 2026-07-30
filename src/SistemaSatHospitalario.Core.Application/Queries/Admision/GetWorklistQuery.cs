@@ -75,27 +75,52 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // Obtener perfiles del legado con su estado de resultados
             var legacyProfiles = await _legacyRepository.GetProfilesWithResultStatusAsync(legacyOrderId, cancellationToken);
 
-            foreach (var lp in legacyProfiles)
+            if (legacyProfiles != null && legacyProfiles.Any())
             {
-                 // Buscar en la cuenta nativa por TipoServicioId (Laboratorio = 2) y mapeo directo de ID legacy (sin strings/regex)
-                 var nativeDetail = cuenta.Detalles.FirstOrDefault(d => 
-                    d.TipoServicioId == TipoServicioConstants.Laboratorio && 
-                    d.LegacyMappingId == lp.IdPerfil.ToString());
-
-                bool esAnulado = nativeDetail == null || nativeDetail.Cantidad <= 0 || nativeDetail.Precio <= 0;
-
-                dto.Items.Add(new WorklistItemDto
+                foreach (var lp in legacyProfiles)
                 {
-                    Codigo = lp.IdPerfil.ToString("D3"),
-                    Nombre = lp.Descripcion,
-                    Estado = esAnulado ? "ANULADO EN CUENTA" : "ACTIVO - Cobrado",
-                    TieneResultados = lp.TieneResultados,
-                    EsAnulado = esAnulado
-                });
+                    // Buscar en la cuenta nativa por TipoServicioId (Laboratorio = 2) y mapeo directo de ID legacy
+                    var nativeDetail = cuenta.Detalles.FirstOrDefault(d => 
+                        d.TipoServicioId == TipoServicioConstants.Laboratorio && 
+                        d.LegacyMappingId == lp.IdPerfil.ToString());
 
-                if (esAnulado)
+                    bool esAnulado = nativeDetail == null || nativeDetail.Cantidad <= 0 || nativeDetail.Precio <= 0;
+
+                    dto.Items.Add(new WorklistItemDto
+                    {
+                        Codigo = lp.IdPerfil.ToString("D3"),
+                        Nombre = lp.Descripcion,
+                        Estado = esAnulado ? "ANULADO EN CUENTA" : "ACTIVO - Cobrado",
+                        TieneResultados = lp.TieneResultados,
+                        EsAnulado = esAnulado
+                    });
+
+                    if (esAnulado)
+                    {
+                        dto.TieneAnulados = true;
+                    }
+                }
+            }
+            else
+            {
+                // Fallback para servicios de laboratorio cargados directamente en la cuenta nativa
+                var labDetalles = cuenta.Detalles
+                    .Where(d => d.TipoServicioId == TipoServicioConstants.Laboratorio || (d.TipoServicio != null && d.TipoServicio.ToUpper() == "LABORATORIO"))
+                    .ToList();
+
+                int idx = 1;
+                foreach (var d in labDetalles)
                 {
-                    dto.TieneAnulados = true;
+                    bool esAnulado = d.Cantidad <= 0 || d.Precio <= 0;
+                    dto.Items.Add(new WorklistItemDto
+                    {
+                        Codigo = idx.ToString("D3"),
+                        Nombre = d.Descripcion,
+                        Estado = esAnulado ? "ANULADO EN CUENTA" : "ACTIVO - Cobrado",
+                        TieneResultados = false,
+                        EsAnulado = esAnulado
+                    });
+                    idx++;
                 }
             }
 

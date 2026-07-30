@@ -10,32 +10,46 @@
     visibility: hidden;
   }
   
-  .no-print, nav, header, sidebar, .fixed, .absolute, button {
+  /* Ocultar elementos de layout global de Angular / App */
+  app-sidebar,
+  header,
+  nav,
+  aside,
+  .no-print,
+  .glass-panel,
+  .glass-card,
+  .backdrop-blur-3xl,
+  .fixed,
+  button {
     display: none !important;
   }
 
+  body * {
+    visibility: hidden;
+  }
+
   .print-only-container, .print-only-container * {
-    visibility: visible;
+    visibility: visible !important;
   }
 
   .print-only-container {
     display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
     color: #000000 !important;
     background: #ffffff !important;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 11pt;
     line-height: 1.4;
-    padding: 0;
-    margin: 0;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   @page {
     size: A4 portrait;
-    margin: 15mm 15mm 15mm 15mm;
+    margin: 12mm 15mm 15mm 15mm;
   }
 
   /* Encabezado A4 */
@@ -83,7 +97,7 @@
     line-height: 1.5;
   }
 
-  /* Tabla A4 */
+  /* Tabla A4 Paginada (Para 400+ items) */
   .print-table {
     width: 100%;
     border-collapse: collapse;
@@ -92,9 +106,17 @@
     page-break-inside: auto;
   }
 
+  .print-table thead {
+    display: table-header-group !important; /* Repite el encabezado de la tabla al inicio de CADA página impresa */
+  }
+
+  .print-table tbody {
+    display: table-row-group !important;
+  }
+
   .print-table tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+    page-break-inside: avoid !important; /* Evita que una fila se divida entre dos páginas */
+    page-break-after: auto !important;
   }
 
   .print-table th, .print-table td {

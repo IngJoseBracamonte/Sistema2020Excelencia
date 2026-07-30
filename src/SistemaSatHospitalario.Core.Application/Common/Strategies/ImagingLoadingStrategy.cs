@@ -111,13 +111,14 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             {
                 string nombrePaciente = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
 
+                var medicoInterpreteId = request.MedicoInterpreteId ?? request.MedicoId;
                 if (esRx)
                 {
-                    await _externaService.EnviarOrdenRXAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken);
+                    await _externaService.EnviarOrdenRXAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken, requiereInforme, medicoInterpreteId);
                 }
                 else
                 {
-                    await _externaService.EnviarOrdenTomoAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken);
+                    await _externaService.EnviarOrdenTomoAsync(cuenta.Id, paciente.Id, request.Descripcion, nombrePaciente, cancellationToken, requiereInforme, medicoInterpreteId);
                 }
 
                 var orden = await _context.OrdenesImagenes
@@ -130,7 +131,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                 if (orden != null)
                 {
                     orden.RequiereInforme = requiereInforme;
-                    orden.MedicoInterpreteId = request.MedicoInterpreteId ?? request.MedicoId;
+                    orden.MedicoInterpreteId = medicoInterpreteId;
+                    await _context.SaveChangesAsync(cancellationToken);
                 }
 
                 // Verificar si ya se ingresó un informe previo para marcarlo como completado de inmediato.

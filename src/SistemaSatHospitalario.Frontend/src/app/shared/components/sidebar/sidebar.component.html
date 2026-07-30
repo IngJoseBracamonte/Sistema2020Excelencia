@@ -29,9 +29,9 @@
                     [class.rotate-180]="dropdownsOpen().enfermeria"></lucide-icon>
             </button>
             <div *ngIf="dropdownsOpen().enfermeria" class="pl-8 space-y-1 animate-fade-in">
-                <a routerLink="/enfermeria" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active-sublink" class="nav-subitem font-bold">Triage y Cuentas</a>
-                <a routerLink="/enfermeria" [queryParams]="{tab: 'pedidos'}" routerLinkActive="active-sublink" class="nav-subitem">Requisición de Stock</a>
-                <a routerLink="/enfermeria" [queryParams]="{tab: 'stock'}" routerLinkActive="active-sublink" class="nav-subitem">Stock Local & Acta</a>
+                <a routerLink="/enfermeria" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active-sublink" class="nav-subitem font-bold">Paciente</a>
+                <a routerLink="/enfermeria" [queryParams]="{tab: 'pedidos'}" routerLinkActive="active-sublink" class="nav-subitem">Solicitud a Inventario</a>
+                <a routerLink="/enfermeria" [queryParams]="{tab: 'stock'}" routerLinkActive="active-sublink" class="nav-subitem">Inventario Actual</a>
             </div>
         </div>
 
@@ -62,8 +62,8 @@
                     [class.rotate-180]="dropdownsOpen().facturacion"></lucide-icon>
             </button>
             <div *ngIf="dropdownsOpen().facturacion" class="pl-8 space-y-1 animate-fade-in">
-                <a *ngIf="permissionService.can('Permissions.Facturacion.Particular')" routerLink="/facturacion" [queryParams]="{type: 'Particular'}" routerLinkActive="active-sublink" class="nav-subitem italic">Particular</a>
-                <a *ngIf="permissionService.can('Permissions.Facturacion.Convenio')" routerLink="/facturacion" [queryParams]="{type: 'Seguro'}" routerLinkActive="active-sublink" class="nav-subitem">Seguros</a>
+                <a *ngIf="permissionService.can('Permissions.Facturacion.Particular')" routerLink="/facturacion" [queryParams]="{type: 'Particular'}" routerLinkActive="active-sublink" class="nav-subitem italic">👤 Particular</a>
+                <a *ngIf="permissionService.can('Permissions.Facturacion.Convenio')" routerLink="/facturacion" [queryParams]="{type: 'Seguro'}" routerLinkActive="active-sublink" class="nav-subitem">🛡️ Seguros</a>
                 <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant()" routerLink="/cierre-cuenta/Hospitalizacion" routerLinkActive="active-sublink" class="nav-subitem">🏥 Hospitalaria</a>
                 <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant()" routerLink="/cierre-cuenta/Emergencia" routerLinkActive="active-sublink" class="nav-subitem">🚨 Emergencia</a>
             </div>
@@ -102,6 +102,9 @@
                 <span>Inventario</span>
             </div>
             <div class="pl-3 space-y-1 border-l border-indigo-500/20 ml-3">
+                <a routerLink="/inventario/stock" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
+                    Stock por Sedes / Áreas
+                </a>
                 <a routerLink="/inventario/compras" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
                     Compras & Entradas
                 </a>

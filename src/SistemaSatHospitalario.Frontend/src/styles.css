@@ -216,3 +216,63 @@ select option {
   color: var(--primary);
   font-weight: 700;
 }
+
+/* ==========================================
+   REGLAS GLOBALES DE IMPRESIÓN (PRINT A4)
+   ========================================== */
+@media print {
+  /* Ocultar elementos globales de la aplicación */
+  app-sidebar,
+  header,
+  nav,
+  aside,
+  .glass-sidebar,
+  .no-print,
+  button,
+  .fixed,
+  .toast,
+  .header-glass {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Si la página contiene un documento de impresión A4 (.print-only-container) */
+  body:has(.print-only-container) app-sidebar,
+  body:has(.print-only-container) header,
+  body:has(.print-only-container) nav,
+  body:has(.print-only-container) aside,
+  body:has(.print-only-container) .glass-card,
+  body:has(.print-only-container) .glass-panel,
+  body:has(.print-only-container) .backdrop-blur-3xl,
+  body:has(.print-only-container) app-enfermeria > div > *:not(app-stock-local-area),
+  body:has(.print-only-container) app-stock-local-area > div > *:not(.print-only-container) {
+    display: none !important;
+  }
+
+  .print-only-container,
+  .print-only-container * {
+    visibility: visible !important;
+    color: #000000 !important;
+  }
+
+  .print-only-container {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    z-index: 999999 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
