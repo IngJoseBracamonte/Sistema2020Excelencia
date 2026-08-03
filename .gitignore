@@ -433,3 +433,8 @@ blob-report/
 /coverage/
 *.trx
 
+# Database E2E Tests (Ignored)
+e2e-db-tests/
+playwright-db.config.ts
+
+

@@ -18,6 +18,10 @@ export interface OrdenCirugia {
   motivoCancelacion?: string;
   fechaCreacion: string;
   usuarioCreacion: string;
+  razonCirugia?: string;
+  especialidad?: string;
+  notasOperatorias?: string;
+  requisitosQuirurgicos?: string;
 }
 
 export interface CirugiaLog {
@@ -51,6 +55,8 @@ export interface CrearOrdenCirugiaRequest {
   precioBaseUsd: number;
   medicoId: string;
   fechaHoraProgramada: string;
+  razonCirugia?: string;
+  especialidad?: string;
 }
 
 export interface CambiarEstadoCirugiaRequest {

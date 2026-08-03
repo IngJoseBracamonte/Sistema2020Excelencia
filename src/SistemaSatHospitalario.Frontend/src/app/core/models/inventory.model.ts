@@ -25,6 +25,9 @@ export interface Insumo {
   fechaInactivacion?: string;
   ocultoEnTraslados?: boolean;
   principiosActivos?: InsumoPrincipioActivo[];
+  reactivosCombinados?: string;
+  indicaciones?: string;
+  fechaVencimiento?: string;
 }
 
 export type TipoMovimientoInsumo = 
@@ -92,14 +95,20 @@ export interface CreateInsumo {
   costoUnitarioBaseUSD: number;
   permiteFraccionamiento?: boolean;
   categoria?: string;
+  reactivosCombinados?: string;
+  indicaciones?: string;
+  fechaVencimiento?: string;
 }
 
 export interface UpdateInsumo {
   nombre: string;
-  unidadMedidaBase: string;
+  unidadMedidaBase?: string;
   costoUnitarioBaseUSD: number;
   permiteFraccionamiento?: boolean;
   categoria?: string;
+  reactivosCombinados?: string;
+  indicaciones?: string;
+  fechaVencimiento?: string;
 }
 
 export interface RecordMovement {
