@@ -81,6 +81,9 @@ export class PedidosAprobacionComponent implements OnInit {
     MessageSquare
   };
 
+  public activeTab = signal<'pendientes' | 'historial'>('pendientes');
+  public historialPedidos = signal<PedidoInterSede[]>([]);
+
   public filteredPedidos = computed(() => {
     const list = this.pedidos();
     const query = this.searchQuery().toLowerCase().trim();
@@ -92,6 +95,20 @@ export class PedidosAprobacionComponent implements OnInit {
       p.detalles.some(d => d.insumoNombre.toLowerCase().includes(query))
     );
   });
+
+  public filteredHistorial = computed(() => {
+    const list = this.historialPedidos();
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return list;
+
+    return list.filter(p => 
+      p.correlativo.toLowerCase().includes(query) ||
+      p.sedeSolicitanteNombre.toLowerCase().includes(query) ||
+      (p.estado && p.estado.toLowerCase().includes(query)) ||
+      p.detalles.some(d => d.insumoNombre.toLowerCase().includes(query))
+    );
+  });
+
 
   ngOnInit() {
     this.loadData();
@@ -110,7 +127,18 @@ export class PedidosAprobacionComponent implements OnInit {
       },
       error: () => this.isLoading.set(false)
     });
+
+    this.loadHistorial();
   }
+
+  loadHistorial() {
+    this.multiSedeService.getPedidosHistorial().subscribe({
+      next: (res: any) => this.historialPedidos.set(res),
+      error: (err: any) => console.error('Error al cargar historial de pedidos:', err)
+    });
+  }
+
+
 
   getStockDisponible(insumoId: string): number {
     return this.insumos().find(i => i.id === insumoId)?.stockActual ?? 0;

@@ -24,7 +24,8 @@ import {
     BarChart3,
     Github,
     FlaskConical,
-    Bed
+    Bed,
+    Building
 } from 'lucide-angular';
 
 @Component({
@@ -91,7 +92,8 @@ export class SidebarComponent implements OnInit {
         Reportes: BarChart3,
         Github: Github,
         Lab: FlaskConical,
-        Bed: Bed
+        Bed: Bed,
+        Building: Building
     };
 
     toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion' | 'enfermeria') {

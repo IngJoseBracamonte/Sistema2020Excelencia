@@ -30,6 +30,12 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
             </p>
           </div>
         </div>
+
+        <div *ngIf="!readOnlyApprovals" class="mt-3 md:mt-0">
+          <span class="px-3.5 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-md">
+            👑 Rol: Supervisor / Admin (Facultad de Aprobación/Ajuste/Rechazo)
+          </span>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -257,8 +263,13 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
   `
 })
 export class PedidosInterSedeComponent implements OnInit {
+  @Input() readOnlyApprovals: boolean = false;
+
   @Input() set areaNombre(val: string) {
-    if (val) this.areaNombreContext = val;
+    if (val) {
+      this.areaNombreContext = val;
+      this.syncSedeWithArea(val);
+    }
   }
   @Input() set sedeId(val: string) {
     if (val) {
@@ -278,14 +289,28 @@ export class PedidosInterSedeComponent implements OnInit {
   public insumos: Insumo[] = [];
   public pedidos: PedidoInterSede[] = [];
 
-  public tipoDestino: TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO';
-
   public newPedido = {
     sedeSolicitanteId: '',
     sedeProveedoraId: '',
     observaciones: '',
     lineas: [] as { insumoId: string; cantidadSolicitada: number }[]
   };
+
+  public syncSedeWithArea(area: string) {
+    if (!area || !this.sedes.length) return;
+    const norm = area.toUpperCase();
+    if (norm.includes('UCI')) {
+      const uciSede = this.sedes.find(s => s.nombre.toUpperCase().includes('UCI') || s.codigo?.toUpperCase() === 'UCI' || s.id === '10000000-0000-0000-0000-000000000004');
+      if (uciSede) this.newPedido.sedeSolicitanteId = uciSede.id;
+    } else if (norm.includes('HOSPITALIZACION')) {
+      const hospSede = this.sedes.find(s => s.nombre.toUpperCase().includes('HOSP') || s.codigo?.toUpperCase() === 'HOSPITALIZACION' || s.id === '10000000-0000-0000-0000-000000000003');
+      if (hospSede) this.newPedido.sedeSolicitanteId = hospSede.id;
+    } else {
+      const emgSede = this.sedes.find(s => s.nombre.toUpperCase().includes('EMERG') || s.codigo?.toUpperCase() === 'EMERGENCIA' || s.id === '10000000-0000-0000-0000-000000000002');
+      if (emgSede) this.newPedido.sedeSolicitanteId = emgSede.id;
+    }
+  }
+
 
   public selectedInsumoId = '';
   public selectedCantidad = 1;
@@ -372,6 +397,8 @@ export class PedidosInterSedeComponent implements OnInit {
         this.newPedido.sedeProveedoraId = principal.id;
         if (this.overrideSedeSolicitanteId) {
           this.newPedido.sedeSolicitanteId = this.overrideSedeSolicitanteId;
+        } else if (this.areaNombreContext) {
+          this.syncSedeWithArea(this.areaNombreContext);
         } else {
           this.newPedido.sedeSolicitanteId = activeSedes.find(s => !s.esPrincipal)?.id || principal.id;
         }
@@ -391,13 +418,6 @@ export class PedidosInterSedeComponent implements OnInit {
     });
   }
 
-  onTipoDestinoChange() {
-    if (this.tipoDestino === 'GASTO_INTERNO_LABORATORIO') {
-      this.newPedido.observaciones = 'Despacho directo para consumo interno de Laboratorio (Gasto operativo).';
-    } else {
-      this.newPedido.observaciones = '';
-    }
-  }
 
   addLinea() {
     if (!this.selectedInsumoId || this.selectedCantidad <= 0) return;

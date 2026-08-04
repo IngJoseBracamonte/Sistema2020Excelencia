@@ -44,6 +44,10 @@ export class InventoryService {
     return this.http.get<any[]>(`${this.apiUrl}/stock-sede/${sedeId}`);
   }
 
+  getStockConsolidado(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/stock-consolidado`);
+  }
+
   createInsumo(dto: CreateInsumo): Observable<Insumo> {
     return this.http.post<Insumo>(`${this.apiUrl}/insumos`, dto);
   }
@@ -97,6 +101,15 @@ export class InventoryService {
 
   getMovements(): Observable<MovimientoInsumo[]> {
     return this.http.get<MovimientoInsumo[]>(`${this.apiUrl}/movimientos`);
+  }
+
+  getKardex(sedeId?: string, insumoId?: string, fechaDesde?: string, fechaHasta?: string): Observable<any> {
+    let params: any = {};
+    if (sedeId && sedeId !== 'TODAS') params.sedeId = sedeId;
+    if (insumoId && insumoId !== 'TODOS') params.insumoId = insumoId;
+    if (fechaDesde) params.fechaDesde = fechaDesde;
+    if (fechaHasta) params.fechaHasta = fechaHasta;
+    return this.http.get<any>(`${this.apiUrl}/kardex`, { params });
   }
 
   performClosing(dto: PerformClosing): Observable<any> {

@@ -35,6 +35,20 @@
     </div>
   </div>
 
+  <!-- Navegación por Pestañas: Pendientes vs Historial -->
+  <div class="flex items-center gap-2 border-b border-white/5 pb-2">
+    <button (click)="activeTab.set('pendientes')"
+      class="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+      [ngClass]="activeTab() === 'pendientes' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-surface-card/60 text-slate-400 border border-white/5 hover:text-white'">
+      ⏳ Pendientes por Aprobar ({{ filteredPedidos().length }})
+    </button>
+    <button (click)="activeTab.set('historial')"
+      class="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+      [ngClass]="activeTab() === 'historial' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-surface-card/60 text-slate-400 border border-white/5 hover:text-white'">
+      📜 Historial de Solicitudes ({{ filteredHistorial().length }})
+    </button>
+  </div>
+
   <!-- Barra de Filtro -->
   <div class="bg-surface-card/60 backdrop-blur-2xl border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-4">
     <div class="relative flex-1">
@@ -44,7 +58,7 @@
         type="text" 
         [ngModel]="searchQuery()" 
         (ngModelChange)="searchQuery.set($event)"
-        placeholder="Filtrar por correlativo, sede solicitante o insumo..."
+        placeholder="Filtrar por correlativo, sede solicitante, estado o insumo..."
         class="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 transition-all"
       />
       <div class="absolute inset-y-0 right-2 my-auto flex items-center">
@@ -58,15 +72,15 @@
       </div>
     </div>
     <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-      Pendientes: {{ filteredPedidos().length }}
+      Resultados: {{ activeTab() === 'pendientes' ? filteredPedidos().length : filteredHistorial().length }}
     </span>
   </div>
 
-  <!-- Lista de Pedidos Pendientes -->
-  <div class="space-y-4">
+  <!-- Vista 1: Lista de Pedidos Pendientes -->
+  <div *ngIf="activeTab() === 'pendientes'" class="space-y-4">
     <div *ngFor="let ped of filteredPedidos()" class="bg-surface-card/60 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 space-y-4 shadow-xl hover:border-amber-500/20 transition-all">
       
-      <!-- Encabezado de la Tarjeta del Pedido (Oculta Sede Proveedora) -->
+      <!-- Encabezado de la Tarjeta del Pedido -->
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
         <div class="flex items-center gap-3">
           <span class="text-xs font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-xl">
@@ -136,7 +150,7 @@
             </div>
           </div>
 
-          <!-- Caja de Observación de Despacho (Regla Estricta: Obligatoria si CantidadAEnviar < CantidadSolicitada) -->
+          <!-- Caja de Observación de Despacho -->
           <div class="pt-2 border-t border-white/5">
             <div class="flex justify-between items-center mb-1">
               <label class="text-[10px] font-black uppercase tracking-wider flex items-center gap-1"
@@ -185,6 +199,79 @@
       No hay solicitudes de despacho pendientes en la bandeja.
     </div>
   </div>
+
+  <!-- Vista 2: Historial de Solicitudes Procesadas (Audit Table) -->
+  <div *ngIf="activeTab() === 'historial'" class="space-y-4">
+    <div *ngFor="let ped of filteredHistorial()" class="bg-surface-card/60 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 space-y-4 shadow-xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-xl">
+            {{ ped.correlativo }}
+          </span>
+          <div class="flex items-center gap-2 text-xs font-bold text-white">
+            <lucide-icon [name]="icons.Building" class="w-4 h-4 text-slate-400"></lucide-icon>
+            <span>Área Solicitante: <strong class="text-indigo-300">{{ ped.sedeSolicitanteNombre }}</strong></span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
+            [ngClass]="{
+              'bg-amber-500/10 text-amber-400 border-amber-500/20': ped.estado === 'Solicitado',
+              'bg-blue-500/10 text-blue-400 border-blue-500/20': ped.estado === 'Despachado',
+              'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': ped.estado === 'Recibido',
+              'bg-rose-500/10 text-rose-400 border-rose-500/20': ped.estado === 'Rechazado' || ped.estado === 'Cancelado'
+            }">
+            {{ ped.estado }}
+          </span>
+          <span class="text-[10px] font-bold text-slate-500">
+            Creado: {{ ped.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Observación auditoría -->
+      <div *ngIf="ped.observaciones" class="text-xs italic text-slate-400 bg-black/30 p-3 rounded-xl border border-white/5">
+        💬 Observación: {{ ped.observaciones }}
+      </div>
+
+      <!-- Tabla Comparativa: Cantidad Solicitada vs Cantidad Despachada (Almacén Principal) -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-white/10 text-[9px] uppercase tracking-widest text-slate-400 bg-black/20">
+              <th class="py-2.5 px-3">Código</th>
+              <th class="py-2.5 px-3">Insumo / Material</th>
+              <th class="py-2.5 px-3 text-center">Enviado por Sede (Pedida)</th>
+              <th class="py-2.5 px-3 text-center">Aceptado Almacén Principal (Entregada)</th>
+              <th class="py-2.5 px-3 text-center">Diferencia / Ajuste</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let det of ped.detalles" class="hover:bg-white/5 transition-all">
+              <td class="py-2.5 px-3 font-mono text-slate-400">{{ det.insumoCodigo }}</td>
+              <td class="py-2.5 px-3 font-bold text-white">{{ det.insumoNombre }}</td>
+              <td class="py-2.5 px-3 text-center font-black text-amber-400 bg-amber-500/5">{{ det.cantidadSolicitada }}</td>
+              <td class="py-2.5 px-3 text-center font-black text-emerald-400 bg-emerald-500/5">{{ det.cantidadDespachada }}</td>
+              <td class="py-2.5 px-3 text-center">
+                <span *ngIf="det.cantidadDespachada === det.cantidadSolicitada" class="text-[10px] font-bold text-slate-500">
+                  Completo (0)
+                </span>
+                <span *ngIf="det.cantidadDespachada < det.cantidadSolicitada" class="text-[10px] font-black text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">
+                  -{{ det.cantidadSolicitada - det.cantidadDespachada }} (Ajustado)
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div *ngIf="filteredHistorial().length === 0" class="text-center py-16 text-slate-500 font-bold text-xs uppercase tracking-widest bg-surface-card/30 border border-white/5 rounded-3xl">
+      No hay solicitudes en el historial.
+    </div>
+  </div>
+
 
   <!-- Modal Rechazo (Auxiliar) -->
   <div *ngIf="showRechazoModal()" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">

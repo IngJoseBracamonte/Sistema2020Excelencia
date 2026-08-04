@@ -39,11 +39,22 @@ export class StockMultisedeComponent implements OnInit {
   private inventoryService = inject(InventoryService);
   private multiSedeService = inject(MultiSedeService);
 
+  public activeTab = signal<'stock' | 'kardex'>('stock');
+
   public sedes = signal<Sede[]>([]);
+  public insumosCatalog = signal<any[]>([]);
   public selectedSedeId = signal<string>('TODAS');
   public stockItems = signal<StockSedeItem[]>([]);
   public isLoading = signal<boolean>(false);
   public searchTerm = signal<string>('');
+
+  // Signals para Kárdex con Rango de Fechas
+  public kardexSedeId = signal<string>('TODAS');
+  public kardexInsumoId = signal<string>('TODOS');
+  public kardexFechaDesde = signal<string>(new Date().toISOString().split('T')[0]);
+  public kardexFechaHasta = signal<string>(new Date().toISOString().split('T')[0]);
+  public kardexResult = signal<any | null>(null);
+  public isKardexLoading = signal<boolean>(false);
 
   readonly icons = {
     Package,
@@ -81,6 +92,14 @@ export class StockMultisedeComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarSedes();
+    this.cargarInsumosCatalog();
+  }
+
+  public cargarInsumosCatalog(): void {
+    this.inventoryService.getInsumos(true).subscribe({
+      next: (insumos) => this.insumosCatalog.set(insumos),
+      error: (err) => console.error('Error al cargar insumos:', err)
+    });
   }
 
   public cargarSedes(): void {
@@ -105,18 +124,18 @@ export class StockMultisedeComponent implements OnInit {
     const targetId = this.selectedSedeId();
 
     if (targetId === 'TODAS') {
-      this.inventoryService.getInsumos(true).subscribe({
-        next: (insumos) => {
-          const items: StockSedeItem[] = insumos.map(i => ({
-            insumoId: i.id,
+      this.inventoryService.getStockConsolidado().subscribe({
+        next: (items) => {
+          const mapped: StockSedeItem[] = items.map(i => ({
+            insumoId: i.insumoId || i.id,
             codigo: i.codigo,
             nombre: i.nombre,
             unidadMedidaBase: i.unidadMedidaBase,
             stockActual: i.stockActual,
-            stockMinimo: 5,
+            stockMinimo: i.stockMinimo || 5,
             sedeNombre: 'Consolidado Global'
           }));
-          this.stockItems.set(items);
+          this.stockItems.set(mapped);
           this.isLoading.set(false);
         },
         error: () => this.isLoading.set(false)
@@ -137,7 +156,34 @@ export class StockMultisedeComponent implements OnInit {
     }
   }
 
+  public cargarKardex(): void {
+    this.isKardexLoading.set(true);
+    this.inventoryService.getKardex(
+      this.kardexSedeId(),
+      this.kardexInsumoId(),
+      this.kardexFechaDesde(),
+      this.kardexFechaHasta()
+    ).subscribe({
+      next: (res: any) => {
+        this.kardexResult.set(res);
+        this.isKardexLoading.set(false);
+      },
+      error: (err: any) => {
+        console.error('Error al cargar Kárdex:', err);
+        this.isKardexLoading.set(false);
+      }
+    });
+  }
+
+  public onTabChange(tab: 'stock' | 'kardex'): void {
+    this.activeTab.set(tab);
+    if (tab === 'kardex' && !this.kardexResult()) {
+      this.cargarKardex();
+    }
+  }
+
   public imprimirReporte(): void {
     window.print();
   }
 }
+

@@ -97,5 +97,16 @@ describe('SidebarComponent', () => {
         
         expect(component.dropdownsOpen()['caja']).toBeTrue();
     });
+
+    it('debe incluir la opción "Sedes & Áreas Clínicas" en el menú de Inventario', () => {
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+        const compiled = fixture.nativeElement as HTMLElement;
+        const link = compiled.querySelector('a[routerLink="/inventario/sedes-areas"]');
+        expect(link).not.toBeNull();
+        expect(link?.textContent).toContain('Sedes & Áreas Clínicas');
+    });
 });
+
 

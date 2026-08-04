@@ -133,6 +133,11 @@ export class MultiSedeService {
     return this.http.get<PedidoInterSede[]>(`${environment.apiUrl}/api/PedidoInterSede/pendientes`);
   }
 
+  getPedidosHistorial(): Observable<PedidoInterSede[]> {
+    return this.http.get<PedidoInterSede[]>(`${environment.apiUrl}/api/PedidoInterSede/historial`);
+  }
+
+
   despacharPedido(id: string, cantidadesAprobadas?: { [key: string]: number }, observacionesPorDetalle?: { [key: string]: string }): Observable<any> {
     const payload = {
       cantidadesAprobadas: cantidadesAprobadas || {},

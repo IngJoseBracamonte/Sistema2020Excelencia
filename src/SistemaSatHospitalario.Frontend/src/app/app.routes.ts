@@ -26,6 +26,7 @@ export const routes: Routes = [
             { path: 'inventario/pedidos', loadComponent: () => import('./features/inventario/pedidos/pedidos-aprobacion.component').then(m => m.PedidosAprobacionComponent) },
             { path: 'inventario/catalogo', loadComponent: () => import('./features/inventario/catalogo/catalogo.component').then(m => m.CatalogoComponent) },
             { path: 'inventario/descarte', loadComponent: () => import('./features/inventario/descarte/descarte.component').then(m => m.DescarteComponent) },
+            { path: 'inventario/sedes-areas', loadComponent: () => import('./features/admin/inventory/sede-management.component').then(m => m.SedeManagementComponent) },
 
             // Rutas administrativas / clínicas
             { path: 'rx-orders', loadComponent: () => import('./features/rx-orders/rx-orders.component').then(m => m.RxOrdersComponent) },
@@ -46,6 +47,7 @@ export const routes: Routes = [
             { path: 'admin/inventory', redirectTo: 'inventario/compras', pathMatch: 'full' },
             { path: 'admin/inventory/pedidos', redirectTo: 'inventario/pedidos', pathMatch: 'full' },
             { path: 'admin/inventory/compras', redirectTo: 'inventario/compras', pathMatch: 'full' },
+            { path: 'admin/inventory/sedes-management', redirectTo: 'inventario/sedes-areas', pathMatch: 'full' },
 
             { path: 'admin/analytics', loadComponent: () => import('./features/admin/analytics/admin-analytics.component').then(m => m.AdminAnalyticsComponent) },
             { path: 'admin/reportes/honorarios', loadComponent: () => import('./features/admin/medicos/components/honoraria-report/honoraria-report.component').then(m => m.HonorariaReportComponent) },

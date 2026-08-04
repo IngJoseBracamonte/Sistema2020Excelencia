@@ -156,6 +156,29 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             return Ok(stocks);
         }
 
+        [HttpGet("stock-consolidado")]
+        public async Task<IActionResult> GetStockConsolidado(CancellationToken ct)
+        {
+            var insumos = await _context.Insumos
+                .Include(i => i.StocksPorSede)
+                .Where(i => !i.IsDeleted)
+                .Select(i => new
+                {
+                    InsumoId = i.Id,
+                    Codigo = i.Codigo,
+                    Nombre = i.Nombre,
+                    UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
+                    StockActual = i.StocksPorSede.Any() ? i.StocksPorSede.Sum(s => s.StockActual) : i.StockActual,
+                    StockMinimo = 5,
+                    SedeNombre = "Consolidado Global"
+                })
+                .OrderBy(i => i.Nombre)
+                .ToListAsync(ct);
+
+            return Ok(insumos);
+        }
+
+
         [HttpPost("insumos")]
         public async Task<IActionResult> CreateInsumo([FromBody] CreateInsumoDto dto, CancellationToken ct)
         {

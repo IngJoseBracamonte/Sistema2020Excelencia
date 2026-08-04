@@ -39,6 +39,26 @@
         </div>
     </div>
 
+    <!-- PESTAÑAS DE NAVEGACIÓN: EXISTENCIAS VS KÁRDEX -->
+    <div class="flex items-center gap-2 border-b border-white/5 pb-2">
+        <button (click)="onTabChange('stock')"
+                class="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+                [ngClass]="activeTab() === 'stock' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-surface-card/60 text-slate-400 border border-white/5 hover:text-white'">
+            <lucide-icon [name]="icons.Package" class="w-4 h-4"></lucide-icon>
+            <span>Existencias por Sede</span>
+        </button>
+        <button (click)="onTabChange('kardex')"
+                class="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+                [ngClass]="activeTab() === 'kardex' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-surface-card/60 text-slate-400 border border-white/5 hover:text-white'">
+            <lucide-icon [name]="icons.Layers" class="w-4 h-4"></lucide-icon>
+            <span>Kárdex de Movimientos Diario</span>
+        </button>
+    </div>
+
+    <!-- VISTA 1: EXISTENCIAS POR SEDE -->
+    <ng-container *ngIf="activeTab() === 'stock'">
+
+
     <!-- TARJETAS DE RESUMEN DE EXISTENCIAS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total Insumos -->
@@ -160,4 +180,151 @@
             </table>
         </div>
     </div>
+    </ng-container>
+
+    <!-- VISTA 2: KÁRDEX DE MOVIMIENTOS DIARIO Y POR FECHAS -->
+    <ng-container *ngIf="activeTab() === 'kardex'">
+        <!-- PANEL DE FILTROS KÁRDEX -->
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
+            <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl">
+                        <lucide-icon [name]="icons.Filter" class="w-5 h-5"></lucide-icon>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-black uppercase text-white tracking-wider">Filtros de Consulta Kárdex</h2>
+                        <p class="text-[10px] text-slate-400">Seleccione la sede, el insumo/medicamento y el periodo a auditar</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Selector de Sede -->
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Sede / Área Clínica</label>
+                    <select [ngModel]="kardexSedeId()" (ngModelChange)="kardexSedeId.set($event)"
+                            class="w-full mt-1 bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500/50 cursor-pointer">
+                        <option value="TODAS" class="bg-slate-900 text-white font-bold">🌐 Todas las Sedes</option>
+                        <option *ngFor="let s of sedes()" [value]="s.id" class="bg-slate-900 text-white font-bold">
+                            {{ s.esPrincipal ? '🏢 ' : '📍 ' }}{{ s.nombre }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Selector de Insumo -->
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Insumo / Medicamento</label>
+                    <select [ngModel]="kardexInsumoId()" (ngModelChange)="kardexInsumoId.set($event)"
+                            class="w-full mt-1 bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500/50 cursor-pointer truncate">
+                        <option value="TODOS" class="bg-slate-900 text-white font-bold">📦 Todos los Insumos</option>
+                        <option *ngFor="let ins of insumosCatalog()" [value]="ins.id" class="bg-slate-900 text-white font-bold">
+                            {{ ins.codigo }} - {{ ins.nombre }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Fecha Desde -->
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Fecha Desde</label>
+                    <input type="date" [ngModel]="kardexFechaDesde()" (ngModelChange)="kardexFechaDesde.set($event)"
+                           class="w-full mt-1 bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500/50" />
+                </div>
+
+                <!-- Fecha Hasta -->
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Fecha Hasta</label>
+                    <div class="flex items-center gap-2 mt-1">
+                        <input type="date" [ngModel]="kardexFechaHasta()" (ngModelChange)="kardexFechaHasta.set($event)"
+                               class="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500/50" />
+                        <button (click)="cargarKardex()" [disabled]="isKardexLoading()"
+                                class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/30 shrink-0 cursor-pointer">
+                            🔍 Consultar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TARJETAS DE RESUMEN DE KÁRDEX -->
+        <div *ngIf="kardexResult()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+            <!-- Balance Inicial -->
+            <div class="glass-card p-4 rounded-2xl border border-white/5">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Balance Inicial</p>
+                <h3 class="text-2xl font-black text-white mt-1">{{ kardexResult().initialBalance }}</h3>
+            </div>
+
+            <!-- Total Entradas -->
+            <div class="glass-card p-4 rounded-2xl border border-white/5">
+                <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">📥 Total Entradas (+)</p>
+                <h3 class="text-2xl font-black text-emerald-400 mt-1">+{{ kardexResult().totalEntradas }}</h3>
+            </div>
+
+            <!-- Total Salidas -->
+            <div class="glass-card p-4 rounded-2xl border border-white/5">
+                <p class="text-[9px] font-black text-rose-400 uppercase tracking-widest">📤 Total Salidas / Consumos (-)</p>
+                <h3 class="text-2xl font-black text-rose-400 mt-1">-{{ kardexResult().totalSalidas }}</h3>
+            </div>
+
+            <!-- Balance Final -->
+            <div class="glass-card p-4 rounded-2xl border border-white/5">
+                <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">📦 Balance Final</p>
+                <h3 class="text-2xl font-black text-indigo-400 mt-1">{{ kardexResult().finalBalance }}</h3>
+            </div>
+        </div>
+
+        <!-- TABLA DETALLADA DE MOVIMIENTOS KÁRDEX -->
+        <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
+            <h3 class="text-xs font-black uppercase text-white tracking-widest flex items-center gap-2">
+                <lucide-icon [name]="icons.Layers" class="w-4 h-4 text-emerald-400"></lucide-icon>
+                <span>Bitácora de Movimientos Registrados</span>
+            </h3>
+
+            <div class="overflow-x-auto rounded-2xl border border-white/5 bg-black/20 custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5 bg-white/[0.02] text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <th class="p-4">Fecha / Hora</th>
+                            <th class="p-4">Sede / Área</th>
+                            <th class="p-4">Insumo / Material</th>
+                            <th class="p-4">Tipo Movimiento</th>
+                            <th class="p-4 text-right">Cantidad</th>
+                            <th class="p-4">Motivo / Detalle</th>
+                            <th class="p-4">Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5 text-xs text-slate-300">
+                        <tr *ngFor="let m of kardexResult()?.movimientos" class="hover:bg-white/[0.02] transition-colors">
+                            <td class="p-4 text-slate-400 font-bold whitespace-nowrap">{{ m.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                            <td class="p-4 font-bold text-indigo-300">{{ m.sedeNombre }}</td>
+                            <td class="p-4">
+                                <div class="font-bold text-white max-w-xs truncate">{{ m.insumoNombre }}</div>
+                                <div class="text-[9px] font-mono text-slate-500">{{ m.insumoCodigo }}</div>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border"
+                                      [ngClass]="{
+                                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': m.cantidadBase > 0,
+                                          'bg-rose-500/10 text-rose-400 border-rose-500/20': m.cantidadBase < 0
+                                      }">
+                                    {{ m.tipoMovimiento }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right font-black text-sm"
+                                [ngClass]="m.cantidadBase > 0 ? 'text-emerald-400' : 'text-rose-400'">
+                                {{ m.cantidadBase > 0 ? '+' : '' }}{{ m.cantidadBase }} {{ m.unidadMedida }}
+                            </td>
+                            <td class="p-4 text-slate-400 italic text-[11px] max-w-xs truncate">{{ m.motivo }}</td>
+                            <td class="p-4 font-bold text-slate-300">{{ m.usuario }}</td>
+                        </tr>
+                        <tr *ngIf="(!kardexResult() || kardexResult().movimientos.length === 0) && !isKardexLoading()">
+                            <td colspan="7" class="p-8 text-center text-slate-500 font-bold italic">
+                                No se registraron movimientos en el periodo y sede seleccionados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </ng-container>
 </div>
+
