@@ -1098,18 +1098,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedAreasClinicasAsync()
         {
-            _logger.LogInformation("[MIGRATION] Verificando existencia de áreas clínicas y migrando sus IDs a constantes fijas...");
+            _logger.LogInformation("[MIGRATION] Verificando existencia de sub-áreas clínicas y limpiando sedes secundarias...");
 
-            var areasDef = new[]
-            {
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Emergencia,      SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia,      Codigo: "EMERGENCIA",      Nombre: "Área de Emergencia"),
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Hospitalizacion, SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, Codigo: "HOSPITALIZACION", Nombre: "Área de Hospitalización"),
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_UCI,             SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos"),
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Farmacia,        SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "FARMACIA",        Nombre: "Farmacia"),
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.AreaId_Laboratorio,     SedeId: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "LABORATORIO",     Nombre: "Laboratorio")
-            };
-
-            // Senior Maintenance: Limpiar áreas clínicas no fijas o sobrantes de pruebas anteriores
+            // Senior Maintenance: Limpiar sub-áreas clínicas de sedes que NO son la Sede Principal
             try
             {
                 var conn = _context.Database.GetDbConnection();
@@ -1121,9 +1112,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 }
                 using (var cmd = conn.CreateCommand())
                 {
-                    var idsFijos = string.Join(",", areasDef.Select(a => $"'{a.Id}'"));
+                    // Seleccionar áreas clínicas cuya sede no sea Principal
+                    cmd.CommandText = @"
+                        SELECT ac.`Id` FROM `AreasClinicas` ac 
+                        JOIN `Sedes` s ON ac.`SedeId` = s.`Id` 
+                        WHERE s.`EsPrincipal` = 0;";
                     
-                    cmd.CommandText = $"SELECT `Id` FROM `AreasClinicas` WHERE `Id` NOT IN ({idsFijos});";
                     var idsToDelete = new List<string>();
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
@@ -1155,50 +1149,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
                         cmd.CommandText = $"DELETE FROM `AreasClinicas` WHERE `Id` IN ({idsStr});";
                         int deleted = await cmd.ExecuteNonQueryAsync();
-                        _logger.LogInformation($"[MIGRATION] Se eliminaron {deleted} áreas clínicas de prueba/sobrantes.");
+                        _logger.LogInformation($"[MIGRATION] Se eliminaron {deleted} sub-áreas clínicas de sedes secundarias.");
                     }
                 }
                 if (closeConnection) await conn.CloseAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[MIGRATION] Error al intentar limpiar áreas clínicas de prueba.");
-            }
-
-            foreach (var def in areasDef)
-            {
-                var conn = _context.Database.GetDbConnection();
-                bool closeConnection = false;
-                if (conn.State != System.Data.ConnectionState.Open)
-                {
-                    await conn.OpenAsync();
-                    closeConnection = true;
-                }
-
-                Guid? existingId = null;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = $"SELECT `Id` FROM `AreasClinicas` WHERE `Codigo` = '{def.Codigo}' LIMIT 1;";
-                    var val = await cmd.ExecuteScalarAsync();
-                    if (val != null && val != DBNull.Value && val.ToString() is string valStr && !string.IsNullOrEmpty(valStr))
-                    {
-                        existingId = Guid.Parse(valStr);
-                    }
-                }
-                if (closeConnection) await conn.CloseAsync();
-
-                if (existingId == null)
-                {
-                    var newArea = new AreaClinica(def.SedeId, def.Codigo, def.Nombre);
-                    SetAreaClinicaId(newArea, def.Id);
-                    _context.AreasClinicas.Add(newArea);
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation($"[MIGRATION] Área Clínica creada: {def.Codigo} con ID {def.Id}.");
-                }
-                else if (existingId.Value != def.Id)
-                {
-                    await MigrateAreaClinicaIdAsync(existingId.Value, def.Id);
-                }
+                _logger.LogWarning(ex, "[MIGRATION] Error al intentar limpiar sub-áreas clínicas de sedes secundarias.");
             }
         }
 

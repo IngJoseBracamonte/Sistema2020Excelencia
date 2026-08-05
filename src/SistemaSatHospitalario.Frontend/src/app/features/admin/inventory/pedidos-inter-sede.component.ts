@@ -31,11 +31,6 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
           </div>
         </div>
 
-        <div *ngIf="!readOnlyApprovals" class="mt-3 md:mt-0">
-          <span class="px-3.5 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-md">
-            👑 Rol: Supervisor / Admin (Facultad de Aprobación/Ajuste/Rechazo)
-          </span>
-        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">

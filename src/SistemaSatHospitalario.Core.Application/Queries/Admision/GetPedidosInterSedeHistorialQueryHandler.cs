@@ -6,20 +6,19 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
-    public class GetPedidosInterSedePendientesQueryHandler : IRequestHandler<GetPedidosInterSedePendientesQuery, List<PedidoInterSedeDto>>
+    public class GetPedidosInterSedeHistorialQueryHandler : IRequestHandler<GetPedidosInterSedeHistorialQuery, List<PedidoInterSedeDto>>
     {
         private readonly IApplicationDbContext _context;
 
-        public GetPedidosInterSedePendientesQueryHandler(IApplicationDbContext context)
+        public GetPedidosInterSedeHistorialQueryHandler(IApplicationDbContext context)
         {
             _context = context;
         }
 
-        public async Task<List<PedidoInterSedeDto>> Handle(GetPedidosInterSedePendientesQuery request, CancellationToken cancellationToken)
+        public async Task<List<PedidoInterSedeDto>> Handle(GetPedidosInterSedeHistorialQuery request, CancellationToken cancellationToken)
         {
             var query = _context.PedidosInterSede
                 .IgnoreQueryFilters()
@@ -27,7 +26,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(p => p.SedeProveedora)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Insumo)
-                .Where(p => p.Estado == EstadoPedidoInterSede.Solicitado || p.Estado == EstadoPedidoInterSede.Aprobado)
                 .OrderByDescending(p => p.FechaCreacion);
 
             var items = await query.ToListAsync(cancellationToken);

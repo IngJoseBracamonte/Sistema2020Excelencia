@@ -42,6 +42,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(result);
         }
 
+        [HttpGet("historial")]
+        public async Task<IActionResult> GetHistorial()
+        {
+            var result = await _mediator.Send(new GetPedidosInterSedeHistorialQuery());
+            return Ok(result);
+        }
+
         [HttpPut("{id}/despachar")]
         public async Task<IActionResult> Dispatch(Guid id, [FromBody] DespacharPedidoDto? dto = null)
         {

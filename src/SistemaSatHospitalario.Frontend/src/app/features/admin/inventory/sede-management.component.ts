@@ -68,10 +68,10 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
 
             <h3 class="text-lg font-black text-main mt-3 uppercase tracking-tight">{{ sede.nombre }}</h3>
 
-            <!-- Áreas Clínicas de esta Sede -->
-            <div class="mt-4 border-t border-glass-border pt-4">
+            <!-- Áreas Clínicas (Solo para Sede Principal) -->
+            <div *ngIf="sede.esPrincipal" class="mt-4 border-t border-glass-border pt-4">
               <div class="flex justify-between items-center mb-3">
-                <h4 class="text-[10px] font-black uppercase tracking-widest text-muted">Áreas Clínicas</h4>
+                <h4 class="text-[10px] font-black uppercase tracking-widest text-muted">Sub-Áreas Clínicas</h4>
                 <button (click)="openCreateAreaModal(sede.id)"
                   class="text-[10px] font-black uppercase tracking-wider text-primary hover:text-primary/70 transition-colors">
                   + Agregar Área
@@ -90,7 +90,7 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
                 </li>
               </ul>
               <ng-template #noAreas>
-                <p class="text-[11px] text-muted font-bold italic">Sin áreas configuradas en esta sede.</p>
+                <p class="text-[11px] text-muted font-bold italic">Sin sub-áreas configuradas en la sede principal.</p>
               </ng-template>
             </div>
           </div>

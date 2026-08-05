@@ -5799,7 +5799,7 @@ namespace Conexiones.DbConnect
                         ADP = row.Table.Columns.Contains("ADP") ? row["ADP"]?.ToString() ?? string.Empty : string.Empty,
                         PCT = row.Table.Columns.Contains("PCT") ? row["PCT"]?.ToString() ?? string.Empty : string.Empty,
                         Reticulocitos = row.Table.Columns.Contains("Reticulocitos") ? row["Reticulocitos"]?.ToString() ?? string.Empty : string.Empty,
-                        Comentario = row.Table.Columns.Contains("Frotis") ? (row["Frotis"]?.ToString() ?? string.Empty) : (row.Table.Columns.Contains("Comentario") ? (row["Comentario"]?.ToString() ?? string.Empty) : string.Empty)
+                        Comentario = row.Table.Columns.Contains("Frotis") ? row["Frotis"]?.ToString() ?? string.Empty: string.Empty
                     };
                 }
                 return new HematologiaEspecial();

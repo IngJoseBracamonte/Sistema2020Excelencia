@@ -62,18 +62,10 @@ describe('PedidosInterSedeComponent', () => {
     expect(compiled.textContent).not.toContain('TIPO DE DESTINO');
   });
 
-  it('no debe renderizar el badge de rol Supervisor/Admin cuando readOnlyApprovals es true', () => {
-    component.readOnlyApprovals = true;
+  it('no debe renderizar el badge de rol en amarillo', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).not.toContain('👑 Rol: Supervisor / Admin');
-  });
-
-  it('debe mostrar el badge de rol Supervisor/Admin cuando readOnlyApprovals es false', () => {
-    component.readOnlyApprovals = false;
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('👑 Rol: Supervisor / Admin');
   });
 
   it('debe sincronizar la sede solicitante al cambiar areaNombre a UCI', () => {

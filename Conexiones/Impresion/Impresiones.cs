@@ -1353,95 +1353,157 @@ namespace Conexiones.Impresion
                                 Margen = new XRect(YPalabras, PosicionP, 90, 14);
                                 gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.Hematies)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.Hematies ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.Hemoglobina)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.Hemoglobina ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.Hematocritos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.Hematocritos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.VCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.VCM ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.HCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.HCM ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.CHCM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.CHCM ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.ADE))
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.ADE)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.ADE ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 else
                                 {
                                     gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.leucocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                {
+                                    var raw = (hematologiaEspecial.leucocitos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 gfx.DrawString("Resultados", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.Neutrofilos))
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Neutrofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.Neutrofilos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")) + "%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.linfocitos))
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.linfocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.linfocitos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")) + "%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.Monocitos))
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Monocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.Monocitos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")) + "%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.Eosinofilos))
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Eosinofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.Eosinofilos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")) + "%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.Basofilos))
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}%", Convert.ToDecimal(hematologiaEspecial.Basofilos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.Basofilos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")) + "%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
                                 if (!string.IsNullOrEmpty(hematologiaEspecial.Plaquetas))
                                 {
-                                    gfx.DrawString(Convert.ToDecimal(hematologiaEspecial.Plaquetas).ToString("#,##0", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.Plaquetas ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                if (!string.IsNullOrEmpty(hematologiaEspecial.VPM))
+
+                                //Convirtiendo el valor de VPM a decimal para evitar errores de formato
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.VPM)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.VPM ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
-                                else
+
+
+
+                                Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                                //Convirtiendo el valor de ADP a decimal para evitar errores de formato
                                 {
-                                    gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.ADP ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                }
+                                //Convirtiendo el valor de PCT a decimal para evitar errores de formato
+                                {
+                                    var raw = (hematologiaEspecial.PCT ?? "").Trim().Replace(',', '.');
+                                    if (!string.IsNullOrEmpty(raw)) Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                if (!string.IsNullOrEmpty(hematologiaEspecial.ADP))
+                                //Convirtiendo el valor de Reticulocitos a decimal para evitar errores de formato   
                                 {
-                                    gfx.DrawString(string.Format("{0:0.0}", Convert.ToDecimal(hematologiaEspecial.ADP)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                                }
-                                else
-                                {
-                                    gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                                }
-                                Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                if (!string.IsNullOrEmpty(hematologiaEspecial.PCT))
-                                {
-                                    gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.PCT)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                                }
-                                else
-                                {
-                                    gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                                }
-                                Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 90, 14);
-                                if (!string.IsNullOrEmpty(hematologiaEspecial.Reticulocitos))
-                                {
-                                    gfx.DrawString(string.Format("{0:0.00}", Convert.ToDecimal(hematologiaEspecial.Reticulocitos)), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
-                                }
-                                else
-                                {
-                                    gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    var raw = (hematologiaEspecial.Reticulocitos ?? "").Trim().Replace(',', '.');
+                                    if (decimal.TryParse(raw, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                                        gfx.DrawString(val.ToString("#,##0.00", System.Globalization.CultureInfo.CreateSpecificCulture("es-ES")), fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                    else
+                                        gfx.DrawString("", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 }
 
                                 PosicionP = 110;
@@ -1494,41 +1556,41 @@ namespace Conexiones.Impresion
                                 Margen = new XRect(YPalabras, PosicionP, 260, 14);
                                 gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("3.50-5.20", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("3.50 - 5.20", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("H: 12,5-16,5 M: 11,5-15,5 N: 10,0-14,0 RN: 15,0-23,0 E: 9,0-13,0", fontSmallValoresEsp, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("H: 12,5 - 16,5 M: 11,5 - 15,5 N: 10,0 - 14,0 RN: 15,0 - 23,0 E: 9,0 - 13,0", fontSmallValoresEsp, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("H: 40,0-50,0 M: 37,0-47,0 N: 33,0-43,0 RN: 44,0-64,0 E: 34,0-44,0", fontSmallValoresEsp, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("H: 40,0 - 50,0 M: 37,0 - 47,0 N: 33,0 - 43,0 RN: 44,0 - 64,0 E: 34,0 - 44,0", fontSmallValoresEsp, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("80.0-100.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("80.0 - 100.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("27.0-34.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("27.0 - 34.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("32.0-36.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("32.0 - 36.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("11.0-16.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("11.0 - 16.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("A: 4.50-11.00 N: 4.50-13.50 RN: 5.50-18.00", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("A: 4.50 - 11.00 N: 4.50 - 13.50 RN: 5.50 - 18.00", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
                                 gfx.DrawString("Valores Normales", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("55-65%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("55 - 65%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("35-45%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("35 - 45%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("04-08%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("04 - 08%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("02-04%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("02 - 04%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
                                 gfx.DrawString("<01%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("150-450 x10^3/uL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("150 - 450 x10^3/uL", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("6.5-12.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("6.5 - 12.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("9.0-17.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("9.0 - 17.0", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
-                                gfx.DrawString("0.100-0.400", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
+                                gfx.DrawString("0.100 - 0.400", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
                                 Margen = new XRect(YPalabras, PosicionP = PosicionP + 15, 260, 14);
                                 gfx.DrawString("0.5 – 2.5%", fontRegular, XBrushes.Black, Margen, XStringFormats.Center);
 
