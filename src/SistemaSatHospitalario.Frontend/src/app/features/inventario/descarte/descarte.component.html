@@ -45,6 +45,17 @@
         Registrar Baja de Stock
       </h2>
 
+      <!-- Área / Sede Origen del Descarte -->
+      <div class="space-y-1">
+        <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Área / Sede Origen del Descarte</label>
+        <select 
+          [ngModel]="selectedSedeId()"
+          (ngModelChange)="selectedSedeId.set($event)"
+          class="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white uppercase outline-none focus:border-rose-500/50 transition-all">
+          <option *ngFor="let s of sedes()" [value]="s.id">{{ s.nombre | uppercase }}</option>
+        </select>
+      </div>
+
       <!-- Autocompletado Insumo -->
       <div class="relative space-y-1">
         <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Seleccionar Insumo</label>

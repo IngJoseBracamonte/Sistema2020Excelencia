@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
@@ -37,6 +38,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var query = _context.Insumos
                 .Include(i => i.PrincipiosActivos)
                     .ThenInclude(pa => pa.PrincipioActivo)
+                .Include(i => i.StocksPorSede)
                 .AsQueryable();
 
             if (excludeHidden == true)
@@ -61,7 +63,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     i.Id,
                     i.Codigo,
                     i.Nombre,
-                    i.StockActual,
+                    StockActual = i.StocksPorSede.Where(s => s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal).Select(s => (decimal?)s.StockActual).FirstOrDefault() 
+                                  ?? i.StocksPorSede.Select(s => (decimal?)s.StockActual).Sum() 
+                                  ?? 0,
                     UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
                     i.CostoUnitarioBaseUSD,
                     i.PermiteFraccionamiento,
@@ -87,16 +91,22 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var insumo = await _context.Insumos
                 .Include(i => i.PrincipiosActivos)
                     .ThenInclude(pa => pa.PrincipioActivo)
+                .Include(i => i.StocksPorSede)
                 .FirstOrDefaultAsync(i => i.Id == id, ct);
 
             if (insumo == null) return NotFound();
+
+            var stockPrincipal = insumo.StocksPorSede
+                .Where(s => s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal)
+                .Select(s => (decimal?)s.StockActual)
+                .FirstOrDefault() ?? insumo.StocksPorSede.Select(s => (decimal?)s.StockActual).Sum() ?? 0;
 
             return Ok(new
             {
                 insumo.Id,
                 insumo.Codigo,
                 insumo.Nombre,
-                insumo.StockActual,
+                StockActual = stockPrincipal,
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
@@ -178,6 +188,24 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             return Ok(insumos);
         }
 
+        [HttpGet("kardex")]
+        public async Task<IActionResult> GetKardex(
+            [FromQuery] Guid? sedeId,
+            [FromQuery] Guid? insumoId,
+            [FromQuery] DateTime? fechaDesde,
+            [FromQuery] DateTime? fechaHasta,
+            CancellationToken ct)
+        {
+            var query = new GetKardexQuery
+            {
+                SedeId = sedeId,
+                InsumoId = insumoId,
+                FechaDesde = fechaDesde,
+                FechaHasta = fechaHasta
+            };
+            var result = await _mediator.Send(query, ct);
+            return Ok(result);
+        }
 
         [HttpPost("insumos")]
         public async Task<IActionResult> CreateInsumo([FromBody] CreateInsumoDto dto, CancellationToken ct)
@@ -314,6 +342,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 var command = new RegistrarDescarteCommand
                 {
                     InsumoId = dto.InsumoId,
+                    SedeId = dto.SedeId,
                     Cantidad = dto.Cantidad,
                     Motivo = dto.Motivo,
                     Usuario = User.Identity?.Name ?? "System"
@@ -480,6 +509,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     public class RegistrarDescarteRequestDto
     {
         public Guid InsumoId { get; set; }
+        public Guid? SedeId { get; set; }
         public decimal Cantidad { get; set; }
         public string Motivo { get; set; } = string.Empty;
     }

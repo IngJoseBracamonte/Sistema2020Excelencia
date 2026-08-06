@@ -14,6 +14,8 @@ import {
   FileText
 } from 'lucide-angular';
 
+import { MultiSedeService, Sede } from '../../../core/services/multi-sede.service';
+
 @Component({
   selector: 'app-descarte',
   standalone: true,
@@ -22,11 +24,14 @@ import {
 })
 export class DescarteComponent implements OnInit {
   private inventoryService = inject(InventoryService);
+  public multiSedeService = inject(MultiSedeService);
 
   @ViewChild('descarteSearchInput') descarteSearchInput!: ElementRef<HTMLInputElement>;
 
   public insumos = signal<Insumo[]>([]);
   public descartesHistory = signal<MovimientoInsumo[]>([]);
+  public sedes = signal<Sede[]>([]);
+  public selectedSedeId = signal<string>('10000000-0000-0000-0000-000000000001'); // Almacén Principal por defecto
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
 
@@ -71,6 +76,9 @@ export class DescarteComponent implements OnInit {
   };
 
   ngOnInit() {
+    this.multiSedeService.getSedes().subscribe({
+      next: (res) => this.sedes.set(res)
+    });
     this.loadData();
   }
 
@@ -151,6 +159,7 @@ export class DescarteComponent implements OnInit {
 
     const dto: DescarteRequest = {
       insumoId: item.id,
+      sedeId: this.selectedSedeId(),
       cantidad: cant,
       motivo: motivo
     };

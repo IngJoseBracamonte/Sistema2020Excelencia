@@ -601,18 +601,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear las tablas de PrincipiosActivos y columnas de soft delete en Insumos.");
                 }
 
-                _logger.LogInformation("Poblando System Database con datos de prueba...");
+                _logger.LogInformation("Ejecutando limpieza de datos de prueba e inicializando System Database limpia...");
+
+                // Purga completa de data transaccional y de pruebas previa para pruebas manuales limpias
+                await PurgeAllTestDataAsync();
 
                 await SeedEspecialidadesAsync();
                 await SeedServiciosClinicosAsync();
                 await SeedMedicosAsync();
                 await SeedServiciosSugerenciasAsync();
                 await SeedHonorariosMedicosServiciosAsync();
-                await SeedPacientesAsync();
-                await SeedCajaDiariaAsync();
                 await SeedConfiguracionAsync();
                 await SeedTasaCambioAsync();
-                await SeedConveniosAsync();
                 
                 // Senior Maintenance Pattern: Asegurar integridad de fechas de recaudación
                 await FixOrphanPaymentDatesAsync();
@@ -620,9 +620,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedMetodosPagoAsync();
                 await SeedInventorySedesAndMigrateStockAsync();
                 await SeedAreasClinicasAsync();
-                await SeedInsumosYRecetasTestAsync();
  
-                _logger.LogInformation("System Database Inicializada Correctamente.");
+                _logger.LogInformation("System Database Inicializada Correctamente (Limpia para Pruebas Manuales).");
             }
             catch (Exception ex)
             {
@@ -631,22 +630,111 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
         }
 
+        private async Task PurgeAllTestDataAsync()
+        {
+            _logger.LogInformation("[PURGE] Ejecutando limpieza completa de datos de prueba en la base de datos moderna...");
+
+            try
+            {
+                var conn = _context.Database.GetDbConnection();
+                bool closeConnection = false;
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                    closeConnection = true;
+                }
+
+                bool isSqlite = _context.Database.IsSqlite();
+
+                var tablesToPurge = new[]
+                {
+                    "DetallesPago",
+                    "RecibosFacturas",
+                    "HistorialModificacionCuentas",
+                    "DetallesServicioMedicosResponsables",
+                    "DetallesServicioCuenta",
+                    "ConsumosServiciosRealizados",
+                    "InsumosCirugiasPacientes",
+                    "CirugiaLogs",
+                    "OrdenesCirugia",
+                    "CuentasServicios",
+                    "PedidosInterSedeDetalles",
+                    "PedidosInterSede",
+                    "MovimientosInsumo",
+                    "CierresInventarioDetalles",
+                    "CierresInventario",
+                    "TriagesEnfermeria",
+                    "ValoracionesFisicas",
+                    "CitasMedicas",
+                    "OrdenesImagenes",
+                    "OrdenesDeServicio",
+                    "OrdenesRX",
+                    "CajasDiarias",
+                    "HistorialesLimpiezasCamas",
+                    "PacientesAdmision",
+                    "SegurosConvenios",
+                    "ServiciosInsumoRecetas",
+                    "InsumosPrincipiosActivos",
+                    "PrincipiosActivos",
+                    "StocksSedes",
+                    "Insumos"
+                };
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (!isSqlite)
+                    {
+                        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 0;";
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                    else
+                    {
+                        cmd.CommandText = "PRAGMA foreign_keys = OFF;";
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+
+                    foreach (var table in tablesToPurge)
+                    {
+                        try
+                        {
+                            cmd.CommandText = $"DELETE FROM `{table}`;";
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning($"[PURGE] Aviso al limpiar tabla {table}: {ex.Message}");
+                        }
+                    }
+
+                    if (!isSqlite)
+                    {
+                        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 1;";
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                    else
+                    {
+                        cmd.CommandText = "PRAGMA foreign_keys = ON;";
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                if (closeConnection)
+                {
+                    await conn.CloseAsync();
+                }
+
+                _logger.LogInformation("[PURGE] Limpieza de datos de prueba completada exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[PURGE] Error durante la purga de datos de prueba.");
+            }
+        }
+
         private async Task SeedConveniosAsync()
         {
-            if (await _context.SegurosConvenios.AnyAsync()) return;
-
-            _logger.LogInformation("Sembrando convenios de seguros por defecto...");
-
-            var convenios = new List<SeguroConvenio>
-            {
-                new SeguroConvenio("PDVSA", "RTN-5", "Av. Principal PDVSA", "0212-1234567", "pdvsa@test.com"),
-                new SeguroConvenio("Seguros Caracas", "RTN-CARACAS", "Centro Seguros Caracas", "0212-7654321", "caracas@test.com"),
-                new SeguroConvenio("Mercantil Seguros", "RTN-MERCANTIL", "Torre Mercantil Seguros", "0212-9999999", "mercantil@test.com"),
-                new SeguroConvenio("Sanitas", "RTN-SANITAS", "Las Mercedes", "0212-8888888", "sanitas@test.com")
-            };
-
-            _context.SegurosConvenios.AddRange(convenios);
-            await _context.SaveChangesAsync();
+            // Pruebas manuales: No sembrar convenios automáticos
+            await Task.CompletedTask;
         }
 
         private async Task SeedServiciosClinicosAsync()
@@ -805,53 +893,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedPacientesAsync()
         {
-            if (!await _context.PacientesAdmision.AnyAsync())
-            {
-                _logger.LogInformation("Sincronizando pacientes desde Sistema Legacy (Concatenación V11.6)...");
-                
-                try 
-                {
-                    // Obtener una muestra de pacientes recientes del legacy para poblar el baseline
-                    var legacyPatients = await _legacyRepository.SearchPatientsLimitedAsync("A", default); // Buscar genérica para traer iniciales
-                    
-                    if (legacyPatients != null && legacyPatients.Any())
-                    {
-                        foreach (var lp in legacyPatients.Take(100)) // Limitamos a 100 para el seed inicial
-                        {
-                            var fullName = $"{lp.Nombre} {lp.Apellidos}".Trim();
-                            var mainPhone = !string.IsNullOrEmpty(lp.Celular) ? lp.Celular : lp.Telefono;
-                            
-                            var nativePatient = new PacienteAdmision(lp.Cedula, fullName, mainPhone ?? "", lp.IdPersona);
-                            _context.PacientesAdmision.Add(nativePatient);
-                        }
-                        
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation("Sincronización inicial completada con éxito.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "No se pudo completar la sincronización legacy durante el seed. Se usarán datos estáticos de respaldo.");
-                    
-                    _context.PacientesAdmision.AddRange(
-                        new PacienteAdmision("0999999999", "John Doe (Backup)", "0987654321", 1),
-                        new PacienteAdmision("0888888888", "Jane Smith (Backup)", "0912345678", 2)
-                    );
-                    await _context.SaveChangesAsync();
-                }
-            }
+            // Pruebas manuales: No cargar pacientes de prueba automáticamente
+            await Task.CompletedTask;
         }
 
         private async Task SeedCajaDiariaAsync()
         {
-            // Evitar duplicar cajas si el sistema se reinicia (Check por NombreUsuario 'admin')
-            if (!await _context.CajasDiarias.AnyAsync(c => c.NombreUsuario == "admin"))
-            {
-                _context.CajasDiarias.Add(
-                    new CajaDiaria(50.00m, 1500.00m, "1", "admin")
-                );
-                await _context.SaveChangesAsync();
-            }
+            // Pruebas manuales: No abrir cajas de prueba automáticamente
+            await Task.CompletedTask;
         }
 
         private async Task SeedConfiguracionAsync()
@@ -1298,81 +1347,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedInsumosYRecetasTestAsync()
         {
-            _logger.LogInformation("Sembrando Catálogo Extendido de Medicamentos e Insumos con Múltiples Unidades de Medida...");
-
-            var med01 = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Codigo == "MED-01");
-
-            // Definición de catálogo realista con diferentes unidades de medida
-            var catalogoReal = new List<(string Codigo, string Nombre, UnidadMedida Unidad, decimal Costo, bool Fraccionable, string Categoria, string PA, string Concentracion)>
-            {
-                ("INS-01", "Ibuprofeno 600mg (Medicamento)", UnidadMedida.UNIDAD, 1.50m, false, "Medicamento", "Ibuprofeno", "600mg"),
-                ("INS-02", "Dexametasona 4mg/2ml (Ampolla 2ml)", UnidadMedida.ML, 2.80m, true, "Medicamento", "Dexametasona", "4mg/2ml"),
-                ("INS-03", "Omeprazol 40mg (Vial Liofilizado)", UnidadMedida.UNIDAD, 4.50m, false, "Medicamento", "Omeprazol", "40mg"),
-                ("INS-04", "Salbutamol Jarabe 2mg/5ml (Frasco 120ml)", UnidadMedida.ML, 3.20m, true, "Medicamento", "Salbutamol", "2mg/5ml"),
-                ("INS-05", "Sulfadiazina de Plata 1% (Tubo 30g)", UnidadMedida.G, 5.10m, true, "Medicamento", "Sulfadiazina de Plata", "1%"),
-                ("INS-06", "Solución Fisiológica 0.9% (Bolsa 500ml)", UnidadMedida.ML, 1.80m, false, "Material Medico", "Cloruro de Sodio", "0.9%"),
-                ("INS-07", "Losartán Potásico 50mg (Comprimidos)", UnidadMedida.UNIDAD, 0.75m, false, "Medicamento", "Losartán Potásico", "50mg"),
-                ("INS-08", "Guantes Quirúrgicos Estériles Talla 7.5 (Caja)", UnidadMedida.UNIDAD, 12.00m, false, "Material Medico", "Látex", "7.5")
-            };
-
-            foreach (var item in catalogoReal)
-            {
-                var insumo = await _context.Insumos.Include(i => i.PrincipiosActivos).FirstOrDefaultAsync(i => i.Codigo == item.Codigo);
-                if (insumo == null)
-                {
-                    insumo = new Insumo(item.Codigo, item.Nombre, 100.00m, item.Unidad, item.Costo, item.Fraccionable, item.Categoria);
-                    _context.Insumos.Add(insumo);
-                    await _context.SaveChangesAsync();
-                }
-
-                // Crear y vincular Principio Activo si aplica
-                if (!string.IsNullOrEmpty(item.PA))
-                {
-                    var pa = await _context.PrincipiosActivos.FirstOrDefaultAsync(p => p.Nombre == item.PA);
-                    if (pa == null)
-                    {
-                        pa = new PrincipioActivo(item.PA);
-                        _context.PrincipiosActivos.Add(pa);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    if (!insumo.PrincipiosActivos.Any(r => r.PrincipioActivoId == pa.Id))
-                    {
-                        insumo.AgregarPrincipioActivo(pa, item.Concentracion);
-                        await _context.SaveChangesAsync();
-                    }
-                }
-
-                // Asegurar Stock Sede Principal (Almacén Central)
-                var stockPrincipal = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal);
-                if (stockPrincipal == null)
-                {
-                    _context.StocksSedes.Add(new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, 250.00m));
-                }
-                else if (stockPrincipal.StockActual < 20.00m)
-                {
-                    stockPrincipal.EstablecerStockCierre(250.00m);
-                }
-
-                // Asegurar Stock UCI
-                var stockUci = await _context.StocksSedes.FirstOrDefaultAsync(s => s.InsumoId == insumo.Id && s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI);
-                if (stockUci == null)
-                {
-                    _context.StocksSedes.Add(new StockSede(insumo.Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, 20.00m));
-                }
-
-                // Receta para MED-01 si aplica
-                if (med01 != null && item.Codigo == "INS-01")
-                {
-                    var receta = await _context.ServiciosInsumoRecetas.FirstOrDefaultAsync(r => r.ServicioClinicoId == med01.Id && r.InsumoId == insumo.Id);
-                    if (receta == null)
-                    {
-                        _context.ServiciosInsumoRecetas.Add(new ServicioInsumoReceta(med01.Id, med01.Codigo, insumo.Id, 1.00m, item.Unidad));
-                    }
-                }
-            }
-
-            await _context.SaveChangesAsync();
+            // Pruebas manuales: No sembrar insumos ni recetas automáticas
+            await Task.CompletedTask;
         }
     }
 }

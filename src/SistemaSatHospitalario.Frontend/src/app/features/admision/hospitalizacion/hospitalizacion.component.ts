@@ -18,6 +18,9 @@ import {
   X, 
   Check, 
   User, 
+  UserCheck,
+  CreditCard,
+  Printer,
   Eye, 
   ArrowRight,
   RefreshCcw,
@@ -74,6 +77,9 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
     X,
     Check,
     User,
+    UserCheck,
+    CreditCard,
+    Printer,
     Eye,
     ArrowRight,
     RefreshCcw,
@@ -140,12 +146,13 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
       }
     });
 
-    // 2. Cargar Sedes activas
+    // 2. Cargar Sedes activas (excluyendo Almacén Principal)
     this.sedeService.getSedes().subscribe({
       next: (res) => {
-        this.sedes.set(res.filter(s => s.activo));
-        if (res.length > 0) {
-          this.nuevaCama.sedeId = res[0].id;
+        const clinicalSedes = res.filter(s => s.activo && !s.esPrincipal);
+        this.sedes.set(clinicalSedes);
+        if (clinicalSedes.length > 0) {
+          this.nuevaCama.sedeId = clinicalSedes[0].id;
         }
       },
       error: (err) => console.error('[HOSPITALIZACION] Error al cargar sedes:', err)
@@ -173,12 +180,14 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Camas filtradas por sede seleccionada
+  // Camas filtradas por sede seleccionada (excluyendo Almacén Principal)
   public camasFiltradas = computed(() => {
-    const list = this.camas();
+    const list = this.camas().filter(c => !c.esPrincipal && !(c.sedeNombre || '').toLowerCase().includes('principal'));
     const filter = this.selectedSedeFilter().toLowerCase().trim();
     if (!filter) return list;
     return list.filter(c => 
+      (c.nombre || '').toLowerCase().includes(filter) ||
+      (c.codigo || '').toLowerCase().includes(filter) ||
       (c.sedeNombre || '').toLowerCase().includes(filter) || 
       (c.sedeId || '').toLowerCase().includes(filter)
     );
@@ -246,6 +255,22 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
 
   private showSuccess(msg: string) {
     this.actionMessage.set(msg);
+    setTimeout(() => this.actionMessage.set(null), 5000);
+  }
+
+  public abrirModalAbono(cama: any) {
+    if (cama.pacienteCedula) {
+      this.router.navigate(['/admision/cierre-cuenta/Hospitalizacion'], {
+        queryParams: { cedula: cama.pacienteCedula, tab: 'abonos' }
+      });
+    } else {
+      this.errorMessage.set('La cama no tiene un paciente o cédula asociada.');
+      setTimeout(() => this.errorMessage.set(null), 4000);
+    }
+  }
+
+  public imprimirConstanciaAltaVoluntaria() {
+    this.actionMessage.set('En desarrollo: Formato de constancia de Alta Voluntaria pendiente por definir');
     setTimeout(() => this.actionMessage.set(null), 5000);
   }
 }

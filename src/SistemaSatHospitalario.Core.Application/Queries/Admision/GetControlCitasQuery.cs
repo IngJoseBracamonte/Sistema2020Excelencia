@@ -50,8 +50,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var montosCuentas = await _context.DetallesServicioCuenta
                 .Where(d => cuentaIds.Contains(d.CuentaServicioId))
                 .GroupBy(d => d.CuentaServicioId)
-                .Select(g => new { CuentaId = g.Key, Total = g.Sum(x => x.Precio * x.Cantidad) })
-                .ToDictionaryAsync(x => x.CuentaId, x => x.Total, cancellationToken);
+                .Select(g => new { 
+                    CuentaId = g.Key, 
+                    Total = g.Sum(x => x.Precio * x.Cantidad),
+                    Honorario = g.Sum(x => x.Honorario * x.Cantidad)
+                })
+                .ToDictionaryAsync(x => x.CuentaId, x => new { x.Total, x.Honorario }, cancellationToken);
 
             var conveniosMap = await _context.SegurosConvenios
                 .ToDictionaryAsync(s => s.Id, s => s.Nombre, cancellationToken);
@@ -75,7 +79,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     if (paciente.FechaNacimiento.Value.Date > DateTime.Today.AddYears(-edad.Value)) edad--;
                 }
 
-                montosCuentas.TryGetValue(cita.CuentaServicioId, out var monto);
+                decimal montoTotal = 0;
+                decimal montoHonorario = 0;
+                if (montosCuentas.TryGetValue(cita.CuentaServicioId, out var mData))
+                {
+                    montoTotal = mData.Total;
+                    montoHonorario = mData.Honorario > 0 ? mData.Honorario : mData.Total;
+                }
                 
                 string formaPago = "PARTICULAR";
                 if (cita.CuentaServicio?.ConvenioId.HasValue == true && conveniosMap.TryGetValue(cita.CuentaServicio.ConvenioId.Value, out var convenioNombre))
@@ -95,7 +105,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Medico = cita.Medico.Nombre,
                     MedicoTelefono = cita.Medico.Telefono,
                     FormaPago = formaPago,
-                    MontoUSD = monto,
+                    MontoUSD = montoTotal,
+                    MontoHonorario = montoHonorario,
                     Estado = cita.Estado,
                     Observaciones = cita.Comentario ?? "",
                     Turno = turnosContador[cita.MedicoId],

@@ -153,7 +153,8 @@ export class ControlCitasComponent implements OnInit {
 
     citasActivas.forEach((c) => {
       const tipo = c.tipoIngreso || 'Particular';
-      const honorario = `$${c.montoUSD.toFixed(2)}`;
+      const valHonorario = (c.montoHonorario !== undefined && c.montoHonorario > 0) ? c.montoHonorario : c.montoUSD;
+      const honorario = `$${valHonorario.toFixed(2)}`;
       
       // Determinamos habitación/box de forma consistente y determinista
       const seed = c.pacienteCedula.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) || 0;

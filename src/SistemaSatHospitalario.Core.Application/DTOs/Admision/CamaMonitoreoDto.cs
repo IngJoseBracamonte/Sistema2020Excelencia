@@ -17,6 +17,8 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public string? PacienteCedula { get; set; }
         public DateTime? FechaIngreso { get; set; }
         public Guid? CuentaId { get; set; }
+        public Guid? MedicoId { get; set; }
+        public string? MedicoNombre { get; set; }
         public decimal TotalFacturado { get; set; }
         public List<CamaMonitoreoDetalleCargoDto> DetallesCargos { get; set; } = new();
         public List<CamaMonitoreoTriageDto> HistorialTriage { get; set; } = new();

@@ -34,6 +34,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             decimal cantidad,
             string motivo,
             string usuario,
+            Guid? sedeId = null,
             CancellationToken cancellationToken = default);
 
         Task PerformClosingAsync(

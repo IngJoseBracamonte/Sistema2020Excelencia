@@ -292,5 +292,48 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Contains("RECHAZADO por SupervisorAudit: Falta de justificación médica", pedido.Observaciones);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task ReceivePedido_ShouldAddStockToSolicitanteSedeAndSetStateToRecibido()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var loggerMock = new Mock<Microsoft.Extensions.Logging.ILogger<SistemaSatHospitalario.Core.Application.Common.Services.InventoryService>>();
+
+            var insumo = new Insumo("I01", "Insumo 1", 100, UnidadMedida.UNIDAD, 1.50m);
+            var sedeSolicitante = new Sede("S01", "Unidad de Cuidados Intensivos", false);
+            var sedeProveedora = new Sede("S02", "Almacén Principal", true);
+
+            var pedido = new PedidoInterSede("PED-2026-0004", sedeSolicitante.Id, sedeProveedora.Id, "Admin", "Requerido UCI");
+            var detalle = new PedidoInterSedeDetalle(insumo, 5);
+            detalle.SetDespachado(5);
+            pedido.AgregarDetalle(detalle);
+            pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
+
+            var stocksList = new List<StockSede>();
+            var stocksMock = stocksList.BuildMockDbSet<StockSede>();
+
+            var pedidosList = new List<PedidoInterSede> { pedido };
+            var pedidosMock = pedidosList.BuildMockDbSet<PedidoInterSede>();
+
+            var movimientosList = new List<MovimientoInsumo>();
+            var movimientosMock = movimientosList.BuildMockDbSet<MovimientoInsumo>();
+
+            mockContext.Setup(c => c.StocksSedes).Returns(stocksMock.Object);
+            mockContext.Setup(c => c.PedidosInterSede).Returns(pedidosMock.Object);
+            mockContext.Setup(c => c.MovimientosInsumo).Returns(movimientosMock.Object);
+
+            var inventoryService = new SistemaSatHospitalario.Core.Application.Common.Services.InventoryService(mockContext.Object, loggerMock.Object);
+
+            // Act
+            await inventoryService.ReceivePedidoAsync(pedido.Id, "EnfermeraUCI", new Dictionary<Guid, decimal>(), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
+            Assert.Equal(5, detalle.CantidadRecibida);
+            mockContext.Verify(c => c.StocksSedes.Add(It.Is<StockSede>(s => s.SedeId == sedeSolicitante.Id && s.StockActual == 5)), Times.Once);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.SedeId == sedeSolicitante.Id && m.CantidadBase == 5 && m.TipoMovimiento == "TransferenciaEntrada")), Times.Once);
+            mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }

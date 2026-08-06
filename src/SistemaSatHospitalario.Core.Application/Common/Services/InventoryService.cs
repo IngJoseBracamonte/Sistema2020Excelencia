@@ -234,6 +234,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             decimal cantidad,
             string motivo,
             string usuario,
+            Guid? sedeId = null,
             CancellationToken cancellationToken = default)
         {
             if (cantidad <= 0)
@@ -251,21 +252,24 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new KeyNotFoundException($"No se encontró el insumo con ID {insumoId}");
             }
 
-            var principalSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+            var targetSedeId = (sedeId.HasValue && sedeId.Value != Guid.Empty) 
+                ? sedeId.Value 
+                : SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+
             var stockSede = await _context.StocksSedes
-                .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == principalSedeId, cancellationToken);
+                .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == targetSedeId, cancellationToken);
 
             if (stockSede == null || stockSede.StockActual < cantidad)
             {
                 var disponible = stockSede?.StockActual ?? 0;
-                throw new InvalidOperationException($"Stock insuficiente en Almacén Central para descarte. Solicitado: {cantidad}, Disponible: {disponible}");
+                throw new InvalidOperationException($"Stock insuficiente en el área/sede seleccionada para descarte. Solicitado: {cantidad}, Disponible: {disponible}");
             }
 
             stockSede.RegistrarMovimientoStock(-cantidad, insumo.PermiteFraccionamiento);
 
             var movimiento = new MovimientoInsumo(
                 insumoId,
-                principalSedeId,
+                targetSedeId,
                 "Descarte",
                 -cantidad,
                 insumo.UnidadMedidaBase,

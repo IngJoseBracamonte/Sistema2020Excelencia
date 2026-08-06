@@ -49,31 +49,118 @@
     </button>
   </div>
 
-  <!-- Barra de Filtro -->
-  <div class="bg-surface-card/60 backdrop-blur-2xl border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-4">
-    <div class="relative flex-1">
-      <input 
-        #aprobacionSearchInput
-        id="aprobacionSearchInput"
-        type="text" 
-        [ngModel]="searchQuery()" 
-        (ngModelChange)="searchQuery.set($event)"
-        placeholder="Filtrar por correlativo, sede solicitante, estado o insumo..."
-        class="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 transition-all"
-      />
-      <div class="absolute inset-y-0 right-2 my-auto flex items-center">
+  <!-- Panel de Filtros Avanzados: MultiSelect por Área, Rango de Fechas y Búsqueda por Texto -->
+  <div class="bg-surface-card/60 backdrop-blur-2xl border border-white/5 rounded-2xl p-4 space-y-3 shadow-xl">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+
+      <!-- 1. MultiSelect de Filtro por ÁREA -->
+      <div class="lg:col-span-4 relative">
+        <label class="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+          📍 Filtrar por Área / Sede Solicitante
+        </label>
         <button 
           type="button"
-          (click)="focusSearchInput()"
-          title="Ctrl + K"
-          class="p-1.5 bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-300 border border-white/10 hover:border-amber-500/30 rounded-lg transition-all flex items-center justify-center cursor-pointer">
-          <lucide-icon [name]="icons.Search" class="w-3.5 h-3.5 text-amber-400 shrink-0"></lucide-icon>
+          (click)="showAreaDropdown.set(!showAreaDropdown())"
+          class="w-full bg-black/40 border border-white/10 hover:border-amber-500/50 rounded-xl px-3 py-2 text-xs font-bold text-white flex items-center justify-between transition-all cursor-pointer">
+          <div class="flex items-center gap-2 truncate">
+            <lucide-icon [name]="icons.Building" class="w-3.5 h-3.5 text-amber-400 shrink-0"></lucide-icon>
+            <span class="truncate">{{ getSelectedAreasLabel() }}</span>
+          </div>
+          <lucide-icon [name]="icons.ChevronDown" class="w-3.5 h-3.5 text-slate-400 transition-transform" [ngClass]="{'rotate-180': showAreaDropdown()}"></lucide-icon>
+        </button>
+
+        <!-- Dropdown con Checkboxes de Áreas -->
+        <div *ngIf="showAreaDropdown()" 
+             class="absolute z-50 left-0 right-0 top-full mt-1 bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar animate-fade-in">
+          
+          <div class="flex items-center justify-between border-b border-white/5 pb-2">
+            <span class="text-[10px] font-black uppercase text-slate-400">Áreas Clínicas</span>
+            <div class="flex items-center gap-2">
+              <button type="button" (click)="selectAllAreas()" class="text-[10px] font-bold text-amber-400 hover:underline">Todas</button>
+              <span class="text-slate-600">|</span>
+              <button type="button" (click)="clearAreaSelection()" class="text-[10px] font-bold text-rose-400 hover:underline">Limpiar</button>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <div *ngFor="let s of sedes()" 
+                 (click)="toggleAreaSelection(s.id)"
+                 class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-all">
+              <span class="text-xs font-bold text-white">{{ s.nombre }}</span>
+              <lucide-icon [name]="isAreaSelected(s.id) ? icons.CheckSquare : icons.Square" 
+                           [class]="isAreaSelected(s.id) ? 'w-4 h-4 text-amber-400' : 'w-4 h-4 text-slate-500'"></lucide-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Filtro Fecha Desde -->
+      <div class="lg:col-span-3">
+        <label class="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+          📅 Fecha Desde
+        </label>
+        <input 
+          type="date"
+          [ngModel]="fechaDesde()"
+          (ngModelChange)="fechaDesde.set($event)"
+          class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-500/50 transition-all"
+        />
+      </div>
+
+      <!-- 3. Filtro Fecha Hasta -->
+      <div class="lg:col-span-3">
+        <label class="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+          📅 Fecha Hasta
+        </label>
+        <input 
+          type="date"
+          [ngModel]="fechaHasta()"
+          (ngModelChange)="fechaHasta.set($event)"
+          class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-500/50 transition-all"
+        />
+      </div>
+
+      <!-- 4. Botón Limpiar Filtros -->
+      <div class="lg:col-span-2 flex items-end">
+        <button 
+          type="button"
+          (click)="resetFilters()"
+          title="Limpiar Filtros"
+          class="w-full bg-white/5 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+          <lucide-icon [name]="icons.RotateCcw" class="w-3.5 h-3.5"></lucide-icon>
+          <span>Limpiar</span>
         </button>
       </div>
+
     </div>
-    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-      Resultados: {{ activeTab() === 'pendientes' ? filteredPedidos().length : filteredHistorial().length }}
-    </span>
+
+    <!-- Buscador Integrado por Correlativo / Insumo y Conteo -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/5">
+      <div class="relative flex-1 w-full">
+        <input 
+          #aprobacionSearchInput
+          id="aprobacionSearchInput"
+          type="text" 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Buscar por correlativo o insumo..."
+          class="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-10 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 transition-all"
+        />
+        <div class="absolute inset-y-0 right-2 my-auto flex items-center">
+          <button 
+            type="button"
+            (click)="focusSearchInput()"
+            title="Ctrl + K"
+            class="p-1 bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-300 border border-white/10 rounded-md transition-all cursor-pointer">
+            <lucide-icon [name]="icons.Search" class="w-3 h-3 text-amber-400 shrink-0"></lucide-icon>
+          </button>
+        </div>
+      </div>
+
+      <span class="text-[10px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl uppercase tracking-widest shrink-0">
+        Resultados: {{ activeTab() === 'pendientes' ? filteredPedidos().length : filteredHistorial().length }}
+      </span>
+    </div>
   </div>
 
   <!-- Vista 1: Lista de Pedidos Pendientes -->

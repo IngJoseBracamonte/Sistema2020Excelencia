@@ -9,13 +9,9 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
-using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
 using SistemaSatHospitalario.Core.Application.Common.Services;

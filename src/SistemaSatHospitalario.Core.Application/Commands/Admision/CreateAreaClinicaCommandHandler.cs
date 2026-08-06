@@ -28,6 +28,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException("La sede especificada no existe o no está activa.");
             }
 
+            if (sede.EsPrincipal)
+            {
+                throw new InvalidOperationException("Las camas clínicas no pertenecen al Almacén Principal.");
+            }
+
             var duplicateExists = await _context.AreasClinicas
                 .AnyAsync(a => a.SedeId == request.SedeId && a.Codigo == request.Codigo && a.Activo, cancellationToken);
             if (duplicateExists)

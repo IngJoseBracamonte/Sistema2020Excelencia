@@ -38,6 +38,7 @@ export interface ControlCitaRow {
   medicoTelefono?: string;
   formaPago: string;
   montoUSD: number;
+  montoHonorario?: number;
   estado: string;
   observaciones: string;
   turno: number;

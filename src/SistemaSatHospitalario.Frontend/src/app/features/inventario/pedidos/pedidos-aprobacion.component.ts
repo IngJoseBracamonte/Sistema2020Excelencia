@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MultiSedeService, PedidoInterSede } from '../../../core/services/multi-sede.service';
+import { MultiSedeService, PedidoInterSede, Sede } from '../../../core/services/multi-sede.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo } from '../../../core/models/inventory.model';
 import { 
@@ -13,7 +13,13 @@ import {
   AlertCircle,
   Package,
   Building,
-  MessageSquare
+  MessageSquare,
+  Calendar,
+  Filter,
+  CheckSquare,
+  Square,
+  RotateCcw,
+  ChevronDown
 } from 'lucide-angular';
 
 @Component({
@@ -30,6 +36,7 @@ export class PedidosAprobacionComponent implements OnInit {
 
   public pedidos = signal<PedidoInterSede[]>([]);
   public insumos = signal<Insumo[]>([]);
+  public sedes = signal<Sede[]>([]);
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
 
@@ -58,8 +65,12 @@ export class PedidosAprobacionComponent implements OnInit {
   // Mapa local para observaciones por ítem: { [pedidoId]: { [detalleId]: observacion } }
   public observacionesMap = signal<Record<string, Record<string, string>>>({});
 
-  // Filtro de búsqueda
+  // Filtros Avanzados (Texto, MultiSelect por Área, Rango de Fechas)
   public searchQuery = signal<string>('');
+  public selectedAreaIds = signal<string[]>([]);
+  public fechaDesde = signal<string>('');
+  public fechaHasta = signal<string>('');
+  public showAreaDropdown = signal<boolean>(false);
 
   // Modal Rechazo (auxiliar)
   public showRechazoModal = signal<boolean>(false);
@@ -78,36 +89,106 @@ export class PedidosAprobacionComponent implements OnInit {
     AlertCircle,
     Package,
     Building,
-    MessageSquare
+    MessageSquare,
+    Calendar,
+    Filter,
+    CheckSquare,
+    Square,
+    RotateCcw,
+    ChevronDown
   };
 
   public activeTab = signal<'pendientes' | 'historial'>('pendientes');
   public historialPedidos = signal<PedidoInterSede[]>([]);
 
-  public filteredPedidos = computed(() => {
-    const list = this.pedidos();
+  // Lógica de Filtro Multicriterio (Área, Fechas y Texto)
+  public filterPedido(p: PedidoInterSede): boolean {
+    // 1. Filtro por Búsqueda de Texto (Correlativo, Sede o Insumo)
     const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return list;
+    if (query) {
+      const matchCorrelativo = (p.correlativo || '').toLowerCase().includes(query);
+      const matchSede = (p.sedeSolicitanteNombre || '').toLowerCase().includes(query);
+      const matchInsumo = p.detalles?.some(d => (d.insumoNombre || '').toLowerCase().includes(query));
+      const matchEstado = (p.estado || '').toLowerCase().includes(query);
+      if (!matchCorrelativo && !matchSede && !matchInsumo && !matchEstado) {
+        return false;
+      }
+    }
 
-    return list.filter(p => 
-      p.correlativo.toLowerCase().includes(query) ||
-      p.sedeSolicitanteNombre.toLowerCase().includes(query) ||
-      p.detalles.some(d => d.insumoNombre.toLowerCase().includes(query))
-    );
+    // 2. Filtro MultiSelect por ÁREA / Sede
+    const selectedAreas = this.selectedAreaIds();
+    if (selectedAreas.length > 0) {
+      const matchArea = selectedAreas.some(sId => {
+        if (p.sedeSolicitanteId === sId) return true;
+        const s = this.sedes().find(x => x.id === sId);
+        return s && (p.sedeSolicitanteNombre || '').toLowerCase().includes(s.nombre.toLowerCase());
+      });
+      if (!matchArea) return false;
+    }
+
+    // 3. Filtro por Fecha Desde
+    if (this.fechaDesde()) {
+      const fDesde = new Date(this.fechaDesde() + 'T00:00:00');
+      const pFecha = new Date(p.fechaCreacion);
+      if (pFecha < fDesde) return false;
+    }
+
+    // 4. Filtro por Fecha Hasta
+    if (this.fechaHasta()) {
+      const fHasta = new Date(this.fechaHasta() + 'T23:59:59');
+      const pFecha = new Date(p.fechaCreacion);
+      if (pFecha > fHasta) return false;
+    }
+
+    return true;
+  }
+
+  public filteredPedidos = computed(() => {
+    return this.pedidos().filter(p => this.filterPedido(p));
   });
 
   public filteredHistorial = computed(() => {
-    const list = this.historialPedidos();
-    const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return list;
-
-    return list.filter(p => 
-      p.correlativo.toLowerCase().includes(query) ||
-      p.sedeSolicitanteNombre.toLowerCase().includes(query) ||
-      (p.estado && p.estado.toLowerCase().includes(query)) ||
-      p.detalles.some(d => d.insumoNombre.toLowerCase().includes(query))
-    );
+    return this.historialPedidos().filter(p => this.filterPedido(p));
   });
+
+  // Métodos de Control para el MultiSelect de Áreas
+  public toggleAreaSelection(areaId: string) {
+    const current = this.selectedAreaIds();
+    if (current.includes(areaId)) {
+      this.selectedAreaIds.set(current.filter(id => id !== areaId));
+    } else {
+      this.selectedAreaIds.set([...current, areaId]);
+    }
+  }
+
+  public selectAllAreas() {
+    this.selectedAreaIds.set(this.sedes().map(s => s.id));
+  }
+
+  public clearAreaSelection() {
+    this.selectedAreaIds.set([]);
+  }
+
+  public isAreaSelected(areaId: string): boolean {
+    return this.selectedAreaIds().includes(areaId);
+  }
+
+  public getSelectedAreasLabel(): string {
+    const selected = this.selectedAreaIds();
+    if (selected.length === 0) return 'Todas las Áreas';
+    if (selected.length === 1) {
+      const s = this.sedes().find(x => x.id === selected[0]);
+      return s ? s.nombre : '1 Área';
+    }
+    return `${selected.length} Áreas Seleccionadas`;
+  }
+
+  public resetFilters() {
+    this.selectedAreaIds.set([]);
+    this.fechaDesde.set('');
+    this.fechaHasta.set('');
+    this.searchQuery.set('');
+  }
 
 
   ngOnInit() {
@@ -116,6 +197,10 @@ export class PedidosAprobacionComponent implements OnInit {
 
   loadData() {
     this.isLoading.set(true);
+    this.multiSedeService.getSedes().subscribe({
+      next: (res) => this.sedes.set(res.filter(s => s.activo && !s.esPrincipal))
+    });
+
     this.inventoryService.getInsumos(true).subscribe({
       next: (res) => this.insumos.set(res)
     });

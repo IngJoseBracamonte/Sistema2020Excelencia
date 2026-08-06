@@ -508,7 +508,10 @@ export class PedidosInterSedeComponent implements OnInit {
 
   confirmarRecepcion(pedidoId: string) {
     this.multiSedeService.recibirPedido(pedidoId, {}).subscribe({
-      next: () => this.loadPedidos(),
+      next: () => {
+        this.loadPedidos();
+        this.inventoryService.getInsumos(true).subscribe(res => this.insumos = res);
+      },
       error: (err: any) => alert(err.error?.message || 'Error al confirmar recepción del pedido')
     });
   }

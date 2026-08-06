@@ -9,6 +9,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class RegistrarDescarteCommand : IRequest
     {
         public Guid InsumoId { get; set; }
+        public Guid? SedeId { get; set; }
         public decimal Cantidad { get; set; }
         public string Motivo { get; set; } = string.Empty;
         public string Usuario { get; set; } = string.Empty;
@@ -30,6 +31,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Cantidad,
                 request.Motivo,
                 request.Usuario,
+                request.SedeId,
                 cancellationToken);
         }
     }

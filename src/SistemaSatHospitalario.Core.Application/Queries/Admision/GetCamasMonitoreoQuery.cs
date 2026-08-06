@@ -9,6 +9,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -27,15 +28,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<CamaMonitoreoDto>> Handle(GetCamasMonitoreoQuery request, CancellationToken cancellationToken)
         {
-            // 1. Obtener todas las camas activas en el sistema
+            // 1. Obtener todas las camas activas en el sistema (excluyendo Almacén Principal)
             var camas = await _context.AreasClinicas
                 .Include(a => a.Sede)
-                .Where(a => a.Activo)
+                .Where(a => a.Activo && (a.Sede == null || !a.Sede.EsPrincipal))
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener todas las cuentas abiertas vinculadas a alguna cama (o retenidas)
             var cuentasAbiertas = await _context.CuentasServicios
                 .Include(c => c.Paciente)
+                .Include(c => c.Medico)
                 .Include(c => c.Detalles)
                 .Where(c => c.Estado == "Abierta" && (c.AreaClinicaId != null || c.CamaRetenidaId != null))
                 .ToListAsync(cancellationToken);
@@ -76,6 +78,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     dto.PacienteCedula = cuentaAsociada.Paciente?.CedulaPasaporte;
                     dto.FechaIngreso = cuentaAsociada.FechaCarga;
                     dto.CuentaId = cuentaAsociada.Id;
+                    dto.MedicoId = cuentaAsociada.MedicoId;
+                    dto.MedicoNombre = cuentaAsociada.Medico?.Nombre;
 
                     // Calcular total respetando la regla All-Inclusive
                     dto.TotalFacturado = cuentaAsociada.Detalles.Sum(d => 
@@ -95,30 +99,35 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                     // Cargar historial de triages asociados al paciente de forma global
                     var pacienteId = cuentaAsociada.PacienteId;
-                    var triages = await _context.TriagesEnfermeria
-                        .Where(t => t.CuentaServicio.PacienteId == pacienteId)
-                        .OrderByDescending(t => t.FechaRegistro)
-                        .ToListAsync(cancellationToken);
+                    if (_context.TriagesEnfermeria != null)
+                    {
+                        var triages = await _context.TriagesEnfermeria
+                            .Where(t => t.CuentaServicio.PacienteId == pacienteId)
+                            .OrderByDescending(t => t.FechaRegistro)
+                            .ToListAsync(cancellationToken);
 
-                    var valoraciones = await _context.ValoracionesFisicas
-                        .Where(v => v.CuentaServicio.PacienteId == pacienteId)
-                        .ToListAsync(cancellationToken);
+                        var valoraciones = (_context.ValoracionesFisicas != null)
+                            ? await _context.ValoracionesFisicas
+                                .Where(v => v.CuentaServicio.PacienteId == pacienteId)
+                                .ToListAsync(cancellationToken)
+                            : new List<ValoracionFisica>();
 
-                    dto.HistorialTriage = triages.Select(t => {
-                        var valoracion = valoraciones.FirstOrDefault(v => v.CuentaServicioId == t.CuentaServicioId);
-                        return new CamaMonitoreoTriageDto
-                        {
-                            FechaRegistro = t.FechaRegistro,
-                            UsuarioRegistro = t.UsuarioRegistro,
-                            MotivoConsulta = t.MotivoConsulta,
-                            TensionArterial = t.TensionArterial,
-                            FrecuenciaCardiaca = t.FrecuenciaCardiaca,
-                            FrecuenciaRespiratoria = t.FrecuenciaRespiratoria,
-                            Temperatura = t.Temperatura,
-                            SaturacionO2 = t.SaturacionO2,
-                            GlasgowTotal = valoracion?.GlasgowTotal ?? 15
-                        };
-                    }).ToList();
+                        dto.HistorialTriage = triages.Select(t => {
+                            var valoracion = valoraciones.FirstOrDefault(v => v.CuentaServicioId == t.CuentaServicioId);
+                            return new CamaMonitoreoTriageDto
+                            {
+                                FechaRegistro = t.FechaRegistro,
+                                UsuarioRegistro = t.UsuarioRegistro,
+                                MotivoConsulta = t.MotivoConsulta,
+                                TensionArterial = t.TensionArterial,
+                                FrecuenciaCardiaca = t.FrecuenciaCardiaca,
+                                FrecuenciaRespiratoria = t.FrecuenciaRespiratoria,
+                                Temperatura = t.Temperatura,
+                                SaturacionO2 = t.SaturacionO2,
+                                GlasgowTotal = valoracion?.GlasgowTotal ?? 15
+                            };
+                        }).ToList();
+                    }
                 }
 
                 result.Add(dto);

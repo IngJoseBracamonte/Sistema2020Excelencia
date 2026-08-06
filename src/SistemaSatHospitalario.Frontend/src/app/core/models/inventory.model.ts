@@ -123,6 +123,7 @@ export interface RecordMovement {
 
 export interface DescarteRequest {
   insumoId: string;
+  sedeId?: string;
   cantidad: number;
   motivo: string;
 }
