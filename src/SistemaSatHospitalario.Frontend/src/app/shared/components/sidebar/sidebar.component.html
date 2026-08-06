@@ -41,12 +41,6 @@
             <span class="font-bold">Cuentas Hospitalarias</span>
         </a>
 
-        <!-- Hospitalización Standalone Link -->
-        <a *ngIf="isAdmin() || isParticularAssistant() || isInsuranceAssistant() || isHospitalAssistant()" routerLink="/admision/hospitalizacion" routerLinkActive="active-link" class="nav-item flex items-center">
-            <lucide-icon [name]="icons.Bed" class="w-5 h-5 mr-3 text-sky-400"></lucide-icon>
-            <span class="font-bold">Habitaciones</span>
-        </a>
-
 
 
         <!-- Dropdown Gestión de Órdenes -->
@@ -206,6 +200,7 @@
             </button>
             <div *ngIf="dropdownsOpen().settings" class="pl-8 space-y-1 animate-fade-in">
                 <a routerLink="/settings" [queryParams]="{tab: 'general'}" routerLinkActive="active-sublink" class="nav-subitem">General & Finanzas</a>
+                <a routerLink="/admision/hospitalizacion" routerLinkActive="active-sublink" class="nav-subitem">Habitaciones</a>
                 <a routerLink="/settings" [queryParams]="{tab: 'convenios'}" routerLinkActive="active-sublink" class="nav-subitem">Convenios</a>
                 <a *ngIf="isAdmin()" routerLink="/settings" [queryParams]="{tab: 'usuarios'}" routerLinkActive="active-sublink" class="nav-subitem">Usuarios y Roles</a>
                 <a *ngIf="isAdmin()" routerLink="/admin/reset-requests" routerLinkActive="active-sublink" class="nav-subitem">Solicitudes de Reset</a>

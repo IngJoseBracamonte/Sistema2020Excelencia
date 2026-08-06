@@ -1202,6 +1202,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     }
                 }
                 if (closeConnection) await conn.CloseAsync();
+
+                // Purga automática de Sedes secundarias dinámicas con código 'SUC%'
+                var sucSedes = await _context.Sedes.Where(s => s.Codigo.StartsWith("SUC")).ToListAsync();
+                if (sucSedes.Any())
+                {
+                    _context.Sedes.RemoveRange(sucSedes);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("[MAINTENANCE] Se purgaron {Count} sedes residuales con código SUC.", sucSedes.Count);
+                }
             }
             catch (Exception ex)
             {
