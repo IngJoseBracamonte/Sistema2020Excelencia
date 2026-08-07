@@ -21,7 +21,7 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     const sedeCode = 'SUC_' + Math.floor(Math.random() * 100000);
 
     // 1. Navigate to Sede management page
-    await page.goto('/admin/inventory/sedes');
+    await page.goto('/inventario/sedes-areas');
     await page.waitForLoadState('networkidle');
 
     // 2. Click "+ Nueva Sede" button

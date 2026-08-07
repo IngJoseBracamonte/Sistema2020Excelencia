@@ -1,6 +1,6 @@
-# Memoria de Arquitectura — Módulo de Inventario v4.0.1 (Motor Transaccional Puro)
+# Memoria de Arquitectura — Módulo de Inventario v4.0.2 (Motor Transaccional Puro)
 
-**Versión**: v4.0.1  
+**Versión**: v4.0.2  
 **Fecha de Actualización**: 2026-08-07  
 **Stack de Tecnología**: .NET 9 WebAPI (CQRS MediatR) + Angular 19+ (Standalone Components + Signals)
 

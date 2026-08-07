@@ -1,8 +1,6 @@
 export const environment = {
   production: true,
-  // En Docker, Nginx hace proxy de /api/ internamente al contenedor API.
-  // No se necesita URL absoluta.
+  // En Docker, Nginx redirige automáticamente /api al contenedor de la API
   apiUrl: '',
-  systemVersion: '4.0.1'
+  systemVersion: '4.0.2'
 };
-
