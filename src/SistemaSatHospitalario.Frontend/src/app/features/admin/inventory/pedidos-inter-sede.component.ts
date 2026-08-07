@@ -59,7 +59,7 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
             <div class="space-y-2 relative">
               <div class="flex justify-between items-center">
                 <label class="text-[10px] text-muted font-black uppercase tracking-wider">Buscar Insumo Requerido</label>
-                <span *ngIf="selectedInsumoObj" class="text-[10px] font-black uppercase px-2 py-0.5 rounded"
+                <span *ngIf="selectedInsumoObj && !readOnlyApprovals" class="text-[10px] font-black uppercase px-2 py-0.5 rounded"
                   [ngClass]="selectedInsumoObj.stockActual > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'">
                   Stock Principal: {{ selectedInsumoObj.stockActual }} {{ selectedInsumoObj.unidadMedidaBase }}
                 </span>
@@ -91,7 +91,7 @@ export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORA
                         <span *ngIf="!ins.principiosActivos || ins.principiosActivos.length === 0" class="italic text-slate-500">
                           Sin P.A.
                         </span>
-                        <span class="font-black" [ngClass]="ins.stockActual > 0 ? 'text-emerald-400' : 'text-rose-400'">
+                        <span *ngIf="!readOnlyApprovals" class="font-black" [ngClass]="ins.stockActual > 0 ? 'text-emerald-400' : 'text-rose-400'">
                           Stock: {{ ins.stockActual }}
                         </span>
                       </div>
