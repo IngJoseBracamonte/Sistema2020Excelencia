@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminBillingService, CuentaAdministrativaDto, CuentaAdministrativaDetailDto } from '../../../core/services/admin-billing.service';
-import { FacturacionService, DetallePagoDto, ReceiptPrintData } from '../../../core/services/facturacion.service';
+import { FacturacionService, DetallePagoDto, ReceiptPrintData, CloseAccountRequest } from '../../../core/services/facturacion.service';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PrintService } from '../../../core/services/print.service';
@@ -247,6 +247,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public nuevoPagoMetodo = signal<string>('Particular - Tarjeta de Crédito/Débito');
   public nuevoPagoReferencia = signal<string>('');
   public nuevoPagoMontoMoneda = signal<number>(0);
+  public cerrarConSaldoPendiente = signal<boolean>(false);
 
   public metodosPago = [
     { label: '💳 Tarjeta de Crédito/Débito', value: 'Particular - Tarjeta de Crédito/Débito', moneda: 'USD' },
@@ -574,7 +575,20 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public subtotalServicios = computed(() => {
     const acc = this.selectedAccount();
     if (!acc) return 0;
-    return acc.total;
+    let sum = 0;
+    if (acc.detalles && acc.detalles.length > 0) {
+      sum = acc.detalles.reduce((accSum, d) => {
+        const p = Number(d.precio || 0);
+        const h = Number(d.honorario || 0);
+        const q = Number(d.cantidad || 1);
+        return accSum + ((p + h) * q);
+      }, 0);
+    }
+    if (sum <= 0 && acc.total > 0) {
+      sum = acc.total;
+    }
+    const cartSum = this.cartTotalUSD() || 0;
+    return sum + cartSum;
   });
 
   public totalGeneral = computed(() => {
@@ -589,14 +603,18 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     return Math.round(total * pct * 100) / 100;
   });
 
+  public totalPagadoLocal = computed(() => {
+    return this.pagos().reduce((accSum, p) => accSum + p.equivalenteAbonadoBase, 0);
+  });
+
   public totalAPagarPaciente = computed(() => {
     const total = this.totalGeneral();
     const cob = this.coberturaSeguro();
-    // Restamos la cobertura del seguro
-    const neto = total - cob;
-    // Restamos cualquier abono que ya haya ingresado en el listado de pagos locales
-    const abonos = this.pagos().reduce((acc, p) => acc + p.equivalenteAbonadoBase, 0);
-    return Math.max(0, neto - abonos);
+    const neto = Math.max(0, total - cob);
+    const acc = this.selectedAccount();
+    const pagadoPrevio = acc?.totalPagado || 0;
+    const abonosLocales = this.totalPagadoLocal();
+    return Math.max(0, neto - pagadoPrevio - abonosLocales);
   });
 
   // Calculate Estancia Days
@@ -861,9 +879,17 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   // Payments Management
   public agregarPago() {
-    const monto = this.nuevoPagoMontoMoneda();
+    let monto = this.nuevoPagoMontoMoneda();
     if (monto <= 0) {
-      this.errorMessage.set('Ingrese un monto de pago mayor a cero.');
+      const metodoInfo = this.metodosPago.find(m => m.value === this.nuevoPagoMetodo());
+      const esBs = metodoInfo?.moneda === 'VES';
+      const tasa = this.tasaCambioDia();
+      const restanteUsd = this.totalAPagarPaciente();
+      monto = esBs ? Math.round(restanteUsd * tasa * 100) / 100 : restanteUsd;
+    }
+
+    if (monto <= 0) {
+      this.errorMessage.set('Ingrese un monto de pago válido mayor a cero.');
       return;
     }
 
@@ -919,24 +945,24 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       correccionesPrecios: [
         {
           detalleId: detail.id,
-          nuevoPrecio: Number(this.editPrecio),
-          nuevoHonorario: Number(this.editHonorario),
-          nuevaCantidad: Number(this.editCantidad)
+          nuevoPrecio: this.editPrecio,
+          nuevoHonorario: this.editHonorario,
+          nuevaCantidad: this.editCantidad
         }
       ]
     };
 
     this.adminBillingService.updateCuentaAdministrativa(command as any).subscribe({
       next: () => {
-        this.actionMessage.set('Servicio modificado administrativamente con éxito.');
-        this.selectedDetailToEdit.set(null);
+        this.actionMessage.set('Detalle de servicio actualizado con éxito.');
         this.isLoading.set(false);
-        this.loadOpenAccounts(); // Refrescar cuenta para ver cambios
+        this.selectedDetailToEdit.set(null);
+        this.loadOpenAccounts();
         setTimeout(() => this.actionMessage.set(null), 3000);
       },
       error: (err: any) => {
-        console.error('[CIERRE-CUENTA] Error al modificar servicio:', err);
-        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al modificar el servicio.');
+        console.error('[CIERRE-CUENTA] Error al editar detalle:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al actualizar detalle.');
         this.isLoading.set(false);
       }
     });
@@ -956,7 +982,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       next: () => {
         this.actionMessage.set('Servicio anulado y removido de la cuenta con éxito.');
         this.isLoading.set(false);
-        this.loadOpenAccounts(); // Refrescar cuenta para ver cambios
+        this.loadOpenAccounts();
         setTimeout(() => this.actionMessage.set(null), 3000);
       },
       error: (err: any) => {
@@ -998,7 +1024,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       next: () => {
         this.actionMessage.set('Check-Out revertido con éxito. Cuenta reabierta y cama restablecida.');
         this.isLoading.set(false);
-        this.estadoFiltro.set('Abierta'); // Cambiar filtro para mostrar la cuenta abierta
+        this.estadoFiltro.set('Abierta');
         this.loadOpenAccounts();
         this.deselectAccount();
         setTimeout(() => this.actionMessage.set(null), 3000);
@@ -1063,12 +1089,11 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.printService.print(content, `Reporte_Egreso_${acc.pacienteCedula}`);
   }
 
-  // Close Account Execution
+  // Close Account Execution / Abono Parcial
   public procesarCierre() {
     const acc = this.selectedAccount();
     if (!acc) return;
 
-    // Si es seguro convenio, inyectamos el pago del seguro
     const finalPayments = [...this.pagos()];
     if (this.nuevoPagoMetodo() === 'Seguro Médico (Convenio)') {
       const cob = this.coberturaSeguro();
@@ -1082,33 +1107,43 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Si queda saldo pendiente por pagar por el paciente, alertamos o permitimos cerrarlo como Cuenta por Cobrar (solo para Hospitalización)
-    const pendiente = this.totalGeneral() - finalPayments.reduce((acc, p) => acc + p.equivalenteAbonadoBase, 0);
+    const saldoPendiente = this.totalAPagarPaciente();
+    const hayPagos = finalPayments.length > 0;
+    const forceCloseWithAR = this.cerrarConSaldoPendiente();
+    const mantenerAbierta = saldoPendiente > 0.01 && !forceCloseWithAR;
 
-    if (this.type() !== 'Emergencia' && pendiente > 0.01) {
-      const confirmAR = confirm(`Queda un saldo pendiente de $${pendiente.toFixed(2)} USD. La cuenta se cerrará y la diferencia se registrará en Cuentas por Cobrar (CxC). ¿Desea continuar?`);
-      if (!confirmAR) return;
+    if (!hayPagos && mantenerAbierta) {
+      this.errorMessage.set('Debe ingresar al menos un pago / abono para registrar la transacción en caja.');
+      return;
     }
 
     this.isLoading.set(true);
+    this.errorMessage.set(null);
 
     const currentUser = this.authService.currentUser();
-    const request = {
+    const request: CloseAccountRequest = {
       cuentaId: acc.cuentaId,
       usuarioCajero: currentUser?.username || 'admin',
       usuarioId: currentUser?.id || '',
       tasaCambio: this.tasaCambioDia(),
       destinoPaciente: this.destinoPaciente(),
       personalRelevo: this.personalRelevo(),
-      pagos: finalPayments
+      pagos: finalPayments,
+      mantenerCuentaAbierta: mantenerAbierta,
+      cerrarConSaldoPendiente: forceCloseWithAR
     };
 
     this.facturacionService.closeAccount(request).subscribe({
       next: (res: any) => {
-        const dest = this.type() === 'Emergencia' ? ` con destino a ${this.destinoPaciente().toUpperCase()}` : '';
-        this.actionMessage.set(`¡Cuenta de ${acc.pacienteNombre} cerrada y facturada con éxito${dest}!`);
+        if (mantenerAbierta) {
+          this.actionMessage.set(`¡Abono registrado con éxito en Caja! La cuenta de ${acc.pacienteNombre} permanece ABIERTA con un saldo pendiente de $ ${saldoPendiente.toFixed(2)} USD (CxC).`);
+        } else {
+          const dest = this.type() === 'Emergencia' ? ` con destino a ${this.destinoPaciente().toUpperCase()}` : '';
+          this.actionMessage.set(`¡Cuenta de ${acc.pacienteNombre} cerrada y facturada con éxito${dest}!`);
+        }
+
         this.isLoading.set(false);
-        
+
         // Descarga/Impresión del recibo generado
         const reciboId = res.reciboId || res.id;
         if (reciboId) {
@@ -1118,12 +1153,16 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
         setTimeout(() => {
           this.actionMessage.set(null);
-          this.deselectAccount();
+          if (!mantenerAbierta) {
+            this.deselectAccount();
+          } else {
+            this.loadOpenAccounts();
+          }
         }, 3000);
       },
       error: (err) => {
-        console.error('[CIERRE-CUENTA] Error al cerrar cuenta:', err);
-        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al procesar el cierre de la cuenta.');
+        console.error('[CIERRE-CUENTA] Error al procesar cierre/abono:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.error || 'Error al procesar la operación de cobro/abono.');
         this.isLoading.set(false);
       }
     });
@@ -1221,9 +1260,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
           !this.newPatientData.nombre || 
           !this.newPatientData.apellidos || 
           !this.newPatientData.fechaNacimiento || 
-          !this.newPatientData.celular || 
-          !this.newPatientData.direccion) {
-        this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento, Celular y Dirección.");
+          !this.newPatientData.celular) {
+        this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento y Celular.");
         return;
       }
 

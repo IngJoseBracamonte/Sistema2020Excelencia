@@ -218,13 +218,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
             _context.Insumos.Add(insumo);
 
-            if (dto.StockInicial != 0)
+            if (dto.StockInicial > 0)
             {
                 var principalSede = await _context.Sedes.FirstOrDefaultAsync(s => s.EsPrincipal && s.Activo, ct);
                 var targetSedeId = principalSede?.Id ?? SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
-
-                var stockSede = new StockSede(insumo.Id, targetSedeId, dto.StockInicial);
-                _context.StocksSedes.Add(stockSede);
 
                 var mov = new MovimientoInsumo(
                     insumo.Id,
@@ -437,6 +434,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 if (insumo == null)
                 {
                     return BadRequest(new { Message = $"No se encontró el insumo con ID {item.InsumoId}." });
+                }
+
+                if (item.Cantidad <= 0)
+                {
+                    return BadRequest(new { Message = $"La cantidad a ingresar para el insumo '{insumo.Nombre}' debe ser mayor a 0." });
                 }
 
                 insumo.ActualizarDetalles(

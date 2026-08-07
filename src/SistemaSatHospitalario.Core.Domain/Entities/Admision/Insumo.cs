@@ -45,10 +45,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             IsDeleted = false;
             FechaInactivacion = null;
 
-            if (stockActual > 0)
-            {
-                StocksPorSede.Add(new StockSede(Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, stockActual));
-            }
+            var stockInicialValido = stockActual < 0 ? 0 : stockActual;
+            StocksPorSede.Add(new StockSede(Id, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, stockInicialValido));
         }
 
         public void RegistrarMovimientoStock(decimal cantidadBase)

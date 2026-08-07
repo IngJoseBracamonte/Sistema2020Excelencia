@@ -66,5 +66,33 @@ namespace SistemaSatHospitalario.UnitTests.Application
             // Assert
             Assert.False(insumo.OcultoEnTraslados);
         }
+
+        [Fact]
+        public void CrearInsumo_StockInicialCero_EsPermitidoSinRequiereIngresoCentral()
+        {
+            // Arrange & Act: Se registra medicamento en catálogo con stock 0 (no requiere compra inicial obligatoria)
+            var medicamento = new Insumo("MED-CAT-01", "Omeprazol 20mg", 0m, UnidadMedida.UNIDAD, 0.80m, true, "Medicamento");
+
+            // Assert
+            Assert.Equal(0m, medicamento.StockActual);
+            Assert.Single(medicamento.StocksPorSede);
+            Assert.Equal(0m, medicamento.StocksPorSede.First().StockActual);
+        }
+
+        [Fact]
+        public void Compra_StockSedeRegistrarMovimiento_ConCantidadPositiva_IncrementaStock()
+        {
+            // Arrange
+            var insumo = new Insumo("MED-CAT-02", "Losartán 50mg", 0m, UnidadMedida.UNIDAD, 1.20m, true, "Medicamento");
+            var stockSede = insumo.StocksPorSede.First();
+
+            // Act: Se registra una compra de 50 unidades
+            stockSede.RegistrarMovimientoStock(50m, insumo.PermiteFraccionamiento);
+
+            // Assert
+            Assert.Equal(50m, stockSede.StockActual);
+            Assert.Equal(50m, insumo.StockActual);
+        }
     }
 }
+

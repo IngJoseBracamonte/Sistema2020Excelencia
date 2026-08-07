@@ -125,5 +125,34 @@ namespace SistemaSatHospitalario.UnitTests.Application
             // Assert: Verificar que Cancelado y Rechazado no tengan el mismo valor numérico
             Assert.NotEqual((int)EstadoPedidoInterSede.Rechazado, (int)EstadoPedidoInterSede.Cancelado);
         }
+
+        [Fact]
+        public void Insumo_CrearConStockInicial_AsignaStockSedeAlmacenPrincipalUnico()
+        {
+            // Arrange & Act: Crear un medicamento con stock inicial 15
+            var medicamento = new Insumo("MED-TEST-01", "Amoxicilina 500mg Caps", 15m, UnidadMedida.UNIDAD, 2.50m, true, "Medicamento");
+
+            // Assert: Debe existir un ÚNICO registro en StocksPorSede para el Almacén Principal (SeedConstants.SedeId_Principal)
+            Assert.Single(medicamento.StocksPorSede);
+            var stockPrincipal = medicamento.StocksPorSede.First();
+            Assert.Equal(SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, stockPrincipal.SedeId);
+            Assert.Equal(15m, stockPrincipal.StockActual);
+            Assert.Equal(15m, medicamento.StockActual);
+        }
+
+        [Fact]
+        public void Insumo_CrearConStockCero_InicializaStockSedeAlmacenPrincipalConCero()
+        {
+            // Arrange & Act: Crear un medicamento con stock inicial 0
+            var medicamento = new Insumo("MED-TEST-02", "Ibuprofeno 800mg", 0m, UnidadMedida.UNIDAD, 1.80m, true, "Medicamento");
+
+            // Assert: Debe crearse la entrada de StockSede en Almacén Principal con stock 0 (evitando entradas nulas o duplicados posterior)
+            Assert.Single(medicamento.StocksPorSede);
+            var stockPrincipal = medicamento.StocksPorSede.First();
+            Assert.Equal(SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal, stockPrincipal.SedeId);
+            Assert.Equal(0m, stockPrincipal.StockActual);
+            Assert.Equal(0m, medicamento.StockActual);
+        }
     }
 }
+

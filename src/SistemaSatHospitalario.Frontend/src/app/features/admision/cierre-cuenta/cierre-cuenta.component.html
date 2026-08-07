@@ -214,7 +214,7 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación <span class="text-rose-500 font-bold">*</span></label>
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación (Opcional)</label>
                             <input type="text" [(ngModel)]="newPatientData.direccion" placeholder="Ej: Calle Principal..."
                                 class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
                         </div>
@@ -576,81 +576,6 @@
     </div>
     <!-- ================= VISTA 1: ANTESALA DE CIERRE (DASHBOARD DE GESTIÓN CLÍNICA / PACIENTES ACTIVOS) ================= -->
     <div *ngIf="!selectedAccount()" class="space-y-6">
-        
-        <!-- KPI METRICS GRID ROW -->
-        <div class="grid grid-cols-1 gap-6" [ngClass]="(type() === 'Emergencia' || type() === 'Hospitalizacion') ? 'md:grid-cols-2' : 'md:grid-cols-3'">
-            <!-- 1. Estado del Sistema / Capacidad (Scanline/Holographic background style) -->
-            <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
-                <!-- Glowing effect -->
-                <div class="absolute -right-12 -top-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
-                <div class="absolute inset-0 bg-gradient-to-b from-white/[0.01] to-transparent pointer-events-none"></div>
-                
-                <div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado de la Unidad</span>
-                        <lucide-icon [name]="icons.Activity" class="w-4 h-4 text-primary animate-pulse"></lucide-icon>
-                    </div>
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">TODOS LOS SERVICIOS OPERATIVOS</p>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5">
-                    <div>
-                        <p class="text-[9px] font-black text-slate-500 uppercase">Capacidad</p>
-                        <p class="text-xl font-black text-white font-mono tracking-tighter mt-1">{{ capacidadUnidad() }}%</p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] font-black text-slate-500 uppercase">Activos</p>
-                        <p class="text-xl font-black text-white font-mono tracking-tighter mt-1">{{ accounts().length }}</p>
-                    </div>
-                    <div>
-                        <p class="text-[9px] font-black text-slate-500 uppercase">Prom. Estancia</p>
-                        <p class="text-xl font-black text-white font-mono tracking-tighter mt-1">{{ estanciaPromedio() }}d</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. Alerta de Paciente Crítico / Altas Pendientes (Coral / Primary style theme) -->
-            <div class="p-6 rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
-                <div class="absolute -right-8 -top-8 w-24 h-24 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
-                
-                <div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black text-primary uppercase tracking-[0.2em] font-semibold">Alerta Crítica / Alta</span>
-                        <lucide-icon [name]="icons.Info" class="w-4 h-4 text-primary animate-bounce"></lucide-icon>
-                    </div>
-                    <h4 class="text-lg font-black text-white uppercase tracking-tight mt-2">Paciente Crítico</h4>
-                </div>
-
-                <div class="flex items-end justify-between mt-4">
-                    <div>
-                        <p class="text-2xl font-black text-white font-mono leading-none">{{ alertasCriticosCount() }}</p>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Pacientes en alerta de cuidado</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Despachar Recurso / Nueva Admisión (Blue-grey slate style theme) -->
-            <div *ngIf="type() !== 'Emergencia' && type() !== 'Hospitalizacion'" class="glass-panel p-6 rounded-[2rem] border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[160px] group shadow-2xl">
-                <div class="absolute -right-12 -top-12 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-all"></div>
-                
-                <div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones de Caja</span>
-                        <lucide-icon [name]="icons.CreditCard" class="w-4 h-4 text-indigo-400"></lucide-icon>
-                    </div>
-                    <h4 class="text-sm font-black text-white uppercase tracking-tight mt-2">Gestión de Órdenes</h4>
-                </div>
-
-                <div class="mt-4 flex gap-2">
-                    <a routerLink="/cajas" class="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 text-[9px] font-black uppercase tracking-widest text-center transition-all cursor-pointer flex items-center justify-center">
-                        Arqueo Caja
-                    </a>
-                    <a routerLink="/cxc" class="flex-1 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/20 text-[9px] font-black uppercase tracking-widest text-center transition-all cursor-pointer flex items-center justify-center">
-                        Ver CxC
-                    </a>
-                </div>
-            </div>
-        </div>
 
         <!-- MAIN CONTENT COLUMNS GRID -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1256,16 +1181,29 @@
                     <!-- Cierre Accion Card -->
                     <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex flex-col justify-between items-stretch">
                         <div class="space-y-4">
-                            <h3 class="text-sm font-black text-white uppercase tracking-wider">Finalizar Episodio</h3>
+                            <h3 class="text-sm font-black text-white uppercase tracking-wider">Finalizar Episodio / Abonar</h3>
                             <p class="text-[10px] text-slate-500 font-bold leading-relaxed">
-                                Al procesar el cierre, el sistema marcará la cuenta como cerrada, se aplicará el cuadre en la caja del usuario activo, y se enviará la orden de laboratorio e imagenología correspondiente si aplica.
+                                Al abonar o procesar el cierre, el pago se ingresa automáticamente en la caja del usuario activo. Si la cuenta mantiene saldo pendiente y no se marca el cierre definitivo, la cuenta permanecerá Abierta en Cuentas por Cobrar (CxC).
                             </p>
+
+                            <!-- Checkbox opcional para forzar cierre definitivo con saldo pendiente (CxC) -->
+                            <label *ngIf="totalAPagarPaciente() > 0.01" class="flex items-center space-x-2 cursor-pointer mt-2 bg-white/5 p-3 rounded-xl border border-white/10 hover:border-amber-500/30 transition-all">
+                                <input type="checkbox" [ngModel]="cerrarConSaldoPendiente()" (ngModelChange)="cerrarConSaldoPendiente.set($event)" class="accent-rose-500 w-4 h-4 rounded">
+                                <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider">
+                                    Dar Alta / Cerrar Definitivamente registrando Saldo Pendiente en Cuentas por Cobrar (CxC)
+                                </span>
+                            </label>
                         </div>
 
-                        <!-- Si la cuenta está abierta, mostrar botón de cierre normal -->
+                        <!-- Si la cuenta está abierta, mostrar botón dinámico de abono o cierre -->
                         <button *ngIf="selectedAccount()?.estado !== 'Facturada'" (click)="procesarCierre()" [disabled]="isLoading()"
-                            class="w-full py-5 bg-primary hover:bg-rose-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 min-h-[58px] mt-4">
-                            {{ isLoading() ? 'Procesando...' : (type() === 'Emergencia' || type() === 'Hospitalizacion' ? 'Procesar Cierre y Egreso' : 'Procesar Cobro y Cerrar') }}
+                            class="w-full py-5 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50 min-h-[58px] mt-4"
+                            [ngClass]="totalAPagarPaciente() > 0.01 && !cerrarConSaldoPendiente() ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20' : 'bg-primary hover:bg-rose-600 shadow-primary/20'">
+                            {{ isLoading() ? 'Procesando...' : (
+                                totalAPagarPaciente() > 0.01 && !cerrarConSaldoPendiente() ?
+                                '💳 REGISTRAR ABONO Y MANTENER CUENTA ABIERTA' :
+                                (type() === 'Emergencia' || type() === 'Hospitalizacion' ? 'Procesar Cierre y Egreso' : 'Procesar Cobro y Cerrar 100%')
+                            ) }}
                         </button>
 
                         <!-- Si la cuenta ya está facturada (checked-out), mostrar banners/reversión -->

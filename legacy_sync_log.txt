@@ -3479,3 +3479,150 @@
 [2026-08-06 00:03:04] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
 [2026-08-06 00:03:04] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50510) ===
 [2026-08-06 00:03:04] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 00526585-199a-43a9-9cef-183eb35d2521
+[2026-08-06 00:25:22] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-06 00:25:22] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: a42a264e-0c63-485e-9bb4-cab702fb8c91
+[2026-08-06 00:25:22] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: a42a264e-0c63-485e-9bb4-cab702fb8c91 ===
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29641)
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29641
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29641...
+[2026-08-06 00:25:22] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-06 00:25:22] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29641, Convenio: 1
+[2026-08-06 00:25:22] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-06 00:25:22] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50511)
+[2026-08-06 00:25:22] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-06 00:25:22] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50511) ===
+[2026-08-06 00:25:22] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: a42a264e-0c63-485e-9bb4-cab702fb8c91
+[2026-08-07 10:01:18] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-07 10:01:18] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 23e5f7d8-0899-42a4-860e-6df872279ea1
+[2026-08-07 10:01:18] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 23e5f7d8-0899-42a4-860e-6df872279ea1 ===
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29642)
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29642
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-07 10:01:18] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29642...
+[2026-08-07 10:01:18] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-07 10:01:18] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29642, Convenio: 1
+[2026-08-07 10:01:19] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-07 10:01:19] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50512)
+[2026-08-07 10:01:19] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-07 10:01:19] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50512) ===
+[2026-08-07 10:01:19] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 23e5f7d8-0899-42a4-860e-6df872279ea1
+[2026-08-07 10:02:52] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-07 10:02:52] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 3d9e265f-1d1d-4b41-918c-81d6648945e7
+[2026-08-07 10:02:52] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 3d9e265f-1d1d-4b41-918c-81d6648945e7 ===
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29643)
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29643
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29643...
+[2026-08-07 10:02:52] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-07 10:02:52] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29643, Convenio: 1
+[2026-08-07 10:02:52] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-07 10:02:52] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50513)
+[2026-08-07 10:02:52] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-07 10:02:52] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50513) ===
+[2026-08-07 10:02:52] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 3d9e265f-1d1d-4b41-918c-81d6648945e7
+[2026-08-07 10:05:09] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-07 10:05:09] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 3aec1139-136b-4f85-a531-cbef6b5ec580
+[2026-08-07 10:05:09] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 3aec1139-136b-4f85-a531-cbef6b5ec580 ===
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29644)
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29644
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29644...
+[2026-08-07 10:05:09] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-07 10:05:09] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29644, Convenio: 1
+[2026-08-07 10:05:09] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-07 10:05:09] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50514)
+[2026-08-07 10:05:09] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-07 10:05:09] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50514) ===
+[2026-08-07 10:05:09] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 3aec1139-136b-4f85-a531-cbef6b5ec580
+[2026-08-07 10:05:37] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-07 10:05:37] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 3f02db1d-8e7e-487b-b784-0e3dd908bdfa
+[2026-08-07 10:05:38] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 3f02db1d-8e7e-487b-b784-0e3dd908bdfa ===
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29645)
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29645
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29645...
+[2026-08-07 10:05:38] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-07 10:05:38] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29645, Convenio: 1
+[2026-08-07 10:05:38] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-07 10:05:38] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50515)
+[2026-08-07 10:05:38] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-07 10:05:38] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50515) ===
+[2026-08-07 10:05:38] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 3f02db1d-8e7e-487b-b784-0e3dd908bdfa
+[2026-08-07 10:06:54] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-07 10:06:54] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: c5ef1ccc-ab3a-4781-b8f5-24f506c34e32
+[2026-08-07 10:06:55] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: c5ef1ccc-ab3a-4781-b8f5-24f506c34e32 ===
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29646)
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29646
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29646...
+[2026-08-07 10:06:55] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-07 10:06:55] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29646, Convenio: 1
+[2026-08-07 10:06:55] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-07 10:06:55] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50516)
+[2026-08-07 10:06:55] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-07 10:06:55] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50516) ===
+[2026-08-07 10:06:55] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: c5ef1ccc-ab3a-4781-b8f5-24f506c34e32
+[2026-08-07 10:08:16] [TRACE] [LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron 309 perfiles de la base de datos.
+[2026-08-07 10:08:16] [TRACE] [CLOSE-ACCOUNT] Iniciando proceso para Cuenta: 4ef5ad2a-f80a-4793-839f-3cd6d91281b8
+[2026-08-07 10:08:16] [TRACE] [CLOSE-ACCOUNT] Procesando 1 ítems de Laboratorio para Legado.
+[2026-08-07 10:08:16] [TRACE] [LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: 4ef5ad2a-f80a-4793-839f-3cd6d91281b8 ===
+[2026-08-07 10:08:16] [TRACE] [LEGACY-SYNC] Paciente encontrado: V-99999998 | NombreCorto: Paciente Prueba BD | IdLegacy: 
+[2026-08-07 10:08:16] [TRACE] [LEGACY-SYNC] JIT: El paciente V-99999998 Paciente Prueba BD no tiene ID Legacy. Intentando Onboarding...
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] JIT: No existe en Legacy. Creando nuevo registro...
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] JIT: Paciente creado exitosamente en Legacy (ID: 29647)
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] LegacyId resuelto: 29647
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] Total detalles en cuenta: 1
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC]   -> Detalle: 'Laboratorio - HEMATOLOGIA COMPLETA' | TipoServicio: 'Laboratorio' | EsLab: True | LegacyMappingId: '1'
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] Item Lab: 'Laboratorio - HEMATOLOGIA COMPLETA' | MappingId raw: '1'
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] Perfil agregado: IdPerfil=1, Precio=15.0000
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] Generando orden con 1 perfiles para paciente legacy 29647...
+[2026-08-07 10:08:17] [TRACE] [SCHEMA-DIAGNOSTIC] perfilesfacturados columns: IdOrden, IdPersona, IdPerfil, PrecioPerfil, Facturado
+[2026-08-07 10:08:17] [TRACE] [LEGACY-REPO] Generando Orden para Paciente Legacy ID: 29647, Convenio: 1
+[2026-08-07 10:08:17] [TRACE] [LEGACY-REPO] Número de Orden asignado para el día: 1
+[2026-08-07 10:08:17] [TRACE] [LEGACY-REPO] 'orden' insertada via Raw SQL (ID: 50517)
+[2026-08-07 10:08:17] [TRACE] [LEGACY-REPO] 1 perfiles insertados via Raw SQL.
+[2026-08-07 10:08:17] [TRACE] [LEGACY-SYNC] === FIN ProcessLegacyOrder - Orden generada exitosamente (ID: 50517) ===
+[2026-08-07 10:08:17] [TRACE] [CLOSE-ACCOUNT] Cuenta cerrada exitosamente: 4ef5ad2a-f80a-4793-839f-3cd6d91281b8

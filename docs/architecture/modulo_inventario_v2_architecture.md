@@ -1,6 +1,7 @@
-# Memoria de Arquitectura — Módulo de Inventario v2 (Motor Transaccional Puro)
+# Memoria de Arquitectura — Módulo de Inventario v4.0.1 (Motor Transaccional Puro)
 
-**Fecha de Implementación**: 2026-07-28  
+**Versión**: v4.0.1  
+**Fecha de Actualización**: 2026-08-07  
 **Stack de Tecnología**: .NET 9 WebAPI (CQRS MediatR) + Angular 19+ (Standalone Components + Signals)
 
 ---
@@ -17,6 +18,8 @@
 - **Cálculo de Stock Consolidado Global**: Al seleccionar `TODAS LAS SEDES (CONSOLIDADO)` en `/inventario/stock`, el sistema invoca `GET api/inventory/stock-consolidado` ejecutando `SUM(StockActual)` a través de `StocksPorSede`, garantizando el acumulado físico real de existencias sin arrojar 0 o estado "Agotado" por error.
 - **Historial de Solicitudes en Inventario**: La pestaña `Historial de Solicitudes` en `/inventario/pedidos` permite auditar la comparación entre la `Cantidad Solicitada` por la sede y la `Cantidad Aceptada/Despachada` por el Almacén Principal, con motivos y justificaciones por ítem.
 - **Tablero Kárdex Multisede & Diario**: Endpoint `GET api/inventory/kardex` con selectores para Sede, Insumo y Rango de Fechas (`Fecha Desde` y `Fecha Hasta`). Genera el desglose del **Balance Inicial**, **Total Entradas (+)**, **Total Salidas/Consumos (-)** y **Balance Final**.
+- **Asignación Única y Directa al Almacén Principal**: Todo insumo o medicamento creado en el sistema instancia automáticamente su registro base de `StockSede` asignado al Almacén Principal (`SeedConstants.SedeId_Principal`). Se evita la instanciación duplicada de `StockSede` en controladores para mantener la restricción de clave única (`IX_StocksSede_SedeId_InsumoId`) e integrar perfectamente con la regla de Unidireccionalidad.
+- **Registro de Catálogo vs Ingreso por Compra**: La creación/registro de un medicamento o insumo en el catálogo (`CreateInsumo`) NO requiere stock inicial obligatorio (> 0) y puede registrarse con stock inicial 0. Es en el módulo de compras (`RecordPurchase` / `/inventario/compras`) donde la cantidad comprada que incrementa existencias debe ser estrictamente mayor a 0 (`Cantidad > 0`).
 
 
 ---

@@ -28,6 +28,8 @@ export interface CuentaAdministrativaDto {
   convenioId?: number;
   seguroNombre?: string;
   total: number;
+  totalPagado?: number;
+  saldoPendiente?: number;
   reciboId?: string;
   numeroRecibo?: string;
   areaClinicaId?: string;

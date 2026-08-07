@@ -182,18 +182,26 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // Extraemos items para pasarlos después
                 var itemsLab = accountsToBill.SelectMany(c => c.Detalles).Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio)).ToList();
 
-                // 4.3 EJECUCIÓN NUCLEAR: Actualización Directa en DB vía Repositorio
-                // Previene DbUpdateConcurrencyException (V10.9 SQL Direct)
-                foreach (var acc in accountsToBill)
+                // 4.3 Determinamos si se cierra la cuenta o permanece abierta como abono parcial
+                bool debeCerrarCuenta = !request.MantenerCuentaAbierta && (totalPagado >= (totalCuenta - 0.01m) || request.CerrarConSaldoPendiente);
+
+                if (debeCerrarCuenta)
                 {
-                    acc.Facturar();
-                    if (acc.Id == request.CuentaId)
+                    foreach (var acc in accountsToBill)
                     {
-                        acc.RegistrarDestinoEgreso(request.DestinoPaciente, request.PersonalRelevo);
+                        acc.Facturar();
+                        if (acc.Id == request.CuentaId)
+                        {
+                            acc.RegistrarDestinoEgreso(request.DestinoPaciente, request.PersonalRelevo);
+                        }
+                        string? dest = acc.Id == request.CuentaId ? request.DestinoPaciente : null;
+                        string? relevo = acc.Id == request.CuentaId ? request.PersonalRelevo : null;
+                        await _billingRepository.ForzarCierreCuentaAsync(acc.Id, DateTime.UtcNow, dest, relevo, cancellationToken);
                     }
-                    string? dest = acc.Id == request.CuentaId ? request.DestinoPaciente : null;
-                    string? relevo = acc.Id == request.CuentaId ? request.PersonalRelevo : null;
-                    await _billingRepository.ForzarCierreCuentaAsync(acc.Id, DateTime.UtcNow, dest, relevo, cancellationToken);
+                }
+                else
+                {
+                    _logger.LogTrace($"[CLOSE-ACCOUNT] Abono registrado exitosamente. La cuenta {request.CuentaId} permanece ABIERTA.");
                 }
 
                 // Si es un traslado clínico interno, creamos automáticamente una nueva cuenta (hija) en la ubicación destino

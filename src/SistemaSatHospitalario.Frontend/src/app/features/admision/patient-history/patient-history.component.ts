@@ -280,9 +280,8 @@ export class PatientHistoryComponent implements OnInit {
         !this.newPatientData.nombre || 
         !this.newPatientData.apellidos || 
         !this.newPatientData.fechaNacimiento || 
-        !this.newPatientData.celular || 
-        !this.newPatientData.direccion) {
-      this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento, Celular y Dirección.");
+        !this.newPatientData.celular) {
+      this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento y Celular.");
       return;
     }
 

@@ -15,5 +15,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public bool Consolidar { get; set; }
         public string? DestinoPaciente { get; set; }
         public string? PersonalRelevo { get; set; }
+        public bool MantenerCuentaAbierta { get; set; }
+        public bool CerrarConSaldoPendiente { get; set; }
     }
 }

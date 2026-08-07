@@ -132,6 +132,8 @@ export interface CloseAccountRequest {
   consolidar?: boolean;
   destinoPaciente?: string;
   personalRelevo?: string;
+  mantenerCuentaAbierta?: boolean;
+  cerrarConSaldoPendiente?: boolean;
 }
 
 @Injectable({
