@@ -21,13 +21,16 @@ export class InventoryService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/inventory`;
 
-  getInsumos(excludeHidden?: boolean, search?: string): Observable<Insumo[]> {
+  getInsumos(excludeHidden?: boolean, search?: string, sedeId?: string): Observable<Insumo[]> {
     let params: any = {};
     if (excludeHidden !== undefined) {
       params.excludeHidden = excludeHidden.toString();
     }
     if (search) {
       params.search = search;
+    }
+    if (sedeId) {
+      params.sedeId = sedeId;
     }
     return this.http.get<Insumo[]>(`${this.apiUrl}/insumos`, { params });
   }

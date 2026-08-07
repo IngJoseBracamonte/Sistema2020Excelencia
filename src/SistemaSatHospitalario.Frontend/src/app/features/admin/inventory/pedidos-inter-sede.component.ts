@@ -398,13 +398,16 @@ export class PedidosInterSedeComponent implements OnInit {
           this.newPedido.sedeSolicitanteId = activeSedes.find(s => !s.esPrincipal)?.id || principal.id;
         }
       }
-    });
-
-    this.inventoryService.getInsumos(true).subscribe(res => {
-      this.insumos = res;
+      this.loadInsumos();
     });
 
     this.loadPedidos();
+  }
+
+  loadInsumos() {
+    this.inventoryService.getInsumos(true, undefined, this.newPedido.sedeProveedoraId).subscribe(res => {
+      this.insumos = res;
+    });
   }
 
   loadPedidos() {
@@ -481,7 +484,7 @@ export class PedidosInterSedeComponent implements OnInit {
     this.multiSedeService.despacharPedido(pedidoId, mapaLineas).subscribe({
       next: () => {
         this.loadPedidos();
-        this.inventoryService.getInsumos(true).subscribe(res => this.insumos = res);
+        this.loadInsumos();
       },
       error: (err: any) => alert(err.error?.message || 'Error al despachar el pedido')
     });
@@ -510,7 +513,7 @@ export class PedidosInterSedeComponent implements OnInit {
     this.multiSedeService.recibirPedido(pedidoId, {}).subscribe({
       next: () => {
         this.loadPedidos();
-        this.inventoryService.getInsumos(true).subscribe(res => this.insumos = res);
+        this.loadInsumos();
       },
       error: (err: any) => alert(err.error?.message || 'Error al confirmar recepción del pedido')
     });

@@ -33,8 +33,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         }
 
         [HttpGet("insumos")]
-        public async Task<IActionResult> GetInsumos([FromQuery] bool? excludeHidden, [FromQuery] string? search, CancellationToken ct)
+        public async Task<IActionResult> GetInsumos([FromQuery] bool? excludeHidden, [FromQuery] string? search, [FromQuery] Guid? sedeId, CancellationToken ct)
         {
+            var targetSedeId = sedeId ?? SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+
             var query = _context.Insumos
                 .Include(i => i.PrincipiosActivos)
                     .ThenInclude(pa => pa.PrincipioActivo)
@@ -63,9 +65,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     i.Id,
                     i.Codigo,
                     i.Nombre,
-                    StockActual = i.StocksPorSede.Where(s => s.SedeId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal).Select(s => (decimal?)s.StockActual).FirstOrDefault() 
-                                  ?? i.StocksPorSede.Select(s => (decimal?)s.StockActual).Sum() 
-                                  ?? 0,
+                    StockActual = i.StocksPorSede.Where(s => s.SedeId == targetSedeId).Select(s => (decimal?)s.StockActual).FirstOrDefault() ?? 0,
                     UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
                     i.CostoUnitarioBaseUSD,
                     i.PermiteFraccionamiento,

@@ -21,6 +21,7 @@
 - **Asignación Única y Directa al Almacén Principal**: Todo insumo o medicamento creado en el sistema instancia automáticamente su registro base de `StockSede` asignado al Almacén Principal (`SeedConstants.SedeId_Principal`). Se evita la instanciación duplicada de `StockSede` en controladores para mantener la restricción de clave única (`IX_StocksSede_SedeId_InsumoId`) e integrar perfectamente con la regla de Unidireccionalidad.
 - **Registro de Catálogo vs Ingreso por Compra**: La creación/registro de un medicamento o insumo en el catálogo (`CreateInsumo`) NO requiere stock inicial obligatorio (> 0) y puede registrarse con stock inicial 0. Es en el módulo de compras (`RecordPurchase` / `/inventario/compras`) donde la cantidad comprada que incrementa existencias debe ser strictly mayor a 0 (`Cantidad > 0`).
 - **Modalidad de Ingreso de Costo de Compras (Costo Total vs Costo Unitario)**: En `/inventario/compras`, el operador puede seleccionar entre **💵 Costo Total Renglón ($)** (monto total de la factura por la compra del renglón, ej: $25.00 por 5 cajas de 20 tabletas = 100 tabletas) y **🏷️ Costo Unitario ($)**. La interfaz calcula automáticamente el costo unitario base derivado ($0.25 / tablet) que se guarda en el catálogo para valorizar existencias, evitando multiplicar la cantidad total de unidades base por el precio del paquete/caja.
+- **Filtrado de Stock por Sede & Catálogo Completo**: El endpoint `GET api/inventory/insumos?sedeId={id}` permite consultar las existencias del catálogo discriminadas por Sede. La proyección retorna el `StockActual` físico de la sede solicitada (o 0 si no posee existencias físicas en ella) sin omitir ningún producto del catálogo, permitiendo autocompletar e incluir cualquier insumo en requisiciones inter-sede. Si `sedeId` no es especificado, aplica fallback retrocompatible a Almacén Principal (`SeedConstants.SedeId_Principal`).
 
 ---
 
@@ -51,10 +52,18 @@ El Sidebar simplifica la navegación bajo la categoría **Inventario**:
 
 ---
 
-## 4. UI/UX Cyber-Medical Glassmorphism
+## 4. Infraestructura & Auto-Generación SSL Interna en Docker (Nginx Alpine)
+
+- **Entrypoint Autónomo (`docker-entrypoint.sh`)**: El contenedor Nginx (`sat-frontend`) en su rutina de arranque evalúa la presencia de certificados válidos en `/etc/nginx/ssl` (volumen montado `:ro`). Si no existen certificados provistos por el host, genera internamente mediante `openssl` llaves autofirmadas RSA 2048-bit válidas por 10 años (`CN=localhost`) en `/etc/ssl/certs/selfsigned.crt` y reconfigura `/etc/nginx/conf.d/default.conf` con `sed`.
+- **Cero Intervención Manual**: Elimina la dependencia de scripts manuales de generación SSL en Windows, asegurando un arranque limpio con `docker-compose up -d --build frontend` sin errores `BIO_new_file() failed`.
+
+---
+
+## 5. UI/UX Cyber-Medical Glassmorphism
 
 - Paleta HSL tailor-made `#0B0F19` con tarjetas glassmorphic `bg-surface-card/60 backdrop-blur-2xl`.
 - Badges dinámicos de principios activos 🧬 en color Índigo (`bg-indigo-500/10 text-indigo-300`).
 - Badges de Stock Central con discriminación de disponibilidad (Emerald/Rose).
 - Tableros de auditoría de Kárdex y Requisiciones con discriminación por colores de estado.
+
 

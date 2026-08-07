@@ -22,8 +22,8 @@ LABEL maintainer="SistemaSatHospitalario" \
       description="Hospital System Frontend PWA" \
       version="1.0"
 
-# Instalar curl para healthcheck
-RUN apk add --no-cache curl
+# Instalar curl y openssl para healthcheck y generación de certs SSL
+RUN apk add --no-cache curl openssl
 
 # Copiar el build de Angular al directorio de Nginx
 COPY --from=build /app/dist/sistema-sat-hospitalario.frontend/browser /usr/share/nginx/html
@@ -31,10 +31,15 @@ COPY --from=build /app/dist/sistema-sat-hospitalario.frontend/browser /usr/share
 # Copiar configuración Nginx personalizada (proxy a API + SPA routing)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Copiar script de entrypoint para automatización SSL
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 80 443
 
 # Health check nativo Docker
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \
     CMD curl -f http://localhost:80/ || exit 1
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
