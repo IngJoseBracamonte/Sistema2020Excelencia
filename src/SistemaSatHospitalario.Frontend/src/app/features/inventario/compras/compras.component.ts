@@ -45,6 +45,7 @@ export class ComprasComponent implements OnInit {
 
   // Formulario por renglón
   public purchaseQty = signal<number>(1);
+  public costMode = signal<'total' | 'unitario'>('total');
   public purchaseCost = signal<number>(0);
   
   // Carrito de Compras
@@ -65,6 +66,20 @@ export class ComprasComponent implements OnInit {
     Package,
     Layers
   };
+
+  public calculatedUnitCost = computed(() => {
+    const qty = Number(this.purchaseQty());
+    const cost = Number(this.purchaseCost());
+    if (qty <= 0) return 0;
+    return this.costMode() === 'total' ? (cost / qty) : cost;
+  });
+
+  public calculatedTotalCost = computed(() => {
+    const qty = Number(this.purchaseQty());
+    const cost = Number(this.purchaseCost());
+    if (qty <= 0) return 0;
+    return this.costMode() === 'total' ? cost : (qty * cost);
+  });
 
   public cartTotal = computed(() => {
     return this.cart().reduce((sum, item) => sum + item.totalUSD, 0);
@@ -111,6 +126,7 @@ export class ComprasComponent implements OnInit {
     this.filteredInsumos.set([]);
     this.purchaseCost.set(insumo.costoUnitarioBaseUSD);
     this.purchaseQty.set(1);
+    this.costMode.set('total');
   }
 
   addToCart() {
@@ -133,8 +149,8 @@ export class ComprasComponent implements OnInit {
     }
 
     const qty = Number(this.purchaseQty());
-    const cost = Number(this.purchaseCost());
-    const totalUSD = qty * cost;
+    const unitCost = this.calculatedUnitCost();
+    const totalUSD = this.calculatedTotalCost();
 
     const paNames = item.principiosActivos ? item.principiosActivos.map(pa => `${pa.nombre} (${pa.concentracion})`) : [];
 
@@ -143,7 +159,7 @@ export class ComprasComponent implements OnInit {
       this.cart.update(prev => {
         const updated = [...prev];
         updated[existingIndex].cantidad = qty;
-        updated[existingIndex].precioCostoUSD = cost;
+        updated[existingIndex].precioCostoUSD = unitCost;
         updated[existingIndex].totalUSD = totalUSD;
         return updated;
       });
@@ -155,7 +171,7 @@ export class ComprasComponent implements OnInit {
           codigo: item.codigo,
           nombre: item.nombre,
           cantidad: qty,
-          precioCostoUSD: cost,
+          precioCostoUSD: unitCost,
           totalUSD: totalUSD,
           principiosActivosNames: paNames
         }
@@ -167,6 +183,7 @@ export class ComprasComponent implements OnInit {
     this.purchaseSearchTerm.set('');
     this.purchaseQty.set(1);
     this.purchaseCost.set(0);
+    this.costMode.set('total');
   }
 
   removeFromCart(index: number) {

@@ -237,7 +237,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             }
 
             await _context.SaveChangesAsync(ct);
-            return Ok(insumo);
+            return Ok(new
+            {
+                insumo.Id,
+                insumo.Codigo,
+                insumo.Nombre,
+                StockActual = insumo.StockActual,
+                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                insumo.CostoUnitarioBaseUSD,
+                insumo.PermiteFraccionamiento,
+                insumo.Categoria,
+                insumo.IsDeleted,
+                insumo.OcultoEnTraslados
+            });
         }
 
         [HttpPut("insumos/{id}")]
@@ -254,7 +266,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 dto.Categoria
             );
             await _context.SaveChangesAsync(ct);
-            return Ok(insumo);
+            return Ok(new
+            {
+                insumo.Id,
+                insumo.Codigo,
+                insumo.Nombre,
+                StockActual = insumo.StockActual,
+                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                insumo.CostoUnitarioBaseUSD,
+                insumo.PermiteFraccionamiento,
+                insumo.Categoria,
+                insumo.IsDeleted,
+                insumo.OcultoEnTraslados
+            });
         }
 
         // --- Principios Activos CRUD & Vinculación ---
@@ -414,7 +438,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
             insumo.Restaurar();
             await _context.SaveChangesAsync(ct);
-            return Ok(insumo);
+            return Ok(new
+            {
+                insumo.Id,
+                insumo.Codigo,
+                insumo.Nombre,
+                StockActual = insumo.StockActual,
+                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                insumo.CostoUnitarioBaseUSD,
+                insumo.PermiteFraccionamiento,
+                insumo.Categoria,
+                insumo.IsDeleted,
+                insumo.OcultoEnTraslados
+            });
         }
 
         [HttpPost("compras")]

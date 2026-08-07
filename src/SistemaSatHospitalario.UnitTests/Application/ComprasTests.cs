@@ -93,6 +93,25 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(50m, stockSede.StockActual);
             Assert.Equal(50m, insumo.StockActual);
         }
+
+        [Fact]
+        public void Compra_CalculoCostosTotalYUnitario_ActualizaCostoUnitarioBaseEIncrementaStock()
+        {
+            // Arrange: 100 tabletas compradas en 5 cajas a $5 c/u = $25.00 total. Costo Unitario = $25 / 100 = $0.25
+            var insumo = new Insumo("MED-NEO-PRED-5", "Neolpharma Prednisona 5mg", 0m, UnidadMedida.UNIDAD, 0m, true, "Medicamento");
+            var cantidadUnidades = 100m;
+            var costoTotalCompraUSD = 25.00m;
+            var costoUnitarioDerivado = costoTotalCompraUSD / cantidadUnidades;
+
+            // Act: Actualizar detalles de costo e incrementar stock
+            insumo.ActualizarDetalles(insumo.Nombre, insumo.UnidadMedidaBase, costoUnitarioDerivado, insumo.PermiteFraccionamiento, insumo.Categoria);
+            var stockSede = insumo.StocksPorSede.First();
+            stockSede.RegistrarMovimientoStock(cantidadUnidades, insumo.PermiteFraccionamiento);
+
+            // Assert
+            Assert.Equal(0.25m, insumo.CostoUnitarioBaseUSD);
+            Assert.Equal(100m, insumo.StockActual);
+        }
     }
 }
 

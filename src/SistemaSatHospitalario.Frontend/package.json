@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "start:aspire": "ng serve --port %PORT%",
+    "start:ssl": "ng serve --ssl --ssl-cert ../../ssl/server.crt --ssl-key ../../ssl/server.key",
+    "serve:pwa": "npx http-server dist/sistema-sat-hospitalario.frontend/browser -S -C ../../ssl/server.crt -K ../../ssl/server.key -p 4200",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

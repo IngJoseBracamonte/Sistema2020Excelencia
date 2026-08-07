@@ -153,6 +153,36 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(0m, stockPrincipal.StockActual);
             Assert.Equal(0m, medicamento.StockActual);
         }
+
+        [Fact]
+        public void Insumo_ProyeccionDTO_PrevieneCiclosDeNavegacion()
+        {
+            // Arrange
+            var insumo = new Insumo("MED-TEST-03", "Prednisona 5mg Neolpharma", 0m, UnidadMedida.UNIDAD, 5.00m, true, "Medicamento");
+
+            // Act: Proyección limpia anti-ciclo circular
+            var dto = new
+            {
+                insumo.Id,
+                insumo.Codigo,
+                insumo.Nombre,
+                StockActual = insumo.StockActual,
+                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                insumo.CostoUnitarioBaseUSD,
+                insumo.PermiteFraccionamiento,
+                insumo.Categoria,
+                insumo.IsDeleted,
+                insumo.OcultoEnTraslados
+            };
+
+            // Assert
+            Assert.Equal("MED-TEST-03", dto.Codigo);
+            Assert.Equal("Prednisona 5mg Neolpharma", dto.Nombre);
+            Assert.Equal(5.00m, dto.CostoUnitarioBaseUSD);
+            Assert.Equal("UNIDAD", dto.UnidadMedidaBase);
+            Assert.Equal(0m, dto.StockActual);
+        }
     }
 }
+
 
