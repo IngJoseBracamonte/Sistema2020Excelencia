@@ -601,10 +601,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear las tablas de PrincipiosActivos y columnas de soft delete en Insumos.");
                 }
 
-                _logger.LogInformation("Ejecutando limpieza de datos de prueba e inicializando System Database limpia...");
-
-                // Purga completa de data transaccional y de pruebas previa para pruebas manuales limpias
-                await PurgeAllTestDataAsync();
+                // _logger.LogInformation("Ejecutando limpieza de datos de prueba e inicializando System Database limpia...");
+                // // Purga completa de data transaccional deshabilitada para preservar persistencia real de datos
+                // await PurgeAllTestDataAsync();
 
                 await SeedEspecialidadesAsync();
                 await SeedServiciosClinicosAsync();
