@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,84 +23,143 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<PendingARDto>> Handle(GetPendingARQuery request, CancellationToken cancellationToken)
         {
-            var query = from ar in _context.CuentasPorCobrar.AsNoTracking()
-                        join pac in _context.PacientesAdmision.AsNoTracking() on ar.PacienteId equals pac.Id
-                        join cta in _context.CuentasServicios.AsNoTracking() on ar.CuentaServicioId equals cta.Id
-                        // Ajuste de tipos Guid? a int? para el join de Convenios
-                        join conv in _context.SegurosConvenios.AsNoTracking() on cta.ConvenioId equals (int?)conv.Id into convJoin
-                        from conv in convJoin.DefaultIfEmpty()
-                        join rf in _context.RecibosFactura.AsNoTracking() on cta.Id equals rf.CuentaServicioId into rfJoin
-                        from rf in rfJoin.DefaultIfEmpty()
-                        select new PendingARDto
-                        {
-                            Id = ar.Id,
-                            CuentaId = ar.CuentaServicioId,
-                            ReciboId = rf != null ? (Guid?)rf.Id : null,
-                            PacienteNombre = pac.NombreCorto,
-                            PacienteCedula = pac.CedulaPasaporte,
-                            TipoIngreso = cta.TipoIngreso,
-                            SeguroNombre = conv != null ? conv.Nombre : EstadoConstants.Particular,
-                            MontoTotal = ar.MontoTotalBase,
-                            SaldoPendiente = ar.MontoTotalBase - ar.MontoPagadoBase,
-                            FechaEmision = ar.FechaCreacion,
-                            Estado = ar.Estado,
-                            IsAudited = ar.IsAudited || cta.ConvenioId == null,
-                            QuienAutorizo = ar.QuienAutorizo,
-                            DoctorProcedimiento = ar.DoctorProcedimiento,
-                            InformacionAdicional = ar.InformacionAdicional,
-                            CompromisoGenerado = ar.CompromisoGenerado,
-                            GarantiaGenerada = ar.GarantiaGenerada,
-                            FechaNacimiento = pac.FechaNacimiento,
-                            TelefonoContact = pac.TelefonoContact,
-                            Conceptos = _context.DetallesServicioCuenta
-                                .Where(d => d.CuentaServicioId == ar.CuentaServicioId)
-                                .Select(d => new ConceptoFacturadoDto
-                                {
-                                    Descripcion = d.Descripcion,
-                                    MontoBase = d.Precio * d.Cantidad
-                                }).ToList(),
-                            Pagos = _context.DetallesPago
-                                .Where(dp => _context.RecibosFactura
-                                    .Any(rf => rf.Id == dp.ReciboFacturaId && rf.CuentaServicioId == ar.CuentaServicioId))
-                                .Select(dp => new PaymentHistoryDto
-                                {
-                                    // Senior Fix: Usamos una subconsulta de FechaEmision en lugar de .First()
-                                    Fecha = _context.RecibosFactura
-                                        .Where(r => r.Id == dp.ReciboFacturaId)
-                                        .Select(r => r.FechaEmision)
-                                        .FirstOrDefault(),
-                                    Metodo = dp.MetodoPago,
-                                    Referencia = dp.ReferenciaBancaria,
-                                    MontoBase = dp.EquivalenteAbonadoBase,
-                                    MontoCambiario = dp.MontoAbonadoMoneda
-                                }).ToList()
-                        };
+            var baseQuery = from ar in _context.CuentasPorCobrar.AsNoTracking()
+                            join pac in _context.PacientesAdmision.AsNoTracking() on ar.PacienteId equals pac.Id
+                            join cta in _context.CuentasServicios.AsNoTracking() on ar.CuentaServicioId equals cta.Id
+                            join conv in _context.SegurosConvenios.AsNoTracking() on cta.ConvenioId equals (int?)conv.Id into convJoin
+                            from conv in convJoin.DefaultIfEmpty()
+                            join rf in _context.RecibosFactura.AsNoTracking() on cta.Id equals rf.CuentaServicioId into rfJoin
+                            from rf in rfJoin.DefaultIfEmpty()
+                            select new
+                            {
+                                ArId = ar.Id,
+                                CuentaId = ar.CuentaServicioId,
+                                ReciboId = rf != null ? (Guid?)rf.Id : null,
+                                PacienteNombre = pac.NombreCorto,
+                                PacienteCedula = pac.CedulaPasaporte,
+                                TipoIngreso = cta.TipoIngreso,
+                                SeguroNombre = conv != null ? conv.Nombre : EstadoConstants.Particular,
+                                MontoTotal = ar.MontoTotalBase,
+                                MontoPagadoBase = ar.MontoPagadoBase,
+                                FechaEmision = ar.FechaCreacion,
+                                Estado = ar.Estado,
+                                IsAudited = ar.IsAudited || cta.ConvenioId == null,
+                                QuienAutorizo = ar.QuienAutorizo,
+                                DoctorProcedimiento = ar.DoctorProcedimiento,
+                                InformacionAdicional = ar.InformacionAdicional,
+                                CompromisoGenerado = ar.CompromisoGenerado,
+                                GarantiaGenerada = ar.GarantiaGenerada,
+                                FechaNacimiento = pac.FechaNacimiento,
+                                TelefonoContact = pac.TelefonoContact,
+                                ConvenioId = cta.ConvenioId
+                            };
 
             if (!string.IsNullOrEmpty(request.Estado))
             {
-                query = query.Where(ar => ar.Estado == request.Estado);
+                baseQuery = baseQuery.Where(ar => ar.Estado == request.Estado);
             }
 
             if (!string.IsNullOrEmpty(request.SearchTerm))
             {
-                query = query.Where(ar => ar.PacienteNombre.Contains(request.SearchTerm) || ar.PacienteCedula.Contains(request.SearchTerm));
+                baseQuery = baseQuery.Where(ar => ar.PacienteNombre.Contains(request.SearchTerm) || ar.PacienteCedula.Contains(request.SearchTerm));
             }
 
             if (request.StartDate.HasValue || request.EndDate.HasValue)
             {
-                // Standard Date Range (V12.1): Precise daily boundaries without excessive overlap
                 var start = request.StartDate?.Date ?? DateTime.MinValue;
                 var end = request.EndDate?.Date.AddDays(1).AddTicks(-1) ?? DateTime.MaxValue;
-                
-                query = query.Where(ar => ar.FechaEmision >= start && ar.FechaEmision <= end);
+                baseQuery = baseQuery.Where(ar => ar.FechaEmision >= start && ar.FechaEmision <= end);
             }
 
             if (request.SoloCompromiso.HasValue && request.SoloCompromiso.Value)
             {
-                query = query.Where(ar => ar.CompromisoGenerado && ar.SeguroNombre == EstadoConstants.Particular);
+                baseQuery = baseQuery.Where(ar => ar.CompromisoGenerado && ar.SeguroNombre == EstadoConstants.Particular);
             }
 
-            return await query.OrderByDescending(ar => ar.FechaEmision).ToListAsync(cancellationToken);
+            var rawList = await baseQuery.OrderByDescending(ar => ar.FechaEmision).ToListAsync(cancellationToken);
+
+            if (!rawList.Any())
+            {
+                return new List<PendingARDto>();
+            }
+
+            var cuentaIds = rawList.Select(r => r.CuentaId).Distinct().ToList();
+
+            var conceptos = await _context.DetallesServicioCuenta
+                .AsNoTracking()
+                .Where(d => cuentaIds.Contains(d.CuentaServicioId))
+                .Select(d => new
+                {
+                    d.CuentaServicioId,
+                    d.Descripcion,
+                    MontoBase = d.Precio * d.Cantidad
+                })
+                .ToListAsync(cancellationToken);
+
+            var recibos = await _context.RecibosFactura
+                .AsNoTracking()
+                .Where(r => cuentaIds.Contains(r.CuentaServicioId))
+                .Select(r => new { r.Id, r.CuentaServicioId, r.FechaEmision })
+                .ToListAsync(cancellationToken);
+
+            var reciboIds = recibos.Select(r => r.Id).Distinct().ToList();
+
+            var pagos = await _context.DetallesPago
+                .AsNoTracking()
+                .Where(dp => reciboIds.Contains(dp.ReciboFacturaId))
+                .Select(dp => new
+                {
+                    dp.ReciboFacturaId,
+                    dp.MetodoPago,
+                    dp.ReferenciaBancaria,
+                    dp.EquivalenteAbonadoBase,
+                    dp.MontoAbonadoMoneda
+                })
+                .ToListAsync(cancellationToken);
+
+            var result = rawList.Select(ar => new PendingARDto
+            {
+                Id = ar.ArId,
+                CuentaId = ar.CuentaId,
+                ReciboId = ar.ReciboId,
+                PacienteNombre = ar.PacienteNombre,
+                PacienteCedula = ar.PacienteCedula,
+                TipoIngreso = ar.TipoIngreso,
+                SeguroNombre = ar.SeguroNombre,
+                MontoTotal = ar.MontoTotal,
+                SaldoPendiente = ar.MontoTotal - ar.MontoPagadoBase,
+                FechaEmision = ar.FechaEmision,
+                Estado = ar.Estado,
+                IsAudited = ar.IsAudited,
+                QuienAutorizo = ar.QuienAutorizo,
+                DoctorProcedimiento = ar.DoctorProcedimiento,
+                InformacionAdicional = ar.InformacionAdicional,
+                CompromisoGenerado = ar.CompromisoGenerado,
+                GarantiaGenerada = ar.GarantiaGenerada,
+                FechaNacimiento = ar.FechaNacimiento,
+                TelefonoContact = ar.TelefonoContact,
+                Conceptos = conceptos
+                    .Where(c => c.CuentaServicioId == ar.CuentaId)
+                    .Select(c => new ConceptoFacturadoDto
+                    {
+                        Descripcion = c.Descripcion,
+                        MontoBase = c.MontoBase
+                    })
+                    .ToList(),
+                Pagos = (from dp in pagos
+                         join r in recibos on dp.ReciboFacturaId equals r.Id
+                         where r.CuentaServicioId == ar.CuentaId
+                         select new PaymentHistoryDto
+                         {
+                             Fecha = r.FechaEmision,
+                             Metodo = dp.MetodoPago,
+                             Referencia = dp.ReferenciaBancaria,
+                             MontoBase = dp.EquivalenteAbonadoBase,
+                             MontoCambiario = dp.MontoAbonadoMoneda
+                         }).ToList()
+            }).ToList();
+
+            return result;
         }
     }
 }

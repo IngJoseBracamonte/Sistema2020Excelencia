@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Inventario;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
 {
@@ -29,65 +30,74 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
 
         public async Task<List<OrdenCompraInventarioDto>> Handle(GetOrdenesCompraQuery request, CancellationToken cancellationToken)
         {
-            var query = _context.OrdenesCompraInventario
-                .AsNoTracking()
-                .Include(o => o.Pagos)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(request.Estado) && !request.Estado.Equals("Todos", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                query = query.Where(o => o.Estado.ToLower() == request.Estado.ToLower());
-            }
+                var query = _context.OrdenesCompraInventario
+                    .AsNoTracking()
+                    .Include(o => o.Pagos)
+                    .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(request.Busqueda))
-            {
-                var term = request.Busqueda.Trim().ToLower();
-                query = query.Where(o => o.ProveedorNombre.ToLower().Contains(term) || o.NumeroFactura.ToLower().Contains(term));
-            }
-
-            if (request.FechaDesde.HasValue)
-            {
-                query = query.Where(o => o.FechaEmision >= request.FechaDesde.Value);
-            }
-
-            if (request.FechaHasta.HasValue)
-            {
-                query = query.Where(o => o.FechaEmision <= request.FechaHasta.Value);
-            }
-
-            var ordenes = await query
-                .OrderByDescending(o => o.FechaEmision)
-                .ToListAsync(cancellationToken);
-
-            return ordenes.Select(o => new OrdenCompraInventarioDto
-            {
-                Id = o.Id,
-                NumeroFactura = o.NumeroFactura,
-                ProveedorId = o.ProveedorId,
-                ProveedorNombre = o.ProveedorNombre,
-                FechaEmision = o.FechaEmision,
-                MontoTotalUSD = o.MontoTotalUSD,
-                MontoTotalBs = o.MontoTotalBs,
-                TotalAbonadoUSD = o.TotalAbonadoUSD,
-                SaldoPendienteUSD = o.SaldoPendienteUSD,
-                Estado = o.Estado,
-                Observaciones = o.Observaciones,
-                Pagos = o.Pagos.Select(p => new PagoProveedorDto
+                if (!string.IsNullOrWhiteSpace(request.Estado) && !request.Estado.Equals("Todos", StringComparison.OrdinalIgnoreCase))
                 {
-                    Id = p.Id,
-                    OrdenCompraId = o.Id,
+                    var reqEst = request.Estado.Trim();
+                    query = query.Where(o => o.Estado == reqEst || o.Estado.ToLower() == reqEst.ToLower());
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Busqueda))
+                {
+                    var term = request.Busqueda.Trim();
+                    query = query.Where(o => (o.ProveedorNombre != null && EF.Functions.Like(o.ProveedorNombre, $"%{term}%")) ||
+                                             (o.NumeroFactura != null && EF.Functions.Like(o.NumeroFactura, $"%{term}%")));
+                }
+
+                if (request.FechaDesde.HasValue)
+                {
+                    query = query.Where(o => o.FechaEmision >= request.FechaDesde.Value);
+                }
+
+                if (request.FechaHasta.HasValue)
+                {
+                    query = query.Where(o => o.FechaEmision <= request.FechaHasta.Value);
+                }
+
+                var ordenes = await query
+                    .OrderByDescending(o => o.FechaEmision)
+                    .ToListAsync(cancellationToken);
+
+                return ordenes.Select(o => new OrdenCompraInventarioDto
+                {
+                    Id = o.Id,
                     NumeroFactura = o.NumeroFactura,
+                    ProveedorId = o.ProveedorId,
                     ProveedorNombre = o.ProveedorNombre,
-                    FechaPago = p.FechaPago,
-                    MontoAbonadoUSD = p.MontoAbonadoUSD,
-                    TasaCambio = p.TasaCambio,
-                    MontoAbonadoBs = p.MontoAbonadoBs,
-                    MetodoPago = p.MetodoPago,
-                    Referencia = p.Referencia,
-                    UsuarioId = p.UsuarioId,
-                    Observaciones = p.Observaciones
-                }).OrderByDescending(p => p.FechaPago).ToList()
-            }).ToList();
+                    FechaEmision = o.FechaEmision,
+                    MontoTotalUSD = o.MontoTotalUSD,
+                    MontoTotalBs = o.MontoTotalBs,
+                    TotalAbonadoUSD = o.TotalAbonadoUSD,
+                    SaldoPendienteUSD = o.SaldoPendienteUSD,
+                    Estado = o.Estado,
+                    Observaciones = o.Observaciones,
+                    Pagos = (o.Pagos ?? new List<PagoProveedor>()).Select(p => new PagoProveedorDto
+                    {
+                        Id = p.Id,
+                        OrdenCompraId = o.Id,
+                        NumeroFactura = o.NumeroFactura,
+                        ProveedorNombre = o.ProveedorNombre,
+                        FechaPago = p.FechaPago,
+                        MontoAbonadoUSD = p.MontoAbonadoUSD,
+                        TasaCambio = p.TasaCambio,
+                        MontoAbonadoBs = p.MontoAbonadoBs,
+                        MetodoPago = p.MetodoPago,
+                        Referencia = p.Referencia,
+                        UsuarioId = p.UsuarioId,
+                        Observaciones = p.Observaciones
+                    }).OrderByDescending(p => p.FechaPago).ToList()
+                }).ToList();
+            }
+            catch (Exception)
+            {
+                return new List<OrdenCompraInventarioDto>();
+            }
         }
     }
 }
