@@ -78,9 +78,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public auditFilter = signal<string>('Todos');
 
   // Chart Options
-  public revenueChartOptions: Partial<ChartOptions> = {};
-  public purchasesChartOptions: Partial<ChartOptions> = {};
-  public originChartOptions: Partial<ChartOptions> = {};
+  public revenueChartOptions: Partial<ChartOptions> = { chart: { type: 'area', height: 280, background: 'transparent' } };
+  public purchasesChartOptions: Partial<ChartOptions> = { chart: { type: 'bar', height: 240, background: 'transparent' } };
+  public originChartOptions: Partial<ChartOptions> = { chart: { type: 'donut', height: 220, background: 'transparent' } };
 
   // Lista de auditoría filtrada de forma reactiva
   public filteredAudit = computed(() => {
@@ -138,8 +138,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.initCharts(data);
         this.isLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.isLoading.set(false);
+        console.warn('[Dashboard] Error al cargar insights:', err?.status || err?.message);
       }
     });
   }

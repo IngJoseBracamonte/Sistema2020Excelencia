@@ -956,7 +956,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                     new TipoServicio(2, "Laboratorio", "LAB"),
                     new TipoServicio(3, "RX", "RX"),
                     new TipoServicio(4, "Tomo", "TOMO"),
-                    new TipoServicio(5, "Insumo", "INS")
+                    new TipoServicio(5, "Insumo", "INS"),
+                    new TipoServicio(6, "Informe", "INF")
                 );
             });
 

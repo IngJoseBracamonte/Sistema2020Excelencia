@@ -59,9 +59,9 @@ export class AdminAnalyticsComponent implements OnInit {
   public isLoading = signal<boolean>(false);
 
   // Opciones de Gráficos
-  public trendChartOptions: Partial<ChartOptions> = {};
-  public specialtyChartOptions: Partial<ChartOptions> = {};
-  public patientMixChartOptions: Partial<ChartOptions> = {};
+  public trendChartOptions: Partial<ChartOptions> = { chart: { type: 'area', height: 300, background: 'transparent' } };
+  public specialtyChartOptions: Partial<ChartOptions> = { chart: { type: 'bar', height: 300, background: 'transparent' } };
+  public patientMixChartOptions: Partial<ChartOptions> = { chart: { type: 'donut', height: 300, background: 'transparent' } };
 
   readonly icons = {
     Trend: TrendingUp,
@@ -86,7 +86,10 @@ export class AdminAnalyticsComponent implements OnInit {
         this.initCharts(data);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: (err) => {
+        this.isLoading.set(false);
+        console.warn('[Analytics] Error al cargar insights:', err?.status || err?.message);
+      }
     });
   }
 
@@ -100,10 +103,11 @@ export class AdminAnalyticsComponent implements OnInit {
     };
 
     // 1. Gráfico de Tendencia de Ingresos (Líneas)
+    const trendData = data.tendenciaIngresos || [];
     this.trendChartOptions = {
       series: [{
         name: "Ingresos (USD)",
-        data: data.tendenciaIngresos.map(t => t.monto)
+        data: trendData.map(t => t.monto)
       }],
       chart: {
         type: "area",
@@ -113,7 +117,7 @@ export class AdminAnalyticsComponent implements OnInit {
         background: 'transparent',
         foreColor: '#94a3b8'
       },
-      colors: ['#f43f5e'], // Rose 500
+      colors: ['#f43f5e'],
       stroke: { curve: 'smooth', width: 4 },
       fill: {
         type: 'gradient',
@@ -126,7 +130,7 @@ export class AdminAnalyticsComponent implements OnInit {
       },
       dataLabels: { enabled: false },
       xaxis: {
-        categories: data.tendenciaIngresos.map(t => t.fecha),
+        categories: trendData.map(t => t.fecha),
         axisBorder: { show: false },
         axisTicks: { show: false }
       },
@@ -139,10 +143,11 @@ export class AdminAnalyticsComponent implements OnInit {
     };
 
     // 2. Gráfico por Especialidad (Barras Horizontales)
+    const specData = data.ventasPorEspecialidad || [];
     this.specialtyChartOptions = {
       series: [{
         name: "Monto Facturado",
-        data: data.ventasPorEspecialidad.map(v => v.monto)
+        data: specData.map(v => v.monto)
       }],
       chart: {
         type: "bar",
@@ -158,10 +163,10 @@ export class AdminAnalyticsComponent implements OnInit {
           barHeight: '60%'
         }
       },
-      colors: ['#10b981'], // Emerald 500
+      colors: ['#10b981'],
       dataLabels: { enabled: false },
       xaxis: {
-        categories: data.ventasPorEspecialidad.map(v => v.especialidad),
+        categories: specData.map(v => v.especialidad),
         axisBorder: { show: false }
       },
       grid: {
@@ -172,16 +177,19 @@ export class AdminAnalyticsComponent implements OnInit {
     };
 
     // 3. Gráfico de Mix de Pacientes (Dona)
+    const distData = data.distribucionPacientes || [];
+    const mixSeries = distData.map(d => d.valor);
+    const hasMixData = mixSeries.some(v => v > 0);
     this.patientMixChartOptions = {
-      series: data.distribucionPacientes.map(d => d.valor),
+      series: hasMixData ? mixSeries : [1],
       chart: {
         type: "donut",
         height: 300,
         background: 'transparent',
         foreColor: '#94a3b8'
       },
-      labels: data.distribucionPacientes.map(d => d.etiqueta),
-      colors: ['#38bdf8', '#f59e0b'], // Sky 400, Amber 500
+      labels: hasMixData ? distData.map(d => d.etiqueta) : ['Sin datos'],
+      colors: ['#38bdf8', '#f59e0b'],
       legend: { position: 'bottom', markers: { strokeWidth: 0 } },
       stroke: { show: false },
       plotOptions: {
@@ -194,7 +202,7 @@ export class AdminAnalyticsComponent implements OnInit {
                 show: true,
                 label: 'TOTAL',
                 color: '#f8fafc',
-                formatter: () => data.pacientesAtendidosHoy.toString()
+                formatter: () => (data.pacientesAtendidosHoy ?? 0).toString()
               }
             }
           }

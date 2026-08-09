@@ -62,7 +62,9 @@ export class BillingFacadeService {
     return this.serviciosCargados().reduce((acc: number, curr: any) => {
       // Normalización en tiempo real (Pachón Pro V11.2)
       const precioUsd = curr.precioUsd ?? curr.PrecioUsd;
-      const normalized = precioUsd ?? (curr.esLegacy ? (curr.precio / this.tasaCambioDia()) : 0);
+      const tasa = this.tasaCambioDia() || 1; // Guard: Nunca dividir por 0
+      const raw = precioUsd ?? (curr.esLegacy ? (curr.precio / tasa) : 0);
+      const normalized = Number.isFinite(raw) ? raw : 0;
       return acc + normalized;
     }, 0);
   });
@@ -274,13 +276,16 @@ export class BillingFacadeService {
         // Motor de Normalización USD-First (V11.2)
         // Si el item viene del legado y solo tiene precio en Bs, se divide por la tasa
         const precioBaseUsd = s.precioUsd || s.PrecioUsd;
-        const normalizedPrice = precioBaseUsd || (s.esLegacy ? (s.precio / this.tasaCambioDia()) : s.precio);
+        const tasa = this.tasaCambioDia() || 1; // Guard: Nunca dividir por 0
+        const rawPrice = precioBaseUsd || (s.esLegacy ? (s.precio / tasa) : s.precio);
+        // Sanitización anti-NaN/Infinity: si el resultado no es un número finito, usar 0
+        const normalizedPrice = Number.isFinite(rawPrice) ? rawPrice : 0;
 
         return {
           servicioId: s.id,
           descripcion: s.descripcion,
           precio: normalizedPrice,
-          honorario: s.honorarioUsd || s.HonorarioUsd || 0,
+          honorario: Number.isFinite(s.honorarioUsd || s.HonorarioUsd || 0) ? (s.honorarioUsd || s.HonorarioUsd || 0) : 0,
           cantidad: 1,
           tipoServicio: s.tipo,
           medicoId: s.medicoId || undefined,
