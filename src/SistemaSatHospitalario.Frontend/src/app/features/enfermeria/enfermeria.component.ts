@@ -1450,6 +1450,7 @@ export class EnfermeriaComponent implements OnInit {
     this.triageAntecedenteCardiopatia.set(false);
 
     this.showIngresoModal.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   public buscarPacienteIngreso() {

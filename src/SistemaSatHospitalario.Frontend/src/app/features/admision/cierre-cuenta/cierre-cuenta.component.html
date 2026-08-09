@@ -61,8 +61,8 @@
         </div>
     </div>
 
-    <!-- Modal de Ingreso/Admisión de Paciente (Estilo Premium) -->
-    <div *ngIf="showIngresoModal()" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <!-- Modal de Ingreso/Admisión de Paciente (Estilo Premium - Posicionado en Top de Pantalla) -->
+    <div *ngIf="showIngresoModal()" class="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-4 md:pt-8 overflow-y-auto">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showIngresoModal.set(false)"></div>
         <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
             

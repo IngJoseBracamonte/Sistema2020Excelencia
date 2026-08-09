@@ -1224,6 +1224,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.triageAntecedenteCardiopatia.set(false);
 
     this.showIngresoModal.set(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   public buscarPacienteIngreso() {
