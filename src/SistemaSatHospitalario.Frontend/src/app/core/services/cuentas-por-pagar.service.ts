@@ -21,6 +21,10 @@ export class CuentasPorPagarService {
     return this.http.get<OrdenCompraInventario[]>(`${this.baseUrl}/ordenes`, { params });
   }
 
+  getFacturas(estado?: string, busqueda?: string, fechaDesde?: string, fechaHasta?: string): Observable<OrdenCompraInventario[]> {
+    return this.getOrdenes(estado, busqueda, fechaDesde, fechaHasta);
+  }
+
   registrarPago(request: RegistrarPagoRequest): Observable<PagoProveedor> {
     return this.http.post<PagoProveedor>(`${this.baseUrl}/registrar-pago`, request);
   }

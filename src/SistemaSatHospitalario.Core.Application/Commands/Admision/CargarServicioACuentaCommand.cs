@@ -284,6 +284,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     "EMERGENCIA" => SeedConstants.SedeId_Emergencia,
                     "HOSPITALIZACION" or "HOSPITALIZACIÓN" => SeedConstants.SedeId_Hospitalizacion,
                     "UCI" => SeedConstants.SedeId_UCI,
+                    "CIRUGIA" or "CIRUGÍA" or "QUIROFANO" or "QUIRÓFANO" => SeedConstants.SedeId_Cirugia,
                     _ => null
                 };
 

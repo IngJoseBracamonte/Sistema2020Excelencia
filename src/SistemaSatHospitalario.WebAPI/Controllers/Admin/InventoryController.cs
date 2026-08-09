@@ -404,31 +404,38 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             }
         }
 
-        [HttpPost("movimientos")]
-        public async Task<IActionResult> RecordMovement([FromBody] RecordMovementDto dto, CancellationToken ct)
+        [HttpPost("envio-subarea")]
+        public async Task<IActionResult> EnviarASubArea([FromBody] EnviarASubAreaCommand command, CancellationToken ct)
         {
-            var username = User.Identity?.Name ?? dto.Usuario ?? "System";
-            await _inventoryService.RecordMovementAsync(
-                dto.InsumoId,
-                dto.SedeId,
-                dto.TipoMovimiento,
-                dto.CantidadOriginal,
-                dto.UnidadMedidaOriginal,
-                username,
-                dto.Motivo,
-                ct
-            );
-            return Ok(new { Success = true });
+            try
+            {
+                command.Usuario = User.Identity?.Name ?? command.Usuario ?? "System";
+                var result = await _mediator.Send(command, ct);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpGet("movimientos")]
-        public async Task<IActionResult> GetMovements(CancellationToken ct)
+        public async Task<IActionResult> GetMovements(
+            [FromQuery] string? tipoMovimiento,
+            [FromQuery] DateTime? fechaDesde,
+            [FromQuery] DateTime? fechaHasta,
+            [FromQuery] string? search,
+            CancellationToken ct)
         {
-            var movements = await _context.MovimientosInsumo
-                .Include(m => m.Insumo)
-                .OrderByDescending(m => m.Fecha)
-                .ToListAsync(ct);
-            return Ok(movements);
+            var query = new GetHistorialMovimientosQuery
+            {
+                TipoMovimiento = tipoMovimiento,
+                FechaDesde = fechaDesde,
+                FechaHasta = fechaHasta,
+                SearchTerm = search
+            };
+            var result = await _mediator.Send(query, ct);
+            return Ok(result);
         }
 
         [HttpPost("cierre")]

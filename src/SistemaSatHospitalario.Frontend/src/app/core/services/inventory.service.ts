@@ -98,12 +98,21 @@ export class InventoryService {
     return this.http.post<any>(`${this.apiUrl}/descarte`, dto);
   }
 
-  recordMovement(dto: RecordMovement): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/movimientos`, dto);
+  enviarASubArea(dto: { insumoId: string; areaClinicaId?: string; nombreSubArea: string; cantidad: number; motivo: string }): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/envio-subarea`, dto);
   }
 
-  getMovements(): Observable<MovimientoInsumo[]> {
-    return this.http.get<MovimientoInsumo[]>(`${this.apiUrl}/movimientos`);
+  getHistorialMovimientos(tipoMovimiento?: string, fechaDesde?: string, fechaHasta?: string, search?: string): Observable<any[]> {
+    let params: any = {};
+    if (tipoMovimiento) params.tipoMovimiento = tipoMovimiento;
+    if (fechaDesde) params.fechaDesde = fechaDesde;
+    if (fechaHasta) params.fechaHasta = fechaHasta;
+    if (search) params.search = search;
+    return this.http.get<any[]>(`${this.apiUrl}/movimientos`, { params });
+  }
+
+  getMovements(): Observable<any[]> {
+    return this.getHistorialMovimientos();
   }
 
   getKardex(sedeId?: string, insumoId?: string, fechaDesde?: string, fechaHasta?: string): Observable<any> {

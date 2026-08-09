@@ -1,7 +1,7 @@
-# Memoria de Arquitectura — Módulo de Inventario v4.0.3 (Motor Transaccional Puro)
+# Memoria de Arquitectura — Módulo de Inventario v4.1.0 (Motor Transaccional & Auditoría Consolidada)
 
-**Versión**: v4.0.3  
-**Fecha de Actualización**: 2026-08-07  
+**Versión**: v4.1.0  
+**Fecha de Actualización**: 2026-08-09  
 **Stack de Tecnología**: .NET 9 WebAPI (CQRS MediatR) + Angular 19+ (Standalone Components + Signals)
 
 ---
@@ -12,17 +12,11 @@
 - **Persistencia Monetaria**: Operaciones base persistidas exclusivamente en Dólares ($ USD).
 - **Control Flow & Navegación Pure**: Toda la interacción ocurre mediante el `router-outlet` del layout principal sin desplegar modales primarios de edición.
 - **Relación N:M Principios Activos**: Cada insumo o medicamento puede asociarse con N principios activos indicando su concentración individual (ej: Ibuprofeno 400mg + Clorfeniramina 4mg).
-- **Segregación de Funciones Estricta (SoD)**: El personal operativo (Enfermería / Asistentes) en `/enfermeria` únicamente puede crear requisiciones y confirmar recepción de pedidos. Se deshabilitan totalmente los botones y controles de aprobación en Enfermería (`[readOnlyApprovals]="true"`), y se oculta completamente la visibilidad del Stock disponible del Almacén Principal (`!readOnlyApprovals`) para mantener un formulario limpio de requisición sin especulaciones. La evaluación, ajuste de cantidades y despacho queda centralizado exclusivamente en `/inventario/pedidos` para supervisores.
-- **Simplificación de Formulario & Restricción a 3 Áreas Clínicas**: Se eliminó el campo redundante `TIPO DE DESTINO` en el formulario de requisición. La Sede Solicitante en Enfermería se sincroniza automáticamente con el área clínica activa (**EMERGENCIA**, **HOSPITALIZACIÓN**, **UCI**), dirigiendo la reposición unidireccional directamente hacia el Almacén Principal.
-- **Ocultamiento de Badge de Rol en Enfermería**: El distintivo de rol Supervisor/Admin se oculta automáticamente cuando `readOnlyApprovals = true`.
-- **Cálculo de Stock Consolidado Global**: Al seleccionar `TODAS LAS SEDES (CONSOLIDADO)` en `/inventario/stock`, el sistema invoca `GET api/inventory/stock-consolidado` ejecutando `SUM(StockActual)` a través de `StocksPorSede`, garantizando el acumulado físico real de existencias sin arrojar 0 o estado "Agotado" por error.
-- **Historial de Solicitudes en Inventario**: La pestaña `Historial de Solicitudes` en `/inventario/pedidos` permite auditar la comparación entre la `Cantidad Solicitada` por la sede y la `Cantidad Aceptada/Despachada` por el Almacén Principal, con motivos y justificaciones por ítem.
-- **Tablero Kárdex Multisede & Diario**: Endpoint `GET api/inventory/kardex` con selectores para Sede, Insumo y Rango de Fechas (`Fecha Desde` y `Fecha Hasta`). Genera el desglose del **Balance Inicial**, **Total Entradas (+)**, **Total Salidas/Consumos (-)** y **Balance Final**.
-- **Asignación Única y Directa al Almacén Principal**: Todo insumo o medicamento creado en el sistema instancia automáticamente su registro base de `StockSede` asignado al Almacén Principal (`SeedConstants.SedeId_Principal`). Se evita la instanciación duplicada de `StockSede` en controladores para mantener la restricción de clave única (`IX_StocksSede_SedeId_InsumoId`) e integrar perfectamente con la regla de Unidireccionalidad.
-- **Registro de Catálogo vs Ingreso por Compra**: La creación/registro de un medicamento o insumo en el catálogo (`CreateInsumo`) NO requiere stock inicial obligatorio (> 0) y puede registrarse con stock inicial 0. Es en el módulo de compras (`RecordPurchase` / `/inventario/compras`) donde la cantidad comprada que incrementa existencias debe ser strictly mayor a 0 (`Cantidad > 0`).
-- **Modalidad de Ingreso de Costo de Compras (Costo Total vs Costo Unitario)**: En `/inventario/compras`, el operador puede seleccionar entre **💵 Costo Total Renglón ($)** (monto total de la factura por la compra del renglón, ej: $25.00 por 5 cajas de 20 tabletas = 100 tabletas) y **🏷️ Costo Unitario ($)**. La interfaz calcula automáticamente el costo unitario base derivado ($0.25 / tablet) que se guarda en el catálogo para valorizar existencias, evitando multiplicar la cantidad total de unidades base por el precio del paquete/caja.
-- **Filtrado de Stock por Sede & Catálogo Completo**: El endpoint `GET api/inventory/insumos?sedeId={id}` permite consultar las existencias del catálogo discriminadas por Sede. La proyección retorna el `StockActual` físico de la sede solicitada (o 0 si no posee existencias físicas en ella) sin omitir ningún producto del catálogo, permitiendo autocompletar e incluir cualquier insumo en requisiciones inter-sede. Si `sedeId` no es especificado, aplica fallback retrocompatible a Almacén Principal (`SeedConstants.SedeId_Principal`).
-- **Módulo de Cuentas por Pagar de Inventario (Proveedores)**: Ubicado en `/inventario/cuentas-por-pagar`. Permite gestionar las facturas de proveedores (`OrdenCompraInventario`) y el registro atómico de abonos/pagos (`PagoProveedor`) en $ USD y su conversión oficial a Bs. Valida que ningún abono supere el `SaldoPendienteUSD` actual y transiciona automáticamente la compra a estado **Pagado** al alcanzar el 100% saldado. Mantiene auditoría completa con timeline histórico de pagos y métodos de pago (Transferencia, Efectivo USD, Zelle, Punto, Cheque).
+- **Segregación de Funciones Estricta (SoD)**: El personal operativo (Enfermería / Asistentes) en `/enfermeria` únicamente puede crear requisiciones y confirmar recepción de pedidos. Se deshabilitan totalmente los botones y controles de aprobación en Enfermería (`[readOnlyApprovals]="true"`), y se oculta completamente la visibilidad del Stock disponible del Almacén Principal (`!readOnlyApprovals`) para mantener un formulario limpio de requisición sin especulaciones. La evaluación, ajuste de cantidades y despacho queda centralizado exclusivamente en `/inventario/envios-recepciones` para supervisores.
+- **Flujo de Envío Directo a Sub-Áreas (Salida Definitiva de Almacén)**: Las sub-áreas como Laboratorio, Farmacia, Mantenimiento, Consultorios, etc. que operan con sistemas o dinámicas externas NO acumulan ni gestionan saldo de inventario local. Al ejecutar un "Envío a Sub-Área", el sistema descuenta de forma única y atómica el stock físico del Almacén Principal (`SedeId_Principal`) y genera un registro inmutable en `MovimientoInsumo` de tipo `"EnvioSubArea"`, capturando timestamp, insumo, cantidad, sub-área de destino, usuario y motivo.
+- **Simplificación de Formulario & Restricción a Áreas Clínicas**: La Sede Solicitante en Enfermería se sincroniza automáticamente con el área clínica activa (**EMERGENCIA**, **HOSPITALIZACIÓN**, **UCI**, **CIRUGÍA**), dirigiendo la reposición unidireccional directamente hacia el Almacén Principal.
+- **Módulo Consolidado de Historiales (6 Dimensiones de Trazabilidad)**: Ubicado en `/inventario/historiales`. Integra en una sola interfaz reactiva 6 pestañas de auditoría: 1) Historial de Ingreso de Medicamentos, 2) Historial de Compras, 3) Historial de Aprobación de Pedidos, 4) Historial de Envíos a Subáreas, 5) Historial de Descartes y 6) Historial de Cuentas por Pagar. Permite filtrado universal por rango de fechas (`Fecha Desde` / `Fecha Hasta`) y por texto reactivo.
+- **Módulo de Cuentas por Pagar de Inventario (Proveedores)**: Ubicado en `/inventario/cuentas-por-pagar`. Permite gestionar las facturas de proveedores (`OrdenCompraInventario`) y el registro atómico de abonos/pagos (`PagoProveedor`) en $ USD y su conversión oficial a Bs. Valida que ningún abono supere el `SaldoPendienteUSD` actual y transiciona automáticamente la compra a estado **Pagado** al alcanzar el 100% saldado.
 
 ---
 
@@ -35,10 +29,11 @@ El Sidebar simplifica la navegación bajo la categoría **Inventario**:
 | `/inventario/stock` | `StockMultisedeComponent` | Control de existencias por Sede / Consolidado Global y pestaña de Kárdex de Movimientos Diario. |
 | `/inventario/compras` | `ComprasComponent` | Registro e ingreso de stock central al Almacén Principal sin vencimiento. |
 | `/inventario/cuentas-por-pagar` | `CuentasPorPagarComponent` | Gestión de compras a proveedores, registro de abonos en $ USD / Bs, cálculo de saldos y auditoría de pagos. |
-| `/inventario/pedidos` | `PedidosAprobacionComponent` | Pestañas de **Pendientes por Aprobar** e **Historial de Solicitudes**. Permite despacho parcial con observación obligatoria. |
+| `/inventario/envios-recepciones` | `EnviosRecepcionesComponent` | Pestaña 1 (Aprobación de Requisiciones Inter-Sede) + Pestaña 2 (Despacho Directo a Sub-Áreas como Salida Definitiva de Almacén Principal). |
+| `/inventario/historiales` | `HistorialesComponent` | Consola de auditoría de 6 dimensiones (Ingresos, Compras, Pedidos, Envíos a Subáreas, Descartes, Cuentas por Pagar). |
 | `/inventario/catalogo` | `CatalogoComponent` | CRUD de Insumos y gestión de la relación N:M de Principios Activos. |
 | `/inventario/descarte` | `DescarteComponent` | Bajas manuales de stock por merma o deterioro con justificación requerida para auditoría. |
-| `/inventario/sedes-areas` | `SedeManagementComponent` | Administración y creación de sucursales físicas (Sedes) y departamentos u áreas clínicas (UCI, Emergencia, Hospitalización, Quirófano, Almacén Central). |
+| `/inventario/sedes-areas` | `SedeManagementComponent` | Administración y creación de sucursales físicas (Sedes) y departamentos u áreas clínicas. |
 
 
 ---

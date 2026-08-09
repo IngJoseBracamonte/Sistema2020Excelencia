@@ -1029,7 +1029,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal,       Codigo: "PRINCIPAL",       Nombre: "Almacen Principal",    EsPrincipal: true),
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia,      Codigo: "EMERGENCIA",      Nombre: "Área de Emergencia",             EsPrincipal: false),
                 (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, Codigo: "HOSPITALIZACION", Nombre: "Área de Hospitalización",        EsPrincipal: false),
-                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos",  EsPrincipal: false)
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI,             Codigo: "UCI",             Nombre: "Unidad de Cuidados Intensivos",  EsPrincipal: false),
+                (Id: SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia,         Codigo: "CIRUGIA",         Nombre: "Área de Cirugía y Quirófano",    EsPrincipal: false)
             };
 
             foreach (var def in sedesDef)

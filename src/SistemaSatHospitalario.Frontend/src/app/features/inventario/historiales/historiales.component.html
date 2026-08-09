@@ -1,0 +1,311 @@
+<div class="min-h-screen bg-[#020617] text-slate-200 p-4 md:p-8 font-sans">
+  
+  <!-- Header Principal -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div class="flex items-center space-x-3">
+      <div class="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+        <lucide-icon [name]="icons.History" class="w-8 h-8 text-amber-400"></lucide-icon>
+      </div>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic">Historiales de Inventario & Auditoría</h1>
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+          <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+          Trazabilidad Integral Multidimensional (6 Dimensiones)
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Pestañas de Navegación (6 Niveles) -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-white/5 scrollbar-thin">
+    <button (click)="setTab('ingresos')"
+      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'ingresos', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'ingresos' }"
+      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      <lucide-icon [name]="icons.PackageCheck" class="w-4 h-4"></lucide-icon>
+      <span>Ingreso de Medicamentos</span>
+    </button>
+
+    <button (click)="setTab('compras')"
+      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'compras', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'compras' }"
+      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      <lucide-icon [name]="icons.ShoppingCart" class="w-4 h-4"></lucide-icon>
+      <span>Compras</span>
+    </button>
+
+    <button (click)="setTab('pedidos')"
+      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'pedidos', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'pedidos' }"
+      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      <lucide-icon [name]="icons.FileText" class="w-4 h-4"></lucide-icon>
+      <span>Aprobación de Pedidos</span>
+    </button>
+
+    <button (click)="setTab('envios')"
+      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'envios', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'envios' }"
+      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      <lucide-icon [name]="icons.Send" class="w-4 h-4"></lucide-icon>
+      <span>Envíos a Sub-Áreas</span>
+    </button>
+
+    <button (click)="setTab('descartes')"
+      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'descartes', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'descartes' }"
+      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
+      <span>Descartes</span>
+    </button>
+
+    <button (click)="setTab('cxp')"
+      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'cxp', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'cxp' }"
+      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      <lucide-icon [name]="icons.CreditCard" class="w-4 h-4"></lucide-icon>
+      <span>Cuentas por Pagar</span>
+    </button>
+  </div>
+
+  <!-- Panel de Filtros Multicriterio por Rango de Fechas -->
+  <div class="bg-surface-card p-5 rounded-[2rem] border border-white/5 shadow-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <div>
+        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Desde</label>
+        <input type="date" [(ngModel)]="fechaDesde" (ngModelChange)="fechaDesde.set($event); loadCurrentTab()"
+          class="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Hasta</label>
+        <input type="date" [(ngModel)]="fechaHasta" (ngModelChange)="fechaHasta.set($event); loadCurrentTab()"
+          class="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+      </div>
+
+      <div class="relative min-w-[220px]">
+        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Buscar</label>
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="searchQuery.set($event); loadCurrentTab()"
+          placeholder="Código, insumo o motivo..."
+          class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+      </div>
+
+      <button (click)="resetFilters()" class="mt-4 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all">
+        Limpiar Filtros
+      </button>
+    </div>
+
+    <button (click)="loadCurrentTab()" [disabled]="isLoading()"
+      class="px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+      <lucide-icon [name]="icons.RefreshCcw" class="w-4 h-4" [class.animate-spin]="isLoading()"></lucide-icon>
+      Actualizar
+    </button>
+  </div>
+
+  <!-- TABLA CONTENEDORA DE RESULTADOS -->
+  <div class="bg-surface-card p-6 rounded-[2rem] border border-white/5 shadow-2xl">
+    
+    <!-- 1. HISTORIAL DE INGRESO DE MEDICAMENTOS -->
+    <div *ngIf="activeTab() === 'ingresos'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
+              <th class="pb-3">Fecha</th>
+              <th class="pb-3">Insumo / Medicamento</th>
+              <th class="pb-3 text-center">Cantidad Ingresada</th>
+              <th class="pb-3">Motivo / Carga</th>
+              <th class="pb-3">Usuario Responsable</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let item of historialIngresos()" class="hover:bg-white/[0.02]">
+              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3 font-bold text-white">
+                {{ item.insumoNombre }}
+                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+              </td>
+              <td class="py-3 text-center">
+                <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md font-mono font-bold">
+                  +{{ item.cantidadOriginal }} {{ item.unidadMedidaOriginal }}
+                </span>
+              </td>
+              <td class="py-3 text-slate-300">{{ item.motivo }}</td>
+              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+            </tr>
+            <tr *ngIf="historialIngresos().length === 0">
+              <td colspan="5" class="py-8 text-center text-slate-500 italic">No se encontraron registros de ingresos.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. HISTORIAL DE COMPRAS -->
+    <div *ngIf="activeTab() === 'compras'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
+              <th class="pb-3">Fecha Compra</th>
+              <th class="pb-3">Insumo Comprado</th>
+              <th class="pb-3 text-center">Cantidad</th>
+              <th class="pb-3">Detalle Costo</th>
+              <th class="pb-3">Registrado Por</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let item of historialCompras()" class="hover:bg-white/[0.02]">
+              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3 font-bold text-white">
+                {{ item.insumoNombre }}
+                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+              </td>
+              <td class="py-3 text-center font-mono font-bold text-emerald-400">+{{ item.cantidadOriginal }}</td>
+              <td class="py-3 text-slate-300">{{ item.motivo }}</td>
+              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+            </tr>
+            <tr *ngIf="historialCompras().length === 0">
+              <td colspan="5" class="py-8 text-center text-slate-500 italic">No se encontraron compras registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. HISTORIAL DE APROBACIÓN DE PEDIDOS -->
+    <div *ngIf="activeTab() === 'pedidos'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
+              <th class="pb-3">Correlativo</th>
+              <th class="pb-3">Fecha Solicitud</th>
+              <th class="pb-3">Sub-Área Solicitante</th>
+              <th class="pb-3 text-center">Estado</th>
+              <th class="pb-3">Firmas</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let p of historialPedidos()" class="hover:bg-white/[0.02]">
+              <td class="py-3 font-bold text-indigo-400">{{ p.correlativo || p.id.slice(0, 8) }}</td>
+              <td class="py-3 text-slate-400">{{ p.fechaCreacion | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3 font-bold text-white">{{ p.sedeSolicitanteNombre }}</td>
+              <td class="py-3 text-center">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase"
+                  [ngClass]="{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': p.estado === 'Despachado' || p.estado === 'Aprobado', 'bg-rose-500/10 text-rose-400 border border-rose-500/20': p.estado === 'Rechazado' }">
+                  {{ p.estado }}
+                </span>
+              </td>
+              <td class="py-3 text-slate-400 text-[11px]">
+                <p>Solicitó: {{ p.usuarioSolicitante }}</p>
+                <p *ngIf="p.usuarioAprobador">Aprobó: {{ p.usuarioAprobador }}</p>
+              </td>
+            </tr>
+            <tr *ngIf="historialPedidos().length === 0">
+              <td colspan="5" class="py-8 text-center text-slate-500 italic">No hay historial de pedidos procesados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. HISTORIAL DE ENVÍOS A SUBÁREAS -->
+    <div *ngIf="activeTab() === 'envios'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
+              <th class="pb-3">Fecha Despacho</th>
+              <th class="pb-3">Insumo</th>
+              <th class="pb-3 text-center">Cantidad Enviada</th>
+              <th class="pb-3">Sub-Área Destino</th>
+              <th class="pb-3">Responsable</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let item of historialEnvios()" class="hover:bg-white/[0.02]">
+              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3 font-bold text-white">
+                {{ item.insumoNombre }}
+                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+              </td>
+              <td class="py-3 text-center">
+                <span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-md font-mono font-bold">
+                  -{{ item.cantidadOriginal }} {{ item.unidadMedidaOriginal }}
+                </span>
+              </td>
+              <td class="py-3 text-indigo-400 font-bold">{{ item.motivo }}</td>
+              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+            </tr>
+            <tr *ngIf="historialEnvios().length === 0">
+              <td colspan="5" class="py-8 text-center text-slate-500 italic">No hay historial de envíos directos.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. HISTORIAL DE DESCARTES -->
+    <div *ngIf="activeTab() === 'descartes'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
+              <th class="pb-3">Fecha Descarte</th>
+              <th class="pb-3">Insumo Descartado</th>
+              <th class="pb-3 text-center">Cantidad Bajas</th>
+              <th class="pb-3">Motivo / Justificación</th>
+              <th class="pb-3">Usuario Autorizador</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let item of historialDescartes()" class="hover:bg-white/[0.02]">
+              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3 font-bold text-white">
+                {{ item.insumoNombre }}
+                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+              </td>
+              <td class="py-3 text-center font-mono font-bold text-rose-400">-{{ item.cantidadOriginal }}</td>
+              <td class="py-3 text-slate-300 italic">{{ item.motivo }}</td>
+              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+            </tr>
+            <tr *ngIf="historialDescartes().length === 0">
+              <td colspan="5" class="py-8 text-center text-slate-500 italic">No se encontraron descartes registrados.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 6. HISTORIAL DE CUENTAS POR PAGAR -->
+    <div *ngIf="activeTab() === 'cxp'">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
+              <th class="pb-3">Nº Factura / Control</th>
+              <th class="pb-3">Proveedor</th>
+              <th class="pb-3">Fecha Emisión</th>
+              <th class="pb-3 text-center">Total Factura (USD)</th>
+              <th class="pb-3 text-center">Saldo Pendiente</th>
+              <th class="pb-3 text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr *ngFor="let f of historialCxp()" class="hover:bg-white/[0.02]">
+              <td class="py-3 font-bold text-cyan-400">{{ f.numeroFactura }}</td>
+              <td class="py-3 font-bold text-white">{{ f.proveedorNombre }}</td>
+              <td class="py-3 text-slate-400">{{ f.fechaEmision | date:'dd/MM/yyyy' }}</td>
+              <td class="py-3 text-center font-mono font-bold text-slate-200">${{ f.montoTotalUSD | number:'1.2-2' }}</td>
+              <td class="py-3 text-center font-mono font-bold text-amber-400">${{ f.saldoPendienteUSD | number:'1.2-2' }}</td>
+              <td class="py-3 text-center">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase"
+                  [ngClass]="{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': f.estado === 'Pagado', 'bg-amber-500/10 text-amber-400 border border-amber-500/20': f.estado === 'Pendiente' }">
+                  {{ f.estado }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="historialCxp().length === 0">
+              <td colspan="6" class="py-8 text-center text-slate-500 italic">No hay historial de facturas en cuentas por pagar.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>

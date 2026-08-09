@@ -36,6 +36,8 @@ export interface PedidoInterSede {
   fechaDespacho?: string;
   fechaRecepcion?: string;
   usuarioCreador: string;
+  usuarioSolicitante?: string;
+  usuarioAprobador?: string;
   observaciones: string;
   detalles: PedidoInterSedeDetalle[];
 }
@@ -48,6 +50,8 @@ export interface PedidoInterSedeDetalle {
   cantidadSolicitada: number;
   cantidadDespachada: number;
   cantidadRecibida: number;
+  stockDisponibleSedeProveedora?: number;
+  observacionesSupervisor?: string;
 }
 
 export interface CreatePedidoInterSedeDto {
@@ -133,10 +137,13 @@ export class MultiSedeService {
     return this.http.get<PedidoInterSede[]>(`${environment.apiUrl}/api/PedidoInterSede/pendientes`);
   }
 
+  getPedidosRecibidos(): Observable<PedidoInterSede[]> {
+    return this.getPedidosPendientes();
+  }
+
   getPedidosHistorial(): Observable<PedidoInterSede[]> {
     return this.http.get<PedidoInterSede[]>(`${environment.apiUrl}/api/PedidoInterSede/historial`);
   }
-
 
   despacharPedido(id: string, cantidadesAprobadas?: { [key: string]: number }, observacionesPorDetalle?: { [key: string]: string }): Observable<any> {
     const payload = {
@@ -144,6 +151,10 @@ export class MultiSedeService {
       observacionesPorDetalle: observacionesPorDetalle || {}
     };
     return this.http.put(`${environment.apiUrl}/api/PedidoInterSede/${id}/despachar`, payload);
+  }
+
+  aprobarPedido(id: string, cantidadesAprobadas?: { [key: string]: number }, observacionesPorDetalle?: { [key: string]: string }): Observable<any> {
+    return this.despacharPedido(id, cantidadesAprobadas, observacionesPorDetalle);
   }
 
   rechazarPedido(id: string, motivo: string): Observable<any> {

@@ -38,6 +38,11 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         /// </summary>
         public static readonly Guid SedeId_UCI = new Guid("10000000-0000-0000-0000-000000000004");
 
+        /// <summary>
+        /// Sede / Depósito del área de Quirófano / Cirugía.
+        /// </summary>
+        public static readonly Guid SedeId_Cirugia = new Guid("10000000-0000-0000-0000-000000000005");
+
 
         // ─────────────────────────────────────────────────────────────
         // ÁREAS CLÍNICAS (IDs fijos para mapear por ID y no por strings)
@@ -47,6 +52,7 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public static readonly Guid AreaId_UCI = new Guid("30000000-0000-0000-0000-000000000003");
         public static readonly Guid AreaId_Farmacia = new Guid("30000000-0000-0000-0000-000000000004");
         public static readonly Guid AreaId_Laboratorio = new Guid("30000000-0000-0000-0000-000000000005");
+        public static readonly Guid AreaId_Cirugia = new Guid("30000000-0000-0000-0000-000000000006");
 
         // ─────────────────────────────────────────────────────────────
         // ÁREAS CLÍNICAS / UBICACIONES FÍSICAS (Camas, Boxes, Habitaciones)
@@ -81,15 +87,17 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         /// </summary>
         public static Guid ResolveSedeInventario(string tipoIngreso, string? subAreaClinica)
         {
-            // UCI tiene su propio depósito aunque el TipoIngreso sea 'Hospitalizacion'
+            // UCI es la única sub-área especial de Hospitalización que mantiene su propio depósito
             if (string.Equals(subAreaClinica, SubAreas.UCI, StringComparison.OrdinalIgnoreCase))
                 return SedeId_UCI;
 
             return tipoIngreso?.ToUpperInvariant() switch
             {
-                "EMERGENCIA"      => SedeId_Emergencia,
-                "HOSPITALIZACION" => SedeId_Hospitalizacion,
-                _                 => SedeId_Principal
+                "EMERGENCIA"                                          => SedeId_Emergencia,
+                "HOSPITALIZACION"                                     => SedeId_Hospitalizacion,
+                "UCI"                                                 => SedeId_UCI,
+                "CIRUGIA" or "CIRUGÍA" or "QUIROFANO" or "QUIRÓFANO" => SedeId_Cirugia,
+                _                                                     => SedeId_Principal
             };
         }
     }

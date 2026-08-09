@@ -29,13 +29,31 @@ Se corrigieron tres familias de errores interrelacionados que se manifestaban en
 - `Number.isFinite()` como sanitizador final: cualquier resultado no-finito se sustituye por 0.
 - Aplicado en 3 puntos: `totalCargadoUSD` computed, `syncCartWithBackend` precio y honorario.
 
+## Incorporación de Cirugía como Área Operativa Principal (`SeedConstants`)
+
+Se definió **Cirugía / Quirófano** como Área Operativa / Sede de Inventario principal al mismo nivel de Emergencia, Hospitalización y UCI:
+
+- **`SeedConstants.cs`**:
+  - `SedeId_Cirugia = 10000000-0000-0000-0000-000000000005`
+  - `AreaId_Cirugia = 30000000-0000-0000-0000-000000000006`
+  - `ResolveSedeInventario("CIRUGIA" | "QUIROFANO") => SedeId_Cirugia`
+- **`SystemDbInitializer.cs`**:
+  - Inclusión de `SedeId_Cirugia` ("CIRUGIA", "Área de Cirugía y Quirófano") en la lista de sedes sembradas.
+- **`CargarServicioACuentaCommand.cs`**:
+  - Mapeo de `"CIRUGIA"`, `"CIRUGÍA"`, `"QUIROFANO"`, `"QUIRÓFANO"` al `SedeId_Cirugia`.
+
 ## Pruebas Unitarias
 
-Se crearon 5 tests nuevos en `SyncCarritoCommandTests.cs`:
+Se crearon tests unitarios en `SyncCarritoCommandTests.cs` y `SeedConstantsTests.cs`:
 - `Handle_ItemConGuid_DebeRetornarServicioIdGuidEnDetalles` ✅
 - `Handle_ItemConIdLegacy_DebeRetornarGuidEmptyComoServicioId` ✅
+- `Handle_ItemConTipoServicioInforme_DebeSincronizarCorrectamente` ✅
 - `Handle_PrecioModificadoSinSupervisorKey_DebeLanzarExcepcion` ✅
 - `Handle_PrecioModificadoConSupervisorKeyValida_DebePermitirSync` ✅
 - `Handle_PacienteNoExiste_DebeLanzarExcepcion` ✅
+- `SedeId_Cirugia_DebeEstarDefinidaYNoSerVacia` ✅
+- `AreaId_Cirugia_DebeEstarDefinidaYNoSerVacia` ✅
+- `ResolveSedeInventario_ConCirugiaOQuirofano_DebeRetornarSedeIdCirugia` ✅
 
-**Total: 5/5 aprobados.**
+**Total: 9/9 aprobados.**
+
