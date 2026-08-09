@@ -84,16 +84,14 @@ import {
             <input type="text" [ngModel]="filtroTexto()" (ngModelChange)="filtroTexto.set($event)" placeholder="Buscar paciente, cédula, cirugía, doctor o especialidad..." class="w-full bg-gray-950 border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition">
           </div>
 
-          <!-- Filtro de Estado -->
+          <!-- Filtro de Estado (DB-Driven) -->
           <div class="relative min-w-[160px]">
             <lucide-icon name="filter" class="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></lucide-icon>
             <select [ngModel]="filtroEstado()" (ngModelChange)="onFiltroEstadoChange($event)" class="w-full bg-gray-950 border border-gray-800 rounded-xl pl-8 pr-4 py-2 text-xs text-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 appearance-none transition">
               <option value="">Todos los Estados</option>
-              <option value="Programado">Programado</option>
-              <option value="PendienteEjecucion">Pendiente de Ejecución</option>
-              <option value="EnProceso">En Proceso</option>
-              <option value="Completada">Completada</option>
-              <option value="Cancelada">Cancelada</option>
+              <option *ngFor="let est of estadosCirugiaCatalog()" [value]="est.id">
+                <ng-container *ngIf="est.codigo">[{{ est.codigo }}] </ng-container>{{ est.nombre }}
+              </option>
             </select>
           </div>
 
@@ -559,7 +557,12 @@ export class PabellonGestionComponent implements OnInit {
     razonCirugia: ''
   };
 
+  public estadosCirugiaCatalog = signal<any[]>([]);
+
   ngOnInit(): void {
+    this.pabellonService.getEstadosCirugia().subscribe({
+      next: (estados) => this.estadosCirugiaCatalog.set(estados || [])
+    });
     this.cargarOrdenes();
     this.cargarMedicos();
   }

@@ -54,12 +54,14 @@ export class DescarteComponent implements OnInit {
     }
   }
 
-  // Formulario de Descarte
+  // Formulario de Descarte (DB-Driven)
   public descarteSearchTerm = signal<string>('');
   public filteredInsumos = signal<Insumo[]>([]);
   public selectedInsumo = signal<Insumo | null>(null);
   public cantidadDescarte = signal<number>(1);
+  public motivoDescarteId = signal<string>('');
   public motivoDescarte = signal<string>('');
+  public motivosDescarte = signal<any[]>([]);
 
   // Alertas
   public successMessage = signal<string | null>(null);
@@ -78,6 +80,15 @@ export class DescarteComponent implements OnInit {
   ngOnInit() {
     this.multiSedeService.getSedes().subscribe({
       next: (res) => this.sedes.set(res)
+    });
+    this.inventoryService.getMotivosDescarte().subscribe({
+      next: (motivos) => {
+        this.motivosDescarte.set(motivos || []);
+        if (motivos && motivos.length > 0) {
+          this.motivoDescarteId.set(motivos[0].id);
+          this.motivoDescarte.set(motivos[0].nombre);
+        }
+      }
     });
     this.loadData();
   }

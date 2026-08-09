@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface OrdenCirugia {
@@ -113,5 +113,17 @@ export class PabellonService {
 
   cargoExtra(req: CargoExtraCirugiaRequest): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/CargoExtra`, req);
+  }
+
+  getEstadosCirugia(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/Estados`).pipe(
+      catchError(() => of([
+        { id: 'Programado', codigo: 'PROG', nombre: 'Programado' },
+        { id: 'PendienteEjecucion', codigo: 'PEND', nombre: 'Pendiente de Ejecución' },
+        { id: 'EnProceso', codigo: 'PROC', nombre: 'En Proceso / Quirófano' },
+        { id: 'Completada', codigo: 'COMP', nombre: 'Completada / Recuperación' },
+        { id: 'Cancelada', codigo: 'CANC', nombre: 'Cancelada' }
+      ]))
+    );
   }
 }

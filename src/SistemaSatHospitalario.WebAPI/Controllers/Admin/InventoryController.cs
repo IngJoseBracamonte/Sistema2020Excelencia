@@ -438,6 +438,32 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             return Ok(result);
         }
 
+        [HttpGet("motivos-descarte")]
+        public IActionResult GetMotivosDescarte()
+        {
+            var motivos = new[]
+            {
+                new { Id = "10000000-0000-0000-0000-000000000101", Codigo = "VENC", Nombre = "Vencimiento / Caducidad" },
+                new { Id = "10000000-0000-0000-0000-000000000102", Codigo = "DANO", Nombre = "Avería / Rotura / Daño Físico" },
+                new { Id = "10000000-0000-0000-0000-000000000103", Codigo = "DETE", Nombre = "Deterioro / Contaminación" },
+                new { Id = "10000000-0000-0000-0000-000000000104", Codigo = "AUDI", Nombre = "Ajuste de Auditoría" }
+            };
+            return Ok(motivos);
+        }
+
+        [HttpGet("tipos-movimiento")]
+        public IActionResult GetTiposMovimiento()
+        {
+            var tipos = new[]
+            {
+                new { Id = "Ingreso", Codigo = "ING", Nombre = "Ingreso / Compra Insumo" },
+                new { Id = "EnvioSubArea", Codigo = "ENV", Nombre = "Envío Directo a Sub-Área" },
+                new { Id = "Descarte", Codigo = "DES", Nombre = "Descarte / Baja de Inventario" },
+                new { Id = "Ajuste", Codigo = "AJU", Nombre = "Ajuste Kárdex Auditoría" }
+            };
+            return Ok(tipos);
+        }
+
         [HttpPost("cierre")]
         public async Task<IActionResult> PerformClosing([FromBody] PerformClosingDto dto, CancellationToken ct)
         {

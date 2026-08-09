@@ -1098,7 +1098,9 @@
                         <div class="md:col-span-5 space-y-1">
                             <label class="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Método de Pago</label>
                             <select [(ngModel)]="nuevoPagoMetodo" class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-[10px] font-black text-white min-h-[44px]">
-                                <option *ngFor="let opt of metodosPago" [value]="opt.value">{{ opt.label }}</option>
+                                <option *ngFor="let opt of metodosPagoDb()" [value]="opt.nombre || opt.valor">
+                                  [{{ opt.grupoMoneda === 1 ? 'USD' : 'Bs' }}] {{ opt.nombre || opt.valor }}
+                                </option>
                             </select>
                         </div>
                         <div class="md:col-span-3 space-y-1">

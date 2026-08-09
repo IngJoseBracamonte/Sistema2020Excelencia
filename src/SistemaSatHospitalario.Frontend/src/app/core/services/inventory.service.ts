@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
   Insumo, 
@@ -113,6 +113,29 @@ export class InventoryService {
 
   getMovements(): Observable<any[]> {
     return this.getHistorialMovimientos();
+  }
+
+  getMotivosDescarte(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/motivos-descarte`).pipe(
+      // Fallback defensivo si la BD no retorna registros aún
+      catchError(() => of([
+        { id: '10000000-0000-0000-0000-000000000101', codigo: 'VENC', nombre: 'Vencimiento / Caducidad' },
+        { id: '10000000-0000-0000-0000-000000000102', codigo: 'DANO', nombre: 'Avería / Rotura / Daño Físico' },
+        { id: '10000000-0000-0000-0000-000000000103', codigo: 'DETE', nombre: 'Deterioro / Contaminación' },
+        { id: '10000000-0000-0000-0000-000000000104', codigo: 'AUDI', nombre: 'Ajuste de Auditoría' }
+      ]))
+    );
+  }
+
+  getTiposMovimiento(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/tipos-movimiento`).pipe(
+      catchError(() => of([
+        { id: 'ING', nombre: 'Ingreso / Compra Insumo' },
+        { id: 'ENV', nombre: 'Envío Directo a Sub-Área' },
+        { id: 'DES', nombre: 'Descarte / Baja de Inventario' },
+        { id: 'AJU', nombre: 'Ajuste Kárdex Auditoría' }
+      ]))
+    );
   }
 
   getKardex(sedeId?: string, insumoId?: string, fechaDesde?: string, fechaHasta?: string): Observable<any> {

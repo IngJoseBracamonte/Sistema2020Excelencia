@@ -64,7 +64,13 @@ export class HistorialesComponent implements OnInit {
     FileText
   };
 
+  // --- Catálogo DB-Driven ---
+  public tiposMovimientoCatalog = signal<any[]>([]);
+
   ngOnInit() {
+    this.inventoryService.getTiposMovimiento().subscribe({
+      next: (tipos) => this.tiposMovimientoCatalog.set(tipos || [])
+    });
     this.loadCurrentTab();
   }
 

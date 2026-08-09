@@ -64,6 +64,11 @@ export class ReceivablesComponent implements OnInit {
   public receivables = signal<PendingAR[]>([]);
   public searchTerm = signal<string>('');
   public filterEstado = signal<string>('Pendiente');
+  public estadosCuentaCatalog = signal<any[]>([
+    { id: 'Pendiente', nombre: 'PENDIENTE DE PAGO' },
+    { id: 'Saldada', nombre: 'SALDADAS / PAGADAS' },
+    { id: 'Todos', nombre: 'TODAS LAS CUENTAS' }
+  ]);
   public startDate = signal<string>(new Date().toISOString().split('T')[0]);
   public endDate = signal<string>(new Date().toISOString().split('T')[0]);
   public soloCompromiso = signal<boolean>(false);

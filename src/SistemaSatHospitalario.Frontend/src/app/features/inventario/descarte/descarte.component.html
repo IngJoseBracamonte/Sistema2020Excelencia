@@ -145,16 +145,29 @@
         />
       </div>
 
+      <!-- Causal de Descarte (DB-Driven) -->
+      <div>
+        <label class="text-[10px] font-black uppercase tracking-wider text-rose-400">Causal Oficial de Baja (Catálogo DB)</label>
+        <select 
+          [ngModel]="motivoDescarteId()"
+          (ngModelChange)="motivoDescarteId.set($event)"
+          class="w-full mt-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white uppercase outline-none focus:border-rose-500/50 transition-all">
+          <option *ngFor="let m of motivosDescarte()" [value]="m.id">
+            <ng-container *ngIf="m.codigo">[{{ m.codigo }}] </ng-container>{{ m.nombre }}
+          </option>
+        </select>
+      </div>
+
       <!-- Motivo / Justificación (Obligatorio) -->
       <div>
         <label class="text-[10px] font-black uppercase tracking-wider text-rose-400 flex items-center gap-1">
-          <span>Motivo / Justificación de la Baja</span>
+          <span>Detalle / Observación Complementaria</span>
           <span class="text-[9px] bg-rose-500/20 border border-rose-500/30 px-1.5 py-0.2 rounded">Requerido</span>
         </label>
         <textarea 
           [ngModel]="motivoDescarte()"
           (ngModelChange)="motivoDescarte.set($event)"
-          rows="3"
+          rows="2"
           placeholder="Especifique detalladamente la razón (ej: Frasco roto durante traslado, empaque abierto...)"
           class="w-full mt-1 bg-black/40 border border-white/10 rounded-2xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 transition-all resize-none"
           [ngClass]="!motivoDescarte().trim() ? 'border-rose-500/40' : 'border-white/10'"

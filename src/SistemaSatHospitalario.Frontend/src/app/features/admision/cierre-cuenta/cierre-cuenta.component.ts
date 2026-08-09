@@ -14,6 +14,7 @@ import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { MedicoService, Medico } from '../../../core/services/medico.service';
 import { MultiSedeService, AreaClinica } from '../../../core/services/multi-sede.service';
+import { CatalogService } from '../../../core/services/catalog.service';
 // Wizard components shared with Enfermeria
 import { DynamicStepperComponent } from '../../enfermeria/components/dynamic-stepper/dynamic-stepper.component';
 import { NursingCartComponent } from '../../enfermeria/components/nursing-cart/nursing-cart.component';
@@ -242,19 +243,16 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public editandoTasa = signal<boolean>(false);
   public tasaEditValue = signal<number>(36.5);
 
-  // Payments List
+  private catalogService = inject(CatalogService);
+
+  // Payments List (DB-Driven Signal)
   public pagos = signal<DetallePagoDto[]>([]);
-  public nuevoPagoMetodo = signal<string>('Particular - Tarjeta de Crédito/Débito');
+  public metodosPagoDb = signal<any[]>([]);
+  public nuevoPagoMetodoId = signal<string>('');
+  public nuevoPagoMetodo = signal<string>('');
   public nuevoPagoReferencia = signal<string>('');
   public nuevoPagoMontoMoneda = signal<number>(0);
   public cerrarConSaldoPendiente = signal<boolean>(false);
-
-  public metodosPago = [
-    { label: '💳 Tarjeta de Crédito/Débito', value: 'Particular - Tarjeta de Crédito/Débito', moneda: 'USD' },
-    { label: '💵 Efectivo Divisas', value: 'Particular - Efectivo Divisas', moneda: 'USD' },
-    { label: '⚡ Transferencia Nacional (Bs)', value: 'Particular - Transferencia SPEI', moneda: 'VES' },
-    { label: '🛡️ Seguro Médico (Convenio)', value: 'Seguro Médico (Convenio)', moneda: 'USD' }
-  ];
 
   // Convenios Catalog
   public convenios = signal<any[]>([]);
@@ -635,10 +633,22 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       error: () => this.tasaCambioDia.set(36.5)
     });
 
-    // 2. Cargar Convenios para dropdowns
+    // 2. Cargar Convenios y Métodos de Pago DB-Driven
     this.conveniosService.getAll().subscribe({
       next: (res) => this.convenios.set(res),
       error: (err) => console.error('[CIERRE-CUENTA] Error convenios:', err)
+    });
+
+    this.catalogService.getPaymentMethods(true).subscribe({
+      next: (methods) => {
+        this.metodosPagoDb.set(methods || []);
+        if (methods && methods.length > 0) {
+          const firstId = methods[0].id || methods[0].valor || methods[0].nombre;
+          this.nuevoPagoMetodoId.set(firstId);
+          this.nuevoPagoMetodo.set(methods[0].nombre || methods[0].valor);
+        }
+      },
+      error: (err) => console.error('[CIERRE-CUENTA] Error metodos pago:', err)
     });
 
     // 3. Suscribirse a los parámetros de la ruta para detectar el tipo de ingreso
@@ -881,8 +891,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public agregarPago() {
     let monto = this.nuevoPagoMontoMoneda();
     if (monto <= 0) {
-      const metodoInfo = this.metodosPago.find(m => m.value === this.nuevoPagoMetodo());
-      const esBs = metodoInfo?.moneda === 'VES';
+      const metodoInfo = this.metodosPagoDb().find((m: any) => (m.nombre || m.valor) === this.nuevoPagoMetodo());
+      const esBs = metodoInfo?.grupoMoneda === 2 || metodoInfo?.moneda === 'VES';
       const tasa = this.tasaCambioDia();
       const restanteUsd = this.totalAPagarPaciente();
       monto = esBs ? Math.round(restanteUsd * tasa * 100) / 100 : restanteUsd;
@@ -893,8 +903,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const metodoInfo = this.metodosPago.find(m => m.value === this.nuevoPagoMetodo());
-    const esBs = metodoInfo?.moneda === 'VES';
+    const metodoInfo = this.metodosPagoDb().find((m: any) => (m.nombre || m.valor) === this.nuevoPagoMetodo());
+    const esBs = metodoInfo?.grupoMoneda === 2 || metodoInfo?.moneda === 'VES';
     const tasa = this.tasaCambioDia();
     const equiv = esBs ? Math.round(monto / tasa * 100) / 100 : monto;
 

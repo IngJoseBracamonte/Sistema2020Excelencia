@@ -77,6 +77,9 @@ export interface ServicioCatalogo {
   isConsultation?: boolean;
   honorariumCategory?: string;
   permiteFraccionamiento?: boolean;
+  requiereMedico?: boolean;
+  esInventariable?: boolean;
+  tipoServicioId?: number;
   sugerenciasIds?: string[];
   SugerenciasIds?: string[];
   [key: string]: any;
@@ -194,21 +197,30 @@ export const CLASSIFICATION_RULES: readonly ClassificationRule[] = [
 ];
 
 /**
- * Pure strategy function to classify catalog services based on rules engine
+ * Pure strategy function to classify catalog services based on DB-driven domain flags & attributes
  */
 export function classifyService(service: ServicioCatalogo | null | undefined): ItemClassification {
   if (!service) return ITEM_CLASSIFICATIONS.PROCEDIMIENTO;
 
+  // 1. Evaluación DB-Driven por flags explícitas del modelo relacional
+  if (service.requiereMedico) {
+    return ITEM_CLASSIFICATIONS.CONSULTA;
+  }
+  if (service.permiteFraccionamiento || service.esInventariable) {
+    return ITEM_CLASSIFICATIONS.MEDICAMENTO;
+  }
+
+  // 2. Evaluación DB-Driven por ID de Tipo de Servicio
+  const tipoId = service.tipoServicioId;
+  if (tipoId === 3 || tipoId === 300) return ITEM_CLASSIFICATIONS.LABORATORIO;
+  if (tipoId === 4 || tipoId === 400) return ITEM_CLASSIFICATIONS.RX;
+  if (tipoId === 1 || tipoId === 100) return ITEM_CLASSIFICATIONS.MEDICAMENTO;
+  if (tipoId === 2 || tipoId === 200) return ITEM_CLASSIFICATIONS.CONSULTA;
+
+  // 3. Evaluación relacional por CategoriId
   const cat = service.categoryId;
-  const tipoUpper = (service.tipo || '').toUpperCase();
-  const descUpper = (service.descripcion || '').toUpperCase();
-  const honorCatUpper = (service.honorariumCategory || '').toUpperCase();
-
-  const matchesText = (keywords: string[]) => 
-    keywords.some(kw => tipoUpper.includes(kw) || descUpper.includes(kw) || honorCatUpper.includes(kw));
-
   for (const rule of CLASSIFICATION_RULES) {
-    if ((cat !== undefined && rule.categoryIds.includes(cat)) || rule.customCheck?.(service) || matchesText(rule.keywords)) {
+    if (cat !== undefined && rule.categoryIds.includes(cat)) {
       return rule.classification;
     }
   }
@@ -332,7 +344,9 @@ export class EnfermeriaComponent implements OnInit {
   public triageTemperatura = signal<number>(37.0);
   public triageSaturacionO2 = signal<number>(98);
   public triageGlicemiaCapilar = signal<number | null>(null);
-  public triageClasificacion = signal<string>(DEFAULT_TRIAGE.CLASIFICACION);
+  // Niveles de Triage DB-Driven
+  public nivelesTriage = signal<any[]>([]);
+  public triageClasificacion = signal<string>('Nivel III (Amarillo)');
   public triageEstadoConciencia = signal<string>(DEFAULT_TRIAGE.ESTADO_CONCIENCIA);
   public triageGlasgowOcular = signal<number>(4);
   public triageGlasgowVerbal = signal<number>(5);
@@ -583,6 +597,23 @@ export class EnfermeriaComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/api/Triage/niveles`).subscribe({
+      next: (niveles) => {
+        this.nivelesTriage.set(niveles || []);
+        if (niveles && niveles.length > 0) {
+          this.triageClasificacion.set(niveles[0].nombre || niveles[0].descripcion);
+        }
+      },
+      error: () => {
+        this.nivelesTriage.set([
+          { id: '1', nombre: 'Nivel I (Rojo) - Reanimación' },
+          { id: '2', nombre: 'Nivel II (Naranja) - Emergencia' },
+          { id: '3', nombre: 'Nivel III (Amarillo) - Urgencia' },
+          { id: '4', nombre: 'Nivel IV (Verde) - Menor' }
+        ]);
+      }
+    });
+
     this.refreshAccounts();
     this.loadCatalogAndConvenios();
     this.loadCamasDisponibles();
