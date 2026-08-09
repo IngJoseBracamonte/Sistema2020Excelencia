@@ -330,6 +330,21 @@ export class PedidosAprobacionComponent implements OnInit {
     });
   }
 
+  confirmarRecepcion(pedido: PedidoInterSede) {
+    this.isSubmitting.set(true);
+    this.multiSedeService.recibirPedido(pedido.id, {}).subscribe({
+      next: () => {
+        this.showSuccess(`Recepción confirmada para pedido ${pedido.correlativo}. Stock sumado exitosamente a ${pedido.sedeSolicitanteNombre}.`);
+        this.isSubmitting.set(false);
+        this.loadData();
+      },
+      error: (err) => {
+        this.showError(err.error?.message || 'Error al confirmar recepción del pedido.');
+        this.isSubmitting.set(false);
+      }
+    });
+  }
+
   private showSuccess(msg: string) {
     this.successMessage.set(msg);
     this.errorMessage.set(null);

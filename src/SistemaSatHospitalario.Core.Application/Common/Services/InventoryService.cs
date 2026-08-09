@@ -415,44 +415,61 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
                         if (cantidadADespachar > 0)
                         {
-                            // Descuenta stock
+                            // 1. Descuenta stock de Sede Proveedora (Almacén Principal)
                             stockSede.RegistrarMovimientoStock(-cantidadADespachar, detalle.Insumo.PermiteFraccionamiento);
                             _logger.LogInformation("Stock transferido desde Sede Proveedora {SedeId}. Insumo: {InsumoId}, Cantidad: {Cantidad}", pedido.SedeProveedoraId, detalle.InsumoId, cantidadADespachar);
                             detalle.SetDespachado(cantidadADespachar);
+                            detalle.SetRecibido(cantidadADespachar);
 
-                            if (esGastoInterno)
-                            {
-                                detalle.SetRecibido(cantidadADespachar);
-                            }
-
-                            // Registrar movimiento
-                            var tipoMov = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
-                            var motivoTxt = esGastoInterno 
+                            // Registrar movimiento de salida en Sede Proveedora
+                            var tipoMovSalida = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
+                            var motivoSalidaTxt = esGastoInterno 
                                 ? $"Nota de Entrega por Consumo Interno de Laboratorio/Mantenimiento ({pedido.Correlativo})"
                                 : $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante (Cant. Aprobada: {cantidadADespachar})";
 
-                            var movimiento = new MovimientoInsumo(
+                            var movimientoSalida = new MovimientoInsumo(
                                 detalle.InsumoId,
                                 pedido.SedeProveedoraId,
-                                tipoMov,
+                                tipoMovSalida,
                                 -cantidadADespachar,
                                 detalle.Insumo.UnidadMedidaBase,
                                 cantidadADespachar,
                                 usuario,
-                                motivoTxt
+                                motivoSalidaTxt
                             );
-                            _context.MovimientosInsumo.Add(movimiento);
+                            _context.MovimientosInsumo.Add(movimientoSalida);
+
+                            // 2. Si no es Gasto Interno, sumar inmediatamente el stock a la Sede Solicitante y registrar TransferenciaEntrada
+                            if (!esGastoInterno)
+                            {
+                                var stockSolicitante = await _context.StocksSedes
+                                    .FirstOrDefaultAsync(s => s.InsumoId == detalle.InsumoId && s.SedeId == pedido.SedeSolicitanteId, cancellationToken);
+
+                                if (stockSolicitante == null)
+                                {
+                                    stockSolicitante = new StockSede(detalle.InsumoId, pedido.SedeSolicitanteId, 0);
+                                    _context.StocksSedes.Add(stockSolicitante);
+                                }
+
+                                stockSolicitante.RegistrarMovimientoStock(cantidadADespachar, detalle.Insumo.PermiteFraccionamiento);
+                                _logger.LogInformation("Stock recibido automáticamente en Sede Solicitante {SedeId}. Insumo: {InsumoId}, Cantidad: {Cantidad}", pedido.SedeSolicitanteId, detalle.InsumoId, cantidadADespachar);
+
+                                var movimientoEntrada = new MovimientoInsumo(
+                                    detalle.InsumoId,
+                                    pedido.SedeSolicitanteId,
+                                    "TransferenciaEntrada",
+                                    cantidadADespachar,
+                                    detalle.Insumo.UnidadMedidaBase,
+                                    cantidadADespachar,
+                                    usuario,
+                                    $"Recepción por despacho de pedido inter-sede {pedido.Correlativo}"
+                                );
+                                _context.MovimientosInsumo.Add(movimientoEntrada);
+                            }
                         }
                     }
 
-                    if (esGastoInterno)
-                    {
-                        pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
-                    }
-                    else
-                    {
-                        pedido.CambiarEstado(EstadoPedidoInterSede.Despachado);
-                    }
+                    pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
 
                     await _context.SaveChangesAsync(cancellationToken);
                     break;

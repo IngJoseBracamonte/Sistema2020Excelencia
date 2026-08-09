@@ -23,6 +23,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [EnableCors("AngularPolicy")]
     public class AuthController : ControllerBase
     {

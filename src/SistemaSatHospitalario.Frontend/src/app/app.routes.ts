@@ -28,6 +28,7 @@ export const routes: Routes = [
             { path: 'inventario/catalogo', loadComponent: () => import('./features/inventario/catalogo/catalogo.component').then(m => m.CatalogoComponent) },
             { path: 'inventario/descarte', loadComponent: () => import('./features/inventario/descarte/descarte.component').then(m => m.DescarteComponent) },
             { path: 'inventario/sedes-areas', loadComponent: () => import('./features/admin/inventory/sede-management.component').then(m => m.SedeManagementComponent) },
+            { path: 'inventario/cuentas-por-pagar', loadComponent: () => import('./features/admin/inventory/cuentas-por-pagar.component').then(m => m.CuentasPorPagarComponent) },
 
             // Rutas administrativas / clínicas
             { path: 'rx-orders', loadComponent: () => import('./features/rx-orders/rx-orders.component').then(m => m.RxOrdersComponent) },
@@ -45,6 +46,8 @@ export const routes: Routes = [
             { path: 'medicos', loadComponent: () => import('./features/admin/medicos/medico-management.component').then(m => m.MedicoManagementComponent) },
             
             // Alias/compatibilidad legacy si alguna referencia antigua navega ahí
+            { path: 'admin/catalog', redirectTo: 'catalog', pathMatch: 'full' },
+            { path: 'admision/facturacion', redirectTo: 'facturacion', pathMatch: 'full' },
             { path: 'admin/inventory', redirectTo: 'inventario/compras', pathMatch: 'full' },
             { path: 'admin/inventory/pedidos', redirectTo: 'inventario/pedidos', pathMatch: 'full' },
             { path: 'admin/inventory/compras', redirectTo: 'inventario/compras', pathMatch: 'full' },

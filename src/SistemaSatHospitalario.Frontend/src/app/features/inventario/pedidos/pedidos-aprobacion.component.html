@@ -351,6 +351,15 @@
             </tr>
           </tbody>
         </table>
+      <!-- Acciones de Recepción -->
+      <div *ngIf="ped.estado === 'Despachado'" class="flex justify-end pt-3 border-t border-white/5">
+        <button 
+          (click)="confirmarRecepcion(ped)"
+          [disabled]="isSubmitting()"
+          class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/30 active:scale-95 flex items-center gap-2 cursor-pointer">
+          <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
+          <span>📥 Confirmar Recepción & Sumar Stock a {{ ped.sedeSolicitanteNombre }}</span>
+        </button>
       </div>
     </div>
 

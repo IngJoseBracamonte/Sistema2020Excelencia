@@ -1,6 +1,6 @@
-# Memoria de Arquitectura — Módulo de Inventario v4.0.2 (Motor Transaccional Puro)
+# Memoria de Arquitectura — Módulo de Inventario v4.0.3 (Motor Transaccional Puro)
 
-**Versión**: v4.0.2  
+**Versión**: v4.0.3  
 **Fecha de Actualización**: 2026-08-07  
 **Stack de Tecnología**: .NET 9 WebAPI (CQRS MediatR) + Angular 19+ (Standalone Components + Signals)
 
@@ -22,6 +22,7 @@
 - **Registro de Catálogo vs Ingreso por Compra**: La creación/registro de un medicamento o insumo en el catálogo (`CreateInsumo`) NO requiere stock inicial obligatorio (> 0) y puede registrarse con stock inicial 0. Es en el módulo de compras (`RecordPurchase` / `/inventario/compras`) donde la cantidad comprada que incrementa existencias debe ser strictly mayor a 0 (`Cantidad > 0`).
 - **Modalidad de Ingreso de Costo de Compras (Costo Total vs Costo Unitario)**: En `/inventario/compras`, el operador puede seleccionar entre **💵 Costo Total Renglón ($)** (monto total de la factura por la compra del renglón, ej: $25.00 por 5 cajas de 20 tabletas = 100 tabletas) y **🏷️ Costo Unitario ($)**. La interfaz calcula automáticamente el costo unitario base derivado ($0.25 / tablet) que se guarda en el catálogo para valorizar existencias, evitando multiplicar la cantidad total de unidades base por el precio del paquete/caja.
 - **Filtrado de Stock por Sede & Catálogo Completo**: El endpoint `GET api/inventory/insumos?sedeId={id}` permite consultar las existencias del catálogo discriminadas por Sede. La proyección retorna el `StockActual` físico de la sede solicitada (o 0 si no posee existencias físicas en ella) sin omitir ningún producto del catálogo, permitiendo autocompletar e incluir cualquier insumo en requisiciones inter-sede. Si `sedeId` no es especificado, aplica fallback retrocompatible a Almacén Principal (`SeedConstants.SedeId_Principal`).
+- **Módulo de Cuentas por Pagar de Inventario (Proveedores)**: Ubicado en `/inventario/cuentas-por-pagar`. Permite gestionar las facturas de proveedores (`OrdenCompraInventario`) y el registro atómico de abonos/pagos (`PagoProveedor`) en $ USD y su conversión oficial a Bs. Valida que ningún abono supere el `SaldoPendienteUSD` actual y transiciona automáticamente la compra a estado **Pagado** al alcanzar el 100% saldado. Mantiene auditoría completa con timeline histórico de pagos y métodos de pago (Transferencia, Efectivo USD, Zelle, Punto, Cheque).
 
 ---
 
@@ -33,6 +34,7 @@ El Sidebar simplifica la navegación bajo la categoría **Inventario**:
 |---|---|---|
 | `/inventario/stock` | `StockMultisedeComponent` | Control de existencias por Sede / Consolidado Global y pestaña de Kárdex de Movimientos Diario. |
 | `/inventario/compras` | `ComprasComponent` | Registro e ingreso de stock central al Almacén Principal sin vencimiento. |
+| `/inventario/cuentas-por-pagar` | `CuentasPorPagarComponent` | Gestión de compras a proveedores, registro de abonos en $ USD / Bs, cálculo de saldos y auditoría de pagos. |
 | `/inventario/pedidos` | `PedidosAprobacionComponent` | Pestañas de **Pendientes por Aprobar** e **Historial de Solicitudes**. Permite despacho parcial con observación obligatoria. |
 | `/inventario/catalogo` | `CatalogoComponent` | CRUD de Insumos y gestión de la relación N:M de Principios Activos. |
 | `/inventario/descarte` | `DescarteComponent` | Bajas manuales de stock por merma o deterioro con justificación requerida para auditoría. |
@@ -45,7 +47,7 @@ El Sidebar simplifica la navegación bajo la categoría **Inventario**:
 
 - `RegistrarCompraCommand`: Incrementa stock atómicamente en Sede Principal y actualiza costo unitario USD.
 - `RegistrarDescarteCommand`: Valida stock central, aplica descuento directo y registra movimiento tipo `Descarte` con motivo de auditoría.
-- `DispatchPedidoInterSedeCommand`: Admite `CantidadesAprobadas` y `ObservacionesPorDetalle`. Valida que si `CantidadAEnviar < CantidadSolicitada`, la observación por detalle es requerida.
+- `DispatchPedidoInterSedeCommand`: Admite `CantidadesAprobadas` y `ObservacionesPorDetalle`. Al ser aprobado por el Supervisor, ejecuta de forma atómica e inmediata la salida del Almacén Principal (`TransferenciaSalida`) y la recepción/sumado directo en la Sede Solicitante (`TransferenciaEntrada`), cambiando la solicitud a estado `Recibido` sin requerir confirmación manual posterior de Enfermería.
 - `ReceivePedidoInterSedeCommand`: Al confirmar recepción desde la sede solicitante, incrementa el stock en `StocksSedes` para la sub-sede destino y registra `TransferenciaEntrada`.
 - `GetPedidosInterSedeHistorialQuery`: Obtiene el historial completo de solicitudes filtrable por Sede y Rango de Fechas.
 - `GetKardex`: Endpoint transaccional que computa Balance Inicial, Entradas, Salidas y Balance Final por Insumo/Sede entre Fechas.

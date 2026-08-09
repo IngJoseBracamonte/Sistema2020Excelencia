@@ -19,6 +19,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     public class InventoryController : ControllerBase
     {
         private readonly IApplicationDbContext _context;
@@ -30,6 +31,31 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             _context = context;
             _inventoryService = inventoryService;
             _mediator = mediator;
+        }
+
+        [HttpGet("stock/by-code/{codigo}")]
+        public async Task<IActionResult> GetStockByCodigo(string codigo, CancellationToken ct)
+        {
+            var insumo = await _context.Insumos
+                .Include(i => i.StocksPorSede)
+                .FirstOrDefaultAsync(i => i.Codigo == codigo && !i.IsDeleted, ct);
+
+            if (insumo == null) return NotFound(new { Message = $"No se encontró insumo con código {codigo}." });
+
+            var targetSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+            var stockPrincipal = insumo.StocksPorSede
+                .Where(s => s.SedeId == targetSedeId)
+                .Select(s => (decimal?)s.StockActual)
+                .FirstOrDefault() ?? insumo.StockActual;
+
+            return Ok(new
+            {
+                insumo.Id,
+                insumo.Codigo,
+                insumo.Nombre,
+                StockActual = stockPrincipal,
+                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString()
+            });
         }
 
         [HttpGet("insumos")]

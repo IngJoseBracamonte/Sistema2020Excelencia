@@ -73,6 +73,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; set; }
         public DbSet<OrdenCirugia> OrdenesCirugia { get; set; }
         public DbSet<CirugiaLog> CirugiaLogs { get; set; }
+        public DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; set; }
+        public DbSet<PagoProveedor> PagosProveedores { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);

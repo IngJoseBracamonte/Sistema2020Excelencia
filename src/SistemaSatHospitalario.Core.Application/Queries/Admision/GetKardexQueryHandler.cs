@@ -48,7 +48,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 if (priorMovements.Any())
                 {
-                    initialBalance = priorMovements.Sum(m => IsEntrada(m.TipoMovimiento) ? m.CantidadBase : -m.CantidadBase);
+                    initialBalance = priorMovements.Sum(m => IsEntrada(m.TipoMovimiento) 
+                        ? Math.Abs(m.CantidadBase) 
+                        : -Math.Abs(m.CantidadBase));
                 }
             }
 
@@ -92,11 +94,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             decimal totalEntradas = movimientosList
                 .Where(m => IsEntrada(m.TipoMovimiento))
-                .Sum(m => m.CantidadBase);
+                .Sum(m => Math.Abs(m.CantidadBase));
 
             decimal totalSalidas = movimientosList
                 .Where(m => !IsEntrada(m.TipoMovimiento))
-                .Sum(m => m.CantidadBase);
+                .Sum(m => Math.Abs(m.CantidadBase));
 
             decimal finalBalance = initialBalance + totalEntradas - totalSalidas;
 
@@ -109,6 +111,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 Movimientos = movimientosList.Select(m =>
                 {
                     var esEntrada = IsEntrada(m.TipoMovimiento);
+                    var cantAbs = Math.Abs(m.CantidadOriginal > 0 ? m.CantidadOriginal : m.CantidadBase);
+                    var cantFinal = esEntrada ? cantAbs : -cantAbs;
+
                     return new KardexMovimientoDto
                     {
                         Id = m.Id,
@@ -119,8 +124,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         SedeId = m.SedeId,
                         SedeNombre = m.Sede != null ? m.Sede.Nombre : "Almacén Principal",
                         TipoMovimiento = m.TipoMovimiento,
-                        Cantidad = m.CantidadOriginal > 0 ? m.CantidadOriginal : m.CantidadBase,
-                        CantidadBase = esEntrada ? m.CantidadBase : -m.CantidadBase,
+                        Cantidad = cantFinal,
+                        CantidadBase = cantFinal,
                         UnidadMedida = m.UnidadMedidaOriginal.ToString(),
                         Usuario = m.Usuario ?? "Sistema",
                         Motivo = m.Motivo ?? string.Empty,

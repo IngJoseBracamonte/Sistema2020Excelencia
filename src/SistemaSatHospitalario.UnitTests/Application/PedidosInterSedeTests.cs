@@ -108,9 +108,11 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             // Assert
             Assert.Equal(30, stockProveedora.StockActual); // 50 - 20
-            Assert.Equal(EstadoPedidoInterSede.Despachado, pedido.Estado);
+            Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
             Assert.Equal(20, detalle.CantidadDespachada);
+            Assert.Equal(20, detalle.CantidadRecibida);
             mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == "TransferenciaSalida" && m.CantidadBase == -20)), Times.Once);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == "TransferenciaEntrada" && m.CantidadBase == 20)), Times.Once);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -263,7 +265,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             // Assert
             Assert.Equal(38, stockProveedora.StockActual); // 50 - 12
-            Assert.Equal(EstadoPedidoInterSede.Despachado, pedido.Estado);
+            Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
             Assert.Equal(12, detalle.CantidadDespachada);
             mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.CantidadBase == -12)), Times.Once);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

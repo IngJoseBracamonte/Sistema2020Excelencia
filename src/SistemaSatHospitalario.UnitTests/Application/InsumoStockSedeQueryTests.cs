@@ -114,5 +114,41 @@ namespace SistemaSatHospitalario.UnitTests.Application
             // Assert
             Assert.Equal(30m, result[0].StockActual);
         }
+
+        [Fact]
+        public void ProyeccionStock_PorCodigo_RetornaInsumoYStockCorrecto()
+        {
+            // Arrange
+            var codigoBusqueda = "INS-LAP-01";
+            var insumo = new Insumo(codigoBusqueda, "KIT DE LAPARATOMIA", 100m, UnidadMedida.UNIDAD, 10.00m);
+            var sedePrincipalId = SeedConstants.SedeId_Principal;
+            insumo.StocksPorSede.Add(new StockSede(insumo.Id, sedePrincipalId, 100m));
+
+            var insumosList = new List<Insumo> { insumo };
+
+            // Act: Simulación de consulta por código de insumo en API REST
+            var targetInsumo = insumosList.FirstOrDefault(i => i.Codigo == codigoBusqueda && !i.IsDeleted);
+            Assert.NotNull(targetInsumo);
+
+            var stockPrincipal = targetInsumo.StocksPorSede
+                .Where(s => s.SedeId == sedePrincipalId)
+                .Select(s => (decimal?)s.StockActual)
+                .FirstOrDefault() ?? targetInsumo.StockActual;
+
+            var dto = new
+            {
+                targetInsumo.Id,
+                targetInsumo.Codigo,
+                targetInsumo.Nombre,
+                StockActual = stockPrincipal,
+                UnidadMedidaBase = targetInsumo.UnidadMedidaBase.ToString()
+            };
+
+            // Assert
+            Assert.Equal("INS-LAP-01", dto.Codigo);
+            Assert.Equal("KIT DE LAPARATOMIA", dto.Nombre);
+            Assert.Equal(100m, dto.StockActual);
+            Assert.Equal("UNIDAD", dto.UnidadMedidaBase);
+        }
     }
 }
