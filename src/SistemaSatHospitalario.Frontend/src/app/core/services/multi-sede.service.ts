@@ -116,6 +116,12 @@ export class MultiSedeService {
   }
 
   // --- API AREAS CLINICAS ---
+  getAreasClinicas(sedeId?: string): Observable<AreaClinica[]> {
+    let params: any = {};
+    if (sedeId) params.sedeId = sedeId;
+    return this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`, { params });
+  }
+
   createAreaClinica(dto: { sedeId: string; codigo: string; nombre: string }): Observable<string> {
     return this.http.post<string>(`${environment.apiUrl}/api/AreaClinica`, dto);
   }

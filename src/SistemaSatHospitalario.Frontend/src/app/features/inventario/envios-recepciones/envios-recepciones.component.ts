@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MultiSedeService, PedidoInterSede, Sede } from '../../../core/services/multi-sede.service';
+import { MultiSedeService, PedidoInterSede, Sede, AreaClinica } from '../../../core/services/multi-sede.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo } from '../../../core/models/inventory.model';
 import { 
@@ -29,7 +29,7 @@ import {
 
 export interface EnvioSubAreaForm {
   insumoId: string;
-  nombreSubArea: string;
+  areaClinicaId: string;
   cantidad: number;
   motivo: string;
 }
@@ -73,21 +73,12 @@ export class EnviosRecepcionesComponent implements OnInit {
   public selectedPedidoRechazar = signal<PedidoInterSede | null>(null);
   public motivoRechazo = signal<string>('');
 
-  // --- Formulario Envío Directo a Sub-Área ---
-  public subAreasDisponibles = [
-    'Emergencia',
-    'Hospitalización',
-    'Unidad de Cuidados Intensivos (UCI)',
-    'Cirugía / Quirófano',
-    'Laboratorio',
-    'Farmacia',
-    'Mantenimiento / Servicios Generales',
-    'Consultorios Externos'
-  ];
+  // --- Formulario Envío Directo a Sub-Área (DB-Driven: Signal vacía inicial) ---
+  public subAreasDisponibles = signal<AreaClinica[]>([]);
 
   public nuevoEnvio = signal<EnvioSubAreaForm>({
     insumoId: '',
-    nombreSubArea: 'Laboratorio',
+    areaClinicaId: '',
     cantidad: 1,
     motivo: ''
   });
@@ -141,6 +132,18 @@ export class EnviosRecepcionesComponent implements OnInit {
     this.multiSedeService.getSedes().subscribe({
       next: (s) => this.sedes.set(s),
       error: (e) => console.error('Error al cargar sedes:', e)
+    });
+
+    // Cargar únicamente las sub-áreas clínicas de la BD vinculadas a la Sede Principal (DB-Driven & Dynamic Preselection)
+    const principalSedeId = '10000000-0000-0000-0000-000000000001';
+    this.multiSedeService.getAreasClinicas(principalSedeId).subscribe({
+      next: (areas) => {
+        this.subAreasDisponibles.set(areas || []);
+        if (areas && areas.length > 0) {
+          this.nuevoEnvio.update(curr => ({ ...curr, areaClinicaId: areas[0].id }));
+        }
+      },
+      error: (e) => console.error('Error al cargar áreas clínicas de Sede Principal:', e)
     });
 
     this.multiSedeService.getPedidosRecibidos().subscribe({
@@ -309,7 +312,7 @@ export class EnviosRecepcionesComponent implements OnInit {
     });
   }
 
-  // --- Ejecución Envío Directo a Sub-Área ---
+  // --- Ejecución Envío Directo a Sub-Área (DB-Driven & GUID Strict) ---
   public procesarEnvioSubArea() {
     const form = this.nuevoEnvio();
 
@@ -317,7 +320,7 @@ export class EnviosRecepcionesComponent implements OnInit {
       this.showToast('Por favor selecciona un insumo / medicamento.', 'error');
       return;
     }
-    if (!form.nombreSubArea) {
+    if (!form.areaClinicaId) {
       this.showToast('Selecciona la sub-área de destino.', 'error');
       return;
     }
@@ -330,20 +333,25 @@ export class EnviosRecepcionesComponent implements OnInit {
       return;
     }
 
+    const areaObj = this.subAreasDisponibles().find(a => a.id === form.areaClinicaId);
+    const nombreResolved = areaObj ? (areaObj.codigo ? `[${areaObj.codigo}] ${areaObj.nombre}` : areaObj.nombre) : '';
+
     this.isSubmitting.set(true);
     this.inventoryService.enviarASubArea({
       insumoId: form.insumoId,
-      nombreSubArea: form.nombreSubArea,
+      areaClinicaId: form.areaClinicaId,
+      nombreSubArea: nombreResolved,
       cantidad: form.cantidad,
       motivo: form.motivo
     }).subscribe({
       next: (res) => {
         this.isSubmitting.set(false);
         this.showToast(res.message || 'Envío directo procesado exitosamente.', 'success');
-        // Reset form
+        // Reset form preseleccionando dinámicamente el primer ID
+        const firstId = this.subAreasDisponibles().length > 0 ? this.subAreasDisponibles()[0].id : '';
         this.nuevoEnvio.set({
           insumoId: '',
-          nombreSubArea: form.nombreSubArea,
+          areaClinicaId: firstId,
           cantidad: 1,
           motivo: ''
         });

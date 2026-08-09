@@ -45,6 +45,11 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var movimientosList = new List<MovimientoInsumo>();
             var mockMovimientosDbSet = movimientosList.BuildMockDbSet<MovimientoInsumo>();
 
+            var areaLab = new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central");
+            typeof(AreaClinica).GetProperty("Id")!.SetValue(areaLab, _subAreaId);
+            var areasList = new List<AreaClinica> { areaLab }.BuildMockDbSet<AreaClinica>();
+            _mockContext.Setup(c => c.AreasClinicas).Returns(areasList.Object);
+
             _mockContext.Setup(c => c.Insumos).Returns(insumosList.Object);
             _mockContext.Setup(c => c.StocksSedes).Returns(stocksList.Object);
             _mockContext.Setup(c => c.MovimientosInsumo).Returns(mockMovimientosDbSet.Object);
@@ -97,6 +102,11 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             var insumosList = new List<Insumo> { insumo }.BuildMockDbSet<Insumo>();
             var stocksList = new List<StockSede> { stockPrincipal }.BuildMockDbSet<StockSede>();
+
+            var areaLab = new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central");
+            typeof(AreaClinica).GetProperty("Id")!.SetValue(areaLab, _subAreaId);
+            var areasList = new List<AreaClinica> { areaLab }.BuildMockDbSet<AreaClinica>();
+            _mockContext.Setup(c => c.AreasClinicas).Returns(areasList.Object);
 
             _mockContext.Setup(c => c.Insumos).Returns(insumosList.Object);
             _mockContext.Setup(c => c.StocksSedes).Returns(stocksList.Object);

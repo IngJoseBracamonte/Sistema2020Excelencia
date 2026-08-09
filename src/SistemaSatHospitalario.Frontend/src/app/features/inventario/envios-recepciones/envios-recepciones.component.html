@@ -167,15 +167,18 @@
       <div class="space-y-4">
         <div>
           <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Sub-Área Destino</label>
-          <select [ngModel]="nuevoEnvio().nombreSubArea" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, nombreSubArea: $event, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
+          <select [ngModel]="nuevoEnvio().areaClinicaId" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: $event, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
             class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-            <option *ngFor="let area of subAreasDisponibles" [value]="area">{{ area }}</option>
+            <option value="">-- Seleccionar Sub-Área Destino --</option>
+            <option *ngFor="let area of subAreasDisponibles()" [value]="area.id">
+              <ng-container *ngIf="area.codigo">[{{ area.codigo }}] </ng-container>{{ area.nombre }}
+            </option>
           </select>
         </div>
 
         <div>
           <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Insumo / Medicamento</label>
-          <select [ngModel]="nuevoEnvio().insumoId" (ngModelChange)="nuevoEnvio.set({ insumoId: $event, nombreSubArea: nuevoEnvio().nombreSubArea, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
+          <select [ngModel]="nuevoEnvio().insumoId" (ngModelChange)="nuevoEnvio.set({ insumoId: $event, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
             class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
             <option value="">-- Seleccionar Material --</option>
             <option *ngFor="let ins of insumos()" [value]="ins.id">
@@ -192,13 +195,13 @@
 
         <div>
           <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Cantidad a Despachar</label>
-          <input type="number" min="1" [max]="selectedInsumoStock()" [ngModel]="nuevoEnvio().cantidad" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, nombreSubArea: nuevoEnvio().nombreSubArea, cantidad: +$event, motivo: nuevoEnvio().motivo })"
+          <input type="number" min="1" [max]="selectedInsumoStock()" [ngModel]="nuevoEnvio().cantidad" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: +$event, motivo: nuevoEnvio().motivo })"
             class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-indigo-500">
         </div>
 
         <div>
           <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Justificación / Motivo</label>
-          <textarea rows="3" [ngModel]="nuevoEnvio().motivo" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, nombreSubArea: nuevoEnvio().nombreSubArea, cantidad: nuevoEnvio().cantidad, motivo: $event })"
+          <textarea rows="3" [ngModel]="nuevoEnvio().motivo" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: nuevoEnvio().cantidad, motivo: $event })"
             placeholder="Ej: Reposición de insumos operativos..."
             class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
