@@ -85,14 +85,17 @@
                     </div>
 
                     <!-- Lista de resultados encontrados -->
-                    <div *ngIf="patientsEncontrados().length > 0" class="border border-white/5 rounded-2xl divide-y divide-white/5 max-h-48 overflow-y-auto">
+                    <div *ngIf="patientsEncontrados().length > 0" class="border border-rose-500/20 bg-black/40 rounded-2xl divide-y divide-white/5 max-h-48 overflow-y-auto">
                         <div *ngFor="let p of patientsEncontrados()" (click)="seleccionarPacienteIngreso(p)"
-                             class="p-4 hover:bg-white/5 cursor-pointer flex justify-between items-center transition-all">
+                             class="p-4 hover:bg-rose-500/10 cursor-pointer flex justify-between items-center transition-all group">
                             <div>
-                                <span class="text-xs font-black text-white uppercase">{{ p.nombre }} {{ p.apellidos }}</span>
-                                <span class="text-[9px] text-slate-500 font-mono block mt-1">CÉDULA: {{ p.cedula }}</span>
+                                <span class="text-xs font-black text-white uppercase group-hover:text-rose-400">{{ p.nombre }} {{ p.apellidos }}</span>
+                                <span class="text-[9px] text-slate-400 font-mono block mt-1">CÉDULA: {{ p.cedula }}</span>
                             </div>
-                            <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest text-right">SELECCIONAR</span>
+                            <button type="button" (click)="seleccionarPacienteIngreso(p)"
+                                    class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95">
+                                SELECCIONAR
+                            </button>
                         </div>
                     </div>
 

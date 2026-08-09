@@ -1457,13 +1457,20 @@ export class EnfermeriaComponent implements OnInit {
     const term = this.searchIngresoTerm().trim();
     if (term.length >= 3) {
       this.isSearchingPatient.set(true);
+      this.errorMessage.set(null);
       this.patientService.searchPatients(term).subscribe({
         next: (res) => {
-          this.patientsEncontrados.set(res);
+          this.patientsEncontrados.set(res || []);
           this.isSearchingPatient.set(false);
+          if (res && res.length === 1) {
+            this.seleccionarPacienteIngreso(res[0]);
+          } else if (res && res.length === 0) {
+            this.errorMessage.set("No se encontró ningún paciente con la cédula o nombre ingresado.");
+          }
         },
-        error: () => {
+        error: (err) => {
           this.isSearchingPatient.set(false);
+          this.errorMessage.set(err.error?.message || "Error al buscar paciente.");
         }
       });
     }
@@ -1472,6 +1479,7 @@ export class EnfermeriaComponent implements OnInit {
   public seleccionarPacienteIngreso(p: PatientRecord) {
     this.selectedPatientForIngreso.set(p);
     this.patientsEncontrados.set([]);
+    this.errorMessage.set(null);
   }
 
   public deseleccionarPacienteIngreso() {
@@ -1507,6 +1515,7 @@ export class EnfermeriaComponent implements OnInit {
             this.isLoading.set(false);
             this.triageSelectedPatientId.set(p.id);
             this.ingresoStep.set(2);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           } else {
             this.abrirCuentaParaPaciente(p.id);
           }
@@ -1517,8 +1526,13 @@ export class EnfermeriaComponent implements OnInit {
         }
       });
     } else {
-      // Usar paciente existente
-      const patient = this.selectedPatientForIngreso();
+      // Usar paciente existente con auto-selección si hay resultados de búsqueda pendientes
+      let patient = this.selectedPatientForIngreso();
+      if (!patient && this.patientsEncontrados().length > 0) {
+        patient = this.patientsEncontrados()[0];
+        this.seleccionarPacienteIngreso(patient);
+      }
+
       if (!patient) {
         this.errorMessage.set("Por favor busque y seleccione un paciente o complete el formulario de nuevo registro.");
         return;
@@ -1527,6 +1541,7 @@ export class EnfermeriaComponent implements OnInit {
       if (this.type() === TIPO_INGRESO.EMERGENCIA) {
         this.triageSelectedPatientId.set(patient.id);
         this.ingresoStep.set(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         this.isLoading.set(true);
         this.abrirCuentaParaPaciente(patient.id);
