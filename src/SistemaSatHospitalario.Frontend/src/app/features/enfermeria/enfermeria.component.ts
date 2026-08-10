@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed, HostListener, ElementRef } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -596,6 +596,17 @@ export class EnfermeriaComponent implements OnInit {
     return latestWithState || history[0];
   });
 
+  constructor() {
+    effect(() => {
+      const account = this.selectedAccount();
+      const areaFilter = this.nursingAreaFilter();
+      const areas = this.areasClinicas();
+      if (areas.length > 0) {
+        this.autoSelectAreaClinicaForAccount(account);
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.http.get<any[]>(`${environment.apiUrl}/api/Triage/niveles`).subscribe({
       next: (niveles) => {
@@ -714,17 +725,33 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   public autoSelectAreaClinicaForAccount(account: CuentaAdministrativa | null): void {
-    if (!account) return;
     const areas = this.areasClinicas();
     if (!areas || areas.length === 0) return;
 
-    const ingresoNorm = (account.tipoIngreso || '').toLowerCase().trim();
-    
-    // Buscar coincidencia por nombre o código con el tipoIngreso del paciente (Emergencia, Hospitalizacion, UCI, etc.)
+    const normalizeStr = (str: string) => (str || '')
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+    // Prioridad de sincronización DB-Driven:
+    // 1. subAreaClinica del paciente seleccionado (ej. "Hospitalización", "Emergencia", "UCI")
+    // 2. tipoIngreso del paciente seleccionado (ej. "Emergencia", "Hospitalizacion", "UCI")
+    // 3. Filtro de área activo en la cabecera del módulo de enfermería (nursingAreaFilter())
+    const rawTarget = account?.subAreaClinica || account?.tipoIngreso || this.nursingAreaFilter() || '';
+    const targetNorm = normalizeStr(rawTarget);
+
+    if (!targetNorm) return;
+
     const matched = areas.find(a => {
-      const nameNorm = (a.nombre || '').toLowerCase().trim();
-      const codeNorm = (a.codigo || '').toLowerCase().trim();
-      return nameNorm.includes(ingresoNorm) || ingresoNorm.includes(nameNorm) || codeNorm === ingresoNorm;
+      const nameNorm = normalizeStr(a.nombre);
+      const codeNorm = normalizeStr(a.codigo);
+
+      if (targetNorm === 'uci') {
+        return nameNorm.includes('uci') || codeNorm.includes('uci') || nameNorm.includes('cuidados intensivos');
+      }
+
+      return nameNorm.includes(targetNorm) || targetNorm.includes(nameNorm) || codeNorm === targetNorm;
     });
 
     if (matched) {
@@ -1004,7 +1031,7 @@ export class EnfermeriaComponent implements OnInit {
     this.fastChargeSearchTerm.set('');
     this.fastChargeQuantity = 1;
     this.selectedMedicoId.set(null);
-    this.selectedAreaClinicaId.set(null);
+    this.autoSelectAreaClinicaForAccount(this.selectedAccount());
     this.customPrecio.set(null);
     this.customHonorario.set(null);
     this.activeSuggestions.set([]);
