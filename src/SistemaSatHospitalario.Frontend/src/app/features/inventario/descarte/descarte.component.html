@@ -150,7 +150,7 @@
         <label class="text-[10px] font-black uppercase tracking-wider text-rose-400">Causal Oficial de Baja (Catálogo DB)</label>
         <select 
           [ngModel]="motivoDescarteId()"
-          (ngModelChange)="motivoDescarteId.set($event)"
+          (ngModelChange)="onMotivoChange($event)"
           class="w-full mt-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-xs font-bold text-white uppercase outline-none focus:border-rose-500/50 transition-all">
           <option *ngFor="let m of motivosDescarte()" [value]="m.id">
             <ng-container *ngIf="m.codigo">[{{ m.codigo }}] </ng-container>{{ m.nombre }}

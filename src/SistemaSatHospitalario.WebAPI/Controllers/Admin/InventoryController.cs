@@ -523,6 +523,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var username = User.Identity?.Name ?? "System";
             var principalSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
 
+            decimal totalCompraUSD = 0m;
+
             foreach (var item in dto.Items)
             {
                 var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == item.InsumoId, ct);
@@ -535,6 +537,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 {
                     return BadRequest(new { Message = $"La cantidad a ingresar para el insumo '{insumo.Nombre}' debe ser mayor a 0." });
                 }
+
+                totalCompraUSD += Math.Round(item.Cantidad * item.PrecioCostoUSD, 2);
 
                 insumo.ActualizarDetalles(
                     insumo.Nombre,
@@ -562,10 +566,26 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     insumo.UnidadMedidaBase,
                     item.Cantidad,
                     username,
-                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD."
+                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD. Prov: {dto.ProveedorNombre ?? "General"}"
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
+
+            // Registrar automáticamente la Cuenta por Pagar / Orden de Compra
+            var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
+            var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
+            var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
+
+            var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
+                numFact,
+                provNombre,
+                DateTime.Now,
+                totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
+                tasa,
+                null,
+                $"Ingreso atómico de compra de insumos registrado por {username}."
+            );
+            _context.OrdenesCompraInventario.Add(ordenCompra);
 
             await _context.SaveChangesAsync(ct);
             return Ok(new { Success = true });
@@ -614,6 +634,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     public class RecordPurchaseDto
     {
         public Guid? SedeId { get; set; }
+        public string? ProveedorNombre { get; set; }
+        public string? NumeroFactura { get; set; }
+        public decimal? TasaCambio { get; set; }
         public List<PurchaseItemDto> Items { get; set; } = new();
     }
 

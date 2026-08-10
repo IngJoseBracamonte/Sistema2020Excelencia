@@ -1617,7 +1617,7 @@ export class EnfermeriaComponent implements OnInit {
     // 1. Abrir la cuenta clínica
     this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId(), this.selectedCamaId()).subscribe({
       next: (res: any) => {
-        const cuentaId = res.cuentaId || res.id;
+        const cuentaId = res?.cuentaId || res?.CuentaId || res?.id || (typeof res === 'string' ? res : null);
         if (!cuentaId) {
           this.isLoading.set(false);
           this.errorMessage.set("Error: No se pudo obtener el ID de la cuenta creada.");

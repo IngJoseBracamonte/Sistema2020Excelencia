@@ -29,7 +29,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .FirstOrDefaultAsync(p => p.CedulaPasaporte == request.Cedula, cancellationToken);
             
             if (nativePatient != null) 
-                throw new InvalidOperationException("El paciente ya se encuentra registrado localmente.");
+            {
+                return new PatientDto
+                {
+                    Id = nativePatient.Id,
+                    IdPacienteLegacy = nativePatient.IdPacienteLegacy,
+                    Cedula = nativePatient.CedulaPasaporte,
+                    Nombre = nativePatient.NombreCorto,
+                    Telefono = nativePatient.TelefonoContact ?? "",
+                    Celular = nativePatient.TelefonoContact ?? "",
+                    FechaNacimiento = nativePatient.FechaNacimiento?.ToString("yyyy-MM-dd") ?? "",
+                    Direccion = nativePatient.Direccion ?? "",
+                    EsLegacy = nativePatient.IdPacienteLegacy.HasValue,
+                    Source = "Nativo"
+                };
+            }
 
             // 2. Validar duplicados en Legacy y Onboard si es necesario
             var existingLegacy = await _legacyRepository.GetPatientByCedulaAsync(request.Cedula, cancellationToken);

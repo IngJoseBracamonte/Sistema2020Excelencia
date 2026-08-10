@@ -93,6 +93,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpPost("AbrirCuenta")]
+        [HttpPost("abrir-cuenta")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AbrirCuenta([FromBody] AbrirCuentaClinicaCommand command)
@@ -103,12 +104,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 var accountId = await _mediator.Send(command);
                 return Ok(new { 
                     Message = "Cuenta clínica abierta exitosamente.", 
-                    CuentaId = accountId
+                    CuentaId = accountId,
+                    cuentaId = accountId,
+                    id = accountId
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
             }
         }
         

@@ -136,10 +136,19 @@ export class DescarteComponent implements OnInit {
     this.cantidadDescarte.set(1);
   }
 
+  onMotivoChange(id: string) {
+    this.motivoDescarteId.set(id);
+    const found = this.motivosDescarte().find(m => m.id === id);
+    if (found) {
+      this.motivoDescarte.set(found.nombre);
+    }
+  }
+
   submitDescarte() {
     const item = this.selectedInsumo();
     const cant = Number(this.cantidadDescarte());
-    const motivo = this.motivoDescarte().trim();
+    const selectedMotivoObj = this.motivosDescarte().find(m => m.id === this.motivoDescarteId());
+    const motivo = selectedMotivoObj ? selectedMotivoObj.nombre : (this.motivoDescarte().trim() || 'Descarte General');
 
     if (!item) {
       this.showError('Debe seleccionar un insumo a descartar.');

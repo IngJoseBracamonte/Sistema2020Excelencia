@@ -150,5 +150,8 @@ export interface PurchaseItem {
 
 export interface RecordPurchase {
   sedeId?: string;
+  proveedorNombre?: string;
+  numeroFactura?: string;
+  tasaCambio?: number;
   items: PurchaseItem[];
 }
