@@ -23,12 +23,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<Guid> Handle(AbrirCuentaClinicaCommand request, CancellationToken cancellationToken)
         {
-            // 1. Validar que el paciente existe
+            // 1. Validar que el paciente existe por GUID o por ID Legacy
+            var pacSearchStr = !string.IsNullOrWhiteSpace(request.RawPacienteId) ? request.RawPacienteId.Trim() : request.PacienteId.ToString();
+
             var paciente = await _context.PacientesAdmision
                 .FirstOrDefaultAsync(p => p.Id == request.PacienteId, cancellationToken);
+
+            if (paciente == null && int.TryParse(pacSearchStr, out var legacyId))
+            {
+                paciente = await _context.PacientesAdmision
+                    .FirstOrDefaultAsync(p => p.IdPacienteLegacy == legacyId, cancellationToken);
+            }
+
             if (paciente == null)
             {
-                throw new InvalidOperationException($"El paciente con ID {request.PacienteId} no existe.");
+                throw new InvalidOperationException($"El paciente con ID {pacSearchStr} no existe.");
             }
 
             // 2. Validar especialidad del médico si aplica
@@ -85,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 3. Buscar si ya tiene una cuenta abierta de ese tipo de ingreso
             var cuentaExistente = await _context.CuentasServicios
-                .FirstOrDefaultAsync(c => c.PacienteId == request.PacienteId && 
+                .FirstOrDefaultAsync(c => c.PacienteId == paciente.Id && 
                                            c.Estado == EstadoConstants.Abierta && 
                                            c.TipoIngreso == request.TipoIngreso, cancellationToken);
 
@@ -96,7 +105,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 4. Crear nueva cuenta clínica
             var nuevaCuenta = new CuentaServicios(
-                request.PacienteId,
+                paciente.Id,
                 request.UsuarioCarga,
                 request.TipoIngreso,
                 request.ConvenioId,

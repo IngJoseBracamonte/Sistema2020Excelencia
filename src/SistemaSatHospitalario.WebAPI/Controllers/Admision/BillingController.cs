@@ -96,17 +96,54 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [HttpPost("abrir-cuenta")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> AbrirCuenta([FromBody] AbrirCuentaClinicaCommand command)
+        public async Task<IActionResult> AbrirCuenta([FromBody] AbrirCuentaRequestDto dto)
         {
             try
             {
-                command.UsuarioCarga = User.GetUserName();
+                if (dto == null)
+                {
+                    return BadRequest(new { Error = "El cuerpo de la solicitud no puede estar vacío." });
+                }
+
+                Guid pacienteGuid = Guid.Empty;
+                var pacIdStr = dto.PacienteId?.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(pacIdStr) && Guid.TryParse(pacIdStr, out var parsedGuid))
+                {
+                    pacienteGuid = parsedGuid;
+                }
+
+                // Resolver AreaClinicaId / CamaId
+                Guid? areaClinicaGuid = null;
+                var areaStr = (dto.AreaClinicaId ?? dto.CamaId)?.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(areaStr) && Guid.TryParse(areaStr, out var parsedArea))
+                {
+                    areaClinicaGuid = parsedArea;
+                }
+
+                // Resolver MedicoId
+                Guid? medicoGuid = null;
+                var medicoStr = dto.MedicoId?.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(medicoStr) && Guid.TryParse(medicoStr, out var parsedMedico))
+                {
+                    medicoGuid = parsedMedico;
+                }
+
+                var command = new AbrirCuentaClinicaCommand
+                {
+                    PacienteId = pacienteGuid,
+                    RawPacienteId = pacIdStr,
+                    TipoIngreso = dto.TipoIngreso ?? "Emergencia",
+                    ConvenioId = dto.ConvenioId,
+                    MedicoId = medicoGuid,
+                    AreaClinicaId = areaClinicaGuid,
+                    PermitirBypassExcepcionMedica = dto.PermitirBypassExcepcionMedica,
+                    UsuarioCarga = User.GetUserName()
+                };
+
                 var accountId = await _mediator.Send(command);
                 return Ok(new { 
                     Message = "Cuenta clínica abierta exitosamente.", 
-                    CuentaId = accountId,
-                    cuentaId = accountId,
-                    id = accountId
+                    CuentaId = accountId
                 });
             }
             catch (Exception ex)
@@ -500,5 +537,16 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { Error = ex.Message });
             }
         }
+    }
+
+    public class AbrirCuentaRequestDto
+    {
+        public object? PacienteId { get; set; }
+        public string? TipoIngreso { get; set; }
+        public int? ConvenioId { get; set; }
+        public object? MedicoId { get; set; }
+        public object? AreaClinicaId { get; set; }
+        public object? CamaId { get; set; }
+        public bool PermitirBypassExcepcionMedica { get; set; }
     }
 }

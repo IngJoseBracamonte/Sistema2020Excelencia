@@ -6,6 +6,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class AbrirCuentaClinicaCommand : IRequest<Guid>
     {
         public Guid PacienteId { get; set; }
+        public string? RawPacienteId { get; set; }
         public string TipoIngreso { get; set; } = string.Empty; // Particular, Seguro, Hospitalizacion, UCI, Emergencia
         public int? ConvenioId { get; set; }
         public string UsuarioCarga { get; set; } = string.Empty;
