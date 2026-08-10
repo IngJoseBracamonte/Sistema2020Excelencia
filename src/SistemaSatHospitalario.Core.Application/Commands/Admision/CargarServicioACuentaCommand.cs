@@ -297,8 +297,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (targetSedeId == null)
             {
-                targetSedeId = cuenta.AreaClinicaId.HasValue
-                    ? (await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken))?.SedeId
+                var effectiveAreaId = request.AreaClinicaId ?? cuenta.AreaClinicaId;
+                targetSedeId = effectiveAreaId.HasValue
+                    ? (await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Id == effectiveAreaId.Value, cancellationToken))?.SedeId
                     : SeedConstants.ResolveSedeInventario(cuenta.TipoIngreso, cuenta.SubAreaClinica);
             }
 
