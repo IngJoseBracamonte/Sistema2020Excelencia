@@ -70,10 +70,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 var searchLower = request.SearchTerm.Trim().ToLower();
                 query = query.Where(m =>
-                    m.Insumo.Nombre.ToLower().Contains(searchLower) ||
-                    m.Insumo.Codigo.ToLower().Contains(searchLower) ||
-                    m.Usuario.ToLower().Contains(searchLower) ||
-                    m.Motivo.ToLower().Contains(searchLower)
+                    (m.Insumo != null && m.Insumo.Nombre != null && m.Insumo.Nombre.ToLower().Contains(searchLower)) ||
+                    (m.Insumo != null && m.Insumo.Codigo != null && m.Insumo.Codigo.ToLower().Contains(searchLower)) ||
+                    (m.Usuario != null && m.Usuario.ToLower().Contains(searchLower)) ||
+                    (m.Motivo != null && m.Motivo.ToLower().Contains(searchLower))
                 );
             }
 
@@ -83,16 +83,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     Id = m.Id,
                     InsumoId = m.InsumoId,
-                    InsumoCodigo = m.Insumo.Codigo,
-                    InsumoNombre = m.Insumo.Nombre,
+                    InsumoCodigo = m.Insumo != null ? m.Insumo.Codigo : "N/A",
+                    InsumoNombre = m.Insumo != null ? m.Insumo.Nombre : "Insumo Eliminado",
                     SedeId = m.SedeId,
                     TipoMovimiento = m.TipoMovimiento,
                     CantidadBase = m.CantidadBase,
                     CantidadOriginal = m.CantidadOriginal,
                     UnidadMedidaOriginal = m.UnidadMedidaOriginal.ToString(),
-                    Usuario = m.Usuario,
+                    Usuario = m.Usuario ?? "Sistema",
                     Fecha = m.Fecha,
-                    Motivo = m.Motivo
+                    Motivo = m.Motivo ?? ""
                 })
                 .ToListAsync(cancellationToken);
 

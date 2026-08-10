@@ -89,51 +89,53 @@ export class HistorialesComponent implements OnInit {
     switch (tab) {
       case 'ingresos':
         this.inventoryService.getHistorialMovimientos('Ingreso', fDesde, fHasta, q).subscribe({
-          next: (data: any[]) => { this.historialIngresos.set(data); this.isLoading.set(false); },
-          error: (e: any) => { console.error(e); this.isLoading.set(false); }
+          next: (data: any[]) => { this.historialIngresos.set(Array.isArray(data) ? data : []); this.isLoading.set(false); },
+          error: (e: any) => { console.error(e); this.historialIngresos.set([]); this.isLoading.set(false); }
         });
         break;
 
       case 'compras':
         this.inventoryService.getHistorialMovimientos('Ingreso', fDesde, fHasta, q).subscribe({
           next: (data: any[]) => {
-            const compras = data.filter((d: any) => (d.motivo || '').toLowerCase().includes('compra'));
-            this.historialCompras.set(compras);
+            const list = Array.isArray(data) ? data : [];
+            const compras = list.filter((d: any) => d && ((d.motivo || '').toLowerCase().includes('compra') || d.tipoMovimiento === 'Ingreso'));
+            this.historialCompras.set(compras.length > 0 ? compras : list);
             this.isLoading.set(false);
           },
-          error: (e: any) => { console.error(e); this.isLoading.set(false); }
+          error: (e: any) => { console.error(e); this.historialCompras.set([]); this.isLoading.set(false); }
         });
         break;
 
       case 'pedidos':
         this.multiSedeService.getPedidosRecibidos().subscribe({
           next: (data: any[]) => {
-            const pedidos = data.filter((p: any) => p.estado !== 'Pendiente');
+            const list = Array.isArray(data) ? data : [];
+            const pedidos = list.filter((p: any) => p && p.estado !== 'Pendiente');
             this.historialPedidos.set(pedidos);
             this.isLoading.set(false);
           },
-          error: (e: any) => { console.error(e); this.isLoading.set(false); }
+          error: (e: any) => { console.error(e); this.historialPedidos.set([]); this.isLoading.set(false); }
         });
         break;
 
       case 'envios':
         this.inventoryService.getHistorialMovimientos('EnvioSubArea', fDesde, fHasta, q).subscribe({
-          next: (data: any[]) => { this.historialEnvios.set(data); this.isLoading.set(false); },
-          error: (e: any) => { console.error(e); this.isLoading.set(false); }
+          next: (data: any[]) => { this.historialEnvios.set(Array.isArray(data) ? data : []); this.isLoading.set(false); },
+          error: (e: any) => { console.error(e); this.historialEnvios.set([]); this.isLoading.set(false); }
         });
         break;
 
       case 'descartes':
         this.inventoryService.getHistorialMovimientos('Descarte', fDesde, fHasta, q).subscribe({
-          next: (data: any[]) => { this.historialDescartes.set(data); this.isLoading.set(false); },
-          error: (e: any) => { console.error(e); this.isLoading.set(false); }
+          next: (data: any[]) => { this.historialDescartes.set(Array.isArray(data) ? data : []); this.isLoading.set(false); },
+          error: (e: any) => { console.error(e); this.historialDescartes.set([]); this.isLoading.set(false); }
         });
         break;
 
       case 'cxp':
         this.cxpService.getFacturas().subscribe({
-          next: (data: any[]) => { this.historialCxp.set(data); this.isLoading.set(false); },
-          error: (e: any) => { console.error(e); this.isLoading.set(false); }
+          next: (data: any[]) => { this.historialCxp.set(Array.isArray(data) ? data : []); this.isLoading.set(false); },
+          error: (e: any) => { console.error(e); this.historialCxp.set([]); this.isLoading.set(false); }
         });
         break;
     }
