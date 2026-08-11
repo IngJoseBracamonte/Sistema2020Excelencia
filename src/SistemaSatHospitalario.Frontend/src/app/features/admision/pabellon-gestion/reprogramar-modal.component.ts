@@ -20,7 +20,7 @@ import { OrdenCirugia } from '../../../core/services/pabellon.service';
             </div>
             <div>
               <h3 class="text-base font-bold text-white">Reprogramar Cirugía</h3>
-              <p class="text-xs text-gray-400">{{ cirugia?.pacienteNombre }} • {{ cirugia?.descripcionCirugia }}</p>
+              <p class="text-xs text-gray-400">{{ cirugia.pacienteNombre }} • {{ cirugia.descripcionCirugia }}</p>
             </div>
           </div>
           <button (click)="cerrar.emit()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition">
@@ -33,7 +33,7 @@ import { OrdenCirugia } from '../../../core/services/pabellon.service';
           <!-- Fecha y Hora Actual -->
           <div class="bg-gray-950/60 p-3.5 rounded-xl border border-gray-800 flex justify-between items-center text-xs">
             <span class="text-gray-400">Programación Actual:</span>
-            <span class="font-bold text-amber-400">{{ cirugia?.fechaHoraProgramada | date:'dd/MM/yyyy hh:mm a' }}</span>
+            <span class="font-bold text-amber-400">{{ cirugia.fechaHoraProgramada | date:'dd/MM/yyyy hh:mm a' }}</span>
           </div>
 
           <!-- Nueva Fecha y Hora -->
