@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
@@ -50,6 +52,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // Log de auditoría de creación
             orden.AgregarLog(request.UsuarioCreacion, CirugiaEventoConstants.Creacion,
                 $"Cirugía '{request.DescripcionCirugia}' programada para {request.FechaHoraProgramada:yyyy-MM-dd HH:mm}. Precio: ${request.PrecioBaseUsd:N2} USD.");
+
+            orden.AgregarHistorialObservacion(
+                $"Programación inicial para {request.FechaHoraProgramada:dd/MM/yyyy HH:mm}.",
+                "ProgramacionInicial",
+                request.UsuarioCreacion);
+
+            // Cargar requisitos activos desde el catálogo maestro DB-Driven
+            var reqsActivos = await _context.RequisitosCirugia
+                .Where(r => r.EsActivo)
+                .ToListAsync(cancellationToken);
+
+            foreach (var req in reqsActivos)
+            {
+                orden.AgregarRequisito(req.Id, cumplido: false);
+            }
 
             _context.OrdenesCirugia.Add(orden);
             await _context.SaveChangesAsync(cancellationToken);

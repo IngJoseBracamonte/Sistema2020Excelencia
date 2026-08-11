@@ -41,23 +41,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCirugiaId, cancellationToken)
                 ?? throw new InvalidOperationException("La orden de cirugía no fue encontrada.");
 
-            switch (request.NuevoEstado)
+            var targetState = request.NuevoEstado?.Trim() ?? string.Empty;
+
+            if (targetState.Equals(EstadoCirugiaConstants.EnEspera, StringComparison.OrdinalIgnoreCase))
             {
-                case EstadoCirugiaConstants.EnProceso:
-                    orden.IniciarCirugia(request.UsuarioId);
-                    break;
-                case EstadoCirugiaConstants.Completada:
-                    orden.CompletarCirugia(request.UsuarioId);
-                    break;
-                case EstadoCirugiaConstants.Cancelada:
-                    orden.CancelarCirugia(request.UsuarioId, request.MotivoCancelacion ?? "Sin motivo especificado");
-                    break;
-                default:
-                    throw new ArgumentException($"Estado de cirugía no reconocido: {request.NuevoEstado}");
+                orden.IniciarEspera(request.UsuarioId);
+            }
+            else if (targetState.Equals(EstadoCirugiaConstants.EnCirugia, StringComparison.OrdinalIgnoreCase) ||
+                     targetState.Equals("EnProceso", StringComparison.OrdinalIgnoreCase))
+            {
+                orden.IniciarCirugia(request.UsuarioId);
+            }
+            else if (targetState.Equals(EstadoCirugiaConstants.Finalizado, StringComparison.OrdinalIgnoreCase) ||
+                     targetState.Equals("Completada", StringComparison.OrdinalIgnoreCase))
+            {
+                orden.FinalizarCirugia(request.UsuarioId);
+            }
+            else if (targetState.Equals(EstadoCirugiaConstants.Cancelada, StringComparison.OrdinalIgnoreCase))
+            {
+                orden.CancelarCirugia(request.UsuarioId, request.MotivoCancelacion ?? "Sin motivo especificado");
+            }
+            else
+            {
+                throw new ArgumentException($"Estado de cirugía no reconocido o desatendido: {request.NuevoEstado}");
             }
 
             await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Estado de Orden {OrdenId} cambiado a {Estado}.", request.OrdenCirugiaId, orden.Estado);
+            _logger.LogInformation("Estado de Orden {OrdenId} cambiado exitosamente a {Estado}.", request.OrdenCirugiaId, orden.Estado);
             return true;
         }
     }

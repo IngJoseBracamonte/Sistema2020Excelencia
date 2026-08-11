@@ -73,6 +73,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; set; }
         public DbSet<OrdenCirugia> OrdenesCirugia { get; set; }
         public DbSet<CirugiaLog> CirugiaLogs { get; set; }
+        public DbSet<RequisitoCirugia> RequisitosCirugia { get; set; }
+        public DbSet<OrdenCirugiaRequisito> OrdenesCirugiaRequisitos { get; set; }
+        public DbSet<CirugiaObservacionHistorial> CirugiasObservacionesHistorial { get; set; }
         public DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; set; }
         public DbSet<PagoProveedor> PagosProveedores { get; set; }
 
@@ -991,6 +994,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(l => l.OrdenCirugiaId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasMany(o => o.Requisitos)
+                      .WithOne(r => r.OrdenCirugia)
+                      .HasForeignKey(r => r.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(o => o.HistorialObservaciones)
+                      .WithOne(h => h.OrdenCirugia)
+                      .HasForeignKey(h => h.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasIndex(o => o.FechaHoraProgramada);
                 entity.HasIndex(o => o.Estado);
             });
@@ -1005,6 +1018,39 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.HasIndex(l => l.OrdenCirugiaId);
                 entity.HasIndex(l => l.Timestamp);
+            });
+
+            builder.Entity<RequisitoCirugia>(entity =>
+            {
+                entity.ToTable("RequisitosCirugia");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.Nombre).IsRequired().HasMaxLength(200);
+                entity.Property(r => r.Descripcion).HasMaxLength(500);
+            });
+
+            builder.Entity<OrdenCirugiaRequisito>(entity =>
+            {
+                entity.ToTable("OrdenesCirugiaRequisitos");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.VerificadoPor).HasMaxLength(100);
+
+                entity.HasOne(r => r.RequisitoCirugia)
+                      .WithMany(m => m.OrdenesRequisitos)
+                      .HasForeignKey(r => r.RequisitoCirugiaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(r => r.OrdenCirugiaId);
+            });
+
+            builder.Entity<CirugiaObservacionHistorial>(entity =>
+            {
+                entity.ToTable("CirugiasObservacionesHistorial");
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.Observacion).IsRequired().HasMaxLength(1000);
+                entity.Property(h => h.Tipo).IsRequired().HasMaxLength(50);
+                entity.Property(h => h.UsuarioRegistro).IsRequired().HasMaxLength(100);
+
+                entity.HasIndex(h => h.OrdenCirugiaId);
             });
         }
 

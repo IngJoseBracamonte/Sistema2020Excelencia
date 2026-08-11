@@ -125,3 +125,152 @@ describe('EnfermeriaComponent - Dropdown DAR DE ALTA Tests', () => {
     expect(component.isAccountSolvent()).toBeFalse();
   });
 });
+
+describe('EnfermeriaComponent - Médico Tratante en Ingreso', () => {
+  let component: EnfermeriaComponent;
+  let fixture: ComponentFixture<EnfermeriaComponent>;
+
+  let mockAuthService: any;
+  let mockMedicoService: any;
+  let mockMultiSedeService: any;
+  let mockPatientService: any;
+  let mockFacturacionService: any;
+
+  beforeEach(async () => {
+    mockAuthService = {
+      currentUser: signal({ id: 'user-1', username: 'enfermero1', role: 'Enfermero' })
+    };
+
+    mockMedicoService = {
+      getMedicos: jasmine.createSpy('getMedicos').and.returnValue(of([])),
+      getAll: jasmine.createSpy('getAll').and.returnValue(of([]))
+    };
+
+    mockMultiSedeService = {
+      activeSede: signal({ id: 'sede-1', nombre: 'Sede Principal' }),
+      areas: signal([])
+    };
+
+    mockPatientService = {
+      searchPatients: jasmine.createSpy('searchPatients').and.returnValue(of([]))
+    };
+
+    mockFacturacionService = {
+      getCuentaPorId: jasmine.createSpy('getCuentaPorId').and.returnValue(of(null)),
+      abrirCuenta: jasmine.createSpy('abrirCuenta').and.returnValue(of({ cuentaId: 'acc-test' }))
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [EnfermeriaComponent, HttpClientTestingModule],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: MedicoService, useValue: mockMedicoService },
+        { provide: MultiSedeService, useValue: mockMultiSedeService },
+        { provide: PatientService, useValue: mockPatientService },
+        { provide: FacturacionService, useValue: mockFacturacionService }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EnfermeriaComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('debe inicializar medicoTratanteIngresoId como null', () => {
+    expect(component.medicoTratanteIngresoId()).toBeNull();
+  });
+
+  it('debe resetear medicoTratanteIngresoId al abrir el modal de ingreso', () => {
+    component.medicoTratanteIngresoId.set('some-medico-id');
+    component.abrirModalIngreso();
+    expect(component.medicoTratanteIngresoId()).toBeNull();
+  });
+
+  it('esMedicoTratanteRequerido debe ser false cuando el tipo es Emergencia', () => {
+    component.nursingAreaFilter.set('Emergencia');
+    expect(component.esMedicoTratanteRequerido()).toBeFalse();
+  });
+
+  it('esMedicoTratanteRequerido debe ser true cuando el tipo es Hospitalizacion', () => {
+    component.nursingAreaFilter.set('Hospitalizacion');
+    expect(component.esMedicoTratanteRequerido()).toBeTrue();
+  });
+
+  it('esMedicoTratanteRequerido debe ser true cuando el tipo es UCI', () => {
+    component.nursingAreaFilter.set('UCI');
+    expect(component.esMedicoTratanteRequerido()).toBeTrue();
+  });
+
+  it('no debe bloquear procesarIngreso en Emergencia sin médico tratante', () => {
+    component.nursingAreaFilter.set('Emergencia');
+    component.medicoTratanteIngresoId.set(null);
+    component.selectedPatientForIngreso.set({
+      id: 'pac-1',
+      nombre: 'Juan',
+      apellidos: 'Perez',
+      cedula: 'V-12345678'
+    } as any);
+    component.showNewPatientForm.set(false);
+
+    component.procesarIngreso();
+
+    // En emergencia avanza al step 2 (triage) sin error de médico
+    expect(component.ingresoStep()).toBe(2);
+    expect(component.errorMessage()).toBeNull();
+  });
+
+  it('debe bloquear procesarIngreso en Hospitalizacion sin médico tratante', () => {
+    component.nursingAreaFilter.set('Hospitalizacion');
+    component.medicoTratanteIngresoId.set(null);
+    component.selectedPatientForIngreso.set({
+      id: 'pac-1',
+      nombre: 'Juan',
+      apellidos: 'Perez',
+      cedula: 'V-12345678'
+    } as any);
+    component.showNewPatientForm.set(false);
+
+    component.procesarIngreso();
+
+    expect(component.errorMessage()).toBeTruthy();
+    expect(component.errorMessage()!.toLowerCase()).toContain('médico tratante');
+  });
+
+  it('debe bloquear procesarIngreso en UCI sin médico tratante', () => {
+    component.nursingAreaFilter.set('UCI');
+    component.medicoTratanteIngresoId.set(null);
+    component.selectedPatientForIngreso.set({
+      id: 'pac-1',
+      nombre: 'Juan',
+      apellidos: 'Perez',
+      cedula: 'V-12345678'
+    } as any);
+    component.showNewPatientForm.set(false);
+
+    component.procesarIngreso();
+
+    expect(component.errorMessage()).toBeTruthy();
+    expect(component.errorMessage()!.toLowerCase()).toContain('médico tratante');
+  });
+
+  it('debe permitir procesarIngreso en Hospitalizacion con médico tratante seleccionado', () => {
+    component.nursingAreaFilter.set('Hospitalizacion');
+    component.medicoTratanteIngresoId.set('medico-guid-hosp');
+    component.selectedPatientForIngreso.set({
+      id: 'pac-1',
+      nombre: 'Juan',
+      apellidos: 'Perez',
+      cedula: 'V-12345678'
+    } as any);
+    component.showNewPatientForm.set(false);
+
+    component.procesarIngreso();
+
+    // No debe haber error de médico (puede haber un loading state)
+    const err = component.errorMessage();
+    if (err) {
+      expect(err.toLowerCase()).not.toContain('médico tratante');
+    }
+  });
+});
+
