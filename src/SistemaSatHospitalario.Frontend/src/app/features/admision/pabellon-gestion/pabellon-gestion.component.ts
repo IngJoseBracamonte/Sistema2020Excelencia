@@ -40,7 +40,6 @@ import {
     CommonModule, 
     FormsModule, 
     LucideAngularModule, 
-    GestionConsumoModalComponent,
     PabellonCalendarioComponent,
     PabellonMicroComponent,
     ReprogramarModalComponent,
