@@ -78,6 +78,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<CirugiaObservacionHistorial> CirugiasObservacionesHistorial { get; set; }
         public DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; set; }
         public DbSet<PagoProveedor> PagosProveedores { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -1090,6 +1091,19 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.HasIndex(p => p.OrdenCompraId);
                 entity.HasIndex(p => p.FechaPago);
+            });
+
+            builder.Entity<Proveedor>(entity =>
+            {
+                entity.ToTable("Proveedores");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.RIF).IsRequired().HasMaxLength(50);
+                entity.Property(p => p.RazonSocial).IsRequired().HasMaxLength(250);
+                entity.Property(p => p.Direccion).HasMaxLength(500);
+                entity.Property(p => p.Telefono).HasMaxLength(50);
+
+                entity.HasIndex(p => p.RIF).IsUnique();
+                entity.HasIndex(p => p.RazonSocial);
             });
         }
 

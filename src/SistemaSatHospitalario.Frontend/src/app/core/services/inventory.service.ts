@@ -13,7 +13,8 @@ import {
   CreateRecipe,
   RecordPurchase,
   PrincipioActivo,
-  DescarteRequest
+  DescarteRequest,
+  Proveedor
 } from '../models/inventory.model';
 
 @Injectable({ providedIn: 'root' })
@@ -165,5 +166,15 @@ export class InventoryService {
 
   deleteRecipe(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/recetas/${id}`);
+  }
+
+  getProveedores(q?: string): Observable<Proveedor[]> {
+    let params: any = {};
+    if (q) params.q = q;
+    return this.http.get<Proveedor[]>(`${this.apiUrl}/proveedores`, { params });
+  }
+
+  createProveedor(dto: { rif: string; razonSocial: string; direccion?: string; telefono?: string }): Observable<Proveedor> {
+    return this.http.post<Proveedor>(`${this.apiUrl}/proveedores`, dto);
   }
 }

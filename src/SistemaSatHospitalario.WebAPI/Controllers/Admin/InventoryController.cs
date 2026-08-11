@@ -262,6 +262,49 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 _context.MovimientosInsumo.Add(mov);
             }
 
+            // --- AUTO-CREACIÓN EN MAESTRO DE SERVICIOS (DESACTIVADO, PRECIO 0, CÓDIGO ALEATORIO) ---
+            string prefix = (dto.Categoria ?? "").ToUpperInvariant().Contains(TipoServicioConstants.CategoriaMedicamento.ToUpperInvariant()) ? "MED-AUT-" : "INS-AUT-";
+            string randomCode;
+            var random = new Random();
+            do
+            {
+                randomCode = $"{prefix}{random.Next(1000, 9999)}";
+            } while (await _context.ServiciosClinicos.AnyAsync(s => s.Codigo == randomCode, ct));
+
+            var servicioClinico = new ServicioClinico(
+                randomCode,
+                dto.Nombre,
+                0m, // Sin precio base USD (0), requiere asignación de Admin
+                TipoServicioConstants.TipoInsumoMedicamento
+            );
+            servicioClinico.Activo = false; // Desactivado por defecto
+            servicioClinico.UnidadMedida = dto.UnidadMedidaBase.ToString();
+            servicioClinico.PermiteFraccionamiento = dto.PermiteFraccionamiento;
+            servicioClinico.RequiereInventario = true;
+
+            _context.ServiciosClinicos.Add(servicioClinico);
+
+            // Vinculación de Receta (BOM) con la cantidad de 1 unidad del insumo
+            var receta = new ServicioInsumoReceta(
+                servicioClinico.Id,
+                servicioClinico.Codigo,
+                insumo.Id,
+                1m,
+                dto.UnidadMedidaBase
+            );
+            _context.ServiciosInsumoRecetas.Add(receta);
+
+            // Crear Notificación dirigida a Administradores
+            var notification = new SistemaSatHospitalario.Core.Domain.Entities.Common.Notification(
+                "Nuevo Insumo por Configurar",
+                $"Se ha registrado el insumo '{dto.Nombre}'. Se requiere asignar precio de venta y código final en Maestro de Servicios.",
+                "Warning",
+                null,
+                "Administrador",
+                $"/catalog?edit={servicioClinico.Id}"
+            );
+            _context.Notifications.Add(notification);
+
             await _context.SaveChangesAsync(ct);
             return Ok(new
             {
@@ -274,7 +317,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.PermiteFraccionamiento,
                 insumo.Categoria,
                 insumo.IsDeleted,
-                insumo.OcultoEnTraslados
+                insumo.OcultoEnTraslados,
+                ServicioClinicoId = servicioClinico.Id,
+                ServicioClinicoCodigo = servicioClinico.Codigo
             });
         }
 
@@ -582,7 +627,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 DateTime.Now,
                 totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
                 tasa,
-                null,
+                dto.ProveedorId,
                 $"Ingreso atómico de compra de insumos registrado por {username}."
             );
             _context.OrdenesCompraInventario.Add(ordenCompra);
@@ -590,6 +635,49 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             await _context.SaveChangesAsync(ct);
             return Ok(new { Success = true });
         }
+
+        [HttpGet("proveedores")]
+        public async Task<IActionResult> GetProveedores([FromQuery] string? q, CancellationToken ct)
+        {
+            var queryable = _context.Proveedores.AsNoTracking().Where(p => p.Activo);
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim().ToLower();
+                queryable = queryable.Where(p => p.RazonSocial.ToLower().Contains(term) || p.RIF.ToLower().Contains(term));
+            }
+
+            var proveedores = await queryable.OrderBy(p => p.RazonSocial).Take(50).ToListAsync(ct);
+            return Ok(proveedores);
+        }
+
+        [HttpPost("proveedores")]
+        public async Task<IActionResult> CreateProveedor([FromBody] CreateProveedorDto dto, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(dto.RIF))
+                return BadRequest(new { Message = "El RIF es requerido." });
+            if (string.IsNullOrWhiteSpace(dto.RazonSocial))
+                return BadRequest(new { Message = "La razón social es requerida." });
+
+            var rifClean = dto.RIF.Trim().ToUpperInvariant();
+            if (await _context.Proveedores.AnyAsync(p => p.RIF == rifClean, ct))
+            {
+                return BadRequest(new { Message = $"Ya existe un proveedor registrado con el RIF {rifClean}." });
+            }
+
+            var proveedor = new SistemaSatHospitalario.Core.Domain.Entities.Admision.Proveedor(dto.RIF, dto.RazonSocial, dto.Direccion, dto.Telefono);
+            _context.Proveedores.Add(proveedor);
+            await _context.SaveChangesAsync(ct);
+
+            return Ok(proveedor);
+        }
+    }
+
+    public class CreateProveedorDto
+    {
+        public string RIF { get; set; } = string.Empty;
+        public string RazonSocial { get; set; } = string.Empty;
+        public string? Direccion { get; set; }
+        public string? Telefono { get; set; }
     }
 
     public class CreateInsumoDto
@@ -600,7 +688,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
-        public string Categoria { get; set; } = "Medicamento";
+        public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
     }
 
     public class UpdateInsumoDto
@@ -609,7 +697,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
-        public string Categoria { get; set; } = "Medicamento";
+        public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
     }
 
     public class CreatePrincipioActivoDto
@@ -634,6 +722,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     public class RecordPurchaseDto
     {
         public Guid? SedeId { get; set; }
+        public Guid? ProveedorId { get; set; }
         public string? ProveedorNombre { get; set; }
         public string? NumeroFactura { get; set; }
         public decimal? TasaCambio { get; set; }
