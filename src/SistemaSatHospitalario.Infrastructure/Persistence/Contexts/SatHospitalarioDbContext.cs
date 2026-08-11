@@ -1052,6 +1052,45 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.HasIndex(h => h.OrdenCirugiaId);
             });
+
+            builder.Entity<OrdenCompraInventario>(entity =>
+            {
+                entity.ToTable("OrdenesCompraInventario");
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.NumeroFactura).IsRequired().HasMaxLength(100);
+                entity.Property(o => o.ProveedorNombre).IsRequired().HasMaxLength(250);
+                entity.Property(o => o.MontoTotalUSD).HasPrecision(18, 2);
+                entity.Property(o => o.MontoTotalBs).HasPrecision(18, 2);
+                entity.Property(o => o.TotalAbonadoUSD).HasPrecision(18, 2);
+                entity.Property(o => o.SaldoPendienteUSD).HasPrecision(18, 2);
+                entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
+                entity.Property(o => o.Observaciones).HasMaxLength(1000);
+
+                entity.HasMany(o => o.Pagos)
+                      .WithOne(p => p.OrdenCompra)
+                      .HasForeignKey(p => p.OrdenCompraId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(o => o.NumeroFactura);
+                entity.HasIndex(o => o.ProveedorNombre);
+                entity.HasIndex(o => o.Estado);
+            });
+
+            builder.Entity<PagoProveedor>(entity =>
+            {
+                entity.ToTable("PagosProveedores");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.MontoAbonadoUSD).HasPrecision(18, 2);
+                entity.Property(p => p.TasaCambio).HasPrecision(18, 2);
+                entity.Property(p => p.MontoAbonadoBs).HasPrecision(18, 2);
+                entity.Property(p => p.MetodoPago).IsRequired().HasMaxLength(50);
+                entity.Property(p => p.Referencia).HasMaxLength(100);
+                entity.Property(p => p.UsuarioId).HasMaxLength(100);
+                entity.Property(p => p.Observaciones).HasMaxLength(1000);
+
+                entity.HasIndex(p => p.OrdenCompraId);
+                entity.HasIndex(p => p.FechaPago);
+            });
         }
 
     }
