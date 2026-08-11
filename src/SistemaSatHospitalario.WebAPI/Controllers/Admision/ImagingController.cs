@@ -344,12 +344,22 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             foreach (var estudio in request.Estudios)
             {
+                var estTrim = estudio.Trim();
+                bool reqInf = request.RequiereInforme;
+                if (!reqInf)
+                {
+                    var catItem = await _context.ServiciosClinicos
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(s => s.Descripcion == estTrim && (s.ServicioInformeId != null || s.EsServicioInforme));
+                    if (catItem != null) reqInf = true;
+                }
+
                 var order = new OrdenImagen
                 {
                     CuentaId = Guid.Empty, // Se asociará al validar
                     PacienteId = request.PacienteId,
                     PacienteNombre = request.PacienteNombre,
-                    Estudio = estudio.Trim(),
+                    Estudio = estTrim,
                     TipoServicio = request.TipoServicio.ToUpper(),
                     Estado = "Pendiente", // Comienza como Pendiente para ser procesado tras la aprobación
                     FechaCreacion = DateTime.UtcNow,
@@ -357,7 +367,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     RequiereValidacion = true,
                     Validada = false,
                     MedicoSolicitanteId = defaultMedicoId,
-                    MedicoSolicitanteNombre = defaultMedicoNombre
+                    MedicoSolicitanteNombre = defaultMedicoNombre,
+                    RequiereInforme = reqInf
                 };
 
                 _context.OrdenesImagenes.Add(order);
@@ -627,6 +638,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public string PacienteNombre { get; set; } = string.Empty;
         public List<string> Estudios { get; set; } = new List<string>();
         public string TipoServicio { get; set; } = string.Empty; // RX o TOMO
+        public bool RequiereInforme { get; set; }
     }
 
     public class ValidateDirectOrderRequest
