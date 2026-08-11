@@ -57,10 +57,29 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .ToDictionaryAsync(p => p.ServicioClinicoId, p => p.PrecioDiferencial, cancellationToken);
             }
 
+            var recetasDict = await (from r in _context.ServiciosInsumoRecetas.AsNoTracking()
+                                     join i in _context.Insumos.AsNoTracking() on r.InsumoId equals i.Id into ri
+                                     from i in ri.DefaultIfEmpty()
+                                     select new ServicioInsumoRecetaDto
+                                     {
+                                         Id = r.Id,
+                                         ServicioClinicoId = r.ServicioClinicoId,
+                                         ServicioCodigo = r.ServicioCodigo,
+                                         InsumoId = r.InsumoId,
+                                         InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
+                                         InsumoCodigo = i != null ? i.Codigo : "",
+                                         Cantidad = r.Cantidad,
+                                         UnidadMedidaConsumo = r.UnidadMedidaConsumo.ToString()
+                                     })
+                                     .GroupBy(r => r.ServicioClinicoId)
+                                     .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
+
             // 3. Mapear servicios nativos (Asumimos PrecioBase en USD)
             foreach (var s in serviciosNativos)
             {
                 var editorType = ResolveEditorType(s.TipoServicio, false);
+                var itemRecetas = recetasDict.ContainsKey(s.Id) ? recetasDict[s.Id] : new List<ServicioInsumoRecetaDto>();
+
                 var item = new CatalogItemDto
                 {
                     Id = s.Id.ToString(),
@@ -85,6 +104,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         MedicoNombre = hm.Medico?.Nombre ?? "Desconocido",
                         Honorario = hm.MontoHonorario
                     }).ToList(),
+                    HonorariosEspecificos = s.HonorariosMedicos.Select(hm => new DoctorHonorarioDto
+                    {
+                        MedicoId = hm.MedicoId,
+                        MedicoNombre = hm.Medico?.Nombre ?? "Desconocido",
+                        Honorario = hm.MontoHonorario
+                    }).ToList(),
+                    Receta = itemRecetas,
+                    InsumosReceta = itemRecetas,
                     UnidadMedida = s.UnidadMedida,
                     PermiteFraccionamiento = s.PermiteFraccionamiento
                 };

@@ -26,6 +26,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public bool EsServicioInforme { get; set; } = false;
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioInputDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioInputDto>();
+        public List<DoctorHonorarioInputDto> HonorariosEspecificos { get; set; } = new List<DoctorHonorarioInputDto>();
+        public List<ServicioInsumoRecetaInputDto> RecetaInsumos { get; set; } = new List<ServicioInsumoRecetaInputDto>();
+        public List<ServicioInsumoRecetaInputDto> Receta { get; set; } = new List<ServicioInsumoRecetaInputDto>();
     }
 
     public class CreateCatalogItemCommandHandler : IRequestHandler<CreateCatalogItemCommand, Guid>
@@ -72,14 +75,29 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // Guardar honorarios específicos por médico
-            if (request.HonorariosMedicos != null && request.HonorariosMedicos.Any())
+            var honorarios = (request.HonorariosMedicos != null && request.HonorariosMedicos.Any()) ? request.HonorariosMedicos : request.HonorariosEspecificos;
+            if (honorarios != null && honorarios.Any())
             {
-                foreach (var h in request.HonorariosMedicos)
+                foreach (var h in honorarios)
                 {
                     if (h.Honorario > 0)
                     {
                         var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
                         _context.HonorariosMedicosServicios.Add(newHon);
+                    }
+                }
+            }
+
+            // Guardar receta BOM de insumos
+            var recetaItems = (request.RecetaInsumos != null && request.RecetaInsumos.Any()) ? request.RecetaInsumos : request.Receta;
+            if (recetaItems != null && recetaItems.Any())
+            {
+                foreach (var r in recetaItems)
+                {
+                    if (Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida>(r.UnidadMedidaConsumo, true, out var uom))
+                    {
+                        var receta = new ServicioInsumoReceta(item.Id, item.Codigo, r.InsumoId, r.Cantidad, uom);
+                        _context.ServiciosInsumoRecetas.Add(receta);
                     }
                 }
             }

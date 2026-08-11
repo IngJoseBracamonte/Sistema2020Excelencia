@@ -25,6 +25,9 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public bool EsServicioInforme { get; set; }
         public List<string> SugerenciasIds { get; set; } = new List<string>();
         public List<DoctorHonorarioDto> HonorariosMedicos { get; set; } = new List<DoctorHonorarioDto>();
+        public List<DoctorHonorarioDto> HonorariosEspecificos { get; set; } = new List<DoctorHonorarioDto>();
+        public List<ServicioInsumoRecetaDto> Receta { get; set; } = new List<ServicioInsumoRecetaDto>();
+        public List<ServicioInsumoRecetaDto> InsumosReceta { get; set; } = new List<ServicioInsumoRecetaDto>();
         public string? UnidadMedida { get; set; }
         public bool PermiteFraccionamiento { get; set; }
         public bool IsConsultation => CategoryId == 1 || (Tipo ?? "").Contains("CONSULT", StringComparison.OrdinalIgnoreCase);
