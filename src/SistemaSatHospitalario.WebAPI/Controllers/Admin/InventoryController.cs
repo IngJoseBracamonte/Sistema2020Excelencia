@@ -26,12 +26,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         private readonly IApplicationDbContext _context;
         private readonly IInventoryService _inventoryService;
         private readonly IMediator _mediator;
+        private readonly ILogger<InventoryController> _logger;
 
-        public InventoryController(IApplicationDbContext context, IInventoryService inventoryService, IMediator mediator)
+        public InventoryController(
+            IApplicationDbContext context, 
+            IInventoryService inventoryService, 
+            IMediator mediator,
+            ILogger<InventoryController> logger)
         {
             _context = context;
             _inventoryService = inventoryService;
             _mediator = mediator;
+            _logger = logger;
         }
 
         [HttpGet("stock/by-code/{codigo}")]
