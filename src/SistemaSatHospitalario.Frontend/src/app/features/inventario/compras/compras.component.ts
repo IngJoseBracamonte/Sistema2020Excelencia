@@ -144,17 +144,34 @@ export class ComprasComponent implements OnInit {
     return this.cart().reduce((sum, item) => sum + item.totalUSD, 0);
   });
 
-  public saldoRestanteCalculado = computed(() => {
-    const orden = this.selectedOrden();
-    if (!orden) return 0;
-    const abono = this.montoAbonarInput() || 0;
-    return Math.max(0, orden.saldoPendienteUSD - abono);
+  public esMetodoBs = computed(() => {
+    const m = (this.metodoPagoInput() || '').toUpperCase();
+    return m.includes('BS') || m.includes('PAGO MÓVIL') || m.includes('PAGO MOVIL') || m.includes('PUNTO');
+  });
+
+  public montoAbonoUSDCalculado = computed(() => {
+    const val = this.montoAbonarInput() || 0;
+    const tasa = this.tasaCambioInput() || 1;
+    if (this.esMetodoBs()) {
+      return tasa > 0 ? Math.round((val / tasa) * 100) / 100 : 0;
+    }
+    return val;
   });
 
   public montoAbonarBsCalculado = computed(() => {
-    const abono = this.montoAbonarInput() || 0;
+    const val = this.montoAbonarInput() || 0;
     const tasa = this.tasaCambioInput() || 1;
-    return abono * tasa;
+    if (this.esMetodoBs()) {
+      return val;
+    }
+    return Math.round(val * tasa * 100) / 100;
+  });
+
+  public saldoRestanteCalculado = computed(() => {
+    const orden = this.selectedOrden();
+    if (!orden) return 0;
+    const abonoUSD = this.montoAbonoUSDCalculado();
+    return Math.max(0, Math.round((orden.saldoPendienteUSD - abonoUSD) * 100) / 100);
   });
 
   ngOnInit() {
@@ -442,11 +459,26 @@ export class ComprasComponent implements OnInit {
   }
 
   // --- MÉTODOS DE PAGO Y ABONO COMPARTIDOS CON CUENTAS POR PAGAR ---
+  onMetodoPagoChange(metodo: string): void {
+    this.metodoPagoInput.set(metodo);
+    const orden = this.selectedOrden();
+    const tasa = this.tasaCambioInput() || this.tasaOficial();
+    if (!orden) return;
+
+    const esBs = metodo.toUpperCase().includes('BS') || metodo.toUpperCase().includes('PAGO MÓVIL') || metodo.toUpperCase().includes('PAGO MOVIL') || metodo.toUpperCase().includes('PUNTO');
+
+    if (esBs) {
+      this.montoAbonarInput.set(Math.round(orden.saldoPendienteUSD * tasa * 100) / 100);
+    } else {
+      this.montoAbonarInput.set(orden.saldoPendienteUSD);
+    }
+  }
+
   openPaymentModal(orden: OrdenCompraInventario) {
     this.selectedOrden.set(orden);
+    this.metodoPagoInput.set('EFECTIVO USD');
     this.montoAbonarInput.set(orden.saldoPendienteUSD);
     this.tasaCambioInput.set(this.tasaOficial());
-    this.metodoPagoInput.set('Transferencia');
     this.referenciaInput.set('');
     this.observacionesInput.set('');
     this.errorMessage.set(null);
@@ -462,14 +494,14 @@ export class ComprasComponent implements OnInit {
     const orden = this.selectedOrden();
     if (!orden) return;
 
-    const abono = this.montoAbonarInput();
-    if (!abono || abono <= 0) {
+    const abonoUSD = this.montoAbonoUSDCalculado();
+    if (!abonoUSD || abonoUSD <= 0) {
       this.showError('El monto a abonar debe ser mayor a cero.');
       return;
     }
 
-    if (abono > orden.saldoPendienteUSD) {
-      this.showError(`El abono ($${abono.toFixed(2)}) supera el saldo pendiente ($${orden.saldoPendienteUSD.toFixed(2)}).`);
+    if (abonoUSD > orden.saldoPendienteUSD + 0.01) {
+      this.showError(`El abono ($${abonoUSD.toFixed(2)}) supera el saldo pendiente ($${orden.saldoPendienteUSD.toFixed(2)}).`);
       return;
     }
 
@@ -482,7 +514,7 @@ export class ComprasComponent implements OnInit {
 
     const request: RegistrarPagoRequest = {
       ordenCompraId: orden.id,
-      montoAbonadoUSD: abono,
+      montoAbonadoUSD: abonoUSD,
       tasaCambio: this.tasaCambioInput() || this.tasaOficial(),
       metodoPago: this.metodoPagoInput(),
       referencia: this.referenciaInput().trim(),

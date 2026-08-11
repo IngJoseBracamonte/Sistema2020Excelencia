@@ -515,7 +515,9 @@
     <!-- Campos del Formulario de Abono -->
     <div class="space-y-4">
       <div>
-        <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Monto a Abonar ($ USD)</label>
+        <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+          {{ esMetodoBs() ? 'Monto a Abonar (Bs.)' : 'Monto a Abonar ($ USD)' }}
+        </label>
         <input type="number" 
                [ngModel]="montoAbonarInput()" 
                (ngModelChange)="montoAbonarInput.set($event)"
@@ -533,9 +535,12 @@
                  class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white text-center outline-none focus:border-emerald-500">
         </div>
         <div>
-          <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Equivalente (Bs.)</label>
+          <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            {{ esMetodoBs() ? 'Equivalente ($ USD)' : 'Equivalente (Bs.)' }}
+          </label>
           <div class="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs font-black text-cyan-400 text-center font-mono">
-            Bs. {{ montoAbonarBsCalculado() | number:'1.2-2' }}
+            <span *ngIf="!esMetodoBs()">Bs. {{ montoAbonarBsCalculado() | number:'1.2-2' }}</span>
+            <span *ngIf="esMetodoBs()">$ {{ montoAbonoUSDCalculado() | number:'1.2-2' }} USD</span>
           </div>
         </div>
       </div>
@@ -544,13 +549,15 @@
         <div>
           <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Método de Pago</label>
           <select [ngModel]="metodoPagoInput()" 
-                  (ngModelChange)="metodoPagoInput.set($event)"
+                  (ngModelChange)="onMetodoPagoChange($event)"
                   class="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white uppercase outline-none focus:border-emerald-500">
-            <option value="Transferencia">Transferencia</option>
-            <option value="Pago Móvil">Pago Móvil</option>
-            <option value="Efectivo USD">Efectivo USD</option>
-            <option value="Zelle">Zelle</option>
-            <option value="Cheque">Cheque</option>
+            <option value="EFECTIVO USD">EFECTIVO USD ($)</option>
+            <option value="ZELLE">ZELLE ($)</option>
+            <option value="TRANSFERENCIA USD">TRANSFERENCIA USD ($)</option>
+            <option value="PAGO MÓVIL">PAGO MÓVIL (Bs.)</option>
+            <option value="TRANSFERENCIA BS">TRANSFERENCIA (Bs.)</option>
+            <option value="EFECTIVO BS">EFECTIVO (Bs.)</option>
+            <option value="PUNTO DE VENTA">PUNTO DE VENTA (Bs.)</option>
           </select>
         </div>
         <div>
