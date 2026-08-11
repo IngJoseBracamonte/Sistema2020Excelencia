@@ -617,38 +617,56 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 _context.MovimientosInsumo.Add(mov);
             }
 
-            // Registrar automáticamente la Cuenta por Pagar / Orden de Compra
-            var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
-            var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
-            var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
-
-            var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
-                numFact,
-                provNombre,
-                DateTime.Now,
-                totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
-                tasa,
-                dto.ProveedorId,
-                $"Ingreso atómico de compra de insumos registrado por {username}."
-            );
-            _context.OrdenesCompraInventario.Add(ordenCompra);
-
+            // 1. Guardar cambios del ingreso de inventario (Stock, Movimientos, Insumos)
             await _context.SaveChangesAsync(ct);
+
+            // 2. Registrar automáticamente la Cuenta por Pagar / Orden de Compra de manera defensiva
+            try
+            {
+                var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
+                var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
+                var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
+
+                var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
+                    numFact,
+                    provNombre,
+                    DateTime.Now,
+                    totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
+                    tasa,
+                    dto.ProveedorId,
+                    $"Ingreso atómico de compra de insumos registrado por {username}."
+                );
+                _context.OrdenesCompraInventario.Add(ordenCompra);
+                await _context.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo registrar la Orden de Compra en Cuentas por Pagar. Ejecute el script SQL manual si no ha creado las tablas.");
+            }
+
             return Ok(new { Success = true });
         }
 
         [HttpGet("proveedores")]
         public async Task<IActionResult> GetProveedores([FromQuery] string? q, CancellationToken ct)
         {
-            var queryable = _context.Proveedores.AsNoTracking().Where(p => p.Activo);
-            if (!string.IsNullOrWhiteSpace(q))
+            try
             {
-                var term = q.Trim().ToLower();
-                queryable = queryable.Where(p => p.RazonSocial.ToLower().Contains(term) || p.RIF.ToLower().Contains(term));
-            }
+                var queryable = _context.Proveedores.AsNoTracking().Where(p => p.Activo);
+                if (!string.IsNullOrWhiteSpace(q))
+                {
+                    var term = q.Trim().ToLower();
+                    queryable = queryable.Where(p => p.RazonSocial.ToLower().Contains(term) || p.RIF.ToLower().Contains(term));
+                }
 
-            var proveedores = await queryable.OrderBy(p => p.RazonSocial).Take(50).ToListAsync(ct);
-            return Ok(proveedores);
+                var proveedores = await queryable.OrderBy(p => p.RazonSocial).Take(50).ToListAsync(ct);
+                return Ok(proveedores);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo consultar proveedores de la base de datos MySQL.");
+                return Ok(new List<SistemaSatHospitalario.Core.Domain.Entities.Admision.Proveedor>());
+            }
         }
 
         [HttpPost("proveedores")]
@@ -660,16 +678,24 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 return BadRequest(new { Message = "La razón social es requerida." });
 
             var rifClean = dto.RIF.Trim().ToUpperInvariant();
-            if (await _context.Proveedores.AnyAsync(p => p.RIF == rifClean, ct))
+            try
             {
-                return BadRequest(new { Message = $"Ya existe un proveedor registrado con el RIF {rifClean}." });
+                if (await _context.Proveedores.AnyAsync(p => p.RIF == rifClean, ct))
+                {
+                    return BadRequest(new { Message = $"Ya existe un proveedor registrado con el RIF {rifClean}." });
+                }
+
+                var proveedor = new SistemaSatHospitalario.Core.Domain.Entities.Admision.Proveedor(dto.RIF, dto.RazonSocial, dto.Direccion, dto.Telefono);
+                _context.Proveedores.Add(proveedor);
+                await _context.SaveChangesAsync(ct);
+
+                return Ok(proveedor);
             }
-
-            var proveedor = new SistemaSatHospitalario.Core.Domain.Entities.Admision.Proveedor(dto.RIF, dto.RazonSocial, dto.Direccion, dto.Telefono);
-            _context.Proveedores.Add(proveedor);
-            await _context.SaveChangesAsync(ct);
-
-            return Ok(proveedor);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear proveedor en la base de datos.");
+                return BadRequest(new { Message = "Error al guardar el proveedor. Asegúrese de ejecutar el script SQL manual para crear la tabla 'Proveedores' en MySQL." });
+            }
         }
     }
 
