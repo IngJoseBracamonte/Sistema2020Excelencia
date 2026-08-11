@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { CuentasPorPagarService } from '../../../core/services/cuentas-por-pagar.service';
 import { SettingsService } from '../../../core/services/settings.service';
+import { CatalogService } from '../../../core/services/catalog.service';
 import { Insumo, RecordPurchase, PurchaseItem, PrincipioActivo, Proveedor } from '../../../core/models/inventory.model';
-import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest } from '../../../core/models/cuentas-por-pagar.model';
+import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest, CatalogoMetodoPagoDto, MONEDA_USD_ID, MONEDA_BS_ID } from '../../../core/models/cuentas-por-pagar.model';
 import { SearchFocusDirective } from '../../../shared/directives/search-focus.directive';
 import { 
   LucideAngularModule, 
@@ -47,9 +48,13 @@ export class ComprasComponent implements OnInit {
   private inventoryService = inject(InventoryService);
   private cuentasService = inject(CuentasPorPagarService);
   private settingsService = inject(SettingsService);
+  private catalogService = inject(CatalogService);
 
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
+
+  // Catálogo de Métodos de Pago DB-Driven
+  public metodosPago = signal<CatalogoMetodoPagoDto[]>([]);
 
   // Buscador y Selección de Proveedores
   public proveedoresList = signal<Proveedor[]>([]);
@@ -145,15 +150,16 @@ export class ComprasComponent implements OnInit {
   });
 
   public esMetodoBs = computed(() => {
-    const m = (this.metodoPagoInput() || '').toUpperCase();
-    return m.includes('BS') || m.includes('PAGO MÓVIL') || m.includes('PAGO MOVIL') || m.includes('PUNTO');
+    const selectedId = this.metodoPagoInput();
+    const metodo = this.metodosPago().find(m => m.id === selectedId);
+    return metodo ? metodo.monedaId === MONEDA_BS_ID : false;
   });
 
   public montoAbonoUSDCalculado = computed(() => {
     const val = this.montoAbonarInput() || 0;
     const tasa = this.tasaCambioInput() || 1;
     if (this.esMetodoBs()) {
-      return tasa > 0 ? Math.round((val / tasa) * 100) / 100 : 0;
+      return tasa > 0 ? this.redondearDosDecimales(val / tasa) : 0;
     }
     return val;
   });
@@ -164,14 +170,14 @@ export class ComprasComponent implements OnInit {
     if (this.esMetodoBs()) {
       return val;
     }
-    return Math.round(val * tasa * 100) / 100;
+    return this.redondearDosDecimales(val * tasa);
   });
 
   public saldoRestanteCalculado = computed(() => {
     const orden = this.selectedOrden();
     if (!orden) return 0;
     const abonoUSD = this.montoAbonoUSDCalculado();
-    return Math.max(0, Math.round((orden.saldoPendienteUSD - abonoUSD) * 100) / 100);
+    return Math.max(0, this.redondearDosDecimales(orden.saldoPendienteUSD - abonoUSD));
   });
 
   ngOnInit() {
@@ -182,10 +188,38 @@ export class ComprasComponent implements OnInit {
       }
     });
 
+    this.loadMetodosPagoDb();
     this.loadInsumos();
     this.loadPrincipiosActivos();
     this.loadProveedores();
     this.cargarOrdenes();
+  }
+
+  loadMetodosPagoDb(): void {
+    this.catalogService.getPaymentMethods().subscribe({
+      next: (res: any[]) => {
+        const mapped: CatalogoMetodoPagoDto[] = (res || []).map(x => ({
+          id: String(x.id || x.valor || x.value || x.nombre),
+          nombre: x.nombre || x.name || x.valor,
+          monedaId: (x.grupoMoneda === 2 || x.grupoMoneda === 'VES' || (x.nombre || '').toUpperCase().includes('BS') || (x.nombre || '').toUpperCase().includes('PAGO MÓVIL') || (x.nombre || '').toUpperCase().includes('PUNTO')) ? MONEDA_BS_ID : MONEDA_USD_ID,
+          activo: x.activo ?? true
+        })).filter(m => m.activo);
+
+        this.metodosPago.set(mapped);
+      },
+      error: () => {
+        const defaultMethods: CatalogoMetodoPagoDto[] = [
+          { id: '1', nombre: 'EFECTIVO USD ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '2', nombre: 'ZELLE ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '3', nombre: 'TRANSFERENCIA USD ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '4', nombre: 'PAGO MÓVIL (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '5', nombre: 'TRANSFERENCIA (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '6', nombre: 'EFECTIVO (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '7', nombre: 'PUNTO DE VENTA (Bs.)', monedaId: MONEDA_BS_ID, activo: true }
+        ];
+        this.metodosPago.set(defaultMethods);
+      }
+    });
   }
 
   loadProveedores(query?: string) {
@@ -459,29 +493,44 @@ export class ComprasComponent implements OnInit {
   }
 
   // --- MÉTODOS DE PAGO Y ABONO COMPARTIDOS CON CUENTAS POR PAGAR ---
-  onMetodoPagoChange(metodo: string): void {
-    this.metodoPagoInput.set(metodo);
+  onMetodoPagoChange(metodoPagoId: string): void {
+    this.metodoPagoInput.set(metodoPagoId);
+    
     const orden = this.selectedOrden();
-    const tasa = this.tasaCambioInput() || this.tasaOficial();
     if (!orden) return;
 
-    const esBs = metodo.toUpperCase().includes('BS') || metodo.toUpperCase().includes('PAGO MÓVIL') || metodo.toUpperCase().includes('PAGO MOVIL') || metodo.toUpperCase().includes('PUNTO');
+    const metodoSeleccionado = this.metodosPago().find(m => m.id === metodoPagoId);
+    if (!metodoSeleccionado) return;
 
-    if (esBs) {
-      this.montoAbonarInput.set(Math.round(orden.saldoPendienteUSD * tasa * 100) / 100);
+    if (metodoSeleccionado.monedaId === MONEDA_BS_ID) {
+      const tasa = this.tasaCambioInput() || this.tasaOficial();
+      const montoCalculadoBs = this.redondearDosDecimales(orden.saldoPendienteUSD * tasa);
+      this.montoAbonarInput.set(montoCalculadoBs);
     } else {
       this.montoAbonarInput.set(orden.saldoPendienteUSD);
     }
   }
 
+  public redondearDosDecimales(valor: number): number {
+    return Math.round(valor * 100) / 100;
+  }
+
   openPaymentModal(orden: OrdenCompraInventario) {
     this.selectedOrden.set(orden);
-    this.metodoPagoInput.set('EFECTIVO USD');
-    this.montoAbonarInput.set(orden.saldoPendienteUSD);
     this.tasaCambioInput.set(this.tasaOficial());
     this.referenciaInput.set('');
     this.observacionesInput.set('');
     this.errorMessage.set(null);
+
+    const metodos = this.metodosPago();
+    if (metodos.length > 0) {
+      const defaultId = metodos[0].id;
+      this.metodoPagoInput.set(defaultId);
+      this.onMetodoPagoChange(defaultId);
+    } else {
+      this.montoAbonarInput.set(orden.saldoPendienteUSD);
+    }
+
     this.showPaymentModal.set(true);
   }
 
@@ -512,11 +561,14 @@ export class ComprasComponent implements OnInit {
 
     this.isSubmittingPago.set(true);
 
+    const metodoSeleccionado = this.metodosPago().find(m => m.id === this.metodoPagoInput());
+    const nombreMetodo = metodoSeleccionado ? metodoSeleccionado.nombre : this.metodoPagoInput();
+
     const request: RegistrarPagoRequest = {
       ordenCompraId: orden.id,
       montoAbonadoUSD: abonoUSD,
       tasaCambio: this.tasaCambioInput() || this.tasaOficial(),
-      metodoPago: this.metodoPagoInput(),
+      metodoPago: nombreMetodo,
       referencia: this.referenciaInput().trim(),
       observaciones: this.observacionesInput().trim()
     };
