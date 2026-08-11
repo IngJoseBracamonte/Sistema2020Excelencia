@@ -32,6 +32,7 @@ export interface AreaClinica {
   estado?: number;
   estadoNombre?: string;
   esAreaAdmision?: boolean;
+  esSubAreaAlmacenPrincipal?: boolean;
 }
 
 export interface PedidoInterSede {
