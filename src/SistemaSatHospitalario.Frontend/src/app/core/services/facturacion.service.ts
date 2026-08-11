@@ -143,12 +143,13 @@ export class FacturacionService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Billing`;
 
-  abrirCuenta(pacienteId: string, tipoIngreso: string, convenioId?: number | null, camaId?: string | number | null): Observable<any> {
+  abrirCuenta(pacienteId: string, tipoIngreso: string, convenioId?: number | null, camaId?: string | number | null, medicoId?: string | null): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/abrir-cuenta`, {
       pacienteId,
       tipoIngreso,
       convenioId: convenioId ?? null,
-      camaId: camaId ?? null
+      camaId: camaId ?? null,
+      medicoId: medicoId ?? null
     });
   }
 

@@ -316,6 +316,13 @@ export class EnfermeriaComponent implements OnInit {
   public selectedPatientForIngreso = signal<PatientRecord | null>(null);
   public convenioIngresoId = signal<number | null>(null);
   public selectedCamaId = signal<string | null>(null);
+  public medicoTratanteIngresoId = signal<string | null>(null);
+
+  // Médico tratante es obligatorio en Hospitalización y UCI, opcional en Emergencia
+  public esMedicoTratanteRequerido = computed(() => {
+    const tipo = this.type();
+    return tipo === TIPO_INGRESO.HOSPITALIZACION || tipo === TIPO_INGRESO.UCI;
+  });
   public camasDisponibles = signal<any[]>([]);
   public errorMessage = signal<string | null>(null);
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
@@ -1460,6 +1467,7 @@ export class EnfermeriaComponent implements OnInit {
     this.convenioIngresoId.set(null);
     this.showNewPatientForm.set(false);
     this.selectedCamaId.set(null);
+    this.medicoTratanteIngresoId.set(null);
     this.loadCamasDisponibles();
     this.newPatientData = {
       cedula: '',
@@ -1547,6 +1555,12 @@ export class EnfermeriaComponent implements OnInit {
   public procesarIngreso() {
     this.errorMessage.set(null);
 
+    // Validar médico tratante obligatorio para Hospitalización y UCI
+    if (this.esMedicoTratanteRequerido() && !this.medicoTratanteIngresoId()) {
+      this.errorMessage.set('Debe seleccionar un Médico Tratante para ingreso a ' + this.type() + '.');
+      return;
+    }
+
     // Si fechaNacimientoFormatted tiene un valor válido de 10 caracteres, actualizar la propiedad subyacente
     if (this.fechaNacimientoFormatted && this.fechaNacimientoFormatted.length === 10) {
       const parts = this.fechaNacimientoFormatted.split('-');
@@ -1609,7 +1623,7 @@ export class EnfermeriaComponent implements OnInit {
 
   private abrirCuentaParaPaciente(pacienteId: string) {
     const targetType = this.type();
-    this.facturacionService.abrirCuenta(pacienteId, targetType, this.convenioIngresoId(), this.selectedCamaId()).subscribe({
+    this.facturacionService.abrirCuenta(pacienteId, targetType, this.convenioIngresoId(), this.selectedCamaId(), this.medicoTratanteIngresoId()).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.showIngresoModal.set(false);
@@ -1642,7 +1656,7 @@ export class EnfermeriaComponent implements OnInit {
     this.isLoading.set(true);
 
     // 1. Abrir la cuenta clínica
-    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId(), this.selectedCamaId()).subscribe({
+    this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId(), this.selectedCamaId(), this.medicoTratanteIngresoId()).subscribe({
       next: (res: any) => {
         const cuentaId = res?.cuentaId || res?.CuentaId || res?.id || (typeof res === 'string' ? res : null);
         if (!cuentaId) {
