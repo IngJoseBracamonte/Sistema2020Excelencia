@@ -703,6 +703,96 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 return BadRequest(new { Message = "Error al guardar el proveedor. Asegúrese de ejecutar el script SQL manual para crear la tabla 'Proveedores' en MySQL." });
             }
         }
+
+        // --- RECETAS / BOM ENDPOINTS ---
+
+        [HttpGet("recetas")]
+        public async Task<IActionResult> GetRecetas(CancellationToken ct)
+        {
+            try
+            {
+                var recetas = await (from r in _context.ServiciosInsumoRecetas.AsNoTracking()
+                                     join i in _context.Insumos.AsNoTracking() on r.InsumoId equals i.Id into ri
+                                     from i in ri.DefaultIfEmpty()
+                                     select new
+                                     {
+                                         Id = r.Id,
+                                         ServicioClinicoId = r.ServicioClinicoId,
+                                         ServicioCodigo = r.ServicioCodigo,
+                                         InsumoId = r.InsumoId,
+                                         InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
+                                         Cantidad = r.Cantidad,
+                                         UnidadMedidaConsumo = r.UnidadMedidaConsumo.ToString()
+                                     }).ToListAsync(ct);
+
+                return Ok(recetas);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener recetas de insumos.");
+                return Ok(new List<object>());
+            }
+        }
+
+        [HttpPost("recetas")]
+        public async Task<IActionResult> CreateReceta([FromBody] CreateRecetaDto dto, CancellationToken ct)
+        {
+            if (dto == null || dto.ServicioClinicoId == Guid.Empty || dto.InsumoId == Guid.Empty || dto.Cantidad <= 0)
+            {
+                return BadRequest(new { Message = "Parámetros inválidos para registrar la receta." });
+            }
+
+            var servicio = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == dto.ServicioClinicoId, ct);
+            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == dto.InsumoId, ct);
+            if (servicio == null || insumo == null)
+            {
+                return NotFound(new { Message = "El servicio clínico o el insumo no existen." });
+            }
+
+            Enum.TryParse<UnidadMedida>(dto.UnidadMedidaConsumo ?? insumo.UnidadMedidaBase.ToString(), true, out var unidad);
+
+            var receta = new ServicioInsumoReceta(
+                servicio.Id,
+                servicio.Codigo,
+                insumo.Id,
+                dto.Cantidad,
+                unidad
+            );
+
+            _context.ServiciosInsumoRecetas.Add(receta);
+            await _context.SaveChangesAsync(ct);
+
+            return Ok(new
+            {
+                Id = receta.Id,
+                ServicioClinicoId = receta.ServicioClinicoId,
+                ServicioCodigo = receta.ServicioCodigo,
+                InsumoId = receta.InsumoId,
+                InsumoNombre = insumo.Nombre,
+                Cantidad = receta.Cantidad,
+                UnidadMedidaConsumo = receta.UnidadMedidaConsumo.ToString()
+            });
+        }
+
+        [HttpDelete("recetas/{id}")]
+        public async Task<IActionResult> DeleteReceta(Guid id, CancellationToken ct)
+        {
+            var receta = await _context.ServiciosInsumoRecetas.FirstOrDefaultAsync(r => r.Id == id, ct);
+            if (receta == null) return NotFound(new { Message = "Receta no encontrada." });
+
+            _context.ServiciosInsumoRecetas.Remove(receta);
+            await _context.SaveChangesAsync(ct);
+            return Ok(new { Message = "Receta eliminada con éxito." });
+        }
+    }
+
+    public class CreateRecetaDto
+    {
+        public Guid ServicioClinicoId { get; set; }
+        public string? ServicioCodigo { get; set; }
+        public Guid InsumoId { get; set; }
+        public decimal Cantidad { get; set; }
+        public string? UnidadMedidaConsumo { get; set; }
     }
 
     public class CreateProveedorDto
