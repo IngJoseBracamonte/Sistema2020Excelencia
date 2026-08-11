@@ -8,6 +8,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
