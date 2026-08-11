@@ -249,18 +249,20 @@
         <!-- Formulario Inputs -->
         <div class="space-y-4">
           
-          <!-- Monto a Abonar ($ USD) -->
+          <!-- Monto a Abonar (Bs. o USD según método) -->
           <div>
-            <label class="text-[10px] font-black uppercase tracking-widest text-slate-300 block mb-1">Monto a Abonar ($ USD)</label>
+            <label class="text-[10px] font-black uppercase tracking-widest text-slate-300 block mb-1">
+              {{ esMetodoBs() ? 'Monto a Abonar (Bs.)' : 'Monto a Abonar ($ USD)' }}
+            </label>
             <input type="number" 
                    [ngModel]="montoAbonarInput()" 
                    (ngModelChange)="montoAbonarInput.set($event)"
-                   [max]="selectedOrden()?.saldoPendienteUSD || 0"
                    min="0.01" step="0.01"
                    class="w-full bg-[#0B0F19] border border-cyan-500/30 rounded-xl px-4 py-3 text-lg font-black text-emerald-400 focus:outline-none focus:border-cyan-400">
             
             <div class="flex justify-between items-center text-[10px] font-bold mt-1.5 text-slate-400">
-              <span>Equivalente: <strong class="text-white">Bs. {{ montoAbonarBsCalculado() | number:'1.2-2' }}</strong></span>
+              <span *ngIf="!esMetodoBs()">Equivalente: <strong class="text-white">Bs. {{ montoAbonarBsCalculado() | number:'1.2-2' }}</strong></span>
+              <span *ngIf="esMetodoBs()">Equivalente: <strong class="text-white">$ {{ montoAbonoUSDCalculado() | number:'1.2-2' }} USD</strong></span>
               <span>Saldo Restante: <strong class="text-amber-400">$ {{ saldoRestanteCalculado() | number:'1.2-2' }}</strong></span>
             </div>
           </div>
@@ -279,13 +281,15 @@
             <div>
               <label class="text-[10px] font-black uppercase tracking-widest text-slate-300 block mb-1">Método de Pago</label>
               <select [ngModel]="metodoPagoInput()" 
-                      (ngModelChange)="metodoPagoInput.set($event)"
+                      (ngModelChange)="onMetodoPagoChange($event)"
                       class="w-full bg-[#0B0F19] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
-                <option value="Transferencia">Transferencia Bancaria</option>
-                <option value="Efectivo USD">Efectivo USD</option>
-                <option value="Zelle">Zelle</option>
-                <option value="Punto">Punto de Venta</option>
-                <option value="Cheque">Cheque</option>
+                <option value="EFECTIVO USD">EFECTIVO USD ($)</option>
+                <option value="ZELLE">ZELLE ($)</option>
+                <option value="TRANSFERENCIA USD">TRANSFERENCIA USD ($)</option>
+                <option value="PAGO MÓVIL">PAGO MÓVIL (Bs.)</option>
+                <option value="TRANSFERENCIA BS">TRANSFERENCIA (Bs.)</option>
+                <option value="EFECTIVO BS">EFECTIVO (Bs.)</option>
+                <option value="PUNTO DE VENTA">PUNTO DE VENTA (Bs.)</option>
               </select>
             </div>
           </div>
