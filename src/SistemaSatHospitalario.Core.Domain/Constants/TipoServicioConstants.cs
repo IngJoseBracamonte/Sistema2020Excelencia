@@ -15,6 +15,8 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
 
         public const string RayosXString = "RX";
         public const string TomografiaString = "TOMO";
+        public const string InformeString = "INFORME";
+        public const string RadiologiaEspecialidad = "RADIOLOGIA";
 
         public const string CategoriaMedicamento = "Medicamento";
         public const string CategoriaInsumo = "Insumo";
