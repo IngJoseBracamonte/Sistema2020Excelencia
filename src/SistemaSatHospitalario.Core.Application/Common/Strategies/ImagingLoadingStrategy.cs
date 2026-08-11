@@ -154,7 +154,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
             string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
             var notification = new ServicioCargadoNotification(
-                esRx ? "RX" : "TOMO",
+                esRx ? TipoServicioConstants.RayosXString : TipoServicioConstants.TomografiaString,
                 request.OrigenCarga ?? request.TipoIngreso,
                 paciente.Id,
                 pNombre,
