@@ -1,10 +1,9 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { LucideAngularModule, Bell, Check, Info, AlertTriangle, X } from 'lucide-angular';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-// Importamos el servicio de SignalR si existe, o usamos uno nuevo.
-// Por ahora simularemos la conexión o usaremos HttpClient para pull inicial.
 
 @Component({
   selector: 'app-notification-center',
@@ -51,9 +50,6 @@ import { environment } from '../../../../environments/environment';
 
               <div *ngIf="!n.isRead" class="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0"></div>
             </div>
-            
-            <a *ngIf="n.actionUrl" [href]="n.actionUrl" 
-               class="absolute inset-0 opacity-0 pointer-events-auto"></a>
           </div>
 
           <div *ngIf="notifications().length === 0" class="p-12 text-center opacity-30">
@@ -81,7 +77,8 @@ import { environment } from '../../../../environments/environment';
 })
 export class NotificationCenterComponent implements OnInit {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/Notifications`; // Por implementar
+  private router = inject(Router);
+  private apiUrl = `${environment.apiUrl}/api/Notifications`;
 
   public icons = { Bell, Check, Info, AlertTriangle, X };
   public showDropdown = signal(false);
@@ -90,18 +87,15 @@ export class NotificationCenterComponent implements OnInit {
 
   ngOnInit() {
     this.loadNotifications();
-    // Aquí se integraría SignalR para recibir en tiempo real
   }
 
   loadNotifications() {
-    // Simulamos carga por ahora hasta tener el controlador
     this.http.get<any[]>(`${this.apiUrl}/latest`).subscribe({
       next: (data) => {
-        this.notifications.set(data);
+        this.notifications.set(data || []);
         this.updateUnreadCount();
       },
       error: () => {
-        // Fallback para demo
         this.notifications.set([]);
       }
     });
@@ -116,12 +110,17 @@ export class NotificationCenterComponent implements OnInit {
   }
 
   markAsRead(notification: any) {
-    if (notification.isRead) return;
-    
-    this.http.post(`${this.apiUrl}/${notification.id}/read`, {}).subscribe(() => {
-      notification.isRead = true;
-      this.updateUnreadCount();
-    });
+    if (!notification.isRead) {
+      this.http.post(`${this.apiUrl}/${notification.id}/read`, {}).subscribe(() => {
+        notification.isRead = true;
+        this.updateUnreadCount();
+      });
+    }
+
+    if (notification.actionUrl) {
+      this.showDropdown.set(false);
+      this.router.navigateByUrl(notification.actionUrl);
+    }
   }
 
   markAllAsRead() {

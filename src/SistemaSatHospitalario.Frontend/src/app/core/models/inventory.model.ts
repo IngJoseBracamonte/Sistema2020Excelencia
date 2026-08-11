@@ -142,6 +142,16 @@ export interface CreateRecipe {
   unidadMedidaConsumo: string;
 }
 
+export interface Proveedor {
+  id: string;
+  rif: string;
+  razonSocial: string;
+  direccion?: string;
+  telefono?: string;
+  activo?: boolean;
+  fechaRegistro?: string;
+}
+
 export interface PurchaseItem {
   insumoId: string;
   cantidad: number;
@@ -150,6 +160,7 @@ export interface PurchaseItem {
 
 export interface RecordPurchase {
   sedeId?: string;
+  proveedorId?: string;
   proveedorNombre?: string;
   numeroFactura?: string;
   tasaCambio?: number;

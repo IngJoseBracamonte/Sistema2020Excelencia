@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { CuentasPorPagarService } from '../../../core/services/cuentas-por-pagar.service';
 import { SettingsService } from '../../../core/services/settings.service';
-import { Insumo, RecordPurchase, PurchaseItem, PrincipioActivo } from '../../../core/models/inventory.model';
+import { Insumo, RecordPurchase, PurchaseItem, PrincipioActivo, Proveedor } from '../../../core/models/inventory.model';
 import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest } from '../../../core/models/cuentas-por-pagar.model';
 import { SearchFocusDirective } from '../../../shared/directives/search-focus.directive';
 import { 
@@ -20,7 +20,11 @@ import {
   Building2,
   FileText,
   DollarSign,
-  History
+  History,
+  UserPlus,
+  Phone,
+  MapPin,
+  X
 } from 'lucide-angular';
 
 interface CartItem {
@@ -47,7 +51,22 @@ export class ComprasComponent implements OnInit {
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
 
-  // Datos de Proveedor y Factura de Recepción
+  // Buscador y Selección de Proveedores
+  public proveedoresList = signal<Proveedor[]>([]);
+  public proveedorSearchTerm = signal<string>('');
+  public filteredProveedores = signal<Proveedor[]>([]);
+  public selectedProveedor = signal<Proveedor | null>(null);
+  public showProveedorDropdown = signal<boolean>(false);
+
+  // Modal para Crear Nuevo Proveedor
+  public showNewProveedorModal = signal<boolean>(false);
+  public newProveedorRif = signal<string>('');
+  public newProveedorRazonSocial = signal<string>('');
+  public newProveedorDireccion = signal<string>('');
+  public newProveedorTelefono = signal<string>('');
+  public isSavingProveedor = signal<boolean>(false);
+
+  // Datos de Proveedor e Insumo
   public proveedorNombreInput = signal<string>('');
   public numeroFacturaInput = signal<string>('');
   public tasaOficial = signal<number>(50.00);
@@ -100,7 +119,11 @@ export class ComprasComponent implements OnInit {
     Building2,
     FileText,
     DollarSign,
-    History
+    History,
+    UserPlus,
+    Phone,
+    MapPin,
+    X
   };
 
   public calculatedUnitCost = computed(() => {
@@ -144,7 +167,94 @@ export class ComprasComponent implements OnInit {
 
     this.loadInsumos();
     this.loadPrincipiosActivos();
+    this.loadProveedores();
     this.cargarOrdenes();
+  }
+
+  loadProveedores(query?: string) {
+    this.inventoryService.getProveedores(query).subscribe({
+      next: (res) => {
+        this.proveedoresList.set(res || []);
+        this.filteredProveedores.set(res || []);
+      },
+      error: (err) => console.error('Error al cargar proveedores', err)
+    });
+  }
+
+  onProveedorSearchChange(val: string) {
+    this.proveedorSearchTerm.set(val);
+    const term = val.trim().toLowerCase();
+    if (term) {
+      this.filteredProveedores.set(
+        this.proveedoresList().filter(p => 
+          p.razonSocial.toLowerCase().includes(term) ||
+          p.rif.toLowerCase().includes(term)
+        )
+      );
+    } else {
+      this.filteredProveedores.set(this.proveedoresList());
+    }
+    this.showProveedorDropdown.set(true);
+  }
+
+  selectProveedor(prov: Proveedor) {
+    this.selectedProveedor.set(prov);
+    this.proveedorNombreInput.set(prov.razonSocial);
+    this.proveedorSearchTerm.set(`${prov.razonSocial} (${prov.rif})`);
+    this.showProveedorDropdown.set(false);
+  }
+
+  clearSelectedProveedor() {
+    this.selectedProveedor.set(null);
+    this.proveedorNombreInput.set('');
+    this.proveedorSearchTerm.set('');
+    this.showProveedorDropdown.set(false);
+  }
+
+  openNewProveedorModal() {
+    this.newProveedorRif.set('');
+    this.newProveedorRazonSocial.set('');
+    this.newProveedorDireccion.set('');
+    this.newProveedorTelefono.set('');
+    this.showNewProveedorModal.set(true);
+  }
+
+  closeNewProveedorModal() {
+    this.showNewProveedorModal.set(false);
+  }
+
+  saveNewProveedor() {
+    const rif = this.newProveedorRif().trim();
+    const razonSocial = this.newProveedorRazonSocial().trim();
+
+    if (!rif) {
+      this.showError('El RIF del proveedor es requerido.');
+      return;
+    }
+    if (!razonSocial) {
+      this.showError('La Razón Social del proveedor es requerida.');
+      return;
+    }
+
+    this.isSavingProveedor.set(true);
+    this.inventoryService.createProveedor({
+      rif,
+      razonSocial,
+      direccion: this.newProveedorDireccion().trim() || undefined,
+      telefono: this.newProveedorTelefono().trim() || undefined
+    }).subscribe({
+      next: (newProv) => {
+        this.isSavingProveedor.set(false);
+        this.closeNewProveedorModal();
+        this.showSuccess(`Proveedor '${newProv.razonSocial}' registrado exitosamente.`);
+        this.loadProveedores();
+        this.selectProveedor(newProv);
+      },
+      error: (err) => {
+        this.isSavingProveedor.set(false);
+        this.showError(err.error?.message || 'Error al guardar el nuevo proveedor.');
+      }
+    });
   }
 
   loadInsumos() {
@@ -303,7 +413,8 @@ export class ComprasComponent implements OnInit {
     this.isSubmitting.set(true);
 
     const dto: RecordPurchase = {
-      proveedorNombre: this.proveedorNombreInput().trim() || 'Proveedor General',
+      proveedorId: this.selectedProveedor()?.id,
+      proveedorNombre: this.selectedProveedor()?.razonSocial || this.proveedorNombreInput().trim() || 'Proveedor General',
       numeroFactura: this.numeroFacturaInput().trim() || undefined,
       tasaCambio: this.tasaOficial(),
       items: this.cart().map(i => ({
@@ -317,7 +428,7 @@ export class ComprasComponent implements OnInit {
       next: () => {
         this.showSuccess('Ingreso de compras e inserción en Cuentas por Pagar procesados exitosamente.');
         this.cart.set([]);
-        this.proveedorNombreInput.set('');
+        this.clearSelectedProveedor();
         this.numeroFacturaInput.set('');
         this.isSubmitting.set(false);
         this.loadInsumos();

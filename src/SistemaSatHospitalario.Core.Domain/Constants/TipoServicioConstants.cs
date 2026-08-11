@@ -10,5 +10,9 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const int Tomo = 4;
         public const int Insumo = 5;
         public const int Informe = 6;
+
+        public const string CategoriaMedicamento = "Medicamento";
+        public const string CategoriaInsumo = "Insumo";
+        public const string TipoInsumoMedicamento = "Insumo / Medicamento";
     }
 }
