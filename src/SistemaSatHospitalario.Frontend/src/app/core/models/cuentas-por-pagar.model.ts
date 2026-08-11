@@ -36,3 +36,13 @@ export interface RegistrarPagoRequest {
   referencia: string;
   observaciones?: string;
 }
+
+export interface CatalogoMetodoPagoDto {
+  id: string;
+  nombre: string;
+  monedaId: number; // 1 = USD, 2 = VES / Bs
+  activo: boolean;
+}
+
+export const MONEDA_USD_ID = 1;
+export const MONEDA_BS_ID = 2;
