@@ -107,6 +107,25 @@ describe('SidebarComponent', () => {
         expect(link).not.toBeNull();
         expect(link?.textContent).toContain('Sedes & Áreas Clínicas');
     });
+
+    it('debe mostrar el enlace de Cirugía para administradores', () => {
+        authServiceMock.isAdministrador.and.returnValue(true);
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+        const compiled = fixture.nativeElement as HTMLElement;
+        const link = compiled.querySelector('a[routerLink="/pabellon/gestion"]');
+        expect(link).not.toBeNull();
+        expect(link?.textContent).toContain('Cirugía');
+    });
+
+    it('debe expandir automáticamente el dropdown "cirugia" si la ruta contiene /pabellon', () => {
+        spyOnProperty(router, 'url', 'get').and.returnValue('/pabellon/gestion');
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+        expect(component.dropdownsOpen()['cirugia']).toBeTrue();
+    });
 });
 
 

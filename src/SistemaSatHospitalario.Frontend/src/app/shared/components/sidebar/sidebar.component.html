@@ -81,6 +81,12 @@
             <span class="font-bold">Monitor de Laboratorio</span>
         </a>
 
+        <!-- Cirugía / Pabellón Quirúrgico -->
+        <a *ngIf="isAdministrativeGroup() || isAdmin()" routerLink="/pabellon/gestion" routerLinkActive="active-link" class="nav-item flex items-center">
+            <lucide-icon [name]="icons.Scissors" class="w-5 h-5 mr-3 text-red-500"></lucide-icon>
+            <span class="font-bold">Cirugía</span>
+        </a>
+
         <a *ngIf="isAdministrativeGroup()" routerLink="/seguros" routerLinkActive="active-link" class="nav-item flex items-center">
             <lucide-icon [name]="icons.ShieldCheck" class="w-5 h-5 mr-3 text-emerald-500"></lucide-icon>
             <span class="font-bold">Garantías</span>
