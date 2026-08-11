@@ -131,5 +131,86 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Obtiene el catálogo maestro de requisitos quirúrgicos DB-Driven.
+        /// </summary>
+        [HttpGet("RequisitosCatalogo")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRequisitosCatalogo([FromQuery] bool soloActivos = true)
+        {
+            var result = await _mediator.Send(new GetRequisitosCirugiaQuery { SoloActivos = soloActivos });
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Crea un nuevo requisito maestro quirúrgico DB-Driven.
+        /// </summary>
+        [HttpPost("RequisitosCatalogo")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CrearRequisitoCatalogo([FromBody] CreateRequisitoCirugiaCommand command)
+        {
+            try
+            {
+                var id = await _mediator.Send(command);
+                return Ok(new { id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Reprograma una cirugía requiriendo una nueva fecha/hora y motivo/observación obligatorios.
+        /// </summary>
+        [HttpPost("Reprogramar")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Reprogramar([FromBody] ReprogramarCirugiaCommand command)
+        {
+            try
+            {
+                command.UsuarioId = User.GetUserName();
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Marca o desmarca un requisito de checklist para una orden de cirugía.
+        /// </summary>
+        [HttpPatch("Ordenes/{id:guid}/Requisitos/{requisitoId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ToggleRequisito(Guid id, Guid requisitoId, [FromBody] ToggleRequisitoRequest request)
+        {
+            try
+            {
+                var command = new ToggleRequisitoCirugiaCommand
+                {
+                    OrdenCirugiaId = id,
+                    RequisitoCirugiaId = requisitoId,
+                    Cumplido = request.Cumplido,
+                    UsuarioId = User.GetUserName()
+                };
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+
+    public class ToggleRequisitoRequest
+    {
+        public bool Cumplido { get; set; }
     }
 }

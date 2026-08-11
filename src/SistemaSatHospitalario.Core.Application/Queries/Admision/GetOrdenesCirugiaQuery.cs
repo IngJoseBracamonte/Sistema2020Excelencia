@@ -9,6 +9,26 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
+    public class OrdenCirugiaRequisitoDto
+    {
+        public Guid Id { get; set; }
+        public Guid RequisitoCirugiaId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public bool Cumplido { get; set; }
+        public DateTime? FechaVerificacion { get; set; }
+        public string? VerificadoPor { get; set; }
+    }
+
+    public class CirugiaObservacionHistorialDto
+    {
+        public Guid Id { get; set; }
+        public string Observacion { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public DateTime FechaRegistro { get; set; }
+        public string UsuarioRegistro { get; set; } = string.Empty;
+    }
+
     public class OrdenCirugiaDto
     {
         public Guid Id { get; set; }
@@ -25,6 +45,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public string? MotivoCancelacion { get; set; }
         public DateTime FechaCreacion { get; set; }
         public string UsuarioCreacion { get; set; } = string.Empty;
+        public List<OrdenCirugiaRequisitoDto> Requisitos { get; set; } = new();
+        public List<CirugiaObservacionHistorialDto> HistorialObservaciones { get; set; } = new();
     }
 
     public class CirugiaLogDto
@@ -76,6 +98,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .AsNoTracking()
                 .Include(o => o.Paciente)
                 .Include(o => o.Medico)
+                .Include(o => o.Requisitos)
+                    .ThenInclude(r => r.RequisitoCirugia)
+                .Include(o => o.HistorialObservaciones)
                 .AsQueryable();
 
             if (request.FechaInicio.HasValue)
@@ -92,7 +117,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrWhiteSpace(request.Estado))
             {
-                query = query.Where(o => o.Estado == request.Estado);
+                var targetState = request.Estado.Trim();
+                query = query.Where(o => o.Estado == targetState ||
+                    (targetState == "Programada" && o.Estado == "PendienteEjecucion") ||
+                    (targetState == "EnCirugia" && o.Estado == "EnProceso") ||
+                    (targetState == "Finalizado" && o.Estado == "Completada"));
             }
 
             return await query
@@ -112,7 +141,25 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Estado = o.Estado,
                     MotivoCancelacion = o.MotivoCancelacion,
                     FechaCreacion = o.FechaCreacion,
-                    UsuarioCreacion = o.UsuarioCreacion
+                    UsuarioCreacion = o.UsuarioCreacion,
+                    Requisitos = o.Requisitos.Select(r => new OrdenCirugiaRequisitoDto
+                    {
+                        Id = r.Id,
+                        RequisitoCirugiaId = r.RequisitoCirugiaId,
+                        Nombre = r.RequisitoCirugia.Nombre,
+                        Descripcion = r.RequisitoCirugia.Descripcion,
+                        Cumplido = r.Cumplido,
+                        FechaVerificacion = r.FechaVerificacion,
+                        VerificadoPor = r.VerificadoPor
+                    }).ToList(),
+                    HistorialObservaciones = o.HistorialObservaciones.Select(h => new CirugiaObservacionHistorialDto
+                    {
+                        Id = h.Id,
+                        Observacion = h.Observacion,
+                        Tipo = h.Tipo,
+                        FechaRegistro = h.FechaRegistro,
+                        UsuarioRegistro = h.UsuarioRegistro
+                    }).OrderByDescending(h => h.FechaRegistro).ToList()
                 })
                 .ToListAsync(cancellationToken);
         }
@@ -139,11 +186,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(o => o.Paciente)
                 .Include(o => o.Medico)
                 .Include(o => o.Logs)
+                .Include(o => o.Requisitos)
+                    .ThenInclude(r => r.RequisitoCirugia)
+                .Include(o => o.HistorialObservaciones)
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCirugiaId, cancellationToken);
 
             if (orden == null) return null;
 
-            // Obtener insumos cargados a la cuenta del paciente
             var insumosAsignados = await _context.InsumosCirugiasPacientes
                 .AsNoTracking()
                 .Include(i => i.Insumo)
@@ -176,6 +225,24 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 MotivoCancelacion = orden.MotivoCancelacion,
                 FechaCreacion = orden.FechaCreacion,
                 UsuarioCreacion = orden.UsuarioCreacion,
+                Requisitos = orden.Requisitos.Select(r => new OrdenCirugiaRequisitoDto
+                {
+                    Id = r.Id,
+                    RequisitoCirugiaId = r.RequisitoCirugiaId,
+                    Nombre = r.RequisitoCirugia.Nombre,
+                    Descripcion = r.RequisitoCirugia.Descripcion,
+                    Cumplido = r.Cumplido,
+                    FechaVerificacion = r.FechaVerificacion,
+                    VerificadoPor = r.VerificadoPor
+                }).ToList(),
+                HistorialObservaciones = orden.HistorialObservaciones.Select(h => new CirugiaObservacionHistorialDto
+                {
+                    Id = h.Id,
+                    Observacion = h.Observacion,
+                    Tipo = h.Tipo,
+                    FechaRegistro = h.FechaRegistro,
+                    UsuarioRegistro = h.UsuarioRegistro
+                }).OrderByDescending(h => h.FechaRegistro).ToList(),
                 Logs = orden.Logs.Select(l => new CirugiaLogDto
                 {
                     Id = l.Id,

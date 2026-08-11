@@ -73,8 +73,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<InsumoCirugiaPaciente> InsumosCirugiasPacientes { get; set; }
         public DbSet<OrdenCirugia> OrdenesCirugia { get; set; }
         public DbSet<CirugiaLog> CirugiaLogs { get; set; }
+        public DbSet<RequisitoCirugia> RequisitosCirugia { get; set; }
+        public DbSet<OrdenCirugiaRequisito> OrdenesCirugiaRequisitos { get; set; }
+        public DbSet<CirugiaObservacionHistorial> CirugiasObservacionesHistorial { get; set; }
         public DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; set; }
         public DbSet<PagoProveedor> PagosProveedores { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -991,6 +995,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(l => l.OrdenCirugiaId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasMany(o => o.Requisitos)
+                      .WithOne(r => r.OrdenCirugia)
+                      .HasForeignKey(r => r.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(o => o.HistorialObservaciones)
+                      .WithOne(h => h.OrdenCirugia)
+                      .HasForeignKey(h => h.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasIndex(o => o.FechaHoraProgramada);
                 entity.HasIndex(o => o.Estado);
             });
@@ -1005,6 +1019,91 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.HasIndex(l => l.OrdenCirugiaId);
                 entity.HasIndex(l => l.Timestamp);
+            });
+
+            builder.Entity<RequisitoCirugia>(entity =>
+            {
+                entity.ToTable("RequisitosCirugia");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.Nombre).IsRequired().HasMaxLength(200);
+                entity.Property(r => r.Descripcion).HasMaxLength(500);
+            });
+
+            builder.Entity<OrdenCirugiaRequisito>(entity =>
+            {
+                entity.ToTable("OrdenesCirugiaRequisitos");
+                entity.HasKey(r => r.Id);
+                entity.Property(r => r.VerificadoPor).HasMaxLength(100);
+
+                entity.HasOne(r => r.RequisitoCirugia)
+                      .WithMany(m => m.OrdenesRequisitos)
+                      .HasForeignKey(r => r.RequisitoCirugiaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(r => r.OrdenCirugiaId);
+            });
+
+            builder.Entity<CirugiaObservacionHistorial>(entity =>
+            {
+                entity.ToTable("CirugiasObservacionesHistorial");
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.Observacion).IsRequired().HasMaxLength(1000);
+                entity.Property(h => h.Tipo).IsRequired().HasMaxLength(50);
+                entity.Property(h => h.UsuarioRegistro).IsRequired().HasMaxLength(100);
+
+                entity.HasIndex(h => h.OrdenCirugiaId);
+            });
+
+            builder.Entity<OrdenCompraInventario>(entity =>
+            {
+                entity.ToTable("OrdenesCompraInventario");
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.NumeroFactura).IsRequired().HasMaxLength(100);
+                entity.Property(o => o.ProveedorNombre).IsRequired().HasMaxLength(250);
+                entity.Property(o => o.MontoTotalUSD).HasPrecision(18, 2);
+                entity.Property(o => o.MontoTotalBs).HasPrecision(18, 2);
+                entity.Property(o => o.TotalAbonadoUSD).HasPrecision(18, 2);
+                entity.Property(o => o.SaldoPendienteUSD).HasPrecision(18, 2);
+                entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
+                entity.Property(o => o.Observaciones).HasMaxLength(1000);
+
+                entity.HasMany(o => o.Pagos)
+                      .WithOne(p => p.OrdenCompra)
+                      .HasForeignKey(p => p.OrdenCompraId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(o => o.NumeroFactura);
+                entity.HasIndex(o => o.ProveedorNombre);
+                entity.HasIndex(o => o.Estado);
+            });
+
+            builder.Entity<PagoProveedor>(entity =>
+            {
+                entity.ToTable("PagosProveedores");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.MontoAbonadoUSD).HasPrecision(18, 2);
+                entity.Property(p => p.TasaCambio).HasPrecision(18, 2);
+                entity.Property(p => p.MontoAbonadoBs).HasPrecision(18, 2);
+                entity.Property(p => p.MetodoPago).IsRequired().HasMaxLength(50);
+                entity.Property(p => p.Referencia).HasMaxLength(100);
+                entity.Property(p => p.UsuarioId).HasMaxLength(100);
+                entity.Property(p => p.Observaciones).HasMaxLength(1000);
+
+                entity.HasIndex(p => p.OrdenCompraId);
+                entity.HasIndex(p => p.FechaPago);
+            });
+
+            builder.Entity<Proveedor>(entity =>
+            {
+                entity.ToTable("Proveedores");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.RIF).IsRequired().HasMaxLength(50);
+                entity.Property(p => p.RazonSocial).IsRequired().HasMaxLength(250);
+                entity.Property(p => p.Direccion).HasMaxLength(500);
+                entity.Property(p => p.Telefono).HasMaxLength(50);
+
+                entity.HasIndex(p => p.RIF).IsUnique();
+                entity.HasIndex(p => p.RazonSocial);
             });
         }
 

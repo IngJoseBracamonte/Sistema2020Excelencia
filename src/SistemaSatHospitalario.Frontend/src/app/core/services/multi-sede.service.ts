@@ -13,6 +13,16 @@ export interface Sede {
   areasClinicas?: AreaClinica[];
 }
 
+export enum EstadoPedidoInterSede {
+  Solicitado = 'Solicitado',
+  Aprobado = 'Aprobado',
+  Despachado = 'Despachado',
+  Recibido = 'Recibido',
+  Rechazado = 'Rechazado',
+  Cancelado = 'Cancelado',
+  Pendiente = 'Pendiente'
+}
+
 export interface AreaClinica {
   id: string;
   sedeId: string;

@@ -296,7 +296,7 @@ export class InventoryDashboardComponent implements OnInit {
         alert('Movimiento registrado con éxito.');
         this.setTab('stock');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         console.error(err);
         alert('Error al registrar el movimiento.');

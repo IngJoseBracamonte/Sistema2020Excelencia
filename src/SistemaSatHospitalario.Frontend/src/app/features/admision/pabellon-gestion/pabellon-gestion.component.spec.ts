@@ -101,7 +101,7 @@ describe('PabellonGestionComponent', () => {
 
   it('debe seleccionar una orden de cirugía al hacer clic y mostrarla en la señal de ordenSeleccionada', () => {
     expect(component.ordenSeleccionada()).toBeNull();
-    component.seleccionarCirugia(mockOrdenes[0]);
+    component.ordenSeleccionada.set(mockOrdenes[0]);
     expect(component.ordenSeleccionada()?.id).toBe('ord-1');
     expect(component.ordenSeleccionada()?.razonCirugia).toBe('Hernia estrangulada síntoma severo');
   });

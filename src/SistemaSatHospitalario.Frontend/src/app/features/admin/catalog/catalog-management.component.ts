@@ -126,6 +126,8 @@ export class CatalogManagementComponent implements OnInit {
     });
   });
 
+  readonly pendingEditId = signal<string | null>(null);
+
   constructor() {
     this.route.queryParams.pipe(takeUntilDestroyed()).subscribe(params => {
       if (params['filter']) {
@@ -133,6 +135,11 @@ export class CatalogManagementComponent implements OnInit {
         if (this.availableTypes.includes(filterType)) {
           this.selectedTypes.set([filterType]);
         }
+      }
+      const editId = params['edit'] || params['editServicioId'];
+      if (editId) {
+        this.pendingEditId.set(editId);
+        this.checkPendingEdit();
       }
     });
   }
@@ -153,12 +160,24 @@ export class CatalogManagementComponent implements OnInit {
       next: (data: CatalogItem[]) => {
         this.catalog.set(data || []);
         this.isLoading.set(false);
+        this.checkPendingEdit();
       },
       error: (err: any) => {
         console.error('Error cargando catálogo:', err);
         this.isLoading.set(false);
       }
     });
+  }
+
+  private checkPendingEdit(): void {
+    const editId = this.pendingEditId();
+    if (editId && this.catalog().length > 0) {
+      const found = this.catalog().find(i => (i.id || (i as any)._id || i.codigo) === editId);
+      if (found) {
+        this.openEdit(found);
+        this.pendingEditId.set(null);
+      }
+    }
   }
 
   setSortOption(option: SortOption): void {

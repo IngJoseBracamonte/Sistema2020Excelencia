@@ -213,6 +213,24 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Médico Tratante -->
+                    <div class="mt-4">
+                        <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">
+                            <lucide-icon [name]="icons.Stethoscope" class="w-3 h-3 inline-block mr-1 -mt-0.5"></lucide-icon>
+                            Médico Tratante
+                            <span *ngIf="esMedicoTratanteRequerido()" class="text-rose-500 font-bold">*</span>
+                            <span *ngIf="!esMedicoTratanteRequerido()" class="text-slate-600 font-normal ml-1">(Opcional)</span>
+                        </label>
+                        <select [ngModel]="medicoTratanteIngresoId()" (ngModelChange)="medicoTratanteIngresoId.set($event)"
+                                [ngClass]="esMedicoTratanteRequerido() && !medicoTratanteIngresoId() ? 'border-rose-500/40' : 'border-white/10'"
+                                class="w-full bg-black/40 border px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
+                            <option [value]="null">--- SELECCIONAR MÉDICO ---</option>
+                            <option *ngFor="let m of medicos()" [value]="m.id">
+                                {{ m.nombre | uppercase }} {{ m.apellidos | uppercase }} — {{ m.especialidad | uppercase }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Mensaje de Error Interno Modal -->
