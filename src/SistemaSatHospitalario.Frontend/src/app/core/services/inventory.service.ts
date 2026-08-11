@@ -98,6 +98,10 @@ export class InventoryService {
     return this.http.post<any>(`${this.apiUrl}/descarte`, dto);
   }
 
+  recordMovement(dto: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/movimiento`, dto);
+  }
+
   enviarASubArea(dto: { insumoId: string; areaClinicaId?: string; nombreSubArea: string; cantidad: number; motivo: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/envio-subarea`, dto);
   }

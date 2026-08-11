@@ -83,9 +83,44 @@ describe('FacturacionService', () => {
             pacienteId: 'pac-123',
             tipoIngreso: 'Emergencia',
             convenioId: 5,
-            camaId: 'cama-12'
+            camaId: 'cama-12',
+            medicoId: null
         });
         req.flush({ cuentaId: 'acc-789', message: 'Cuenta clínica abierta exitosamente.' });
+    });
+
+    it('debe enviar medicoId en la apertura de cuenta cuando se proporciona', () => {
+        service.abrirCuenta('pac-456', 'Hospitalizacion', 3, 'cama-05', 'medico-guid-001').subscribe(response => {
+            expect(response.cuentaId).toBe('acc-hosp-1');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/abrir-cuenta`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual({
+            pacienteId: 'pac-456',
+            tipoIngreso: 'Hospitalizacion',
+            convenioId: 3,
+            camaId: 'cama-05',
+            medicoId: 'medico-guid-001'
+        });
+        req.flush({ cuentaId: 'acc-hosp-1', message: 'Cuenta clínica abierta exitosamente.' });
+    });
+
+    it('debe enviar medicoId como null cuando no se proporciona', () => {
+        service.abrirCuenta('pac-789', 'Emergencia', null, null).subscribe(response => {
+            expect(response.cuentaId).toBe('acc-emg-1');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/Billing/abrir-cuenta`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual({
+            pacienteId: 'pac-789',
+            tipoIngreso: 'Emergencia',
+            convenioId: null,
+            camaId: null,
+            medicoId: null
+        });
+        req.flush({ cuentaId: 'acc-emg-1', message: 'Cuenta clínica abierta exitosamente.' });
     });
 
     it('debe enviar el cierre de cuenta correctamente', () => {

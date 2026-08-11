@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Generic;
+using SistemaSatHospitalario.Core.Domain.State;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
     /// <summary>
     /// Representa una orden de cirugía programada asociada a una cuenta de paciente.
-    /// Gestiona el ciclo de vida completo: agendamiento, ejecución, consumo y cierre.
+    /// Gestiona el ciclo de vida completo mediante el Patrón State: agendamiento, ejecución, consumo y cierre.
     /// </summary>
     public class OrdenCirugia
     {
         public Guid Id { get; private set; }
         public Guid CuentaServicioId { get; private set; }
         public Guid PacienteId { get; private set; }
+        public Guid? AreaClinicaId { get; private set; }
         public string DescripcionCirugia { get; private set; }
         public decimal PrecioBaseUsd { get; private set; }
         public Guid MedicoId { get; private set; }
@@ -25,9 +27,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public virtual CuentaServicios CuentaServicio { get; private set; }
         public virtual PacienteAdmision Paciente { get; private set; }
         public virtual Medico Medico { get; private set; }
+        public virtual AreaClinica? AreaClinica { get; private set; }
 
         private readonly List<CirugiaLog> _logs = new();
-        public IReadOnlyCollection<CirugiaLog> Logs => _logs.AsReadOnly();
+        public virtual IReadOnlyCollection<CirugiaLog> Logs => _logs.AsReadOnly();
+
+        private readonly List<OrdenCirugiaRequisito> _requisitos = new();
+        public virtual IReadOnlyCollection<OrdenCirugiaRequisito> Requisitos => _requisitos.AsReadOnly();
+
+        private readonly List<CirugiaObservacionHistorial> _historialObservaciones = new();
+        public virtual IReadOnlyCollection<CirugiaObservacionHistorial> HistorialObservaciones => _historialObservaciones.AsReadOnly();
+
+        private ICirugiaState? _currentState;
+        public ICirugiaState CurrentState => _currentState ??= CirugiaStateFactory.GetState(Estado);
 
         protected OrdenCirugia() { }
 
@@ -38,7 +50,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             decimal precioBaseUsd,
             Guid medicoId,
             DateTime fechaHoraProgramada,
-            string usuarioCreacion)
+            string usuarioCreacion,
+            Guid? areaClinicaId = null)
         {
             if (string.IsNullOrWhiteSpace(descripcionCirugia))
                 throw new ArgumentException("La descripción de la cirugía es obligatoria.", nameof(descripcionCirugia));
@@ -52,61 +65,86 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
             PacienteId = pacienteId;
-            DescripcionCirugia = descripcionCirugia;
+            AreaClinicaId = areaClinicaId;
+            DescripcionCirugia = descripcionCirugia.Trim();
             PrecioBaseUsd = precioBaseUsd;
             MedicoId = medicoId;
             FechaHoraProgramada = fechaHoraProgramada;
-            Estado = EstadoCirugiaConstants.PendienteEjecucion;
+            Estado = EstadoCirugiaConstants.Programada;
             FechaCreacion = DateTime.UtcNow;
-            UsuarioCreacion = usuarioCreacion;
+            UsuarioCreacion = usuarioCreacion.Trim();
+            _currentState = new ProgramadaState();
         }
 
-        /// <summary>
-        /// Transiciona la orden al estado En Proceso.
-        /// </summary>
+        // --- Métodos de Estado encapsulados (State Pattern) ---
+
+        public void IniciarEspera(string usuarioId)
+        {
+            CurrentState.IniciarEspera(this, usuarioId);
+        }
+
         public void IniciarCirugia(string usuarioId)
         {
-            if (Estado != EstadoCirugiaConstants.PendienteEjecucion)
-                throw new InvalidOperationException("Solo se puede iniciar una cirugía en estado Pendiente de Ejecución.");
-
-            Estado = EstadoCirugiaConstants.EnProceso;
-            AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado,
-                $"Estado cambiado de {EstadoCirugiaConstants.PendienteEjecucion} a {EstadoCirugiaConstants.EnProceso}");
+            CurrentState.IniciarCirugia(this, usuarioId);
         }
 
-        /// <summary>
-        /// Marca la cirugía como completada.
-        /// </summary>
+        public void FinalizarCirugia(string usuarioId)
+        {
+            CurrentState.FinalizarCirugia(this, usuarioId);
+        }
+
         public void CompletarCirugia(string usuarioId)
         {
-            if (Estado != EstadoCirugiaConstants.EnProceso)
-                throw new InvalidOperationException("Solo se puede completar una cirugía que está En Proceso.");
-
-            Estado = EstadoCirugiaConstants.Completada;
-            AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado,
-                $"Estado cambiado de {EstadoCirugiaConstants.EnProceso} a {EstadoCirugiaConstants.Completada}");
+            FinalizarCirugia(usuarioId);
         }
 
-        /// <summary>
-        /// Cancela la cirugía con un motivo obligatorio.
-        /// </summary>
+        public void Reprogramar(DateTime nuevaFecha, string motivo, string usuarioId)
+        {
+            CurrentState.Reprogramar(this, nuevaFecha, motivo, usuarioId);
+        }
+
         public void CancelarCirugia(string usuarioId, string motivo)
         {
-            if (Estado == EstadoCirugiaConstants.Completada)
-                throw new InvalidOperationException("No se puede cancelar una cirugía ya completada.");
-            if (string.IsNullOrWhiteSpace(motivo))
-                throw new ArgumentException("El motivo de cancelación es obligatorio.", nameof(motivo));
-
-            var estadoAnterior = Estado;
-            Estado = EstadoCirugiaConstants.Cancelada;
-            MotivoCancelacion = motivo;
-            AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado,
-                $"Estado cambiado de {estadoAnterior} a {EstadoCirugiaConstants.Cancelada}. Motivo: {motivo}");
+            CurrentState.Cancelar(this, motivo, usuarioId);
         }
 
-        /// <summary>
-        /// Agrega un log de auditoría inmutable a la orden de cirugía.
-        /// </summary>
+        // --- Helpers Internos invocados por ICirugiaState ---
+
+        internal void SetEstadoInternal(string nuevoEstado, ICirugiaState stateInstance)
+        {
+            Estado = nuevoEstado;
+            _currentState = stateInstance;
+        }
+
+        internal void MotivoCancelacionInternal(string motivo)
+        {
+            MotivoCancelacion = motivo;
+        }
+
+        internal void ActualizarFechaYMotivoReprogramacion(DateTime nuevaFecha, string motivo, string usuarioId)
+        {
+            var fechaAnterior = FechaHoraProgramada;
+            FechaHoraProgramada = nuevaFecha;
+            
+            var detalle = $"Reprogramada de {fechaAnterior:dd/MM/yyyy HH:mm} a {nuevaFecha:dd/MM/yyyy HH:mm}. Motivo: {motivo}";
+            AgregarLog(usuarioId, "Reprogramacion", detalle);
+            AgregarHistorialObservacion(detalle, "Reprogramacion", usuarioId);
+        }
+
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro)
+        {
+            var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro);
+            _historialObservaciones.Add(item);
+            return item;
+        }
+
+        public OrdenCirugiaRequisito AgregarRequisito(Guid requisitoCirugiaId, bool cumplido = false)
+        {
+            var req = new OrdenCirugiaRequisito(Id, requisitoCirugiaId, cumplido);
+            _requisitos.Add(req);
+            return req;
+        }
+
         public CirugiaLog AgregarLog(string usuarioId, string evento, string detalle)
         {
             var log = new CirugiaLog(Id, usuarioId, evento, detalle);
@@ -117,12 +155,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
     /// <summary>
     /// Constantes de estado para OrdenCirugia.
+    /// Contiene los nuevos estados (Programada, EnEspera, EnCirugia, Finalizado) y alias para compatibilidad retroactiva.
     /// </summary>
     public static class EstadoCirugiaConstants
     {
-        public const string PendienteEjecucion = "PendienteEjecucion";
-        public const string EnProceso = "EnProceso";
-        public const string Completada = "Completada";
+        public const string Programada = "Programada";
+        public const string EnEspera = "EnEspera";
+        public const string EnCirugia = "EnCirugia";
+        public const string Finalizado = "Finalizado";
+
+        // Aliases para compatibilidad con código/data previa
+        public const string PendienteEjecucion = "Programada";
+        public const string EnProceso = "EnCirugia";
+        public const string Completada = "Finalizado";
         public const string Cancelada = "Cancelada";
     }
 
@@ -136,5 +181,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public const string DevolucionInsumos = "DevolucionInsumos";
         public const string CargoExtra = "CargoExtra";
         public const string TransicionEstado = "TransicionEstado";
+        public const string Reprogramacion = "Reprogramacion";
     }
 }
