@@ -171,5 +171,54 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => handler.Handle(command, CancellationToken.None));
             Assert.Contains("procesado", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
+
+        [Fact]
+        public async Task TomographyService_DomainClassification_ShouldAssertExactTomographyConstant()
+        {
+            // Arrange
+            using var context = new SatHospitalarioDbContext(_options);
+            var mockExterna = new Mock<IOrdenExternaService>();
+            var mockMediator = new Mock<IMediator>();
+
+            var strategy = new ImagingLoadingStrategy(mockExterna.Object, context, mockMediator.Object);
+
+            var paciente = new PacienteAdmision("V-99999999", "Pedro Gomez", "04129999999", null, DateTime.Now.AddYears(-50), "Dir");
+            var cuenta = new CuentaServicios(paciente.Id, "Admin", "Particular");
+
+            var tomoService = new ServicioClinico("TAC01", "Tomografía Axial Computarizada Cráneo", 120.00m, TipoServicioConstants.TomografiaString)
+            {
+                TipoServicioId = TipoServicioConstants.Tomografia,
+                Category = ServiceCategory.Radiology,
+                HonorariumCategory = "TOMO"
+            };
+
+            await context.PacientesAdmision.AddAsync(paciente);
+            await context.ServiciosClinicos.AddAsync(tomoService);
+            await context.SaveChangesAsync();
+
+            var request = new CargarServicioACuentaCommand
+            {
+                PacienteId = paciente.Id,
+                TipoIngreso = "Particular",
+                ServicioId = tomoService.Id.ToString(),
+                Descripcion = tomoService.Descripcion,
+                Precio = 120.00m,
+                Cantidad = 1,
+                TipoServicio = TipoServicioConstants.TomografiaString,
+                RequiereInforme = false
+            };
+
+            var detalle = cuenta.AgregarServicio(tomoService.Id, tomoService.Descripcion, 120.00m, 25.00m, 1, TipoServicioConstants.TomografiaString, "Admin", null, null);
+
+            // Act
+            await strategy.ExecuteAsync(request, cuenta, paciente, detalle, tomoService, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(TipoServicioConstants.TomografiaString, tomoService.TipoServicio);
+            Assert.Equal(TipoServicioConstants.Tomografia, tomoService.TipoServicioId);
+            Assert.Equal(TipoServicioConstants.TomografiaString, detalle.TipoServicio);
+            mockExterna.Verify(e => e.EnviarOrdenTomoAsync(cuenta.Id, paciente.Id, tomoService.Descripcion, paciente.NombreCompleto, It.IsAny<CancellationToken>(), false, null), Times.Once);
+            mockExterna.Verify(e => e.EnviarOrdenRXAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<bool>(), It.IsAny<Guid?>()), Times.Never);
+        }
     }
 }

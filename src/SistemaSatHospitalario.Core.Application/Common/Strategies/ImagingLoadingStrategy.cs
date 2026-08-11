@@ -101,13 +101,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                 }
             }
 
-            bool isClinical = !string.IsNullOrEmpty(request.OrigenCarga) || 
-                              cuenta.TipoIngreso == EstadoConstants.Hospitalizacion || 
-                              cuenta.TipoIngreso == EstadoConstants.Emergencia || 
-                              cuenta.TipoIngreso == "UCI";
+            bool isClinical = true; // Toda orden de imagenologia genera orden externa RX o TOMO
 
-            bool esRx = request.TipoServicio == EstadoConstants.RX || 
-                        (baseService != null && (baseService.Category == ServiceCategory.Radiology || baseService.TipoServicioId == 3));
+            bool esRx = request.TipoServicio == TipoServicioConstants.RayosXString || 
+                        (baseService != null && baseService.TipoServicioId == TipoServicioConstants.RayosX);
 
             if (isClinical)
             {
