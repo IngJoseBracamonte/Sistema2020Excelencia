@@ -45,9 +45,10 @@
         Incorporar Renglón de Compra
       </h2>
         <!-- Datos del Proveedor & Factura de Origen -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-black/30 border border-white/5 rounded-2xl">
+      <div class="space-y-3 p-4 bg-black/30 border border-white/5 rounded-2xl">
+        <!-- Proveedor (Arriba, ancho completo) -->
         <div class="relative">
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-1.5">
             <label class="text-[9px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1">
               <lucide-icon [name]="icons.Building2" class="w-3 h-3 text-emerald-400"></lucide-icon>
               Proveedor / Razón Social
@@ -55,10 +56,9 @@
             <button 
               type="button" 
               (click)="openNewProveedorModal()"
-              class="text-[9px] font-black text-emerald-400 hover:text-emerald-300 flex items-center gap-1 uppercase tracking-wider transition-colors hover:underline"
-              title="Registrar un nuevo proveedor con RIF, Dirección y Teléfono">
-              <lucide-icon [name]="icons.UserPlus" class="w-3 h-3"></lucide-icon>
-              + Nuevo Proveedor
+              class="p-1 px-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all active:scale-95 flex items-center gap-1"
+              title="Registrar Nuevo Proveedor (RIF, Razón Social, Dirección, Teléfono)">
+              <lucide-icon [name]="icons.UserPlus" class="w-3.5 h-3.5"></lucide-icon>
             </button>
           </div>
 
@@ -97,6 +97,8 @@
             </div>
           </div>
         </div>
+
+        <!-- Nº Factura / Control (Abajo) -->
         <div>
           <label class="text-[9px] font-black uppercase tracking-wider text-emerald-400 block mb-1 flex items-center gap-1">
             <lucide-icon [name]="icons.FileText" class="w-3 h-3 text-emerald-400"></lucide-icon>
