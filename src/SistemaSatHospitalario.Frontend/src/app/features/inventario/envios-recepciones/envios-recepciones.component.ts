@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MultiSedeService, PedidoInterSede, Sede, AreaClinica } from '../../../core/services/multi-sede.service';
+import { MultiSedeService, PedidoInterSede, Sede, AreaClinica, EstadoPedidoInterSede } from '../../../core/services/multi-sede.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo } from '../../../core/models/inventory.model';
 import { 
@@ -229,7 +229,12 @@ export class EnviosRecepcionesComponent implements OnInit {
   }
 
   public filteredPedidosPendientes = computed(() => {
-    return this.pedidos().filter(p => p.estado === 'Pendiente' && this.filterPedido(p));
+    return this.pedidos().filter(p => {
+      const st = (p.estado || '').toLowerCase().trim();
+      const isPendiente = st === EstadoPedidoInterSede.Solicitado.toLowerCase() || 
+                          st === EstadoPedidoInterSede.Pendiente.toLowerCase();
+      return isPendiente && this.filterPedido(p);
+    });
   });
 
   public updateCantidad(pedidoId: string, detalleId: string, cantidad: number) {
