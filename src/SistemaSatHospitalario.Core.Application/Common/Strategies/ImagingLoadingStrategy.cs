@@ -46,8 +46,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             // REGLA 1: El estudio base de imagenología se registra SIN médico responsable ni honorario directo al técnico.
             detalle.LimpiarMedicoResponsable();
 
-            // REGLA 2: Determinar si requiere informe (Por Toggle o por defecto en Seguros)
+            // REGLA 2: Determinar si requiere informe (Por Toggle, por informe vinculado en catálogo, por médico asignado o en Seguros)
             bool requiereInforme = request.RequiereInforme || 
+                                   request.MedicoInterpreteId.HasValue ||
+                                   (baseService != null && (baseService.ServicioInformeId.HasValue || baseService.EsServicioInforme)) ||
                                    cuenta.TipoIngreso.Equals("Seguro", StringComparison.OrdinalIgnoreCase) || 
                                    (request.OrigenCarga ?? "").Equals("Seguros", StringComparison.OrdinalIgnoreCase);
 
