@@ -642,7 +642,7 @@
                                 <p class="text-[10px] text-slate-400 font-mono mt-1">{{ acc.pacienteCedula }}</p>
                             </div>
                             
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <span class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-[8px] font-black uppercase tracking-widest">
                                     {{ acc.tipoIngreso }}
                                 </span>
@@ -651,6 +651,9 @@
                                 </span>
                                 <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
                                     {{ acc.seguroNombre }}
+                                </span>
+                                <span *ngIf="acc.medicoTratanteNombre || acc['medicoTratante'] || acc['medicoNombre']" class="text-[8px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold flex items-center gap-1 border border-blue-500/30 uppercase">
+                                    Dr. {{ acc.medicoTratanteNombre || acc['medicoTratante'] || acc['medicoNombre'] }}
                                 </span>
                             </div>
                         </div>
@@ -720,6 +723,11 @@
                             </span>
                             <span *ngIf="selectedAccount()?.areaClinicaNombre" class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
                             <span *ngIf="selectedAccount()?.areaClinicaNombre">Cama: {{ selectedAccount()?.areaClinicaNombre }}</span>
+                            <span *ngIf="selectedAccount()?.medicoTratanteNombre || selectedAccount()?.['medicoTratante'] || selectedAccount()?.['medicoNombre']" class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
+                            <span *ngIf="selectedAccount()?.medicoTratanteNombre || selectedAccount()?.['medicoTratante'] || selectedAccount()?.['medicoNombre']" class="inline-flex items-center gap-1.5 text-blue-400 font-bold border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 rounded-xl text-[10px] uppercase">
+                                <lucide-icon [name]="icons.Stethoscope" class="w-3.5 h-3.5"></lucide-icon>
+                                Dr. {{ selectedAccount()?.medicoTratanteNombre || selectedAccount()?.['medicoTratante'] || selectedAccount()?.['medicoNombre'] }}
+                            </span>
                         </div>
                     </div>
                     

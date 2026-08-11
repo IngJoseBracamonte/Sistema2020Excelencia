@@ -61,6 +61,9 @@ export interface CuentaAdministrativa {
   areaClinicaId?: string;
   areaClinicaNombre?: string;
   subAreaClinica?: string;
+  medicoTratanteNombre?: string;
+  medicoTratante?: string;
+  medicoNombre?: string;
   detalles?: any[];
   [key: string]: any;
 }
@@ -465,6 +468,11 @@ export class EnfermeriaComponent implements OnInit {
   public selectedMedicoId = signal<string | null>(null);
   public selectedAreaClinicaId = signal<string | null>(null);
   public areasClinicas = signal<AreaClinica[]>([]);
+  public areasOperativas = signal<AreaClinica[]>([]);
+  public areaClinicaCargaId = signal<string>('');
+  public areaActivaTop = signal<string>('EMERGENCIA');
+  public pacientesActivos = signal<any[]>([]);
+  public pacienteSeleccionado = signal<any | null>(null);
   public fastChargeQuantity = 1;
   public isSavingFastCharge = signal<boolean>(false);
 
@@ -612,6 +620,19 @@ export class EnfermeriaComponent implements OnInit {
         this.autoSelectAreaClinicaForAccount(account);
       }
     });
+
+    effect(() => {
+      const topAreaNombre = this.nursingAreaFilter() || this.areaActivaTop();
+      const areas = this.areasOperativas();
+      if (areas.length > 0) {
+        const areaCoincidente = areas.find(a =>
+          (a.nombre || '').toUpperCase().includes(topAreaNombre.toUpperCase())
+        );
+        if (areaCoincidente) {
+          this.areaClinicaCargaId.set(areaCoincidente.id);
+        }
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -723,6 +744,16 @@ export class EnfermeriaComponent implements OnInit {
       next: (res) => {
         const activeAreas = res.filter(a => a.activo);
         this.areasClinicas.set(activeAreas);
+
+        // Excluye sub-áreas del Almacén (Farmacia, Laboratorio) y deja solo las 3 áreas operativas de atención clínica
+        const operacionales = activeAreas.filter(a =>
+          !a.esSubAreaAlmacenPrincipal &&
+          ['EMERGENCIA', 'HOSPITALIZACIÓN', 'HOSPITALIZACION', 'UCI'].some(nombre =>
+            (a.nombre || '').toUpperCase().includes(nombre)
+          )
+        );
+        this.areasOperativas.set(operacionales);
+
         if (this.selectedAccount()) {
           this.autoSelectAreaClinicaForAccount(this.selectedAccount());
         }
