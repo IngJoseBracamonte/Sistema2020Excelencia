@@ -22,17 +22,16 @@ export enum EstadoPedidoInterSede {
   Cancelado = 'Cancelado',
   Pendiente = 'Pendiente'
 }
-
 export interface AreaClinica {
   id: string;
-  sedeId: string;
-  codigo: string;
   nombre: string;
-  activo: boolean;
-  estado?: number;
-  estadoNombre?: string;
-  esAreaAdmision?: boolean;
+  codigo: string;
+  activo?: boolean; // Se agrega para resolver el error en cierre-cuenta
   esSubAreaAlmacenPrincipal?: boolean;
+  areaPadreId?: string | null;
+  servicioTarifaBaseId?: string | null;
+  tarifaBasePrecioUsd?: number;
+  tarifaBaseHonorarioUsd?: number;
 }
 
 export interface PedidoInterSede {
@@ -71,11 +70,16 @@ export interface CreatePedidoInterSedeDto {
   observaciones: string;
   lineas: { insumoId: string; cantidadSolicitada: number }[];
 }
-
+export interface SedeDto {
+  id: string;
+  nombre: string;
+  codigo: string;
+  activo: boolean;
+}
 @Injectable({ providedIn: 'root' })
 export class MultiSedeService {
   private http = inject(HttpClient);
-  
+
   // Sede Contexto Activo (para filtrados de stock reactivos)
   private activeSedeSignal = signal<Sede | null>(null);
   public activeSede = computed(() => this.activeSedeSignal());
@@ -99,7 +103,7 @@ export class MultiSedeService {
           this.activeSedeSignal.set(exists);
           return;
         }
-      } catch {}
+      } catch { }
     }
     const principal = sedes.find(s => s.esPrincipal && s.activo);
     if (principal) {

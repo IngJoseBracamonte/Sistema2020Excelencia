@@ -11,6 +11,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Codigo { get; private set; }
         public string Nombre { get; private set; }
         public bool Activo { get; private set; }
+        public bool EsSubAreaAlmacenPrincipal { get; set; }
+        public Guid? AreaPadreId { get; set; }
 
         // Strong-typed state and custom admission rates properties
         public EstadoUbicacion Estado { get; private set; }

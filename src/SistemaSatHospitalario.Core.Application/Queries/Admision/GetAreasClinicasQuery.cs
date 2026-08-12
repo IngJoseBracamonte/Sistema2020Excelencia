@@ -8,5 +8,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetAreasClinicasQuery : IRequest<List<AreaClinicaDto>>
     {
         public Guid? SedeId { get; set; }
+       public bool SoloActivas { get; set; } = true; 
     }
 }
