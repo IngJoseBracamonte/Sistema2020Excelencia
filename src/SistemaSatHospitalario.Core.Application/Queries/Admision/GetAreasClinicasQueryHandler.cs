@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -20,22 +21,35 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<AreaClinicaDto>> Handle(GetAreasClinicasQuery request, CancellationToken cancellationToken)
         {
-            var query = _context.AreasClinicas.AsQueryable();
+            var queryable = _context.AreasClinicas
+                .Include(a => a.Sede)
+                .Include(a => a.ServicioTarifaBase)
+                .AsNoTracking();
 
-            if (request.SedeId.HasValue)
+            if (request.SoloActivas)
             {
-                query = query.Where(a => a.SedeId == request.SedeId.Value);
+                queryable = queryable.Where(a => a.Activo);
             }
 
-            return await query
+            if (request.SedeId.HasValue && request.SedeId.Value != Guid.Empty)
+            {
+                queryable = queryable.Where(a => a.SedeId == request.SedeId.Value);
+            }
+
+            return await queryable
                 .Select(a => new AreaClinicaDto
                 {
                     Id = a.Id,
-                    SedeId = a.SedeId,
-                    SedeNombre = a.Sede.Nombre,
-                    Codigo = a.Codigo,
                     Nombre = a.Nombre,
-                    Activo = a.Activo
+                    Codigo = a.Codigo,
+                    Activo = a.Activo,
+                    SedeId = a.SedeId,
+                    SedeNombre = a.Sede != null ? a.Sede.Nombre : string.Empty,
+                    EsSubAreaAlmacenPrincipal = a.EsSubAreaAlmacenPrincipal,
+                    AreaPadreId = a.AreaPadreId,
+                    ServicioTarifaBaseId = a.ServicioTarifaBaseId,
+                    TarifaBasePrecioUsd = a.ServicioTarifaBase != null ? a.ServicioTarifaBase.PrecioBase : 0m,
+                    TarifaBaseHonorarioUsd = a.ServicioTarifaBase != null ? a.ServicioTarifaBase.HonorarioBase : 0m
                 })
                 .ToListAsync(cancellationToken);
         }

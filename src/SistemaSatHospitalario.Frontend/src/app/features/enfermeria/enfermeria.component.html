@@ -2,17 +2,20 @@
 
     <!-- NOTIFICACIONES TOASTS -->
     <div class="fixed top-8 right-8 z-[110] space-y-4 max-w-sm pointer-events-none">
-        <div *ngIf="actionMessage()" class="pointer-events-auto bg-[#0a0f1d]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-emerald-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
+        <div *ngIf="actionMessage()"
+            class="pointer-events-auto bg-[#0a0f1d]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-emerald-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
             <div class="h-10 w-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center shadow-lg">
                 <lucide-icon [name]="icons.Check" class="w-6 h-6"></lucide-icon>
             </div>
             <div class="flex-1">
-                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-60">Operación Exitosa</p>
+                <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest opacity-60">Operación Exitosa
+                </p>
                 <p class="text-sm font-black text-white leading-tight mt-0.5">{{ actionMessage() }}</p>
             </div>
         </div>
 
-        <div *ngIf="errorMessage()" class="pointer-events-auto bg-[#1a0f16]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-rose-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
+        <div *ngIf="errorMessage()"
+            class="pointer-events-auto bg-[#1a0f16]/90 backdrop-blur-2xl p-6 rounded-[1.5rem] border border-rose-500/30 shadow-2xl animate-fade-in flex items-center gap-4">
             <div class="h-10 w-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg">
                 <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
             </div>
@@ -23,117 +26,137 @@
         </div>
     </div>
 
-    <!-- Modal de Ingreso/Admisión de Paciente (Estilo Premium - Posicionado en Top de Pantalla) -->
-    <div *ngIf="showIngresoModal()" class="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-4 md:pt-8 overflow-y-auto">
-        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="showIngresoModal.set(false)"></div>
-        <div class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
-            
+    <!-- MODAL DE INGRESO / ADMISIÓN DE PACIENTE -->
+    <div *ngIf="showIngresoModal()"
+        class="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-4 md:pt-8 overflow-y-auto">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow"
+            (click)="showIngresoModal.set(false)"></div>
+        <div
+            class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
+
             <!-- Encabezado Modal -->
             <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
                 <div class="flex items-center space-x-4">
-                    <div class="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg shadow-rose-500/5">
+                    <div
+                        class="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-lg shadow-rose-500/5">
                         <lucide-icon [name]="icons.UserPlus" class="w-6 h-6"></lucide-icon>
                     </div>
                     <div>
-                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Ingresar Paciente a {{ type() }}</h3>
-                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Registrar admisión y abrir cuenta de atención</p>
+                        <h3 class="text-xl font-black text-white tracking-tight uppercase">Ingresar Paciente a {{ type()
+                            }}</h3>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Registrar
+                            admisión y abrir cuenta de atención</p>
                     </div>
                 </div>
-                <button (click)="showIngresoModal.set(false)" class="p-2 text-slate-500 hover:text-white transition-colors">
+                <button (click)="showIngresoModal.set(false)"
+                    class="p-2 text-slate-500 hover:text-white transition-colors">
                     <lucide-icon [name]="icons.X" class="w-6 h-6"></lucide-icon>
                 </button>
             </div>
-            
+
             <!-- STEP 1: Selección y Registro de Paciente -->
             <div *ngIf="ingresoStep() === 1" class="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                
-                <!-- Toggle: Buscar Existente vs Registrar Nuevo -->
+
                 <div class="grid grid-cols-2 gap-4">
                     <button type="button" (click)="showNewPatientForm.set(false)"
-                            [ngClass]="!showNewPatientForm() ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
-                            class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
+                        [ngClass]="!showNewPatientForm() ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
+                        class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
                         BUSCAR PACIENTE EXISTENTE
                     </button>
                     <button type="button" (click)="showNewPatientForm.set(true)"
-                            [ngClass]="showNewPatientForm() ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
-                            class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
+                        [ngClass]="showNewPatientForm() ? 'bg-rose-500/15 border-rose-500/30 text-white' : 'bg-white/5 border-white/5 text-slate-500'"
+                        class="p-4 border rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all text-center">
                         REGISTRAR NUEVO PACIENTE
                     </button>
                 </div>
 
-                <!-- FORMULARIO 1: BUSCAR PACIENTE -->
+                <!-- BUSCAR PACIENTE -->
                 <div *ngIf="!showNewPatientForm()" class="space-y-4 animate-fade-in">
                     <div class="flex items-center space-x-3 mb-2">
                         <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
-                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Buscador por Cédula o Nombre</h4>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Buscador por Cédula o
+                            Nombre</h4>
                     </div>
 
-                    <!-- Buscador e input -->
                     <div class="flex gap-2">
                         <div class="relative flex-1">
-                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                            <span
+                                class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
                                 <lucide-icon [name]="icons.Search" class="w-4 h-4"></lucide-icon>
                             </span>
-                            <input type="text" [ngModel]="searchIngresoTerm()" (ngModelChange)="searchIngresoTerm.set($event)" (keyup.enter)="buscarPacienteIngreso()"
+                            <input type="text" [ngModel]="searchIngresoTerm()"
+                                (ngModelChange)="searchIngresoTerm.set($event)" (keyup.enter)="buscarPacienteIngreso()"
                                 placeholder="Escriba cédula o nombre (mínimo 3 caracteres)..."
                                 class="w-full pl-11 pr-5 py-3.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white placeholder:text-slate-600 outline-none focus:border-rose-500/50 focus:ring-4 focus:ring-rose-500/10 transition-all font-bold uppercase">
                         </div>
                         <button type="button" (click)="buscarPacienteIngreso()"
-                                class="bg-rose-600 hover:bg-rose-500 text-white px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95">
+                            class="bg-rose-600 hover:bg-rose-500 text-white px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95">
                             BUSCAR
                         </button>
                     </div>
 
-                    <!-- Lista de resultados encontrados -->
-                    <div *ngIf="patientsEncontrados().length > 0" class="border border-rose-500/20 bg-black/40 rounded-2xl divide-y divide-white/5 max-h-48 overflow-y-auto">
+                    <div *ngIf="patientsEncontrados().length > 0"
+                        class="border border-rose-500/20 bg-black/40 rounded-2xl divide-y divide-white/5 max-h-48 overflow-y-auto">
                         <div *ngFor="let p of patientsEncontrados()" (click)="seleccionarPacienteIngreso(p)"
-                             class="p-4 hover:bg-rose-500/10 cursor-pointer flex justify-between items-center transition-all group">
+                            class="p-4 hover:bg-rose-500/10 cursor-pointer flex justify-between items-center transition-all group">
                             <div>
-                                <span class="text-xs font-black text-white uppercase group-hover:text-rose-400">{{ p.nombre }} {{ p.apellidos }}</span>
-                                <span class="text-[9px] text-slate-400 font-mono block mt-1">CÉDULA: {{ p.cedula }}</span>
+                                <span class="text-xs font-black text-white uppercase group-hover:text-rose-400">{{
+                                    p.nombre }} {{ p.apellidos }}</span>
+                                <span class="text-[9px] text-slate-400 font-mono block mt-1">CÉDULA: {{ p.cedula
+                                    }}</span>
                             </div>
                             <button type="button" (click)="seleccionarPacienteIngreso(p)"
-                                    class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95">
+                                class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95">
                                 SELECCIONAR
                             </button>
                         </div>
                     </div>
 
-                    <!-- Detalle del Paciente Seleccionado -->
-                    <div *ngIf="selectedPatientForIngreso()" class="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl flex justify-between items-center animate-scale-in">
+                    <div *ngIf="selectedPatientForIngreso()"
+                        class="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl flex justify-between items-center animate-scale-in">
                         <div>
-                            <span class="text-[8px] font-black text-rose-400 uppercase tracking-widest block">Paciente Seleccionado:</span>
+                            <span class="text-[8px] font-black text-rose-400 uppercase tracking-widest block">Paciente
+                                Seleccionado:</span>
                             <span class="text-xs font-black text-white uppercase mt-1 block">
                                 {{ selectedPatientForIngreso()?.nombre }} {{ selectedPatientForIngreso()?.apellidos }}
                             </span>
-                            <span class="text-[9px] text-slate-400 font-mono block mt-0.5">Cédula: {{ selectedPatientForIngreso()?.cedula }}</span>
+                            <span class="text-[9px] text-slate-400 font-mono block mt-0.5">Cédula: {{
+                                selectedPatientForIngreso()?.cedula }}</span>
                         </div>
-                        <button type="button" (click)="deseleccionarPacienteIngreso()" class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest">
+                        <button type="button" (click)="deseleccionarPacienteIngreso()"
+                            class="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest">
                             CAMBIAR
                         </button>
                     </div>
                 </div>
 
-                <!-- FORMULARIO 2: REGISTRO DE NUEVO PACIENTE -->
+                <!-- REGISTRO DE NUEVO PACIENTE -->
                 <div *ngIf="showNewPatientForm()" class="space-y-4 animate-fade-in">
                     <div class="flex items-center space-x-3 mb-2">
                         <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
-                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Datos del Nuevo Paciente</h4>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Datos del Nuevo
+                            Paciente</h4>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula / Pasaporte <span class="text-rose-500 font-bold">*</span></label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Cédula
+                                / Pasaporte <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.cedula"
                                 class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase font-mono">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres <span class="text-rose-500 font-bold">*</span></label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Nombres
+                                <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.nombre"
                                 class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos <span class="text-rose-500 font-bold">*</span></label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Apellidos
+                                <span class="text-rose-500 font-bold">*</span></label>
                             <input type="text" [(ngModel)]="newPatientData.apellidos"
                                 class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
                         </div>
@@ -141,7 +164,8 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sexo</label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sexo</label>
                             <div class="grid grid-cols-3 gap-2">
                                 <button *ngFor="let s of ['M', 'F', 'ND']" (click)="newPatientData.sexo = s"
                                     [class]="newPatientData.sexo === s ? 'bg-rose-600 text-white border-rose-600' : 'bg-black/40 text-slate-400 border-white/10 hover:bg-white/5'"
@@ -151,14 +175,17 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha de Nacimiento (DD-MM-YYYY) <span class="text-rose-500 font-bold">*</span></label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Fecha
+                                de Nacimiento (DD-MM-YYYY) <span class="text-rose-500 font-bold">*</span></label>
                             <div class="relative flex items-center">
                                 <input type="text" [(ngModel)]="fechaNacimientoFormatted"
-                                    placeholder="DD-MM-YYYY (ej: 02-07-1990)"
-                                    maxlength="10"
+                                    placeholder="DD-MM-YYYY (ej: 02-07-1990)" maxlength="10"
                                     class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs font-black text-white font-mono uppercase pr-10">
-                                <input type="date" [ngModel]="newPatientData.fechaNacimiento" (ngModelChange)="newPatientData.fechaNacimiento = $event"
-                                    class="absolute right-2 w-6 h-6 opacity-0 cursor-pointer z-10" title="Seleccionar fecha del calendario">
+                                <input type="date" [ngModel]="newPatientData.fechaNacimiento"
+                                    (ngModelChange)="newPatientData.fechaNacimiento = $event"
+                                    class="absolute right-2 w-6 h-6 opacity-0 cursor-pointer z-10"
+                                    title="Seleccionar fecha del calendario">
                                 <div class="absolute right-3 pointer-events-none text-slate-400">
                                     <lucide-icon [name]="icons.Calendar" class="w-4 h-4"></lucide-icon>
                                 </div>
@@ -168,9 +195,11 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular Principal <span class="text-rose-500 font-bold">*</span></label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Celular
+                                Principal <span class="text-rose-500 font-bold">*</span></label>
                             <div class="flex space-x-2">
-                                <select [(ngModel)]="newPatientData.codigoCelular" 
+                                <select [(ngModel)]="newPatientData.codigoCelular"
                                     class="w-24 bg-black/40 border border-white/10 rounded-xl px-2 py-3 text-[10px] font-black text-white outline-none">
                                     <option *ngFor="let c of codigosCelular" [value]="c">{{ c }}</option>
                                 </select>
@@ -179,33 +208,41 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección de Habitación (Opcional)</label>
-                            <input type="text" [(ngModel)]="newPatientData.direccion" placeholder="Ej: Calle Principal..."
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Dirección
+                                de Habitación (Opcional)</label>
+                            <input type="text" [(ngModel)]="newPatientData.direccion"
+                                placeholder="Ej: Calle Principal..."
                                 class="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
                         </div>
                     </div>
                 </div>
 
-                <!-- PARAMETROS COMUNES DE INGRESO (CONVENIO / SEGURO) -->
+                <!-- PARÁMETROS COMUNES DE INGRESO (CONVENIO / SEGURO / CAMA / MÉDICO TRATANTE) -->
                 <div class="pt-6 border-t border-white/5 space-y-4">
                     <div class="flex items-center space-x-3">
                         <span class="h-1.5 w-1.5 bg-rose-500 rounded-full"></span>
-                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Parámetros de Cobertura Administrativa</h4>
+                        <h4 class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Parámetros de
+                            Cobertura Administrativa</h4>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Aseguradora / Convenio de Ingreso</label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Aseguradora
+                                / Convenio de Ingreso</label>
                             <select [ngModel]="convenioIngresoId()" (ngModelChange)="convenioIngresoId.set($event)"
-                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
+                                class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
                                 <option [value]="null">--- PARTICULAR (SIN SEGURO) ---</option>
                                 <option *ngFor="let c of convenios()" [value]="c.id">{{ c.nombre | uppercase }}</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Cama / Habitación Asignada</label>
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Cama
+                                / Habitación Asignada</label>
                             <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
-                                    class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
+                                class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
                                 <option [value]="null">--- SELECCIONAR CAMA ---</option>
                                 <option *ngFor="let cama of camasDisponiblesIngreso()" [value]="cama.camaId">
                                     {{ cama.nombre }} ({{ cama.codigo }})
@@ -217,14 +254,17 @@
                     <!-- Médico Tratante -->
                     <div class="mt-4">
                         <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">
-                            <lucide-icon [name]="icons.Stethoscope" class="w-3 h-3 inline-block mr-1 -mt-0.5"></lucide-icon>
+                            <lucide-icon [name]="icons.Stethoscope"
+                                class="w-3 h-3 inline-block mr-1 -mt-0.5"></lucide-icon>
                             Médico Tratante
                             <span *ngIf="esMedicoTratanteRequerido()" class="text-rose-500 font-bold">*</span>
-                            <span *ngIf="!esMedicoTratanteRequerido()" class="text-slate-600 font-normal ml-1">(Opcional)</span>
+                            <span *ngIf="!esMedicoTratanteRequerido()"
+                                class="text-slate-600 font-normal ml-1">(Opcional)</span>
                         </label>
-                        <select [ngModel]="medicoTratanteIngresoId()" (ngModelChange)="medicoTratanteIngresoId.set($event)"
-                                [ngClass]="esMedicoTratanteRequerido() && !medicoTratanteIngresoId() ? 'border-rose-500/40' : 'border-white/10'"
-                                class="w-full bg-black/40 border px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
+                        <select [ngModel]="medicoTratanteIngresoId()"
+                            (ngModelChange)="medicoTratanteIngresoId.set($event)"
+                            [ngClass]="esMedicoTratanteRequerido() && !medicoTratanteIngresoId() ? 'border-rose-500/40' : 'border-white/10'"
+                            class="w-full bg-black/40 border px-4 py-3 rounded-xl text-xs font-black text-white outline-none focus:border-rose-500/50 min-h-[44px]">
                             <option [value]="null">--- SELECCIONAR MÉDICO ---</option>
                             <option *ngFor="let m of medicos()" [value]="m.id">
                                 {{ m.nombre | uppercase }} — {{ m.especialidad | uppercase }}
@@ -233,38 +273,42 @@
                     </div>
                 </div>
 
-                <!-- Mensaje de Error Interno Modal -->
-                <div *ngIf="errorMessage()" class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-xl">
+                <div *ngIf="errorMessage()"
+                    class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-xl">
                     {{ errorMessage() }}
                 </div>
 
-                <!-- Botones Accion Modal (Responsive Wrap) -->
                 <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-white/5">
                     <button type="button" (click)="showIngresoModal.set(false)"
-                            class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all min-h-[44px]">
+                        class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all min-h-[44px]">
                         CANCELAR
                     </button>
                     <button type="button" (click)="procesarIngreso()" [disabled]="isLoading()"
-                            class="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
-                        {{ isLoading() ? 'PROCESANDO...' : (type() === 'Emergencia' ? 'SIGUIENTE: DATOS DE TRIAGE' : 'PROCESAR INGRESO CLÍNICO') }}
+                        class="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
+                        {{ isLoading() ? 'PROCESANDO...' : (type() === 'Emergencia' ? 'SIGUIENTE: DATOS DE TRIAGE' :
+                        'PROCESAR INGRESO CLÍNICO') }}
                     </button>
                 </div>
 
             </div>
 
             <!-- STEP 2: Recepción, Motivo de Consulta y Triage de Enfermería (Solo Emergencia) -->
-            <div *ngIf="ingresoStep() === 2" class="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar animate-fade-in">
-                <!-- Seccion 2: Recepción, Motivo de Consulta y Triage -->
+            <div *ngIf="ingresoStep() === 2"
+                class="p-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar animate-fade-in">
                 <div class="space-y-4">
                     <div class="flex items-center space-x-3 mb-2">
                         <span class="h-2 w-2 bg-rose-500 rounded-full animate-pulse"></span>
-                        <h4 class="text-xs font-black text-white uppercase tracking-wider">2. RECEPCIÓN, MOTIVO DE CONSULTA Y TRIAGE DE ENFERMERÍA</h4>
+                        <h4 class="text-xs font-black text-white uppercase tracking-wider">2. RECEPCIÓN, MOTIVO DE
+                            CONSULTA Y TRIAGE DE ENFERMERÍA</h4>
                     </div>
 
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Motivo de Consulta (Relato Breve) *</label>
-                            <textarea [ngModel]="triageMotivoConsulta()" (ngModelChange)="triageMotivoConsulta.set($event)"
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1 mb-1">Motivo
+                                de Consulta (Relato Breve) *</label>
+                            <textarea [ngModel]="triageMotivoConsulta()"
+                                (ngModelChange)="triageMotivoConsulta.set($event)"
                                 placeholder="Ej: Ingresa por presentar dolor abdominal agudo..."
                                 class="w-full bg-black/40 border border-white/10 px-4 py-3 rounded-xl text-xs text-white focus:border-rose-500/50 outline-none uppercase h-20"></textarea>
                         </div>
@@ -272,43 +316,62 @@
 
                     <div class="grid grid-cols-2 sm:grid-cols-6 gap-3">
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">T.A. (mmHg)</label>
-                            <input type="text" [ngModel]="triageTensionArterial()" (ngModelChange)="triageTensionArterial.set($event)" placeholder="120/80"
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">T.A.
+                                (mmHg)</label>
+                            <input type="text" [ngModel]="triageTensionArterial()"
+                                (ngModelChange)="triageTensionArterial.set($event)" placeholder="120/80"
                                 class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase text-center font-mono">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">F.C. (xmin)</label>
-                            <input type="number" [ngModel]="triageFrecuenciaCardiaca()" (ngModelChange)="triageFrecuenciaCardiaca.set($event)" placeholder="80"
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">F.C.
+                                (xmin)</label>
+                            <input type="number" [ngModel]="triageFrecuenciaCardiaca()"
+                                (ngModelChange)="triageFrecuenciaCardiaca.set($event)" placeholder="80"
                                 class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white text-center font-mono">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">F.R. (xmin)</label>
-                            <input type="number" [ngModel]="triageFrecuenciaRespiratoria()" (ngModelChange)="triageFrecuenciaRespiratoria.set($event)" placeholder="18"
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">F.R.
+                                (xmin)</label>
+                            <input type="number" [ngModel]="triageFrecuenciaRespiratoria()"
+                                (ngModelChange)="triageFrecuenciaRespiratoria.set($event)" placeholder="18"
                                 class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white text-center font-mono">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Temp (°C)</label>
-                            <input type="number" step="0.1" [ngModel]="triageTemperatura()" (ngModelChange)="triageTemperatura.set($event)" placeholder="37.0"
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Temp
+                                (°C)</label>
+                            <input type="number" step="0.1" [ngModel]="triageTemperatura()"
+                                (ngModelChange)="triageTemperatura.set($event)" placeholder="37.0"
                                 class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white text-center font-mono">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sat O2 (%)</label>
-                            <input type="number" [ngModel]="triageSaturacionO2()" (ngModelChange)="triageSaturacionO2.set($event)" placeholder="98"
+                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Sat
+                                O2 (%)</label>
+                            <input type="number" [ngModel]="triageSaturacionO2()"
+                                (ngModelChange)="triageSaturacionO2.set($event)" placeholder="98"
                                 class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white text-center font-mono">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Glicemia Capilar</label>
-                            <input type="number" [ngModel]="triageGlicemiaCapilar()" (ngModelChange)="triageGlicemiaCapilar.set($event)" placeholder="Opcional"
+                            <label
+                                class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Glicemia
+                                Capilar</label>
+                            <input type="number" [ngModel]="triageGlicemiaCapilar()"
+                                (ngModelChange)="triageGlicemiaCapilar.set($event)" placeholder="Opcional"
                                 class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white text-center font-mono">
                         </div>
                     </div>
 
                     <div class="space-y-1 pt-2">
-                        <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Clasificación Triaje</label>
+                        <label
+                            class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Clasificación
+                            Triaje</label>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <button type="button" *ngFor="let nivel of ['Nivel I (Rojo)', 'Nivel II (Naranja)', 'Nivel III (Amarillo)', 'Nivel IV/V (Verde/Azul)']"
-                                (click)="triageClasificacion.set(nivel)"
-                                [ngClass]="{
+                            <button type="button"
+                                *ngFor="let nivel of ['Nivel I (Rojo)', 'Nivel II (Naranja)', 'Nivel III (Amarillo)', 'Nivel IV/V (Verde/Azul)']"
+                                (click)="triageClasificacion.set(nivel)" [ngClass]="{
                                     'bg-red-500 text-white border-red-600': triageClasificacion() === nivel && nivel.includes('Rojo'),
                                     'bg-orange-500 text-white border-orange-600': triageClasificacion() === nivel && nivel.includes('Naranja'),
                                     'bg-yellow-500 text-slate-950 border-yellow-600': triageClasificacion() === nivel && nivel.includes('Amarillo'),
@@ -322,235 +385,13 @@
                     </div>
                 </div>
 
-                <!-- Seccion 3: Valoración Física Inicial Rápida -->
-                <div class="pt-6 border-t border-white/5 space-y-4">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <span class="h-2 w-2 bg-rose-500 rounded-full animate-pulse"></span>
-                        <h4 class="text-xs font-black text-white uppercase tracking-wider">3. VALORACIÓN FÍSICA INICIAL RÁPIDA</h4>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Left Sub-column -->
-                        <div class="space-y-4">
-                            <!-- Estado Conciencia -->
-                            <div class="space-y-1">
-                                <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Estado de Conciencia</label>
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    <button type="button" *ngFor="let ec of ['Alerta', 'Somnoliento', 'Estuporoso', 'Inconsciente']"
-                                        (click)="triageEstadoConciencia.set(ec)"
-                                        [ngClass]="triageEstadoConciencia() === ec ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/10' : 'bg-black/40 text-slate-400 border-white/10 hover:bg-white/5'"
-                                        class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
-                                        {{ ec }}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Escala de Glasgow -->
-                            <div class="space-y-2 p-4 bg-black/30 border border-white/5 rounded-2xl">
-                                <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Escala de Glasgow</span>
-                                <div class="grid grid-cols-3 gap-2">
-                                    <div>
-                                        <label class="block text-[7px] text-slate-500 font-black uppercase tracking-widest mb-1">Oculares</label>
-                                        <select [ngModel]="triageGlasgowOcular()" (ngModelChange)="triageGlasgowOcular.set($event)"
-                                            class="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 text-[10px] font-black text-white outline-none">
-                                            <option [value]="4">4 - ESPONTÁNEO</option>
-                                            <option [value]="3">3 - AL HABLAR</option>
-                                            <option [value]="2">2 - AL DOLOR</option>
-                                            <option [value]="1">1 - NINGUNO</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[7px] text-slate-500 font-black uppercase tracking-widest mb-1">Verbal</label>
-                                        <select [ngModel]="triageGlasgowVerbal()" (ngModelChange)="triageGlasgowVerbal.set($event)"
-                                            class="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 text-[10px] font-black text-white outline-none">
-                                            <option [value]="5">5 - ORIENTADO</option>
-                                            <option [value]="4">4 - CONFUSO</option>
-                                            <option [value]="3">3 - INAPROPIADO</option>
-                                            <option [value]="2">2 - INCOMPRENSIBLE</option>
-                                            <option [value]="1">1 - NINGUNO</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[7px] text-slate-500 font-black uppercase tracking-widest mb-1">Motor</label>
-                                        <select [ngModel]="triageGlasgowMotor()" (ngModelChange)="triageGlasgowMotor.set($event)"
-                                            class="w-full bg-black/40 border border-white/10 rounded-xl px-2 py-1.5 text-[10px] font-black text-white outline-none">
-                                            <option [value]="6">6 - OBEDECE</option>
-                                            <option [value]="5">5 - LOCALIZA</option>
-                                            <option [value]="4">4 - RETIRA</option>
-                                            <option [value]="3">3 - FLEXIÓN ANÓMALA</option>
-                                            <option [value]="2">2 - EXTENSIÓN ANÓMALA</option>
-                                            <option [value]="1">1 - NINGUNO</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="flex justify-between items-center pt-2 border-t border-white/5">
-                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Glasgow Total:</span>
-                                    <span class="text-xs font-black text-rose-500 font-mono">{{ triageGlasgowTotal() }}/15</span>
-                                </div>
-                            </div>
-
-                            <!-- Estado Circulatorio y Piel/Mucosas -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Estado Circulatorio: Pulso</label>
-                                    <select [ngModel]="triagePulso()" (ngModelChange)="triagePulso.set($event)"
-                                        class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-xs font-black text-white outline-none">
-                                        <option value="Rítmico">RÍTMICO</option>
-                                        <option value="Arrítmico">ARRÍTMICO</option>
-                                        <option value="Débil">DÉBIL</option>
-                                        <option value="Fuerte">FUERTE</option>
-                                    </select>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Piel y Mucosas</label>
-                                    <input type="text" [ngModel]="triagePielMucosas()" (ngModelChange)="triagePielMucosas.set($event)" placeholder="Normocoloreada"
-                                        class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase">
-                                </div>
-                            </div>
-
-                            <!-- Antecedentes Médicos -->
-                            <div class="space-y-2 p-4 bg-black/30 border border-white/5 rounded-2xl">
-                                <span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Antecedentes Médicos</span>
-                                <div class="flex gap-4">
-                                    <label class="flex items-center space-x-2 text-xs font-bold text-slate-300 cursor-pointer">
-                                        <input type="checkbox" [ngModel]="triageAntecedenteHTA()" (ngModelChange)="triageAntecedenteHTA.set($event)"
-                                            class="rounded border-white/10 bg-black/40 text-rose-600 focus:ring-rose-500/20">
-                                        <span>HTAs</span>
-                                    </label>
-                                    <label class="flex items-center space-x-2 text-xs font-bold text-slate-300 cursor-pointer">
-                                        <input type="checkbox" [ngModel]="triageAntecedenteDiabetes()" (ngModelChange)="triageAntecedenteDiabetes.set($event)"
-                                            class="rounded border-white/10 bg-black/40 text-rose-600 focus:ring-rose-500/20">
-                                        <span>Diabetes</span>
-                                    </label>
-                                    <label class="flex items-center space-x-2 text-xs font-bold text-slate-300 cursor-pointer">
-                                        <input type="checkbox" [ngModel]="triageAntecedenteCardiopatia()" (ngModelChange)="triageAntecedenteCardiopatia.set($event)"
-                                            class="rounded border-white/10 bg-black/40 text-rose-600 focus:ring-rose-500/20">
-                                        <span>Cardiopatía</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Right Sub-column -->
-                        <div class="space-y-4">
-                            <!-- Vía Aérea y Ventilación -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Vía Aérea</label>
-                                    <select [ngModel]="triageViaAerea()" (ngModelChange)="triageViaAerea.set($event)"
-                                        class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-xs font-black text-white outline-none">
-                                        <option value="Permeable">PERMEABLE</option>
-                                        <option value="Obstruida">OBSTRUIDA</option>
-                                        <option value="Apoyo Mecánico">APOYO MECÁNICO</option>
-                                    </select>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Ventilación</label>
-                                    <select [ngModel]="triageVentilacion()" (ngModelChange)="triageVentilacion.set($event)"
-                                        class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-xs font-black text-white outline-none">
-                                        <option value="Normal">NORMAL</option>
-                                        <option value="Taquipnea">TAQUIPNEA</option>
-                                        <option value="Disnea">DISNEA</option>
-                                        <option value="Apnea">APNEA</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Llenado Capilar y Pupilas -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Llenado Capilar</label>
-                                    <select [ngModel]="triageLlenadoCapilar()" (ngModelChange)="triageLlenadoCapilar.set($event)"
-                                        class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-xs font-black text-white outline-none">
-                                        <option value="&lt; 2 segundos">&lt; 2 SEGUNDOS</option>
-                                        <option value="&gt; 2 segundos">&gt; 2 SEGUNDOS</option>
-                                    </select>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Pupilas</label>
-                                    <select [ngModel]="triagePupilas()" (ngModelChange)="triagePupilas.set($event)"
-                                        class="w-full bg-black/40 border border-white/10 px-3 py-2 rounded-xl text-xs font-black text-white outline-none">
-                                        <option value="Isocóricas">ISOCÓRICAS</option>
-                                        <option value="Anisocóricas">ANISOCÓRICAS</option>
-                                        <option value="Mióticas">MIÓTICAS</option>
-                                        <option value="Midriáticas">MIDRIÁTICAS</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Alergias Conocidas -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div class="space-y-1 sm:col-span-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">¿Alergias?</label>
-                                    <div class="grid grid-cols-2 gap-1">
-                                        <button type="button" (click)="triageAlergiasNinguna.set(true)"
-                                            [class]="triageAlergiasNinguna() ? 'bg-rose-600 text-white border-rose-600' : 'bg-black/40 text-slate-400 border-white/10'"
-                                            class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">NO</button>
-                                        <button type="button" (click)="triageAlergiasNinguna.set(false)"
-                                            [class]="!triageAlergiasNinguna() ? 'bg-rose-600 text-white border-rose-600' : 'bg-black/40 text-slate-400 border-white/10'"
-                                            class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">SÍ</button>
-                                    </div>
-                                </div>
-                                <div class="space-y-1 sm:col-span-2">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Especificar Alergias</label>
-                                    <input type="text" [disabled]="triageAlergiasNinguna()" [ngModel]="triageAlergiasEspecificar()" (ngModelChange)="triageAlergiasEspecificar.set($event)" placeholder="Ej: Penicilina"
-                                        class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase disabled:opacity-30">
-                                </div>
-                            </div>
-
-                            <!-- Accesos Venosos -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div class="space-y-1 sm:col-span-1">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">¿Accesos Venosos?</label>
-                                    <div class="grid grid-cols-2 gap-1">
-                                        <button type="button" (click)="triageAccesosVenososTrae.set(false)"
-                                            [class]="!triageAccesosVenososTrae() ? 'bg-rose-600 text-white border-rose-600' : 'bg-black/40 text-slate-400 border-white/10'"
-                                            class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">NO</button>
-                                        <button type="button" (click)="triageAccesosVenososTrae.set(true)"
-                                            [class]="triageAccesosVenososTrae() ? 'bg-rose-600 text-white border-rose-600' : 'bg-black/40 text-slate-400 border-white/10'"
-                                            class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">SÍ</button>
-                                    </div>
-                                </div>
-                                <div class="space-y-1 sm:col-span-2">
-                                    <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Especificar Lugar</label>
-                                    <input type="text" [disabled]="!triageAccesosVenososTrae()" [ngModel]="triageAccesosVenososLugar()" (ngModelChange)="triageAccesosVenososLugar.set($event)" placeholder="Ej: Antiguas de MSD"
-                                        class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl focus:border-rose-500/50 focus:outline-none text-xs text-white uppercase disabled:opacity-30">
-                                </div>
-                            </div>
-
-                            <!-- Pertenencias -->
-                            <div class="space-y-1">
-                                <label class="block text-[8px] font-black text-slate-500 uppercase tracking-widest px-1">Destino Pertenencias</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button type="button" (click)="triagePertenencias.set('Entregadas a familiar')"
-                                        [class]="triagePertenencias() === 'Entregadas a familiar' ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/10' : 'bg-black/40 text-slate-400 border-white/10 hover:bg-white/5'"
-                                        class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
-                                        ENTREGADAS A FAMILIAR
-                                    </button>
-                                    <button type="button" (click)="triagePertenencias.set('Custodia administrativa')"
-                                        [class]="triagePertenencias() === 'Custodia administrativa' ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/10' : 'bg-black/40 text-slate-400 border-white/10 hover:bg-white/5'"
-                                        class="py-2 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
-                                        CUSTODIA ADM.
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mensaje de Error Interno Modal -->
-                <div *ngIf="errorMessage()" class="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-xl">
-                    {{ errorMessage() }}
-                </div>
-
-                <!-- Botones Accion Modal (Responsive Wrap) -->
                 <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-white/5">
                     <button type="button" (click)="ingresoStep.set(1)"
-                            class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all min-h-[44px]">
+                        class="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all min-h-[44px]">
                         ATRÁS
                     </button>
                     <button type="button" (click)="procesarIngresoEmergenciaCompleto()" [disabled]="isLoading()"
-                            class="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
+                        class="w-full sm:w-auto bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 min-h-[44px]">
                         {{ isLoading() ? 'PROCESANDO REGISTRO...' : 'REGISTRAR INGRESO Y TRIAGE CLÍNICO' }}
                     </button>
                 </div>
@@ -558,11 +399,13 @@
         </div>
     </div>
 
-    <!-- HEADER GENERAL DE SECCIÓN -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-5 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl">
+    <!-- HEADER GENERAL DE SECCIÓN CON BOTONES DE FILTRO (EMERGENCIA, HOSPITALIZACIÓN, UCI) -->
+    <div
+        class="flex flex-col md:flex-row md:items-center justify-between bg-surface-card backdrop-blur-3xl p-5 rounded-[2rem] border border-white/5 relative overflow-hidden shadow-2xl">
         <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -z-10 blur-3xl"></div>
         <div class="flex items-center space-x-6">
-            <div class="h-12 w-12 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
+            <div
+                class="h-12 w-12 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/5">
                 <lucide-icon [name]="selectedAccount() ? icons.Activity : icons.FileText" class="w-6 h-6"></lucide-icon>
             </div>
             <div>
@@ -575,103 +418,89 @@
             </div>
         </div>
 
-        <!-- Selector de Área Clínica de Monitoreo & Solicitud de Stock -->
-        <div class="flex flex-wrap items-center bg-black/40 p-1.5 rounded-[1.5rem] border border-white/5 mt-4 md:mt-0 gap-1">
+        <!-- Selector de Sede de Monitoreo & Solicitud de Stock -->
+        <div
+            class="flex flex-wrap items-center bg-black/40 p-1.5 rounded-[1.5rem] border border-white/5 mt-4 md:mt-0 gap-1">
             <button (click)="nursingAreaFilter.set(TIPO_INGRESO.EMERGENCIA); refreshAccounts()"
-                    [class]="nursingAreaFilter() === TIPO_INGRESO.EMERGENCIA ? 'bg-rose-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
-                    class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
+                [class]="nursingAreaFilter() === TIPO_INGRESO.EMERGENCIA ? 'bg-rose-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
+                class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                 Emergencia
             </button>
             <button (click)="nursingAreaFilter.set(TIPO_INGRESO.HOSPITALIZACION); refreshAccounts()"
-                    [class]="nursingAreaFilter() === TIPO_INGRESO.HOSPITALIZACION ? 'bg-indigo-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
-                    class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
+                [class]="nursingAreaFilter() === TIPO_INGRESO.HOSPITALIZACION ? 'bg-indigo-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
+                class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                 Hospitalización
             </button>
             <button (click)="nursingAreaFilter.set(TIPO_INGRESO.UCI); refreshAccounts()"
-                    [class]="nursingAreaFilter() === TIPO_INGRESO.UCI ? 'bg-amber-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
-                    class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
+                [class]="nursingAreaFilter() === TIPO_INGRESO.UCI ? 'bg-amber-500 text-white shadow-xl' : 'text-slate-400 hover:text-white'"
+                class="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                 UCI
             </button>
         </div>
     </div>
 
-    <!-- MAIN CONTENT VIEW AREA ACCORDING TO MODULETAB -->
+    <!-- MAIN CONTENT VIEW AREA -->
     <div *ngIf="moduleTab() === 'triage'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-fade-in">
-        
+
         <!-- LEFT COLUMN (4/12): ACTIVE PATIENT ACCORDION DIRECTORY -->
         <div class="lg:col-span-4 space-y-6">
             <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xs font-black text-white uppercase tracking-wider">Pacientes Activos</h3>
                     <div class="flex items-center gap-2">
-                        <button (click)="abrirModalIngreso()" class="h-9 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center gap-2 font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all cursor-pointer shadow-lg shadow-rose-500/10 animate-fade-in">
+                        <button (click)="abrirModalIngreso()"
+                            class="h-9 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center gap-2 font-black uppercase text-[9px] tracking-widest active:scale-95 transition-all cursor-pointer shadow-lg shadow-rose-500/10 animate-fade-in">
                             <lucide-icon [name]="icons.Plus" class="w-3.5 h-3.5"></lucide-icon>
                             Ingresar Paciente
                         </button>
-                        <button (click)="refreshAccounts()" 
-                                [disabled]="isLoading()" 
-                                class="p-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/5 rounded-xl transition-all active:scale-95 disabled:opacity-50">
-                            <lucide-icon [name]="icons.RefreshCcw" class="w-4 h-4" [class.animate-spin]="isLoading()"></lucide-icon>
+                        <button (click)="refreshAccounts()" [disabled]="isLoading()"
+                            class="p-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/5 rounded-xl transition-all active:scale-95 disabled:opacity-50">
+                            <lucide-icon [name]="icons.RefreshCcw" class="w-4 h-4"
+                                [class.animate-spin]="isLoading()"></lucide-icon>
                         </button>
                     </div>
                 </div>
 
-                <!-- Input de búsqueda con Icono de Lupita -->
                 <div class="relative">
-                    <input type="text" 
-                           [ngModel]="searchTerm()"
-                           (ngModelChange)="searchTerm.set($event)"
-                           placeholder="Buscar por cédula o nombre..."
-                           class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs tracking-tight text-white placeholder:text-slate-500 uppercase outline-none focus:border-rose-500/30 transition-all">
+                    <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+                        placeholder="Buscar por cédula o nombre..."
+                        class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold text-xs tracking-tight text-white placeholder:text-slate-500 uppercase outline-none focus:border-rose-500/30 transition-all">
                     <lucide-icon [name]="icons.Search"
-                                 class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></lucide-icon>
+                        class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></lucide-icon>
                 </div>
 
-                <!-- Lista de pacientes -->
                 <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-                    <div *ngFor="let acc of filteredAccounts()"
-                         (click)="selectAccount(acc)"
-                         [ngClass]="selectedAccount()?.cuentaId === acc.cuentaId ? 'bg-rose-500/5 border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.05)]' : 'bg-white/[0.01] hover:bg-white/[0.03] border-white/5'"
-                         class="p-4 border rounded-2xl cursor-pointer transition-all active:scale-98 flex justify-between items-center group relative overflow-hidden">
-                        
+                    <div *ngFor="let acc of filteredAccounts()" (click)="selectAccount(acc)"
+                        [ngClass]="selectedAccount()?.cuentaId === acc.cuentaId ? 'bg-rose-500/5 border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.05)]' : 'bg-white/[0.01] hover:bg-white/[0.03] border-white/5'"
+                        class="p-4 border rounded-2xl cursor-pointer transition-all active:scale-98 flex justify-between items-center group relative overflow-hidden">
+
                         <div class="space-y-2 relative z-10">
                             <div>
-                                <h4 class="text-xs font-black uppercase text-white tracking-tight leading-none group-hover:text-rose-400 transition-colors">
+                                <h4
+                                    class="text-xs font-black uppercase text-white tracking-tight leading-none group-hover:text-rose-400 transition-colors">
                                     {{ acc.pacienteNombre }}
                                 </h4>
                                 <p class="text-[10px] text-slate-400 font-mono mt-1">{{ acc.pacienteCedula }}</p>
                             </div>
-                            
+
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-[8px] font-black uppercase tracking-widest">
+                                <span
+                                    class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-[8px] font-black uppercase tracking-widest">
                                     {{ acc.tipoIngreso }}
                                 </span>
-                                <span *ngIf="acc.areaClinicaNombre" class="px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-[8px] font-black uppercase tracking-widest">
-                                    {{ acc.areaClinicaNombre }}
-                                </span>
-                                <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
-                                    {{ acc.seguroNombre }}
-                                </span>
-                                <span *ngIf="acc.medicoTratanteNombre || acc['medicoTratante'] || acc['medicoNombre']" class="text-[8px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold flex items-center gap-1 border border-blue-500/30 uppercase">
+                                <span *ngIf="acc.medicoTratanteNombre || acc['medicoTratante'] || acc['medicoNombre']"
+                                    class="text-[8px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold flex items-center gap-1 border border-blue-500/30 uppercase">
                                     Dr. {{ acc.medicoTratanteNombre || acc['medicoTratante'] || acc['medicoNombre'] }}
                                 </span>
                             </div>
                         </div>
 
                         <div class="text-right relative z-10 flex flex-col items-end">
-                            <span class="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-[9px] font-black uppercase tracking-wider block font-mono">
+                            <span
+                                class="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-lg text-[9px] font-black uppercase tracking-wider block font-mono">
                                 {{ acc.subAreaClinica || 'Sin Cama' }}
                             </span>
-                            <span class="text-[8px] text-slate-500 font-black uppercase tracking-widest mt-1 block">
-                                Cama / Ubicación
-                            </span>
                         </div>
-                    </div>
-
-                    <!-- Empty state -->
-                    <div *ngIf="filteredAccounts().length === 0" class="text-center py-12 text-slate-500">
-                        <lucide-icon [name]="icons.User" class="w-8 h-8 mx-auto mb-2 opacity-35"></lucide-icon>
-                        <p class="text-[10px] font-black uppercase tracking-wider">No hay pacientes activos en esta sección</p>
                     </div>
                 </div>
             </div>
@@ -679,612 +508,322 @@
 
         <!-- RIGHT COLUMN (8/12): CLINICAL WORKSPACE -->
         <div class="lg:col-span-8 space-y-6">
-            
-            <div *ngIf="!selectedAccount()" class="glass-panel p-16 rounded-[2rem] border border-white/5 text-center flex flex-col items-center justify-center min-h-[450px]">
-                <div class="h-16 w-16 bg-rose-500/5 text-rose-500/40 border border-rose-500/10 rounded-[1.5rem] flex items-center justify-center mb-6">
+
+            <div *ngIf="!selectedAccount()"
+                class="glass-panel p-16 rounded-[2rem] border border-white/5 text-center flex flex-col items-center justify-center min-h-[450px]">
+                <div
+                    class="h-16 w-16 bg-rose-500/5 text-rose-500/40 border border-rose-500/10 rounded-[1.5rem] flex items-center justify-center mb-6">
                     <lucide-icon [name]="icons.Stethoscope" class="w-8 h-8"></lucide-icon>
                 </div>
                 <h3 class="text-sm font-black text-white uppercase tracking-wider">Bandeja de Trabajo Vacía</h3>
                 <p class="text-[10px] text-slate-500 font-bold max-w-sm mt-2 leading-relaxed">
-                    Seleccione un paciente de la lista lateral para cargar insumos médicos, registrar signos vitales de triage u ordenar traslados internos.
+                    Seleccione un paciente de la lista lateral para cargar insumos médicos, registrar signos vitales de
+                    triage u ordenar traslados internos.
                 </p>
             </div>
 
             <!-- PATIENT WORKSPACE CARD -->
             <div *ngIf="selectedAccount()" class="space-y-6 animate-fade-in-up">
-                
-                <!-- Success/Info Action Banner -->
-                <div *ngIf="actionMessage()" class="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-2xl animate-bounce flex items-center gap-2">
-                    <lucide-icon [name]="icons.Check" class="w-4 h-4"></lucide-icon>
-                    <span>{{ actionMessage() }}</span>
-                </div>
-
-                <!-- PATIENT META HEADER CARD -->
-                <div class="glass-panel p-6 rounded-[2rem] border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div class="space-y-2">
-                        <span class="px-3 py-1 bg-[#1a2c4e] border border-blue-500/20 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest">
-                            Cuenta Abierta
-                        </span>
-                        <h2 class="text-xl font-bold text-white uppercase tracking-tight font-outfit mt-1">
-                            {{ selectedAccount()?.pacienteNombre }}
-                        </h2>
-                        <div class="flex items-center gap-4 text-xs text-slate-400 font-medium">
-                            <span class="font-mono">Cédula: {{ selectedAccount()?.pacienteCedula }}</span>
-                            <span class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
-                            <span>Seguro: {{ selectedAccount()?.seguroNombre || 'PARTICULAR' }}</span>
-                            <span class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
-                            <span *ngIf="isAccountSolvent()" class="inline-flex items-center gap-1.5 text-emerald-400 font-bold">
-                                <lucide-icon [name]="icons.CheckCircle" class="w-3.5 h-3.5"></lucide-icon>
-                                Solvente
-                            </span>
-                            <span *ngIf="!isAccountSolvent()" class="inline-flex items-center gap-1.5 text-amber-400 font-bold">
-                                <lucide-icon [name]="icons.AlertTriangle" class="w-3.5 h-3.5"></lucide-icon>
-                                Pendiente
-                            </span>
-                            <span *ngIf="selectedAccount()?.areaClinicaNombre" class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
-                            <span *ngIf="selectedAccount()?.areaClinicaNombre">Cama: {{ selectedAccount()?.areaClinicaNombre }}</span>
-                            <span *ngIf="selectedAccount()?.medicoTratanteNombre || selectedAccount()?.['medicoTratante'] || selectedAccount()?.['medicoNombre']" class="h-1.5 w-1.5 bg-slate-700 rounded-full"></span>
-                            <span *ngIf="selectedAccount()?.medicoTratanteNombre || selectedAccount()?.['medicoTratante'] || selectedAccount()?.['medicoNombre']" class="inline-flex items-center gap-1.5 text-blue-400 font-bold border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 rounded-xl text-[10px] uppercase">
-                                <lucide-icon [name]="icons.Stethoscope" class="w-3.5 h-3.5"></lucide-icon>
-                                Dr. {{ selectedAccount()?.medicoTratanteNombre || selectedAccount()?.['medicoTratante'] || selectedAccount()?.['medicoNombre'] }}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                        <!-- BOTÓN DESPLEGABLE DAR DE ALTA -->
-                        <div class="relative group alta-dropdown-container">
-                            <button type="button" 
-                                    (click)="toggleAltaDropdown($event)" 
-                                    class="px-5 py-3.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2 cursor-pointer select-none">
-                                🚪 DAR DE ALTA
-                                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-200" [class.rotate-180]="isAltaDropdownOpen()"></lucide-icon>
-                            </button>
-                            <!-- Contenedor con puente de hover continuo (top-full pt-2 + pseudo elemento) y toggle persistente por clic -->
-                            <div class="absolute right-0 top-full pt-2 w-52 hidden group-hover:block z-[90]"
-                                 [class.!block]="isAltaDropdownOpen()">
-                                <div class="bg-[#0b1120] border border-white/10 rounded-2xl shadow-2xl overflow-hidden before:content-[''] before:absolute before:-top-2 before:left-0 before:right-0 before:h-2">
-                                    <button type="button" (click)="iniciarAltaMedica(0)" class="w-full px-4 py-3 text-left hover:bg-white/5 text-xs font-black text-emerald-400 flex items-center gap-2 cursor-pointer">
-                                        🟢 Alta Normal
-                                    </button>
-                                    <button type="button" (click)="iniciarAltaMedica(1)" class="w-full px-4 py-3 text-left hover:bg-white/5 text-xs font-black text-amber-400 flex items-center gap-2 border-t border-white/5 cursor-pointer">
-                                        🟠 Alta Voluntaria
-                                    </button>
-                                    <button type="button" (click)="iniciarAltaMedica(2)" class="w-full px-4 py-3 text-left hover:bg-white/5 text-xs font-black text-rose-400 flex items-center gap-2 border-t border-white/5 cursor-pointer">
-                                        🔴 Alta Por Defunción
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-black/20 p-4 rounded-2xl border border-white/5 text-left md:text-right">
-                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Total Acumulado en Cuenta</span>
-                            <span class="text-2xl font-black text-white font-mono block mt-1">$ {{ selectedAccount()?.total | number:'1.2-2' }}</span>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- CLINICAL TABS CONTROL -->
                 <div class="flex border-b border-white/5 gap-2 overflow-x-auto">
                     <button (click)="activeTab.set('fast-charge')"
-                            [class]="activeTab() === 'fast-charge' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
+                        [class]="activeTab() === 'fast-charge' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
+                        class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
                         Carga de Insumos
                     </button>
                     <button (click)="activeTab.set('triage')"
-                            [class]="activeTab() === 'triage' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
+                        [class]="activeTab() === 'triage' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
+                        class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
                         Triage y Signos Vitales
                     </button>
                     <button (click)="activeTab.set('transfer')"
-                            [class]="activeTab() === 'transfer' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
+                        [class]="activeTab() === 'transfer' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
+                        class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
                         Traslados y Destino
                     </button>
                     <button (click)="activeTab.set('history')"
-                            [class]="activeTab() === 'history' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                            class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
+                        [class]="activeTab() === 'history' ? 'border-rose-500 text-rose-500' : 'border-transparent text-slate-400 hover:text-slate-200'"
+                        class="px-6 py-4 border-b-2 font-black uppercase text-[10px] tracking-widest transition-all cursor-pointer whitespace-nowrap">
                         ✦ Historial Completo
                     </button>
                 </div>
 
                 <!-- TAB 1: TRIAGE Y SIGNOS VITALES -->
                 <div *ngIf="activeTab() === 'triage'" class="space-y-6 animate-fade-in">
-                    
+
                     <!-- Estado Actual Paciente (Pinned Header) -->
-                    <div *ngIf="showTriageForm && estadoActualPaciente()" class="p-6 bg-rose-500/5 border border-rose-500/10 rounded-[2rem] space-y-2">
+                    <div *ngIf="showTriageForm && estadoActualPaciente()"
+                        class="p-6 bg-rose-500/5 border border-rose-500/10 rounded-[2rem] space-y-2">
                         <div class="flex items-center gap-2 text-rose-400">
                             <lucide-icon [name]="icons.Activity" class="w-4 h-4"></lucide-icon>
-                            <span class="text-[9px] font-black uppercase tracking-widest">Último Reporte Clínico Registrado</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest">Último Reporte Clínico
+                                Registrado</span>
                         </div>
-                        <h4 class="text-sm font-bold text-white uppercase tracking-tight mt-1">{{ estadoActualPaciente()?.descripcionRapida }}</h4>
-                        <p class="text-xs text-slate-400 leading-normal">{{ estadoActualPaciente()?.descripcionDetallada }}</p>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5 text-xs text-slate-400">
-                            <div><span class="text-slate-500">T/A:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.tensionArterial }} mmHg</span></div>
-                            <div><span class="text-slate-500">F/C:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.frecuenciaCardiaca }} lpm</span></div>
-                            <div><span class="text-slate-500">Temp:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.temperatura }} °C</span></div>
-                            <div><span class="text-slate-500">SatO2:</span> <span class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.saturacionO2 }} %</span></div>
+                        <h4 class="text-sm font-bold text-white uppercase tracking-tight mt-1">{{
+                            estadoActualPaciente()?.descripcionRapida }}</h4>
+                        <p class="text-xs text-slate-400 leading-normal">{{ estadoActualPaciente()?.descripcionDetallada
+                            }}</p>
+                        <div
+                            class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5 text-xs text-slate-400">
+                            <div><span class="text-slate-500">T/A:</span> <span
+                                    class="font-mono text-white font-bold ml-1">{{
+                                    estadoActualPaciente()?.tensionArterial }} mmHg</span></div>
+                            <div><span class="text-slate-500">F/C:</span> <span
+                                    class="font-mono text-white font-bold ml-1">{{
+                                    estadoActualPaciente()?.frecuenciaCardiaca }} lpm</span></div>
+                            <div><span class="text-slate-500">Temp:</span> <span
+                                    class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.temperatura
+                                    }} °C</span></div>
+                            <div><span class="text-slate-500">SatO2:</span> <span
+                                    class="font-mono text-white font-bold ml-1">{{ estadoActualPaciente()?.saturacionO2
+                                    }} %</span></div>
                         </div>
                     </div>
 
                     <!-- BOTÓN NUEVO TRIAGE Y VISTA DETALLADA DEL PRIMER HISTORIAL -->
                     <div *ngIf="!showTriageForm" class="space-y-6">
-                        <div class="flex justify-between items-center bg-[#1e293b]/20 border border-white/5 p-6 rounded-[2rem]">
+                        <div
+                            class="flex justify-between items-center bg-[#1e293b]/20 border border-white/5 p-6 rounded-[2rem]">
                             <div>
-                                <h3 class="text-sm font-black text-white uppercase tracking-wider">Triage y Signos Vitales</h3>
-                                <p class="text-xs text-slate-400 mt-1">Gestione el registro de constantes clínicas para este paciente.</p>
+                                <h3 class="text-sm font-black text-white uppercase tracking-wider">Triage y Signos
+                                    Vitales</h3>
+                                <p class="text-xs text-slate-400 mt-1">Gestione el registro de constantes clínicas para
+                                    este paciente.</p>
                             </div>
-                            <button (click)="showTriageForm = true; isEditingTriage = false" 
-                                    class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
+                            <button (click)="showTriageForm = true; isEditingTriage = false"
+                                class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all">
                                 Nuevo Triage
                             </button>
                         </div>
 
                         <!-- VISTA DETALLADA DEL PRIMER HISTORIAL (TRIAGE MÁS RECIENTE) -->
-                        <div *ngIf="nursingHistory().length > 0; else noHistory" class="glass-panel p-8 rounded-[2rem] border border-white/5 space-y-8 bg-slate-900/20">
+                        <div *ngIf="nursingHistory().length > 0; else noHistory"
+                            class="glass-panel p-8 rounded-[2rem] border border-white/5 space-y-8 bg-slate-900/20">
                             <div class="flex items-center justify-between pb-4 border-b border-white/5">
                                 <div class="space-y-1">
-                                    <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest">Triage Más Reciente</span>
-                                    <h3 class="text-base font-bold text-white uppercase tracking-tight">{{ nursingHistory()[0].descripcionRapida || 'Triage General' }}</h3>
+                                    <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest">Triage
+                                        Más Reciente</span>
+                                    <h3 class="text-base font-bold text-white uppercase tracking-tight">{{
+                                        nursingHistory()[0].descripcionRapida || 'Triage General' }}</h3>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{{ nursingHistory()[0].fechaRegistro | date:'medium' }}</p>
-                                    <p class="text-[9px] font-medium text-slate-400 mt-0.5">Por: {{ nursingHistory()[0].usuarioRegistro }}</p>
+                                    <p
+                                        class="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">
+                                        {{ nursingHistory()[0].fechaRegistro | date:'medium' }}</p>
+                                    <p class="text-[9px] font-medium text-slate-400 mt-0.5">Por: {{
+                                        nursingHistory()[0].usuarioRegistro }}</p>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <!-- 1. Signos Vitales -->
                                 <div class="space-y-3">
-                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 1. Constantes y Signos Vitales
+                                    <h4
+                                        class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 1. Constantes y
+                                        Signos Vitales
                                     </h4>
-                                    <div class="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
-                                        <div><span class="text-slate-500 block">Tensión Arterial:</span><strong class="text-white">{{ nursingHistory()[0].tensionArterial || '---' }} mmHg</strong></div>
-                                        <div><span class="text-slate-500 block">Frecuencia Cardíaca:</span><strong class="text-white">{{ nursingHistory()[0].frecuenciaCardiaca || '0' }} lpm</strong></div>
-                                        <div><span class="text-slate-500 block">Frecuencia Respiratoria:</span><strong class="text-white">{{ nursingHistory()[0].frecuenciaRespiratoria || '0' }} rpm</strong></div>
-                                        <div><span class="text-slate-500 block">Temperatura:</span><strong class="text-white">{{ nursingHistory()[0].temperatura || '0' }} °C</strong></div>
-                                        <div><span class="text-slate-500 block">Saturación O2:</span><strong class="text-white">{{ nursingHistory()[0].saturacionO2 || '0' }} %</strong></div>
-                                        <div><span class="text-slate-500 block">Glicemia Capilar:</span><strong class="text-white">{{ nursingHistory()[0].glicemiaCapilar || '---' }} mg/dL</strong></div>
+                                    <div
+                                        class="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
+                                        <div><span class="text-slate-500 block">Tensión Arterial:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].tensionArterial || '---' }}
+                                                mmHg</strong></div>
+                                        <div><span class="text-slate-500 block">Frecuencia Cardíaca:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].frecuenciaCardiaca || '0' }}
+                                                lpm</strong></div>
+                                        <div><span class="text-slate-500 block">Frecuencia Respiratoria:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].frecuenciaRespiratoria || '0'
+                                                }} rpm</strong></div>
+                                        <div><span class="text-slate-500 block">Temperatura:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].temperatura || '0' }}
+                                                °C</strong></div>
+                                        <div><span class="text-slate-500 block">Saturación O2:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].saturacionO2 || '0' }}
+                                                %</strong></div>
+                                        <div><span class="text-slate-500 block">Glicemia Capilar:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].glicemiaCapilar || '---' }}
+                                                mg/dL</strong></div>
                                     </div>
                                 </div>
 
-                                <!-- 2. Valoración Física -->
                                 <div class="space-y-3">
-                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <h4
+                                        class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 2. Valoración Física
                                     </h4>
-                                    <div class="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
-                                        <div><span class="text-slate-500 block">Vía Aérea:</span><strong class="text-white">{{ nursingHistory()[0].viaAerea || '---' }}</strong></div>
-                                        <div><span class="text-slate-500 block">Ventilación:</span><strong class="text-white">{{ nursingHistory()[0].ventilacion || '---' }}</strong></div>
-                                        <div><span class="text-slate-500 block">Pulso:</span><strong class="text-white">{{ nursingHistory()[0].pulso || '---' }}</strong></div>
-                                        <div><span class="text-slate-500 block">Piel/Mucosas:</span><strong class="text-white">{{ nursingHistory()[0].pielMucosas || '---' }}</strong></div>
-                                        <div><span class="text-slate-500 block">Llenado Capilar:</span><strong class="text-white">{{ nursingHistory()[0].llenadoCapilar || '---' }}</strong></div>
-                                        <div><span class="text-slate-500 block">Pupilas:</span><strong class="text-white">{{ nursingHistory()[0].pupilas || '---' }}</strong></div>
-                                    </div>
-                                </div>
-
-                                <!-- 3. Antecedentes -->
-                                <div class="space-y-3">
-                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 3. Antecedentes Clínicos
-                                    </h4>
-                                    <div class="space-y-2 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
-                                        <div><span class="text-slate-500">Alergias:</span> <span class="text-white font-bold">{{ nursingHistory()[0].alergias || 'Ninguna' }}</span></div>
-                                        <div><span class="text-slate-500">Antecedentes Médicos:</span> <span class="text-white font-bold">{{ nursingHistory()[0].antecedentesMedicos || 'Ninguno' }}</span></div>
-                                        <div><span class="text-slate-500">Accesos Venosos:</span> <span class="text-white font-bold">{{ nursingHistory()[0].accesosVenosos || 'Ninguno' }}</span></div>
-                                        <div><span class="text-slate-500">Pertenencias recibidas:</span> <span class="text-white font-bold">{{ nursingHistory()[0].pertenencias || 'Ninguna' }}</span></div>
-                                    </div>
-                                </div>
-
-                                <!-- 4. Estado Actual y Diagnóstico -->
-                                <div class="space-y-3">
-                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 4. Estado Actual y Diagnóstico
-                                    </h4>
-                                    <div class="space-y-2 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
-                                        <div><span class="text-slate-500">Estado de Conciencia:</span> <span class="text-white font-bold">{{ nursingHistory()[0].estadoConciencia || '---' }}</span></div>
-                                        <div><span class="text-slate-500">Glasgow:</span> <span class="font-mono text-white font-bold">Ocular {{ nursingHistory()[0].glasgowOcular }}/4, Verbal {{ nursingHistory()[0].glasgowVerbal }}/5, Motor {{ nursingHistory()[0].glasgowMotor }}/6 (Total: {{ nursingHistory()[0].glasgowTotal }}/15)</span></div>
-                                        <div><span class="text-slate-500">Diagnóstico Presuntivo:</span> <p class="text-white font-semibold leading-relaxed mt-0.5">{{ nursingHistory()[0].diagnosticoPresuntivo || 'No registrado' }}</p></div>
-                                        <div><span class="text-slate-500">Observaciones Generales:</span> <p class="text-slate-300 leading-relaxed mt-0.5">{{ nursingHistory()[0].descripcionDetallada || 'No registradas' }}</p></div>
+                                    <div
+                                        class="grid grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-2xl text-xs">
+                                        <div><span class="text-slate-500 block">Vía Aérea:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].viaAerea || '---' }}</strong>
+                                        </div>
+                                        <div><span class="text-slate-500 block">Ventilación:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].ventilacion || '---'
+                                                }}</strong></div>
+                                        <div><span class="text-slate-500 block">Pulso:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].pulso || '---' }}</strong>
+                                        </div>
+                                        <div><span class="text-slate-500 block">Piel/Mucosas:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].pielMucosas || '---'
+                                                }}</strong></div>
+                                        <div><span class="text-slate-500 block">Llenado Capilar:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].llenadoCapilar || '---'
+                                                }}</strong></div>
+                                        <div><span class="text-slate-500 block">Pupilas:</span><strong
+                                                class="text-white">{{ nursingHistory()[0].pupilas || '---' }}</strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Botón para Editar este registro directamente -->
                             <div class="flex justify-end pt-4 border-t border-white/5">
-                                <button (click)="onEditTriageClick(nursingHistory()[0])" 
-                                        class="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                                <button (click)="onEditTriageClick(nursingHistory()[0])"
+                                    class="px-6 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
                                     Modificar Triage
                                 </button>
                             </div>
                         </div>
 
                         <ng-template #noHistory>
-                            <div class="glass-panel p-8 rounded-[2rem] border border-white/5 text-center text-slate-500 py-12">
-                                <lucide-icon [name]="icons.Info" class="w-8 h-8 mx-auto text-slate-600 mb-2"></lucide-icon>
-                                <p class="text-xs font-bold uppercase tracking-wider">No se han registrado constantes ni triage para esta cuenta</p>
-                                <p class="text-[11px] text-slate-400 mt-1">Utilice el botón "Nuevo Triage" arriba para registrar el primer informe.</p>
+                            <div
+                                class="glass-panel p-8 rounded-[2rem] border border-white/5 text-center text-slate-500 py-12">
+                                <lucide-icon [name]="icons.Info"
+                                    class="w-8 h-8 mx-auto text-slate-600 mb-2"></lucide-icon>
+                                <p class="text-xs font-bold uppercase tracking-wider">No se han registrado constantes ni
+                                    triage para esta cuenta</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Utilice el botón "Nuevo Triage" arriba para
+                                    registrar el primer informe.</p>
                             </div>
                         </ng-template>
-                    </div>
-
-                    <!-- REGISTRO / EDITAR FORMULARIO -->
-                    <div *ngIf="showTriageForm" id="nursingForm" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-sm font-black text-white uppercase tracking-wider">
-                                {{ isEditingTriage ? 'Modificar Registro Clínico' : 'Nuevo Registro de Triage' }}
-                            </h3>
-                            <button *ngIf="isEditingTriage || nursingHistory().length > 0" (click)="resetTriageForm()" 
-                                    class="text-xs text-slate-400 hover:text-white uppercase font-bold transition-colors">
-                                {{ isEditingTriage ? 'Cancelar Edición' : 'Volver' }}
-                            </button>
-                        </div>
-
-                        <!-- SELECTORES MODULARES -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <label class="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/5 cursor-pointer">
-                                <input type="checkbox" [(ngModel)]="registrarConstantesVitales" class="h-4 w-4 rounded border-white/10 text-rose-600 focus:ring-rose-500 focus:ring-offset-0 bg-black/30">
-                                <span class="text-[10px] font-black text-white uppercase tracking-wider">1. Signos Vitales</span>
-                            </label>
-                            <label class="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/5 cursor-pointer">
-                                <input type="checkbox" [(ngModel)]="registrarValoracionFisica" class="h-4 w-4 rounded border-white/10 text-rose-600 focus:ring-rose-500 focus:ring-offset-0 bg-black/30">
-                                <span class="text-[10px] font-black text-white uppercase tracking-wider">2. Valoración Física</span>
-                            </label>
-                            <label class="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/5 cursor-pointer">
-                                <input type="checkbox" [(ngModel)]="registrarAntecedentes" class="h-4 w-4 rounded border-white/10 text-rose-600 focus:ring-rose-500 focus:ring-offset-0 bg-black/30">
-                                <span class="text-[10px] font-black text-white uppercase tracking-wider">3. Antecedentes</span>
-                            </label>
-                            <label class="flex items-center space-x-3 p-3 bg-white/5 rounded-xl border border-white/5 cursor-pointer">
-                                <input type="checkbox" [(ngModel)]="registrarEstadoActual" class="h-4 w-4 rounded border-white/10 text-rose-600 focus:ring-rose-500 focus:ring-offset-0 bg-black/30">
-                                <span class="text-[10px] font-black text-white uppercase tracking-wider">4. Estado Actual</span>
-                            </label>
-                        </div>
-
-                        <!-- 1. Constantes Vitales -->
-                        <div *ngIf="registrarConstantesVitales" class="space-y-4 pt-4 border-t border-white/5 animate-fade-in">
-                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">1. Constantes y Signos Vitales</h4>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Tensión Arterial (mmHg)</label>
-                                    <input type="text" [(ngModel)]="tensionArterial" placeholder="120/80" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Frecuencia Cardíaca (lpm)</label>
-                                    <input type="number" [(ngModel)]="frecuenciaCardiaca" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Frecuencia Respiratoria (rpm)</label>
-                                    <input type="number" [(ngModel)]="frecuenciaRespiratoria" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Temperatura (°C)</label>
-                                    <input type="number" [(ngModel)]="temperatura" step="0.1" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Saturación de Oxígeno (%)</label>
-                                    <input type="number" [(ngModel)]="saturacionO2" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Glicemia Capilar (mg/dL)</label>
-                                    <input type="number" [(ngModel)]="glicemiaCapilar" placeholder="Opcional" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 2. Valoracion Fisica (Escalas Neurológicas y Circulatorio) -->
-                        <div *ngIf="registrarValoracionFisica" class="space-y-4 pt-6 border-t border-white/5 animate-fade-in">
-                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">2. Valoración Física General</h4>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                <div class="space-y-2 col-span-1 md:col-span-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Estado de Conciencia</label>
-                                    <select [(ngModel)]="estadoConciencia" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-rose-500/30">
-                                        <option value="Alerta" class="bg-[#152035]">ALERTA</option>
-                                        <option value="Somnoliento" class="bg-[#152035]">SOMNOLIENTO</option>
-                                        <option value="Estuporoso" class="bg-[#152035]">ESTUPOROSO</option>
-                                        <option value="Comatoso" class="bg-[#152035]">COMATOSO</option>
-                                    </select>
-                                </div>
-
-                                <!-- Glasgow Escalas -->
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Glasgow Ocular (1-4)</label>
-                                    <input type="number" [(ngModel)]="glasgowOcular" (change)="updateGlasgowTotal()" min="1" max="4" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Glasgow Verbal (1-5)</label>
-                                    <input type="number" [(ngModel)]="glasgowVerbal" (change)="updateGlasgowTotal()" min="1" max="5" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Glasgow Motor (1-6)</label>
-                                    <input type="number" [(ngModel)]="glasgowMotor" (change)="updateGlasgowTotal()" min="1" max="6" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Glasgow Total (3-15)</label>
-                                    <input type="number" [ngModel]="glasgowTotal" readonly class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-slate-400 font-mono text-center font-bold">
-                                </div>
-
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Vía Aérea</label>
-                                    <input type="text" [(ngModel)]="viaAerea" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ventilación</label>
-                                    <input type="text" [(ngModel)]="ventilacion" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 3. Antecedentes -->
-                        <div *ngIf="registrarAntecedentes" class="space-y-4 pt-6 border-t border-white/5 animate-fade-in">
-                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">3. Antecedentes y Alergias</h4>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Alergias Conocidas</label>
-                                    <input type="text" [(ngModel)]="alergias" placeholder="Medicamentos, alimentos, etc." class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Antecedentes Médicos Relevantes</label>
-                                    <input type="text" [(ngModel)]="antecedentesMedicos" placeholder="Hipertensión, Diabetes, Asma, Cirugías previas" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 4. Estado Actual (Sintomatología y motivo) -->
-                        <div *ngIf="registrarEstadoActual" class="space-y-4 pt-6 border-t border-white/5 animate-fade-in">
-                            <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest">4. Estado Clínico Actual</h4>
-                            
-                            <div class="grid grid-cols-1 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Motivo de la Consulta / Síntoma Principal</label>
-                                    <input type="text" [(ngModel)]="motivoConsulta" placeholder="Dolor abdominal agudo, dificultad respiratoria, cefalea" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Descripción Rápida (Diagnóstico Presuntivo / Impresión Clínica)</label>
-                                    <input type="text" [(ngModel)]="descripcionRapida" placeholder="Ej: Crisis Hipertensiva, Apendicitis en estudio" class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-rose-500/30">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Notas Clínicas Adicionales / Tratamiento Administrado</label>
-                                    <textarea [(ngModel)]="descripcionDetallada" rows="3" placeholder="Detalle observaciones físicas, estado mental, canalización de vías..." class="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-white focus:outline-none focus:border-rose-500/30"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end pt-6 border-t border-white/5">
-                            <button (click)="submitTriage()" 
-                                    [disabled]="isLoading()" 
-                                    class="px-10 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all disabled:opacity-50">
-                                {{ isLoading() ? 'Guardando...' : (isEditingTriage ? 'Actualizar Registro' : 'Registrar Constantes y Triage') }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- HISTORIAL DE TRIAGE REGISTRADOS -->
-                    <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6">
-                        <h3 class="text-sm font-black text-white uppercase tracking-wider">Historial Clínico de Enfermería</h3>
-                        
-                        <div class="space-y-4">
-                            <div *ngFor="let item of nursingHistory()" 
-                                 class="p-5 bg-white/[0.01] border border-white/5 rounded-2xl hover:border-white/10 transition-all flex flex-col md:flex-row justify-between gap-4">
-                                <div class="space-y-3">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{{ item.fechaRegistro | date:'medium' }}</span>
-                                        <span class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-black rounded uppercase tracking-wider">Registrado por: {{ item.usuarioRegistro }}</span>
-                                    </div>
-                                    
-                                    <div>
-                                        <h4 class="text-sm font-bold text-white uppercase tracking-tight">{{ item.descripcionRapida || 'REGISTRO DE TRIAGE GENERAL' }}</h4>
-                                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">{{ item.descripcionDetallada || 'No se registraron observaciones detalladas.' }}</p>
-                                    </div>
-
-                                    <div class="flex flex-wrap gap-4 text-xs text-slate-400 pt-2 border-t border-white/5">
-                                        <div><span class="text-slate-500">T/A:</span> <span class="font-mono text-white font-bold">{{ item.tensionArterial }} mmHg</span></div>
-                                        <div><span class="text-slate-500">F/C:</span> <span class="font-mono text-white font-bold">{{ item.frecuenciaCardiaca }} lpm</span></div>
-                                        <div><span class="text-slate-500">Temp:</span> <span class="font-mono text-white font-bold">{{ item.temperatura }} °C</span></div>
-                                        <div><span class="text-slate-500">SatO2:</span> <span class="font-mono text-white font-bold">{{ item.saturacionO2 }} %</span></div>
-                                    </div>
-                                </div>
-
-                                <div class="flex md:flex-col justify-end items-end gap-2">
-                                    <button (click)="onEditTriageClick(item)" 
-                                            class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-                                        Editar
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div *ngIf="nursingHistory().length === 0" class="text-center py-8 text-slate-500">
-                                <p class="text-xs font-bold uppercase tracking-wider">No se han registrado constantes ni triage para esta cuenta</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 <!-- TAB 2: CARGA RÁPIDA DE INSUMOS -->
-                <div *ngIf="activeTab() === 'fast-charge'" class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start animate-fade-in">
-                    
-                    <!-- LEFT CONTAINER (70%): STEPPER AND CONFIGURATION -->
-                    <div class="xl:col-span-2 glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6 bg-slate-900/20">
-                        
-                        <!-- WIZARD STEPPER HEADER -->
-                        <app-dynamic-stepper 
-                            [currentStep]="currentStep()" 
-                            [stepperMode]="activeStepperMode()"
-                        ></app-dynamic-stepper>
+                <div *ngIf="activeTab() === 'fast-charge'"
+                    class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start animate-fade-in">
 
-                        <!-- PASO 1: BÚSQUEDA Y SELECCIÓN -->
-                        <app-step-catalog-search
-                            *ngIf="currentStep() === 1"
-                            [searchTerm]="fastChargeSearchTerm()"
-                            [filteredServices]="filteredServices()"
-                            (searchChange)="onFastChargeSearchChange($event)"
-                            (itemSelected)="selectCatalogService($event)"
-                        ></app-step-catalog-search>
+                    <div
+                        class="xl:col-span-2 glass-panel p-6 rounded-[2rem] border border-white/5 space-y-6 bg-slate-900/20">
 
-                        <!-- PASO 2: AJUSTES DE CARGA POR MODO -->
-                        <app-step-doctor-select
-                            *ngIf="currentStep() === 2 && activeStepperMode() === 'consulta'"
-                            [medicos]="medicosFiltrados()"
-                            [selectedMedicoId]="selectedMedicoId()"
-                            [areasClinicas]="areasClinicas()"
-                            [selectedAreaClinicaId]="selectedAreaClinicaId()"
-                            [customPrecio]="customPrecio()"
-                            [customHonorario]="customHonorario()"
-                            [precioFinalCalculado]="precioFinalCalculado()"
-                            (medicoSelected)="onMedicoSelected($event)"
-                            (areaSelected)="onAreaSelected($event)"
-                            (precioChange)="customPrecio.set($event)"
-                            (honorarioChange)="customHonorario.set($event)"
-                        ></app-step-doctor-select>
+                        <app-dynamic-stepper [currentStep]="currentStep()"
+                            [stepperMode]="activeStepperMode()"></app-dynamic-stepper>
 
-                        <app-step-lab-rx-price
-                            *ngIf="currentStep() === 2 && activeStepperMode() === 'lab-rx'"
-                            [areasClinicas]="areasClinicas()"
-                            [selectedAreaClinicaId]="selectedAreaClinicaId()"
-                            [medicos]="medicosFiltrados()"
-                            [selectedMedicoId]="selectedMedicoId()"
-                            [customPrecio]="customPrecio()"
-                            [precioFinalCalculado]="precioFinalCalculado()"
-                            [hasHonorario]="(selectedService()?.honorarioBase ?? 0) > 0 && !(itemClassification() === 'RX' && getAreaClinicaNombre(selectedAreaClinicaId()) === 'EMERGENCIA')"
-                            (areaSelected)="onAreaSelected($event)"
-                            (medicoSelected)="onMedicoSelected($event)"
-                            (precioChange)="customPrecio.set($event)"
-                        ></app-step-lab-rx-price>
+                        <app-step-catalog-search *ngIf="currentStep() === 1" [searchTerm]="fastChargeSearchTerm()"
+                            [filteredServices]="filteredServices()" (searchChange)="onFastChargeSearchChange($event)"
+                            (itemSelected)="selectCatalogService($event)"></app-step-catalog-search>
+
+                        <!-- PASO 2: SEDE ASIGNADA Y FILTRADA AUTOMÁTICAMENTE -->
+                        <app-step-doctor-select *ngIf="currentStep() === 2 && activeStepperMode() === 'consulta'"
+                            [medicos]="medicosFiltrados()" [selectedMedicoId]="selectedMedicoId()"
+                            [areasClinicas]="sedesOperativas()" [selectedAreaClinicaId]="selectedSedeId()"
+                            [customPrecio]="customPrecio()" [customHonorario]="customHonorario()"
+                            [precioFinalCalculado]="precioFinalCalculado()" (medicoSelected)="onMedicoSelected($event)"
+                            (areaSelected)="onSedeSelected($event)" (precioChange)="customPrecio.set($event)"
+                            (honorarioChange)="customHonorario.set($event)"></app-step-doctor-select>
+
+                        <app-step-lab-rx-price *ngIf="currentStep() === 2 && activeStepperMode() === 'lab-rx'"
+                            [areasClinicas]="sedesOperativas()" [selectedAreaClinicaId]="selectedSedeId()"
+                            [medicos]="medicosFiltrados()" [selectedMedicoId]="selectedMedicoId()"
+                            [customPrecio]="customPrecio()" [precioFinalCalculado]="precioFinalCalculado()"
+                            (areaSelected)="onSedeSelected($event)" (medicoSelected)="onMedicoSelected($event)"
+                            (precioChange)="customPrecio.set($event)"></app-step-lab-rx-price>
 
                         <app-step-quantity
                             *ngIf="currentStep() === 2 && (activeStepperMode() === 'medicamento' || activeStepperMode() === 'procedimiento')"
-                            [quantity]="fastChargeQuantity"
-                            [unitLabel]="selectedService()?.unidadMedida || 'UD'"
+                            [quantity]="fastChargeQuantity()" [unitLabel]="selectedService()?.unidadMedida || 'UD'"
                             [permiteFraccionamiento]="selectedService()?.permiteFraccionamiento ?? false"
-                            [areasClinicas]="areasClinicas()"
-                            [selectedAreaClinicaId]="selectedAreaClinicaId()"
+                            [areasClinicas]="sedesOperativas()" [selectedAreaClinicaId]="selectedSedeId()"
                             [precioFinalCalculado]="precioFinalCalculado()"
-                            (quantityChange)="fastChargeQuantity = $event"
-                            (areaSelected)="onAreaSelected($event)"
-                        ></app-step-quantity>
+                            (quantityChange)="fastChargeQuantity.set($event)" (areaSelected)="onSedeSelected($event)">
+                        </app-step-quantity>
 
                         <!-- PASO 3: CONFIRMACIÓN Y SUGERENCIAS -->
-                        <app-step-confirm
-                            *ngIf="currentStep() === 3"
+                        <app-step-confirm *ngIf="currentStep() === 3"
                             [patientName]="selectedAccount()?.pacienteNombre ?? ''"
                             [patientCedula]="selectedAccount()?.pacienteCedula ?? ''"
                             [itemDescription]="selectedService()?.descripcion ?? ''"
-                            [quantity]="(activeStepperMode() === 'consulta' || activeStepperMode() === 'lab-rx') ? 1 : fastChargeQuantity"
+                            [quantity]="(activeStepperMode() === 'consulta' || activeStepperMode() === 'lab-rx') ? 1 : fastChargeQuantity()"
                             [unitLabel]="selectedService()?.unidadMedida || 'UD'"
                             [medicoNombre]="selectedMedicoId() ? getMedicoNombre(selectedMedicoId()) : null"
-                            [areaClinicaNombre]="selectedAreaClinicaId() ? getAreaClinicaNombre(selectedAreaClinicaId()) : null"
-                            [precioFinalCalculado]="precioFinalCalculado()"
-                            [activeSuggestions]="activeSuggestions()"
-                            [selectedSuggestions]="selectedSuggestions()"
-                            [classification]="itemClassification()"
-                            (toggleSuggestion)="toggleSuggestionSelection($event)"
-                        ></app-step-confirm>
-
-                        <!-- STEPPER NAVIGATION BUTTONS -->
+                            [areaClinicaNombre]="selectedSedeId() ? getSedeNombre(selectedSedeId()) : null"
+                            [precioFinalCalculado]="precioFinalCalculado()" [activeSuggestions]="activeSuggestions()"
+                            [selectedSuggestions]="selectedSuggestions()" [classification]="itemClassification()"
+                            (toggleSuggestion)="toggleSuggestionSelection($event)">
+                        </app-step-confirm>
+                        <!-- BOTONES DE NAVEGACIÓN DEL STEPPER -->
                         <div class="flex justify-between items-center pt-4 border-t border-white/5">
-                            <button 
-                                type="button" 
-                                *ngIf="currentStep() > 1"
-                                (click)="currentStep.set(currentStep() - 1)"
-                                class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-                            >
+                            <button type="button" *ngIf="currentStep() > 1" (click)="currentStep.set(currentStep() - 1)"
+                                class="bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95">
                                 Atrás
                             </button>
                             <div *ngIf="currentStep() === 1"></div>
-                            
+
                             <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
                                 Paso {{ currentStep() }} de 3
                             </span>
 
-                            <button 
-                                type="button" 
-                                *ngIf="currentStep() === 1"
-                                [disabled]="!selectedService()"
+                            <button type="button" *ngIf="currentStep() === 1" [disabled]="!selectedService()"
                                 (click)="currentStep.set(2)"
-                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30"
-                            >
+                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30">
                                 Siguiente
                             </button>
 
-                            <button 
-                                type="button" 
-                                *ngIf="currentStep() === 2"
-                                id="btnStep2Next"
-                                [disabled]="(activeStepperMode() === 'consulta' && !selectedMedicoId()) || !selectedAreaClinicaId()"
+                            <button type="button" *ngIf="currentStep() === 2" id="btnStep2Next"
+                                [disabled]="(activeStepperMode() === 'consulta' && !selectedMedicoId()) || !selectedSedeId()"
                                 (click)="currentStep.set(3)"
-                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30"
-                            >
+                                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 disabled:opacity-30">
                                 Siguiente
                             </button>
 
-                            <button 
-                                type="button" 
-                                id="btnStep3Confirm" 
-                                *ngIf="currentStep() === 3"
+                            <button type="button" id="btnStep3Confirm" *ngIf="currentStep() === 3"
                                 (click)="addCurrentItemToCart()"
-                                class="bg-rose-600 hover:bg-rose-500 text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20"
-                            >
+                                class="bg-rose-600 hover:bg-rose-500 text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-rose-500/20">
                                 Confirmar y Agregar al Carro
                             </button>
                         </div>
+
                     </div>
 
-                    <!-- RIGHT CONTAINER (30%): CART VIEW AND ACTION -->
                     <div class="xl:col-span-1">
-                        <app-nursing-cart
-                            [items]="cartItems()"
-                            [cartTotalUSD]="cartTotalUSD()"
-                            [isSaving]="isSavingFastCharge()"
-                            [patientName]="selectedAccount()?.pacienteNombre ?? null"
-                            (removeItem)="removeCartItem($event)"
-                            (editItem)="editCartItem($event)"
-                            (registerAll)="submitAllCartItems()"
-                        ></app-nursing-cart>
+                        <app-nursing-cart [items]="cartItems()" [cartTotalUSD]="cartTotalUSD()"
+                            [isSaving]="isSavingFastCharge()" [patientName]="selectedAccount()?.pacienteNombre ?? null"
+                            (removeItem)="removeCartItem($event)" (editItem)="editCartItem($event)"
+                            (registerAll)="submitAllCartItems()"></app-nursing-cart>
                     </div>
 
                 </div>
 
-                <!-- TAB 3: TRASLADOS Y DESTINO (Traslado Inteligente) -->
+                <!-- TAB 3: TRASLADOS Y DESTINO -->
                 <div *ngIf="activeTab() === 'transfer'" class="space-y-6 animate-fade-in">
-                    <app-traslados-destino
-                        [selectedAccount]="selectedAccount()"
-                        [camasDisponibles]="camasDisponibles()"
-                        (transferCompleted)="onTransferOrDischargeCompleted($event)"
+                    <app-traslados-destino [selectedAccount]="selectedAccount()" [camasDisponibles]="camasDisponibles()"
+                        [areasClinicas]="sedesOperativas()" (transferCompleted)="onTransferOrDischargeCompleted($event)"
                         (dischargeCompleted)="onTransferOrDischargeCompleted($event)"
                         (actionErrorMessage)="handleActionErrorMessage($event)">
                     </app-traslados-destino>
                 </div>
 
-                <!-- TAB 4: HISTORIAL COMPLETO (Insumos con Costo, Traslados, Cirugías y Triage) -->
+                <!-- TAB 4: HISTORIAL COMPLETO -->
                 <div *ngIf="activeTab() === 'history'" class="space-y-6 animate-fade-in">
-                    
-                    <!-- Resumen de Cargos e Insumos -->
                     <div class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                <h3
+                                    class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
                                     <lucide-icon [name]="icons.Clipboard" class="w-4 h-4 text-rose-500"></lucide-icon>
                                     Historial Clínico y Cargos de la Cuenta
                                 </h3>
-                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                                    Detalle acumulado de insumos, medicamentos, estudios, cirugías y traslados
-                                </p>
                             </div>
-                            <span class="px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[9px] font-black uppercase tracking-widest font-mono">
+                            <span
+                                class="px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[9px] font-black uppercase tracking-widest font-mono">
                                 {{ selectedAccount()?.detalles?.length || 0 }} REGISTROS EN CUENTA
                             </span>
                         </div>
 
-                        <!-- TABLA DE CARGOS / INSUMOS CON COSTO -->
                         <div class="bg-black/30 border border-white/5 rounded-2xl overflow-hidden shadow-inner">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-white/[0.02] border-b border-white/5">
-                                        <th class="p-3.5">Descripción del Cargo / Insumo / Cirugía</th>
+                                    <tr
+                                        class="text-[9px] font-black uppercase tracking-widest text-slate-400 bg-white/[0.02] border-b border-white/5">
+                                        <th class="p-3.5">Descripción del Cargo / Insumo</th>
                                         <th class="p-3.5">Tipo</th>
                                         <th class="p-3.5 text-center">Cantidad</th>
                                         <th class="p-3.5 text-right">Precio Unit. ($)</th>
@@ -1293,68 +832,38 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-white/5 text-xs font-medium">
-                                    <tr *ngFor="let det of selectedAccount()?.detalles" class="hover:bg-white/[0.02] transition-colors">
+                                    <tr *ngFor="let det of selectedAccount()?.detalles"
+                                        class="hover:bg-white/[0.02] transition-colors">
                                         <td class="p-3.5">
-                                            <span class="font-bold text-white uppercase block">{{ det.descripcion }}</span>
-                                            <span *ngIf="det.incluidoEnTarifaBase" class="text-[8px] text-emerald-400 font-black uppercase tracking-widest block">✦ Incluido en Tarifa Base</span>
+                                            <span class="font-bold text-white uppercase block">{{ det.descripcion
+                                                }}</span>
                                         </td>
                                         <td class="p-3.5">
-                                            <span class="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider"
-                                                  [ngClass]="{
-                                                    'bg-purple-500/20 text-purple-300 border border-purple-500/30': det.tipoServicio === 'Cirugia' || det.tipoServicio === 'Procedimiento' || det.tipoServicio === 'Quirofano',
-                                                    'bg-blue-500/20 text-blue-300 border border-blue-500/30': det.tipoServicio === 'Medicamento' || det.tipoServicio === 'Insumo',
-                                                    'bg-rose-500/20 text-rose-300 border border-rose-500/30': det.tipoServicio === 'RX' || det.tipoServicio === 'Laboratorio' || det.tipoServicio === 'TOMO',
-                                                    'bg-slate-500/20 text-slate-300 border border-slate-500/30': !det.tipoServicio
-                                                  }">
+                                            <span
+                                                class="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider bg-slate-500/20 text-slate-300 border border-slate-500/30">
                                                 {{ det.tipoServicio || 'General' }}
                                             </span>
                                         </td>
-                                        <td class="p-3.5 text-center font-mono font-bold text-slate-300">{{ det.cantidad }}</td>
-                                        <td class="p-3.5 text-right font-mono text-slate-400">$ {{ det.precio | number:'1.2-2' }}</td>
-                                        <td class="p-3.5 text-right font-mono font-bold text-emerald-400">$ {{ (det.precio * det.cantidad) | number:'1.2-2' }}</td>
-                                        <td class="p-3.5 text-center font-mono text-[10px] text-slate-500">{{ det.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</td>
+                                        <td class="p-3.5 text-center font-mono font-bold text-slate-300">{{ det.cantidad
+                                            }}</td>
+                                        <td class="p-3.5 text-right font-mono text-slate-400">$ {{ det.precio |
+                                            number:'1.2-2' }}</td>
+                                        <td class="p-3.5 text-right font-mono font-bold text-emerald-400">$ {{
+                                            (det.precio * det.cantidad) | number:'1.2-2' }}</td>
+                                        <td class="p-3.5 text-center font-mono text-[10px] text-slate-500">{{
+                                            det.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</td>
                                     </tr>
-                                    <tr *ngIf="!selectedAccount()?.detalles || selectedAccount()?.detalles?.length === 0">
-                                        <td colspan="6" class="p-8 text-center text-slate-500 text-xs font-bold uppercase tracking-wider">
+                                    <tr
+                                        *ngIf="!selectedAccount()?.detalles || selectedAccount()?.detalles?.length === 0">
+                                        <td colspan="6"
+                                            class="p-8 text-center text-slate-500 text-xs font-bold uppercase tracking-wider">
                                             No se han registrado cargos o insumos en esta cuenta aún.
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- TOTALIZADOR -->
-                        <div class="flex justify-between items-center bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monto Total Acumulado en Historia</span>
-                            <span class="text-xl font-black text-emerald-400 font-mono">$ {{ selectedAccount()?.total | number:'1.2-2' }} USD</span>
-                        </div>
                     </div>
-
-                    <!-- HISTORIAL DE CONSTANTES VITALES Y TRIAGE -->
-                    <div *ngIf="nursingHistory().length > 0" class="glass-panel p-6 rounded-[2rem] border border-white/5 space-y-4">
-                        <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-                            <lucide-icon [name]="icons.Activity" class="w-4 h-4 text-emerald-400"></lucide-icon>
-                            Historial de Triage y Signos Vitales
-                        </h3>
-                        <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
-                            <div *ngFor="let h of nursingHistory()" class="p-4 bg-white/[0.01] border border-white/5 rounded-2xl space-y-2 text-xs">
-                                <div class="flex justify-between items-center">
-                                    <span class="font-black text-rose-400 text-[9px] uppercase tracking-widest">{{ h.clasificacion || 'Nivel de Triage' }}</span>
-                                    <span class="text-slate-500 font-mono text-[10px]">{{ h.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
-                                </div>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-mono text-slate-300">
-                                    <div><span class="text-slate-500 font-bold">T.A.:</span> {{ h.tensionArterial || 'N/A' }}</div>
-                                    <div><span class="text-slate-500 font-bold">F.C.:</span> {{ h.frecuenciaCardiaca || 0 }} bpm</div>
-                                    <div><span class="text-slate-500 font-bold">Temp:</span> {{ h.temperatura || 0 }} °C</div>
-                                    <div><span class="text-slate-500 font-bold">SatO2:</span> {{ h.saturacionO2 || 0 }} %</div>
-                                </div>
-                                <div *ngIf="h.motivoConsulta" class="text-[10px] text-slate-400 italic">
-                                    "{{ h.motivoConsulta }}"
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
             </div>
@@ -1362,17 +871,20 @@
 
     </div>
 
-    <!-- MODAL INTERYECTOR DE SOLVENCIA (ENFERMERÍA) -->
+    <!-- MODAL INTERYECTOR DE SOLVENCIA -->
     <div *ngIf="showSolvenciaModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md" (click)="showSolvenciaModal.set(false)"></div>
-        <div class="relative bg-surface-card border border-amber-500/30 rounded-[2rem] p-8 max-w-md w-full shadow-2xl space-y-6">
+        <div
+            class="relative bg-surface-card border border-amber-500/30 rounded-[2rem] p-8 max-w-md w-full shadow-2xl space-y-6">
             <div class="flex items-center space-x-4">
-                <div class="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                <div
+                    class="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                     <lucide-icon [name]="icons.AlertTriangle" class="w-6 h-6"></lucide-icon>
                 </div>
                 <div>
                     <h3 class="text-base font-black text-white uppercase tracking-tight">Advertencia de Solvencia</h3>
-                    <p class="text-[9px] font-black text-amber-400 uppercase tracking-widest">Saldo Pendiente Registrado</p>
+                    <p class="text-[9px] font-black text-amber-400 uppercase tracking-widest">Saldo Pendiente Registrado
+                    </p>
                 </div>
             </div>
 
@@ -1382,29 +894,32 @@
 
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-white/5">
                 <button type="button" (click)="showSolvenciaModal.set(false)"
-                        class="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                    class="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
                     No, Cancelar
                 </button>
                 <button type="button" (click)="continuarAltaSinSolvencia()"
-                        class="px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-600/20">
+                    class="px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-600/20">
                     Sí, Continuar
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL REGISTRO DE ALTA MÉDICA (ENFERMERÍA) -->
+    <!-- MODAL REGISTRO DE ALTA MÉDICA -->
     <div *ngIf="showAltaModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md" (click)="showAltaModal.set(false)"></div>
-        <div class="relative bg-surface-card border border-rose-500/30 rounded-[2rem] p-8 max-w-lg w-full shadow-2xl space-y-6">
+        <div
+            class="relative bg-surface-card border border-rose-500/30 rounded-[2rem] p-8 max-w-lg w-full shadow-2xl space-y-6">
             <div class="flex items-center justify-between border-b border-white/5 pb-4">
                 <div class="flex items-center space-x-3">
-                    <div class="h-10 w-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center border border-rose-500/20">
+                    <div
+                        class="h-10 w-10 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center border border-rose-500/20">
                         <lucide-icon [name]="icons.LogOut" class="w-5 h-5"></lucide-icon>
                     </div>
                     <div>
                         <h3 class="text-sm font-black text-white uppercase tracking-wider">Registrar Alta Médica</h3>
-                        <p class="text-[9px] text-slate-400 uppercase font-mono">{{ selectedAccount()?.pacienteNombre }}</p>
+                        <p class="text-[9px] text-slate-400 uppercase font-mono">{{ selectedAccount()?.pacienteNombre }}
+                        </p>
                     </div>
                 </div>
                 <button type="button" (click)="showAltaModal.set(false)" class="text-slate-500 hover:text-white">
@@ -1414,53 +929,56 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tipo de Alta Médica</label>
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tipo de
+                        Alta Médica</label>
                     <div class="grid grid-cols-3 gap-2">
                         <button type="button" (click)="tipoAltaSeleccionada.set(0)"
-                                [class]="tipoAltaSeleccionada() === 0 ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-black/40 text-slate-400 border-white/10'"
-                                class="py-3 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
+                            [class]="tipoAltaSeleccionada() === 0 ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-black/40 text-slate-400 border-white/10'"
+                            class="py-3 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
                             🟢 Normal
                         </button>
                         <button type="button" (click)="tipoAltaSeleccionada.set(1)"
-                                [class]="tipoAltaSeleccionada() === 1 ? 'bg-amber-600 text-white border-amber-500' : 'bg-black/40 text-slate-400 border-white/10'"
-                                class="py-3 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
+                            [class]="tipoAltaSeleccionada() === 1 ? 'bg-amber-600 text-white border-amber-500' : 'bg-black/40 text-slate-400 border-white/10'"
+                            class="py-3 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
                             🟠 Voluntaria
                         </button>
                         <button type="button" (click)="tipoAltaSeleccionada.set(2)"
-                                [class]="tipoAltaSeleccionada() === 2 ? 'bg-rose-600 text-white border-rose-500' : 'bg-black/40 text-slate-400 border-white/10'"
-                                class="py-3 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
+                            [class]="tipoAltaSeleccionada() === 2 ? 'bg-rose-600 text-white border-rose-500' : 'bg-black/40 text-slate-400 border-white/10'"
+                            class="py-3 border rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
                             🔴 Defunción
                         </button>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Observaciones / Justificación Médica</label>
-                    <textarea [ngModel]="observacionesAlta()" (ngModelChange)="observacionesAlta.set($event)"
-                              rows="3" placeholder="Detalles de egreso o indicaciones especiales..."
-                              class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-rose-500/40"></textarea>
+                    <label
+                        class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Observaciones
+                        / Justificación Médica</label>
+                    <textarea [ngModel]="observacionesAlta()" (ngModelChange)="observacionesAlta.set($event)" rows="3"
+                        placeholder="Detalles de egreso o indicaciones especiales..."
+                        class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-rose-500/40"></textarea>
                 </div>
             </div>
 
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-white/5">
                 <button type="button" (click)="showAltaModal.set(false)"
-                        class="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest">
+                    class="px-5 py-3 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest">
                     Cancelar
                 </button>
                 <button type="button" (click)="procesarAltaPaciente()" [disabled]="isProcessingAlta()"
-                        class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-600/20 active:scale-95 disabled:opacity-50">
+                    class="px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-600/20 active:scale-95 disabled:opacity-50">
                     {{ isProcessingAlta() ? 'Procesando...' : 'Confirmar y Registrar Alta' }}
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- SECCIÓN FULL PAGE: REQUISICIONES DE STOCK -->
+    <!-- SECCIONES FULL PAGE -->
     <div *ngIf="moduleTab() === 'pedidos'" class="animate-fade-in space-y-4">
-        <app-pedidos-inter-sede [areaNombre]="nursingAreaFilter()" [sedeId]="currentAreaSedeId()"></app-pedidos-inter-sede>
+        <app-pedidos-inter-sede [areaNombre]="nursingAreaFilter()"
+            [sedeId]="currentAreaSedeId()"></app-pedidos-inter-sede>
     </div>
 
-    <!-- SECCIÓN FULL PAGE: STOCK LOCAL Y ACTA DE TURNO -->
     <div *ngIf="moduleTab() === 'stock'" class="animate-fade-in space-y-4">
         <app-stock-local-area [areaNombre]="nursingAreaFilter()" [sedeId]="currentAreaSedeId()"></app-stock-local-area>
     </div>
