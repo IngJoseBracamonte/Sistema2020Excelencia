@@ -24,7 +24,7 @@ import { AreaClinica } from '../../../../core/services/multi-sede.service';
       </div>
 
       <div>
-        <label class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Área Clínica (Ubicación de Atención)</label>
+        <label class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Ubicación / Sede de Atención</label>
         <select 
           id="selectAreaClinicaFastCharge"
           [ngModel]="selectedAreaClinicaId"

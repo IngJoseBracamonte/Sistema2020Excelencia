@@ -11,10 +11,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class CargarServiciosMasivoCommand : IRequest<List<CargarServicioResult>>
     {
+        public Guid? CuentaId { get; set; }
         public Guid PacienteId { get; set; }
         public string TipoIngreso { get; set; } = string.Empty;
         public int? ConvenioId { get; set; }
         public string? OrigenCarga { get; set; } // "Enfermeria", "Hospitalizacion", "UCI", "Emergencia", etc.
+        public string? UsuarioCarga { get; set; }
         public List<ServicioMasivoItemDto> Items { get; set; } = new List<ServicioMasivoItemDto>();
     }
 
@@ -63,6 +65,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 {
                     var singleCommand = new CargarServicioACuentaCommand
                     {
+                        CuentaId = request.CuentaId,
                         PacienteId = request.PacienteId,
                         TipoIngreso = request.TipoIngreso,
                         ConvenioId = request.ConvenioId,
@@ -72,7 +75,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         Honorario = item.Honorario,
                         Cantidad = item.Cantidad,
                         TipoServicio = item.TipoServicio,
-                        UsuarioCarga = "NursingAssistant",
+                        UsuarioCarga = request.UsuarioCarga ?? "NursingAssistant",
                         MedicoId = item.MedicoId,
                         HoraCita = item.HoraCita,
                         AreaClinicaId = item.AreaClinicaId,

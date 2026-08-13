@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -123,18 +124,24 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         InsumoNombre = m.Insumo != null ? m.Insumo.Nombre : "Insumo Desconocido",
                         SedeId = m.SedeId,
                         SedeNombre = m.Sede != null ? m.Sede.Nombre : "Almacén Principal",
-                        TipoMovimiento = m.TipoMovimiento,
+                        TipoMovimiento = m.TipoMovimiento.ToString(),
                         Cantidad = cantFinal,
                         CantidadBase = cantFinal,
                         UnidadMedida = m.UnidadMedidaOriginal.ToString(),
                         Usuario = m.Usuario ?? "Sistema",
-                        Motivo = m.Motivo ?? string.Empty,
+                        Motivo = m.Motivo,
                         EsEntrada = esEntrada
                     };
                 }).ToList()
             };
 
             return result;
+        }
+
+        private static bool IsEntrada(TipoMovimientoInsumo tipo)
+        {
+            return tipo == TipoMovimientoInsumo.Ingreso ||
+                   tipo == TipoMovimientoInsumo.TransferenciaEntrada;
         }
 
         private static bool IsEntrada(string tipoMovimiento)

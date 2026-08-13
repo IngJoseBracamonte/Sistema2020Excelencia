@@ -156,7 +156,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     {
                         Id = h.Id,
                         Observacion = h.Observacion,
-                        Tipo = h.Tipo,
+                        Tipo = h.Tipo.ToString(),
                         FechaRegistro = h.FechaRegistro,
                         UsuarioRegistro = h.UsuarioRegistro
                     }).OrderByDescending(h => h.FechaRegistro).ToList()
@@ -239,7 +239,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     Id = h.Id,
                     Observacion = h.Observacion,
-                    Tipo = h.Tipo,
+                    Tipo = h.Tipo.ToString(),
                     FechaRegistro = h.FechaRegistro,
                     UsuarioRegistro = h.UsuarioRegistro
                 }).OrderByDescending(h => h.FechaRegistro).ToList(),

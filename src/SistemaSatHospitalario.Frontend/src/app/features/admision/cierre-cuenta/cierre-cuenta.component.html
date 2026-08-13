@@ -781,7 +781,7 @@
                         <span class="text-slate-500">Médico Tratante</span>
                         <select *ngIf="canCollectAndClose()" [ngModel]="medicoTratanteId()" (ngModelChange)="medicoTratanteId.set($event)"
                             class="bg-black/30 border border-white/10 px-2 py-1 rounded text-white text-[11px] font-bold outline-none focus:border-primary max-w-[150px] truncate">
-                            <option [value]="null">--- Seleccionar ---</option>
+                            <option [value]="null">NO ASIGNADO</option>
                             <option *ngFor="let m of medicos()" [value]="m.id">{{ m.nombre | uppercase }}</option>
                         </select>
                         <span *ngIf="!canCollectAndClose()" class="text-white text-[11px] font-bold uppercase truncate max-w-[150px]">{{ obtenerNombreMedico(medicoTratanteId()) }}</span>
