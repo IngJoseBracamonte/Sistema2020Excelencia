@@ -11,7 +11,7 @@ import { LucideAngularModule, Plus, Minus } from 'lucide-angular';
   template: `
     <div class="space-y-4">
       <div>
-        <label class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Área Clínica (Ubicación de Carga)</label>
+        <label class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Ubicación / Sede de Carga</label>
         <select 
           id="selectAreaClinicaFastCharge"
           [ngModel]="selectedAreaClinicaId"

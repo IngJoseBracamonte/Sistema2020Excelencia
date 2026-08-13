@@ -50,7 +50,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var handler = new GetHistorialMovimientosQueryHandler(_mockContext.Object);
             var query = new GetHistorialMovimientosQuery
             {
-                TipoMovimiento = "EnvioSubArea"
+                TipoMovimiento = "Consumo"
             };
 
             // Act
@@ -59,7 +59,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             // Assert
             Assert.NotNull(result);
             Assert.Single(result);
-            Assert.Equal("EnvioSubArea", result[0].TipoMovimiento);
+            Assert.Equal("Consumo", result[0].TipoMovimiento);
             Assert.Contains("Laboratorio", result[0].Motivo);
         }
 

@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities
 {
@@ -10,12 +11,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
         public Guid PacienteId { get; protected set; }
         public string NombrePaciente { get; protected set; }
         public string TipoIngreso { get; protected set; } // Particular, Seguro, Hospitalizacion, Emergencia
-        public string EstadoFacturacion { get; protected set; } // Sin Factura, Factura Fiscal
+        public EstadoFacturacion EstadoFacturacion { get; protected set; }
         public decimal TotalCobrado { get; protected set; }
         public DateTime FechaCreacion { get; protected set; }
         
         // Se cambió de Guid? a int? para sincronización con Legacy
         public int? ConvenioId { get; protected set; } // Opcional, asociado a Seguros/Convenios
+
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey(nameof(PacienteId))]
+        public virtual Admision.PacienteAdmision? Paciente { get; protected set; }
 
         protected OrdenDeServicio() { }
 
@@ -26,7 +30,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
             PacienteId = pacienteId;
             NombrePaciente = nombrePaciente ?? throw new ArgumentNullException(nameof(nombrePaciente));
             TipoIngreso = tipoIngreso ?? throw new ArgumentNullException(nameof(tipoIngreso));
-            EstadoFacturacion = tipoIngreso == "Seguro" ? "Factura Fiscal" : "Sin Factura";
+            EstadoFacturacion = tipoIngreso == "Seguro" ? EstadoFacturacion.FacturaFiscal : EstadoFacturacion.SinFactura;
             FechaCreacion = DateTime.UtcNow;
             TotalCobrado = 0;
             ConvenioId = convenioId;

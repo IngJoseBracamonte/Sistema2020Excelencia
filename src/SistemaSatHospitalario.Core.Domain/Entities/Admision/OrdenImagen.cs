@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -14,7 +15,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string PacienteNombre { get; set; } = string.Empty;
         public string Estudio { get; set; } = string.Empty;
         public string TipoServicio { get; set; } = string.Empty; // RX o TOMO
-        public string Estado { get; set; } = "Pendiente"; // Pendiente, Procesado, Anulado
+        public EstadoOrdenImagen Estado { get; set; } = EstadoOrdenImagen.Pendiente;
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
         public string? ProcesadoPor { get; set; }
         public DateTime? FechaProcesado { get; set; }
@@ -26,6 +27,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? MedicoSolicitanteId { get; set; }
         public string? MedicoSolicitanteNombre { get; set; }
         public string? Informe { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey(nameof(PacienteId))]
+        public virtual PacienteAdmision? Paciente { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey(nameof(MedicoSolicitanteId))]
+        public virtual Medico? MedicoSolicitante { get; set; }
 
         // Nuevos campos para informe de imagenología y trazabilidad técnica
         public string? LinkInforme { get; set; }
@@ -42,13 +49,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             PacienteNombre = pacienteNombre;
             Estudio = estudio;
             TipoServicio = tipoServicio;
-            Estado = "Pendiente";
+            Estado = EstadoOrdenImagen.Pendiente;
             FechaCreacion = DateTime.UtcNow;
         }
 
         public void MarcarComoProcesado(string usuario)
         {
-            Estado = "Procesado";
+            Estado = EstadoOrdenImagen.Procesado;
             ProcesadoPor = usuario;
             FechaProcesado = DateTime.UtcNow;
         }

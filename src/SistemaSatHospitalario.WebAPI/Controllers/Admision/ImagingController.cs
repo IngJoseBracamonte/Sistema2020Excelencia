@@ -9,6 +9,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 using SistemaSatHospitalario.Infrastructure.Hubs;
 using System.Security.Claims;
 
@@ -41,7 +42,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             // type debe ser RX o TOMO
             var query = _context.OrdenesImagenes
-                .Where(o => o.TipoServicio == type && o.Estado == "Pendiente");
+                .Where(o => o.TipoServicio == type && o.Estado == EstadoOrdenImagen.Pendiente);
 
             var orders = await (from o in query
                                 join p in _context.PacientesAdmision on o.PacienteId equals p.Id into op
@@ -52,11 +53,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     OrderId = o.Id,
                                     CuentaId = o.CuentaId,
                                     PacienteId = o.PacienteId,
-                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteNombre = p != null && !string.IsNullOrEmpty(p.NombreCorto) ? p.NombreCorto : o.PacienteNombre,
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
-                                    Estado = o.Estado,
+                                    Estado = o.Estado.ToString(),
                                     FechaCreacion = o.FechaCreacion,
                                     ProcesadoPor = o.ProcesadoPor,
                                     FechaProcesado = o.FechaProcesado,
@@ -160,7 +161,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public async Task<IActionResult> GetUnprocessedReports()
         {
             var query = _context.OrdenesImagenes.AsNoTracking()
-                .Where(o => o.RequiereInforme && (string.IsNullOrEmpty(o.LinkInforme) || o.Estado == "Pendiente"));
+                .Where(o => o.RequiereInforme && (string.IsNullOrEmpty(o.LinkInforme) || o.Estado == EstadoOrdenImagen.Pendiente));
 
             var orders = await (from o in query
                                 join p in _context.PacientesAdmision on o.PacienteId equals p.Id into op
@@ -174,7 +175,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
-                                    Estado = o.Estado,
+                                    Estado = o.Estado.ToString(),
                                     FechaCreacion = o.FechaCreacion,
                                     LinkInforme = o.LinkInforme,
                                     ObservacionesMedico = o.ObservacionesMedico,

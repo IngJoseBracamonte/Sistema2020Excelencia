@@ -238,6 +238,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("OrdenesDeServicio");
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.TotalCobrado).HasPrecision(18, 2);
+                entity.Property(o => o.EstadoFacturacion).HasConversion<int>();
 
                 entity.HasOne<PacienteAdmision>()
                       .WithMany(p => p.Ordenes)
@@ -328,7 +329,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(d => d.AreaClinicaId)
                       .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasOne<TipoServicio>()
+                entity.HasOne(d => d.TipoServicioNav)
                       .WithMany()
                       .HasForeignKey(d => d.TipoServicioId)
                       .OnDelete(DeleteBehavior.Restrict);
@@ -550,6 +551,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(o => o.Id);
                 entity.HasIndex(o => o.Estado);
                 entity.HasIndex(o => o.TipoServicio);
+
+                entity.HasOne(o => o.Paciente)
+                      .WithMany()
+                      .HasForeignKey(o => o.PacienteId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(o => o.MedicoSolicitante)
+                      .WithMany()
+                      .HasForeignKey(o => o.MedicoSolicitanteId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             builder.Entity<Moneda>(entity =>
@@ -882,6 +893,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(s => new { s.SedeId, s.InsumoId }).IsUnique();
             });
 
+            builder.Entity<MovimientoInsumo>(entity =>
+            {
+                entity.ToTable("MovimientosInsumo");
+                entity.HasKey(m => m.Id);
+                entity.Property(m => m.TipoMovimiento).HasConversion<int>();
+                entity.Property(m => m.CantidadBase).HasPrecision(18, 4);
+                entity.Property(m => m.CantidadOriginal).HasPrecision(18, 4);
+            });
+
             builder.Entity<PedidoInterSede>(entity =>
             {
                 entity.ToTable("PedidosInterSede");
@@ -1048,7 +1068,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("CirugiasObservacionesHistorial");
                 entity.HasKey(h => h.Id);
                 entity.Property(h => h.Observacion).IsRequired().HasMaxLength(1000);
-                entity.Property(h => h.Tipo).IsRequired().HasMaxLength(50);
+                entity.Property(h => h.Tipo).HasConversion<int>();
                 entity.Property(h => h.UsuarioRegistro).IsRequired().HasMaxLength(100);
 
                 entity.HasIndex(h => h.OrdenCirugiaId);
@@ -1088,10 +1108,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(p => p.Referencia).HasMaxLength(100);
                 entity.Property(p => p.UsuarioId).HasMaxLength(100);
                 entity.Property(p => p.Observaciones).HasMaxLength(1000);
-
-                entity.HasIndex(p => p.OrdenCompraId);
-                entity.HasIndex(p => p.FechaPago);
             });
+
+            builder.Entity<OrdenImagen>(entity =>
+            {
+                entity.ToTable("OrdenesImagenes");
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.Estado).HasConversion<int>();
+            });
+
+            builder.Entity<PagoProveedor>().HasIndex(p => p.OrdenCompraId);
+            builder.Entity<PagoProveedor>().HasIndex(p => p.FechaPago);
 
             builder.Entity<Proveedor>(entity =>
             {

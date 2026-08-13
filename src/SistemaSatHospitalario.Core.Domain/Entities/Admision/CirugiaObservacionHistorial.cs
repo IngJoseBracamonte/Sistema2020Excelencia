@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -10,15 +11,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public Guid OrdenCirugiaId { get; private set; }
         public string Observacion { get; private set; }
-        public string Tipo { get; private set; }
+        public TipoObservacionCirugia Tipo { get; private set; }
         public DateTime FechaRegistro { get; private set; }
         public string UsuarioRegistro { get; private set; }
+        public string? UsuarioRegistroId { get; private set; }
 
         public virtual OrdenCirugia OrdenCirugia { get; private set; }
 
         protected CirugiaObservacionHistorial() { }
 
-        public CirugiaObservacionHistorial(Guid ordenCirugiaId, string observacion, string tipo, string usuarioRegistro)
+        public CirugiaObservacionHistorial(Guid ordenCirugiaId, string observacion, TipoObservacionCirugia tipo, string usuarioRegistro, string? usuarioRegistroId = null)
         {
             if (ordenCirugiaId == Guid.Empty)
                 throw new ArgumentException("El ID de la orden de cirugía es obligatorio.", nameof(ordenCirugiaId));
@@ -28,9 +30,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Id = Guid.NewGuid();
             OrdenCirugiaId = ordenCirugiaId;
             Observacion = observacion.Trim();
-            Tipo = string.IsNullOrWhiteSpace(tipo) ? "ObservacionMedica" : tipo.Trim();
+            Tipo = tipo;
             FechaRegistro = DateTime.UtcNow;
             UsuarioRegistro = string.IsNullOrWhiteSpace(usuarioRegistro) ? "Sistema" : usuarioRegistro.Trim();
+            UsuarioRegistroId = usuarioRegistroId;
         }
     }
 }
