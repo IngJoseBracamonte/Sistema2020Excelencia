@@ -63,7 +63,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             movimientosList.Verify(m => m.Add(It.Is<MovimientoInsumo>(mov =>
                 mov.InsumoId == insumo.Id &&
                 mov.SedeId == sedeAId &&
-                mov.TipoMovimiento == "Ingreso" &&
+                mov.TipoMovimiento == TipoMovimientoInsumo.Ingreso &&
                 mov.CantidadBase == 5.0m)), Times.Once);
 
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -125,7 +125,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             movimientosList.Verify(m => m.Add(It.Is<MovimientoInsumo>(mov =>
                 mov.InsumoId == insumo.Id &&
                 mov.SedeId == sedeAId &&
-                mov.TipoMovimiento == "AjusteCierre" &&
+                mov.TipoMovimiento == TipoMovimientoInsumo.AjusteCierre &&
                 mov.CantidadBase == -2.0m)), Times.Once);
 
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

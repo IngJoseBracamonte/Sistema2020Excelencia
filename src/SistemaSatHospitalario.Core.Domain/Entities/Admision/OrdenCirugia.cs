@@ -128,14 +128,26 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             
             var detalle = $"Reprogramada de {fechaAnterior:dd/MM/yyyy HH:mm} a {nuevaFecha:dd/MM/yyyy HH:mm}. Motivo: {motivo}";
             AgregarLog(usuarioId, "Reprogramacion", detalle);
-            AgregarHistorialObservacion(detalle, "Reprogramacion", usuarioId);
+            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugia.Reprogramacion, usuarioId, usuarioId);
         }
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro)
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugia tipo = Enums.TipoObservacionCirugia.ObservacionMedica, string usuarioRegistro = "Sistema", string? usuarioRegistroId = null)
         {
-            var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro);
+            var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro, usuarioRegistroId);
             _historialObservaciones.Add(item);
             return item;
+        }
+
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro, string? usuarioRegistroId = null)
+        {
+            var tipoEnum = tipo?.ToLowerInvariant() switch
+            {
+                "reprogramacion" => Enums.TipoObservacionCirugia.Reprogramacion,
+                "hitoquirurgico" => Enums.TipoObservacionCirugia.HitoQuirurgico,
+                "cancelacion" => Enums.TipoObservacionCirugia.Cancelacion,
+                _ => Enums.TipoObservacionCirugia.ObservacionMedica
+            };
+            return AgregarHistorialObservacion(observacion, tipoEnum, usuarioRegistro, usuarioRegistroId);
         }
 
         public OrdenCirugiaRequisito AgregarRequisito(Guid requisitoCirugiaId, bool cumplido = false)

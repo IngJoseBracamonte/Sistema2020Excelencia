@@ -19,6 +19,7 @@ export interface RegistrarReciboFacturaRequest {
 }
 
 export interface CargarServicioACuentaRequest {
+  cuentaId?: string;
   pacienteId: string; // Identidad Nativa GUID (V11.1)
   tipoIngreso: string;
   convenioId?: number; // Referencia Legacy

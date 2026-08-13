@@ -14,6 +14,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo, Informe
         public int TipoServicioId { get; private set; }
         public string UsuarioCarga { get; private set; }
+        public string? UsuarioCargaId { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public string? LegacyMappingId { get; private set; }
         public Guid? MedicoResponsableId { get; private set; }
@@ -28,6 +29,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal PrecioCatalogoHistorico { get; private set; }
         public virtual CuentaServicios CuentaServicio { get; private set; }
         public virtual AreaClinica? AreaClinica { get; private set; }
+        [System.ComponentModel.DataAnnotations.Schema.ForeignKey(nameof(TipoServicioId))]
+        public virtual TipoServicio? TipoServicioNav { get; private set; }
         public virtual System.Collections.Generic.ICollection<DetalleServicioMedicoResponsable> MedicosResponsables { get; private set; } = new System.Collections.Generic.List<DetalleServicioMedicoResponsable>();
 
         public void AgregarMedicoResponsable(Guid medicoId, string rol, decimal montoHonorario)
@@ -58,7 +61,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected DetalleServicioCuenta() { }
 
-        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null)
+        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null, int? tipoServicioId = null, string? usuarioCargaId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -67,9 +70,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Precio = precio;
             Honorario = honorario;
             Cantidad = cantidad;
-            TipoServicio = tipoServicio ?? throw new ArgumentNullException(nameof(tipoServicio));
-            TipoServicioId = MapearTipoServicioAId(tipoServicio);
+            TipoServicio = tipoServicio ?? string.Empty;
+            TipoServicioId = tipoServicioId ?? Constants.TipoServicioConstants.Insumo;
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
+            UsuarioCargaId = usuarioCargaId;
             LegacyMappingId = legacyMappingId;
             FechaCarga = DateTime.UtcNow;
             Realizado = false;
@@ -121,18 +125,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void ModificarCantidadAdministrativa(decimal nuevaCantidad)
         {
             Cantidad = nuevaCantidad;
-        }
-
-        private static int MapearTipoServicioAId(string tipoServicio)
-        {
-            if (string.IsNullOrWhiteSpace(tipoServicio)) return Constants.TipoServicioConstants.Insumo;
-            var t = tipoServicio.ToUpperInvariant();
-            if (t == "INFORME" || t == "INFORME MEDICO" || t == "INFORME MÉDICO") return Constants.TipoServicioConstants.Informe;
-            if (t == "LABORATORIO" || t == "LAB") return Constants.TipoServicioConstants.Laboratorio;
-            if (t == "RX") return Constants.TipoServicioConstants.RX;
-            if (t == "TOMO" || t == "TOMOGRAFIA" || t == "TOMOGRAFÍA") return Constants.TipoServicioConstants.Tomo;
-            if (t == "MEDICO" || t == "MEDICA" || t == "MÉDICO" || t == "MÉDICA" || t == "CONSULTA") return Constants.TipoServicioConstants.Medico;
-            return Constants.TipoServicioConstants.Insumo;
         }
     }
 }

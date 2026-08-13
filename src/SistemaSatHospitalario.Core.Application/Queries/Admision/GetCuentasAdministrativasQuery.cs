@@ -34,6 +34,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(c => c.Paciente)
                 .Include(c => c.Convenio)
                 .Include(c => c.AreaClinica)
+                .Include(c => c.Medico)
                 .AsNoTracking();
 
             if (!string.IsNullOrEmpty(request.SearchTerm))
@@ -102,6 +103,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     AreaClinicaId = c.AreaClinicaId,
                     AreaClinicaNombre = c.AreaClinica?.Nombre,
                     SubAreaClinica = c.SubAreaClinica,
+                    MedicoId = c.MedicoId ?? c.Detalles.FirstOrDefault(d => d.MedicoResponsableId.HasValue)?.MedicoResponsableId,
+                    MedicoNombre = c.Medico?.Nombre,
                     Detalles = c.Detalles.Select(d => new CuentaAdministrativaDetailDto
                     {
                         Id = d.Id,
@@ -113,7 +116,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         TipoServicio = d.TipoServicio,
                         FechaCarga = d.FechaCarga,
                         LegacyMappingId = d.LegacyMappingId,
-                        IncluidoEnTarifaBase = d.IncluidoEnTarifaBase
+                        IncluidoEnTarifaBase = d.IncluidoEnTarifaBase,
+                        MedicoResponsableId = d.MedicoResponsableId
                     }).ToList()
                 };
 

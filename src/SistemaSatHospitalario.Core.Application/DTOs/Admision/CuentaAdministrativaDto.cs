@@ -23,6 +23,8 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public Guid? AreaClinicaId { get; set; }
         public string? AreaClinicaNombre { get; set; }
         public string? SubAreaClinica { get; set; }
+        public Guid? MedicoId { get; set; }
+        public string? MedicoNombre { get; set; }
         
         public List<CuentaAdministrativaDetailDto> Detalles { get; set; } = new();
     }
@@ -39,5 +41,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Admision
         public DateTime FechaCarga { get; set; }
         public string? LegacyMappingId { get; set; }
         public bool IncluidoEnTarifaBase { get; set; }
+        public Guid? MedicoResponsableId { get; set; }
     }
 }
