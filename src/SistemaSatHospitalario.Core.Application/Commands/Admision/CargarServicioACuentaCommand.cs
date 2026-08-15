@@ -17,6 +17,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class CargarServicioACuentaCommand : IRequest<CargarServicioResult>, IAuditablePriceRequest
     {
+        public Guid? CuentaId { get; set; }
         // Se estandarizó de int a Guid para identidad nativa (V11.1)
         public Guid PacienteId { get; set; }
         public string TipoIngreso { get; set; } = string.Empty; // Particular, Seguro, Hospitalizacion, Emergencia
@@ -478,7 +479,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         private async Task<CuentaServicios> GetOrCreateCuentaAsync(Guid pacienteId, CargarServicioACuentaCommand request, CancellationToken ct)
         {
-            var cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, ct);
+            CuentaServicios? cuenta = null;
+            if (request.CuentaId.HasValue && request.CuentaId.Value != Guid.Empty)
+            {
+                cuenta = await _repository.ObtenerCuentaPorIdAsync(request.CuentaId.Value, ct);
+            }
+
+            if (cuenta == null)
+            {
+                cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, ct);
+            }
+
             if (cuenta == null)
             {
                 cuenta = new CuentaServicios(pacienteId, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);

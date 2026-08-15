@@ -58,6 +58,23 @@ export class CatalogBOMHandler {
     setTimeout(() => this.showInsumoDropdown.set(false), 200);
   }
 
+  public loadRecetaInsumos(recetaData: any[] | undefined): void {
+    const safeData = Array.isArray(recetaData) ? recetaData : [];
+    const lines: BOMLine[] = [];
+    safeData.forEach(item => {
+      if (item) {
+        lines.push({
+          insumoId: item.insumoId || item.id,
+          insumoCodigo: item.insumoCodigo || item.codigo || '',
+          insumoNombre: item.insumoNombre || item.nombre || item.descripcion || '',
+          cantidad: item.cantidad || 1,
+          unidadMedida: item.unidadMedidaConsumo || item.unidadMedida || 'UNIDAD'
+        });
+      }
+    });
+    this.bomLines.set(lines);
+  }
+
   public reset(): void {
     this.bomLines.set([]);
     this.insumoSearchQuery.set('');

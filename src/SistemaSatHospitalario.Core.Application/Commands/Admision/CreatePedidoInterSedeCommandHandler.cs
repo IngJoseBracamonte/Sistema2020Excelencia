@@ -28,7 +28,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var year = DateTime.UtcNow.Year.ToString();
             var latestCorrelativo = await _context.PedidosInterSede
                 .Where(p => p.Correlativo.StartsWith($"PED-{year}-"))
-                .OrderByDescending(p => p.Correlativo)
+                .OrderByDescending(p => p.Correlativo.Length)
+                .ThenByDescending(p => p.Correlativo)
                 .Select(p => p.Correlativo)
                 .FirstOrDefaultAsync(cancellationToken);
 

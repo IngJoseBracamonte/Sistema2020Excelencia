@@ -16,36 +16,16 @@ import { StockLocalAreaComponent } from './components/stock-local-area/stock-loc
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
-import { MultiSedeService, AreaClinica } from '../../core/services/multi-sede.service';
+import { MultiSedeService, SedeDto, AreaClinica } from '../../core/services/multi-sede.service';
 import { PatientService, PatientRecord } from '../../core/services/patient.service';
 import { FacturacionService } from '../../core/services/facturacion.service';
 import { TIPO_INGRESO, TipoIngresoType, matchTipoIngreso, normalizeTipoIngreso } from '../../core/constants/tipo-ingreso.constants';
-import { 
-  LucideAngularModule, 
-  Search, 
-  RefreshCcw, 
-  Check, 
-  CheckCircle,
-  X, 
-  ChevronRight, 
-  ChevronDown, 
-  AlertCircle, 
-  AlertTriangle,
-  Info, 
-  Calendar, 
-  User, 
-  Plus, 
-  Stethoscope, 
-  LogOut, 
-  Activity, 
-  FileText, 
-  Heart, 
-  Clipboard, 
-  Thermometer, 
-  Droplet, 
-  Shuffle, 
-  Edit,
-  UserPlus
+import {
+  LucideAngularModule,
+  Search, RefreshCcw, Check, CheckCircle, X, ChevronRight, ChevronDown,
+  AlertCircle, AlertTriangle, Info, Calendar, User, Plus, Stethoscope,
+  LogOut, Activity, FileText, Heart, Clipboard, Thermometer, Droplet,
+  Shuffle, Edit, UserPlus
 } from 'lucide-angular';
 
 export interface CuentaAdministrativa {
@@ -61,6 +41,9 @@ export interface CuentaAdministrativa {
   areaClinicaId?: string;
   areaClinicaNombre?: string;
   subAreaClinica?: string;
+  medicoTratanteNombre?: string;
+  medicoTratante?: string;
+  medicoNombre?: string;
   detalles?: any[];
   [key: string]: any;
 }
@@ -146,7 +129,6 @@ export interface TriageRecord {
   [key: string]: any;
 }
 
-// Item classification Constants & Types (Specification / Strategy Pattern)
 export const ITEM_CLASSIFICATIONS = {
   CONSULTA: 'Consulta',
   LABORATORIO: 'Laboratorio',
@@ -157,73 +139,17 @@ export const ITEM_CLASSIFICATIONS = {
 
 export type ItemClassification = (typeof ITEM_CLASSIFICATIONS)[keyof typeof ITEM_CLASSIFICATIONS];
 
-export const CATEGORY_IDS = {
-  CONSULTA: 1,
-  LABORATORIO: 2,
-  RADIOLOGIA: 3,
-  MEDICAMENTO: 4,
-  IMAGENOLOGIA: 6,
-} as const;
-
-interface ClassificationRule {
-  classification: ItemClassification;
-  categoryIds: number[];
-  keywords: string[];
-  customCheck?: (s: ServicioCatalogo) => boolean;
-}
-
-export const CLASSIFICATION_RULES: readonly ClassificationRule[] = [
-  {
-    classification: ITEM_CLASSIFICATIONS.CONSULTA,
-    categoryIds: [CATEGORY_IDS.CONSULTA],
-    keywords: ['CONSULTA', 'MEDICO', 'CITA'],
-    customCheck: (s) => Boolean(s.isConsultation)
-  },
-  {
-    classification: ITEM_CLASSIFICATIONS.LABORATORIO,
-    categoryIds: [CATEGORY_IDS.LABORATORIO],
-    keywords: ['LAB', 'PERFIL', 'LABORATORIO']
-  },
-  {
-    classification: ITEM_CLASSIFICATIONS.RX,
-    categoryIds: [CATEGORY_IDS.RADIOLOGIA, CATEGORY_IDS.IMAGENOLOGIA],
-    keywords: ['RX', 'RAYOS', 'RADIOLOGIA', 'TOMOGRAFIA', 'RADIOGRAF', 'ECO', 'TOMOGRAF']
-  },
-  {
-    classification: ITEM_CLASSIFICATIONS.MEDICAMENTO,
-    categoryIds: [CATEGORY_IDS.MEDICAMENTO],
-    keywords: ['INSUMO', 'MEDICAMENTO', 'FARMACIA', 'AMPOLLA', 'TABLETA']
-  }
-];
-
-/**
- * Pure strategy function to classify catalog services based on DB-driven domain flags & attributes
- */
 export function classifyService(service: ServicioCatalogo | null | undefined): ItemClassification {
   if (!service) return ITEM_CLASSIFICATIONS.PROCEDIMIENTO;
 
-  // 1. Evaluación DB-Driven por flags explícitas del modelo relacional
-  if (service.requiereMedico) {
-    return ITEM_CLASSIFICATIONS.CONSULTA;
-  }
-  if (service.permiteFraccionamiento || service.esInventariable) {
-    return ITEM_CLASSIFICATIONS.MEDICAMENTO;
-  }
+  if (service.requiereMedico) return ITEM_CLASSIFICATIONS.CONSULTA;
+  if (service.permiteFraccionamiento || service.esInventariable) return ITEM_CLASSIFICATIONS.MEDICAMENTO;
 
-  // 2. Evaluación DB-Driven por ID de Tipo de Servicio
   const tipoId = service.tipoServicioId;
   if (tipoId === 3 || tipoId === 300) return ITEM_CLASSIFICATIONS.LABORATORIO;
   if (tipoId === 4 || tipoId === 400) return ITEM_CLASSIFICATIONS.RX;
   if (tipoId === 1 || tipoId === 100) return ITEM_CLASSIFICATIONS.MEDICAMENTO;
   if (tipoId === 2 || tipoId === 200) return ITEM_CLASSIFICATIONS.CONSULTA;
-
-  // 3. Evaluación relacional por CategoriId
-  const cat = service.categoryId;
-  for (const rule of CLASSIFICATION_RULES) {
-    if (cat !== undefined && rule.categoryIds.includes(cat)) {
-      return rule.classification;
-    }
-  }
 
   return ITEM_CLASSIFICATIONS.PROCEDIMIENTO;
 }
@@ -247,8 +173,8 @@ export const DEFAULT_TRIAGE = {
   selector: 'app-enfermeria',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
+    CommonModule,
+    FormsModule,
     LucideAngularModule,
     DynamicStepperComponent,
     NursingCartComponent,
@@ -276,37 +202,15 @@ export class EnfermeriaComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly icons = {
-    Search,
-    RefreshCcw,
-    Check,
-    CheckCircle,
-    X,
-    ChevronRight,
-    ChevronDown,
-    AlertCircle,
-    AlertTriangle,
-    Info,
-    Calendar,
-    User,
-    Plus,
-    Stethoscope,
-    LogOut,
-    Activity,
-    FileText,
-    Heart,
-    Clipboard,
-    Thermometer,
-    Droplet,
-    Shuffle,
-    Edit,
-    UserPlus
+    Search, RefreshCcw, Check, CheckCircle, X, ChevronRight, ChevronDown,
+    AlertCircle, AlertTriangle, Info, Calendar, User, Plus, Stethoscope,
+    LogOut, Activity, FileText, Heart, Clipboard, Thermometer, Droplet,
+    Shuffle, Edit, UserPlus
   };
 
-  // Admission flow states (V1.2.92 Onboarding)
+  // Flow State
   public moduleTab = signal<'triage' | 'pedidos' | 'stock'>('triage');
   public showIngresoModal = signal<boolean>(false);
-  public showPedidosModal = signal<boolean>(false);
-  public showStockModal = signal<boolean>(false);
   public showAltaDropdown = signal<boolean>(false);
   public ingresoStep = signal<number>(1);
   public showNewPatientForm = signal<boolean>(false);
@@ -318,7 +222,6 @@ export class EnfermeriaComponent implements OnInit {
   public selectedCamaId = signal<string | null>(null);
   public medicoTratanteIngresoId = signal<string | null>(null);
 
-  // Médico tratante es obligatorio en Hospitalización y UCI, opcional en Emergencia
   public esMedicoTratanteRequerido = computed(() => {
     const tipo = this.type();
     return tipo === TIPO_INGRESO.HOSPITALIZACION || tipo === TIPO_INGRESO.UCI;
@@ -328,21 +231,12 @@ export class EnfermeriaComponent implements OnInit {
   public codigosCelular = ['0416', '0426', '0414', '0424', '0412', '0422'];
 
   public newPatientData = {
-    cedula: '',
-    nombre: '',
-    apellidos: '',
-    correo: '',
-    celular: '',
-    telefono: '',
-    direccion: '',
-    fechaNacimiento: new Date().toISOString().split('T')[0],
-    sexo: 'ND',
-    tipoCorreo: DEFAULT_TRIAGE.TIPO_CORREO,
-    codigoCelular: DEFAULT_TRIAGE.CODIGO_CELULAR,
-    codigoTelefono: DEFAULT_TRIAGE.CODIGO_TELEFONO
+    cedula: '', nombre: '', apellidos: '', correo: '', celular: '', telefono: '', direccion: '',
+    fechaNacimiento: new Date().toISOString().split('T')[0], sexo: 'ND',
+    tipoCorreo: DEFAULT_TRIAGE.TIPO_CORREO, codigoCelular: DEFAULT_TRIAGE.CODIGO_CELULAR, codigoTelefono: DEFAULT_TRIAGE.CODIGO_TELEFONO
   };
 
-  // Triage Signals (for Emergency complete flow)
+  // Triage Signals
   public triageSelectedPatientId = signal<string | null>(null);
   public triageMotivoConsulta = signal<string>('');
   public triageTensionArterial = signal<string>('');
@@ -351,16 +245,13 @@ export class EnfermeriaComponent implements OnInit {
   public triageTemperatura = signal<number>(37.0);
   public triageSaturacionO2 = signal<number>(98);
   public triageGlicemiaCapilar = signal<number | null>(null);
-  // Niveles de Triage DB-Driven
   public nivelesTriage = signal<any[]>([]);
   public triageClasificacion = signal<string>('Nivel III (Amarillo)');
   public triageEstadoConciencia = signal<string>(DEFAULT_TRIAGE.ESTADO_CONCIENCIA);
   public triageGlasgowOcular = signal<number>(4);
   public triageGlasgowVerbal = signal<number>(5);
   public triageGlasgowMotor = signal<number>(6);
-  public triageGlasgowTotal = computed(() => {
-    return this.triageGlasgowOcular() + this.triageGlasgowVerbal() + this.triageGlasgowMotor();
-  });
+  public triageGlasgowTotal = computed(() => this.triageGlasgowOcular() + this.triageGlasgowVerbal() + this.triageGlasgowMotor());
   public triageViaAerea = signal<string>(DEFAULT_TRIAGE.VIA_AEREA);
   public triageVentilacion = signal<string>(DEFAULT_TRIAGE.VENTILACION);
   public triagePulso = signal<string>(DEFAULT_TRIAGE.PULSO);
@@ -376,29 +267,41 @@ export class EnfermeriaComponent implements OnInit {
   public triageAntecedenteDiabetes = signal<boolean>(false);
   public triageAntecedenteCardiopatia = signal<boolean>(false);
 
-  // Determinar dinámicamente el tipo de ingreso según el área clínica activa en Enfermería
   public type = computed(() => this.nursingAreaFilter());
 
-  // Mapeo dinámico de Sede ID del Depósito Clínico activo según nursingAreaFilter
-  public currentAreaSedeId = computed<string>(() => {
-    const filter = (this.nursingAreaFilter() || '').toUpperCase();
-    if (filter.includes('HOSPITALIZACION')) {
-      return '10000000-0000-0000-0000-000000000003';
-    }
-    if (filter.includes('UCI')) {
-      return '10000000-0000-0000-0000-000000000004';
-    }
-    return '10000000-0000-0000-0000-000000000002'; // EMERGENCIA por defecto
+  // Sedes de la BD
+  public sedes = signal<SedeDto[]>([]);
+  public selectedSedeId = signal<string | null>(null);
+
+  public sedesOperativas = computed(() => {
+    const allSedes = this.sedes();
+    const currentTab = normalizeTipoIngreso(this.nursingAreaFilter() || '');
+
+    const sedeFiltrada = allSedes.filter(s => {
+      const nameNorm = normalizeTipoIngreso(s.nombre || '');
+      const codeNorm = normalizeTipoIngreso(s.codigo || '');
+      return nameNorm.includes(currentTab) || currentTab.includes(nameNorm) || codeNorm === currentTab;
+    });
+
+    return sedeFiltrada.length > 0 ? sedeFiltrada : allSedes;
   });
 
+  public currentAreaSedeId = computed<string>(() => {
+    const activeId = this.selectedSedeId();
+    if (activeId) return activeId;
+
+    const list = this.sedesOperativas();
+    return list[0]?.id || '';
+  });
 
   // State Lists
   public activeAccounts = signal<CuentaAdministrativa[]>([]);
   public convenios = signal<Convenio[]>([]);
   public servicesCatalog = signal<ServicioCatalogo[]>([]);
   public medicos = signal<Medico[]>([]);
-  
-  // Selected Patient / Timeline
+  public areasClinicas = signal<AreaClinica[]>([]);
+
+  // Selected Patient
   public selectedAccount = signal<CuentaAdministrativa | null>(null);
   public isAccountSolvent = computed<boolean>(() => {
     const active = this.selectedAccount();
@@ -409,24 +312,20 @@ export class EnfermeriaComponent implements OnInit {
     return saldo <= 0;
   });
   public nursingHistory = signal<TriageRecord[]>([]);
-  
+
   // Tab / Filter UI
-  public activeTab = signal<'fast-charge' | 'triage' | 'transfer' | 'history'>('fast-charge'); // fast-charge, triage, transfer, history
+  public activeTab = signal<'fast-charge' | 'triage' | 'transfer' | 'history'>('fast-charge');
   public searchTerm = signal<string>('');
   public isLoading = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
 
-  // Modular update selectors
+  // Vital Signs
   public registrarConstantesVitales = true;
   public registrarValoracionFisica = true;
   public registrarAntecedentes = true;
   public registrarEstadoActual = true;
-
-  // Descriptions
   public descripcionRapida = '';
   public descripcionDetallada = '';
-
-  // Vital Signs Form
   public motivoConsulta = '';
   public tensionArterial = '';
   public frecuenciaCardiaca = 0;
@@ -435,7 +334,6 @@ export class EnfermeriaComponent implements OnInit {
   public saturacionO2 = 98;
   public glicemiaCapilar: number | null = null;
 
-  // Physical Assessment Form
   public estadoConciencia = 'Alerta';
   public glasgowOcular = 4;
   public glasgowVerbal = 5;
@@ -452,30 +350,28 @@ export class EnfermeriaComponent implements OnInit {
   public pertenencias = '';
   public antecedentesMedicos = '';
 
-  // Editing state
   public showTriageForm = false;
   public isEditingTriage = false;
   public editingTriageId: string | null = null;
   public editingValoracionId: string | null = null;
 
-  // Fast Charge Medication autocomplete
+  // Fast Charge Stepper Signals
   public fastChargeSearchTerm = signal<string>('');
   public filteredServices = signal<ServicioCatalogo[]>([]);
   public selectedService = signal<ServicioCatalogo | null>(null);
   public selectedMedicoId = signal<string | null>(null);
-  public selectedAreaClinicaId = signal<string | null>(null);
-  public areasClinicas = signal<AreaClinica[]>([]);
-  public fastChargeQuantity = 1;
+
+  // ** Signal reactivo para cantidad en Carga Rápida **
+  public fastChargeQuantity = signal<number>(1);
   public isSavingFastCharge = signal<boolean>(false);
 
-  // Stepper & Pricing properties
   public currentStep = signal<number>(1);
   public activeStepperMode = signal<StepperMode>('catalog');
   public cartItems = signal<CartItem[]>([]);
   public activeSuggestions = signal<ServicioCatalogo[]>([]);
   public selectedSuggestions = signal<Record<string, boolean>>({});
 
-  public cartTotalUSD = computed(() => 
+  public cartTotalUSD = computed(() =>
     this.cartItems().reduce((acc, item) => acc + (item.precioBase + item.honorario) * item.cantidad, 0)
   );
 
@@ -484,7 +380,6 @@ export class EnfermeriaComponent implements OnInit {
   public customPrecio = signal<number | null>(null);
   public customHonorario = signal<number | null>(null);
 
-  // Computed Item Classification delegated to pure rules engine
   public itemClassification = computed<ItemClassification>(() => classifyService(this.selectedService()));
 
   public medicosFiltrados = computed(() => {
@@ -506,13 +401,12 @@ export class EnfermeriaComponent implements OnInit {
     return filtered.length > 0 ? filtered : allMedicos;
   });
 
+  // ** Computado reactivo que multiplica el precio base por fastChargeQuantity() **
   public precioFinalCalculado = computed<number>(() => {
     const s = this.selectedService();
     if (!s) return 0;
     const classification = this.itemClassification();
     const customPriceVal = this.customPrecio();
-    const defaultHonorary = s.honorarioBase ?? 0;
-    const isConsult = classification === ITEM_CLASSIFICATIONS.CONSULTA || (s.categoryId === 1);
     const pureBasePrice = s.precioUsd ?? 0;
     const basePrice = customPriceVal ?? pureBasePrice;
 
@@ -526,18 +420,16 @@ export class EnfermeriaComponent implements OnInit {
       return basePrice;
     }
 
-    const qty = this.fastChargeQuantity || 1;
+    const qty = this.fastChargeQuantity() || 1;
     return basePrice * qty;
   });
 
   public incrementQuantity(): void {
-    this.fastChargeQuantity = (Number(this.fastChargeQuantity) || 1) + 1;
+    this.fastChargeQuantity.update(v => (Number(v) || 1) + 1);
   }
 
   public decrementQuantity(): void {
-    if (this.fastChargeQuantity > 1) {
-      this.fastChargeQuantity = Number(this.fastChargeQuantity) - 1;
-    }
+    this.fastChargeQuantity.update(v => v > 1 ? v - 1 : 1);
   }
 
   // Transfer Area Form
@@ -550,47 +442,22 @@ export class EnfermeriaComponent implements OnInit {
 
   public camasDisponiblesIngreso = computed(() => {
     const camas = this.camasDisponibles();
-    const activeFilter = this.nursingAreaFilter();
-    let targetSedeId = '';
-    if (activeFilter === TIPO_INGRESO.HOSPITALIZACION) {
-      targetSedeId = '10000000-0000-0000-0000-000000000003';
-    } else if (activeFilter === TIPO_INGRESO.UCI) {
-      targetSedeId = '10000000-0000-0000-0000-000000000004';
-    } else if (activeFilter === TIPO_INGRESO.EMERGENCIA) {
-      targetSedeId = '10000000-0000-0000-0000-000000000002';
-    }
+    const targetSedeId = this.currentAreaSedeId();
     const filtered = targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
     return (filtered && filtered.length > 0) ? filtered : camas;
   });
 
-  public camasDisponiblesTraslado = computed(() => {
-    const camas = this.camasDisponibles();
-    const dest = this.nuevoTipoIngreso();
-    let targetSedeId = '';
-    if (dest === TIPO_INGRESO.HOSPITALIZACION) {
-      targetSedeId = '10000000-0000-0000-0000-000000000003';
-    } else if (dest === TIPO_INGRESO.UCI) {
-      targetSedeId = '10000000-0000-0000-0000-000000000004';
-    } else if (dest === TIPO_INGRESO.EMERGENCIA) {
-      targetSedeId = '10000000-0000-0000-0000-000000000002';
-    }
-    const filtered = targetSedeId ? camas.filter(c => c.sedeId === targetSedeId) : camas;
-    return (filtered && filtered.length > 0) ? filtered : camas;
-  });
-
-  // Filtered active accounts computed list con normalización de acentos y constantes estandarizadas
   public filteredAccounts = computed(() => {
     const list = this.activeAccounts();
     const term = this.searchTerm().trim();
     const currentTab = this.nursingAreaFilter();
 
-    // Filtro por área clínica seleccionada en Enfermería utilizando la regla unificada matchTipoIngreso
     const areaFiltered = list.filter(acc => matchTipoIngreso(acc.tipoIngreso, currentTab));
 
     if (!term) return areaFiltered;
     const termNorm = normalizeTipoIngreso(term);
-    return areaFiltered.filter(acc => 
-      normalizeTipoIngreso(acc.pacienteNombre).includes(termNorm) || 
+    return areaFiltered.filter(acc =>
+      normalizeTipoIngreso(acc.pacienteNombre).includes(termNorm) ||
       normalizeTipoIngreso(acc.pacienteCedula).includes(termNorm) ||
       normalizeTipoIngreso(acc.tipoIngreso).includes(termNorm)
     );
@@ -605,11 +472,9 @@ export class EnfermeriaComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      const account = this.selectedAccount();
-      const areaFilter = this.nursingAreaFilter();
-      const areas = this.areasClinicas();
-      if (areas.length > 0) {
-        this.autoSelectAreaClinicaForAccount(account);
+      const list = this.sedesOperativas();
+      if (list.length > 0) {
+        this.selectedSedeId.set(list[0].id);
       }
     });
   }
@@ -647,6 +512,26 @@ export class EnfermeriaComponent implements OnInit {
     });
   }
 
+  public autoSelectSedeForPatient(account: CuentaAdministrativa | null): void {
+    const list = this.sedesOperativas();
+    if (!list || list.length === 0) return;
+
+    const targetRaw = account?.subAreaClinica || account?.areaClinicaNombre || account?.tipoIngreso || this.nursingAreaFilter();
+    const targetNorm = normalizeTipoIngreso(targetRaw || '');
+
+    const match = list.find(s => {
+      const nameNorm = normalizeTipoIngreso(s.nombre || '');
+      const codeNorm = normalizeTipoIngreso(s.codigo || '');
+      return nameNorm.includes(targetNorm) || targetNorm.includes(nameNorm) || codeNorm === targetNorm;
+    });
+
+    if (match) {
+      this.selectedSedeId.set(match.id);
+    } else {
+      this.selectedSedeId.set(list[0].id);
+    }
+  }
+
   public loadCamasDisponibles() {
     this.http.get<any[]>(`${environment.apiUrl}/api/AreaClinica/monitoreo`).subscribe({
       next: (res) => {
@@ -659,13 +544,11 @@ export class EnfermeriaComponent implements OnInit {
 
   public refreshAccounts(): void {
     this.isLoading.set(true);
-    // Cargar cuentas administrativas abiertas
     this.http.get<CuentaAdministrativa[]>(`${environment.apiUrl}/api/Billing/cuentas-administrativas?estado=Abierta`)
       .subscribe({
         next: (res) => {
           this.activeAccounts.set(res);
           this.isLoading.set(false);
-          // Auto re-seleccionar la cuenta activa actual para ver cambios
           const currentSelected = this.selectedAccount();
           if (currentSelected) {
             const updated = res.find(c => c.cuentaId === currentSelected.cuentaId);
@@ -695,77 +578,35 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   private loadCatalogAndConvenios(): void {
-    // Cargar catalogo unificado de insumos/medicamentos/servicios
     this.http.get<ServicioCatalogo[]>(`${environment.apiUrl}/api/Catalog/unified`)
       .subscribe({
-        next: (res) => {
-          // Allow all items in the catalog for charging
-          this.servicesCatalog.set(res);
-        },
+        next: (res) => this.servicesCatalog.set(res),
         error: (err) => console.error('[ENFERMERIA] Error loading catalog:', err)
       });
 
-    // Cargar convenios
     this.http.get<Convenio[]>(`${environment.apiUrl}/api/Convenios`)
       .subscribe({
         next: (res) => this.convenios.set(res),
         error: (err) => console.error('[ENFERMERIA] Error loading convenios:', err)
       });
 
-    // Cargar médicos activos
     this.medicoService.getAll().subscribe({
       next: (res) => this.medicos.set(res.filter(m => m.activo)),
       error: (err) => console.error('[ENFERMERIA] Error loading medicos:', err)
     });
 
-    // Cargar áreas clínicas (Sedes)
-    this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
+    this.http.get<SedeDto[]>(`${environment.apiUrl}/api/Sede`).subscribe({
       next: (res) => {
-        const activeAreas = res.filter(a => a.activo);
-        this.areasClinicas.set(activeAreas);
-        if (this.selectedAccount()) {
-          this.autoSelectAreaClinicaForAccount(this.selectedAccount());
-        }
+        const activeSedes = res.filter(s => s.activo);
+        this.sedes.set(activeSedes);
       },
+      error: (err) => console.error('[ENFERMERIA] Error loading sedes:', err)
+    });
+
+    this.multiSedeService.getAreasClinicas().subscribe({
+      next: (areas) => this.areasClinicas.set(areas.filter(a => a.activo !== false)),
       error: (err) => console.error('[ENFERMERIA] Error loading areas clinicas:', err)
     });
-  }
-
-  public autoSelectAreaClinicaForAccount(account: CuentaAdministrativa | null): void {
-    const areas = this.areasClinicas();
-    if (!areas || areas.length === 0) return;
-
-    const normalizeStr = (str: string) => (str || '')
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-
-    // Prioridad de sincronización DB-Driven:
-    // 1. subAreaClinica del paciente seleccionado (ej. "Hospitalización", "Emergencia", "UCI")
-    // 2. tipoIngreso del paciente seleccionado (ej. "Emergencia", "Hospitalizacion", "UCI")
-    // 3. Filtro de área activo en la cabecera del módulo de enfermería (nursingAreaFilter())
-    const rawTarget = account?.subAreaClinica || account?.tipoIngreso || this.nursingAreaFilter() || '';
-    const targetNorm = normalizeStr(rawTarget);
-
-    if (!targetNorm) return;
-
-    const matched = areas.find(a => {
-      const nameNorm = normalizeStr(a.nombre);
-      const codeNorm = normalizeStr(a.codigo);
-
-      if (targetNorm === 'uci') {
-        return nameNorm.includes('uci') || codeNorm.includes('uci') || nameNorm.includes('cuidados intensivos');
-      }
-
-      return nameNorm.includes(targetNorm) || targetNorm.includes(nameNorm) || codeNorm === targetNorm;
-    });
-
-    if (matched) {
-      this.selectedAreaClinicaId.set(matched.id);
-    } else if (areas.length > 0 && !this.selectedAreaClinicaId()) {
-      this.selectedAreaClinicaId.set(areas[0].id);
-    }
   }
 
   public selectAccount(account: CuentaAdministrativa): void {
@@ -773,14 +614,12 @@ export class EnfermeriaComponent implements OnInit {
     this.loadTriageHistory(account.cuentaId);
     this.resetTriageForm();
     this.activeTab.set('fast-charge');
-    
-    // Auto-set the current convenio for transfer panel
+
     this.nuevoConvenioId = account.convenioId;
     this.nuevoTipoIngreso.set(account.tipoIngreso);
     this.esEgreso = false;
 
-    // Auto pre-select Area Clinica matching patient's admission area / current location
-    this.autoSelectAreaClinicaForAccount(account);
+    this.autoSelectSedeForPatient(account);
   }
 
   public loadTriageHistory(cuentaId: string): void {
@@ -788,20 +627,16 @@ export class EnfermeriaComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.nursingHistory.set(res);
-          if (res.length > 0) {
-            this.showTriageForm = false;
-          } else {
-            this.showTriageForm = true;
-          }
+          this.showTriageForm = res.length === 0;
         },
         error: (err) => console.error('[ENFERMERIA] Error loading history:', err)
       });
   }
 
   public updateGlasgowTotal(): void {
-    this.glasgowTotal = (Number(this.glasgowOcular) || 0) + 
-                        (Number(this.glasgowVerbal) || 0) + 
-                        (Number(this.glasgowMotor) || 0);
+    this.glasgowTotal = (Number(this.glasgowOcular) || 0) +
+      (Number(this.glasgowVerbal) || 0) +
+      (Number(this.glasgowMotor) || 0);
   }
 
   public resetTriageForm(): void {
@@ -839,12 +674,8 @@ export class EnfermeriaComponent implements OnInit {
     this.isEditingTriage = false;
     this.editingTriageId = null;
     this.editingValoracionId = null;
-    
-    if (this.nursingHistory().length > 0) {
-      this.showTriageForm = false;
-    } else {
-      this.showTriageForm = true;
-    }
+
+    this.showTriageForm = this.nursingHistory().length === 0;
   }
 
   private buildTriagePayload(cuentaId?: string): Record<string, any> {
@@ -921,7 +752,6 @@ export class EnfermeriaComponent implements OnInit {
   }
 
   public onEditTriageClick(item: TriageRecord): void {
-    // Cargar registro seleccionado en el formulario para editarlo
     this.motivoConsulta = item.motivoConsulta || '';
     this.tensionArterial = item.tensionArterial || '';
     this.frecuenciaCardiaca = item.frecuenciaCardiaca || 0;
@@ -958,7 +788,6 @@ export class EnfermeriaComponent implements OnInit {
     this.editingValoracionId = item.valoracionId || null;
     this.showTriageForm = true;
 
-    // Scroll vertical del panel al formulario
     setTimeout(() => {
       const formElement = document.getElementById('nursingForm');
       if (formElement) {
@@ -967,13 +796,12 @@ export class EnfermeriaComponent implements OnInit {
     }, 50);
   }
 
-  // Fast Charge Medication Autocomplete
   public onFastChargeSearchChange(val: string): void {
     this.fastChargeSearchTerm.set(val);
     const term = val.trim().toLowerCase();
     if (term.length >= 1) {
-      const filtered = this.servicesCatalog().filter(s => 
-        s.descripcion.toLowerCase().includes(term) || 
+      const filtered = this.servicesCatalog().filter(s =>
+        s.descripcion.toLowerCase().includes(term) ||
         s.codigo.toLowerCase().includes(term)
       );
       this.filteredServices.set(filtered);
@@ -997,23 +825,15 @@ export class EnfermeriaComponent implements OnInit {
     this.selectedService.set(service);
     this.fastChargeSearchTerm.set(service.descripcion);
     this.filteredServices.set([]);
-    this.fastChargeQuantity = 1;
+    this.fastChargeQuantity.set(1);
     this.selectedMedicoId.set(null);
 
-    // Auto pre-select Area Clinica from active account
-    if (this.selectedAccount()) {
-      this.autoSelectAreaClinicaForAccount(this.selectedAccount());
-    }
-
-    // Inicializar precio base del catálogo y honorario por defecto
     this.customPrecio.set(service.precioUsd ?? 0);
     this.customHonorario.set(service.honorarioBase ?? 0);
 
-    // Determinar modo del stepper
     const classification = classifyService(service);
     this.activeStepperMode.set(this.mapClassificationToMode(classification));
 
-    // Sugerencias Dinámicas desde Maestro de Servicios / DB
     const sugIds = service.sugerenciasIds || service.SugerenciasIds || [];
     const suggestions = this.servicesCatalog().filter(item => sugIds.includes(String(item.id)));
     this.activeSuggestions.set(suggestions);
@@ -1022,7 +842,6 @@ export class EnfermeriaComponent implements OnInit {
     suggestions.forEach(s => initialSelection[s.id] = true);
     this.selectedSuggestions.set(initialSelection);
 
-    // Avanzar al Paso 2 del Stepper
     this.currentStep.set(2);
   }
 
@@ -1036,9 +855,8 @@ export class EnfermeriaComponent implements OnInit {
   public resetCurrentItemSelection(): void {
     this.selectedService.set(null);
     this.fastChargeSearchTerm.set('');
-    this.fastChargeQuantity = 1;
+    this.fastChargeQuantity.set(1);
     this.selectedMedicoId.set(null);
-    this.autoSelectAreaClinicaForAccount(this.selectedAccount());
     this.customPrecio.set(null);
     this.customHonorario.set(null);
     this.activeSuggestions.set([]);
@@ -1055,23 +873,20 @@ export class EnfermeriaComponent implements OnInit {
     const getUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 
     const classification = this.itemClassification();
-    const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA || 
-                       classification === ITEM_CLASSIFICATIONS.LABORATORIO || 
-                       classification === ITEM_CLASSIFICATIONS.RX;
-    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
+    const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
+      classification === ITEM_CLASSIFICATIONS.LABORATORIO ||
+      classification === ITEM_CLASSIFICATIONS.RX;
+    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity());
 
-    const requiresMedico = classification === ITEM_CLASSIFICATIONS.CONSULTA || 
+    const requiresMedico = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
       ((service.honorarioBase ?? 0) > 0 && classification !== ITEM_CLASSIFICATIONS.RX && classification !== ITEM_CLASSIFICATIONS.LABORATORIO);
-    
+
     if (requiresMedico && !this.selectedMedicoId()) {
       alert('Por favor, seleccione el médico tratante para la consulta.');
       return;
     }
 
-    const defaultHonorary = service.honorarioBase ?? 0;
-    const isConsult = classification === ITEM_CLASSIFICATIONS.CONSULTA || (service.categoryId === 1);
-    const pureBasePrice = service.precioUsd ?? 0;
-    const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : pureBasePrice;
+    const basePrice = this.customPrecio() !== null ? Number(this.customPrecio()) : (service.precioUsd ?? 0);
     const honoraryPrice = this.customHonorario() !== null ? Number(this.customHonorario()) : (service.honorarioBase ?? 0);
 
     const mainItem: CartItem = {
@@ -1084,21 +899,19 @@ export class EnfermeriaComponent implements OnInit {
       cantidad: effectiveQty,
       medicoId: this.selectedMedicoId(),
       medicoNombre: this.getMedicoNombre(this.selectedMedicoId()),
-      areaClinicaId: this.selectedAreaClinicaId(),
-      areaClinicaNombre: this.getAreaClinicaNombre(this.selectedAreaClinicaId()),
+      areaClinicaId: this.selectedSedeId(),
+      areaClinicaNombre: this.getSedeNombre(this.selectedSedeId()),
       unidadMedida: service.unidadMedida || 'UD'
     };
 
     const newItems: CartItem[] = [mainItem];
 
-    // Sugerencias Dinámicas
     const activeSugs = this.activeSuggestions();
     const selSugs = this.selectedSuggestions();
     for (const sug of activeSugs) {
       if (selSugs[sug.id]) {
         const sugClass = classifyService(sug);
         const sugDefaultHonorary = sug.honorarioBase ?? 0;
-        const sugIsConsult = sugClass === ITEM_CLASSIFICATIONS.CONSULTA || (sug.categoryId === 1);
         const sugPureBasePrice = sug.precioUsd ?? 0;
         newItems.push({
           id: getUuid(),
@@ -1110,8 +923,8 @@ export class EnfermeriaComponent implements OnInit {
           cantidad: 1,
           medicoId: null,
           medicoNombre: null,
-          areaClinicaId: this.selectedAreaClinicaId(),
-          areaClinicaNombre: this.getAreaClinicaNombre(this.selectedAreaClinicaId()),
+          areaClinicaId: this.selectedSedeId(),
+          areaClinicaNombre: this.getSedeNombre(this.selectedSedeId()),
           unidadMedida: sug.unidadMedida || 'UD'
         });
       }
@@ -1135,18 +948,19 @@ export class EnfermeriaComponent implements OnInit {
     if (catalogItem) {
       this.selectedService.set(catalogItem);
       this.fastChargeSearchTerm.set(catalogItem.descripcion);
-      this.fastChargeQuantity = item.cantidad;
+      this.fastChargeQuantity.set(item.cantidad);
       this.selectedMedicoId.set(item.medicoId);
       this.customPrecio.set(item.precioBase);
       this.customHonorario.set(item.honorario);
-      this.selectedAreaClinicaId.set(item.areaClinicaId);
-      
+      this.selectedSedeId.set(item.areaClinicaId);
+
       const classification = classifyService(catalogItem);
       this.activeStepperMode.set(this.mapClassificationToMode(classification));
       this.currentStep.set(2);
     }
   }
 
+  // **VERIFICACIÓN DEL FLUJO DE CARGA MASIVA Y ACTUALIZACIÓN DE CUENTA**
   public submitAllCartItems(): void {
     const active = this.selectedAccount();
     const items = this.cartItems();
@@ -1155,6 +969,7 @@ export class EnfermeriaComponent implements OnInit {
     this.isSavingFastCharge.set(true);
 
     const payload = {
+      cuentaId: active.cuentaId, // Vinculación directa con la cuenta abierta
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,
@@ -1189,13 +1004,16 @@ export class EnfermeriaComponent implements OnInit {
       });
   }
 
-  public getAreaClinicaNombre(areaId: string | null): string {
-    if (!areaId) return '';
-    const a = this.areasClinicas().find(x => x.id === areaId);
-    return a ? a.nombre.toUpperCase() : 'DESCONOCIDA';
+  public getSedeNombre(sedeId: string | null): string {
+    if (!sedeId) return '';
+    const s = this.sedes().find(x => x.id === sedeId);
+    return s ? s.nombre.toUpperCase() : 'DESCONOCIDA';
   }
 
-  // Clinical Transfer / Discharge
+  public onSedeSelected(sedeId: string | null): void {
+    this.selectedSedeId.set(sedeId);
+  }
+
   public submitTransfer(): void {
     const active = this.selectedAccount();
     if (!active) return;
@@ -1204,9 +1022,9 @@ export class EnfermeriaComponent implements OnInit {
 
     const payload = {
       pacienteId: active.pacienteId,
-      nuevoTipoIngreso: this.esEgreso ? 'Particular' : this.nuevoTipoIngreso(), // Alta closes only
+      nuevoTipoIngreso: this.esEgreso ? 'Particular' : this.nuevoTipoIngreso(),
       nuevoConvenioId: this.esEgreso ? null : this.nuevoConvenioId,
-      usuarioTraslado: '', // Se sobreescribe en Backend
+      usuarioTraslado: '',
       esEgreso: this.esEgreso,
       nuevaAreaClinicaId: this.esEgreso ? null : this.selectedCamaId(),
       fechaHoraEgresoEfectiva: this.fechaHoraEgresoEfectiva ? new Date(this.fechaHoraEgresoEfectiva).toISOString() : null,
@@ -1235,16 +1053,7 @@ export class EnfermeriaComponent implements OnInit {
       });
   }
 
-  // Traslado Inteligente Signals & Handlers
-  public modoTrasladoInteligente = signal<'CAMBIO_CAMA' | 'TRASLADO_AREA'>('CAMBIO_CAMA');
-  public areaDestinoInteligente = signal<string>('EMERGENCIA');
-  public cantidadHorasInteligente = signal<number>(1);
-  public cambiaMedicoTratanteInteligente = signal<boolean>(false);
-  public nuevoMedicoIdInteligente = signal<string | null>(null);
-  public observacionInteligente = signal<string>('');
-  public montoACobrarUsdInteligente = signal<number>(300);
-
-  // Alta Médica & Solvencia Signals & Handlers
+  // Alta Médica Handlers
   public isAltaDropdownOpen = signal<boolean>(false);
   public showAltaModal = signal<boolean>(false);
   public showSolvenciaModal = signal<boolean>(false);
@@ -1323,7 +1132,7 @@ export class EnfermeriaComponent implements OnInit {
       error: (err: any) => {
         this.isProcessingAlta.set(false);
         const rawBody = err.error;
-        const errorMsg = 
+        const errorMsg =
           (typeof rawBody === 'string' ? rawBody : null) ||
           rawBody?.error ||
           rawBody?.Error ||
@@ -1346,82 +1155,6 @@ export class EnfermeriaComponent implements OnInit {
     alert(err);
   }
 
-  public onAreaDestinoChange(area: string): void {
-    this.areaDestinoInteligente.set(area);
-    const defaultRate = area === 'UCI' ? 600 : area === 'HOSPITALIZACION' ? 450 : 300;
-    this.montoACobrarUsdInteligente.set(defaultRate);
-  }
-
-  public submitCambioCama(): void {
-    const active = this.selectedAccount();
-    if (!active) return;
-    if (!this.selectedCamaId()) {
-      alert('Debe seleccionar una cama destino para realizar el cambio de cama.');
-      return;
-    }
-    this.isSavingTransfer.set(true);
-    const payload = {
-      cuentaId: active.cuentaId,
-      camaDestinoId: this.selectedCamaId()
-    };
-    this.http.post(`${environment.apiUrl}/api/Enfermeria/CambioCama`, payload).subscribe({
-      next: () => {
-        this.showSuccess('Cambio de cama realizado exitosamente sin costo adicional.');
-        this.refreshAccounts();
-        this.isSavingTransfer.set(false);
-      },
-      error: (err) => {
-        alert('Error al realizar cambio de cama: ' + (err.error?.Error || err.message));
-        this.isSavingTransfer.set(false);
-      }
-    });
-  }
-
-  public submitTrasladoArea(): void {
-    const active = this.selectedAccount();
-    if (!active) return;
-    if (!this.selectedCamaId()) {
-      alert('Debe seleccionar una cama en el área destino.');
-      return;
-    }
-    this.isSavingTransfer.set(true);
-
-    const medicoIdRaw = this.nuevoMedicoIdInteligente();
-    const nuevoMedicoIdSaneado = (medicoIdRaw && medicoIdRaw.trim() !== '') ? medicoIdRaw.trim() : null;
-
-    const payload = {
-      cuentaId: active.cuentaId,
-      areaDestino: this.areaDestinoInteligente() || 'HOSPITALIZACION',
-      camaDestinoId: this.selectedCamaId(),
-      cantidadHoras: Number(this.cantidadHorasInteligente()) || 1,
-      cambiaMedicoTratante: Boolean(this.cambiaMedicoTratanteInteligente()),
-      nuevoMedicoId: nuevoMedicoIdSaneado,
-      observacion: (this.observacionInteligente() || '').trim(),
-      montoACobrarUsd: Number(this.montoACobrarUsdInteligente()) || 0
-    };
-
-    this.http.post(`${environment.apiUrl}/api/Enfermeria/TrasladoArea`, payload).subscribe({
-      next: () => {
-        this.showSuccess(`Traslado a ${this.areaDestinoInteligente()} procesado con éxito ($${this.montoACobrarUsdInteligente()} USD).`);
-        this.refreshAccounts();
-        this.isSavingTransfer.set(false);
-      },
-      error: (err) => {
-        const rawBody = err.error;
-        const errorMsg = 
-          (typeof rawBody === 'string' ? rawBody : null) ||
-          rawBody?.error ||
-          rawBody?.Error ||
-          rawBody?.message ||
-          rawBody?.Message ||
-          err.message ||
-          'Error al realizar traslado de área.';
-        alert('Error al realizar traslado de área: ' + errorMsg);
-        this.isSavingTransfer.set(false);
-      }
-    });
-  }
-
   private showSuccess(msg: string): void {
     this.actionMessage.set(msg);
     setTimeout(() => this.actionMessage.set(null), 6000);
@@ -1439,14 +1172,6 @@ export class EnfermeriaComponent implements OnInit {
     }
   }
 
-  public onAreaSelected(areaId: string | null): void {
-    this.selectedAreaClinicaId.set(areaId);
-    if (this.itemClassification() === 'RX' && this.getAreaClinicaNombre(areaId) === 'EMERGENCIA') {
-      this.selectedMedicoId.set(null);
-      this.customHonorario.set(null);
-    }
-  }
-
   public getMedicoNombre(medicoId: string | null): string {
     if (!medicoId) return '';
     const m = this.medicos().find(x => x.id === medicoId);
@@ -1459,7 +1184,6 @@ export class EnfermeriaComponent implements OnInit {
     return m ? (m.especialidad?.toUpperCase() || 'GENERAL') : 'GENERAL';
   }
 
-  // --- Ingresar Paciente / Abrir Cuenta Clinica Flow (V1.2.92) ---
   public abrirModalIngreso() {
     this.searchIngresoTerm.set('');
     this.patientsEncontrados.set([]);
@@ -1470,22 +1194,12 @@ export class EnfermeriaComponent implements OnInit {
     this.medicoTratanteIngresoId.set(null);
     this.loadCamasDisponibles();
     this.newPatientData = {
-      cedula: '',
-      nombre: '',
-      apellidos: '',
-      correo: '',
-      celular: '',
-      telefono: '',
-      direccion: '',
-      fechaNacimiento: new Date().toISOString().split('T')[0],
-      sexo: 'ND',
-      tipoCorreo: DEFAULT_TRIAGE.TIPO_CORREO,
-      codigoCelular: DEFAULT_TRIAGE.CODIGO_CELULAR,
-      codigoTelefono: DEFAULT_TRIAGE.CODIGO_TELEFONO
+      cedula: '', nombre: '', apellidos: '', correo: '', celular: '', telefono: '', direccion: '',
+      fechaNacimiento: new Date().toISOString().split('T')[0], sexo: 'ND',
+      tipoCorreo: DEFAULT_TRIAGE.TIPO_CORREO, codigoCelular: DEFAULT_TRIAGE.CODIGO_CELULAR, codigoTelefono: DEFAULT_TRIAGE.CODIGO_TELEFONO
     };
     this.errorMessage.set(null);
-    
-    // Reset triage signals
+
     this.ingresoStep.set(1);
     this.triageSelectedPatientId.set(null);
     this.triageMotivoConsulta.set('');
@@ -1555,13 +1269,11 @@ export class EnfermeriaComponent implements OnInit {
   public procesarIngreso() {
     this.errorMessage.set(null);
 
-    // Validar médico tratante obligatorio para Hospitalización y UCI
     if (this.esMedicoTratanteRequerido() && !this.medicoTratanteIngresoId()) {
       this.errorMessage.set('Debe seleccionar un Médico Tratante para ingreso a ' + this.type() + '.');
       return;
     }
 
-    // Si fechaNacimientoFormatted tiene un valor válido de 10 caracteres, actualizar la propiedad subyacente
     if (this.fechaNacimientoFormatted && this.fechaNacimientoFormatted.length === 10) {
       const parts = this.fechaNacimientoFormatted.split('-');
       if (parts.length === 3) {
@@ -1570,12 +1282,11 @@ export class EnfermeriaComponent implements OnInit {
     }
 
     if (this.showNewPatientForm()) {
-      // Registrar nuevo paciente primero
-      if (!this.newPatientData.cedula || 
-          !this.newPatientData.nombre || 
-          !this.newPatientData.apellidos || 
-          !this.newPatientData.fechaNacimiento || 
-          !this.newPatientData.celular) {
+      if (!this.newPatientData.cedula ||
+        !this.newPatientData.nombre ||
+        !this.newPatientData.apellidos ||
+        !this.newPatientData.fechaNacimiento ||
+        !this.newPatientData.celular) {
         this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento y Celular.");
         return;
       }
@@ -1598,7 +1309,6 @@ export class EnfermeriaComponent implements OnInit {
         }
       });
     } else {
-      // Usar paciente existente con auto-selección si hay resultados de búsqueda pendientes
       let patient = this.selectedPatientForIngreso();
       if (!patient && this.patientsEncontrados().length > 0) {
         patient = this.patientsEncontrados()[0];
@@ -1655,7 +1365,6 @@ export class EnfermeriaComponent implements OnInit {
 
     this.isLoading.set(true);
 
-    // 1. Abrir la cuenta clínica
     this.facturacionService.abrirCuenta(pacienteId, 'Emergencia', this.convenioIngresoId(), this.selectedCamaId(), this.medicoTratanteIngresoId()).subscribe({
       next: (res: any) => {
         const cuentaId = res?.cuentaId || res?.CuentaId || res?.id || (typeof res === 'string' ? res : null);
@@ -1665,7 +1374,6 @@ export class EnfermeriaComponent implements OnInit {
           return;
         }
 
-        // 2. Preparar el payload del triage
         const antecedenteParts: string[] = [];
         if (this.triageAntecedenteHTA()) antecedenteParts.push('HTA');
         if (this.triageAntecedenteDiabetes()) antecedenteParts.push('Diabetes');
@@ -1711,7 +1419,6 @@ export class EnfermeriaComponent implements OnInit {
           descripcionDetallada: `Ingreso inicial por: ${rawMotivo}. Clasificación: ${clasificacion}`
         };
 
-        // 3. Registrar el Triage y Valoración Física
         this.http.post(`${environment.apiUrl}/api/Enfermeria/Triage`, triagePayload).subscribe({
           next: () => {
             this.isLoading.set(false);
@@ -1723,7 +1430,6 @@ export class EnfermeriaComponent implements OnInit {
           },
           error: (err: any) => {
             this.isLoading.set(false);
-            // Mostramos éxito del ingreso pero advertimos sobre el triage
             this.showIngresoModal.set(false);
             this.actionMessage.set(`Paciente ingresado, pero hubo un error al registrar el triage: ${err.error?.Error || err.message}`);
             setTimeout(() => this.actionMessage.set(null), 8000);
@@ -1738,7 +1444,6 @@ export class EnfermeriaComponent implements OnInit {
     });
   }
 
-  // Formateador de Fecha de Nacimiento
   public get fechaNacimientoFormatted(): string {
     if (!this.newPatientData.fechaNacimiento) return '';
     const parts = this.newPatientData.fechaNacimiento.split('-');

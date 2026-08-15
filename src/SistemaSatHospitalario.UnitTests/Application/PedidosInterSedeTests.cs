@@ -111,8 +111,8 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
             Assert.Equal(20, detalle.CantidadDespachada);
             Assert.Equal(20, detalle.CantidadRecibida);
-            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == "TransferenciaSalida" && m.CantidadBase == -20)), Times.Once);
-            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == "TransferenciaEntrada" && m.CantidadBase == 20)), Times.Once);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == TipoMovimientoInsumo.TransferenciaSalida && m.CantidadBase == -20)), Times.Once);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == TipoMovimientoInsumo.TransferenciaEntrada && m.CantidadBase == 20)), Times.Once);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -209,7 +209,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(23, stockSolicitante.StockActual); // 5 inicial + 18 recibidos
             Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
             Assert.Equal(18, detalle.CantidadRecibida);
-            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == "TransferenciaEntrada" && m.CantidadBase == 18)), Times.Once);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.TipoMovimiento == TipoMovimientoInsumo.TransferenciaEntrada && m.CantidadBase == 18)), Times.Once);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -334,7 +334,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(EstadoPedidoInterSede.Recibido, pedido.Estado);
             Assert.Equal(5, detalle.CantidadRecibida);
             mockContext.Verify(c => c.StocksSedes.Add(It.Is<StockSede>(s => s.SedeId == sedeSolicitante.Id && s.StockActual == 5)), Times.Once);
-            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.SedeId == sedeSolicitante.Id && m.CantidadBase == 5 && m.TipoMovimiento == "TransferenciaEntrada")), Times.Once);
+            mockContext.Verify(c => c.MovimientosInsumo.Add(It.Is<MovimientoInsumo>(m => m.SedeId == sedeSolicitante.Id && m.CantidadBase == 5 && m.TipoMovimiento == TipoMovimientoInsumo.TransferenciaEntrada)), Times.Once);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
     }

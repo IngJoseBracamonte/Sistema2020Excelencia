@@ -14,6 +14,8 @@ export interface CuentaAdministrativaDetailDto {
   fechaCarga: string;
   legacyMappingId?: string;
   incluidoEnTarifaBase: boolean;
+  medicoResponsableId?: string;
+  medicoId?: string;
 }
 
 export interface CuentaAdministrativaDto {
@@ -35,6 +37,8 @@ export interface CuentaAdministrativaDto {
   areaClinicaId?: string;
   areaClinicaNombre?: string;
   subAreaClinica?: string;
+  medicoId?: string;
+  medicoNombre?: string;
   detalles: CuentaAdministrativaDetailDto[];
 }
 

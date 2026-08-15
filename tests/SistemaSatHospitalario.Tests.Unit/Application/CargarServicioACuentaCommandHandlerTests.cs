@@ -224,6 +224,101 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             capturedCuenta.Detalles.First().Honorario.Should().Be(20);
             capturedCuenta.Detalles.First().Precio.Should().Be(120);
         }
+
+        [Fact]
+        public async Task Should_UseCuentaId_When_CuentaIdIsProvidedInCommand()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var cuentaId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            var cuentaEspecifica = new CuentaServicios(pacienteId, "Admin", "Particular");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(cuentaEspecifica, cuentaId);
+
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("E001", "Examen Especifico", 50, "Laboratorio");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            service.Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Other;
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            _repositoryMock.Setup(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(cuentaEspecifica);
+
+            var command = new CargarServicioACuentaCommand
+            {
+                CuentaId = cuentaId,
+                PacienteId = pacienteId,
+                TipoIngreso = "Particular",
+                ServicioId = servicioId.ToString(),
+                Descripcion = "Examen Especifico",
+                Precio = 50,
+                Honorario = 0,
+                Cantidad = 1,
+                TipoServicio = "Laboratorio",
+                UsuarioCarga = "Admin"
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.CuentaId.Should().Be(cuentaId);
+            cuentaEspecifica.Detalles.Should().HaveCount(1);
+            _repositoryMock.Verify(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Should_PopulateTipoServicioId_When_DetalleIsCreated()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var cuentaId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            var cuentaEspecifica = new CuentaServicios(pacienteId, "Admin", "Particular");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(cuentaEspecifica, cuentaId);
+
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            var pacienteSet = new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.PacientesAdmision).Returns(pacienteSet.Object);
+
+            var service = new ServicioClinico("E002", "Consulta Cardiologia", 100, "Medico");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            service.Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Other;
+            var serviceSet = new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet();
+            _contextMock.Setup(c => c.ServiciosClinicos).Returns(serviceSet.Object);
+
+            _repositoryMock.Setup(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(cuentaEspecifica);
+
+            var command = new CargarServicioACuentaCommand
+            {
+                CuentaId = cuentaId,
+                PacienteId = pacienteId,
+                TipoIngreso = "Particular",
+                ServicioId = servicioId.ToString(),
+                Descripcion = "Consulta Cardiologia",
+                Precio = 100,
+                Honorario = 0,
+                Cantidad = 1,
+                TipoServicio = "MEDICO",
+                MedicoId = Guid.NewGuid(),
+                UsuarioCarga = "Admin"
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            cuentaEspecifica.Detalles.Should().HaveCount(1);
+            var createdDetail = cuentaEspecifica.Detalles.First();
+            createdDetail.TipoServicioId.Should().Be(SistemaSatHospitalario.Core.Domain.Constants.TipoServicioConstants.Medico);
+        }
     }
 }
 

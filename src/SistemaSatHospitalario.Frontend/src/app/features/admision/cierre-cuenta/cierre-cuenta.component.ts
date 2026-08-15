@@ -153,20 +153,20 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public triageSaturacionO2 = signal<number>(98);
   public triageGlicemiaCapilar = signal<number | null>(null);
   public triageClasificacion = signal<string>('Nivel III (Amarillo)');
-  
+
   public triageEstadoConciencia = signal<string>('Alerta');
   public triageGlasgowOcular = signal<number>(4);
   public triageGlasgowVerbal = signal<number>(5);
   public triageGlasgowMotor = signal<number>(6);
   public triageGlasgowTotal = computed(() => Number(this.triageGlasgowOcular()) + Number(this.triageGlasgowVerbal()) + Number(this.triageGlasgowMotor()));
-  
+
   public triageViaAerea = signal<string>('Permeable');
   public triageVentilacion = signal<string>('Normal');
   public triagePulso = signal<string>('Rítmico');
   public triagePielMucosas = signal<string>('Normocoloreada');
   public triageLlenadoCapilar = signal<string>('< 2 segundos');
   public triagePupilas = signal<string>('Isocóricas');
-  
+
   public triageAlergiasNinguna = signal<boolean>(true);
   public triageAlergiasEspecificar = signal<string>('');
   public triageAccesosVenososTrae = signal<boolean>(false);
@@ -348,31 +348,29 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     const term = this.searchTerm().toLowerCase().trim();
     const list = this.accounts();
     if (!term) return list;
-    return list.filter(acc => 
-      acc.pacienteNombre.toLowerCase().includes(term) || 
+    return list.filter(acc =>
+      acc.pacienteNombre.toLowerCase().includes(term) ||
       acc.pacienteCedula.toLowerCase().includes(term)
     );
   });
 
   public enrichedAccounts = computed(() => {
     const list = this.filteredAccounts();
-    return list.map((acc, index) => {
+    const map = this.patientDetailsMap();
+    return list.map((acc) => {
       // Determinamos iniciales del paciente
-      const names = acc.pacienteNombre.trim().split(/\s+/);
+      const names = (acc.pacienteNombre || '').trim().split(/\s+/);
       const initials = names.map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
-      
-      // Estado clínico, habitación/cama deterministas a partir de la cédula para consistencia visual
-      const seed = acc.pacienteCedula.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) || index;
-      const statuses = ['Crítico', 'Estable', 'Observación'];
-      const status = statuses[seed % statuses.length];
-      
-      const roomType = this.type() === 'Hospitalizacion' ? 'Hab.' : 'Box';
-      const room = acc.areaClinicaNombre || `${roomType} ${100 + (seed % 15)}${String.fromCharCode(65 + (seed % 3))}`;
-      
-      let statusClass = 'text-rose-500 bg-rose-500/10 border border-rose-500/20';
-      if (status === 'Estable') {
-        statusClass = 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
-      } else if (status === 'Observación') {
+
+      // Estado de la cuenta y ubicación real asignada
+      const patient = map[acc.pacienteId];
+      const status = acc.estado || 'Abierta';
+      const room = acc.areaClinicaNombre || (this.type() === 'Hospitalizacion' ? 'Habitación' : 'Box');
+
+      let statusClass = 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+      if (acc.subAreaClinica === 'UCI' || acc.tipoIngreso === 'UCI') {
+        statusClass = 'text-rose-500 bg-rose-500/10 border border-rose-500/20';
+      } else if (status !== 'Abierta') {
         statusClass = 'text-amber-500 bg-amber-500/10 border border-amber-500/20';
       }
 
@@ -381,7 +379,9 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         initials,
         status,
         room,
-        statusClass
+        statusClass,
+        grupoSanguineo: patient?.grupoSanguineo || 'N/R',
+        fechaNacimiento: patient?.fechaNacimiento
       };
     });
   });
@@ -409,12 +409,12 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     if (!fechaNacimiento) return '—';
     const nacimiento = new Date(fechaNacimiento);
     if (isNaN(nacimiento.getTime())) return '—';
-    
+
     const hoy = new Date();
     let años = hoy.getFullYear() - nacimiento.getFullYear();
     let meses = hoy.getMonth() - nacimiento.getMonth();
     let dias = hoy.getDate() - nacimiento.getDate();
-    
+
     if (dias < 0) {
       meses--;
       const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
@@ -424,7 +424,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       años--;
       meses += 12;
     }
-    
+
     if (años > 0) return `${años} ${años === 1 ? 'año' : 'años'}`;
     if (meses > 0) return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
     return `${dias} ${dias === 1 ? 'día' : 'días'}`;
@@ -478,7 +478,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         const rawDate = tr.fechaRegistro || tr.FechaRegistro || acc.fechaCarga;
         const date = new Date(rawDate);
         const user = tr.usuarioRegistro || tr.UsuarioRegistro || 'sistema';
-        
+
         // Registro de Triage Genuino
         activities.push({
           timestamp: date,
@@ -686,16 +686,24 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       error: (err) => console.error('[CIERRE-CUENTA] Error al cargar médicos:', err)
     });
 
-    // 5.1 Cargar áreas clínicas (Ubicaciones)
-    this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`).subscribe({
-      next: (res) => {
-        const activeAreas = res.filter(a => a.activo);
-        this.areasClinicas.set(activeAreas);
+    // 5.1 Cargar Sedes Operativas (excluyendo la Sede Principal / Almacén Central)
+    this.multiSedeService.getSedes().subscribe({
+      next: (sedes) => {
+        const sedesOperativas = sedes
+          .filter(s => s.activo && !s.esPrincipal && s.id !== '00000000-0000-0000-0000-000000000001')
+          .map(s => ({
+            id: s.id,
+            nombre: s.nombre,
+            codigo: s.codigo,
+            activo: s.activo
+          }));
+
+        this.areasClinicas.set(sedesOperativas as AreaClinica[]);
         if (this.selectedAccount()) {
           this.autoSelectAreaClinicaForAccount(this.selectedAccount());
         }
       },
-      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar áreas clínicas:', err)
+      error: (err) => console.error('[CIERRE-CUENTA] Error al cargar sedes:', err)
     });
 
     // 6. Cargar áreas clínicas (camas)
@@ -789,11 +797,12 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.pagos.set([]); // Limpiar pagos temporales
     this.diagnostico.set('Diagnóstico General / Control Médico');
     this.destinoPaciente.set('Alta Médica');
-    this.personalRelevo.set('');
-    this.medicoTratanteId.set(null); // Resetear selección de médico
+    // Cargar médico tratante si la cuenta lo posee
+    const medicoIdEnCuenta = acc.medicoId || acc.detalles?.find((d: any) => d.medicoResponsableId || d.medicoId)?.medicoResponsableId || null;
+    this.medicoTratanteId.set(medicoIdEnCuenta);
     this.mostrarSeccionPago.set(false);
     this.mostrarDetalleItems.set(false);
-    
+
     // Si la cuenta ya tiene convenio pre-configurado
     if (acc.convenioId) {
       this.convenioSeleccionadoId.set(acc.convenioId);
@@ -820,7 +829,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
     for (const term of searchTerms) {
       if (!term) continue;
-      
+
       const matched = areas.find(a => {
         const nameNorm = (a.nombre || '').toLowerCase().trim();
         const codeNorm = (a.codigo || '').toLowerCase().trim();
@@ -847,21 +856,15 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.loadOpenAccounts();
   }
 
-  // Mock Blood Type helper based on patient ID to visual match the reference mockup
-  public getMockBloodType(pacienteId: string): string {
-    const types = ['O+', 'A-', 'AB+', 'B+', 'O-', 'A+'];
-    const idx = pacienteId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % types.length;
-    return types[idx];
-  }
-
-  // Helper calculation of age
+  // Cálculo de edad real a partir de fecha de nacimiento
   public getPatientAge(fechaNacStr?: string): string {
-    if (!fechaNacStr) return '42 años'; // Fallback
+    if (!fechaNacStr) return 'N/R';
     const birth = new Date(fechaNacStr);
+    if (isNaN(birth.getTime())) return 'N/R';
     const ageDifMs = Date.now() - birth.getTime();
     const ageDate = new Date(ageDifMs);
     const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-    const dateStr = birth.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const dateStr = birth.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return `${age} años (FN: ${dateStr})`;
   }
 
@@ -1202,7 +1205,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       codigoTelefono: '0274'
     };
     this.errorMessage.set(null);
-    
+
     // Reset triage signals
     this.ingresoStep.set(1);
     this.triageSelectedPatientId.set(null);
@@ -1275,11 +1278,11 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
     if (this.showNewPatientForm()) {
       // Registrar nuevo paciente primero
-      if (!this.newPatientData.cedula || 
-          !this.newPatientData.nombre || 
-          !this.newPatientData.apellidos || 
-          !this.newPatientData.fechaNacimiento || 
-          !this.newPatientData.celular) {
+      if (!this.newPatientData.cedula ||
+        !this.newPatientData.nombre ||
+        !this.newPatientData.apellidos ||
+        !this.newPatientData.fechaNacimiento ||
+        !this.newPatientData.celular) {
         this.errorMessage.set("Todos los campos marcados con (*) son obligatorios: Cédula, Nombres, Apellidos, Fecha de Nacimiento y Celular.");
         return;
       }
@@ -1531,9 +1534,13 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   }
 
   public obtenerNombreMedico(id: string | null): string {
-    if (!id) return '--- SIN ASIGNAR ---';
+    if (!id) {
+      const acc = this.selectedAccount();
+      if (acc?.medicoNombre) return acc.medicoNombre.toUpperCase();
+      return 'NO ASIGNADO';
+    }
     const medico = this.medicos().find(m => m.id === id);
-    return medico ? medico.nombre : '--- SIN ASIGNAR ---';
+    return medico ? medico.nombre.toUpperCase() : (this.selectedAccount()?.medicoNombre?.toUpperCase() || 'NO ASIGNADO');
   }
 
   public addCurrentItemToCart(): void {
@@ -1553,14 +1560,14 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
     const classification = this.itemClassification();
     const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
-                       classification === ITEM_CLASSIFICATIONS.LABORATORIO ||
-                       classification === ITEM_CLASSIFICATIONS.RX;
+      classification === ITEM_CLASSIFICATIONS.LABORATORIO ||
+      classification === ITEM_CLASSIFICATIONS.RX;
     const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
 
     const requiresMedico = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
       ((service.honorarioBase ?? 0) > 0 &&
-       classification !== ITEM_CLASSIFICATIONS.RX &&
-       classification !== ITEM_CLASSIFICATIONS.LABORATORIO);
+        classification !== ITEM_CLASSIFICATIONS.RX &&
+        classification !== ITEM_CLASSIFICATIONS.LABORATORIO);
 
     if (requiresMedico && !this.selectedMedicoId()) {
       alert('Por favor, seleccione el médico tratante para la consulta.');
@@ -1646,6 +1653,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null);
 
     const payload = {
+      cuentaId: active.cuentaId,
       pacienteId: active.pacienteId,
       tipoIngreso: active.tipoIngreso,
       convenioId: active.convenioId,

@@ -404,6 +404,114 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     if (!hasDetallePadreId)
                         await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `DetallePadreId` TEXT NULL;" : "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `DetallePadreId` CHAR(36) NULL;");
 
+                    bool hasTipoServicioId = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(DetallesServicioCuenta);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("TipoServicioId", StringComparison.OrdinalIgnoreCase)) hasTipoServicioId = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `DetallesServicioCuenta` LIKE 'TipoServicioId';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync()) hasTipoServicioId = true;
+                            }
+                        }
+                    }
+                    if (!hasTipoServicioId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `TipoServicioId` INTEGER NOT NULL DEFAULT 5;" : "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `TipoServicioId` INT NOT NULL DEFAULT 5;");
+
+                    bool hasUsuarioCargaId = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(DetallesServicioCuenta);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("UsuarioCargaId", StringComparison.OrdinalIgnoreCase)) hasUsuarioCargaId = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `DetallesServicioCuenta` LIKE 'UsuarioCargaId';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync()) hasUsuarioCargaId = true;
+                            }
+                        }
+                    }
+                    if (!hasUsuarioCargaId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `UsuarioCargaId` TEXT NULL;" : "ALTER TABLE `DetallesServicioCuenta` ADD COLUMN `UsuarioCargaId` VARCHAR(255) NULL;");
+
+                    bool hasCirugiaUsuarioRegistroId = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(CirugiasObservacionesHistorial);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("UsuarioRegistroId", StringComparison.OrdinalIgnoreCase)) hasCirugiaUsuarioRegistroId = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `CirugiasObservacionesHistorial` LIKE 'UsuarioRegistroId';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync()) hasCirugiaUsuarioRegistroId = true;
+                            }
+                        }
+                    }
+                    if (!hasCirugiaUsuarioRegistroId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CirugiasObservacionesHistorial` ADD COLUMN `UsuarioRegistroId` TEXT NULL;" : "ALTER TABLE `CirugiasObservacionesHistorial` ADD COLUMN `UsuarioRegistroId` VARCHAR(255) NULL;");
+
+                    bool hasPagoMetodoPagoId = false;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        if (isSqlite)
+                        {
+                            cmd.CommandText = "PRAGMA table_info(DetallesPago);";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    var name = reader["name"]?.ToString() ?? string.Empty;
+                                    if (name.Equals("MetodoPagoId", StringComparison.OrdinalIgnoreCase)) hasPagoMetodoPagoId = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cmd.CommandText = "SHOW COLUMNS FROM `DetallesPago` LIKE 'MetodoPagoId';";
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync()) hasPagoMetodoPagoId = true;
+                            }
+                        }
+                    }
+                    if (!hasPagoMetodoPagoId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `DetallesPago` ADD COLUMN `MetodoPagoId` TEXT NULL;" : "ALTER TABLE `DetallesPago` ADD COLUMN `MetodoPagoId` CHAR(36) NULL;");
+
                     // 3. OrdenesImagenes
                     bool hasLinkInforme = false;
                     bool hasObservacionesMedico = false;
@@ -617,6 +725,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await FixOrphanPaymentDatesAsync();
                 await SeedMonedasAsync();
                 await SeedMetodosPagoAsync();
+                await SeedTiposServicioAsync();
                 await SeedInventorySedesAndMigrateStockAsync();
                 await SeedAreasClinicasAsync();
  
@@ -746,6 +855,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 new ServicioClinico("S004", "Consulta Ginecologica", 60.00m, "Consulta") { HonorariumCategory = "CONSULTA" },
                 new ServicioClinico("S005", "Citologia", 25.00m, "Citologia") { HonorariumCategory = "CITOLOGIA" },
                 new ServicioClinico("S006", "Eco Ginecologico", 40.00m, "Eco") { HonorariumCategory = "INFORME" },
+                new ServicioClinico("S007", "Tomografía Axial Computarizada (TAC) Cráneo", 120.00m, "TOMO") { HonorariumCategory = "TOMO" },
                 new ServicioClinico("MED-01", "Ibuprofeno 600mg (Medicamento)", 5.00m, "Medicamento") { Category = ServiceCategory.Insumo, HonorariumCategory = "MEDICAMENTO" },
                 new ServicioClinico("HOSP-EMG-01", "Cargo por Traslado / Estancia Emergencia", 300.00m, "Hospitalario") { HonorariumCategory = "HOSPITALARIO" },
                 new ServicioClinico("HOSP-HOS-01", "Cargo por Traslado / Estancia Hospitalización", 450.00m, "Hospitalario") { HonorariumCategory = "HOSPITALARIO" },
@@ -1358,6 +1468,56 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         {
             // Pruebas manuales: No sembrar insumos ni recetas automáticas
             await Task.CompletedTask;
+        }
+
+        private async Task SeedTiposServicioAsync()
+        {
+            try
+            {
+                var isSqlite = _context.Database.IsSqlite();
+                if (isSqlite)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS TiposServicio (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Nombre TEXT NOT NULL,
+                            Codigo TEXT NOT NULL
+                        );
+                    ");
+                }
+                else
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS `TiposServicio` (
+                            `Id` INT NOT NULL AUTO_INCREMENT,
+                            `Nombre` VARCHAR(100) NOT NULL,
+                            `Codigo` VARCHAR(50) NOT NULL,
+                            PRIMARY KEY (`Id`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                }
+
+                if (!await _context.TiposServicio.AnyAsync())
+                {
+                    var tipos = new List<TipoServicio>
+                    {
+                        new TipoServicio(Core.Domain.Constants.TipoServicioConstants.Medico, "Servicio Médico / Consulta", "MEDICO"),
+                        new TipoServicio(Core.Domain.Constants.TipoServicioConstants.Laboratorio, "Examen de Laboratorio", "LAB"),
+                        new TipoServicio(Core.Domain.Constants.TipoServicioConstants.RX, "Rayos X / Imagenología", "RX"),
+                        new TipoServicio(Core.Domain.Constants.TipoServicioConstants.Tomo, "Tomografía Axial", "TOMO"),
+                        new TipoServicio(Core.Domain.Constants.TipoServicioConstants.Insumo, "Insumo / Medicamento", "INSUMO"),
+                        new TipoServicio(Core.Domain.Constants.TipoServicioConstants.Informe, "Informe / Lectura Médica", "INFORME")
+                    };
+
+                    await _context.TiposServicio.AddRangeAsync(tipos);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("[SYSTEM-DB-INITIALIZER] Se sembraron 6 tipos de servicio en la tabla TiposServicio.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[SYSTEM-DB-INITIALIZER] Error al sembrar la tabla TiposServicio.");
+            }
         }
     }
 }

@@ -78,6 +78,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<CirugiaObservacionHistorial> CirugiasObservacionesHistorial { get; set; }
         public DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; set; }
         public DbSet<PagoProveedor> PagosProveedores { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
 
         public SatHospitalarioDbContext(DbContextOptions<SatHospitalarioDbContext> options) : base(options) { }
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) => Database.BeginTransactionAsync(cancellationToken);
@@ -237,8 +238,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("OrdenesDeServicio");
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.TotalCobrado).HasPrecision(18, 2);
+                entity.Property(o => o.EstadoFacturacion).HasConversion<int>();
 
-                entity.HasOne<PacienteAdmision>()
+                entity.HasOne(o => o.Paciente)
                       .WithMany(p => p.Ordenes)
                       .HasForeignKey(o => o.PacienteId)
                       .OnDelete(DeleteBehavior.Restrict);
@@ -327,7 +329,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(d => d.AreaClinicaId)
                       .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasOne<TipoServicio>()
+                entity.HasOne(d => d.TipoServicioNav)
                       .WithMany()
                       .HasForeignKey(d => d.TipoServicioId)
                       .OnDelete(DeleteBehavior.Restrict);
@@ -549,6 +551,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(o => o.Id);
                 entity.HasIndex(o => o.Estado);
                 entity.HasIndex(o => o.TipoServicio);
+
+                entity.HasOne(o => o.Paciente)
+                      .WithMany()
+                      .HasForeignKey(o => o.PacienteId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(o => o.MedicoSolicitante)
+                      .WithMany()
+                      .HasForeignKey(o => o.MedicoSolicitanteId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             builder.Entity<Moneda>(entity =>
@@ -881,6 +893,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(s => new { s.SedeId, s.InsumoId }).IsUnique();
             });
 
+            builder.Entity<MovimientoInsumo>(entity =>
+            {
+                entity.ToTable("MovimientosInsumo");
+                entity.HasKey(m => m.Id);
+                entity.Property(m => m.TipoMovimiento).HasConversion<int>();
+                entity.Property(m => m.CantidadBase).HasPrecision(18, 4);
+                entity.Property(m => m.CantidadOriginal).HasPrecision(18, 4);
+            });
+
             builder.Entity<PedidoInterSede>(entity =>
             {
                 entity.ToTable("PedidosInterSede");
@@ -1047,10 +1068,69 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("CirugiasObservacionesHistorial");
                 entity.HasKey(h => h.Id);
                 entity.Property(h => h.Observacion).IsRequired().HasMaxLength(1000);
-                entity.Property(h => h.Tipo).IsRequired().HasMaxLength(50);
+                entity.Property(h => h.Tipo).HasConversion<int>();
                 entity.Property(h => h.UsuarioRegistro).IsRequired().HasMaxLength(100);
 
                 entity.HasIndex(h => h.OrdenCirugiaId);
+            });
+
+            builder.Entity<OrdenCompraInventario>(entity =>
+            {
+                entity.ToTable("OrdenesCompraInventario");
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.NumeroFactura).IsRequired().HasMaxLength(100);
+                entity.Property(o => o.ProveedorNombre).IsRequired().HasMaxLength(250);
+                entity.Property(o => o.MontoTotalUSD).HasPrecision(18, 2);
+                entity.Property(o => o.MontoTotalBs).HasPrecision(18, 2);
+                entity.Property(o => o.TotalAbonadoUSD).HasPrecision(18, 2);
+                entity.Property(o => o.SaldoPendienteUSD).HasPrecision(18, 2);
+                entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
+                entity.Property(o => o.Observaciones).HasMaxLength(1000);
+
+                entity.HasMany(o => o.Pagos)
+                      .WithOne(p => p.OrdenCompra)
+                      .HasForeignKey(p => p.OrdenCompraId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(o => o.NumeroFactura);
+                entity.HasIndex(o => o.ProveedorNombre);
+                entity.HasIndex(o => o.Estado);
+            });
+
+            builder.Entity<PagoProveedor>(entity =>
+            {
+                entity.ToTable("PagosProveedores");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.MontoAbonadoUSD).HasPrecision(18, 2);
+                entity.Property(p => p.TasaCambio).HasPrecision(18, 2);
+                entity.Property(p => p.MontoAbonadoBs).HasPrecision(18, 2);
+                entity.Property(p => p.MetodoPago).IsRequired().HasMaxLength(50);
+                entity.Property(p => p.Referencia).HasMaxLength(100);
+                entity.Property(p => p.UsuarioId).HasMaxLength(100);
+                entity.Property(p => p.Observaciones).HasMaxLength(1000);
+            });
+
+            builder.Entity<OrdenImagen>(entity =>
+            {
+                entity.ToTable("OrdenesImagenes");
+                entity.HasKey(o => o.Id);
+                entity.Property(o => o.Estado).HasConversion<int>();
+            });
+
+            builder.Entity<PagoProveedor>().HasIndex(p => p.OrdenCompraId);
+            builder.Entity<PagoProveedor>().HasIndex(p => p.FechaPago);
+
+            builder.Entity<Proveedor>(entity =>
+            {
+                entity.ToTable("Proveedores");
+                entity.HasKey(p => p.Id);
+                entity.Property(p => p.RIF).IsRequired().HasMaxLength(50);
+                entity.Property(p => p.RazonSocial).IsRequired().HasMaxLength(250);
+                entity.Property(p => p.Direccion).HasMaxLength(500);
+                entity.Property(p => p.Telefono).HasMaxLength(50);
+
+                entity.HasIndex(p => p.RIF).IsUnique();
+                entity.HasIndex(p => p.RazonSocial);
             });
         }
 

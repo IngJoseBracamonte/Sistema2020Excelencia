@@ -83,7 +83,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var mov = movimientosList[0];
             Assert.Equal(_insumoId, mov.InsumoId);
             Assert.Equal(SeedConstants.SedeId_Principal, mov.SedeId);
-            Assert.Equal("EnvioSubArea", mov.TipoMovimiento);
+            Assert.Equal("Consumo", mov.TipoMovimiento.ToString());
             Assert.Equal(25m, mov.CantidadOriginal);
             Assert.Equal(_usuario, mov.Usuario);
             Assert.Contains("Laboratorio", mov.Motivo);

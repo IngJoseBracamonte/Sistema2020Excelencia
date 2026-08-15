@@ -48,10 +48,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(m => m.Insumo)
                 .AsNoTracking();
 
-            if (!string.IsNullOrWhiteSpace(request.TipoMovimiento))
+            if (!string.IsNullOrWhiteSpace(request.TipoMovimiento) && Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo>(request.TipoMovimiento, true, out var parsedTipo))
             {
-                var tipoLower = request.TipoMovimiento.Trim().ToLower();
-                query = query.Where(m => m.TipoMovimiento.ToLower() == tipoLower);
+                query = query.Where(m => m.TipoMovimiento == parsedTipo);
             }
 
             if (request.FechaDesde.HasValue)
@@ -86,7 +85,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     InsumoCodigo = m.Insumo != null ? m.Insumo.Codigo : "N/A",
                     InsumoNombre = m.Insumo != null ? m.Insumo.Nombre : "Insumo Eliminado",
                     SedeId = m.SedeId,
-                    TipoMovimiento = m.TipoMovimiento,
+                    TipoMovimiento = m.TipoMovimiento.ToString(),
                     CantidadBase = m.CantidadBase,
                     CantidadOriginal = m.CantidadOriginal,
                     UnidadMedidaOriginal = m.UnidadMedidaOriginal.ToString(),

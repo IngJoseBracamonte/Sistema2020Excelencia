@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { CuentasPorPagarService } from '../../../core/services/cuentas-por-pagar.service';
 import { SettingsService } from '../../../core/services/settings.service';
-import { Insumo, RecordPurchase, PurchaseItem, PrincipioActivo } from '../../../core/models/inventory.model';
-import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest } from '../../../core/models/cuentas-por-pagar.model';
+import { CatalogService } from '../../../core/services/catalog.service';
+import { Insumo, RecordPurchase, PurchaseItem, PrincipioActivo, Proveedor } from '../../../core/models/inventory.model';
+import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest, CatalogoMetodoPagoDto, MONEDA_USD_ID, MONEDA_BS_ID } from '../../../core/models/cuentas-por-pagar.model';
 import { SearchFocusDirective } from '../../../shared/directives/search-focus.directive';
 import { 
   LucideAngularModule, 
@@ -20,7 +21,11 @@ import {
   Building2,
   FileText,
   DollarSign,
-  History
+  History,
+  UserPlus,
+  Phone,
+  MapPin,
+  X
 } from 'lucide-angular';
 
 interface CartItem {
@@ -43,11 +48,30 @@ export class ComprasComponent implements OnInit {
   private inventoryService = inject(InventoryService);
   private cuentasService = inject(CuentasPorPagarService);
   private settingsService = inject(SettingsService);
+  private catalogService = inject(CatalogService);
 
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
 
-  // Datos de Proveedor y Factura de Recepción
+  // Catálogo de Métodos de Pago DB-Driven
+  public metodosPago = signal<CatalogoMetodoPagoDto[]>([]);
+
+  // Buscador y Selección de Proveedores
+  public proveedoresList = signal<Proveedor[]>([]);
+  public proveedorSearchTerm = signal<string>('');
+  public filteredProveedores = signal<Proveedor[]>([]);
+  public selectedProveedor = signal<Proveedor | null>(null);
+  public showProveedorDropdown = signal<boolean>(false);
+
+  // Modal para Crear Nuevo Proveedor
+  public showNewProveedorModal = signal<boolean>(false);
+  public newProveedorRif = signal<string>('');
+  public newProveedorRazonSocial = signal<string>('');
+  public newProveedorDireccion = signal<string>('');
+  public newProveedorTelefono = signal<string>('');
+  public isSavingProveedor = signal<boolean>(false);
+
+  // Datos de Proveedor e Insumo
   public proveedorNombreInput = signal<string>('');
   public numeroFacturaInput = signal<string>('');
   public tasaOficial = signal<number>(50.00);
@@ -100,7 +124,11 @@ export class ComprasComponent implements OnInit {
     Building2,
     FileText,
     DollarSign,
-    History
+    History,
+    UserPlus,
+    Phone,
+    MapPin,
+    X
   };
 
   public calculatedUnitCost = computed(() => {
@@ -121,17 +149,35 @@ export class ComprasComponent implements OnInit {
     return this.cart().reduce((sum, item) => sum + item.totalUSD, 0);
   });
 
-  public saldoRestanteCalculado = computed(() => {
-    const orden = this.selectedOrden();
-    if (!orden) return 0;
-    const abono = this.montoAbonarInput() || 0;
-    return Math.max(0, orden.saldoPendienteUSD - abono);
+  public esMetodoBs = computed(() => {
+    const selectedId = this.metodoPagoInput();
+    const metodo = this.metodosPago().find(m => m.id === selectedId);
+    return metodo ? metodo.monedaId === MONEDA_BS_ID : false;
+  });
+
+  public montoAbonoUSDCalculado = computed(() => {
+    const val = this.montoAbonarInput() || 0;
+    const tasa = this.tasaCambioInput() || 1;
+    if (this.esMetodoBs()) {
+      return tasa > 0 ? this.redondearDosDecimales(val / tasa) : 0;
+    }
+    return val;
   });
 
   public montoAbonarBsCalculado = computed(() => {
-    const abono = this.montoAbonarInput() || 0;
+    const val = this.montoAbonarInput() || 0;
     const tasa = this.tasaCambioInput() || 1;
-    return abono * tasa;
+    if (this.esMetodoBs()) {
+      return val;
+    }
+    return this.redondearDosDecimales(val * tasa);
+  });
+
+  public saldoRestanteCalculado = computed(() => {
+    const orden = this.selectedOrden();
+    if (!orden) return 0;
+    const abonoUSD = this.montoAbonoUSDCalculado();
+    return Math.max(0, this.redondearDosDecimales(orden.saldoPendienteUSD - abonoUSD));
   });
 
   ngOnInit() {
@@ -142,9 +188,124 @@ export class ComprasComponent implements OnInit {
       }
     });
 
+    this.loadMetodosPagoDb();
     this.loadInsumos();
     this.loadPrincipiosActivos();
+    this.loadProveedores();
     this.cargarOrdenes();
+  }
+
+  loadMetodosPagoDb(): void {
+    this.catalogService.getPaymentMethods().subscribe({
+      next: (res: any[]) => {
+        const mapped: CatalogoMetodoPagoDto[] = (res || []).map(x => ({
+          id: String(x.id || x.valor || x.value || x.nombre),
+          nombre: x.nombre || x.name || x.valor,
+          monedaId: (x.grupoMoneda === 2 || x.grupoMoneda === 'VES' || (x.nombre || '').toUpperCase().includes('BS') || (x.nombre || '').toUpperCase().includes('PAGO MÓVIL') || (x.nombre || '').toUpperCase().includes('PUNTO')) ? MONEDA_BS_ID : MONEDA_USD_ID,
+          activo: x.activo ?? true
+        })).filter(m => m.activo);
+
+        this.metodosPago.set(mapped);
+      },
+      error: () => {
+        const defaultMethods: CatalogoMetodoPagoDto[] = [
+          { id: '1', nombre: 'EFECTIVO USD ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '2', nombre: 'ZELLE ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '3', nombre: 'TRANSFERENCIA USD ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '4', nombre: 'PAGO MÓVIL (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '5', nombre: 'TRANSFERENCIA (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '6', nombre: 'EFECTIVO (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '7', nombre: 'PUNTO DE VENTA (Bs.)', monedaId: MONEDA_BS_ID, activo: true }
+        ];
+        this.metodosPago.set(defaultMethods);
+      }
+    });
+  }
+
+  loadProveedores(query?: string) {
+    this.inventoryService.getProveedores(query).subscribe({
+      next: (res) => {
+        this.proveedoresList.set(res || []);
+        this.filteredProveedores.set(res || []);
+      },
+      error: (err) => console.error('Error al cargar proveedores', err)
+    });
+  }
+
+  onProveedorSearchChange(val: string) {
+    this.proveedorSearchTerm.set(val);
+    const term = val.trim().toLowerCase();
+    if (term) {
+      this.filteredProveedores.set(
+        this.proveedoresList().filter(p => 
+          p.razonSocial.toLowerCase().includes(term) ||
+          p.rif.toLowerCase().includes(term)
+        )
+      );
+    } else {
+      this.filteredProveedores.set(this.proveedoresList());
+    }
+    this.showProveedorDropdown.set(true);
+  }
+
+  selectProveedor(prov: Proveedor) {
+    this.selectedProveedor.set(prov);
+    this.proveedorNombreInput.set(prov.razonSocial);
+    this.proveedorSearchTerm.set(`${prov.razonSocial} (${prov.rif})`);
+    this.showProveedorDropdown.set(false);
+  }
+
+  clearSelectedProveedor() {
+    this.selectedProveedor.set(null);
+    this.proveedorNombreInput.set('');
+    this.proveedorSearchTerm.set('');
+    this.showProveedorDropdown.set(false);
+  }
+
+  openNewProveedorModal() {
+    this.newProveedorRif.set('');
+    this.newProveedorRazonSocial.set('');
+    this.newProveedorDireccion.set('');
+    this.newProveedorTelefono.set('');
+    this.showNewProveedorModal.set(true);
+  }
+
+  closeNewProveedorModal() {
+    this.showNewProveedorModal.set(false);
+  }
+
+  saveNewProveedor() {
+    const rif = this.newProveedorRif().trim();
+    const razonSocial = this.newProveedorRazonSocial().trim();
+
+    if (!rif) {
+      this.showError('El RIF del proveedor es requerido.');
+      return;
+    }
+    if (!razonSocial) {
+      this.showError('La Razón Social del proveedor es requerida.');
+      return;
+    }
+
+    this.isSavingProveedor.set(true);
+    this.inventoryService.createProveedor({
+      rif,
+      razonSocial,
+      direccion: this.newProveedorDireccion().trim() || undefined,
+      telefono: this.newProveedorTelefono().trim() || undefined
+    }).subscribe({
+      next: (newProv) => {
+        this.isSavingProveedor.set(false);
+        this.closeNewProveedorModal();
+        this.showSuccess(`Proveedor '${newProv.razonSocial}' registrado exitosamente.`);
+        this.loadProveedores();
+        this.selectProveedor(newProv);
+      },
+      error: (err) => {
+        this.isSavingProveedor.set(false);
+        this.showError(err.error?.message || 'Error al guardar el nuevo proveedor.');
+      }
+    });
   }
 
   loadInsumos() {
@@ -303,7 +464,8 @@ export class ComprasComponent implements OnInit {
     this.isSubmitting.set(true);
 
     const dto: RecordPurchase = {
-      proveedorNombre: this.proveedorNombreInput().trim() || 'Proveedor General',
+      proveedorId: this.selectedProveedor()?.id,
+      proveedorNombre: this.selectedProveedor()?.razonSocial || this.proveedorNombreInput().trim() || 'Proveedor General',
       numeroFactura: this.numeroFacturaInput().trim() || undefined,
       tasaCambio: this.tasaOficial(),
       items: this.cart().map(i => ({
@@ -317,7 +479,7 @@ export class ComprasComponent implements OnInit {
       next: () => {
         this.showSuccess('Ingreso de compras e inserción en Cuentas por Pagar procesados exitosamente.');
         this.cart.set([]);
-        this.proveedorNombreInput.set('');
+        this.clearSelectedProveedor();
         this.numeroFacturaInput.set('');
         this.isSubmitting.set(false);
         this.loadInsumos();
@@ -331,14 +493,44 @@ export class ComprasComponent implements OnInit {
   }
 
   // --- MÉTODOS DE PAGO Y ABONO COMPARTIDOS CON CUENTAS POR PAGAR ---
+  onMetodoPagoChange(metodoPagoId: string): void {
+    this.metodoPagoInput.set(metodoPagoId);
+    
+    const orden = this.selectedOrden();
+    if (!orden) return;
+
+    const metodoSeleccionado = this.metodosPago().find(m => m.id === metodoPagoId);
+    if (!metodoSeleccionado) return;
+
+    if (metodoSeleccionado.monedaId === MONEDA_BS_ID) {
+      const tasa = this.tasaCambioInput() || this.tasaOficial();
+      const montoCalculadoBs = this.redondearDosDecimales(orden.saldoPendienteUSD * tasa);
+      this.montoAbonarInput.set(montoCalculadoBs);
+    } else {
+      this.montoAbonarInput.set(orden.saldoPendienteUSD);
+    }
+  }
+
+  public redondearDosDecimales(valor: number): number {
+    return Math.round(valor * 100) / 100;
+  }
+
   openPaymentModal(orden: OrdenCompraInventario) {
     this.selectedOrden.set(orden);
-    this.montoAbonarInput.set(orden.saldoPendienteUSD);
     this.tasaCambioInput.set(this.tasaOficial());
-    this.metodoPagoInput.set('Transferencia');
     this.referenciaInput.set('');
     this.observacionesInput.set('');
     this.errorMessage.set(null);
+
+    const metodos = this.metodosPago();
+    if (metodos.length > 0) {
+      const defaultId = metodos[0].id;
+      this.metodoPagoInput.set(defaultId);
+      this.onMetodoPagoChange(defaultId);
+    } else {
+      this.montoAbonarInput.set(orden.saldoPendienteUSD);
+    }
+
     this.showPaymentModal.set(true);
   }
 
@@ -351,14 +543,14 @@ export class ComprasComponent implements OnInit {
     const orden = this.selectedOrden();
     if (!orden) return;
 
-    const abono = this.montoAbonarInput();
-    if (!abono || abono <= 0) {
+    const abonoUSD = this.montoAbonoUSDCalculado();
+    if (!abonoUSD || abonoUSD <= 0) {
       this.showError('El monto a abonar debe ser mayor a cero.');
       return;
     }
 
-    if (abono > orden.saldoPendienteUSD) {
-      this.showError(`El abono ($${abono.toFixed(2)}) supera el saldo pendiente ($${orden.saldoPendienteUSD.toFixed(2)}).`);
+    if (abonoUSD > orden.saldoPendienteUSD + 0.01) {
+      this.showError(`El abono ($${abonoUSD.toFixed(2)}) supera el saldo pendiente ($${orden.saldoPendienteUSD.toFixed(2)}).`);
       return;
     }
 
@@ -369,11 +561,14 @@ export class ComprasComponent implements OnInit {
 
     this.isSubmittingPago.set(true);
 
+    const metodoSeleccionado = this.metodosPago().find(m => m.id === this.metodoPagoInput());
+    const nombreMetodo = metodoSeleccionado ? metodoSeleccionado.nombre : this.metodoPagoInput();
+
     const request: RegistrarPagoRequest = {
       ordenCompraId: orden.id,
-      montoAbonadoUSD: abono,
+      montoAbonadoUSD: abonoUSD,
       tasaCambio: this.tasaCambioInput() || this.tasaOficial(),
-      metodoPago: this.metodoPagoInput(),
+      metodoPago: nombreMetodo,
       referencia: this.referenciaInput().trim(),
       observaciones: this.observacionesInput().trim()
     };

@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { CuentasPorPagarService } from '../../../core/services/cuentas-por-pagar.service';
 import { SettingsService } from '../../../core/services/settings.service';
-import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest } from '../../../core/models/cuentas-por-pagar.model';
+import { CatalogService } from '../../../core/services/catalog.service';
+import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest, CatalogoMetodoPagoDto, MONEDA_USD_ID, MONEDA_BS_ID } from '../../../core/models/cuentas-por-pagar.model';
 
 @Component({
   selector: 'app-cuentas-por-pagar',
@@ -15,6 +16,7 @@ import { OrdenCompraInventario, PagoProveedor, RegistrarPagoRequest } from '../.
 export class CuentasPorPagarComponent implements OnInit, OnDestroy {
   private cuentasService = inject(CuentasPorPagarService);
   private settingsService = inject(SettingsService);
+  private catalogService = inject(CatalogService);
   private tasaSubscription?: Subscription;
 
   // Estado Principal
@@ -22,6 +24,9 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
   public ordenes = signal<OrdenCompraInventario[]>([]);
   public historialPagos = signal<PagoProveedor[]>([]);
   public isLoading = signal<boolean>(false);
+
+  // Catálogo de Métodos de Pago DB-Driven
+  public metodosPago = signal<CatalogoMetodoPagoDto[]>([]);
 
   // Filtros
   public estadoFilter = signal<'PorPagar' | 'Pagado' | 'Todos'>('PorPagar');
@@ -37,7 +42,7 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
   public selectedOrden = signal<OrdenCompraInventario | null>(null);
   public montoAbonarInput = signal<number>(0);
   public tasaCambioInput = signal<number>(50.00);
-  public metodoPagoInput = signal<string>('Transferencia');
+  public metodoPagoInput = signal<string>('');
   public referenciaInput = signal<string>('');
   public observacionesInput = signal<string>('');
   public isSubmittingPago = signal<boolean>(false);
@@ -46,18 +51,36 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
   public errorMessage = signal<string | null>(null);
   public successMessage = signal<string | null>(null);
 
-  // Computados
-  public saldoRestanteCalculado = computed(() => {
-    const orden = this.selectedOrden();
-    if (!orden) return 0;
-    const abono = this.montoAbonarInput() || 0;
-    return Math.max(0, orden.saldoPendienteUSD - abono);
+  // Computados DB-Driven
+  public esMetodoBs = computed(() => {
+    const selectedId = this.metodoPagoInput();
+    const metodo = this.metodosPago().find(m => m.id === selectedId);
+    return metodo ? metodo.monedaId === MONEDA_BS_ID : false;
+  });
+
+  public montoAbonoUSDCalculado = computed(() => {
+    const val = this.montoAbonarInput() || 0;
+    const tasa = this.tasaCambioInput() || 1;
+    if (this.esMetodoBs()) {
+      return tasa > 0 ? this.redondearDosDecimales(val / tasa) : 0;
+    }
+    return val;
   });
 
   public montoAbonarBsCalculado = computed(() => {
-    const abono = this.montoAbonarInput() || 0;
+    const val = this.montoAbonarInput() || 0;
     const tasa = this.tasaCambioInput() || 1;
-    return abono * tasa;
+    if (this.esMetodoBs()) {
+      return val;
+    }
+    return this.redondearDosDecimales(val * tasa);
+  });
+
+  public saldoRestanteCalculado = computed(() => {
+    const orden = this.selectedOrden();
+    if (!orden) return 0;
+    const abonoUSD = this.montoAbonoUSDCalculado();
+    return Math.max(0, this.redondearDosDecimales(orden.saldoPendienteUSD - abonoUSD));
   });
 
   public totalPorPagarUSD = computed(() => 
@@ -76,7 +99,35 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
       }
     });
 
+    this.cargarMetodosPagoDb();
     this.cargarDatos();
+  }
+
+  cargarMetodosPagoDb(): void {
+    this.catalogService.getPaymentMethods().subscribe({
+      next: (res: any[]) => {
+        const mapped: CatalogoMetodoPagoDto[] = (res || []).map(x => ({
+          id: String(x.id || x.valor || x.value || x.nombre),
+          nombre: x.nombre || x.name || x.valor,
+          monedaId: (x.grupoMoneda === 2 || x.grupoMoneda === 'VES' || (x.nombre || '').toUpperCase().includes('BS') || (x.nombre || '').toUpperCase().includes('PAGO MÓVIL') || (x.nombre || '').toUpperCase().includes('PUNTO')) ? MONEDA_BS_ID : MONEDA_USD_ID,
+          activo: x.activo ?? true
+        })).filter(m => m.activo);
+
+        this.metodosPago.set(mapped);
+      },
+      error: () => {
+        const defaultMethods: CatalogoMetodoPagoDto[] = [
+          { id: '1', nombre: 'EFECTIVO USD ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '2', nombre: 'ZELLE ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '3', nombre: 'TRANSFERENCIA USD ($)', monedaId: MONEDA_USD_ID, activo: true },
+          { id: '4', nombre: 'PAGO MÓVIL (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '5', nombre: 'TRANSFERENCIA (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '6', nombre: 'EFECTIVO (Bs.)', monedaId: MONEDA_BS_ID, activo: true },
+          { id: '7', nombre: 'PUNTO DE VENTA (Bs.)', monedaId: MONEDA_BS_ID, activo: true }
+        ];
+        this.metodosPago.set(defaultMethods);
+      }
+    });
   }
 
   cargarDatos(): void {
@@ -130,15 +181,45 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
     this.cargarDatos();
   }
 
+  onMetodoPagoChange(metodoPagoId: string): void {
+    this.metodoPagoInput.set(metodoPagoId);
+    
+    const orden = this.selectedOrden();
+    if (!orden) return;
+
+    const metodoSeleccionado = this.metodosPago().find(m => m.id === metodoPagoId);
+    if (!metodoSeleccionado) return;
+
+    if (metodoSeleccionado.monedaId === MONEDA_BS_ID) {
+      const tasa = this.tasaCambioInput() || this.tasaOficial();
+      const montoCalculadoBs = this.redondearDosDecimales(orden.saldoPendienteUSD * tasa);
+      this.montoAbonarInput.set(montoCalculadoBs);
+    } else {
+      this.montoAbonarInput.set(orden.saldoPendienteUSD);
+    }
+  }
+
+  public redondearDosDecimales(valor: number): number {
+    return Math.round(valor * 100) / 100;
+  }
+
   openPaymentModal(orden: OrdenCompraInventario): void {
     this.selectedOrden.set(orden);
-    this.montoAbonarInput.set(orden.saldoPendienteUSD);
     this.tasaCambioInput.set(this.tasaOficial());
-    this.metodoPagoInput.set('Transferencia');
     this.referenciaInput.set('');
     this.observacionesInput.set('');
     this.errorMessage.set(null);
     this.successMessage.set(null);
+
+    const metodos = this.metodosPago();
+    if (metodos.length > 0) {
+      const defaultId = metodos[0].id;
+      this.metodoPagoInput.set(defaultId);
+      this.onMetodoPagoChange(defaultId);
+    } else {
+      this.montoAbonarInput.set(orden.saldoPendienteUSD);
+    }
+
     this.showPaymentModal.set(true);
   }
 
@@ -151,14 +232,14 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
     const orden = this.selectedOrden();
     if (!orden) return;
 
-    const abono = this.montoAbonarInput();
-    if (!abono || abono <= 0) {
+    const abonoUSD = this.montoAbonoUSDCalculado();
+    if (!abonoUSD || abonoUSD <= 0) {
       this.errorMessage.set('El monto a abonar debe ser mayor a cero.');
       return;
     }
 
-    if (abono > orden.saldoPendienteUSD) {
-      this.errorMessage.set(`El abono ($${abono.toFixed(2)}) supera el saldo pendiente ($${orden.saldoPendienteUSD.toFixed(2)}).`);
+    if (abonoUSD > orden.saldoPendienteUSD + 0.01) {
+      this.errorMessage.set(`El abono ($${abonoUSD.toFixed(2)}) supera el saldo pendiente ($${orden.saldoPendienteUSD.toFixed(2)}).`);
       return;
     }
 
@@ -170,11 +251,14 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
     this.isSubmittingPago.set(true);
     this.errorMessage.set(null);
 
+    const metodoSeleccionado = this.metodosPago().find(m => m.id === this.metodoPagoInput());
+    const nombreMetodo = metodoSeleccionado ? metodoSeleccionado.nombre : this.metodoPagoInput();
+
     const request: RegistrarPagoRequest = {
       ordenCompraId: orden.id,
-      montoAbonadoUSD: abono,
+      montoAbonadoUSD: abonoUSD,
       tasaCambio: this.tasaCambioInput() || this.tasaOficial(),
-      metodoPago: this.metodoPagoInput(),
+      metodoPago: nombreMetodo,
       referencia: this.referenciaInput().trim(),
       observaciones: this.observacionesInput().trim()
     };

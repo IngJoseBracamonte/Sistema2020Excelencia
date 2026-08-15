@@ -20,6 +20,7 @@ export interface PatientRecord {
   telefono?: string;
   codigoTelefono?: string;
   direccion?: string;
+  grupoSanguineo?: string;
   source?: string;
   esLegacy?: boolean;
   activo?: boolean;

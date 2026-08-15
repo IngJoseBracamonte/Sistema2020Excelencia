@@ -64,28 +64,47 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             Guid? detalleId = null;
             if (request.MontoACobrarUsd > 0)
             {
-                string codigoServicioTarget = request.AreaDestino?.ToUpperInvariant() switch
-                {
-                    "EMERGENCIA" => "HOSP-EMG-01",
-                    "HOSPITALIZACION" => "HOSP-HOS-01",
-                    "UCI" => "HOSP-UCI-01",
-                    _ => "HOSP-HOS-01"
-                };
-
-                var servicioCatalogo = await _context.ServiciosClinicos
-                    .FirstOrDefaultAsync(s => s.Codigo == codigoServicioTarget, cancellationToken);
-
-                // Fallback si no se encuentra por código exacto: buscar el primero de tipo Hospitalario
-                if (servicioCatalogo == null)
+                ServicioClinico? servicioCatalogo = null;
+                if (camaDestino.ServicioTarifaBaseId.HasValue)
                 {
                     servicioCatalogo = await _context.ServiciosClinicos
-                        .FirstOrDefaultAsync(s => s.TipoServicio == "Hospitalario" || s.HonorariumCategory == "HOSPITALARIO", cancellationToken);
+                        .FirstOrDefaultAsync(s => s.Id == camaDestino.ServicioTarifaBaseId.Value, cancellationToken);
                 }
 
-                Guid servicioId = servicioCatalogo?.Id ?? Guid.NewGuid();
-                string descripcionCargo = servicioCatalogo != null
-                    ? $"{servicioCatalogo.Descripcion} ({request.AreaDestino} - {request.CantidadHoras}h)"
-                    : $"Cargo por Traslado a {request.AreaDestino} ({request.CantidadHoras}h)";
+                if (servicioCatalogo == null)
+                {
+                    string areaUpper = request.AreaDestino?.ToUpperInvariant() ?? string.Empty;
+                    string codigoServicioTarget = areaUpper switch
+                    {
+                        var a when a.Contains("EMERG") => "HOSP-EMG-01",
+                        var a when a.Contains("UCI") || a.Contains("INTENSIV") => "HOSP-UCI-01",
+                        var a when a.Contains("HOSP") => "HOSP-HOS-01",
+                        _ => "HOSP-HOS-01"
+                    };
+
+                    servicioCatalogo = await _context.ServiciosClinicos
+                        .FirstOrDefaultAsync(s => s.Codigo == codigoServicioTarget, cancellationToken);
+
+                    // Fallback si no se encuentra por código exacto: buscar el primero de tipo Hospitalario
+                    if (servicioCatalogo == null)
+                    {
+                        servicioCatalogo = await _context.ServiciosClinicos
+                            .FirstOrDefaultAsync(s => s.TipoServicio == "Hospitalario" || s.HonorariumCategory == "HOSPITALARIO", cancellationToken);
+                    }
+
+                    // Si no existe ningún servicio hospitalario, persistir uno por defecto para garantizar integridad referencial
+                    if (servicioCatalogo == null)
+                    {
+                        servicioCatalogo = new ServicioClinico(codigoServicioTarget, $"Estancia / Traslado a {request.AreaDestino}", request.MontoACobrarUsd, "Hospitalario")
+                        {
+                            HonorariumCategory = "HOSPITALARIO"
+                        };
+                        await _context.ServiciosClinicos.AddAsync(servicioCatalogo, cancellationToken);
+                    }
+                }
+
+                Guid servicioId = servicioCatalogo.Id;
+                string descripcionCargo = $"{servicioCatalogo.Descripcion} ({request.AreaDestino} - {request.CantidadHoras}h)";
 
                 if (!string.IsNullOrWhiteSpace(request.Observacion))
                 {

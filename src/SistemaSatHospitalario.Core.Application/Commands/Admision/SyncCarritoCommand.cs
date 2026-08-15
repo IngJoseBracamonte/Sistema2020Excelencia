@@ -147,7 +147,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     cuenta = await _repository.ObtenerCuentaPorIdAsync(request.CuentaId.Value, ct);
                 }
 
-                if (cuenta == null && (request.TipoIngreso == EstadoConstants.Hospitalizacion || request.TipoIngreso == EstadoConstants.Emergencia))
+                if (cuenta == null && (request.TipoIngreso == EstadoConstants.Hospitalizacion || request.TipoIngreso == EstadoConstants.Emergencia || request.TipoIngreso == EstadoConstants.UCI))
                 {
                     cuenta = await _repository.ObtenerCuentaAbiertaPorPacienteAsync(paciente.Id, ct);
                 }

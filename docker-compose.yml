@@ -1,4 +1,4 @@
-# =========================================================
+﻿# =========================================================
 # Docker Compose -- Sistema Sat Hospitalario
 # Orquestador de contenedores para despliegue local y servidor
 #
@@ -7,7 +7,7 @@
 # =========================================================
 
 services:
-  # --- Redis (Caché Distribuido) ---
+  # --- Redis (CachÃƒÂ© Distribuido) ---
   redis:
     image: redis:7-alpine
     container_name: sat-redis
@@ -26,7 +26,7 @@ services:
 
   # --- WebAPI (.NET 9 Backend) ---
   api:
-    image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
+    # image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
     build:
       context: ./src
       dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
@@ -81,7 +81,7 @@ services:
 
   # --- Frontend (Angular PWA + Nginx Proxy) ---
   frontend:
-    image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
+    # image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
     build:
       context: ./src/SistemaSatHospitalario.Frontend
       dockerfile: Dockerfile
@@ -147,9 +147,40 @@ networks:
     driver: bridge
     name: sat-hospital-network
 
-# --- Volúmenes Persistentes ---
+# --- VolÃƒÂºmenes Persistentes ---
 volumes:
   api-logs:
     name: sat-api-logs
   redis-data:
     name: sat-redis-data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

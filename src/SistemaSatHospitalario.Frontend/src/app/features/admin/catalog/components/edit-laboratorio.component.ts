@@ -75,7 +75,8 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
 
     this.inventoryService.getRecetas().subscribe({
       next: (recetas: any[]) => {
-        const itemRecetas = recetas.filter(r => r.servicioClinicoId === item.id);
+        const safeRecetas = Array.isArray(recetas) ? recetas : [];
+        const itemRecetas = safeRecetas.filter(r => r.servicioClinicoId === item.id);
         this.bomLines.set(itemRecetas.map((r: any) => ({
           insumoId: r.insumoId,
           insumoNombre: r.insumoNombre || (r.insumo ? r.insumo.nombre : ''),
@@ -84,7 +85,7 @@ export class EditLaboratorioComponent extends BaseCatalogEditComponent implement
           unidadMedida: r.unidadMedidaConsumo
         })));
       },
-      error: () => console.error('Error loading recipe')
+      error: () => this.bomLines.set([])
     });
 
     if (item.sugerenciasIds?.length) {

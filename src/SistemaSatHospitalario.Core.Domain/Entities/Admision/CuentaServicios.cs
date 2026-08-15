@@ -90,12 +90,22 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CuentaPrincipalId = cuentaPrincipalId;
         }
 
-        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null)
+        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, int? tipoServicioId = null)
         {
             if (Estado != EstadoConstants.Abierta)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
 
-            var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, honorario, cantidad, tipoServicio, usuarioCarga, legacyMappingId, areaClinicaId);
+            int resolvedTipoServicioId = tipoServicioId ?? (tipoServicio?.ToUpperInvariant() switch
+            {
+                "MEDICO" or "CONSULTA" => Constants.TipoServicioConstants.Medico,
+                "LABORATORIO" => Constants.TipoServicioConstants.Laboratorio,
+                "RX" or "RAYOSX" => Constants.TipoServicioConstants.RX,
+                "TOMO" or "TOMOGRAFIA" => Constants.TipoServicioConstants.Tomo,
+                "INFORME" => Constants.TipoServicioConstants.Informe,
+                _ => Constants.TipoServicioConstants.Insumo
+            });
+
+            var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, honorario, cantidad, tipoServicio, usuarioCarga, legacyMappingId, areaClinicaId, null, resolvedTipoServicioId);
             _detalles.Add(detalle);
             return detalle;
         }

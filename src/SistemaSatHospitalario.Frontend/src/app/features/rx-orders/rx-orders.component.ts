@@ -66,6 +66,7 @@ export class RxOrdersComponent implements OnInit {
   // Filtros
   public searchTerm = signal<string>('');
   public filterAudit = signal<string>('Pendiente'); // Pendiente, Procesada, Anulado
+  public filterTipoServicio = signal<string>('TODOS'); // TODOS, RX, TOMO
   public startDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public endDate = signal<string>(new Date().toLocaleDateString('sv-SE'));
   public isLoading = signal<boolean>(false);
@@ -122,11 +123,15 @@ export class RxOrdersComponent implements OnInit {
     if (currentFilter === 'Procesada') statusTarget = 'Procesado';
     else if (currentFilter === 'Anulado') statusTarget = 'Anulado';
 
-    // Filtrar por tipo de servicio y estado
-    let filtered = combined.filter(t => 
-      t.tipoServicio === typeTarget && 
-      t.status === statusTarget
-    );
+    // Filtrar por tipo de servicio y estado respetando la clasificación medica estricta
+    const selectedCategory = this.filterTipoServicio();
+    let filtered = combined.filter(t => t.status === statusTarget);
+    
+    if (selectedCategory !== 'TODOS') {
+      filtered = filtered.filter(t => t.tipoServicio === selectedCategory);
+    } else {
+      filtered = filtered.filter(t => t.tipoServicio === typeTarget);
+    }
 
     // Búsqueda en el cliente si es en vivo (para historial se hace en server, pero por seguridad aplicamos aquí también)
     const term = this.searchTerm().toLowerCase().trim();
@@ -164,8 +169,12 @@ export class RxOrdersComponent implements OnInit {
     // 3. Cargar médicos especialista de Imagenología
     this.http.get<any[]>(`${environment.apiUrl}/api/Medicos`).subscribe({
       next: (medicos) => {
-        const filtered = medicos.filter(m => m.activo && m.especialidad?.toUpperCase().includes('IMAGEN'));
-        this.medicosImagenologos.set(filtered);
+        const active = (medicos || []).filter(m => m.activo);
+        const filtered = active.filter(m => {
+          const esp = (m.especialidad || '').toUpperCase();
+          return esp.includes('IMAGEN') || esp.includes('RADIO') || esp.includes('RX') || esp.includes('TOMO');
+        });
+        this.medicosImagenologos.set(filtered.length > 0 ? filtered : active);
       },
       error: (err) => console.error('[IMAGING] Error loading medicos:', err)
     });

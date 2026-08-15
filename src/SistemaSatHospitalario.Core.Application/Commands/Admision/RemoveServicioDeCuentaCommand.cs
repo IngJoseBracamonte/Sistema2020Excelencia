@@ -45,7 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     var orden = await _context.OrdenesImagenes
                         .FirstOrDefaultAsync(o => o.CuentaId == request.CuentaId && o.Estudio == detalle.Descripcion, cancellationToken);
 
-                    if (orden != null && (orden.Estado.Equals("Procesado", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(orden.LinkInforme)))
+                    if (orden != null && (orden.Estado == SistemaSatHospitalario.Core.Domain.Enums.EstadoOrdenImagen.Procesado || !string.IsNullOrEmpty(orden.LinkInforme)))
                     {
                         throw new InvalidOperationException("No se puede anular un servicio de imagenología que ya ha sido procesado o cuenta con un informe adjunto.");
                     }

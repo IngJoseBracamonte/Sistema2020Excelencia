@@ -278,7 +278,7 @@ export class ReceivablesComponent implements OnInit {
 
   removePayment(index: number) {
     this.payments.update(p => p.filter((_, i) => i !== index));
-    this.resetNewPayment(this.remainingBalanceBs());
+    this.resetNewPayment(this.remainingBalanceUSD());
   }
 
   liquidar() {
