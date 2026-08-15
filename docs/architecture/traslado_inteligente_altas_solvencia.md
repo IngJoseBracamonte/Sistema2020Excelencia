@@ -46,3 +46,14 @@ Para garantizar trazabilidad e inmutabilidad en la gestión de cuentas y traslad
   - Estado `Solvente` (`saldoPendiente <= 0`): Icono `CheckCircle` + texto **Solvente** en verde esmeralda (`text-emerald-400`).
   - Estado `Pendiente` (`saldoPendiente > 0`): Icono `AlertTriangle` + texto **Pendiente** en amarillo/ámbar (`text-amber-400`).
 - Modal Interyector: Mensaje estandarizado: `"El paciente registra un saldo pendiente de $X USD. ¿Desea continuar de todos modos?"` con botones `[No, Cancelar]` / `[Sí, Continuar]`.
+
+---
+
+## 5. Traslado a Emergencia e Inter-Áreas DB-Driven (v4.0.8)
+- **Resolución Resiliente de Servicios Hospitalarios**:
+  - Si la cama destino posee `ServicioTarifaBaseId`, se asocia directamente su servicio de catálogo.
+  - En caso contrario, se resuelve por coincidencia de texto flexible (`a.Contains("EMERG") => "HOSP-EMG-01"`, `a.Contains("UCI") => "HOSP-UCI-01"`, `a.Contains("HOSP") => "HOSP-HOS-01"`), evitando desajustes por descripciones como `"Observación de Emergencia"`.
+- **Cero Listas Hardcodeadas (Regla 12)**:
+  - El selector de áreas destino en `traslados-destino.component.html` se alimenta de `areasClinicas` obtenidas vía `MultiSedeService.getAreasClinicas()`.
+  - El selector de camas filtra en tiempo real (`filteredCamas`) según el área clínica seleccionada en modo `TRASLADO_AREA` o la misma área actual en modo `CAMBIO_CAMA`.
+

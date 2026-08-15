@@ -21,32 +21,38 @@ export class TelemetryService {
   private initTelemetry() {
     if (!isDevMode()) return;
 
-    const otlpEndpoint = 'http://localhost:18889/v1/traces';
+    try {
+      const otlpEndpoint = (window as any)?.__ENV?.OTEL_EXPORTER_OTLP_ENDPOINT 
+        ? `${(window as any).__ENV.OTEL_EXPORTER_OTLP_ENDPOINT}/v1/traces`
+        : 'http://localhost:18889/v1/traces';
 
-    const resource = resourceFromAttributes({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'sistema-sat-hospitalario.frontend',
-    });
-
-    this.provider = new WebTracerProvider({ resource });
-
-    const exporter = new OTLPTraceExporter({
-      url: otlpEndpoint,
-    });
-
-    // Fix: Uso de any para evitar inconsistencias de tipos en OTel 2.x dentro de Angular 19
-    if (this.provider) {
-      (this.provider as any).addSpanProcessor(new BatchSpanProcessor(exporter as any));
-      this.provider.register();
-
-      registerInstrumentations({
-        instrumentations: [
-          new XMLHttpRequestInstrumentation(),
-          new FetchInstrumentation(),
-        ],
-        tracerProvider: this.provider,
+      const resource = resourceFromAttributes({
+        [SemanticResourceAttributes.SERVICE_NAME]: 'sistema-sat-hospitalario.frontend',
       });
-    }
 
-    console.log('OpenTelemetry initialized for Frontend');
+      this.provider = new WebTracerProvider({ resource });
+
+      const exporter = new OTLPTraceExporter({
+        url: otlpEndpoint,
+      });
+
+      // Fix: Uso de any para evitar inconsistencias de tipos en OTel 2.x dentro de Angular 19
+      if (this.provider) {
+        (this.provider as any).addSpanProcessor(new BatchSpanProcessor(exporter as any));
+        this.provider.register();
+
+        registerInstrumentations({
+          instrumentations: [
+            new XMLHttpRequestInstrumentation(),
+            new FetchInstrumentation(),
+          ],
+          tracerProvider: this.provider,
+        });
+      }
+
+      console.log('OpenTelemetry initialized for Frontend');
+    } catch (e) {
+      console.debug('OpenTelemetry disabled or unreachable in this environment');
+    }
   }
 }

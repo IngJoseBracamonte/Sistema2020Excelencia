@@ -60,7 +60,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
 
             var movement = await assertContext.MovimientosInsumo.FirstOrDefaultAsync(m => m.InsumoId == insumo.Id);
             movement.Should().NotBeNull();
-            movement!.TipoMovimiento.Should().Be("Ingreso");
+            movement!.TipoMovimiento.Should().Be(TipoMovimientoInsumo.Ingreso);
             movement.CantidadOriginal.Should().Be(5.0m);
             movement.CantidadBase.Should().Be(5.0m);
             movement.Usuario.Should().Be("Operator");

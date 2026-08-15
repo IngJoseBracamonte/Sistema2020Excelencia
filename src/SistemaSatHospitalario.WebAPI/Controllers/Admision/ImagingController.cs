@@ -95,9 +95,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 query = query.Where(o => o.TipoServicio == type);
             }
 
-            if (!string.IsNullOrEmpty(status) && !status.Equals("ALL", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(status) && !status.Equals("ALL", StringComparison.OrdinalIgnoreCase) && Enum.TryParse<EstadoOrdenImagen>(status, true, out var parsedStatus))
             {
-                query = query.Where(o => o.Estado == status);
+                query = query.Where(o => o.Estado == parsedStatus);
             }
 
             if (startDate.HasValue || endDate.HasValue)
@@ -290,7 +290,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             if (order == null) return NotFound(new { Message = "Orden no encontrada." });
 
             var usuario = User.Identity?.Name ?? "Sistema";
-            order.Estado = "Anulado";
+            order.Estado = EstadoOrdenImagen.Anulado;
             order.ProcesadoPor = usuario;
             order.FechaProcesado = DateTime.UtcNow;
 
@@ -304,7 +304,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
-                status = order.Estado,
+                status = order.Estado.ToString(),
                 patientName = order.PacienteNombre,
                 patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
@@ -362,7 +362,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     PacienteNombre = request.PacienteNombre,
                     Estudio = estTrim,
                     TipoServicio = request.TipoServicio.ToUpper(),
-                    Estado = "Pendiente", // Comienza como Pendiente para ser procesado tras la aprobación
+                    Estado = EstadoOrdenImagen.Pendiente, // Comienza como Pendiente para ser procesado tras la aprobación
                     FechaCreacion = DateTime.UtcNow,
                     EsDirecta = true,
                     RequiereValidacion = true,
@@ -447,7 +447,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
-                                    Estado = o.Estado,
+                                    Estado = o.Estado.ToString(),
                                     FechaCreacion = o.FechaCreacion,
                                     ProcesadoPor = o.ProcesadoPor,
                                     FechaProcesado = o.FechaProcesado,
@@ -516,7 +516,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 // Solo reutilizar cuenta si es de tipo acumulativo (Hospitalizacion/Emergencia) y coincide con el Tipo de Ingreso solicitado
                 var targetTipo = request.TipoIngreso ?? EstadoConstants.Particular;
-                if (targetTipo == EstadoConstants.Hospitalizacion || targetTipo == EstadoConstants.Emergencia)
+                if (targetTipo == EstadoConstants.Hospitalizacion || targetTipo == EstadoConstants.Emergencia || targetTipo == EstadoConstants.UCI)
                 {
                     cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
                         .FirstOrDefaultAsync(c => c.PacienteId == order.PacienteId 
@@ -621,7 +621,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
-                status = order.Estado,
+                status = order.Estado.ToString(),
                 patientName = order.PacienteNombre,
                 patientCedula = patientCedula,
                 servicioNombre = order.Estudio,

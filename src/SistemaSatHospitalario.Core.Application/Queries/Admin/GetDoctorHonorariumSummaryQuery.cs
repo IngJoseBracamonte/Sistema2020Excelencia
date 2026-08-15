@@ -46,7 +46,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                    && cs.Estado != EstadoConstants.Anulada
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
-                   && (detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO"))) || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
+                   && (detail.TipoServicioId == TipoServicioConstants.Medico 
+                       || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta 
+                       || detail.TipoServicio == EstadoConstants.Medico 
+                       || detail.TipoServicio == "MEDICO" 
+                       || detail.TipoServicio == "Medico" 
+                       || (detail.TipoServicio != null && (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO")))))
                    && (detail.MedicoResponsableId == cita.MedicoId || detail.MedicoResponsableId == null)
                 select new
                 {
@@ -68,7 +73,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                    && cs.Estado != EstadoConstants.Anulada
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
-                   && !(detail.TipoServicio == "MEDICO" || detail.TipoServicio == "Medico" || (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO"))) || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta)
+                   && !(detail.TipoServicioId == TipoServicioConstants.Medico 
+                        || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta 
+                        || detail.TipoServicio == EstadoConstants.Medico 
+                        || detail.TipoServicio == "MEDICO" 
+                        || detail.TipoServicio == "Medico" 
+                        || (detail.TipoServicio != null && (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO")))))
                    && (detail.FechaRealizacion ?? detail.FechaCarga) >= start
                    && (detail.FechaRealizacion ?? detail.FechaCarga) <= end
                 select new

@@ -169,8 +169,12 @@ export class RxOrdersComponent implements OnInit {
     // 3. Cargar médicos especialista de Imagenología
     this.http.get<any[]>(`${environment.apiUrl}/api/Medicos`).subscribe({
       next: (medicos) => {
-        const filtered = medicos.filter(m => m.activo && m.especialidad?.toUpperCase().includes('IMAGEN'));
-        this.medicosImagenologos.set(filtered);
+        const active = (medicos || []).filter(m => m.activo);
+        const filtered = active.filter(m => {
+          const esp = (m.especialidad || '').toUpperCase();
+          return esp.includes('IMAGEN') || esp.includes('RADIO') || esp.includes('RX') || esp.includes('TOMO');
+        });
+        this.medicosImagenologos.set(filtered.length > 0 ? filtered : active);
       },
       error: (err) => console.error('[IMAGING] Error loading medicos:', err)
     });

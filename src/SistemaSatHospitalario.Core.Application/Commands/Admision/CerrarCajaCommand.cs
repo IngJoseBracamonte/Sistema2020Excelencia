@@ -61,6 +61,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var listMetodosDesglose = new List<object>();
             decimal totalIngresadoBaseUSD = 0;
             decimal totalCobradoBaseUSD = 0;
+            decimal totalDeclaradoVueltosBaseUSD = 0;
+            decimal totalDeclaradoIngresosBS = 0;
 
             // Agrupar los métodos del catálogo que no son vueltos
             var metodosPrincipales = catalogoMetodos.Where(m => !m.EsVuelto).OrderBy(m => m.Orden).ToList();
@@ -104,8 +106,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // Usar la tasa del día de la caja (si no hay pagos, usar 1 o tasa de la configuración)
                 decimal tasaCambioCaja = recibos.FirstOrDefault(r => r.TasaCambioDia > 0)?.TasaCambioDia ?? 1;
                 
-                decimal declaradoIngresoBase = (metodo.GrupoMoneda == 1) ? declaradoIngresoOriginal : (tasaCambioCaja > 0 ? declaradoIngresoOriginal / tasaCambioCaja : 0);
-                decimal declaradoVueltosBase = (metodo.GrupoMoneda == 1) ? declaradoVueltosOriginal : (tasaCambioCaja > 0 ? declaradoVueltosOriginal / tasaCambioCaja : 0);
+                decimal declaradoIngresoBase = (metodo.GrupoMoneda == 1 || metodo.EsUSD) ? declaradoIngresoOriginal : (tasaCambioCaja > 0 ? declaradoIngresoOriginal / tasaCambioCaja : 0);
+                decimal declaradoVueltosBase = (metodo.GrupoMoneda == 1 || metodo.EsUSD) ? declaradoVueltosOriginal : (tasaCambioCaja > 0 ? declaradoVueltosOriginal / tasaCambioCaja : 0);
                 decimal declaradoNetoBase = declaradoIngresoBase - declaradoVueltosBase;
 
                 // Diferencia en moneda original
@@ -114,6 +116,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 totalIngresadoBaseUSD += declaradoNetoBase;
                 totalCobradoBaseUSD += esperadoNetoBase;
+                totalDeclaradoVueltosBaseUSD += declaradoVueltosBase;
+
+                if (!metodo.EsUSD && metodo.GrupoMoneda != 1)
+                {
+                    totalDeclaradoIngresosBS += declaradoIngresoOriginal;
+                }
 
                 listMetodosDesglose.Add(new
                 {
@@ -142,8 +150,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 CajaId = cajaAbierta.Id,
                 TotalIngresosUSD = totalIngresadoBaseUSD,
-                TotalVueltoUSD = request.Declaracion.Sum(d => d.MontoVueltos), // Declarado
-                TotalIngresosBS = request.Declaracion.Where(d => d.MetodoPago == "Efectivo BS" || d.MetodoPago == "Pago Movil" || d.MetodoPago == "Punto").Sum(d => d.MontoIngreso),
+                TotalVueltoUSD = totalDeclaradoVueltosBaseUSD,
+                TotalIngresosBS = totalDeclaradoIngresosBS,
                 ConteoVentas = recibos.Count,
                 Usuario = cajaAbierta.NombreUsuario,
                 FechaCierre = DateTime.UtcNow

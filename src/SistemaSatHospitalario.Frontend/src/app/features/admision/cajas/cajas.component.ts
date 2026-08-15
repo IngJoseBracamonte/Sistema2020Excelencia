@@ -92,13 +92,16 @@ export class CajasComponent implements OnInit, OnDestroy {
       // Encontrar el esperado en el reporte personal
       const esperadoIngreso = report?.desgloseMetodos?.find(d => d.metodo === m.value)?.montoMonedaOriginal || 0;
       
-      // Encontrar el vuelto asociado
-      let vueltoMetodo = '';
-      if (m.value === 'Dolar Efectivo') vueltoMetodo = 'Vuelto Efectivo USD';
-      else if (m.value === 'Efectivo BS') vueltoMetodo = 'Vuelto Efectivo BS';
-      else if (m.value === 'Pago Movil') vueltoMetodo = 'Vuelto Pago Movil';
-      
-      const esperadoVuelto = report?.desgloseMetodos?.find(d => d.metodo === vueltoMetodo)?.montoMonedaOriginal || 0;
+      // Encontrar el vuelto asociado dinámicamente
+      const normName = (m.name || m.value || '').toUpperCase();
+      const matchingVuelto = report?.desgloseMetodos?.find(d => {
+        const dNorm = (d.metodo || '').toUpperCase();
+        if (!dNorm.includes('VUELTO')) return false;
+        if (m.isUSD && (dNorm.includes('USD') || dNorm.includes('DOLAR') || dNorm.includes('$'))) return true;
+        if (!m.isUSD && (dNorm.includes('BS') || dNorm.includes('BOLIVAR') || dNorm.includes('MOVIL'))) return true;
+        return dNorm.includes(normName);
+      });
+      const esperadoVuelto = matchingVuelto?.montoMonedaOriginal || 0;
       const esperadoVueltoAbs = Math.abs(esperadoVuelto);
 
       const totalEsperado = esperadoIngreso - esperadoVueltoAbs;

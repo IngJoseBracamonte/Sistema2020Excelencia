@@ -16,7 +16,7 @@ import { StockLocalAreaComponent } from './components/stock-local-area/stock-loc
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { MedicoService, Medico } from '../../core/services/medico.service';
-import { MultiSedeService, SedeDto } from '../../core/services/multi-sede.service';
+import { MultiSedeService, SedeDto, AreaClinica } from '../../core/services/multi-sede.service';
 import { PatientService, PatientRecord } from '../../core/services/patient.service';
 import { FacturacionService } from '../../core/services/facturacion.service';
 import { TIPO_INGRESO, TipoIngresoType, matchTipoIngreso, normalizeTipoIngreso } from '../../core/constants/tipo-ingreso.constants';
@@ -299,6 +299,7 @@ export class EnfermeriaComponent implements OnInit {
   public convenios = signal<Convenio[]>([]);
   public servicesCatalog = signal<ServicioCatalogo[]>([]);
   public medicos = signal<Medico[]>([]);
+  public areasClinicas = signal<AreaClinica[]>([]);
 
   // Selected Patient
   public selectedAccount = signal<CuentaAdministrativa | null>(null);
@@ -600,6 +601,11 @@ export class EnfermeriaComponent implements OnInit {
         this.sedes.set(activeSedes);
       },
       error: (err) => console.error('[ENFERMERIA] Error loading sedes:', err)
+    });
+
+    this.multiSedeService.getAreasClinicas().subscribe({
+      next: (areas) => this.areasClinicas.set(areas.filter(a => a.activo !== false)),
+      error: (err) => console.error('[ENFERMERIA] Error loading areas clinicas:', err)
     });
   }
 

@@ -356,23 +356,21 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
 
   public enrichedAccounts = computed(() => {
     const list = this.filteredAccounts();
-    return list.map((acc, index) => {
+    const map = this.patientDetailsMap();
+    return list.map((acc) => {
       // Determinamos iniciales del paciente
-      const names = acc.pacienteNombre.trim().split(/\s+/);
+      const names = (acc.pacienteNombre || '').trim().split(/\s+/);
       const initials = names.map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
 
-      // Estado clínico, habitación/cama deterministas a partir de la cédula para consistencia visual
-      const seed = acc.pacienteCedula.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) || index;
-      const statuses = ['Crítico', 'Estable', 'Observación'];
-      const status = statuses[seed % statuses.length];
+      // Estado de la cuenta y ubicación real asignada
+      const patient = map[acc.pacienteId];
+      const status = acc.estado || 'Abierta';
+      const room = acc.areaClinicaNombre || (this.type() === 'Hospitalizacion' ? 'Habitación' : 'Box');
 
-      const roomType = this.type() === 'Hospitalizacion' ? 'Hab.' : 'Box';
-      const room = acc.areaClinicaNombre || `${roomType} ${100 + (seed % 15)}${String.fromCharCode(65 + (seed % 3))}`;
-
-      let statusClass = 'text-rose-500 bg-rose-500/10 border border-rose-500/20';
-      if (status === 'Estable') {
-        statusClass = 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
-      } else if (status === 'Observación') {
+      let statusClass = 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+      if (acc.subAreaClinica === 'UCI' || acc.tipoIngreso === 'UCI') {
+        statusClass = 'text-rose-500 bg-rose-500/10 border border-rose-500/20';
+      } else if (status !== 'Abierta') {
         statusClass = 'text-amber-500 bg-amber-500/10 border border-amber-500/20';
       }
 
@@ -381,7 +379,9 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         initials,
         status,
         room,
-        statusClass
+        statusClass,
+        grupoSanguineo: patient?.grupoSanguineo || 'N/R',
+        fechaNacimiento: patient?.fechaNacimiento
       };
     });
   });
@@ -856,21 +856,15 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.loadOpenAccounts();
   }
 
-  // Mock Blood Type helper based on patient ID to visual match the reference mockup
-  public getMockBloodType(pacienteId: string): string {
-    const types = ['O+', 'A-', 'AB+', 'B+', 'O-', 'A+'];
-    const idx = pacienteId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % types.length;
-    return types[idx];
-  }
-
-  // Helper calculation of age
+  // Cálculo de edad real a partir de fecha de nacimiento
   public getPatientAge(fechaNacStr?: string): string {
-    if (!fechaNacStr) return '42 años'; // Fallback
+    if (!fechaNacStr) return 'N/R';
     const birth = new Date(fechaNacStr);
+    if (isNaN(birth.getTime())) return 'N/R';
     const ageDifMs = Date.now() - birth.getTime();
     const ageDate = new Date(ageDifMs);
     const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-    const dateStr = birth.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const dateStr = birth.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return `${age} años (FN: ${dateStr})`;
   }
 
