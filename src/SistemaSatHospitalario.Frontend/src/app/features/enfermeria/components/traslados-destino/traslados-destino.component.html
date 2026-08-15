@@ -74,7 +74,7 @@
           <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-cyan-500/40 uppercase">
             <option [value]="null" class="bg-[#152035]">--- SELECCIONAR CAMA EN MISMA ÁREA ---</option>
-            <option *ngFor="let cama of camasDisponibles" [value]="cama.camaId" class="bg-[#152035]">
+            <option *ngFor="let cama of filteredCamas()" [value]="cama.camaId" class="bg-[#152035]">
               {{ cama.nombre }} ({{ cama.codigo }})
             </option>
           </select>
@@ -97,9 +97,17 @@
             Destino</label>
           <select [ngModel]="areaDestinoId()" (ngModelChange)="onAreaDestinoChange($event)"
             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
-            <option value="EMERGENCIA" class="bg-[#152035]">Observación de Emergencia</option>
-            <option value="HOSPITALIZACION" class="bg-[#152035]">Hospitalización General</option>
-            <option value="UCI" class="bg-[#152035]">Unidad de Cuidados Intensivos UCI</option>
+            <option [value]="null" class="bg-[#152035]">--- SELECCIONAR ÁREA DESTINO ---</option>
+            <ng-container *ngIf="areasClinicas && areasClinicas.length > 0; else fallbackAreas">
+              <option *ngFor="let area of areasClinicas" [value]="area.id" class="bg-[#152035]">
+                {{ area.nombre }} ({{ area.codigo || 'S/C' }})
+              </option>
+            </ng-container>
+            <ng-template #fallbackAreas>
+              <option value="EMERGENCIA" class="bg-[#152035]">Observación de Emergencia</option>
+              <option value="HOSPITALIZACION" class="bg-[#152035]">Hospitalización General</option>
+              <option value="UCI" class="bg-[#152035]">Unidad de Cuidados Intensivos UCI</option>
+            </ng-template>
           </select>
         </div>
 
@@ -109,7 +117,7 @@
           <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
             <option [value]="null" class="bg-[#152035]">--- SELECCIONAR CAMA ---</option>
-            <option *ngFor="let cama of camasDisponibles" [value]="cama.camaId" class="bg-[#152035]">
+            <option *ngFor="let cama of filteredCamas()" [value]="cama.camaId" class="bg-[#152035]">
               {{ cama.nombre }} ({{ cama.codigo }})
             </option>
           </select>

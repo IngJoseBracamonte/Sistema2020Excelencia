@@ -516,7 +516,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 // Solo reutilizar cuenta si es de tipo acumulativo (Hospitalizacion/Emergencia) y coincide con el Tipo de Ingreso solicitado
                 var targetTipo = request.TipoIngreso ?? EstadoConstants.Particular;
-                if (targetTipo == EstadoConstants.Hospitalizacion || targetTipo == EstadoConstants.Emergencia)
+                if (targetTipo == EstadoConstants.Hospitalizacion || targetTipo == EstadoConstants.Emergencia || targetTipo == EstadoConstants.UCI)
                 {
                     cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
                         .FirstOrDefaultAsync(c => c.PacienteId == order.PacienteId 

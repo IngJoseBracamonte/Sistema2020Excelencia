@@ -240,7 +240,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(o => o.TotalCobrado).HasPrecision(18, 2);
                 entity.Property(o => o.EstadoFacturacion).HasConversion<int>();
 
-                entity.HasOne<PacienteAdmision>()
+                entity.HasOne(o => o.Paciente)
                       .WithMany(p => p.Ordenes)
                       .HasForeignKey(o => o.PacienteId)
                       .OnDelete(DeleteBehavior.Restrict);

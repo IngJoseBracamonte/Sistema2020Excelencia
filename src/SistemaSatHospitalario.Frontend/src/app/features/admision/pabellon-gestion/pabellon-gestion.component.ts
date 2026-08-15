@@ -1,8 +1,11 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { PabellonService, OrdenCirugia, CrearOrdenCirugiaRequest } from '../../../core/services/pabellon.service';
 import { MedicoService } from '../../../core/services/medico.service';
+import { PatientService, PatientRecord } from '../../../core/services/patient.service';
+import { environment } from '../../../../environments/environment';
 import { GestionConsumoModalComponent } from './gestion-consumo-modal.component';
 import { PabellonCalendarioComponent } from './pabellon-calendario.component';
 import { PabellonMicroComponent } from './pabellon-micro.component';
@@ -202,14 +205,24 @@ import {
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-gray-400 mb-1 block">ID Cuenta Servicio *</label>
-                <input type="text" [(ngModel)]="nuevaCirugiaForm.cuentaServicioId" placeholder="Guid cuenta" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+            <!-- Buscador de Pacientes DB-Driven -->
+            <div>
+              <label class="text-gray-400 mb-1 block">Buscar Paciente (Cédula o Nombre) *</label>
+              <div class="relative">
+                <input type="text" [ngModel]="pacienteSearchQuery()" (ngModelChange)="buscarPacientes($event)" placeholder="Escriba cédula o nombre del paciente..." class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                <div *ngIf="pacientesEncontrados().length > 0" class="absolute left-0 right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-800">
+                  <div *ngFor="let p of pacientesEncontrados()" (click)="seleccionarPaciente(p)" class="p-3 hover:bg-sky-600/20 cursor-pointer flex justify-between items-center transition">
+                    <div>
+                      <span class="text-xs font-bold text-white block">{{ p.nombre }} {{ p.apellidos || '' }}</span>
+                      <span class="text-[10px] text-gray-400">CI: {{ p.cedula }}</span>
+                    </div>
+                    <span class="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-md font-semibold">Seleccionar</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label class="text-gray-400 mb-1 block">ID Paciente *</label>
-                <input type="text" [(ngModel)]="nuevaCirugiaForm.pacienteId" placeholder="Guid paciente" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+              <div *ngIf="pacienteSeleccionado()" class="mt-2 p-2 bg-sky-500/10 border border-sky-500/20 rounded-lg flex items-center justify-between text-xs text-sky-300">
+                <span>👤 {{ pacienteSeleccionado()?.nombre }} (CI: {{ pacienteSeleccionado()?.cedula }})</span>
+                <span class="text-[10px] text-gray-400">Cuenta: {{ nuevaCirugiaForm.cuentaServicioId ? 'Vinculada' : 'Pendiente' }}</span>
               </div>
             </div>
           </div>
@@ -229,6 +242,13 @@ import {
 export class PabellonGestionComponent implements OnInit {
   private pabellonService = inject(PabellonService);
   private medicoService = inject(MedicoService);
+  private patientService = inject(PatientService);
+  private http = inject(HttpClient);
+
+  public pacienteSearchQuery = signal<string>('');
+  public pacientesEncontrados = signal<PatientRecord[]>([]);
+  public pacienteSeleccionado = signal<PatientRecord | null>(null);
+  public isSearchingPatient = signal<boolean>(false);
 
   public vistaModo = signal<'calendario' | 'lista'>('calendario');
   public ordenes = signal<OrdenCirugia[]>([]);
@@ -339,7 +359,52 @@ export class PabellonGestionComponent implements OnInit {
     });
   }
 
+  buscarPacientes(term: string): void {
+    this.pacienteSearchQuery.set(term);
+    if (!term || term.trim().length < 2) {
+      this.pacientesEncontrados.set([]);
+      return;
+    }
+    this.isSearchingPatient.set(true);
+    this.patientService.searchPatients(term.trim()).subscribe({
+      next: (res) => {
+        this.pacientesEncontrados.set(res || []);
+        this.isSearchingPatient.set(false);
+      },
+      error: () => this.isSearchingPatient.set(false)
+    });
+  }
+
+  seleccionarPaciente(p: PatientRecord): void {
+    this.pacienteSeleccionado.set(p);
+    this.nuevaCirugiaForm.pacienteId = p.id;
+    this.pacientesEncontrados.set([]);
+    this.pacienteSearchQuery.set(`${p.nombre} ${p.apellidos || ''} (${p.cedula})`);
+
+    // Buscar si el paciente tiene una cuenta activa
+    this.http.get<any[]>(`${environment.apiUrl}/api/Enfermeria/cuentas-activas`).subscribe({
+      next: (cuentas) => {
+        const cuentaPaciente = (cuentas || []).find(c => c.pacienteId === p.id || c.pacienteCedula === p.cedula);
+        if (cuentaPaciente) {
+          this.nuevaCirugiaForm.cuentaServicioId = cuentaPaciente.cuentaId || cuentaPaciente.id;
+        } else {
+          if (!this.nuevaCirugiaForm.cuentaServicioId) {
+            this.nuevaCirugiaForm.cuentaServicioId = p.id;
+          }
+        }
+      },
+      error: () => {
+        if (!this.nuevaCirugiaForm.cuentaServicioId) {
+          this.nuevaCirugiaForm.cuentaServicioId = p.id;
+        }
+      }
+    });
+  }
+
   abrirModalNuevaCirugia(): void {
+    this.pacienteSearchQuery.set('');
+    this.pacientesEncontrados.set([]);
+    this.pacienteSeleccionado.set(null);
     this.nuevaCirugiaForm = {
       cuentaServicioId: '',
       pacienteId: '',

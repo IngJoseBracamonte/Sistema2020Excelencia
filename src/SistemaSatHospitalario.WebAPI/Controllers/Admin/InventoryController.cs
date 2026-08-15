@@ -508,10 +508,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         {
             var tipos = new[]
             {
-                new { Id = "Ingreso", Codigo = "ING", Nombre = "Ingreso / Compra Insumo" },
-                new { Id = "EnvioSubArea", Codigo = "ENV", Nombre = "Envío Directo a Sub-Área" },
-                new { Id = "Descarte", Codigo = "DES", Nombre = "Descarte / Baja de Inventario" },
-                new { Id = "Ajuste", Codigo = "AJU", Nombre = "Ajuste Kárdex Auditoría" }
+                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo.Ingreso.ToString(), Codigo = "ING", Nombre = "Ingreso / Compra Insumo" },
+                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo.Consumo.ToString(), Codigo = "ENV", Nombre = "Envío / Consumo Directo Sub-Área" },
+                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo.Descarte.ToString(), Codigo = "DES", Nombre = "Descarte / Baja de Inventario" },
+                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo.AjusteCierre.ToString(), Codigo = "AJU", Nombre = "Ajuste Kárdex Cierre / Auditoría" },
+                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo.TransferenciaSalida.ToString(), Codigo = "TRA", Nombre = "Transferencia entre Sedes" }
             };
             return Ok(tipos);
         }
