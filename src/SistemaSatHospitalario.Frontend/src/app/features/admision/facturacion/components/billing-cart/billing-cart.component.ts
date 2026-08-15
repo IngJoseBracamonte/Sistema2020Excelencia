@@ -64,10 +64,12 @@ export class BillingCartComponent {
       }
       return !!s.isConsultation;
     }
-    if (s.categoryId === 1 || s.CategoryId === 1) return true;
-    const tipo = s.tipo || s.Tipo;
+    if (s.tipoServicioId === 1 || s.categoryId === 1 || s.CategoryId === 1) return true;
+    if (s.honorariumCategory === 'CONSULTA' || s.categoriaHonorario === 'CONSULTA' || s.tipoServicio === 'MEDICO') return true;
+    const tipo = s.tipo || s.Tipo || s.tipoServicio;
     if (!tipo) return false;
     const t = tipo.toUpperCase();
+    if (t.includes('MEDICINA') || t.includes('MEDICAMENTO') || t.includes('INSUMO')) return false;
     const prefixes = ['CONS', 'MEDI', 'MÉDI', 'OBST', 'GINE'];
     return prefixes.some((p: string) => t.includes(p));
   }

@@ -8,6 +8,7 @@ export abstract class BasePricedItem {
   honorarioUsd?: number;
   tipo: string;
   tipoServicioId?: number;
+  honorariumCategory?: string;
   editorType?: string;
   categoryId: number; // V5.2 structural classification
   esLegacy: boolean;
@@ -165,7 +166,8 @@ export abstract class BasePricedItem {
   }
 
   get isConsultation(): boolean {
-    if (this.categoryId === 1) return true;
+    if (this.tipoServicioId === 1 || this.categoryId === 1) return true;
+    if (this.honorariumCategory === 'CONSULTA' || this.tipo?.toUpperCase() === 'MEDICO') return true;
     if (!this.tipo) return false;
     const t = this.tipo.toUpperCase();
     if (t.includes('MEDICINA') || t.includes('MEDICAMENTO') || t.includes('INSUMO')) return false;

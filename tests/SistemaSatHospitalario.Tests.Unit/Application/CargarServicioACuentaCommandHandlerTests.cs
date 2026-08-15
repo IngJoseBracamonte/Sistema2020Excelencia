@@ -307,6 +307,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
                 Honorario = 0,
                 Cantidad = 1,
                 TipoServicio = "MEDICO",
+                MedicoId = Guid.NewGuid(),
                 UsuarioCarga = "Admin"
             };
 

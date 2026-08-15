@@ -48,8 +48,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             {
                 "ingreso" => TipoMovimientoInsumo.Ingreso,
                 "descarte" => TipoMovimientoInsumo.Descarte,
-                "consumo" => TipoMovimientoInsumo.Consumo,
-                "ajustecierre" => TipoMovimientoInsumo.AjusteCierre,
+                "consumo" or "enviosubarea" => TipoMovimientoInsumo.Consumo,
+                "ajuste" or "ajustecierre" => TipoMovimientoInsumo.AjusteCierre,
                 "transferenciaentrada" => TipoMovimientoInsumo.TransferenciaEntrada,
                 "transferenciasalida" => TipoMovimientoInsumo.TransferenciaSalida,
                 _ => TipoMovimientoInsumo.Consumo

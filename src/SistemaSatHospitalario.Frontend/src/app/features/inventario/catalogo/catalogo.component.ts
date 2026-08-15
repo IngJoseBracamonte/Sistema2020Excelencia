@@ -87,7 +87,12 @@ export class CatalogoComponent implements OnInit {
   public errorMessage = signal<string | null>(null);
 
   readonly unidadesMedida = ['UNIDAD', 'KG', 'G', 'DG', 'MG', 'L', 'ML'];
-  readonly categorias = ['Medicamento', 'Descartable', 'Material Médico', 'Reactivo', 'Otro'];
+  readonly defaultCategorias = ['Medicamento', 'Descartable', 'Material Médico', 'Reactivo', 'Otro'];
+  public readonly categorias = computed(() => {
+    const fromItems = this.insumos().map(i => i.categoria).filter((c): c is string => !!c && c.trim() !== '');
+    const set = new Set([...this.defaultCategorias, ...fromItems]);
+    return Array.from(set);
+  });
 
   readonly icons = {
     Package,

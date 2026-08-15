@@ -97,13 +97,55 @@ export class TrasladosDestinoComponent {
   public observacionTraslado = signal<string>('');
   public isSavingTransfer = signal<boolean>(false);
 
+  public filteredCamas = computed(() => {
+    const allCamas = this.camasDisponibles || [];
+    if (this.modoTraslado() === 'CAMBIO_CAMA') {
+      const currentArea = this.selectedAccount?.subAreaClinica || this.selectedAccount?.areaClinicaNombre;
+      if (!currentArea) return allCamas;
+      const normCurrent = currentArea.toUpperCase();
+      const filtered = allCamas.filter((c: any) =>
+        (c.areaClinicaNombre && c.areaClinicaNombre.toUpperCase().includes(normCurrent)) ||
+        (c.nombre && c.nombre.toUpperCase().includes(normCurrent)) ||
+        (c.subAreaClinica && c.subAreaClinica.toUpperCase().includes(normCurrent))
+      );
+      return filtered.length > 0 ? filtered : allCamas;
+    } else {
+      const areaId = this.areaDestinoId();
+      if (!areaId) return allCamas;
+      const areaObj = (this.areasClinicas || []).find(a => a.id === areaId);
+      if (!areaObj) {
+        const norm = areaId.toUpperCase();
+        const filtered = allCamas.filter((c: any) =>
+          (c.areaClinicaNombre && c.areaClinicaNombre.toUpperCase().includes(norm)) ||
+          (c.nombre && c.nombre.toUpperCase().includes(norm)) ||
+          (c.subAreaClinica && c.subAreaClinica.toUpperCase().includes(norm)) ||
+          (c.codigo && c.codigo.toUpperCase().includes(norm))
+        );
+        return filtered.length > 0 ? filtered : allCamas;
+      }
+      const normArea = areaObj.nombre.toUpperCase();
+      const filtered = allCamas.filter((c: any) =>
+        c.areaClinicaId === areaId ||
+        c.areaPadreId === areaId ||
+        (c.areaClinicaNombre && c.areaClinicaNombre.toUpperCase().includes(normArea)) ||
+        (c.nombre && c.nombre.toUpperCase().includes(normArea))
+      );
+      return filtered.length > 0 ? filtered : allCamas;
+    }
+  });
+
   /**
    * Asignación dinámica de tarifa derivada del ServicioClinico base vinculado al Área
    */
   public onAreaDestinoChange(areaId: string): void {
     this.areaDestinoId.set(areaId);
+    this.selectedCamaId.set(null);
 
-    const areaSeleccionada = (this.areasClinicas || []).find(a => a.id === areaId);
+    const areaSeleccionada = (this.areasClinicas || []).find(a =>
+      a.id === areaId ||
+      a.nombre.toUpperCase().includes((areaId || '').toUpperCase()) ||
+      a.codigo?.toUpperCase() === (areaId || '').toUpperCase()
+    );
     if (!areaSeleccionada) return;
 
     // Si no está en modo de edición manual, asigna las tarifas oficiales del catálogo maestro

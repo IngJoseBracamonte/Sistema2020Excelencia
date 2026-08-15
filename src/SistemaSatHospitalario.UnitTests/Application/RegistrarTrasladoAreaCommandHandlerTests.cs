@@ -79,6 +79,66 @@ namespace SistemaSatHospitalario.UnitTests.Application
         }
 
         [Fact]
+        public async Task Handle_TrasladoAEmergencia_AplicaCodigoHospEmgYDetalleCorrecto()
+        {
+            // Arrange
+            using var context = GetInMemoryDbContext();
+            var sedeId = Guid.NewGuid();
+
+            var paciente = new PacienteAdmision("V-11223344", "Paciente Emergencia", "0424-5556677", null, DateTime.Today.AddYears(-30));
+            var camaOrigen = new AreaClinica(sedeId, "HOSP-201", "Habitación 201", false);
+            var camaDestino = new AreaClinica(sedeId, "EMG-BOX-1", "Box de Emergencia 1", false);
+            var servicioEmg = new ServicioClinico("HOSP-EMG-01", "Cargo por Traslado / Estancia Emergencia", 300.00m, "Hospitalario")
+            {
+                HonorariumCategory = "HOSPITALARIO"
+            };
+
+            camaOrigen.MarcarComoOcupada();
+
+            await context.PacientesAdmision.AddAsync(paciente);
+            await context.AreasClinicas.AddRangeAsync(camaOrigen, camaDestino);
+            await context.ServiciosClinicos.AddAsync(servicioEmg);
+            await context.SaveChangesAsync();
+
+            var cuenta = new CuentaServicios(paciente.Id, "enfermera1", "Hospitalizacion", null, camaOrigen.Id);
+            await context.CuentasServicios.AddAsync(cuenta);
+            await context.SaveChangesAsync();
+
+            var handler = new RegistrarTrasladoAreaCommandHandler(context);
+
+            var command = new RegistrarTrasladoAreaCommand
+            {
+                CuentaId = cuenta.Id,
+                AreaDestino = "Observación de Emergencia",
+                CamaDestinoId = camaDestino.Id,
+                CantidadHoras = 12,
+                CambiaMedicoTratante = false,
+                Observacion = "Traslado urgente a observación de emergencia",
+                MontoACobrarUsd = 300m,
+                UsuarioTraslado = "enfermera1"
+            };
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Exitoso);
+            Assert.Equal(camaDestino.Id, result.CamaDestinoId);
+            Assert.Equal(300m, result.MontoCargadoUsd);
+
+            var cuentaActualizada = await context.CuentasServicios.Include(c => c.Detalles).FirstAsync(c => c.Id == cuenta.Id);
+            Assert.Equal(camaDestino.Id, cuentaActualizada.AreaClinicaId);
+            Assert.Equal("Observación de Emergencia", cuentaActualizada.SubAreaClinica);
+            Assert.Single(cuentaActualizada.Detalles);
+
+            var detalle = cuentaActualizada.Detalles.First();
+            Assert.Equal(servicioEmg.Id, detalle.ServicioId);
+            Assert.Contains("Emergencia", detalle.Descripcion);
+            Assert.Equal(300m, detalle.Precio);
+        }
+
+        [Fact]
         public async Task Handle_CuentaNoExistente_LanzaExcepcion()
         {
             // Arrange

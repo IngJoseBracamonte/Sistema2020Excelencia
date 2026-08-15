@@ -307,5 +307,44 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Single(result.Detalles);
             _mockBillingRepo.Verify(r => r.GuardarCambiosAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task Handle_TipoIngresoUCI_ReutilizaCuentaAbiertaExistente()
+        {
+            // Arrange
+            var cuentaExistenteUCI = new CuentaServicios(_testPacienteId, _testUsuario, "UCI");
+            _mockBillingRepo.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(_testPacienteId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(cuentaExistenteUCI);
+
+            var handler = CreateHandler();
+            var command = new SyncCarritoCommand
+            {
+                PacienteId = _testPacienteId,
+                UsuarioCarga = _testUsuario,
+                TipoIngreso = "UCI",
+                IsPrivilegedUser = true,
+                Items = new List<ServicioCarritoDto>
+                {
+                    new ServicioCarritoDto
+                    {
+                        ServicioId = _testServicioGuidId.ToString(),
+                        Descripcion = "Monitoreo Intensivo UCI",
+                        Precio = 100.00m,
+                        Honorario = 0m,
+                        Cantidad = 1,
+                        TipoServicio = "Servicio"
+                    }
+                }
+            };
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(cuentaExistenteUCI.Id, result.CuentaId);
+            _mockBillingRepo.Verify(r => r.ObtenerCuentaAbiertaPorPacienteAsync(_testPacienteId, It.IsAny<CancellationToken>()), Times.Once);
+            _mockBillingRepo.Verify(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
     }
 }
