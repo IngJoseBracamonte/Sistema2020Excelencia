@@ -17,7 +17,7 @@ import {
   LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,
   Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap,
   Repeat, DoorOpen, BadgeDollarSign, Bed, CheckCircle2, AlertCircle, Clock, ArrowRight, History, Truck, ArrowLeftRight, Layers, Shield, Filter, Eye, Syringe, AlertTriangle, RotateCcw,
-  CalendarDays, CalendarX, CalendarClock, CheckCheck, CheckSquare, HeartPulse, Play, Undo2, UserPlus, Crown, ClipboardCheck, Boxes
+  CalendarDays, CalendarX, CalendarClock, CheckCheck, CheckSquare, HeartPulse, Play, Undo2, UserPlus, Crown, ClipboardCheck, Boxes, LayoutList
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
@@ -40,7 +40,7 @@ export const appConfig: ApplicationConfig = {
       LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,
       Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap,
       Repeat, DoorOpen, BadgeDollarSign, Bed, CheckCircle2, AlertCircle, Clock, ArrowRight, History, Truck, ArrowLeftRight, Layers, Shield, Filter, Eye, Syringe, AlertTriangle, RotateCcw,
-      CalendarDays, CalendarX, CalendarClock, CheckCheck, CheckSquare, HeartPulse, Play, Undo2, UserPlus, Crown, ClipboardCheck, Boxes
+      CalendarDays, CalendarX, CalendarClock, CheckCheck, CheckSquare, HeartPulse, Play, Undo2, UserPlus, Crown, ClipboardCheck, Boxes, LayoutList
     }))
   ]
 };
