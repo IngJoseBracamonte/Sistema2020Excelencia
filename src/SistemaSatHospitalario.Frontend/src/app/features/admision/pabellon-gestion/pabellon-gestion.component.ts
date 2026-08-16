@@ -13,6 +13,7 @@ import {
 } from '../../../core/services/pabellon.service';
 import { MedicoService } from '../../../core/services/medico.service';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
+import { MultiSedeService, AreaClinica } from '../../../core/services/multi-sede.service';
 import { environment } from '../../../../environments/environment';
 
 import { PabellonCalendarioComponent } from './pabellon-calendario.component';
@@ -98,6 +99,7 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
       @if (vistaModo() === 'calendario') {
         <app-pabellon-calendario
           [cirugias]="calendarioItems()"
+          [habitaciones]="habitaciones()"
           (seleccionarCirugia)="onSeleccionarDeCalendario($event)"
         ></app-pabellon-calendario>
       }
@@ -140,11 +142,16 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
               <!-- Sala / Quirófano y Modalidad de Anestesia -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="text-gray-400 mb-1 block font-semibold">Sala / Quirófano *</label>
+                  <label class="text-gray-400 mb-1 block font-semibold">Habitación / Quirófano *</label>
                   <select [(ngModel)]="nuevaCirugiaForm.salaQuirofano" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-                    <option value="Quirófano 1">Quirófano 1</option>
-                    <option value="Quirófano 2">Quirófano 2</option>
-                    <option value="Sala de Partos">Sala de Partos</option>
+                    @for (h of habitaciones(); track h.id) {
+                      <option [value]="h.nombre">{{ h.nombre }} ({{ h.codigo }})</option>
+                    }
+                    @if (habitaciones().length === 0) {
+                      <option value="Quirófano 1">Quirófano 1</option>
+                      <option value="Quirófano 2">Quirófano 2</option>
+                      <option value="Sala de Partos">Sala de Partos</option>
+                    }
                   </select>
                 </div>
 
@@ -273,6 +280,7 @@ export class PabellonGestionComponent implements OnInit {
   private pabellonService = inject(PabellonService);
   private medicoService = inject(MedicoService);
   private patientService = inject(PatientService);
+  private multiSedeService = inject(MultiSedeService);
   private http = inject(HttpClient);
   private router = inject(Router);
 
@@ -283,6 +291,7 @@ export class PabellonGestionComponent implements OnInit {
   public pacienteSeleccionadoDetalle = signal<PacienteQuirurgicoItem | null>(null);
 
   public medicos = signal<{ id: string; nombre: string; especialidad?: string; activo?: boolean }[]>([]);
+  public habitaciones = signal<AreaClinica[]>([]);
 
   // Búsqueda de Pacientes
   public pacienteSearchQuery = signal<string>('');
@@ -313,6 +322,7 @@ export class PabellonGestionComponent implements OnInit {
 
     this.recargarDatos();
     this.cargarMedicos();
+    this.cargarHabitaciones();
   }
 
   private sincronizarVistaConRuta(): void {
@@ -350,6 +360,19 @@ export class PabellonGestionComponent implements OnInit {
   cargarMedicos(): void {
     this.medicoService.getAll().subscribe({
       next: (res: any[]) => this.medicos.set(res || [])
+    });
+  }
+
+  cargarHabitaciones(): void {
+    this.multiSedeService.getAreasClinicas().subscribe({
+      next: (areas: AreaClinica[]) => {
+        const activas = (areas || []).filter(a => a.activo);
+        this.habitaciones.set(activas);
+        if (activas.length > 0 && (!this.nuevaCirugiaForm.salaQuirofano || this.nuevaCirugiaForm.salaQuirofano === 'Quirófano 1')) {
+          this.nuevaCirugiaForm.salaQuirofano = activas[0].nombre;
+        }
+      },
+      error: (err) => console.error('[PABELLON] Error al cargar habitaciones:', err)
     });
   }
 

@@ -362,6 +362,14 @@ export class PabellonService {
     return this.http.patch<{ success: boolean }>(`${this.apiUrl}/Ordenes/${ordenId}/Requisitos/${requisitoId}`, { cumplido });
   }
 
+  devolucionMasiva(payload: { ordenCirugiaId: string; cuentaId?: string; items: { insumoId: string; cantidadUsada: number }[] }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/DevolucionMasiva`, payload);
+  }
+
+  cargoExtra(payload: any): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/CargoExtra`, payload);
+  }
+
   // --- Supervisor de Inventario: Reposición e Intercambio de Insumos ---
   procesarReposicion(req: {
     insumoId: string;

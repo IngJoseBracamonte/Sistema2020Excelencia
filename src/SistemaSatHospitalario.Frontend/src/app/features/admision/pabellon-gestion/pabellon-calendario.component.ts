@@ -1,12 +1,14 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
+import { AreaClinica } from '../../../core/services/multi-sede.service';
 
 @Component({
   selector: 'app-pabellon-calendario',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-4">
@@ -18,53 +20,29 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
           </div>
           <div>
             <h2 class="text-sm font-bold text-white uppercase tracking-wider">Calendario Quirúrgico Total</h2>
-            <p class="text-xs text-gray-400">Programación de intervenciones, ocupación de quirófanos y salas de parto</p>
+            <p class="text-xs text-gray-400">Programación de intervenciones, ocupación de quirófanos y salas clínicas</p>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <!-- Filtro por Sala / Quirófano -->
-          <div class="flex items-center bg-gray-950/80 p-1 rounded-xl border border-gray-800">
-            <button
-              (click)="salaFiltro.set('')"
-              [class.bg-sky-600]="salaFiltro() === ''"
-              [class.text-white]="salaFiltro() === ''"
-              [class.text-gray-400]="salaFiltro() !== ''"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <!-- ComboList con Buscador para Quirófano / Habitación -->
+          <div class="flex items-center gap-2 bg-gray-950/90 px-3 py-1.5 rounded-xl border border-gray-800 focus-within:border-sky-500/80 transition shadow-inner">
+            <lucide-icon name="door-open" class="w-4 h-4 text-sky-400 shrink-0"></lucide-icon>
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Habitación / Quirófano:</span>
+            <select
+              [ngModel]="salaFiltro()"
+              (ngModelChange)="salaFiltro.set($event)"
+              class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer pr-4"
             >
-              Todos
-            </button>
-            <button
-              (click)="salaFiltro.set('Quirófano 1')"
-              [class.bg-sky-600]="salaFiltro() === 'Quirófano 1'"
-              [class.text-white]="salaFiltro() === 'Quirófano 1'"
-              [class.text-gray-400]="salaFiltro() !== 'Quirófano 1'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              Quirófano 1
-            </button>
-            <button
-              (click)="salaFiltro.set('Quirófano 2')"
-              [class.bg-sky-600]="salaFiltro() === 'Quirófano 2'"
-              [class.text-white]="salaFiltro() === 'Quirófano 2'"
-              [class.text-gray-400]="salaFiltro() !== 'Quirófano 2'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              Quirófano 2
-            </button>
-            <button
-              (click)="salaFiltro.set('Sala de Partos')"
-              [class.bg-sky-600]="salaFiltro() === 'Sala de Partos'"
-              [class.text-white]="salaFiltro() === 'Sala de Partos'"
-              [class.text-gray-400]="salaFiltro() !== 'Sala de Partos'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              Sala de Partos
-            </button>
+              <option value="" class="bg-gray-900 text-gray-200">Todas las Habitaciones / Salas ({{ cirugias().length }})</option>
+              @for (sala of salasDisponibles(); track sala) {
+                <option [value]="sala" class="bg-gray-900 text-white">{{ sala }}</option>
+              }
+            </select>
           </div>
 
           <!-- Totalizador -->
-          <span class="text-xs font-mono font-bold text-sky-400 bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20">
+          <span class="text-xs font-mono font-bold text-sky-400 bg-sky-500/10 px-3 py-2 rounded-xl border border-sky-500/20 shadow-sm">
             {{ cirugiasFiltradas().length }} Agendadas
           </span>
         </div>
@@ -74,7 +52,7 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
       <div *ngIf="cirugiasFiltradas().length === 0" class="text-center py-16 text-gray-400 text-xs bg-gray-900/40 rounded-2xl border border-gray-800/60 p-6">
         <lucide-icon name="calendar-x" class="w-10 h-10 mx-auto text-gray-600 mb-3"></lucide-icon>
         <p class="font-semibold text-gray-300">No hay cirugías programadas para este filtro</p>
-        <p class="text-gray-500 mt-1">Seleccione otro quirófano o agregue una nueva intervención desde el tablero de gestión.</p>
+        <p class="text-gray-500 mt-1">Seleccione otra habitación o quirófano, o agregue una nueva intervención desde el tablero de gestión.</p>
       </div>
 
       <div *ngIf="cirugiasFiltradas().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -98,7 +76,7 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
               <div class="flex flex-wrap items-center gap-1.5 mb-2">
                 <span class="text-[10px] font-semibold text-gray-300 bg-gray-950 px-2 py-0.5 rounded border border-gray-800 flex items-center gap-1">
                   <lucide-icon name="door-open" class="w-3 h-3 text-sky-400"></lucide-icon>
-                  {{ item.salaQuirofano || 'Quirófano 1' }}
+                  {{ item.salaQuirofano || 'Sala Clínica' }}
                 </span>
                 @if (item.esAlquilado) {
                   <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
@@ -148,9 +126,18 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
 })
 export class PabellonCalendarioComponent {
   cirugias = input<CirugiaCalendarioItem[]>([]);
+  habitaciones = input<AreaClinica[]>([]);
   seleccionarCirugia = output<CirugiaCalendarioItem>();
 
   salaFiltro = signal<string>('');
+
+  // Unifica las habitaciones de la BD con las salas registradas en cirugías
+  salasDisponibles = computed(() => {
+    const listHab = (this.habitaciones() || []).map(h => h.nombre.trim()).filter(Boolean);
+    const listCirugias = (this.cirugias() || []).map(c => (c.salaQuirofano || '').trim()).filter(Boolean);
+    const combinadas = Array.from(new Set([...listHab, ...listCirugias]));
+    return combinadas.sort();
+  });
 
   cirugiasFiltradas = computed(() => {
     const list = this.cirugias();
