@@ -7,6 +7,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public Guid CuentaServicioId { get; private set; }
         public virtual CuentaServicios CuentaServicio { get; private set; }
+        public Guid? OrdenCirugiaId { get; private set; }
+        public virtual OrdenCirugia? OrdenCirugia { get; private set; }
         public Guid InsumoId { get; private set; }
         public virtual Insumo Insumo { get; private set; }
         public decimal CantidadEntregada { get; private set; }
@@ -15,7 +17,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected InsumoCirugiaPaciente() { }
 
-        public InsumoCirugiaPaciente(Guid cuentaServicioId, Guid insumoId, decimal cantidadEntregada)
+        public InsumoCirugiaPaciente(Guid cuentaServicioId, Guid insumoId, decimal cantidadEntregada, Guid? ordenCirugiaId = null)
         {
             if (cantidadEntregada <= 0)
             {
@@ -23,6 +25,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             }
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
+            OrdenCirugiaId = ordenCirugiaId;
             InsumoId = insumoId;
             CantidadEntregada = cantidadEntregada;
             CantidadDevuelta = 0;

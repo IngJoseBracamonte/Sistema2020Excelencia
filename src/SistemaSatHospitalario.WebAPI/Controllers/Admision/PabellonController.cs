@@ -1,4 +1,5 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
+        private string CurrentUser => User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name ?? "Sistema";
+
         /// <summary>
         /// Obtiene el listado de ordenes de cirugía filtradas por rango de fechas o estado.
         /// </summary>
@@ -34,6 +37,38 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 FechaInicio = fechaInicio,
                 FechaFin = fechaFin,
+                Estado = estado
+            });
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Obtiene el cronograma para el Calendario Quirúrgico Total.
+        /// </summary>
+        [HttpGet("Calendario")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCalendario([FromQuery] DateTime? fechaInicio, [FromQuery] DateTime? fechaFin, [FromQuery] string? salaQuirofano, [FromQuery] string? estado)
+        {
+            var result = await _mediator.Send(new GetPabellonCalendarioQuery
+            {
+                FechaInicio = fechaInicio,
+                FechaFin = fechaFin,
+                SalaQuirofano = salaQuirofano,
+                Estado = estado
+            });
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Obtiene la lista maestra de pacientes quirúrgicos y su estado para el tablero y panel contextual.
+        /// </summary>
+        [HttpGet("Pacientes")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPacientes([FromQuery] string? busqueda, [FromQuery] string? estado)
+        {
+            var result = await _mediator.Send(new GetPacientesQuirurgicosListaQuery
+            {
+                Busqueda = busqueda,
                 Estado = estado
             });
             return Ok(result);
@@ -62,7 +97,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioCreacion = User.GetUserName();
+                command.UsuarioCreacion = CurrentUser;
                 var result = await _mediator.Send(command);
                 return Ok(new { id = result });
             }
@@ -82,7 +117,107 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.GetUserName();
+                command.UsuarioId = CurrentUser;
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Asigna y despacha un kit de insumos quirúrgicos personalizados a la orden y cuenta del paciente.
+        /// </summary>
+        [HttpPost("AsignarKit")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> AsignarKit([FromBody] AsignarKitCirugiaCommand command)
+        {
+            try
+            {
+                command.UsuarioId = CurrentUser;
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Registra la devolución de insumos sobrantes y actualiza stock.
+        /// </summary>
+        [HttpPost("DevolucionInsumo")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DevolucionInsumo([FromBody] ProcesarDevolucionInsumoCommand command)
+        {
+            try
+            {
+                command.UsuarioId = CurrentUser;
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Solicita insumos ad-hoc de urgencia desde quirófano a almacén central.
+        /// </summary>
+        [HttpPost("SolicitarInsumoExtra")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> SolicitarInsumoExtra([FromBody] SolicitarInsumosExtraCommand command)
+        {
+            try
+            {
+                command.UsuarioId = CurrentUser;
+                var id = await _mediator.Send(command);
+                return Ok(new { id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Despacha una solicitud ad-hoc desde almacén central al quirófano.
+        /// </summary>
+        [HttpPost("DespacharSolicitudExtra")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DespacharSolicitudExtra([FromBody] DespacharSolicitudExtraCommand command)
+        {
+            try
+            {
+                command.UsuarioId = CurrentUser;
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Actualiza honorarios de N médicos, derecho de sala y flag de alquiler de pabellón.
+        /// </summary>
+        [HttpPost("ActualizarHonorariosYPrecios")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ActualizarHonorariosYPrecios([FromBody] ActualizarHonorariosYPreciosCommand command)
+        {
+            try
+            {
+                command.UsuarioId = CurrentUser;
                 var result = await _mediator.Send(command);
                 return Ok(new { success = result });
             }
@@ -102,7 +237,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.GetUserName();
+                command.UsuarioId = CurrentUser;
                 var result = await _mediator.Send(command);
                 return Ok(new { success = result });
             }
@@ -122,7 +257,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.GetUserName();
+                command.UsuarioId = CurrentUser;
                 var result = await _mediator.Send(command);
                 return Ok(new { success = result });
             }
@@ -172,7 +307,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioId = User.GetUserName();
+                command.UsuarioId = CurrentUser;
                 var result = await _mediator.Send(command);
                 return Ok(new { success = result });
             }
@@ -197,7 +332,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     OrdenCirugiaId = id,
                     RequisitoCirugiaId = requisitoId,
                     Cumplido = request.Cumplido,
-                    UsuarioId = User.GetUserName()
+                    UsuarioId = CurrentUser
                 };
                 var result = await _mediator.Send(command);
                 return Ok(new { success = result });
