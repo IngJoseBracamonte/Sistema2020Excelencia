@@ -2,6 +2,8 @@ import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
 import {
   PabellonService,
@@ -52,7 +54,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
           <!-- Switcher de Modos de Vista Principal -->
           <div class="bg-gray-950 p-1 rounded-xl border border-gray-800 flex items-center gap-1">
             <button
-              (click)="vistaModo.set('tablero')"
+              (click)="cambiarModoVista('tablero')"
               [class.bg-sky-600]="vistaModo() === 'tablero'"
               [class.text-white]="vistaModo() === 'tablero'"
               [class.text-gray-400]="vistaModo() !== 'tablero'"
@@ -63,7 +65,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
             </button>
 
             <button
-              (click)="vistaModo.set('calendario')"
+              (click)="cambiarModoVista('calendario')"
               [class.bg-sky-600]="vistaModo() === 'calendario'"
               [class.text-white]="vistaModo() === 'calendario'"
               [class.text-gray-400]="vistaModo() !== 'calendario'"
@@ -74,7 +76,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
             </button>
 
             <button
-              (click)="vistaModo.set('reposicion')"
+              (click)="cambiarModoVista('reposicion')"
               [class.bg-sky-600]="vistaModo() === 'reposicion'"
               [class.text-white]="vistaModo() === 'reposicion'"
               [class.text-gray-400]="vistaModo() !== 'reposicion'"
@@ -290,6 +292,7 @@ export class PabellonGestionComponent implements OnInit {
   private medicoService = inject(MedicoService);
   private patientService = inject(PatientService);
   private http = inject(HttpClient);
+  private router = inject(Router);
 
   // Estados Reactivos con Signals
   public vistaModo = signal<'tablero' | 'calendario' | 'reposicion'>('tablero');
@@ -319,8 +322,31 @@ export class PabellonGestionComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.sincronizarVistaConRuta();
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.sincronizarVistaConRuta();
+    });
+
     this.recargarDatos();
     this.cargarMedicos();
+  }
+
+  private sincronizarVistaConRuta(): void {
+    const url = this.router.url;
+    if (url.includes('/calendario')) {
+      this.vistaModo.set('calendario');
+    } else if (url.includes('/reposicion')) {
+      this.vistaModo.set('reposicion');
+    } else {
+      this.vistaModo.set('tablero');
+    }
+  }
+
+  public cambiarModoVista(modo: 'tablero' | 'calendario' | 'reposicion'): void {
+    this.vistaModo.set(modo);
+    this.router.navigate(['/pabellon', modo]);
   }
 
   recargarDatos(): void {

@@ -74,7 +74,13 @@ export const routes: Routes = [
             { path: 'admin/seguros/gerencia', loadComponent: () => import('./features/admin/seguros-gerencia/management-insurance-dashboard.component').then(m => m.ManagementInsuranceDashboardComponent) },
             { path: 'github-test', loadComponent: () => import('./features/github-test/github-test.component').then(m => m.GithubTestComponent) },
             { path: 'enfermeria', loadComponent: () => import('./features/enfermeria/enfermeria.component').then(m => m.EnfermeriaComponent) },
-            { path: 'pabellon/gestion', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            
+            // --- Módulo Cirugía / Pabellón ---
+            { path: 'pabellon/tablero', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            { path: 'pabellon/calendario', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            { path: 'pabellon/reposicion', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            { path: 'pabellon/gestion', redirectTo: 'pabellon/tablero', pathMatch: 'full' },
+            { path: 'pabellon', redirectTo: 'pabellon/tablero', pathMatch: 'full' },
 
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
