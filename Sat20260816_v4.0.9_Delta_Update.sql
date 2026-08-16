@@ -3,8 +3,9 @@
 -- Base de Datos: sathospitalario (MySQL 8.0+)
 -- Resuelve y asegura todas las columnas requeridas por Entity Framework Core:
 -- 1. InsumosCirugiasPacientes -> OrdenCirugiaId (Causa del Error 500)
--- 2. OrdenesCirugia -> MotivoCancelacion, SedeQuirofanoId, AreaClinicaId
--- 3. Incompatibilidad de Charset / FKs (Error 3780)
+-- 2. TransferenciasReposicionStock -> InsumoId, SedeOrigenId, SedeDestinoId, Cantidad, Motivo, Observaciones, FechaTransferencia, UsuarioId (Causa Error Reposición)
+-- 3. OrdenesCirugia -> MotivoCancelacion, SedeQuirofanoId, AreaClinicaId
+-- 4. Incompatibilidad de Charset / FKs (Error 3780)
 -- ============================================================================
 
 USE `sathospitalario`;
@@ -45,7 +46,36 @@ CALL AddColumnIfNotExists('insumoscirugiaspacientes', 'CantidadEntregada', 'deci
 CALL AddColumnIfNotExists('insumoscirugiaspacientes', 'CantidadDevuelta', 'decimal(18,4) NOT NULL DEFAULT 0.0000');
 
 -- ----------------------------------------------------------------------------
--- 2. TABLA: ordenescirugia (Asegurar todas las columnas de entidad)
+-- 2. TABLA: transferenciasreposicionstock (CORRECCIÓN CRÍTICA ERROR REPOSICIÓN)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `transferenciasreposicionstock` (
+    `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `InsumoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `SedeOrigenId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `SedeDestinoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `Cantidad` decimal(18,4) NOT NULL DEFAULT 0.0000,
+    `Motivo` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'Reposicion',
+    `Observaciones` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    `FechaTransferencia` datetime(6) NOT NULL,
+    `UsuarioId` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+    PRIMARY KEY (`Id`),
+    KEY `IX_transferenciasreposicionstock_InsumoId` (`InsumoId`),
+    KEY `IX_transferenciasreposicionstock_SedeOrigenId` (`SedeOrigenId`),
+    KEY `IX_transferenciasreposicionstock_SedeDestinoId` (`SedeDestinoId`),
+    KEY `IX_transferenciasreposicionstock_FechaTransferencia` (`FechaTransferencia`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'InsumoId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'SedeOrigenId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'SedeDestinoId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'Cantidad', 'decimal(18,4) NOT NULL DEFAULT 0.0000');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'Motivo', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "Reposicion"');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'Observaciones', 'varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'FechaTransferencia', 'datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)');
+CALL AddColumnIfNotExists('transferenciasreposicionstock', 'UsuarioId', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "Sistema"');
+
+-- ----------------------------------------------------------------------------
+-- 3. TABLA: ordenescirugia (Asegurar todas las columnas de entidad)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ordenescirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -91,7 +121,7 @@ CALL AddColumnIfNotExists('ordenescirugia', 'AreaClinicaId', 'char(36) CHARACTER
 CALL AddColumnIfNotExists('ordenescirugia', 'SedeQuirofanoId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL');
 
 -- ----------------------------------------------------------------------------
--- 3. TABLA: cirugiasmedicoshonorarios (Normalizada en 3FN con EspecialidadId)
+-- 4. TABLA: cirugiasmedicoshonorarios (Normalizada en 3FN con EspecialidadId)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `cirugiasmedicoshonorarios` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -117,7 +147,7 @@ CALL AddColumnIfNotExists('cirugiasmedicoshonorarios', 'EspecialidadId', 'char(3
 CALL AddColumnIfNotExists('cirugiasmedicoshonorarios', 'EsCirujanoPrincipal', 'tinyint(1) NOT NULL DEFAULT 0');
 
 -- ----------------------------------------------------------------------------
--- 4. TABLA: solicitudesinsumoscirugia (Requerimientos Ad-hoc desde Quirófano)
+-- 5. TABLA: solicitudesinsumoscirugia (Requerimientos Ad-hoc desde Quirófano)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `solicitudesinsumoscirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -143,31 +173,6 @@ ALTER TABLE `solicitudesinsumoscirugia`
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `InsumoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `AlmacenOrigenId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL;
-
--- ----------------------------------------------------------------------------
--- 5. TABLA: transferenciasreposicionstock (Reposición e Intercambio Multi-Sede)
--- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `transferenciasreposicionstock` (
-    `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-    `SedeOrigenId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-    `SedeDestinoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-    `AreaClinicaOrigenId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
-    `AreaClinicaDestinoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
-    `InsumoEntregadoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-    `CantidadEntregada` decimal(18,2) NOT NULL,
-    `InsumoDevueltoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
-    `CantidadDevuelta` decimal(18,2) NOT NULL DEFAULT '0.00',
-    `TipoOperacion` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'Reposicion',
-    `Motivo` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-    `UsuarioSupervisorId` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-    `FechaMovimiento` datetime(6) NOT NULL,
-    PRIMARY KEY (`Id`),
-    KEY `IX_transferenciasreposicionstock_SedeOrigenId` (`SedeOrigenId`),
-    KEY `IX_transferenciasreposicionstock_SedeDestinoId` (`SedeDestinoId`),
-    KEY `IX_transferenciasreposicionstock_InsumoEntregadoId` (`InsumoEntregadoId`),
-    KEY `IX_transferenciasreposicionstock_InsumoDevueltoId` (`InsumoDevueltoId`),
-    KEY `IX_transferenciasreposicionstock_FechaMovimiento` (`FechaMovimiento`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------------------------------------------------------
 -- 6. TABLAS DE CHECKLIST PREOPERATORIO (Requisitos y Verificaciones)
