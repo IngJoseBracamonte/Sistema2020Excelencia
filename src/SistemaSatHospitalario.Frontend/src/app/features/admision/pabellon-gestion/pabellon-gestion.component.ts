@@ -18,7 +18,6 @@ import { environment } from '../../../../environments/environment';
 import { PabellonCalendarioComponent } from './pabellon-calendario.component';
 import { PabellonPacientesListaComponent } from './pabellon-pacientes-lista.component';
 import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component';
-import { ReposicionInventarioComponent } from '../../inventario/reposicion-inventario.component';
 
 @Component({
   selector: 'app-pabellon-gestion',
@@ -29,8 +28,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
     LucideAngularModule,
     PabellonCalendarioComponent,
     PabellonPacientesListaComponent,
-    PanelDetalleCirugiaComponent,
-    ReposicionInventarioComponent
+    PanelDetalleCirugiaComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -46,7 +44,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
             <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
               Pabellón Quirúrgico & Gestión de Cirugías
             </h1>
-            <p class="text-xs text-gray-400">Programación operativa, checklist preoperatorio, honorarios médicos y reposición de insumos</p>
+            <p class="text-xs text-gray-400">Programación operativa, checklist preoperatorio y honorarios médicos</p>
           </div>
         </div>
 
@@ -73,17 +71,6 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
             >
               <lucide-icon name="calendar-days" class="w-3.5 h-3.5"></lucide-icon>
               Calendario Total
-            </button>
-
-            <button
-              (click)="cambiarModoVista('reposicion')"
-              [class.bg-sky-600]="vistaModo() === 'reposicion'"
-              [class.text-white]="vistaModo() === 'reposicion'"
-              [class.text-gray-400]="vistaModo() !== 'reposicion'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
-            >
-              <lucide-icon name="repeat" class="w-3.5 h-3.5"></lucide-icon>
-              Reposición Insumos
             </button>
           </div>
 
@@ -113,11 +100,6 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
           [cirugias]="calendarioItems()"
           (seleccionarCirugia)="onSeleccionarDeCalendario($event)"
         ></app-pabellon-calendario>
-      }
-
-      <!-- VISTA 3: REPOSICIÓN E INTERCAMBIO DE INSUMOS -->
-      @if (vistaModo() === 'reposicion') {
-        <app-reposicion-inventario></app-reposicion-inventario>
       }
 
       <!-- PANEL LATERAL CONTEXTUAL POR ROL (DRAWER) -->
@@ -295,7 +277,7 @@ export class PabellonGestionComponent implements OnInit {
   private router = inject(Router);
 
   // Estados Reactivos con Signals
-  public vistaModo = signal<'tablero' | 'calendario' | 'reposicion'>('tablero');
+  public vistaModo = signal<'tablero' | 'calendario'>('tablero');
   public pacientesQuirurgicos = signal<PacienteQuirurgicoItem[]>([]);
   public calendarioItems = signal<CirugiaCalendarioItem[]>([]);
   public pacienteSeleccionadoDetalle = signal<PacienteQuirurgicoItem | null>(null);
@@ -337,14 +319,12 @@ export class PabellonGestionComponent implements OnInit {
     const url = this.router.url;
     if (url.includes('/calendario')) {
       this.vistaModo.set('calendario');
-    } else if (url.includes('/reposicion')) {
-      this.vistaModo.set('reposicion');
     } else {
       this.vistaModo.set('tablero');
     }
   }
 
-  public cambiarModoVista(modo: 'tablero' | 'calendario' | 'reposicion'): void {
+  public cambiarModoVista(modo: 'tablero' | 'calendario'): void {
     this.vistaModo.set(modo);
     this.router.navigate(['/pabellon', modo]);
   }
