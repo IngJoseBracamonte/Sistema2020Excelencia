@@ -28,29 +28,6 @@ export interface CirugiaObservacionHistorial {
   usuarioRegistro: string;
 }
 
-export interface OrdenCirugia {
-  id: string;
-  cuentaServicioId: string;
-  pacienteId: string;
-  pacienteNombre: string;
-  pacienteCedula: string;
-  descripcionCirugia: string;
-  precioBaseUsd: number;
-  medicoId: string;
-  medicoNombre: string;
-  fechaHoraProgramada: string;
-  estado: string;
-  motivoCancelacion?: string;
-  fechaCreacion: string;
-  usuarioCreacion: string;
-  razonCirugia?: string;
-  especialidad?: string;
-  notasOperatorias?: string;
-  requisitosQuirurgicos?: string;
-  requisitos?: OrdenCirugiaRequisito[];
-  historialObservaciones?: CirugiaObservacionHistorial[];
-}
-
 export interface CirugiaLog {
   id: string;
   ordenCirugiaId: string;
@@ -70,9 +47,135 @@ export interface InsumoCirugiaConsumo {
   precioUnitarioUsd: number;
 }
 
+export interface MedicoHonorarioItem {
+  id: string;
+  medicoId: string;
+  medicoNombre: string;
+  especialidadId: string;
+  especialidadNombre: string;
+  montoHonorarioUsd: number;
+  esCirujanoPrincipal: boolean;
+}
+
+export interface SolicitudInsumoDetalle {
+  id: string;
+  insumoId: string;
+  insumoNombre: string;
+  insumoCodigo: string;
+  cantidadSolicitada: number;
+  estadoSolicitud: string;
+  fechaSolicitud: string;
+  usuarioSolicitud: string;
+}
+
+export interface UbicacionPaciente {
+  areaClinicaId?: string;
+  areaClinicaNombre: string;
+  camaId?: string;
+  camaNombre: string;
+  camaCodigo: string;
+  descripcionCompleta: string;
+}
+
+export interface TipoIngresoCobertura {
+  tipo: string;
+  convenioId?: number;
+  convenioNombre?: string;
+  esAsegurado: boolean;
+}
+
+export interface CirugiaCalendarioItem {
+  id: string;
+  cuentaServicioId: string;
+  pacienteId: string;
+  pacienteNombre: string;
+  pacienteCedula: string;
+  ubicacion: UbicacionPaciente;
+  ingresoCobertura: TipoIngresoCobertura;
+  descripcionCirugia: string;
+  salaQuirofano: string;
+  modalidadAnestesia: string;
+  esAlquilado: boolean;
+  precioDerechoSalaUsd: number;
+  precioBaseUsd: number;
+  medicoId: string;
+  medicoNombre: string;
+  fechaHoraProgramada: string;
+  estado: string;
+  totalRequisitos: number;
+  requisitosCumplidos: number;
+  estaAptoParaQuirofano: boolean;
+}
+
+export interface PacienteQuirurgicoItem {
+  id: string;
+  cuentaServicioId: string;
+  pacienteId: string;
+  pacienteNombre: string;
+  pacienteCedula: string;
+  ubicacion: UbicacionPaciente;
+  ingresoCobertura: TipoIngresoCobertura;
+  descripcionCirugia: string;
+  salaQuirofano: string;
+  modalidadAnestesia: string;
+  esAlquilado: boolean;
+  precioDerechoSalaUsd: number;
+  precioBaseUsd: number;
+  medicoPrincipalId: string;
+  medicoPrincipalNombre: string;
+  fechaHoraProgramada: string;
+  estado: string;
+  fechaCreacion: string;
+  usuarioCreacion: string;
+  requisitos: OrdenCirugiaRequisito[];
+  medicosHonorarios: MedicoHonorarioItem[];
+  insumosAsignados: InsumoCirugiaConsumo[];
+  solicitudesInsumos: SolicitudInsumoDetalle[];
+  logs: CirugiaLog[];
+}
+
+export interface OrdenCirugia {
+  id: string;
+  cuentaServicioId: string;
+  pacienteId: string;
+  pacienteNombre: string;
+  pacienteCedula: string;
+  descripcionCirugia: string;
+  precioBaseUsd: number;
+  medicoId: string;
+  medicoNombre: string;
+  fechaHoraProgramada: string;
+  estado: string;
+  motivoCancelacion?: string;
+  fechaCreacion: string;
+  usuarioCreacion: string;
+  salaQuirofano?: string;
+  modalidadAnestesia?: string;
+  esAlquilado?: boolean;
+  precioDerechoSalaUsd?: number;
+  requisitos?: OrdenCirugiaRequisito[];
+  historialObservaciones?: CirugiaObservacionHistorial[];
+}
+
 export interface OrdenCirugiaDetalle extends OrdenCirugia {
   logs: CirugiaLog[];
   insumosAsignados: InsumoCirugiaConsumo[];
+}
+
+export interface TransferenciaReposicionItem {
+  id: string;
+  insumoId: string;
+  insumoNombre: string;
+  insumoCodigo: string;
+  sedeOrigenId: string;
+  sedeOrigenNombre: string;
+  sedeDestinoId: string;
+  sedeDestinoNombre: string;
+  cantidad: number;
+  motivo: string;
+  fechaTransferencia: string;
+  usuarioId: string;
+  observaciones?: string;
 }
 
 export interface CrearOrdenCirugiaRequest {
@@ -82,8 +185,10 @@ export interface CrearOrdenCirugiaRequest {
   precioBaseUsd: number;
   medicoId: string;
   fechaHoraProgramada: string;
-  razonCirugia?: string;
-  especialidad?: string;
+  salaQuirofano?: string;
+  modalidadAnestesia?: string;
+  esAlquilado?: boolean;
+  precioDerechoSalaUsd?: number;
 }
 
 export interface CambiarEstadoCirugiaRequest {
@@ -98,32 +203,93 @@ export interface ReprogramarCirugiaRequest {
   motivo: string;
 }
 
-export interface DevolucionMasivaRequest {
-  ordenCirugiaId: string;
-  cuentaId: string;
-  items: { insumoId: string; cantidadUsada: number }[];
-}
-
-export interface CargoExtraCirugiaRequest {
+export interface AsignarKitRequest {
   ordenCirugiaId: string;
   cuentaServicioId: string;
-  servicioId: string;
-  descripcion: string;
-  precio: number;
-  honorario: number;
+  sedeDespachoId?: string;
+  insumosPersonalizados: { insumoId: string; cantidad: number }[];
+}
+
+export interface DevolucionInsumoRequest {
+  cuentaServicioId: string;
+  insumoId: string;
+  cantidadDevuelta: number;
+  sedeReingresoId?: string;
+  motivo?: string;
+}
+
+export interface SolicitarInsumoExtraRequest {
+  ordenCirugiaId: string;
+  insumoId: string;
   cantidad: number;
-  tipoServicio: string;
+  almacenOrigenId?: string;
+  observaciones?: string;
+}
+
+export interface ActualizarHonorariosYPreciosRequest {
+  ordenCirugiaId: string;
+  precioDerechoSalaUsd: number;
+  precioBaseUsd: number;
+  esAlquilado: boolean;
+  medicos: {
+    medicoId: string;
+    especialidadId?: string;
+    montoHonorarioUsd: number;
+    esCirujanoPrincipal: boolean;
+  }[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class PabellonService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Pabellon`;
+  private inventarioUrl = `${environment.apiUrl}/api/Inventario/Reposicion`;
 
-  // Reactive State mediante Angular Signals
+  // Reactive State mediante Signals
+  public calendarioItems = signal<CirugiaCalendarioItem[]>([]);
+  public pacientesQuirurgicos = signal<PacienteQuirurgicoItem[]>([]);
   public cirugias = signal<OrdenCirugia[]>([]);
   public requisitosCatalogo = signal<RequisitoCirugia[]>([]);
+  public reposicionesHistorial = signal<TransferenciaReposicionItem[]>([]);
   public loading = signal<boolean>(false);
+
+  getCalendario(fechaInicio?: string, fechaFin?: string, salaQuirofano?: string, estado?: string): Observable<CirugiaCalendarioItem[]> {
+    this.loading.set(true);
+    let params = new HttpParams();
+    if (fechaInicio) params = params.set('fechaInicio', fechaInicio);
+    if (fechaFin) params = params.set('fechaFin', fechaFin);
+    if (salaQuirofano) params = params.set('salaQuirofano', salaQuirofano);
+    if (estado) params = params.set('estado', estado);
+
+    return this.http.get<CirugiaCalendarioItem[]>(`${this.apiUrl}/Calendario`, { params }).pipe(
+      tap(items => {
+        this.calendarioItems.set(items || []);
+        this.loading.set(false);
+      }),
+      catchError(err => {
+        this.loading.set(false);
+        throw err;
+      })
+    );
+  }
+
+  getPacientesQuirurgicos(busqueda?: string, estado?: string): Observable<PacienteQuirurgicoItem[]> {
+    this.loading.set(true);
+    let params = new HttpParams();
+    if (busqueda) params = params.set('busqueda', busqueda);
+    if (estado) params = params.set('estado', estado);
+
+    return this.http.get<PacienteQuirurgicoItem[]>(`${this.apiUrl}/Pacientes`, { params }).pipe(
+      tap(pacientes => {
+        this.pacientesQuirurgicos.set(pacientes || []);
+        this.loading.set(false);
+      }),
+      catchError(err => {
+        this.loading.set(false);
+        throw err;
+      })
+    );
+  }
 
   getOrdenes(fechaInicio?: string, fechaFin?: string, estado?: string): Observable<OrdenCirugia[]> {
     this.loading.set(true);
@@ -131,7 +297,7 @@ export class PabellonService {
     if (fechaInicio) params = params.set('fechaInicio', fechaInicio);
     if (fechaFin) params = params.set('fechaFin', fechaFin);
     if (estado) params = params.set('estado', estado);
-    
+
     return this.http.get<OrdenCirugia[]>(`${this.apiUrl}/Ordenes`, { params }).pipe(
       tap(data => {
         this.cirugias.set(data || []);
@@ -160,6 +326,26 @@ export class PabellonService {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/Reprogramar`, req);
   }
 
+  asignarKit(req: AsignarKitRequest): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/AsignarKit`, req);
+  }
+
+  devolucionInsumo(req: DevolucionInsumoRequest): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/DevolucionInsumo`, req);
+  }
+
+  solicitarInsumoExtra(req: SolicitarInsumoExtraRequest): Observable<{ id: string }> {
+    return this.http.post<{ id: string }>(`${this.apiUrl}/SolicitarInsumoExtra`, req);
+  }
+
+  despacharSolicitudExtra(solicitudId: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/DespacharSolicitudExtra`, { solicitudId });
+  }
+
+  actualizarHonorariosYPrecios(req: ActualizarHonorariosYPreciosRequest): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/ActualizarHonorariosYPrecios`, req);
+  }
+
   getRequisitosCatalogo(soloActivos: boolean = true): Observable<RequisitoCirugia[]> {
     return this.http.get<RequisitoCirugia[]>(`${this.apiUrl}/RequisitosCatalogo`, {
       params: new HttpParams().set('soloActivos', soloActivos)
@@ -176,23 +362,44 @@ export class PabellonService {
     return this.http.patch<{ success: boolean }>(`${this.apiUrl}/Ordenes/${ordenId}/Requisitos/${requisitoId}`, { cumplido });
   }
 
-  devolucionMasiva(req: DevolucionMasivaRequest): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/DevolucionMasiva`, req);
+  // --- Supervisor de Inventario: Reposición e Intercambio de Insumos ---
+  procesarReposicion(req: {
+    insumoId: string;
+    sedeOrigenId: string;
+    sedeDestinoId: string;
+    cantidad: number;
+    motivo: string;
+    observaciones?: string;
+  }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(this.inventarioUrl, req);
   }
 
-  cargoExtra(req: CargoExtraCirugiaRequest): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/CargoExtra`, req);
+  getReposicionesHistorial(params?: {
+    sedeId?: string;
+    insumoId?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+    motivo?: string;
+  }): Observable<TransferenciaReposicionItem[]> {
+    let httpParams = new HttpParams();
+    if (params?.sedeId) httpParams = httpParams.set('sedeId', params.sedeId);
+    if (params?.insumoId) httpParams = httpParams.set('insumoId', params.insumoId);
+    if (params?.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
+    if (params?.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
+    if (params?.motivo) httpParams = httpParams.set('motivo', params.motivo);
+
+    return this.http.get<TransferenciaReposicionItem[]>(`${this.inventarioUrl}/Historial`, { params: httpParams }).pipe(
+      tap(items => this.reposicionesHistorial.set(items || []))
+    );
   }
 
   getEstadosCirugia(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/Estados`).pipe(
-      catchError(() => of([
-        { id: 'Programada', codigo: 'PROG', nombre: 'Programada' },
-        { id: 'EnEspera', codigo: 'ESPE', nombre: 'En Espera Pre-Quirúrgica' },
-        { id: 'EnCirugia', codigo: 'PROC', nombre: 'En Cirugía / Quirófano' },
-        { id: 'Finalizado', codigo: 'COMP', nombre: 'Finalizado / Recuperación' },
-        { id: 'Cancelada', codigo: 'CANC', nombre: 'Cancelada' }
-      ]))
-    );
+    return of([
+      { id: 'Programada', codigo: 'PROG', nombre: 'Programada' },
+      { id: 'EnEspera', codigo: 'ESPE', nombre: 'En Espera Pre-Quirúrgica' },
+      { id: 'EnCirugia', codigo: 'PROC', nombre: 'En Cirugía / Quirófano' },
+      { id: 'Finalizado', codigo: 'COMP', nombre: 'Finalizado / Recuperación' },
+      { id: 'Cancelada', codigo: 'CANC', nombre: 'Cancelada' }
+    ]);
   }
 }

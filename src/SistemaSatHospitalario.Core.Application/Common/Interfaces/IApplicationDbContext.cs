@@ -71,6 +71,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<RequisitoCirugia> RequisitosCirugia { get; }
         DbSet<OrdenCirugiaRequisito> OrdenesCirugiaRequisitos { get; }
         DbSet<CirugiaObservacionHistorial> CirugiasObservacionesHistorial { get; }
+        DbSet<CirugiaMedicoHonorario> CirugiasMedicosHonorarios { get; }
+        DbSet<SolicitudInsumoCirugia> SolicitudesInsumosCirugia { get; }
+        DbSet<TransferenciaReposicionStock> TransferenciasReposicionStock { get; }
         DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; }
         DbSet<PagoProveedor> PagosProveedores { get; }
         DbSet<Proveedor> Proveedores { get; }

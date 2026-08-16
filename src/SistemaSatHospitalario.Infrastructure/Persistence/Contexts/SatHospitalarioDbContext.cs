@@ -76,6 +76,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<RequisitoCirugia> RequisitosCirugia { get; set; }
         public DbSet<OrdenCirugiaRequisito> OrdenesCirugiaRequisitos { get; set; }
         public DbSet<CirugiaObservacionHistorial> CirugiasObservacionesHistorial { get; set; }
+        public DbSet<CirugiaMedicoHonorario> CirugiasMedicosHonorarios { get; set; }
+        public DbSet<SolicitudInsumoCirugia> SolicitudesInsumosCirugia { get; set; }
+        public DbSet<TransferenciaReposicionStock> TransferenciasReposicionStock { get; set; }
         public DbSet<OrdenCompraInventario> OrdenesCompraInventario { get; set; }
         public DbSet<PagoProveedor> PagosProveedores { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
@@ -991,6 +994,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.DescripcionCirugia).IsRequired().HasMaxLength(500);
                 entity.Property(o => o.PrecioBaseUsd).HasPrecision(18, 2);
+                entity.Property(o => o.PrecioDerechoSalaUsd).HasPrecision(18, 2);
+                entity.Property(o => o.SalaQuirofano).HasMaxLength(100);
+                entity.Property(o => o.ModalidadAnestesia).HasMaxLength(100);
                 entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
                 entity.Property(o => o.MotivoCancelacion).HasMaxLength(500);
                 entity.Property(o => o.UsuarioCreacion).IsRequired().HasMaxLength(100);
@@ -1010,6 +1016,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(o => o.MedicoId)
                       .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(o => o.SedeQuirofano)
+                      .WithMany()
+                      .HasForeignKey(o => o.SedeQuirofanoId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasMany(o => o.Logs)
                       .WithOne(l => l.OrdenCirugia)
                       .HasForeignKey(l => l.OrdenCirugiaId)
@@ -1025,8 +1036,90 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(h => h.OrdenCirugiaId)
                       .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasMany(o => o.MedicosHonorarios)
+                      .WithOne(m => m.OrdenCirugia)
+                      .HasForeignKey(m => m.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(o => o.SolicitudesInsumos)
+                      .WithOne(s => s.OrdenCirugia)
+                      .HasForeignKey(s => s.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasIndex(o => o.FechaHoraProgramada);
                 entity.HasIndex(o => o.Estado);
+            });
+
+            builder.Entity<CirugiaMedicoHonorario>(entity =>
+            {
+                entity.ToTable("CirugiasMedicosHonorarios");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.MontoHonorarioUsd).HasPrecision(18, 2);
+
+                entity.HasOne(c => c.Medico)
+                      .WithMany()
+                      .HasForeignKey(c => c.MedicoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Especialidad)
+                      .WithMany()
+                      .HasForeignKey(c => c.EspecialidadId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(c => c.OrdenCirugiaId);
+                entity.HasIndex(c => c.MedicoId);
+                entity.HasIndex(c => c.EspecialidadId);
+            });
+
+            builder.Entity<SolicitudInsumoCirugia>(entity =>
+            {
+                entity.ToTable("SolicitudesInsumosCirugia");
+                entity.HasKey(s => s.Id);
+                entity.Property(s => s.CantidadSolicitada).HasPrecision(18, 4);
+                entity.Property(s => s.EstadoSolicitud).IsRequired().HasMaxLength(50);
+                entity.Property(s => s.UsuarioSolicitud).IsRequired().HasMaxLength(100);
+                entity.Property(s => s.UsuarioDespacho).HasMaxLength(100);
+                entity.Property(s => s.Observaciones).HasMaxLength(500);
+
+                entity.HasOne(s => s.Insumo)
+                      .WithMany()
+                      .HasForeignKey(s => s.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.AlmacenOrigen)
+                      .WithMany()
+                      .HasForeignKey(s => s.AlmacenOrigenId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(s => s.OrdenCirugiaId);
+                entity.HasIndex(s => s.EstadoSolicitud);
+            });
+
+            builder.Entity<TransferenciaReposicionStock>(entity =>
+            {
+                entity.ToTable("TransferenciasReposicionStock");
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Cantidad).HasPrecision(18, 4);
+                entity.Property(t => t.Motivo).IsRequired().HasMaxLength(100);
+                entity.Property(t => t.UsuarioId).IsRequired().HasMaxLength(100);
+                entity.Property(t => t.Observaciones).HasMaxLength(500);
+
+                entity.HasOne(t => t.Insumo)
+                      .WithMany()
+                      .HasForeignKey(t => t.InsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(t => t.SedeOrigen)
+                      .WithMany()
+                      .HasForeignKey(t => t.SedeOrigenId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(t => t.SedeDestino)
+                      .WithMany()
+                      .HasForeignKey(t => t.SedeDestinoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(t => t.FechaTransferencia);
             });
 
             builder.Entity<CirugiaLog>(entity =>

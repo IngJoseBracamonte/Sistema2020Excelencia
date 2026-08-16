@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SistemaSatHospitalario.Core.Domain.State;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -14,8 +15,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid CuentaServicioId { get; private set; }
         public Guid PacienteId { get; private set; }
         public Guid? AreaClinicaId { get; private set; }
+        public Guid? SedeQuirofanoId { get; private set; }
         public string DescripcionCirugia { get; private set; }
         public decimal PrecioBaseUsd { get; private set; }
+        public decimal PrecioDerechoSalaUsd { get; private set; }
         public Guid MedicoId { get; private set; }
         public DateTime FechaHoraProgramada { get; private set; }
         public string Estado { get; private set; }
@@ -23,11 +26,17 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; private set; }
         public string UsuarioCreacion { get; private set; }
 
+        // Nuevos campos operativos
+        public string SalaQuirofano { get; private set; }
+        public string ModalidadAnestesia { get; private set; }
+        public bool EsAlquilado { get; private set; }
+
         // Navegación
         public virtual CuentaServicios CuentaServicio { get; private set; }
         public virtual PacienteAdmision Paciente { get; private set; }
         public virtual Medico Medico { get; private set; }
         public virtual AreaClinica? AreaClinica { get; private set; }
+        public virtual Sede? SedeQuirofano { get; private set; }
 
         private readonly List<CirugiaLog> _logs = new();
         public virtual IReadOnlyCollection<CirugiaLog> Logs => _logs.AsReadOnly();
@@ -37,6 +46,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         private readonly List<CirugiaObservacionHistorial> _historialObservaciones = new();
         public virtual IReadOnlyCollection<CirugiaObservacionHistorial> HistorialObservaciones => _historialObservaciones.AsReadOnly();
+
+        private readonly List<CirugiaMedicoHonorario> _medicosHonorarios = new();
+        public virtual IReadOnlyCollection<CirugiaMedicoHonorario> MedicosHonorarios => _medicosHonorarios.AsReadOnly();
+
+        private readonly List<SolicitudInsumoCirugia> _solicitudesInsumos = new();
+        public virtual IReadOnlyCollection<SolicitudInsumoCirugia> SolicitudesInsumos => _solicitudesInsumos.AsReadOnly();
 
         private ICirugiaState? _currentState;
         public ICirugiaState CurrentState => _currentState ??= CirugiaStateFactory.GetState(Estado);
@@ -51,12 +66,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Guid medicoId,
             DateTime fechaHoraProgramada,
             string usuarioCreacion,
-            Guid? areaClinicaId = null)
+            Guid? areaClinicaId = null,
+            string salaQuirofano = "Quirófano 1",
+            string modalidadAnestesia = "General",
+            bool esAlquilado = false,
+            decimal precioDerechoSalaUsd = 0,
+            Guid? sedeQuirofanoId = null)
         {
             if (string.IsNullOrWhiteSpace(descripcionCirugia))
                 throw new ArgumentException("La descripción de la cirugía es obligatoria.", nameof(descripcionCirugia));
             if (precioBaseUsd < 0)
                 throw new ArgumentException("El precio base no puede ser negativo.", nameof(precioBaseUsd));
+            if (precioDerechoSalaUsd < 0)
+                throw new ArgumentException("El derecho de sala no puede ser negativo.", nameof(precioDerechoSalaUsd));
             if (medicoId == Guid.Empty)
                 throw new ArgumentException("El médico cirujano es obligatorio.", nameof(medicoId));
             if (string.IsNullOrWhiteSpace(usuarioCreacion))
@@ -66,14 +88,65 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CuentaServicioId = cuentaServicioId;
             PacienteId = pacienteId;
             AreaClinicaId = areaClinicaId;
+            SedeQuirofanoId = sedeQuirofanoId;
             DescripcionCirugia = descripcionCirugia.Trim();
             PrecioBaseUsd = precioBaseUsd;
+            PrecioDerechoSalaUsd = precioDerechoSalaUsd;
             MedicoId = medicoId;
             FechaHoraProgramada = fechaHoraProgramada;
+            SalaQuirofano = string.IsNullOrWhiteSpace(salaQuirofano) ? "Quirófano 1" : salaQuirofano.Trim();
+            ModalidadAnestesia = string.IsNullOrWhiteSpace(modalidadAnestesia) ? "General" : modalidadAnestesia.Trim();
+            EsAlquilado = esAlquilado;
             Estado = EstadoCirugiaConstants.Programada;
             FechaCreacion = DateTime.UtcNow;
             UsuarioCreacion = usuarioCreacion.Trim();
             _currentState = new ProgramadaState();
+        }
+
+        // --- Gestión Administrativa y de Precios ---
+
+        public void ActualizarPreciosAdministrativos(decimal derechoSalaUsd, decimal precioBaseUsd, bool esAlquilado, string usuarioId)
+        {
+            if (derechoSalaUsd < 0) throw new ArgumentException("El derecho de sala no puede ser negativo.", nameof(derechoSalaUsd));
+            if (precioBaseUsd < 0) throw new ArgumentException("El precio base no puede ser negativo.", nameof(precioBaseUsd));
+
+            PrecioDerechoSalaUsd = derechoSalaUsd;
+            PrecioBaseUsd = precioBaseUsd;
+            EsAlquilado = esAlquilado;
+        }
+
+        public void AsignarSalaYAnestesia(string sala, string anestesia, string usuarioId)
+        {
+            if (!string.IsNullOrWhiteSpace(sala)) SalaQuirofano = sala.Trim();
+            if (!string.IsNullOrWhiteSpace(anestesia)) ModalidadAnestesia = anestesia.Trim();
+            AgregarLog(usuarioId, "AsignacionSalaAnestesia", $"Sala: {SalaQuirofano}, Anestesia: {ModalidadAnestesia}");
+        }
+
+        public CirugiaMedicoHonorario AsignarMedicoHonorario(Guid medicoId, Guid especialidadId, decimal honorarioUsd, bool esPrincipal = false)
+        {
+            var existente = _medicosHonorarios.FirstOrDefault(m => m.MedicoId == medicoId);
+            if (existente != null)
+            {
+                existente.ActualizarHonorario(honorarioUsd, especialidadId);
+                return existente;
+            }
+
+            var item = new CirugiaMedicoHonorario(Id, medicoId, especialidadId, honorarioUsd, esPrincipal);
+            _medicosHonorarios.Add(item);
+            return item;
+        }
+
+        public void LimpiarMedicosHonorarios()
+        {
+            _medicosHonorarios.Clear();
+        }
+
+        public SolicitudInsumoCirugia AgregarSolicitudInsumoExtra(Guid insumoId, decimal cantidad, Guid almacenOrigenId, string usuario)
+        {
+            var sol = new SolicitudInsumoCirugia(Id, insumoId, cantidad, almacenOrigenId, usuario);
+            _solicitudesInsumos.Add(sol);
+            AgregarLog(usuario, "SolicitudInsumoExtra", $"Solicitud ad-hoc: Insumo {insumoId}, Cantidad {cantidad}");
+            return sol;
         }
 
         // --- Métodos de Estado encapsulados (State Pattern) ---
@@ -194,5 +267,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public const string CargoExtra = "CargoExtra";
         public const string TransicionEstado = "TransicionEstado";
         public const string Reprogramacion = "Reprogramacion";
+        public const string SolicitudInsumoExtra = "SolicitudInsumoExtra";
     }
 }
