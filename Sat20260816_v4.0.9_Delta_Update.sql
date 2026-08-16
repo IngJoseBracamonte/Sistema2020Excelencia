@@ -1,9 +1,8 @@
 -- ============================================================================
--- SCRIPT DE ACTUALIZACIÓN DELTA COMPLETO - RELEASE v4.0.9
+-- SCRIPT DE ACTUALIZACIÓN DELTA COMPLETO Y DEFINITIVO - RELEASE v4.0.9
 -- Base de Datos: sathospitalario (MySQL 8.0+)
--- Módulo de Cirugía / Pabellón Quirúrgico, Gestión de Honorarios (3FN),
--- Checklist Preoperatorio y Reposición e Intercambio de Insumos Multi-Sede
--- Resuelve y previene incompatibilidades de Charset/Collation (Error 3780 y Error 1054)
+-- Resuelve automáticamente Error 3780 (incompatibilidad de Charset/FK)
+-- mediante eliminación dinámica de restricciones y homologación ascii_general_ci
 -- ============================================================================
 
 USE `sathospitalario`;
@@ -12,7 +11,51 @@ SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 
 -- ----------------------------------------------------------------------------
--- PROCEDIMIENTO AUXILIAR PARA AGREGAR COLUMNAS DE FORMA SEGURA E IDEMPOTENTE
+-- PASO 1: PROCEDIMIENTO PARA ELIMINAR DINÁMICAMENTE CUALQUIER FK INCOMPATIBLE
+-- ----------------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS DropAllCirugiaForeignKeys;
+DELIMITER $$
+CREATE PROCEDURE DropAllCirugiaForeignKeys()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE dropSql VARCHAR(500);
+    
+    DECLARE cur CURSOR FOR
+        SELECT CONCAT('ALTER TABLE `', TABLE_NAME, '` DROP FOREIGN KEY `', CONSTRAINT_NAME, '`')
+        FROM information_schema.TABLE_CONSTRAINTS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+          AND TABLE_NAME IN (
+              'cirugiasobservacioneshistorial',
+              'cirugiasmedicoshonorarios',
+              'solicitudesinsumoscirugia',
+              'ordenescirugiarequisitos',
+              'cirugialogs',
+              'transferenciasreposicionstock'
+          );
+          
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO dropSql;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        SET @s = dropSql;
+        PREPARE stmt FROM @s;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END LOOP;
+    CLOSE cur;
+END$$
+DELIMITER ;
+
+CALL DropAllCirugiaForeignKeys();
+DROP PROCEDURE IF EXISTS DropAllCirugiaForeignKeys;
+
+-- ----------------------------------------------------------------------------
+-- PASO 2: PROCEDIMIENTO AUXILIAR PARA AGREGAR COLUMNAS DE FORMA SEGURA
 -- ----------------------------------------------------------------------------
 DROP PROCEDURE IF EXISTS AddColumnIfNotExists;
 DELIMITER $$
@@ -37,7 +80,7 @@ END$$
 DELIMITER ;
 
 -- ----------------------------------------------------------------------------
--- 1. TABLA: ordenescirugia (Ajustes de Columnas, Charset y Collation)
+-- PASO 3: TABLA ordenescirugia (Creación / Homologación de Charset / Nuevas Columnas)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ordenescirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -63,7 +106,6 @@ CREATE TABLE IF NOT EXISTS `ordenescirugia` (
     KEY `IX_ordenescirugia_FechaHoraProgramada` (`FechaHoraProgramada`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Homologar Charset en ordenescirugia
 ALTER TABLE `ordenescirugia` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `CuentaServicioId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -71,7 +113,6 @@ ALTER TABLE `ordenescirugia`
     MODIFY COLUMN `MedicoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `AreaClinicaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL;
 
--- Columnas nuevas en ordenescirugia
 CALL AddColumnIfNotExists('ordenescirugia', 'SalaQuirofano', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "Quirófano 1"');
 CALL AddColumnIfNotExists('ordenescirugia', 'ModalidadAnestesia', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "General"');
 CALL AddColumnIfNotExists('ordenescirugia', 'EsAlquilado', 'tinyint(1) NOT NULL DEFAULT 0');
@@ -79,7 +120,7 @@ CALL AddColumnIfNotExists('ordenescirugia', 'PrecioDerechoSalaUsd', 'decimal(18,
 CALL AddColumnIfNotExists('ordenescirugia', 'PrecioBaseUsd', 'decimal(18,2) NOT NULL DEFAULT 0.00');
 
 -- ----------------------------------------------------------------------------
--- 2. TABLA: cirugiasobservacioneshistorial (Resolución Error 3780)
+-- PASO 4: TABLA cirugiasobservacioneshistorial (Homologación y FK)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `cirugiasobservacioneshistorial` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -93,22 +134,16 @@ CREATE TABLE IF NOT EXISTS `cirugiasobservacioneshistorial` (
     KEY `IX_CirugiasObservacionesHistorial_OrdenCirugiaId` (`OrdenCirugiaId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Eliminar FK previa si existiese con incompatibilidad
-ALTER TABLE `cirugiasobservacioneshistorial` 
-    DROP FOREIGN KEY IF EXISTS `FK_CirugiasObservacionesHistorial_OrdenesCirugia_OrdenCirugiaId`;
-
--- Homologar Charset
 ALTER TABLE `cirugiasobservacioneshistorial` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL;
 
--- Recrear FK limpia
 ALTER TABLE `cirugiasobservacioneshistorial` 
     ADD CONSTRAINT `FK_CirugiasObservacionesHistorial_OrdenesCirugia_OrdenCirugiaId` 
     FOREIGN KEY (`OrdenCirugiaId`) REFERENCES `ordenescirugia` (`Id`) ON DELETE CASCADE;
 
 -- ----------------------------------------------------------------------------
--- 3. TABLA: cirugiasmedicoshonorarios (Normalizada en 3FN con EspecialidadId)
+-- PASO 5: TABLA cirugiasmedicoshonorarios (Normalizada en 3FN con EspecialidadId)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `cirugiasmedicoshonorarios` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -125,11 +160,6 @@ CREATE TABLE IF NOT EXISTS `cirugiasmedicoshonorarios` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 ALTER TABLE `cirugiasmedicoshonorarios` 
-    DROP FOREIGN KEY IF EXISTS `FK_cirugiasmedicoshonorarios_OrdenCirugia`,
-    DROP FOREIGN KEY IF EXISTS `FK_cirugiasmedicoshonorarios_Medico`,
-    DROP FOREIGN KEY IF EXISTS `FK_cirugiasmedicoshonorarios_Especialidad`;
-
-ALTER TABLE `cirugiasmedicoshonorarios` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `MedicoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -144,7 +174,7 @@ ALTER TABLE `cirugiasmedicoshonorarios`
     ADD CONSTRAINT `FK_cirugiasmedicoshonorarios_Especialidad` FOREIGN KEY (`EspecialidadId`) REFERENCES `especialidades` (`Id`) ON DELETE RESTRICT;
 
 -- ----------------------------------------------------------------------------
--- 4. TABLA: solicitudesinsumoscirugia (Requerimientos Ad-hoc desde Quirófano)
+-- PASO 6: TABLA solicitudesinsumoscirugia (Requerimientos Ad-hoc desde Quirófano)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `solicitudesinsumoscirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -165,11 +195,6 @@ CREATE TABLE IF NOT EXISTS `solicitudesinsumoscirugia` (
     KEY `IX_solicitudesinsumoscirugia_EstadoSolicitud` (`EstadoSolicitud`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-ALTER TABLE `solicitudesinsumoscirugia`
-    DROP FOREIGN KEY IF EXISTS `FK_solicitudesinsumoscirugia_OrdenCirugia`,
-    DROP FOREIGN KEY IF EXISTS `FK_solicitudesinsumoscirugia_Insumo`,
-    DROP FOREIGN KEY IF EXISTS `FK_solicitudesinsumoscirugia_AlmacenOrigen`;
-
 ALTER TABLE `solicitudesinsumoscirugia` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -182,7 +207,7 @@ ALTER TABLE `solicitudesinsumoscirugia`
     ADD CONSTRAINT `FK_solicitudesinsumoscirugia_AlmacenOrigen` FOREIGN KEY (`AlmacenOrigenId`) REFERENCES `sedes` (`Id`) ON DELETE RESTRICT;
 
 -- ----------------------------------------------------------------------------
--- 5. TABLA: transferenciasreposicionstock (Reposición e Intercambio de Insumos)
+-- PASO 7: TABLA transferenciasreposicionstock (Reposición e Intercambio Multi-Sede)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `transferenciasreposicionstock` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -206,12 +231,6 @@ CREATE TABLE IF NOT EXISTS `transferenciasreposicionstock` (
     KEY `IX_transferenciasreposicionstock_FechaMovimiento` (`FechaMovimiento`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-ALTER TABLE `transferenciasreposicionstock`
-    DROP FOREIGN KEY IF EXISTS `FK_transf_SedeOrigen`,
-    DROP FOREIGN KEY IF EXISTS `FK_transf_SedeDestino`,
-    DROP FOREIGN KEY IF EXISTS `FK_transf_InsumoEntregado`,
-    DROP FOREIGN KEY IF EXISTS `FK_transf_InsumoDevuelto`;
-
 ALTER TABLE `transferenciasreposicionstock` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `SedeOrigenId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -228,7 +247,7 @@ ALTER TABLE `transferenciasreposicionstock`
     ADD CONSTRAINT `FK_transf_InsumoDevuelto` FOREIGN KEY (`InsumoDevueltoId`) REFERENCES `insumos` (`Id`) ON DELETE RESTRICT;
 
 -- ----------------------------------------------------------------------------
--- 6. TABLAS DE CHECKLIST PREOPERATORIO (Requisitos y Verificaciones)
+-- PASO 8: TABLAS DE CHECKLIST PREOPERATORIO (Requisitos y Verificaciones)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `requisitoscirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -257,10 +276,6 @@ CREATE TABLE IF NOT EXISTS `ordenescirugiarequisitos` (
     KEY `IX_ordenescirugiarequisitos_RequisitoCirugiaId` (`RequisitoCirugiaId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-ALTER TABLE `ordenescirugiarequisitos`
-    DROP FOREIGN KEY IF EXISTS `FK_ordenescirugiareq_OrdenCirugia`,
-    DROP FOREIGN KEY IF EXISTS `FK_ordenescirugiareq_Requisito`;
-
 ALTER TABLE `ordenescirugiarequisitos` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -271,7 +286,7 @@ ALTER TABLE `ordenescirugiarequisitos`
     ADD CONSTRAINT `FK_ordenescirugiareq_Requisito` FOREIGN KEY (`RequisitoCirugiaId`) REFERENCES `requisitoscirugia` (`Id`) ON DELETE RESTRICT;
 
 -- ----------------------------------------------------------------------------
--- 7. TABLA: cirugialogs (Auditoría de Eventos Quirúrgicos)
+-- PASO 9: TABLA cirugialogs (Auditoría de Eventos Quirúrgicos)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `cirugialogs` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -285,9 +300,6 @@ CREATE TABLE IF NOT EXISTS `cirugialogs` (
     KEY `IX_cirugialogs_Timestamp` (`Timestamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-ALTER TABLE `cirugialogs`
-    DROP FOREIGN KEY IF EXISTS `FK_cirugialogs_OrdenCirugia`;
-
 ALTER TABLE `cirugialogs` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL;
@@ -296,7 +308,7 @@ ALTER TABLE `cirugialogs`
     ADD CONSTRAINT `FK_cirugialogs_OrdenCirugia` FOREIGN KEY (`OrdenCirugiaId`) REFERENCES `ordenescirugia` (`Id`) ON DELETE CASCADE;
 
 -- ----------------------------------------------------------------------------
--- 8. SEED DATA: Requisitos Preoperatorios Base (Usando EsActivo y FechaCreacion)
+-- PASO 10: SEED DATA: Requisitos Preoperatorios Base
 -- ----------------------------------------------------------------------------
 INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsActivo`, `FechaCreacion`)
 SELECT '11111111-1111-1111-1111-111111111101', 'Ayuno Completo (>= 8 horas)', 'Verificación estricta de ingesta de alimentos y líquidos', 1, NOW(6)
