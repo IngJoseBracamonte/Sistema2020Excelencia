@@ -3,7 +3,7 @@
 -- Base de Datos: sathospitalario (MySQL 8.0+)
 -- Módulo de Cirugía / Pabellón Quirúrgico, Gestión de Honorarios (3FN),
 -- Checklist Preoperatorio y Reposición e Intercambio de Insumos Multi-Sede
--- Resuelve y previene incompatibilidades de Charset/Collation (Error 3780)
+-- Resuelve y previene incompatibilidades de Charset/Collation (Error 3780 y Error 1054)
 -- ============================================================================
 
 USE `sathospitalario`;
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `cirugiasobservacioneshistorial` (
     KEY `IX_CirugiasObservacionesHistorial_OrdenCirugiaId` (`OrdenCirugiaId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Eliminar FK previa si estuviese corrupta o con charset incompatible
+-- Eliminar FK previa si existiese con incompatibilidad
 ALTER TABLE `cirugiasobservacioneshistorial` 
     DROP FOREIGN KEY IF EXISTS `FK_CirugiasObservacionesHistorial_OrdenesCirugia_OrdenCirugiaId`;
 
@@ -234,13 +234,16 @@ CREATE TABLE IF NOT EXISTS `requisitoscirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     `Nombre` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
     `Descripcion` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-    `EsObligatorio` tinyint(1) NOT NULL DEFAULT '1',
-    `Activo` tinyint(1) NOT NULL DEFAULT '1',
+    `EsActivo` tinyint(1) NOT NULL DEFAULT '1',
+    `FechaCreacion` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (`Id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 ALTER TABLE `requisitoscirugia` 
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL;
+
+CALL AddColumnIfNotExists('requisitoscirugia', 'EsActivo', 'tinyint(1) NOT NULL DEFAULT 1');
+CALL AddColumnIfNotExists('requisitoscirugia', 'FechaCreacion', 'datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)');
 
 CREATE TABLE IF NOT EXISTS `ordenescirugiarequisitos` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -289,30 +292,30 @@ ALTER TABLE `cirugialogs`
     MODIFY COLUMN `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `OrdenCirugiaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL;
 
-ALTER TABLE `cirugialogs`
+ALTER TABLE `cirugialogs` 
     ADD CONSTRAINT `FK_cirugialogs_OrdenCirugia` FOREIGN KEY (`OrdenCirugiaId`) REFERENCES `ordenescirugia` (`Id`) ON DELETE CASCADE;
 
 -- ----------------------------------------------------------------------------
--- 8. SEED DATA: Requisitos Preoperatorios Base
+-- 8. SEED DATA: Requisitos Preoperatorios Base (Usando EsActivo y FechaCreacion)
 -- ----------------------------------------------------------------------------
-INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsObligatorio`, `Activo`)
-SELECT '11111111-1111-1111-1111-111111111101', 'Ayuno Completo (>= 8 horas)', 'Verificación estricta de ingesta de alimentos y líquidos', 1, 1
+INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsActivo`, `FechaCreacion`)
+SELECT '11111111-1111-1111-1111-111111111101', 'Ayuno Completo (>= 8 horas)', 'Verificación estricta de ingesta de alimentos y líquidos', 1, NOW(6)
 WHERE NOT EXISTS (SELECT 1 FROM `requisitoscirugia` WHERE `Id` = '11111111-1111-1111-1111-111111111101');
 
-INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsObligatorio`, `Activo`)
-SELECT '11111111-1111-1111-1111-111111111102', 'Evaluación Cardiovascular y EKG', 'Informe cardiológico vigente y apto quirúrgico firmado', 1, 1
+INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsActivo`, `FechaCreacion`)
+SELECT '11111111-1111-1111-1111-111111111102', 'Evaluación Cardiovascular y EKG', 'Informe cardiológico vigente y apto quirúrgico firmado', 1, NOW(6)
 WHERE NOT EXISTS (SELECT 1 FROM `requisitoscirugia` WHERE `Id` = '11111111-1111-1111-1111-111111111102');
 
-INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsObligatorio`, `Activo`)
-SELECT '11111111-1111-1111-1111-111111111103', 'Laboratorios (Hematología, PT, PTT, Glicemia)', 'Perfil preoperatorio completo emitido en los últimos 15 días', 1, 1
+INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsActivo`, `FechaCreacion`)
+SELECT '11111111-1111-1111-1111-111111111103', 'Laboratorios (Hematología, PT, PTT, Glicemia)', 'Perfil preoperatorio completo emitido en los últimos 15 días', 1, NOW(6)
 WHERE NOT EXISTS (SELECT 1 FROM `requisitoscirugia` WHERE `Id` = '11111111-1111-1111-1111-111111111103');
 
-INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsObligatorio`, `Activo`)
-SELECT '11111111-1111-1111-1111-111111111104', 'Consentimiento Informado Firmado', 'Documento legal de autorización quirúrgica y anestésica firmado por paciente o familiar', 1, 1
+INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsActivo`, `FechaCreacion`)
+SELECT '11111111-1111-1111-1111-111111111104', 'Consentimiento Informado Firmado', 'Documento legal de autorización quirúrgica y anestésica firmado por paciente o familiar', 1, NOW(6)
 WHERE NOT EXISTS (SELECT 1 FROM `requisitoscirugia` WHERE `Id` = '11111111-1111-1111-1111-111111111104');
 
-INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsObligatorio`, `Activo`)
-SELECT '11111111-1111-1111-1111-111111111105', 'Reserva de Hemoderivados / Tipaje Sanguíneo', 'Disponibilidad de concentrado globular o plasma en banco de sangre si aplica', 0, 1
+INSERT INTO `requisitoscirugia` (`Id`, `Nombre`, `Descripcion`, `EsActivo`, `FechaCreacion`)
+SELECT '11111111-1111-1111-1111-111111111105', 'Reserva de Hemoderivados / Tipaje Sanguíneo', 'Disponibilidad de concentrado globular o plasma en banco de sangre si aplica', 1, NOW(6)
 WHERE NOT EXISTS (SELECT 1 FROM `requisitoscirugia` WHERE `Id` = '11111111-1111-1111-1111-111111111105');
 
 -- Limpieza del procedimiento auxiliar
