@@ -3,7 +3,7 @@
 -- Base de Datos: sathospitalario (MySQL 8.0+)
 -- Resuelve y asegura todas las columnas requeridas por Entity Framework Core:
 -- 1. InsumosCirugiasPacientes -> OrdenCirugiaId (Causa del Error 500)
--- 2. TransferenciasReposicionStock -> InsumoId, SedeOrigenId, SedeDestinoId, Cantidad, Motivo, Observaciones, FechaTransferencia, UsuarioId (Causa Error Reposición)
+-- 2. TransferenciasReposicionStock -> InsumoId, SedeOrigenId, SedeDestinoId, Cantidad, Motivo, Observaciones, FechaTransferencia, UsuarioId
 -- 3. OrdenesCirugia -> MotivoCancelacion, SedeQuirofanoId, AreaClinicaId
 -- 4. Incompatibilidad de Charset / FKs (Error 3780)
 -- ============================================================================
@@ -46,9 +46,11 @@ CALL AddColumnIfNotExists('insumoscirugiaspacientes', 'CantidadEntregada', 'deci
 CALL AddColumnIfNotExists('insumoscirugiaspacientes', 'CantidadDevuelta', 'decimal(18,4) NOT NULL DEFAULT 0.0000');
 
 -- ----------------------------------------------------------------------------
--- 2. TABLA: transferenciasreposicionstock (CORRECCIÓN CRÍTICA ERROR REPOSICIÓN)
+-- 2. TABLA: transferenciasreposicionstock (CORRECCIÓN CRÍTICA REPOSICIÓN)
 -- ----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `transferenciasreposicionstock` (
+DROP TABLE IF EXISTS `transferenciasreposicionstock`;
+
+CREATE TABLE `transferenciasreposicionstock` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     `InsumoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     `SedeOrigenId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -56,23 +58,14 @@ CREATE TABLE IF NOT EXISTS `transferenciasreposicionstock` (
     `Cantidad` decimal(18,4) NOT NULL DEFAULT 0.0000,
     `Motivo` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'Reposicion',
     `Observaciones` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-    `FechaTransferencia` datetime(6) NOT NULL,
-    `UsuarioId` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+    `FechaTransferencia` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `UsuarioId` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'Sistema',
     PRIMARY KEY (`Id`),
     KEY `IX_transferenciasreposicionstock_InsumoId` (`InsumoId`),
     KEY `IX_transferenciasreposicionstock_SedeOrigenId` (`SedeOrigenId`),
     KEY `IX_transferenciasreposicionstock_SedeDestinoId` (`SedeDestinoId`),
     KEY `IX_transferenciasreposicionstock_FechaTransferencia` (`FechaTransferencia`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'InsumoId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'SedeOrigenId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'SedeDestinoId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'Cantidad', 'decimal(18,4) NOT NULL DEFAULT 0.0000');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'Motivo', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "Reposicion"');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'Observaciones', 'varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'FechaTransferencia', 'datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)');
-CALL AddColumnIfNotExists('transferenciasreposicionstock', 'UsuarioId', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "Sistema"');
 
 -- ----------------------------------------------------------------------------
 -- 3. TABLA: ordenescirugia (Asegurar todas las columnas de entidad)
