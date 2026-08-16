@@ -1,8 +1,9 @@
 -- ============================================================================
 -- SCRIPT DE ACTUALIZACIÓN DELTA COMPLETO Y DEFINITIVO - RELEASE v4.0.9
 -- Base de Datos: sathospitalario (MySQL 8.0+)
--- Resuelve automáticamente Error 3780 (incompatibilidad de Charset/FK)
--- mediante eliminación dinámica de restricciones y homologación ascii_general_ci
+-- Resuelve automáticamente:
+-- 1. Error 3780 (incompatibilidad de Charset/FK)
+-- 2. Error 1054 ('EsObligatorio' y 'MotivoCancelacion')
 -- ============================================================================
 
 USE `sathospitalario`;
@@ -80,7 +81,7 @@ END$$
 DELIMITER ;
 
 -- ----------------------------------------------------------------------------
--- PASO 3: TABLA ordenescirugia (Creación / Homologación de Charset / Nuevas Columnas)
+-- PASO 3: TABLA ordenescirugia (Creación / Homologación de Charset / Columnas)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `ordenescirugia` (
     `Id` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
@@ -95,9 +96,11 @@ CREATE TABLE IF NOT EXISTS `ordenescirugia` (
     `PrecioBaseUsd` decimal(18,2) NOT NULL DEFAULT '0.00',
     `FechaHoraProgramada` datetime(6) NOT NULL,
     `Estado` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'Programada',
+    `MotivoCancelacion` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
     `FechaCreacion` datetime(6) NOT NULL,
     `UsuarioCreacion` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
     `AreaClinicaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+    `SedeQuirofanoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
     PRIMARY KEY (`Id`),
     KEY `IX_ordenescirugia_CuentaServicioId` (`CuentaServicioId`),
     KEY `IX_ordenescirugia_PacienteId` (`PacienteId`),
@@ -111,13 +114,17 @@ ALTER TABLE `ordenescirugia`
     MODIFY COLUMN `CuentaServicioId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `PacienteId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
     MODIFY COLUMN `MedicoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
-    MODIFY COLUMN `AreaClinicaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL;
+    MODIFY COLUMN `AreaClinicaId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL,
+    MODIFY COLUMN `SedeQuirofanoId` char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL;
 
 CALL AddColumnIfNotExists('ordenescirugia', 'SalaQuirofano', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "Quirófano 1"');
 CALL AddColumnIfNotExists('ordenescirugia', 'ModalidadAnestesia', 'varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT "General"');
 CALL AddColumnIfNotExists('ordenescirugia', 'EsAlquilado', 'tinyint(1) NOT NULL DEFAULT 0');
 CALL AddColumnIfNotExists('ordenescirugia', 'PrecioDerechoSalaUsd', 'decimal(18,2) NOT NULL DEFAULT 0.00');
 CALL AddColumnIfNotExists('ordenescirugia', 'PrecioBaseUsd', 'decimal(18,2) NOT NULL DEFAULT 0.00');
+CALL AddColumnIfNotExists('ordenescirugia', 'MotivoCancelacion', 'varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL');
+CALL AddColumnIfNotExists('ordenescirugia', 'AreaClinicaId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL');
+CALL AddColumnIfNotExists('ordenescirugia', 'SedeQuirofanoId', 'char(36) CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL');
 
 -- ----------------------------------------------------------------------------
 -- PASO 4: TABLA cirugiasobservacioneshistorial (Homologación y FK)

@@ -15,7 +15,8 @@ import {
   LucideAngularModule, 
   Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
   LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,
-  Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap
+  Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap,
+  Repeat, DoorOpen, BadgeDollarSign, Bed, CheckCircle2, AlertCircle, Clock, ArrowRight, History, Truck, ArrowLeftRight, Layers, Shield, Filter, Eye, Syringe, AlertTriangle, RotateCcw
 } from 'lucide-angular';
 
 registerLocaleData(localeEs);
@@ -36,7 +37,8 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(LucideAngularModule.pick({
       Stethoscope, Activity, DollarSign, Star, Plus, User, Search, Package, Calendar, SearchX,
       LayoutDashboard, Files, Box, ClipboardList, Settings, Users, LogOut, FileText, Bookmark, ChevronDown, ChevronRight, ShieldCheck, BarChart3, Github,
-      Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap
+      Edit3, Trash2, Check, X, RefreshCcw, RefreshCw, Save, FlaskConical, Zap,
+      Repeat, DoorOpen, BadgeDollarSign, Bed, CheckCircle2, AlertCircle, Clock, ArrowRight, History, Truck, ArrowLeftRight, Layers, Shield, Filter, Eye, Syringe, AlertTriangle, RotateCcw
     }))
   ]
 };
