@@ -48,7 +48,8 @@ export class SidebarComponent implements OnInit {
         settings: false,
         facturacion: false,
         enfermeria: false,
-        cirugia: false
+        cirugia: false,
+        inventario: false
     });
 
     ngOnInit() {
@@ -73,6 +74,9 @@ export class SidebarComponent implements OnInit {
         }
         if (url.includes('/pabellon')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), cirugia: true });
+        }
+        if (url.includes('/inventario')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), inventario: true });
         }
     }
 
@@ -102,7 +106,7 @@ export class SidebarComponent implements OnInit {
         Scissors: Scissors
     };
 
-    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion' | 'enfermeria' | 'cirugia') {
+    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion' | 'enfermeria' | 'cirugia' | 'inventario') {
         this.dropdownsOpen.update(prev => ({
             ...prev,
             [key]: !prev[key as keyof typeof prev]
