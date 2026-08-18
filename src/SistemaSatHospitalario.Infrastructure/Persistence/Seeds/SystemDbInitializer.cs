@@ -741,6 +741,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 // Auto-sanación y verificación de tablas y columnas del módulo quirúrgico
                 await EnsureSurgicalTablesAndColumnsAsync();
 
+                // Auto-sanación integral de compatibilidad para respaldos de producción
+                await EnsureProductionCompatibilitySchemaAsync();
+
                 await SeedEspecialidadesAsync();
                 await SeedServiciosClinicosAsync();
                 await SeedMedicosAsync();
@@ -1810,6 +1813,335 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "[SYSTEM-DB-INITIALIZER] No se pudieron verificar/crear las tablas quirúrgicas.");
+            }
+        }
+
+        private async Task EnsureProductionCompatibilitySchemaAsync()
+        {
+            try
+            {
+                var isSqlite = _context.Database.IsSqlite();
+
+                // 1. Tablas auxiliares de Auditoría, Garantías y Compras
+                if (isSqlite)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS GarantiasItems (
+                            Id TEXT PRIMARY KEY,
+                            CuentaPorCobrarId TEXT NOT NULL,
+                            Descripcion TEXT NOT NULL,
+                            ValorEstimado NUMERIC NOT NULL,
+                            FechaRegistro TEXT NOT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS DocumentLogs (
+                            Id TEXT PRIMARY KEY,
+                            DocumentType TEXT NOT NULL,
+                            ReferenceId TEXT NOT NULL,
+                            Action TEXT NOT NULL,
+                            UserId TEXT NOT NULL,
+                            UserName TEXT NOT NULL,
+                            Timestamp TEXT NOT NULL,
+                            Details TEXT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS Proveedores (
+                            Id TEXT PRIMARY KEY,
+                            RIF TEXT NOT NULL,
+                            RazonSocial TEXT NOT NULL,
+                            Direccion TEXT NULL,
+                            Telefono TEXT NULL,
+                            Activo INTEGER NOT NULL DEFAULT 1,
+                            FechaRegistro TEXT NOT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS OrdenesCompraInventario (
+                            Id TEXT PRIMARY KEY,
+                            NumeroFactura TEXT NOT NULL,
+                            ProveedorId TEXT NULL,
+                            ProveedorNombre TEXT NOT NULL,
+                            FechaEmision TEXT NOT NULL,
+                            MontoTotalUSD NUMERIC NOT NULL,
+                            MontoTotalBs NUMERIC NOT NULL,
+                            TotalAbonadoUSD NUMERIC NOT NULL,
+                            SaldoPendienteUSD NUMERIC NOT NULL,
+                            Estado TEXT NOT NULL,
+                            Observaciones TEXT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS PagosProveedores (
+                            Id TEXT PRIMARY KEY,
+                            OrdenCompraId TEXT NOT NULL,
+                            FechaPago TEXT NOT NULL,
+                            MontoAbonadoUSD NUMERIC NOT NULL,
+                            TasaCambio NUMERIC NOT NULL,
+                            MontoAbonadoBs NUMERIC NOT NULL,
+                            MetodoPago TEXT NOT NULL,
+                            Referencia TEXT NULL,
+                            UsuarioId TEXT NULL,
+                            Observaciones TEXT NULL
+                        );
+                    ");
+                }
+                else
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS `GarantiasItems` (
+                            `Id` CHAR(36) NOT NULL,
+                            `CuentaPorCobrarId` CHAR(36) NOT NULL,
+                            `Descripcion` VARCHAR(500) NOT NULL,
+                            `ValorEstimado` DECIMAL(18,2) NOT NULL,
+                            `FechaRegistro` DATETIME NOT NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_GarantiasItems_CxC` (`CuentaPorCobrarId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `DocumentLogs` (
+                            `Id` CHAR(36) NOT NULL,
+                            `DocumentType` VARCHAR(100) NOT NULL,
+                            `ReferenceId` VARCHAR(100) NOT NULL,
+                            `Action` VARCHAR(50) NOT NULL,
+                            `UserId` VARCHAR(100) NOT NULL,
+                            `UserName` VARCHAR(100) NOT NULL,
+                            `Timestamp` DATETIME NOT NULL,
+                            `Details` TEXT NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_DocumentLogs_Ref` (`ReferenceId`),
+                            INDEX `IX_DocumentLogs_Time` (`Timestamp`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `Proveedores` (
+                            `Id` CHAR(36) NOT NULL,
+                            `RIF` VARCHAR(50) NOT NULL,
+                            `RazonSocial` VARCHAR(250) NOT NULL,
+                            `Direccion` VARCHAR(500) NULL,
+                            `Telefono` VARCHAR(50) NULL,
+                            `Activo` TINYINT(1) NOT NULL DEFAULT 1,
+                            `FechaRegistro` DATETIME NOT NULL,
+                            PRIMARY KEY (`Id`),
+                            UNIQUE KEY `IX_Proveedores_RIF` (`RIF`),
+                            INDEX `IX_Proveedores_RazonSocial` (`RazonSocial`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `OrdenesCompraInventario` (
+                            `Id` CHAR(36) NOT NULL,
+                            `NumeroFactura` VARCHAR(100) NOT NULL,
+                            `ProveedorId` CHAR(36) NULL,
+                            `ProveedorNombre` VARCHAR(250) NOT NULL,
+                            `FechaEmision` DATETIME NOT NULL,
+                            `MontoTotalUSD` DECIMAL(18,2) NOT NULL,
+                            `MontoTotalBs` DECIMAL(18,2) NOT NULL,
+                            `TotalAbonadoUSD` DECIMAL(18,2) NOT NULL,
+                            `SaldoPendienteUSD` DECIMAL(18,2) NOT NULL,
+                            `Estado` VARCHAR(50) NOT NULL,
+                            `Observaciones` VARCHAR(1000) NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_OrdenesCompra_Numero` (`NumeroFactura`),
+                            INDEX `IX_OrdenesCompra_Proveedor` (`ProveedorNombre`),
+                            INDEX `IX_OrdenesCompra_Estado` (`Estado`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `PagosProveedores` (
+                            `Id` CHAR(36) NOT NULL,
+                            `OrdenCompraId` CHAR(36) NOT NULL,
+                            `FechaPago` DATETIME NOT NULL,
+                            `MontoAbonadoUSD` DECIMAL(18,2) NOT NULL,
+                            `TasaCambio` DECIMAL(18,2) NOT NULL,
+                            `MontoAbonadoBs` DECIMAL(18,2) NOT NULL,
+                            `MetodoPago` VARCHAR(50) NOT NULL,
+                            `Referencia` VARCHAR(100) NULL,
+                            `UsuarioId` VARCHAR(100) NULL,
+                            `Observaciones` VARCHAR(1000) NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_PagosProveedores_Orden` (`OrdenCompraId`),
+                            INDEX `IX_PagosProveedores_Fecha` (`FechaPago`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                }
+
+                // 2. Columnas dinámicas en tablas existentes
+                var conn = _context.Database.GetDbConnection();
+                bool closeConn = false;
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                    closeConn = true;
+                }
+
+                // Insumos -> OcultoEnTraslados
+                bool hasOcultoEnTraslados = false;
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (isSqlite)
+                    {
+                        cmd.CommandText = "PRAGMA table_info(Insumos);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                if (string.Equals(reader["name"]?.ToString(), "OcultoEnTraslados", StringComparison.OrdinalIgnoreCase))
+                                    hasOcultoEnTraslados = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "SHOW COLUMNS FROM `Insumos` LIKE 'OcultoEnTraslados';";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync()) hasOcultoEnTraslados = true;
+                        }
+                    }
+                }
+                if (!hasOcultoEnTraslados)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite
+                        ? "ALTER TABLE `Insumos` ADD COLUMN `OcultoEnTraslados` INTEGER NOT NULL DEFAULT 0;"
+                        : "ALTER TABLE `Insumos` ADD COLUMN `OcultoEnTraslados` TINYINT(1) NOT NULL DEFAULT 0;");
+                }
+
+                // InsumosCirugiasPacientes -> OrdenCirugiaId
+                bool hasOrdenCirugiaIdInInsumosCirugia = false;
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (isSqlite)
+                    {
+                        cmd.CommandText = "PRAGMA table_info(InsumosCirugiasPacientes);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                if (string.Equals(reader["name"]?.ToString(), "OrdenCirugiaId", StringComparison.OrdinalIgnoreCase))
+                                    hasOrdenCirugiaIdInInsumosCirugia = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "SHOW COLUMNS FROM `InsumosCirugiasPacientes` LIKE 'OrdenCirugiaId';";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync()) hasOrdenCirugiaIdInInsumosCirugia = true;
+                        }
+                    }
+                }
+                if (!hasOrdenCirugiaIdInInsumosCirugia)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite
+                        ? "ALTER TABLE `InsumosCirugiasPacientes` ADD COLUMN `OrdenCirugiaId` TEXT NULL;"
+                        : "ALTER TABLE `InsumosCirugiasPacientes` ADD COLUMN `OrdenCirugiaId` CHAR(36) NULL;");
+                }
+
+                // CuentasPorCobrar -> CompromisoGenerado, GarantiaGenerada, IsAudited, etc.
+                var cxcCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (isSqlite)
+                    {
+                        cmd.CommandText = "PRAGMA table_info(CuentasPorCobrar);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                                cxcCols.Add(reader["name"]?.ToString() ?? string.Empty);
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "SHOW COLUMNS FROM `CuentasPorCobrar`;";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                                cxcCols.Add(reader["Field"]?.ToString() ?? string.Empty);
+                        }
+                    }
+                }
+
+                if (!cxcCols.Contains("CompromisoGenerado"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `CompromisoGenerado` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `CompromisoGenerado` TINYINT(1) NOT NULL DEFAULT 0;");
+                if (!cxcCols.Contains("GarantiaGenerada"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `GarantiaGenerada` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `GarantiaGenerada` TINYINT(1) NOT NULL DEFAULT 0;");
+                if (!cxcCols.Contains("IsAudited"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `IsAudited` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `IsAudited` TINYINT(1) NOT NULL DEFAULT 0;");
+                if (!cxcCols.Contains("UsuarioAuditoria"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `UsuarioAuditoria` TEXT NULL;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `UsuarioAuditoria` VARCHAR(100) NULL;");
+                if (!cxcCols.Contains("FechaAuditoria"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `FechaAuditoria` TEXT NULL;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `FechaAuditoria` DATETIME NULL;");
+                if (!cxcCols.Contains("QuienAutorizo"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `QuienAutorizo` TEXT NULL;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `QuienAutorizo` VARCHAR(150) NULL;");
+                if (!cxcCols.Contains("DoctorProcedimiento"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `DoctorProcedimiento` TEXT NULL;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `DoctorProcedimiento` VARCHAR(150) NULL;");
+                if (!cxcCols.Contains("InformacionAdicional"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `InformacionAdicional` TEXT NULL;" : "ALTER TABLE `CuentasPorCobrar` ADD COLUMN `InformacionAdicional` TEXT NULL;");
+
+                // Medicos -> Activo, Telefono, IntervaloTurnoMinutos
+                var medCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (isSqlite)
+                    {
+                        cmd.CommandText = "PRAGMA table_info(Medicos);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                                medCols.Add(reader["name"]?.ToString() ?? string.Empty);
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "SHOW COLUMNS FROM `Medicos`;";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                                medCols.Add(reader["Field"]?.ToString() ?? string.Empty);
+                        }
+                    }
+                }
+
+                if (!medCols.Contains("Activo"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Medicos` ADD COLUMN `Activo` INTEGER NOT NULL DEFAULT 1;" : "ALTER TABLE `Medicos` ADD COLUMN `Activo` TINYINT(1) NOT NULL DEFAULT 1;");
+                if (!medCols.Contains("Telefono"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Medicos` ADD COLUMN `Telefono` TEXT NULL;" : "ALTER TABLE `Medicos` ADD COLUMN `Telefono` VARCHAR(50) NULL;");
+                if (!medCols.Contains("IntervaloTurnoMinutos"))
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Medicos` ADD COLUMN `IntervaloTurnoMinutos` INTEGER NOT NULL DEFAULT 20;" : "ALTER TABLE `Medicos` ADD COLUMN `IntervaloTurnoMinutos` INT NOT NULL DEFAULT 20;");
+
+                // Especialidades -> Activo
+                bool hasEspActivo = false;
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (isSqlite)
+                    {
+                        cmd.CommandText = "PRAGMA table_info(Especialidades);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                if (string.Equals(reader["name"]?.ToString(), "Activo", StringComparison.OrdinalIgnoreCase))
+                                    hasEspActivo = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "SHOW COLUMNS FROM `Especialidades` LIKE 'Activo';";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync()) hasEspActivo = true;
+                        }
+                    }
+                }
+                if (!hasEspActivo)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite
+                        ? "ALTER TABLE `Especialidades` ADD COLUMN `Activo` INTEGER NOT NULL DEFAULT 1;"
+                        : "ALTER TABLE `Especialidades` ADD COLUMN `Activo` TINYINT(1) NOT NULL DEFAULT 1;");
+                }
+
+                if (closeConn)
+                {
+                    await conn.CloseAsync();
+                }
+
+                _logger.LogInformation("[SYSTEM-DB-INITIALIZER] Esquema de compatibilidad de producción auto-sanado exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[SYSTEM-DB-INITIALIZER] Error durante la auto-sanación de compatibilidad de producción.");
             }
         }
     }
