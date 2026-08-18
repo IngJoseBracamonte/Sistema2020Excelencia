@@ -7,7 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
-namespace SistemaSatHospitalario.Core.Application.Queries.Admision
+namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
 {
     public class TransferenciaReposicionDto
     {

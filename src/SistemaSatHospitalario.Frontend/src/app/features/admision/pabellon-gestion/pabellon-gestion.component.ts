@@ -13,12 +13,12 @@ import {
 } from '../../../core/services/pabellon.service';
 import { MedicoService } from '../../../core/services/medico.service';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
+import { MultiSedeService, AreaClinica } from '../../../core/services/multi-sede.service';
 import { environment } from '../../../../environments/environment';
 
 import { PabellonCalendarioComponent } from './pabellon-calendario.component';
 import { PabellonPacientesListaComponent } from './pabellon-pacientes-lista.component';
 import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component';
-import { ReposicionInventarioComponent } from '../../inventario/reposicion-inventario.component';
 
 @Component({
   selector: 'app-pabellon-gestion',
@@ -29,8 +29,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
     LucideAngularModule,
     PabellonCalendarioComponent,
     PabellonPacientesListaComponent,
-    PanelDetalleCirugiaComponent,
-    ReposicionInventarioComponent
+    PanelDetalleCirugiaComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -46,7 +45,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
             <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
               Pabellón Quirúrgico & Gestión de Cirugías
             </h1>
-            <p class="text-xs text-gray-400">Programación operativa, checklist preoperatorio, honorarios médicos y reposición de insumos</p>
+            <p class="text-xs text-gray-400">Programación operativa, checklist preoperatorio y honorarios médicos</p>
           </div>
         </div>
 
@@ -74,26 +73,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
               <lucide-icon name="calendar-days" class="w-3.5 h-3.5"></lucide-icon>
               Calendario Total
             </button>
-
-            <button
-              (click)="cambiarModoVista('reposicion')"
-              [class.bg-sky-600]="vistaModo() === 'reposicion'"
-              [class.text-white]="vistaModo() === 'reposicion'"
-              [class.text-gray-400]="vistaModo() !== 'reposicion'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
-            >
-              <lucide-icon name="repeat" class="w-3.5 h-3.5"></lucide-icon>
-              Reposición Insumos
-            </button>
           </div>
-
-          <button
-            (click)="abrirModalNuevaCirugia()"
-            class="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-lg shadow-sky-600/20 transition flex items-center gap-2"
-          >
-            <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
-            Programar Cirugía
-          </button>
         </div>
       </div>
 
@@ -111,13 +91,9 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
       @if (vistaModo() === 'calendario') {
         <app-pabellon-calendario
           [cirugias]="calendarioItems()"
+          [quirofanos]="quirofanos()"
           (seleccionarCirugia)="onSeleccionarDeCalendario($event)"
         ></app-pabellon-calendario>
-      }
-
-      <!-- VISTA 3: REPOSICIÓN E INTERCAMBIO DE INSUMOS -->
-      @if (vistaModo() === 'reposicion') {
-        <app-reposicion-inventario></app-reposicion-inventario>
       }
 
       <!-- PANEL LATERAL CONTEXTUAL POR ROL (DRAWER) -->
@@ -158,11 +134,16 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
               <!-- Sala / Quirófano y Modalidad de Anestesia -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="text-gray-400 mb-1 block font-semibold">Sala / Quirófano *</label>
+                  <label class="text-gray-400 mb-1 block font-semibold">Quirófano / Sala Quirúrgica *</label>
                   <select [(ngModel)]="nuevaCirugiaForm.salaQuirofano" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-                    <option value="Quirófano 1">Quirófano 1</option>
-                    <option value="Quirófano 2">Quirófano 2</option>
-                    <option value="Sala de Partos">Sala de Partos</option>
+                    @for (q of quirofanos(); track q.id) {
+                      <option [value]="q.nombre">{{ q.nombre }} ({{ q.codigo }})</option>
+                    }
+                    @if (quirofanos().length === 0) {
+                      <option value="Quirófano 1">Quirófano 1</option>
+                      <option value="Quirófano 2">Quirófano 2</option>
+                      <option value="Sala de Partos">Sala de Partos</option>
+                    }
                   </select>
                 </div>
 
@@ -262,7 +243,7 @@ import { ReposicionInventarioComponent } from '../../inventario/reposicion-inven
                 @if (pacienteSeleccionado()) {
                   <div class="mt-2 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl flex items-center justify-between text-xs text-sky-300">
                     <span>👤 {{ pacienteSeleccionado()?.nombre }} (CI: {{ pacienteSeleccionado()?.cedula }})</span>
-                    <span class="text-[10px] text-gray-400 font-mono">Cuenta: {{ nuevaCirugiaForm.cuentaServicioId ? 'Vinculada' : 'Pendiente' }}</span>
+                    <span class="text-[10px] text-emerald-400 font-semibold">✓ Paciente Seleccionado</span>
                   </div>
                 }
               </div>
@@ -291,16 +272,18 @@ export class PabellonGestionComponent implements OnInit {
   private pabellonService = inject(PabellonService);
   private medicoService = inject(MedicoService);
   private patientService = inject(PatientService);
+  private multiSedeService = inject(MultiSedeService);
   private http = inject(HttpClient);
   private router = inject(Router);
 
   // Estados Reactivos con Signals
-  public vistaModo = signal<'tablero' | 'calendario' | 'reposicion'>('tablero');
+  public vistaModo = signal<'tablero' | 'calendario'>('tablero');
   public pacientesQuirurgicos = signal<PacienteQuirurgicoItem[]>([]);
   public calendarioItems = signal<CirugiaCalendarioItem[]>([]);
   public pacienteSeleccionadoDetalle = signal<PacienteQuirurgicoItem | null>(null);
 
   public medicos = signal<{ id: string; nombre: string; especialidad?: string; activo?: boolean }[]>([]);
+  public quirofanos = signal<AreaClinica[]>([]);
 
   // Búsqueda de Pacientes
   public pacienteSearchQuery = signal<string>('');
@@ -331,20 +314,19 @@ export class PabellonGestionComponent implements OnInit {
 
     this.recargarDatos();
     this.cargarMedicos();
+    this.cargarQuirofanos();
   }
 
   private sincronizarVistaConRuta(): void {
     const url = this.router.url;
     if (url.includes('/calendario')) {
       this.vistaModo.set('calendario');
-    } else if (url.includes('/reposicion')) {
-      this.vistaModo.set('reposicion');
     } else {
       this.vistaModo.set('tablero');
     }
   }
 
-  public cambiarModoVista(modo: 'tablero' | 'calendario' | 'reposicion'): void {
+  public cambiarModoVista(modo: 'tablero' | 'calendario'): void {
     this.vistaModo.set(modo);
     this.router.navigate(['/pabellon', modo]);
   }
@@ -370,6 +352,50 @@ export class PabellonGestionComponent implements OnInit {
   cargarMedicos(): void {
     this.medicoService.getAll().subscribe({
       next: (res: any[]) => this.medicos.set(res || [])
+    });
+  }
+
+  cargarQuirofanos(): void {
+    this.multiSedeService.getAreasClinicas().subscribe({
+      next: (areas: AreaClinica[]) => {
+        const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
+        // Filtrar exclusivamente los quirófanos (por Sede Cirugía o por nombre/código de quirófano)
+        const soloQuirofanos = (areas || []).filter(a => 
+          a.activo !== false && (
+            a.sedeId === cirugiaSedeId ||
+            (a.sedeNombre || '').toLowerCase().includes('cirug') ||
+            (a.nombre || '').toLowerCase().includes('quiróf') ||
+            (a.nombre || '').toLowerCase().includes('quirof') ||
+            (a.nombre || '').toLowerCase().includes('parto') ||
+            (a.codigo || '').toLowerCase().startsWith('qx') ||
+            (a.codigo || '').toLowerCase().startsWith('q')
+          )
+        );
+
+        if (soloQuirofanos.length > 0) {
+          this.quirofanos.set(soloQuirofanos);
+          if (!this.nuevaCirugiaForm.salaQuirofano || this.nuevaCirugiaForm.salaQuirofano === 'Quirófano 1') {
+            this.nuevaCirugiaForm.salaQuirofano = soloQuirofanos[0].nombre;
+          }
+        } else {
+          // Fallback por defecto si aún no se han anexado quirófanos en BD
+          const defaultQuirofanos: AreaClinica[] = [
+            { id: '10000000-0000-0000-0000-000000000051', codigo: 'QX-1', nombre: 'Quirófano 1', activo: true },
+            { id: '10000000-0000-0000-0000-000000000052', codigo: 'QX-2', nombre: 'Quirófano 2', activo: true },
+            { id: '10000000-0000-0000-0000-000000000053', codigo: 'SALA-PARTOS', nombre: 'Sala de Partos', activo: true }
+          ];
+          this.quirofanos.set(defaultQuirofanos);
+          this.nuevaCirugiaForm.salaQuirofano = 'Quirófano 1';
+        }
+      },
+      error: (err) => {
+        console.error('[PABELLON] Error al cargar quirófanos:', err);
+        this.quirofanos.set([
+          { id: '10000000-0000-0000-0000-000000000051', codigo: 'QX-1', nombre: 'Quirófano 1', activo: true },
+          { id: '10000000-0000-0000-0000-000000000052', codigo: 'QX-2', nombre: 'Quirófano 2', activo: true },
+          { id: '10000000-0000-0000-0000-000000000053', codigo: 'SALA-PARTOS', nombre: 'Sala de Partos', activo: true }
+        ]);
+      }
     });
   }
 
@@ -411,23 +437,9 @@ export class PabellonGestionComponent implements OnInit {
   seleccionarPaciente(p: PatientRecord): void {
     this.pacienteSeleccionado.set(p);
     this.nuevaCirugiaForm.pacienteId = p.id;
+    this.nuevaCirugiaForm.cuentaServicioId = p.id;
     this.pacientesEncontrados.set([]);
     this.pacienteSearchQuery.set(`${p.nombre} ${p.apellidos || ''} (${p.cedula})`);
-
-    // Vincular cuenta de hospitalización o emergencia activa
-    this.http.get<any[]>(`${environment.apiUrl}/api/Enfermeria/cuentas-activas`).subscribe({
-      next: (cuentas) => {
-        const cuentaPaciente = (cuentas || []).find(c => c.pacienteId === p.id || c.pacienteCedula === p.cedula);
-        if (cuentaPaciente) {
-          this.nuevaCirugiaForm.cuentaServicioId = cuentaPaciente.cuentaId || cuentaPaciente.id;
-        } else {
-          this.nuevaCirugiaForm.cuentaServicioId = p.id;
-        }
-      },
-      error: () => {
-        this.nuevaCirugiaForm.cuentaServicioId = p.id;
-      }
-    });
   }
 
   abrirModalNuevaCirugia(): void {
@@ -451,10 +463,9 @@ export class PabellonGestionComponent implements OnInit {
 
   esFormularioValido(): boolean {
     return !!(
-      this.nuevaCirugiaForm.descripcionCirugia.trim() &&
+      this.nuevaCirugiaForm.descripcionCirugia?.trim() &&
       this.nuevaCirugiaForm.medicoId &&
-      this.nuevaCirugiaForm.cuentaServicioId.trim() &&
-      this.nuevaCirugiaForm.pacienteId.trim() &&
+      this.nuevaCirugiaForm.pacienteId?.trim() &&
       this.nuevaCirugiaForm.fechaHoraProgramada
     );
   }

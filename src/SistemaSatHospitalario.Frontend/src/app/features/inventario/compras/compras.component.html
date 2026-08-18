@@ -214,15 +214,16 @@
         </div>
       </div>
 
-      <!-- Cantidad y Costo -->
+      <!-- Cantidad Kardex y Costo -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Cantidad (Unidades)</label>
+          <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Cant. Kardex (Total Unidades)</label>
           <input 
             type="number"
             [ngModel]="purchaseQty()"
             (ngModelChange)="purchaseQty.set($event)"
             min="1"
+            placeholder="Ej: 10000"
             class="w-full mt-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-2.5 text-xs font-bold text-white text-center focus:outline-none focus:border-emerald-500/50"
           />
         </div>
@@ -243,7 +244,7 @@
 
       <!-- Badges de Desglose de Cálculo -->
       <div *ngIf="selectedInsumo()" class="flex items-center justify-between text-[10px] font-bold bg-white/5 p-3 rounded-2xl border border-white/5">
-        <span class="text-slate-400">Costo Unit. Base: <strong class="text-emerald-400">${{ calculatedUnitCost() | number:'1.2-4' }}</strong> / u.m.</span>
+        <span class="text-slate-400">Costo Unit. Base: <strong class="text-emerald-400">${{ calculatedUnitCost() | number:'1.2-4' }}</strong> / {{ selectedInsumo()?.unidadMedidaBase }}</span>
         <span class="text-slate-400">Subtotal Renglón: <strong class="text-white">${{ calculatedTotalCost() | number:'1.2-2' }}</strong></span>
       </div>
 
@@ -274,7 +275,7 @@
             <thead>
               <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-white/5 pb-2">
                 <th class="py-2">Insumo</th>
-                <th class="py-2 text-center">Cant.</th>
+                <th class="py-2 text-center">Cant. Kardex</th>
                 <th class="py-2 text-right">Costo Unit.</th>
                 <th class="py-2 text-right">Subtotal</th>
                 <th class="py-2 text-center">Acción</th>
@@ -291,7 +292,7 @@
                     </span>
                   </div>
                 </td>
-                <td class="py-3 text-center font-black text-white">{{ item.cantidad }}</td>
+                <td class="py-3 text-center font-black text-white font-mono">{{ item.cantidad }}</td>
                 <td class="py-3 text-right font-bold text-emerald-400">${{ item.precioCostoUSD | number:'1.2-4' }}</td>
                 <td class="py-3 text-right font-black text-white">${{ item.totalUSD | number:'1.2-2' }}</td>
                 <td class="py-3 text-center">

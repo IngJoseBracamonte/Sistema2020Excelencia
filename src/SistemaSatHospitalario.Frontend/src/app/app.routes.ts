@@ -78,7 +78,6 @@ export const routes: Routes = [
             // --- Módulo Cirugía / Pabellón ---
             { path: 'pabellon/tablero', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
             { path: 'pabellon/calendario', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
-            { path: 'pabellon/reposicion', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
             { path: 'pabellon/gestion', redirectTo: 'pabellon/tablero', pathMatch: 'full' },
             { path: 'pabellon', redirectTo: 'pabellon/tablero', pathMatch: 'full' },
 

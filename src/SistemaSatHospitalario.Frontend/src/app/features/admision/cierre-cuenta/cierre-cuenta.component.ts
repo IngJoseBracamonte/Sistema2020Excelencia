@@ -277,7 +277,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public fastChargeSearchTerm = signal<string>('');
   public filteredServices = signal<ServicioCatalogo[]>([]);
   public selectedService = signal<ServicioCatalogo | null>(null);
-  public fastChargeQuantity = 1;
+  public fastChargeQuantity = signal<number>(1);
   public isSavingFastCharge = signal<boolean>(false);
   public triageHistoryMap = signal<Record<string, any[]>>({});
   // Medicos Catalog
@@ -337,7 +337,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     if (classification === ITEM_CLASSIFICATIONS.LABORATORIO || classification === ITEM_CLASSIFICATIONS.RX) {
       return basePrice;
     }
-    const qty = this.fastChargeQuantity || 1;
+    const qty = Number(this.fastChargeQuantity()) || 1;
     return basePrice * qty;
   });
 
@@ -1459,12 +1459,18 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     this.selectedService.set(service);
     this.fastChargeSearchTerm.set(service.descripcion);
     this.filteredServices.set([]);
-    this.fastChargeQuantity = 1;
+    this.fastChargeQuantity.set(1);
     this.selectedMedicoId.set(null);
     this.customPrecio.set(service.precioUsd ?? 0);
     this.customHonorario.set(service.honorarioBase ?? 0);
     const classification = classifyService(service);
     this.activeStepperMode.set(this.mapClassificationToMode(classification));
+
+    // Auto-asegurar área clínica seleccionada para evitar bloqueos
+    if (!this.selectedAreaClinicaId()) {
+      this.autoSelectAreaClinicaForAccount(this.selectedAccount());
+    }
+
     const sugIds = service.sugerenciasIds || service.SugerenciasIds || [];
     const suggestions = this.servicesCatalog().filter(item => sugIds.includes(String(item.id)));
     this.activeSuggestions.set(suggestions);
@@ -1491,9 +1497,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public resetCurrentItemSelection(): void {
     this.selectedService.set(null);
     this.fastChargeSearchTerm.set('');
-    this.fastChargeQuantity = 1;
+    this.fastChargeQuantity.set(1);
     this.selectedMedicoId.set(null);
-    this.selectedAreaClinicaId.set(null);
     this.customPrecio.set(null);
     this.customHonorario.set(null);
     this.activeSuggestions.set([]);
@@ -1548,6 +1553,11 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     const service = this.selectedService();
     if (!active || !service) return;
 
+    // Asegurar área clínica
+    if (!this.selectedAreaClinicaId() && this.areasClinicas().length > 0) {
+      this.autoSelectAreaClinicaForAccount(active);
+    }
+
     const getUuid = () => {
       if (typeof crypto !== 'undefined') {
         if (crypto.randomUUID) return crypto.randomUUID();
@@ -1562,7 +1572,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
       classification === ITEM_CLASSIFICATIONS.LABORATORIO ||
       classification === ITEM_CLASSIFICATIONS.RX;
-    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity);
+    const effectiveQty = isFixedQty ? 1 : Number(this.fastChargeQuantity());
 
     const requiresMedico = classification === ITEM_CLASSIFICATIONS.CONSULTA ||
       ((service.honorarioBase ?? 0) > 0 &&
@@ -1633,7 +1643,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     if (catalogItem) {
       this.selectedService.set(catalogItem);
       this.fastChargeSearchTerm.set(catalogItem.descripcion);
-      this.fastChargeQuantity = item.cantidad;
+      this.fastChargeQuantity.set(item.cantidad);
       this.selectedMedicoId.set(item.medicoId);
       this.customPrecio.set(item.precioBase);
       this.customHonorario.set(item.honorario);

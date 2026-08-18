@@ -582,6 +582,35 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
                     bool isSqlite = _context.Database.IsSqlite();
 
+                    // 0. Crear tabla CategoriasInsumo si no existe
+                    if (isSqlite)
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            CREATE TABLE IF NOT EXISTS `CategoriasInsumo` (
+                                `Id` TEXT NOT NULL PRIMARY KEY,
+                                `Nombre` TEXT NOT NULL,
+                                `Codigo` TEXT NULL,
+                                `Activo` INTEGER NOT NULL DEFAULT 1,
+                                `FechaCreacion` TEXT NOT NULL
+                            );
+                            CREATE UNIQUE INDEX IF NOT EXISTS `IX_CategoriasInsumo_Nombre` ON `CategoriasInsumo` (`Nombre`);
+                        ");
+                    }
+                    else
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            CREATE TABLE IF NOT EXISTS `CategoriasInsumo` (
+                                `Id` CHAR(36) NOT NULL,
+                                `Nombre` VARCHAR(150) NOT NULL,
+                                `Codigo` VARCHAR(50) NULL,
+                                `Activo` TINYINT(1) NOT NULL DEFAULT 1,
+                                `FechaCreacion` DATETIME NOT NULL,
+                                PRIMARY KEY (`Id`),
+                                UNIQUE KEY `IX_CategoriasInsumo_Nombre` (`Nombre`)
+                            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                        ");
+                    }
+
                     // 1. Crear tabla PrincipiosActivos si no existe
                     if (isSqlite)
                     {
@@ -709,9 +738,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     _logger.LogWarning(ex, "No se pudo verificar/crear las tablas de PrincipiosActivos y columnas de soft delete en Insumos.");
                 }
 
-                // _logger.LogInformation("Ejecutando limpieza de datos de prueba e inicializando System Database limpia...");
-                // // Purga completa de data transaccional deshabilitada para preservar persistencia real de datos
-                // await PurgeAllTestDataAsync();
+                // Auto-sanación y verificación de tablas y columnas del módulo quirúrgico
+                await EnsureSurgicalTablesAndColumnsAsync();
 
                 await SeedEspecialidadesAsync();
                 await SeedServiciosClinicosAsync();
@@ -726,6 +754,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedMonedasAsync();
                 await SeedMetodosPagoAsync();
                 await SeedTiposServicioAsync();
+                await SeedCategoriasInsumoAsync();
                 await SeedInventorySedesAndMigrateStockAsync();
                 await SeedAreasClinicasAsync();
  
@@ -735,6 +764,33 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             {
                 _logger.LogError(ex, "Ocurrió un error inicializando System Database.");
                 throw;
+            }
+        }
+
+        private async Task SeedCategoriasInsumoAsync()
+        {
+            try
+            {
+                if (!await _context.CategoriasInsumo.AnyAsync())
+                {
+                    var defaultCategorias = new List<CategoriaInsumo>
+                    {
+                        new CategoriaInsumo("Medicamento", "MED"),
+                        new CategoriaInsumo("Descartable", "DESC"),
+                        new CategoriaInsumo("Material Médico", "MAT-MED"),
+                        new CategoriaInsumo("Reactivo", "REACT"),
+                        new CategoriaInsumo("Material Quirúrgico", "MAT-QX"),
+                        new CategoriaInsumo("Otro", "OTRO")
+                    };
+
+                    await _context.CategoriasInsumo.AddRangeAsync(defaultCategorias);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Categorías de insumo iniciales sembradas exitosamente ({Count} categorías).", defaultCategorias.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudieron sembrar las categorías de insumo iniciales.");
             }
         }
 
@@ -784,6 +840,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     "ServiciosInsumoRecetas",
                     "InsumosPrincipiosActivos",
                     "PrincipiosActivos",
+                    "CategoriasInsumo",
                     "StocksSedes",
                     "Insumos"
                 };
@@ -1257,75 +1314,40 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
         private async Task SeedAreasClinicasAsync()
         {
-            _logger.LogInformation("[MIGRATION] Verificando existencia de sub-áreas clínicas y limpiando sedes secundarias...");
+            _logger.LogInformation("[SEED] Verificando existencia de quirófanos y áreas clínicas base...");
 
-            // Senior Maintenance: Limpiar sub-áreas clínicas de sedes que NO son la Sede Principal
-            try
+            var defaultAreas = new (Guid SedeId, string Codigo, string Nombre, bool EsAdmision)[]
             {
-                var conn = _context.Database.GetDbConnection();
-                bool closeConnection = false;
-                if (conn.State != System.Data.ConnectionState.Open)
+                // Sede Cirugía (Quirófanos)
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1", false),
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "QX-2", "Quirófano 2", false),
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "SALA-PARTOS", "Sala de Partos", false),
+
+                // Sede Hospitalización (Habitaciones)
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false),
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, "HAB-102", "Habitación 102", false),
+
+                // Sede Emergencia (Boxes)
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true),
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia, "BOX-2", "Box Emergencia 2", true),
+
+                // Sede UCI
+                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false)
+            };
+
+            foreach (var def in defaultAreas)
+            {
+                var exists = await _context.AreasClinicas
+                    .AnyAsync(a => a.SedeId == def.SedeId && a.Codigo == def.Codigo);
+                if (!exists)
                 {
-                    await conn.OpenAsync();
-                    closeConnection = true;
-                }
-                using (var cmd = conn.CreateCommand())
-                {
-                    // Seleccionar áreas clínicas cuya sede no sea Principal
-                    cmd.CommandText = @"
-                        SELECT ac.`Id` FROM `AreasClinicas` ac 
-                        JOIN `Sedes` s ON ac.`SedeId` = s.`Id` 
-                        WHERE s.`EsPrincipal` = 0;";
-                    
-                    var idsToDelete = new List<string>();
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var valStr = reader[0]?.ToString();
-                            if (!string.IsNullOrEmpty(valStr) && Guid.TryParse(valStr, out var parsedGuid))
-                            {
-                                idsToDelete.Add($"'{parsedGuid}'");
-                            }
-                        }
-                    }
-
-                    if (idsToDelete.Any())
-                    {
-                        var idsStr = string.Join(",", idsToDelete);
-
-                        cmd.CommandText = $"UPDATE `CuentasServicios` SET `AreaClinicaId` = NULL WHERE `AreaClinicaId` IN ({idsStr});";
-                        await cmd.ExecuteNonQueryAsync();
-
-                        cmd.CommandText = $"UPDATE `CitasMedicas` SET `AreaClinicaId` = NULL WHERE `AreaClinicaId` IN ({idsStr});";
-                        await cmd.ExecuteNonQueryAsync();
-
-                        cmd.CommandText = $"UPDATE `DetallesServicioCuenta` SET `AreaClinicaId` = NULL WHERE `AreaClinicaId` IN ({idsStr});";
-                        await cmd.ExecuteNonQueryAsync();
-
-                        cmd.CommandText = $"DELETE FROM `HistorialesLimpiezasCamas` WHERE `CamaId` IN ({idsStr});";
-                        await cmd.ExecuteNonQueryAsync();
-
-                        cmd.CommandText = $"DELETE FROM `AreasClinicas` WHERE `Id` IN ({idsStr});";
-                        int deleted = await cmd.ExecuteNonQueryAsync();
-                        _logger.LogInformation($"[MIGRATION] Se eliminaron {deleted} sub-áreas clínicas de sedes secundarias.");
-                    }
-                }
-                if (closeConnection) await conn.CloseAsync();
-
-                // Purga automática de Sedes secundarias dinámicas con código 'SUC%'
-                var sucSedes = await _context.Sedes.Where(s => s.Codigo.StartsWith("SUC")).ToListAsync();
-                if (sucSedes.Any())
-                {
-                    _context.Sedes.RemoveRange(sucSedes);
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("[MAINTENANCE] Se purgaron {Count} sedes residuales con código SUC.", sucSedes.Count);
+                    var area = new AreaClinica(def.SedeId, def.Codigo, def.Nombre, def.EsAdmision);
+                    _context.AreasClinicas.Add(area);
+                    _logger.LogInformation("[SEED] Área/Quirófano creado: {Codigo} - {Nombre}", def.Codigo, def.Nombre);
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "[MIGRATION] Error al intentar limpiar sub-áreas clínicas de sedes secundarias.");
-            }
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task<Guid?> ObtenerSedeIdPorCodigoAsync(string codigo)
@@ -1517,6 +1539,277 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "[SYSTEM-DB-INITIALIZER] Error al sembrar la tabla TiposServicio.");
+            }
+        }
+
+        private async Task EnsureSurgicalTablesAndColumnsAsync()
+        {
+            try
+            {
+                var isSqlite = _context.Database.IsSqlite();
+                var isMySql = !isSqlite;
+
+                if (isSqlite)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS RequisitosCirugia (
+                            Id TEXT PRIMARY KEY,
+                            Nombre TEXT NOT NULL,
+                            Descripcion TEXT NULL,
+                            EsActivo INTEGER NOT NULL DEFAULT 1
+                        );
+                        CREATE TABLE IF NOT EXISTS OrdenesCirugia (
+                            Id TEXT PRIMARY KEY,
+                            CuentaServicioId TEXT NOT NULL,
+                            PacienteId TEXT NOT NULL,
+                            AreaClinicaId TEXT NULL,
+                            SedeQuirofanoId TEXT NULL,
+                            AreaClinicaOrigenId TEXT NULL,
+                            SedeOrigenId TEXT NULL,
+                            DescripcionCirugia TEXT NOT NULL,
+                            PrecioBaseUsd NUMERIC NOT NULL,
+                            PrecioDerechoSalaUsd NUMERIC NOT NULL,
+                            MedicoId TEXT NOT NULL,
+                            FechaHoraProgramada TEXT NOT NULL,
+                            Estado TEXT NOT NULL,
+                            MotivoCancelacion TEXT NULL,
+                            FechaCreacion TEXT NOT NULL,
+                            UsuarioCreacion TEXT NOT NULL,
+                            SalaQuirofano TEXT NOT NULL,
+                            ModalidadAnestesia TEXT NOT NULL,
+                            EsAlquilado INTEGER NOT NULL DEFAULT 0
+                        );
+                        CREATE TABLE IF NOT EXISTS CirugiaLogs (
+                            Id TEXT PRIMARY KEY,
+                            OrdenCirugiaId TEXT NOT NULL,
+                            UsuarioId TEXT NOT NULL,
+                            Evento TEXT NOT NULL,
+                            Detalle TEXT NOT NULL,
+                            Timestamp TEXT NOT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS CirugiasObservacionesHistorial (
+                            Id TEXT PRIMARY KEY,
+                            OrdenCirugiaId TEXT NOT NULL,
+                            Observacion TEXT NOT NULL,
+                            Tipo INTEGER NOT NULL,
+                            FechaRegistro TEXT NOT NULL,
+                            UsuarioRegistro TEXT NOT NULL,
+                            UsuarioRegistroId TEXT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS OrdenesCirugiaRequisitos (
+                            Id TEXT PRIMARY KEY,
+                            OrdenCirugiaId TEXT NOT NULL,
+                            RequisitoCirugiaId TEXT NOT NULL,
+                            Cumplido INTEGER NOT NULL DEFAULT 0,
+                            FechaVerificacion TEXT NULL,
+                            VerificadoPor TEXT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS CirugiasMedicosHonorarios (
+                            Id TEXT PRIMARY KEY,
+                            OrdenCirugiaId TEXT NOT NULL,
+                            MedicoId TEXT NOT NULL,
+                            EspecialidadId TEXT NOT NULL,
+                            MontoHonorarioUsd NUMERIC NOT NULL,
+                            EsCirujanoPrincipal INTEGER NOT NULL DEFAULT 0
+                        );
+                        CREATE TABLE IF NOT EXISTS SolicitudesInsumosCirugia (
+                            Id TEXT PRIMARY KEY,
+                            OrdenCirugiaId TEXT NOT NULL,
+                            InsumoId TEXT NOT NULL,
+                            CantidadSolicitada NUMERIC NOT NULL,
+                            AlmacenOrigenId TEXT NOT NULL,
+                            EstadoSolicitud TEXT NOT NULL,
+                            FechaSolicitud TEXT NOT NULL,
+                            UsuarioSolicitud TEXT NOT NULL,
+                            FechaDespacho TEXT NULL,
+                            UsuarioDespacho TEXT NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS TransferenciasReposicionStock (
+                            Id TEXT PRIMARY KEY,
+                            InsumoId TEXT NOT NULL,
+                            SedeOrigenId TEXT NOT NULL,
+                            SedeDestinoId TEXT NOT NULL,
+                            Cantidad NUMERIC NOT NULL,
+                            Fecha TEXT NOT NULL,
+                            UsuarioId TEXT NOT NULL,
+                            Observacion TEXT NULL
+                        );
+                    ");
+                }
+                else
+                {
+                    await _context.Database.ExecuteSqlRawAsync(@"
+                        CREATE TABLE IF NOT EXISTS `RequisitosCirugia` (
+                            `Id` CHAR(36) NOT NULL,
+                            `Nombre` VARCHAR(250) NOT NULL,
+                            `Descripcion` TEXT NULL,
+                            `EsActivo` TINYINT(1) NOT NULL DEFAULT 1,
+                            PRIMARY KEY (`Id`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `OrdenesCirugia` (
+                            `Id` CHAR(36) NOT NULL,
+                            `CuentaServicioId` CHAR(36) NOT NULL,
+                            `PacienteId` CHAR(36) NOT NULL,
+                            `AreaClinicaId` CHAR(36) NULL,
+                            `SedeQuirofanoId` CHAR(36) NULL,
+                            `AreaClinicaOrigenId` CHAR(36) NULL,
+                            `SedeOrigenId` CHAR(36) NULL,
+                            `DescripcionCirugia` VARCHAR(500) NOT NULL,
+                            `PrecioBaseUsd` DECIMAL(18,2) NOT NULL,
+                            `PrecioDerechoSalaUsd` DECIMAL(18,2) NOT NULL,
+                            `MedicoId` CHAR(36) NOT NULL,
+                            `FechaHoraProgramada` DATETIME NOT NULL,
+                            `Estado` VARCHAR(50) NOT NULL,
+                            `MotivoCancelacion` VARCHAR(500) NULL,
+                            `FechaCreacion` DATETIME NOT NULL,
+                            `UsuarioCreacion` VARCHAR(100) NOT NULL,
+                            `SalaQuirofano` VARCHAR(100) NOT NULL,
+                            `ModalidadAnestesia` VARCHAR(100) NOT NULL,
+                            `EsAlquilado` TINYINT(1) NOT NULL DEFAULT 0,
+                            PRIMARY KEY (`Id`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `CirugiaLogs` (
+                            `Id` CHAR(36) NOT NULL,
+                            `OrdenCirugiaId` CHAR(36) NOT NULL,
+                            `UsuarioId` VARCHAR(100) NOT NULL,
+                            `Evento` VARCHAR(100) NOT NULL,
+                            `Detalle` TEXT NOT NULL,
+                            `Timestamp` DATETIME NOT NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_CirugiaLogs_Orden` (`OrdenCirugiaId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `CirugiasObservacionesHistorial` (
+                            `Id` CHAR(36) NOT NULL,
+                            `OrdenCirugiaId` CHAR(36) NOT NULL,
+                            `Observacion` TEXT NOT NULL,
+                            `Tipo` INT NOT NULL,
+                            `FechaRegistro` DATETIME NOT NULL,
+                            `UsuarioRegistro` VARCHAR(100) NOT NULL,
+                            `UsuarioRegistroId` VARCHAR(100) NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_CirugiaObs_Orden` (`OrdenCirugiaId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `OrdenesCirugiaRequisitos` (
+                            `Id` CHAR(36) NOT NULL,
+                            `OrdenCirugiaId` CHAR(36) NOT NULL,
+                            `RequisitoCirugiaId` CHAR(36) NOT NULL,
+                            `Cumplido` TINYINT(1) NOT NULL DEFAULT 0,
+                            `FechaVerificacion` DATETIME NULL,
+                            `VerificadoPor` VARCHAR(100) NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_OrdenReq_Orden` (`OrdenCirugiaId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `CirugiasMedicosHonorarios` (
+                            `Id` CHAR(36) NOT NULL,
+                            `OrdenCirugiaId` CHAR(36) NOT NULL,
+                            `MedicoId` CHAR(36) NOT NULL,
+                            `EspecialidadId` CHAR(36) NOT NULL,
+                            `MontoHonorarioUsd` DECIMAL(18,2) NOT NULL,
+                            `EsCirujanoPrincipal` TINYINT(1) NOT NULL DEFAULT 0,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_CirugiaMed_Orden` (`OrdenCirugiaId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `SolicitudesInsumosCirugia` (
+                            `Id` CHAR(36) NOT NULL,
+                            `OrdenCirugiaId` CHAR(36) NOT NULL,
+                            `InsumoId` CHAR(36) NOT NULL,
+                            `CantidadSolicitada` DECIMAL(18,4) NOT NULL,
+                            `AlmacenOrigenId` CHAR(36) NOT NULL,
+                            `EstadoSolicitud` VARCHAR(50) NOT NULL,
+                            `FechaSolicitud` DATETIME NOT NULL,
+                            `UsuarioSolicitud` VARCHAR(100) NOT NULL,
+                            `FechaDespacho` DATETIME NULL,
+                            `UsuarioDespacho` VARCHAR(100) NULL,
+                            PRIMARY KEY (`Id`),
+                            INDEX `IX_SolIns_Orden` (`OrdenCirugiaId`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                        CREATE TABLE IF NOT EXISTS `TransferenciasReposicionStock` (
+                            `Id` CHAR(36) NOT NULL,
+                            `InsumoId` CHAR(36) NOT NULL,
+                            `SedeOrigenId` CHAR(36) NOT NULL,
+                            `SedeDestinoId` CHAR(36) NOT NULL,
+                            `Cantidad` DECIMAL(18,4) NOT NULL,
+                            `Fecha` DATETIME NOT NULL,
+                            `UsuarioId` VARCHAR(100) NOT NULL,
+                            `Observacion` TEXT NULL,
+                            PRIMARY KEY (`Id`)
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                    ");
+                }
+
+                // Verificación y adición de columnas dinámicas en OrdenesCirugia si la tabla ya existía
+                var conn = _context.Database.GetDbConnection();
+                bool closeConn = false;
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                    closeConn = true;
+                }
+
+                bool hasAreaClinicaOrigenId = false;
+                bool hasSedeOrigenId = false;
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    if (isSqlite)
+                    {
+                        cmd.CommandText = "PRAGMA table_info(OrdenesCirugia);";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var col = reader["name"]?.ToString() ?? string.Empty;
+                                if (col.Equals("AreaClinicaOrigenId", StringComparison.OrdinalIgnoreCase)) hasAreaClinicaOrigenId = true;
+                                if (col.Equals("SedeOrigenId", StringComparison.OrdinalIgnoreCase)) hasSedeOrigenId = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = "SHOW COLUMNS FROM `OrdenesCirugia` WHERE Field IN ('AreaClinicaOrigenId', 'SedeOrigenId');";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var col = reader["Field"]?.ToString() ?? string.Empty;
+                                if (col.Equals("AreaClinicaOrigenId", StringComparison.OrdinalIgnoreCase)) hasAreaClinicaOrigenId = true;
+                                if (col.Equals("SedeOrigenId", StringComparison.OrdinalIgnoreCase)) hasSedeOrigenId = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!hasAreaClinicaOrigenId)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite
+                        ? "ALTER TABLE `OrdenesCirugia` ADD COLUMN `AreaClinicaOrigenId` TEXT NULL;"
+                        : "ALTER TABLE `OrdenesCirugia` ADD COLUMN `AreaClinicaOrigenId` CHAR(36) NULL;");
+                }
+
+                if (!hasSedeOrigenId)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(isSqlite
+                        ? "ALTER TABLE `OrdenesCirugia` ADD COLUMN `SedeOrigenId` TEXT NULL;"
+                        : "ALTER TABLE `OrdenesCirugia` ADD COLUMN `SedeOrigenId` CHAR(36) NULL;");
+                }
+
+                if (closeConn)
+                {
+                    await conn.CloseAsync();
+                }
+
+                _logger.LogInformation("[SYSTEM-DB-INITIALIZER] Tablas y columnas quirúrgicas auto-sanadas exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[SYSTEM-DB-INITIALIZER] No se pudieron verificar/crear las tablas quirúrgicas.");
             }
         }
     }

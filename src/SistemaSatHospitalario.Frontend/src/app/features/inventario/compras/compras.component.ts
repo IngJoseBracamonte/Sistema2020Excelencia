@@ -81,7 +81,7 @@ export class ComprasComponent implements OnInit {
   public filteredInsumos = signal<Insumo[]>([]);
   public selectedInsumo = signal<Insumo | null>(null);
 
-  // Formulario por renglón
+  // Formulario por renglón (Cantidad Kárdex directa y Costo)
   public purchaseQty = signal<number>(1);
   public costMode = signal<'total' | 'unitario'>('total');
   public purchaseCost = signal<number>(0);

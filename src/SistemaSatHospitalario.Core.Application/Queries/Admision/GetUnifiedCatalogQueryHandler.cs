@@ -57,7 +57,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .ToDictionaryAsync(p => p.ServicioClinicoId, p => p.PrecioDiferencial, cancellationToken);
             }
 
-            var recetasDict = await (from r in _context.ServiciosInsumoRecetas.AsNoTracking()
+            var recetasList = await (from r in _context.ServiciosInsumoRecetas.AsNoTracking()
                                      join i in _context.Insumos.AsNoTracking() on r.InsumoId equals i.Id into ri
                                      from i in ri.DefaultIfEmpty()
                                      select new ServicioInsumoRecetaDto
@@ -71,8 +71,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                          Cantidad = r.Cantidad,
                                          UnidadMedidaConsumo = r.UnidadMedidaConsumo.ToString()
                                      })
-                                     .GroupBy(r => r.ServicioClinicoId)
-                                     .ToDictionaryAsync(g => g.Key, g => g.ToList(), cancellationToken);
+                                     .ToListAsync(cancellationToken);
+
+            var recetasDict = recetasList
+                .GroupBy(r => r.ServicioClinicoId)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             // 3. Mapear servicios nativos (Asumimos PrecioBase en USD)
             foreach (var s in serviciosNativos)
@@ -117,6 +120,60 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 };
                 item.CalculatePrices(tasa);
                 result.Add(item);
+            }
+
+            // 3.5. Obtener Insumos y Medicamentos directos de inventario no duplicados en ServiciosClinicos
+            var existingCodes = new HashSet<string>(result.Select(r => r.Codigo), StringComparer.OrdinalIgnoreCase);
+            var directInsumos = await _context.Insumos
+                .AsNoTracking()
+                .Where(i => !i.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (var insumo in directInsumos)
+            {
+                if (existingCodes.Contains(insumo.Codigo))
+                {
+                    continue;
+                }
+
+                var editorType = ResolveEditorType(insumo.Categoria, false);
+                var selfReceta = new List<ServicioInsumoRecetaDto>
+                {
+                    new ServicioInsumoRecetaDto
+                    {
+                        Id = Guid.NewGuid(),
+                        ServicioClinicoId = insumo.Id,
+                        ServicioCodigo = insumo.Codigo,
+                        InsumoId = insumo.Id,
+                        InsumoNombre = insumo.Nombre,
+                        InsumoCodigo = insumo.Codigo,
+                        Cantidad = 1m,
+                        UnidadMedidaConsumo = insumo.UnidadMedidaBase.ToString()
+                    }
+                };
+
+                var item = new CatalogItemDto
+                {
+                    Id = insumo.Id.ToString(),
+                    Codigo = insumo.Codigo,
+                    Descripcion = insumo.Nombre,
+                    Tipo = editorType,
+                    TipoServicioId = TipoServicioConstants.Insumo,
+                    EditorType = editorType,
+                    CategoryId = (int)ServiceCategory.Insumo,
+                    EsLegacy = false,
+                    Activo = true,
+                    PrecioUsd = insumo.CostoUnitarioBaseUSD > 0 ? insumo.CostoUnitarioBaseUSD : 1.00m,
+                    HonorarioBase = 0m,
+                    UnidadMedida = insumo.UnidadMedidaBase.ToString(),
+                    PermiteFraccionamiento = insumo.PermiteFraccionamiento,
+                    Receta = selfReceta,
+                    InsumosReceta = selfReceta
+                };
+
+                item.CalculatePrices(tasa);
+                result.Add(item);
+                existingCodes.Add(insumo.Codigo);
             }
 
             // 4. Obtener perfiles de Laboratorio del sistema Legacy

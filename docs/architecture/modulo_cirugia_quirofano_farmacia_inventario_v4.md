@@ -90,15 +90,41 @@ classDiagram
    - **Tablero de Pacientes** (`pabellon-pacientes-lista.component.ts`)
    - **Calendario Quirúrgico Total** (`pabellon-calendario.component.ts`)
    - **Apartado de Reposición de Inventario** (`reposicion-inventario.component.ts`)
-2. **`panel-detalle-cirugia.component.ts`**: Drawer lateral contextual con 4 pestañas especializadas por rol:
-   - *Checklist Preop & Estado* (Enfermería)
+2. **`panel-detalle-cirugia.component.ts`**: Drawer lateral contextual con 5 pestañas especializadas por rol:
+   - *Checklist Preop & Estado* (Enfermería, con mutación optimista instantánea a 0ms de latencia)
    - *Insumos & Kits* (Supervisor de Inventario / Farmacia)
    - *Honorarios & Precios* (Administración / Caja)
+   - *Reasignar Fecha/Hora* (Reprogramación con justificación médica obligatoria e historial auditado)
    - *Auditoría & Trazabilidad* (Logs inmutables)
 3. **`reposicion-inventario.component.ts`**: Vista interactiva para registrar transferencias, devoluciones por talla y reposiciones multi-sede.
+4. **`historiales.component.html`**: Tablas de trazabilidad con anchos mínimos configurados (`min-w-[220px]`, `min-w-[280px]`), padding horizontal generoso (`px-5 py-3.5`) y separación tipográfica de columnas para evitar solapamientos entre fechas, insumos y cantidades.
 
 ---
 
-## 5. Verificación y Calidad de Código
-- **Backend .NET 9**: 99/99 pruebas unitarias aprobadas en `tests/SistemaSatHospitalario.Tests.Unit`.
-- **Frontend Angular 19+**: Compilación de bundle de producción (`ng build`) completada con **0 errores**.
+## 6. Segregación Estricta de Quirófanos y Administración en Habitaciones
+- **Segregación Estricta**: En el módulo de Pabellón Quirúrgico (`/pabellon`) y su Calendario Total se listan **únicamente los Quirófanos** asignados a la sede de Cirugía (`SedeId_Cirugia`), aislando completamente las habitaciones y camas de hospitalización.
+- **Anexado de Quirófanos**: En el módulo de **Habitaciones** (`/admision/hospitalizacion`) se implementó la pestaña **Quirófanos**, permitiendo visualizar las salas quirúrgicas operativas y anexar nuevos quirófanos (`+ Anexar Quirófano`) asignados directamente a la Sede de Cirugía.
+- **Gestión de Sedes y Áreas**: El componente `SedeManagementComponent` (`/inventario/sedes-areas`) permite gestionar y anexar sub-áreas y quirófanos en cualquier sede del hospital.
+
+---
+
+## 7. Resiliencia Operativa, Concurrencia y Retorno de Stock
+- **Devolución Atómica de Insumos Quirúrgicos (`ProcesarDevolucionInsumoCommand`)**: Cuando se registran devoluciones de sobrantes de quirófano, se acredita automáticamente el stock a `StocksSedes` (creando la entidad si no existía), se genera el registro inmutable en `MovimientosInsumo` (Kárdex) y se reconcilian los ítems devueltos en las vistas consolidadas.
+- **Transición de Estados Quirúrgicos sin Fricción (`CambiarEstadoCirugiaCommand`)**: Eager loading de `HistorialObservaciones` y `Logs` para garantizar transiciones atómicas directas (`Programada` $\to$ `EnCirugia` / `EnEspera`) con feedback visual instantáneo.
+- **Traslado Concurrente de Pacientes (`TrasladarPacienteCirugiaCommand`)**: Actualización atómica de camas y ubicaciones vinculadas a la cuenta abierta activa, liberando camas previas y evitando excepciones de concurrencia optimista (`DbUpdateConcurrencyException`).
+- **Reasignación de Fecha y Hora (`ReprogramarCirugiaCommand`)**: Comando específico que valida el estado de la orden, actualiza la fecha/hora y registra inmutablemente el motivo en auditoría e historial clínico.
+- **Ítem de Cobro Automático por Ingreso y Traslados Multi-Área (`AbrirCuentaClinicaCommand`, `TrasladarPacienteCommand`, `RegistrarTrasladoAreaCommand`)**:
+  - Al admitir un paciente en Emergencia, Hospitalización o UCI, se registra automáticamente el ítem de cargo en `DetallesServicioCuenta`. En **Emergencia** el precio base se establece en `$0.00 USD` para cuadre administrativo mientras la enfermera atiende al paciente; en **Hospitalización** y **UCI** se aplica la tarifa base de la cama configurada en el catálogo (`ServicioTarifaBase?.PrecioBase`).
+  - Todo traslado físico entre áreas genera un ítem de cargo para cobro en la cuenta resultante, garantizando trazabilidad cronológica y financiera total.
+  - La **Fecha de Ingreso** (`FechaCarga`) se visualiza prominentemente en las tarjetas de pacientes activos y en la cabecera del espacio de trabajo clínico.
+- **Carga Unificada de Servicios e Insumos en Cierre de Cuenta y Enfermería**:
+  - Reutilización estricta de componentes modulares (`DynamicStepperComponent`, `StepCatalogSearchComponent`, `StepDoctorSelectComponent`, `StepLabRxPriceComponent`, `StepQuantityComponent`, `StepConfirmComponent`, `NursingCartComponent`) en `/cierre-cuenta` y `/enfermeria`.
+  - Habilitación del panel de carga de insumos en toda cuenta abierta (`selectedAccount()?.estado !== 'Facturada'`), reactividad con `fastChargeQuantity = signal<number>(1)`, preselección automática de áreas clínicas y liquidación masiva atómica vía `/api/Billing/CargarServiciosMasivo`.
+- **Jerarquía Visual y Stacking Context**: Header global ajustado a `z-10` y área de contenido principal a `z-20` para evitar que elementos superiores tapen los drawers y modales (`z-[500]`).
+
+---
+
+## 8. Verificación y Calidad de Código
+- **Backend .NET 10 / C#**: 107/107 pruebas unitarias aprobadas en `tests/SistemaSatHospitalario.Tests.Unit` (100% de éxito).
+- **Frontend Angular 19+**: Compilación de bundle de producción (`ng build`) completada con **0 errores**, formulario de compras limpio conforme a reglas de diseño DB-Driven sin campos no persistidos.
+

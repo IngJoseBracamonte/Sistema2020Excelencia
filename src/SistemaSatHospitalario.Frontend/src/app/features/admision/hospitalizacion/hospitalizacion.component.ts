@@ -25,7 +25,10 @@ import {
   ArrowRight,
   RefreshCcw,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  DoorOpen,
+  Trash2,
+  Layers
 } from 'lucide-angular';
 
 @Component({
@@ -40,6 +43,9 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
   private readonly sedeService = inject(MultiSedeService);
   private readonly signalRService = inject(SignalrService);
   public readonly auth = inject(AuthService);
+
+  // Control de Pestañas Principales: Camas & Habitaciones vs Quirófanos
+  public activeTab = signal<'camas' | 'quirofanos'>('camas');
 
   // State version control for network cut reconciliation
   public currentStateVersion = signal<number>(0);
@@ -84,14 +90,19 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
     ArrowRight,
     RefreshCcw,
     Sparkles,
-    ClipboardList
+    ClipboardList,
+    DoorOpen,
+    Trash2,
+    Layers
   };
 
   // State Signals
   public camas = signal<any[]>([]);
+  public quirofanos = signal<any[]>([]);
   public sedes = signal<any[]>([]);
   public isLoading = signal<boolean>(false);
   public isSaving = signal<boolean>(false);
+  public isSavingQuirofano = signal<boolean>(false);
   public actionMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
 
@@ -106,6 +117,13 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
     nombre: '',
     sedeId: '',
     esAreaAdmision: false
+  };
+
+  // Formulario de Anexar Quirófano
+  public showCreateQuirofanoModal = signal<boolean>(false);
+  public nuevoQuirofano = {
+    codigo: '',
+    nombre: ''
   };
 
   // Filtros de Sede
@@ -157,6 +175,30 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
       },
       error: (err) => console.error('[HOSPITALIZACION] Error al cargar sedes:', err)
     });
+
+    // 3. Cargar Quirófanos
+    this.cargarQuirofanos();
+  }
+
+  public cargarQuirofanos() {
+    this.sedeService.getAreasClinicas().subscribe({
+      next: (areas: any[]) => {
+        const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
+        const listaQuirofanos = (areas || []).filter(a =>
+          a.activo !== false && (
+            a.sedeId === cirugiaSedeId ||
+            (a.sedeNombre || '').toLowerCase().includes('cirug') ||
+            (a.nombre || '').toLowerCase().includes('quiróf') ||
+            (a.nombre || '').toLowerCase().includes('quirof') ||
+            (a.nombre || '').toLowerCase().includes('parto') ||
+            (a.codigo || '').toLowerCase().startsWith('qx') ||
+            (a.codigo || '').toLowerCase().startsWith('q')
+          )
+        );
+        this.quirofanos.set(listaQuirofanos);
+      },
+      error: (err) => console.error('[HOSPITALIZACION] Error al cargar quirófanos:', err)
+    });
   }
 
   public refrescarCamasSilenciosamente() {
@@ -180,9 +222,19 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Camas filtradas por sede seleccionada (excluyendo Almacén Principal)
+  // Camas filtradas por sede seleccionada (excluyendo Almacén Principal y Quirófanos de Cirugía)
   public camasFiltradas = computed(() => {
-    const list = this.camas().filter(c => !c.esPrincipal && !(c.sedeNombre || '').toLowerCase().includes('principal'));
+    const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
+    const list = this.camas().filter(c => 
+      !c.esPrincipal && 
+      !(c.sedeNombre || '').toLowerCase().includes('principal') &&
+      c.sedeId !== cirugiaSedeId &&
+      !(c.sedeNombre || '').toLowerCase().includes('cirug') &&
+      !(c.nombre || '').toLowerCase().includes('quiróf') &&
+      !(c.nombre || '').toLowerCase().includes('quirof') &&
+      !(c.nombre || '').toLowerCase().includes('parto') &&
+      !(c.codigo || '').toLowerCase().startsWith('qx')
+    );
     const filter = this.selectedSedeFilter().toLowerCase().trim();
     if (!filter) return list;
     return list.filter(c => 
@@ -251,6 +303,66 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
         this.isSaving.set(false);
       }
     });
+  }
+
+  // Métodos para Quirófanos
+  public abrirModalCrearQuirofano() {
+    this.nuevoQuirofano = { codigo: '', nombre: '' };
+    this.showCreateQuirofanoModal.set(true);
+  }
+
+  public cerrarModalCrearQuirofano() {
+    this.showCreateQuirofanoModal.set(false);
+    this.nuevoQuirofano = { codigo: '', nombre: '' };
+  }
+
+  public anexarQuirofano() {
+    this.errorMessage.set(null);
+    const cod = this.nuevoQuirofano.codigo.trim().toUpperCase();
+    const nom = this.nuevoQuirofano.nombre.trim();
+
+    if (!cod || !nom) {
+      this.errorMessage.set('El código y el nombre del quirófano son obligatorios.');
+      return;
+    }
+
+    // Resolver ID de la Sede Cirugía
+    const cirugiaSede = this.sedes().find(s => s.codigo === 'CIRUGIA' || (s.nombre || '').toLowerCase().includes('cirug'));
+    const sedeId = cirugiaSede?.id || '10000000-0000-0000-0000-000000000005';
+
+    this.isSavingQuirofano.set(true);
+    this.sedeService.createAreaClinica({
+      sedeId,
+      codigo: cod,
+      nombre: nom
+    }).subscribe({
+      next: () => {
+        this.isSavingQuirofano.set(false);
+        this.cerrarModalCrearQuirofano();
+        this.showSuccess(`Quirófano "${nom}" anexado exitosamente.`);
+        this.cargarQuirofanos();
+      },
+      error: (err) => {
+        console.error('[HOSPITALIZACION] Error al anexar quirófano:', err);
+        this.errorMessage.set(err.error?.Error || err.error?.message || 'Error al anexar el quirófano.');
+        this.isSavingQuirofano.set(false);
+      }
+    });
+  }
+
+  public eliminarQuirofano(id: string, nombre: string) {
+    if (confirm(`¿Está seguro de eliminar o desactivar el quirófano "${nombre}"?`)) {
+      this.sedeService.deleteAreaClinica(id).subscribe({
+        next: () => {
+          this.showSuccess(`Quirófano "${nombre}" eliminado/desactivado.`);
+          this.cargarQuirofanos();
+        },
+        error: (err) => {
+          console.error('[HOSPITALIZACION] Error al eliminar quirófano:', err);
+          this.errorMessage.set(err.error?.message || 'Error al eliminar el quirófano.');
+        }
+      });
+    }
   }
 
   private showSuccess(msg: string) {

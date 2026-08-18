@@ -1,9 +1,10 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, catchError } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, of, catchError, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
   Insumo, 
+  CategoriaInsumo,
   MovimientoInsumo, 
   ServicioInsumoReceta, 
   CreateInsumo, 
@@ -14,13 +15,18 @@ import {
   RecordPurchase,
   PrincipioActivo,
   DescarteRequest,
-  Proveedor
+  Proveedor,
+  TransferenciaReposicionItem,
+  ProcesarReposicionRequest
 } from '../models/inventory.model';
 
 @Injectable({ providedIn: 'root' })
 export class InventoryService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/inventory`;
+  private reposicionUrl = `${environment.apiUrl}/api/Inventario/Reposicion`;
+
+  public reposicionesHistorial = signal<TransferenciaReposicionItem[]>([]);
 
   getInsumos(excludeHidden?: boolean, search?: string, sedeId?: string): Observable<Insumo[]> {
     let params: any = {};
@@ -66,6 +72,24 @@ export class InventoryService {
 
   restoreInsumo(id: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/insumos/${id}/restaurar`, {});
+  }
+
+  // --- Categorías de Insumos ---
+
+  getCategorias(): Observable<CategoriaInsumo[]> {
+    return this.http.get<CategoriaInsumo[]>(`${this.apiUrl}/categorias`);
+  }
+
+  createCategoria(nombre: string, codigo?: string): Observable<CategoriaInsumo> {
+    return this.http.post<CategoriaInsumo>(`${this.apiUrl}/categorias`, { nombre, codigo });
+  }
+
+  updateCategoria(id: string, nombre: string, codigo?: string, activo?: boolean): Observable<CategoriaInsumo> {
+    return this.http.put<CategoriaInsumo>(`${this.apiUrl}/categorias/${id}`, { nombre, codigo, activo });
+  }
+
+  deleteCategoria(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/categorias/${id}`);
   }
 
   // --- Principios Activos ---
@@ -177,4 +201,30 @@ export class InventoryService {
   createProveedor(dto: { rif: string; razonSocial: string; direccion?: string; telefono?: string }): Observable<Proveedor> {
     return this.http.post<Proveedor>(`${this.apiUrl}/proveedores`, dto);
   }
+
+  // --- Reposición e Intercambio de Insumos Multi-Sede ---
+
+  procesarReposicion(req: ProcesarReposicionRequest): Observable<any> {
+    return this.http.post<any>(`${this.reposicionUrl}`, req);
+  }
+
+  getReposicionesHistorial(params?: {
+    sedeId?: string;
+    insumoId?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+    motivo?: string;
+  }): Observable<TransferenciaReposicionItem[]> {
+    let httpParams = new HttpParams();
+    if (params?.sedeId) httpParams = httpParams.set('sedeId', params.sedeId);
+    if (params?.insumoId) httpParams = httpParams.set('insumoId', params.insumoId);
+    if (params?.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
+    if (params?.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
+    if (params?.motivo) httpParams = httpParams.set('motivo', params.motivo);
+
+    return this.http.get<TransferenciaReposicionItem[]>(`${this.reposicionUrl}/Historial`, { params: httpParams }).pipe(
+      tap(items => this.reposicionesHistorial.set(items || []))
+    );
+  }
 }
+

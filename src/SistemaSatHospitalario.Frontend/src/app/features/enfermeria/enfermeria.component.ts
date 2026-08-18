@@ -36,6 +36,9 @@ export interface CuentaAdministrativa {
   tipoIngreso: string;
   convenioId: number | null;
   seguroNombre?: string;
+  fechaCarga?: string | Date;
+  fechaIngreso?: string | Date;
+  fechaApertura?: string | Date;
   total?: number;
   totalPagado?: number;
   areaClinicaId?: string;
@@ -56,6 +59,7 @@ export interface ServicioCatalogo {
   honorarioBase?: number;
   categoryId?: number;
   tipo?: string;
+  editorType?: string;
   unidadMedida?: string;
   isConsultation?: boolean;
   honorariumCategory?: string;
@@ -145,11 +149,25 @@ export function classifyService(service: ServicioCatalogo | null | undefined): I
   if (service.requiereMedico) return ITEM_CLASSIFICATIONS.CONSULTA;
   if (service.permiteFraccionamiento || service.esInventariable) return ITEM_CLASSIFICATIONS.MEDICAMENTO;
 
+  const tipo = (service.tipo || service.editorType || '').toUpperCase();
+  if (tipo.includes('MEDICAM') || tipo.includes('INSUMO') || tipo.includes('FARMACIA') || tipo.includes('MATERIAL')) {
+    return ITEM_CLASSIFICATIONS.MEDICAMENTO;
+  }
+  if (tipo.includes('CONSULT') || tipo.includes('MEDICO') || tipo.includes('CITA')) {
+    return ITEM_CLASSIFICATIONS.CONSULTA;
+  }
+  if (tipo.includes('LAB')) {
+    return ITEM_CLASSIFICATIONS.LABORATORIO;
+  }
+  if (tipo.includes('RX') || tipo.includes('TOMO') || tipo.includes('IMAGEN')) {
+    return ITEM_CLASSIFICATIONS.RX;
+  }
+
   const tipoId = service.tipoServicioId;
-  if (tipoId === 3 || tipoId === 300) return ITEM_CLASSIFICATIONS.LABORATORIO;
-  if (tipoId === 4 || tipoId === 400) return ITEM_CLASSIFICATIONS.RX;
-  if (tipoId === 1 || tipoId === 100) return ITEM_CLASSIFICATIONS.MEDICAMENTO;
-  if (tipoId === 2 || tipoId === 200) return ITEM_CLASSIFICATIONS.CONSULTA;
+  if (tipoId === 5 || tipoId === 500) return ITEM_CLASSIFICATIONS.MEDICAMENTO;
+  if (tipoId === 3 || tipoId === 300 || tipoId === 4 || tipoId === 400) return ITEM_CLASSIFICATIONS.RX;
+  if (tipoId === 2 || tipoId === 200) return ITEM_CLASSIFICATIONS.LABORATORIO;
+  if (tipoId === 1 || tipoId === 100) return ITEM_CLASSIFICATIONS.CONSULTA;
 
   return ITEM_CLASSIFICATIONS.PROCEDIMIENTO;
 }

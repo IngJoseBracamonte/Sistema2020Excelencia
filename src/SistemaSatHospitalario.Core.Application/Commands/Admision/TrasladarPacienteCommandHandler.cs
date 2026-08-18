@@ -180,14 +180,70 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 // Ocupar la nueva cama si fue especificada
+                AreaClinica? nuevaCama = null;
                 if (request.NuevaAreaClinicaId.HasValue)
                 {
-                    var nuevaCama = await _context.AreasClinicas
+                    nuevaCama = await _context.AreasClinicas
+                        .Include(a => a.ServicioTarifaBase)
                         .FirstOrDefaultAsync(a => a.Id == request.NuevaAreaClinicaId.Value, cancellationToken);
                     if (nuevaCama != null)
                     {
                         nuevaCama.MarcarComoOcupada();
                     }
+                }
+
+                // Generar ítem de cargo en la nueva cuenta por el Traslado / Ingreso a la nueva área
+                bool esAreaClinica = !string.IsNullOrEmpty(request.NuevoTipoIngreso) &&
+                    (request.NuevoTipoIngreso.Equals("Emergencia", StringComparison.OrdinalIgnoreCase) ||
+                     request.NuevoTipoIngreso.Equals("Hospitalizacion", StringComparison.OrdinalIgnoreCase) ||
+                     request.NuevoTipoIngreso.Equals("Hospitalización", StringComparison.OrdinalIgnoreCase) ||
+                     request.NuevoTipoIngreso.Equals("UCI", StringComparison.OrdinalIgnoreCase) ||
+                     request.NuevoTipoIngreso.Equals("Quirofano", StringComparison.OrdinalIgnoreCase) ||
+                     request.NuevoTipoIngreso.Equals("Quirófano", StringComparison.OrdinalIgnoreCase));
+
+                if (esAreaClinica)
+                {
+                    bool esEmergencia = request.NuevoTipoIngreso.Equals("Emergencia", StringComparison.OrdinalIgnoreCase);
+                    decimal precioTraslado = 0.00m;
+                    Guid servicioId = Guid.Empty;
+                    string? legacyMappingId = null;
+
+                    if (!esEmergencia && nuevaCama?.ServicioTarifaBase != null)
+                    {
+                        precioTraslado = nuevaCama.ServicioTarifaBase.PrecioBase;
+                        servicioId = nuevaCama.ServicioTarifaBase.Id;
+                        legacyMappingId = nuevaCama.ServicioTarifaBase.LegacyMappingId;
+
+                        if (request.NuevoConvenioId.HasValue)
+                        {
+                            var priceConv = await _context.PreciosServicioConvenio
+                                .FirstOrDefaultAsync(p => p.SeguroConvenioId == request.NuevoConvenioId.Value 
+                                                          && p.ServicioClinicoId == nuevaCama.ServicioTarifaBaseId.Value, cancellationToken);
+                            if (priceConv != null)
+                            {
+                                precioTraslado = priceConv.PrecioDiferencial;
+                            }
+                        }
+                    }
+                    else if (nuevaCama?.ServicioTarifaBase != null)
+                    {
+                        servicioId = nuevaCama.ServicioTarifaBase.Id;
+                        legacyMappingId = nuevaCama.ServicioTarifaBase.LegacyMappingId;
+                    }
+
+                    string descripcionCargo = $"Traslado a {request.NuevoTipoIngreso}" + (nuevaCama != null ? $" ({nuevaCama.Nombre})" : "");
+                    
+                    nuevaCuenta.AgregarServicio(
+                        servicioId,
+                        descripcionCargo,
+                        precioTraslado,
+                        0m, // Honorario
+                        1m, // Cantidad
+                        "Servicio",
+                        request.UsuarioTraslado,
+                        legacyMappingId,
+                        nuevaCama?.Id
+                    );
                 }
 
                 await _context.CuentasServicios.AddAsync(nuevaCuenta, cancellationToken);

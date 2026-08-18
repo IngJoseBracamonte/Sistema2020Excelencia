@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { MultiSedeService, PedidoInterSede, Sede, AreaClinica, EstadoPedidoInterSede } from '../../../core/services/multi-sede.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo } from '../../../core/models/inventory.model';
@@ -134,16 +135,49 @@ export class EnviosRecepcionesComponent implements OnInit {
       error: (e) => console.error('Error al cargar sedes:', e)
     });
 
-    // Cargar únicamente las sub-áreas clínicas de la BD vinculadas a la Sede Principal (DB-Driven & Dynamic Preselection)
+    // Cargar únicamente Sub-Áreas clínicas y la Sede Hospitalización como destinos disponibles
     const principalSedeId = '10000000-0000-0000-0000-000000000001';
-    this.multiSedeService.getAreasClinicas(principalSedeId).subscribe({
-      next: (areas) => {
-        this.subAreasDisponibles.set(areas || []);
-        if (areas && areas.length > 0) {
-          this.nuevoEnvio.update(curr => ({ ...curr, areaClinicaId: areas[0].id }));
+    const hospitalizacionSedeId = '10000000-0000-0000-0000-000000000003';
+
+    forkJoin({
+      sedes: this.multiSedeService.getSedes(),
+      areas: this.multiSedeService.getAreasClinicas(principalSedeId)
+    }).subscribe({
+      next: ({ sedes, areas }) => {
+        const destinos: AreaClinica[] = [];
+
+        // 1. Sub-Áreas clínicas vinculadas a la Sede Principal (Farmacia, Laboratorio, etc.)
+        (areas || [])
+          .filter(a => a.activo !== false)
+          .forEach(a => {
+            destinos.push(a);
+          });
+
+        // 2. Únicamente la Sede Hospitalización
+        const sedeHosp = (sedes || []).find(s => 
+          s.id === hospitalizacionSedeId || 
+          s.codigo === 'HOSPITALIZACION' || 
+          (s.nombre || '').toLowerCase().includes('hospitaliz')
+        );
+
+        if (sedeHosp && sedeHosp.activo && !destinos.some(d => d.id === sedeHosp.id)) {
+          destinos.push({
+            id: sedeHosp.id,
+            codigo: sedeHosp.codigo,
+            nombre: sedeHosp.nombre,
+            activo: true
+          });
+        }
+
+        this.subAreasDisponibles.set(destinos);
+        if (destinos.length > 0) {
+          const currentId = this.nuevoEnvio().areaClinicaId;
+          if (!currentId || !destinos.some(d => d.id === currentId)) {
+            this.nuevoEnvio.update(curr => ({ ...curr, areaClinicaId: destinos[0].id }));
+          }
         }
       },
-      error: (e) => console.error('Error al cargar áreas clínicas de Sede Principal:', e)
+      error: (e) => console.error('Error al cargar destinos de despacho:', e)
     });
 
     this.multiSedeService.getPedidosRecibidos().subscribe({

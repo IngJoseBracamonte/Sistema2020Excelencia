@@ -12,15 +12,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     /// <summary>
     /// Comando para crear y agendar una nueva orden de cirugía.
+    /// <summary>
+    /// Comando para crear y agendar una nueva orden de cirugía.
     /// </summary>
     public class CrearOrdenCirugiaCommand : IRequest<Guid>
     {
-        public Guid CuentaServicioId { get; set; }
+        public Guid? CuentaServicioId { get; set; }
         public Guid PacienteId { get; set; }
         public string DescripcionCirugia { get; set; } = string.Empty;
         public decimal PrecioBaseUsd { get; set; }
+        public decimal PrecioDerechoSalaUsd { get; set; }
         public Guid MedicoId { get; set; }
         public DateTime FechaHoraProgramada { get; set; }
+        public string SalaQuirofano { get; set; } = "Quirófano 1";
+        public string ModalidadAnestesia { get; set; } = "General";
+        public bool EsAlquilado { get; set; }
+        public Guid? AreaClinicaId { get; set; }
+        public Guid? SedeQuirofanoId { get; set; }
         public string UsuarioCreacion { get; set; } = string.Empty;
     }
 
@@ -40,21 +48,82 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _logger.LogInformation("Creando orden de cirugía: {Descripcion} para Paciente {PacienteId}",
                 request.DescripcionCirugia, request.PacienteId);
 
+            // 1. Resolver o Crear CuentaServicios vinculada al paciente
+            Guid cuentaId = request.CuentaServicioId ?? Guid.Empty;
+            bool cuentaExiste = cuentaId != Guid.Empty && await _context.CuentasServicios.AnyAsync(c => c.Id == cuentaId, cancellationToken);
+
+            if (!cuentaExiste)
+            {
+                var cuentaAbierta = await _context.CuentasServicios
+                    .FirstOrDefaultAsync(c => c.PacienteId == request.PacienteId && c.Estado == "Abierta", cancellationToken);
+
+                if (cuentaAbierta != null)
+                {
+                    cuentaId = cuentaAbierta.Id;
+                }
+                else
+                {
+                    var nuevaCuenta = new CuentaServicios(
+                        request.PacienteId,
+                        string.IsNullOrWhiteSpace(request.UsuarioCreacion) ? "admin" : request.UsuarioCreacion,
+                        "Cirugia",
+                        convenioId: null,
+                        areaClinicaId: request.AreaClinicaId,
+                        subAreaClinica: "Pabellón Quirúrgico",
+                        medicoId: request.MedicoId != Guid.Empty ? request.MedicoId : (Guid?)null
+                    );
+
+                    _context.CuentasServicios.Add(nuevaCuenta);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    cuentaId = nuevaCuenta.Id;
+                }
+            }
+
             var orden = new OrdenCirugia(
-                request.CuentaServicioId,
+                cuentaId,
                 request.PacienteId,
                 request.DescripcionCirugia,
                 request.PrecioBaseUsd,
                 request.MedicoId,
                 request.FechaHoraProgramada,
-                request.UsuarioCreacion);
+                string.IsNullOrWhiteSpace(request.UsuarioCreacion) ? "admin" : request.UsuarioCreacion,
+                request.AreaClinicaId,
+                string.IsNullOrWhiteSpace(request.SalaQuirofano) ? "Quirófano 1" : request.SalaQuirofano,
+                string.IsNullOrWhiteSpace(request.ModalidadAnestesia) ? "General" : request.ModalidadAnestesia,
+                request.EsAlquilado,
+                request.PrecioDerechoSalaUsd,
+                request.SedeQuirofanoId);
+
+            // Asignar Cirujano Principal a la lista de honorarios del equipo médico
+            if (request.MedicoId != Guid.Empty)
+            {
+                var medico = await _context.Medicos
+                    .Include(m => m.Especialidad)
+                    .FirstOrDefaultAsync(m => m.Id == request.MedicoId, cancellationToken);
+
+                var especialidadId = medico?.EspecialidadId ?? Guid.Empty;
+                if (especialidadId == Guid.Empty)
+                {
+                    var primeraEsp = await _context.Especialidades.FirstOrDefaultAsync(cancellationToken);
+                    if (primeraEsp != null) especialidadId = primeraEsp.Id;
+                }
+
+                if (especialidadId != Guid.Empty)
+                {
+                    orden.AsignarMedicoHonorario(
+                        request.MedicoId,
+                        especialidadId,
+                        honorarioUsd: request.PrecioBaseUsd,
+                        esPrincipal: true);
+                }
+            }
 
             // Log de auditoría de creación
             orden.AgregarLog(request.UsuarioCreacion, CirugiaEventoConstants.Creacion,
-                $"Cirugía '{request.DescripcionCirugia}' programada para {request.FechaHoraProgramada:yyyy-MM-dd HH:mm}. Precio: ${request.PrecioBaseUsd:N2} USD.");
+                $"Cirugía '{request.DescripcionCirugia}' programada para {request.FechaHoraProgramada:yyyy-MM-dd HH:mm} en {orden.SalaQuirofano}.");
 
             orden.AgregarHistorialObservacion(
-                $"Programación inicial para {request.FechaHoraProgramada:dd/MM/yyyy HH:mm}.",
+                $"Programación inicial en {orden.SalaQuirofano} para {request.FechaHoraProgramada:dd/MM/yyyy HH:mm}.",
                 "ProgramacionInicial",
                 request.UsuarioCreacion);
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
-namespace SistemaSatHospitalario.Core.Application.Commands.Admision
+namespace SistemaSatHospitalario.Core.Application.Commands.Inventario
 {
     public class ProcesarReposicionStockCommand : IRequest<bool>
     {

@@ -1,16 +1,18 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
+import { AreaClinica } from '../../../core/services/multi-sede.service';
 
 @Component({
   selector: 'app-pabellon-calendario',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-4">
-      <!-- Barra de Filtros del Calendario -->
+      <!-- Barra Superior de Encabezado y Filtro de Quirófano -->
       <div class="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-4 backdrop-blur-md shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
           <div class="p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400">
@@ -18,63 +20,125 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
           </div>
           <div>
             <h2 class="text-sm font-bold text-white uppercase tracking-wider">Calendario Quirúrgico Total</h2>
-            <p class="text-xs text-gray-400">Programación de intervenciones, ocupación de quirófanos y salas de parto</p>
+            <p class="text-xs text-gray-400">Programación de intervenciones, ocupación de quirófanos y salas clínicas</p>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <!-- Filtro por Sala / Quirófano -->
-          <div class="flex items-center bg-gray-950/80 p-1 rounded-xl border border-gray-800">
-            <button
-              (click)="salaFiltro.set('')"
-              [class.bg-sky-600]="salaFiltro() === ''"
-              [class.text-white]="salaFiltro() === ''"
-              [class.text-gray-400]="salaFiltro() !== ''"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <!-- ComboList con Buscador para Quirófano -->
+          <div class="flex items-center gap-2 bg-gray-950/90 px-3 py-1.5 rounded-xl border border-gray-800 focus-within:border-sky-500/80 transition shadow-inner">
+            <lucide-icon name="door-open" class="w-4 h-4 text-sky-400 shrink-0"></lucide-icon>
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Quirófano:</span>
+            <select
+              [ngModel]="salaFiltro()"
+              (ngModelChange)="salaFiltro.set($event)"
+              class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer pr-4"
             >
-              Todos
-            </button>
-            <button
-              (click)="salaFiltro.set('Quirófano 1')"
-              [class.bg-sky-600]="salaFiltro() === 'Quirófano 1'"
-              [class.text-white]="salaFiltro() === 'Quirófano 1'"
-              [class.text-gray-400]="salaFiltro() !== 'Quirófano 1'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              Quirófano 1
-            </button>
-            <button
-              (click)="salaFiltro.set('Quirófano 2')"
-              [class.bg-sky-600]="salaFiltro() === 'Quirófano 2'"
-              [class.text-white]="salaFiltro() === 'Quirófano 2'"
-              [class.text-gray-400]="salaFiltro() !== 'Quirófano 2'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              Quirófano 2
-            </button>
-            <button
-              (click)="salaFiltro.set('Sala de Partos')"
-              [class.bg-sky-600]="salaFiltro() === 'Sala de Partos'"
-              [class.text-white]="salaFiltro() === 'Sala de Partos'"
-              [class.text-gray-400]="salaFiltro() !== 'Sala de Partos'"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-            >
-              Sala de Partos
-            </button>
+              <option value="" class="bg-gray-900 text-gray-200">Todos los Quirófanos ({{ cirugias().length }})</option>
+              @for (sala of salasDisponibles(); track sala) {
+                <option [value]="sala" class="bg-gray-900 text-white">{{ sala }}</option>
+              }
+            </select>
           </div>
 
           <!-- Totalizador -->
-          <span class="text-xs font-mono font-bold text-sky-400 bg-sky-500/10 px-3 py-1.5 rounded-xl border border-sky-500/20">
+          <span class="text-xs font-mono font-bold text-sky-400 bg-sky-500/10 px-3 py-2 rounded-xl border border-sky-500/20 shadow-sm">
             {{ cirugiasFiltradas().length }} Agendadas
           </span>
         </div>
+      </div>
+
+      <!-- Barra de Filtro de Fechas y Navegación Temporal (Parte de abajo del encabezado de Calendario) -->
+      <div class="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-3.5 backdrop-blur-md shadow-xl flex flex-wrap items-center justify-between gap-3">
+        
+        <!-- Accesos Rápidos de Fecha -->
+        <div class="flex items-center gap-1.5 bg-gray-950 p-1 rounded-xl border border-gray-800">
+          <button
+            (click)="setModoFecha('todas')"
+            [class.bg-sky-600]="rangoModo() === 'todas'"
+            [class.text-white]="rangoModo() === 'todas'"
+            [class.text-gray-400]="rangoModo() !== 'todas'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:text-white"
+          >
+            Todas
+          </button>
+          <button
+            (click)="setModoFecha('hoy')"
+            [class.bg-sky-600]="rangoModo() === 'hoy'"
+            [class.text-white]="rangoModo() === 'hoy'"
+            [class.text-gray-400]="rangoModo() !== 'hoy'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:text-white"
+          >
+            Hoy
+          </button>
+          <button
+            (click)="setModoFecha('manana')"
+            [class.bg-sky-600]="rangoModo() === 'manana'"
+            [class.text-white]="rangoModo() === 'manana'"
+            [class.text-gray-400]="rangoModo() !== 'manana'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:text-white"
+          >
+            Mañana
+          </button>
+          <button
+            (click)="setModoFecha('semana')"
+            [class.bg-sky-600]="rangoModo() === 'semana'"
+            [class.text-white]="rangoModo() === 'semana'"
+            [class.text-gray-400]="rangoModo() !== 'semana'"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:text-white"
+          >
+            Esta Semana
+          </button>
+        </div>
+
+        <!-- Selector de Fecha & Controles de Navegación Día a Día -->
+        <div class="flex items-center gap-2">
+          <button
+            (click)="cambiarDia(-1)"
+            title="Día anterior"
+            class="p-2 bg-gray-950 hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 transition shadow-inner"
+          >
+            <lucide-icon name="chevron-left" class="w-4 h-4"></lucide-icon>
+          </button>
+
+          <div class="flex items-center gap-2 bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800 focus-within:border-sky-500/80 transition shadow-inner">
+            <lucide-icon name="calendar" class="w-4 h-4 text-sky-400 shrink-0"></lucide-icon>
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider shrink-0">Fecha:</span>
+            <input
+              type="date"
+              [ngModel]="fechaFiltro()"
+              (ngModelChange)="onFechaInputChange($event)"
+              class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer [color-scheme:dark]"
+            />
+          </div>
+
+          <button
+            (click)="cambiarDia(1)"
+            title="Día siguiente"
+            class="p-2 bg-gray-950 hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 transition shadow-inner"
+          >
+            <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+          </button>
+
+          @if (rangoModo() !== 'todas') {
+            <button
+              (click)="setModoFecha('todas')"
+              title="Limpiar filtro de fecha"
+              class="px-2.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold transition flex items-center gap-1"
+            >
+              <lucide-icon name="x" class="w-3.5 h-3.5"></lucide-icon>
+              Ver Todo
+            </button>
+          }
+        </div>
+
       </div>
 
       <!-- Grid de Cirugías en Calendario -->
       <div *ngIf="cirugiasFiltradas().length === 0" class="text-center py-16 text-gray-400 text-xs bg-gray-900/40 rounded-2xl border border-gray-800/60 p-6">
         <lucide-icon name="calendar-x" class="w-10 h-10 mx-auto text-gray-600 mb-3"></lucide-icon>
         <p class="font-semibold text-gray-300">No hay cirugías programadas para este filtro</p>
-        <p class="text-gray-500 mt-1">Seleccione otro quirófano o agregue una nueva intervención desde el tablero de gestión.</p>
+        <p class="text-gray-500 mt-1">Seleccione otra fecha, quirófano o agregue una nueva intervención desde el tablero de gestión.</p>
       </div>
 
       <div *ngIf="cirugiasFiltradas().length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -98,7 +162,7 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
               <div class="flex flex-wrap items-center gap-1.5 mb-2">
                 <span class="text-[10px] font-semibold text-gray-300 bg-gray-950 px-2 py-0.5 rounded border border-gray-800 flex items-center gap-1">
                   <lucide-icon name="door-open" class="w-3 h-3 text-sky-400"></lucide-icon>
-                  {{ item.salaQuirofano || 'Quirófano 1' }}
+                  {{ item.salaQuirofano || 'Quirófano' }}
                 </span>
                 @if (item.esAlquilado) {
                   <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
@@ -148,16 +212,106 @@ import { CirugiaCalendarioItem } from '../../../core/services/pabellon.service';
 })
 export class PabellonCalendarioComponent {
   cirugias = input<CirugiaCalendarioItem[]>([]);
+  quirofanos = input<AreaClinica[]>([]);
   seleccionarCirugia = output<CirugiaCalendarioItem>();
 
   salaFiltro = signal<string>('');
+  fechaFiltro = signal<string>('');
+  rangoModo = signal<'todas' | 'hoy' | 'manana' | 'semana' | 'personalizado'>('todas');
+
+  // Muestra estrictamente los quirófanos asignados al área de Cirugía
+  salasDisponibles = computed(() => {
+    const listQ = (this.quirofanos() || []).map(q => q.nombre.trim()).filter(Boolean);
+    return Array.from(new Set(listQ)).sort();
+  });
 
   cirugiasFiltradas = computed(() => {
-    const list = this.cirugias();
-    const filtro = this.salaFiltro();
-    if (!filtro) return list;
-    return list.filter(c => (c.salaQuirofano || '').toLowerCase() === filtro.toLowerCase());
+    let list = this.cirugias();
+    const filtroSala = this.salaFiltro();
+    const modo = this.rangoModo();
+    const fecha = this.fechaFiltro();
+
+    if (filtroSala) {
+      list = list.filter(c => (c.salaQuirofano || '').toLowerCase() === filtroSala.toLowerCase());
+    }
+
+    if (modo === 'todas') {
+      return list;
+    }
+
+    const hoyStr = new Date().toISOString().slice(0, 10);
+    const mananaDate = new Date();
+    mananaDate.setDate(mananaDate.getDate() + 1);
+    const mananaStr = mananaDate.toISOString().slice(0, 10);
+
+    if (modo === 'hoy') {
+      return list.filter(c => {
+        if (!c.fechaHoraProgramada) return false;
+        const d = new Date(c.fechaHoraProgramada).toISOString().slice(0, 10);
+        return d === hoyStr;
+      });
+    }
+
+    if (modo === 'manana') {
+      return list.filter(c => {
+        if (!c.fechaHoraProgramada) return false;
+        const d = new Date(c.fechaHoraProgramada).toISOString().slice(0, 10);
+        return d === mananaStr;
+      });
+    }
+
+    if (modo === 'semana') {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const en7Dias = new Date();
+      en7Dias.setDate(en7Dias.getDate() + 7);
+      en7Dias.setHours(23, 59, 59, 999);
+
+      return list.filter(c => {
+        if (!c.fechaHoraProgramada) return false;
+        const d = new Date(c.fechaHoraProgramada);
+        return d >= hoy && d <= en7Dias;
+      });
+    }
+
+    if (modo === 'personalizado' && fecha) {
+      return list.filter(c => {
+        if (!c.fechaHoraProgramada) return false;
+        const d = new Date(c.fechaHoraProgramada).toISOString().slice(0, 10);
+        return d === fecha;
+      });
+    }
+
+    return list;
   });
+
+  setModoFecha(modo: 'todas' | 'hoy' | 'manana' | 'semana') {
+    this.rangoModo.set(modo);
+    if (modo === 'todas') {
+      this.fechaFiltro.set('');
+    } else if (modo === 'hoy') {
+      this.fechaFiltro.set(new Date().toISOString().slice(0, 10));
+    } else if (modo === 'manana') {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      this.fechaFiltro.set(d.toISOString().slice(0, 10));
+    } else if (modo === 'semana') {
+      this.fechaFiltro.set('');
+    }
+  }
+
+  onFechaInputChange(fecha: string) {
+    this.fechaFiltro.set(fecha);
+    this.rangoModo.set(fecha ? 'personalizado' : 'todas');
+  }
+
+  cambiarDia(delta: number) {
+    let base = this.fechaFiltro() ? new Date(this.fechaFiltro() + 'T00:00:00') : new Date();
+    base.setDate(base.getDate() + delta);
+    const nuevaFecha = base.toISOString().slice(0, 10);
+    this.fechaFiltro.set(nuevaFecha);
+    this.rangoModo.set('personalizado');
+  }
 
   getEstadoClass(estado: string): string {
     const e = (estado || '').toLowerCase();

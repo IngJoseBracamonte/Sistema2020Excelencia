@@ -53,7 +53,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new KeyNotFoundException($"No se encontró el insumo con ID {request.InsumoId}.");
             }
 
-            // Validación DB-Driven de la Sub-Área Clínica destino
+            // Validación DB-Driven de la Sub-Área Clínica o Sede destino
             string subAreaNombreResolved = "Sub-Área";
             if (request.AreaClinicaId != Guid.Empty)
             {
@@ -66,9 +66,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         ? areaClinica.Nombre
                         : $"[{areaClinica.Codigo}] {areaClinica.Nombre}";
                 }
-                else if (!string.IsNullOrWhiteSpace(request.NombreSubArea))
+                else
                 {
-                    subAreaNombreResolved = request.NombreSubArea;
+                    var sede = await _context.Sedes
+                        .FirstOrDefaultAsync(s => s.Id == request.AreaClinicaId, cancellationToken);
+
+                    if (sede != null)
+                    {
+                        subAreaNombreResolved = string.IsNullOrWhiteSpace(sede.Codigo)
+                            ? sede.Nombre
+                            : $"[{sede.Codigo}] {sede.Nombre}";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(request.NombreSubArea))
+                    {
+                        subAreaNombreResolved = request.NombreSubArea;
+                    }
                 }
             }
             else if (!string.IsNullOrWhiteSpace(request.NombreSubArea))

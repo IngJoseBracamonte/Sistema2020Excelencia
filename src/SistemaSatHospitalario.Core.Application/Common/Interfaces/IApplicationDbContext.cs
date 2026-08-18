@@ -51,6 +51,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<TriageEnfermeria> TriagesEnfermeria { get; }
         DbSet<ValoracionFisica> ValoracionesFisicas { get; }
         DbSet<Insumo> Insumos { get; }
+        DbSet<CategoriaInsumo> CategoriasInsumo { get; }
         DbSet<PrincipioActivo> PrincipiosActivos { get; }
         DbSet<InsumoPrincipioActivo> InsumosPrincipiosActivos { get; }
         DbSet<ServicioInsumoReceta> ServiciosInsumoRecetas { get; }

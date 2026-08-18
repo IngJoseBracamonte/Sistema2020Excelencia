@@ -1065,12 +1065,13 @@ text.Span($"${data.MontoTotal:N2}").Bold();
                             row.RelativeItem().Text(t =>
                             {
                                 t.Span("Firma: ").Bold();
-                                t.Span("________________________");
+                                t.Span("____________________");
                             });
                             row.RelativeItem().AlignRight().Text(t =>
                             {
+                                t.AlignRight();
                                 t.Span("Fecha: ").Bold();
-                                t.Span("________________________");
+                                t.Span("____________________");
                             });
                         });
                     });

@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, Hos
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
-import { Insumo, PrincipioActivo, CreateInsumo, UpdateInsumo } from '../../../core/models/inventory.model';
+import { Insumo, PrincipioActivo, CategoriaInsumo, CreateInsumo, UpdateInsumo } from '../../../core/models/inventory.model';
 import { 
   LucideAngularModule, 
   Package, 
@@ -14,7 +14,10 @@ import {
   Check, 
   X, 
   AlertCircle,
-  Dna
+  Dna,
+  Tag,
+  Tags,
+  SlidersHorizontal
 } from 'lucide-angular';
 
 @Component({
@@ -30,6 +33,7 @@ export class CatalogoComponent implements OnInit {
 
   public insumos = signal<Insumo[]>([]);
   public principiosActivosList = signal<PrincipioActivo[]>([]);
+  public categoriasInsumoList = signal<CategoriaInsumo[]>([]);
   public isLoading = signal<boolean>(false);
   public isSubmitting = signal<boolean>(false);
 
@@ -82,17 +86,17 @@ export class CatalogoComponent implements OnInit {
   public paConcentracion = signal<string>('');
   public newPaNombre = signal<string>('');
 
+  // Gestión de Categorías
+  public newCategoriaNombre = signal<string>('');
+  public isManagingCategorias = signal<boolean>(false);
+  public editingCategoriaId = signal<string | null>(null);
+  public editingCategoriaNombre = signal<string>('');
+
   // Alertas
   public successMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
 
   readonly unidadesMedida = ['UNIDAD', 'KG', 'G', 'DG', 'MG', 'L', 'ML'];
-  readonly defaultCategorias = ['Medicamento', 'Descartable', 'Material Médico', 'Reactivo', 'Otro'];
-  public readonly categorias = computed(() => {
-    const fromItems = this.insumos().map(i => i.categoria).filter((c): c is string => !!c && c.trim() !== '');
-    const set = new Set([...this.defaultCategorias, ...fromItems]);
-    return Array.from(set);
-  });
 
   readonly icons = {
     Package,
@@ -104,7 +108,10 @@ export class CatalogoComponent implements OnInit {
     Check,
     X,
     AlertCircle,
-    Dna
+    Dna,
+    Tag,
+    Tags,
+    SlidersHorizontal
   };
 
   public filteredInsumos = computed(() => {
@@ -118,6 +125,7 @@ export class CatalogoComponent implements OnInit {
       if (!query) return true;
       return i.nombre.toLowerCase().includes(query) ||
         i.codigo.toLowerCase().includes(query) ||
+        (i.categoria && i.categoria.toLowerCase().includes(query)) ||
         (i.principiosActivos && i.principiosActivos.some(pa => (pa.nombre || '').toLowerCase().includes(query)));
     });
   });
@@ -139,18 +147,30 @@ export class CatalogoComponent implements OnInit {
     this.inventoryService.getPrincipiosActivos().subscribe({
       next: (res) => this.principiosActivosList.set(res)
     });
+
+    this.inventoryService.getCategorias().subscribe({
+      next: (cats) => {
+        this.categoriasInsumoList.set(cats);
+        if (!this.isEditing() && cats.length > 0 && !this.insumoForm().categoria) {
+          this.insumoForm.update(p => ({ ...p, categoria: cats[0].nombre }));
+        }
+      }
+    });
   }
 
   openCreateForm() {
     this.isEditing.set(false);
     this.editingInsumoId.set(null);
+    const defaultCat = this.categoriasInsumoList().find(c => c.nombre.toLowerCase() === 'medicamento')?.nombre 
+      || (this.categoriasInsumoList().length > 0 ? this.categoriasInsumoList()[0].nombre : 'Medicamento');
+
     this.insumoForm.set({
       codigo: '',
       nombre: '',
       unidadMedidaBase: 'UNIDAD',
       costoUnitarioBaseUSD: 0,
       permiteFraccionamiento: true,
-      categoria: 'Medicamento',
+      categoria: defaultCat,
       stockInicial: 0
     });
   }
@@ -188,7 +208,7 @@ export class CatalogoComponent implements OnInit {
       unidadMedidaBase: insumo.unidadMedidaBase,
       costoUnitarioBaseUSD: insumo.costoUnitarioBaseUSD,
       permiteFraccionamiento: insumo.permiteFraccionamiento ?? true,
-      categoria: insumo.categoria || 'Medicamento',
+      categoria: insumo.categoria || (this.categoriasInsumoList().length > 0 ? this.categoriasInsumoList()[0].nombre : 'Medicamento'),
       stockInicial: 0
     });
   }
@@ -245,11 +265,51 @@ export class CatalogoComponent implements OnInit {
           this.loadData();
         },
         error: (err) => {
+          if (err.status === 409 || err.error?.estaDesactivado) {
+            const insumoId = err.error?.insumoId;
+            const nombre = err.error?.nombre || form.nombre;
+            if (insumoId && confirm(`El código '${form.codigo}' pertenece al insumo '${nombre}' que actualmente se encuentra inhabilitado.\n\n¿Desea reactivarlo y actualizar sus datos con la información de este formulario?`)) {
+              this.reactivarYActualizar(insumoId, form);
+              return;
+            }
+          }
           this.showError(err.error?.message || 'Error al crear el insumo.');
           this.isSubmitting.set(false);
         }
       });
     }
+  }
+
+  reactivarYActualizar(insumoId: string, form: any) {
+    this.inventoryService.restoreInsumo(insumoId).subscribe({
+      next: () => {
+        const updateDto: UpdateInsumo = {
+          nombre: form.nombre,
+          unidadMedidaBase: form.unidadMedidaBase,
+          costoUnitarioBaseUSD: form.costoUnitarioBaseUSD,
+          permiteFraccionamiento: form.permiteFraccionamiento,
+          categoria: form.categoria
+        };
+        this.inventoryService.updateInsumo(insumoId, updateDto).subscribe({
+          next: () => {
+            this.showSuccess('Insumo reactivado y actualizado exitosamente.');
+            this.isSubmitting.set(false);
+            this.openCreateForm();
+            this.loadData();
+          },
+          error: () => {
+            this.showSuccess('Insumo reactivado correctamente.');
+            this.isSubmitting.set(false);
+            this.openCreateForm();
+            this.loadData();
+          }
+        });
+      },
+      error: (err) => {
+        this.showError(err.error?.message || 'Error al reactivar el insumo.');
+        this.isSubmitting.set(false);
+      }
+    });
   }
 
   softDeleteInsumo(insumo: Insumo) {
@@ -272,6 +332,63 @@ export class CatalogoComponent implements OnInit {
       },
       error: (err) => this.showError(err.error?.message || 'Error al restaurar insumo.')
     });
+  }
+
+  // --- Categorías de Insumos: Creación y Modificación Dinámica ---
+
+  crearNuevaCategoria() {
+    const nombre = this.newCategoriaNombre().trim();
+    if (!nombre) {
+      this.showError('Ingrese el nombre de la categoría.');
+      return;
+    }
+
+    this.inventoryService.createCategoria(nombre).subscribe({
+      next: (cat) => {
+        this.showSuccess(`Categoría '${cat.nombre}' registrada correctamente.`);
+        this.newCategoriaNombre.set('');
+        this.insumoForm.update(p => ({ ...p, categoria: cat.nombre }));
+        this.inventoryService.getCategorias().subscribe(cats => this.categoriasInsumoList.set(cats));
+      },
+      error: (err) => this.showError(err.error?.message || 'Error al crear la categoría.')
+    });
+  }
+
+  iniciarEdicionCategoria(cat: CategoriaInsumo) {
+    this.editingCategoriaId.set(cat.id);
+    this.editingCategoriaNombre.set(cat.nombre);
+  }
+
+  cancelarEdicionCategoria() {
+    this.editingCategoriaId.set(null);
+    this.editingCategoriaNombre.set('');
+  }
+
+  guardarEdicionCategoria(cat: CategoriaInsumo) {
+    const nuevoNombre = this.editingCategoriaNombre().trim();
+    if (!nuevoNombre) {
+      this.showError('El nombre de la categoría no puede estar vacío.');
+      return;
+    }
+
+    this.inventoryService.updateCategoria(cat.id, nuevoNombre).subscribe({
+      next: (updated) => {
+        this.showSuccess(`Categoría actualizada a '${updated.nombre}'.`);
+        
+        // Si el formulario actual tenía seleccionada esta categoría, actualizarlo
+        if (this.insumoForm().categoria === cat.nombre) {
+          this.insumoForm.update(p => ({ ...p, categoria: updated.nombre }));
+        }
+
+        this.cancelarEdicionCategoria();
+        this.loadData();
+      },
+      error: (err) => this.showError(err.error?.message || 'Error al actualizar el nombre de la categoría.')
+    });
+  }
+
+  toggleGestionCategorias() {
+    this.isManagingCategorias.update(v => !v);
   }
 
   // --- Principios Activos Inline Vinculación ---

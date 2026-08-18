@@ -108,6 +108,16 @@ describe('SidebarComponent', () => {
         expect(link?.textContent).toContain('Sedes & Áreas Clínicas');
     });
 
+    it('debe incluir la opción "Reposición de Insumos" en el menú de Inventario', () => {
+        fixture = TestBed.createComponent(SidebarComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+        const compiled = fixture.nativeElement as HTMLElement;
+        const link = compiled.querySelector('a[routerLink="/inventario/reposicion"]');
+        expect(link).not.toBeNull();
+        expect(link?.textContent).toContain('Reposición de Insumos');
+    });
+
     it('debe mostrar las opciones del módulo de Cirugía para administradores', () => {
         authServiceMock.isAdministrador.and.returnValue(true);
         fixture = TestBed.createComponent(SidebarComponent);
@@ -116,14 +126,11 @@ describe('SidebarComponent', () => {
         const compiled = fixture.nativeElement as HTMLElement;
         const linkTablero = compiled.querySelector('a[routerLink="/pabellon/tablero"]');
         const linkCalendario = compiled.querySelector('a[routerLink="/pabellon/calendario"]');
-        const linkReposicion = compiled.querySelector('a[routerLink="/pabellon/reposicion"]');
         
         expect(linkTablero).not.toBeNull();
         expect(linkTablero?.textContent).toContain('Tablero de Pacientes');
         expect(linkCalendario).not.toBeNull();
         expect(linkCalendario?.textContent).toContain('Calendario Total');
-        expect(linkReposicion).not.toBeNull();
-        expect(linkReposicion?.textContent).toContain('Reposición Insumos');
     });
 
     it('debe expandir automáticamente el dropdown "cirugia" si la ruta contiene /pabellon', () => {

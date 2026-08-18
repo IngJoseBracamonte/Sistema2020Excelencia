@@ -38,28 +38,30 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             var orden = await _context.OrdenesCirugia
                 .Include(o => o.Logs)
+                .Include(o => o.HistorialObservaciones)
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCirugiaId, cancellationToken)
                 ?? throw new InvalidOperationException("La orden de cirugía no fue encontrada.");
 
+            var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "Sistema" : request.UsuarioId.Trim();
             var targetState = request.NuevoEstado?.Trim() ?? string.Empty;
 
             if (targetState.Equals(EstadoCirugiaConstants.EnEspera, StringComparison.OrdinalIgnoreCase))
             {
-                orden.IniciarEspera(request.UsuarioId);
+                orden.IniciarEspera(usuario);
             }
             else if (targetState.Equals(EstadoCirugiaConstants.EnCirugia, StringComparison.OrdinalIgnoreCase) ||
                      targetState.Equals("EnProceso", StringComparison.OrdinalIgnoreCase))
             {
-                orden.IniciarCirugia(request.UsuarioId);
+                orden.IniciarCirugia(usuario);
             }
             else if (targetState.Equals(EstadoCirugiaConstants.Finalizado, StringComparison.OrdinalIgnoreCase) ||
                      targetState.Equals("Completada", StringComparison.OrdinalIgnoreCase))
             {
-                orden.FinalizarCirugia(request.UsuarioId);
+                orden.FinalizarCirugia(usuario);
             }
             else if (targetState.Equals(EstadoCirugiaConstants.Cancelada, StringComparison.OrdinalIgnoreCase))
             {
-                orden.CancelarCirugia(request.UsuarioId, request.MotivoCancelacion ?? "Sin motivo especificado");
+                orden.CancelarCirugia(usuario, request.MotivoCancelacion ?? "Sin motivo especificado");
             }
             else
             {

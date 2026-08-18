@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -36,6 +38,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public async Task<Guid> Handle(SolicitarInsumosExtraCommand request, CancellationToken cancellationToken)
         {
             var orden = await _context.OrdenesCirugia
+                .Include(o => o.Paciente)
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCirugiaId, cancellationToken);
 
             if (orden == null)
@@ -43,23 +46,60 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException($"Orden de cirugía {request.OrdenCirugiaId} no encontrada.");
             }
 
+            var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "admin" : request.UsuarioId;
+
+            // 1. Registrar Solicitud Ad-Hoc en Pabellón
             var solicitud = new SolicitudInsumoCirugia(
                 orden.Id,
                 request.InsumoId,
                 request.Cantidad,
-                request.AlmacenOrigenId,
-                request.UsuarioId,
+                request.AlmacenOrigenId != Guid.Empty ? request.AlmacenOrigenId : SeedConstants.SedeId_Principal,
+                usuario,
                 request.Observaciones);
 
             _context.SolicitudesInsumosCirugia.Add(solicitud);
 
-            var log = new CirugiaLog(orden.Id, request.UsuarioId, CirugiaEventoConstants.SolicitudInsumoExtra,
-                $"Solicitud ad-hoc: Insumo {request.InsumoId}, Cantidad {request.Cantidad}");
+            // 2. Generar Correlativo Atómico e Integrar Requisición en PedidosInterSede para el Supervisor Central
+            var year = DateTime.UtcNow.Year.ToString();
+            var latestCorrelativo = await _context.PedidosInterSede
+                .Where(p => p.Correlativo.StartsWith($"PED-{year}-"))
+                .OrderByDescending(p => p.Correlativo.Length)
+                .ThenByDescending(p => p.Correlativo)
+                .Select(p => p.Correlativo)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            int nextSeq = 1;
+            if (!string.IsNullOrEmpty(latestCorrelativo) && latestCorrelativo.Length >= 13)
+            {
+                var numPart = latestCorrelativo.Substring(latestCorrelativo.LastIndexOf('-') + 1);
+                if (int.TryParse(numPart, out int lastSeq))
+                {
+                    nextSeq = lastSeq + 1;
+                }
+            }
+
+            var correlativo = $"PED-{year}-{nextSeq.ToString().PadLeft(4, '0')}";
+            var pacienteNombre = orden.Paciente != null ? orden.Paciente.NombreCorto : "Paciente Quirúrgico";
+            var obsPedido = $"[CIRUGIA_ADHOC:{solicitud.Id}:{orden.Id}] Paciente: {pacienteNombre} | Cirugía: {orden.DescripcionCirugia} | Urgencia: {request.Observaciones?.Trim()}";
+
+            var pedido = new PedidoInterSede(
+                correlativo,
+                SeedConstants.SedeId_Cirugia,
+                request.AlmacenOrigenId != Guid.Empty ? request.AlmacenOrigenId : SeedConstants.SedeId_Principal,
+                usuario,
+                obsPedido
+            );
+            pedido.AgregarDetalle(new PedidoInterSedeDetalle(request.InsumoId, request.Cantidad));
+            _context.PedidosInterSede.Add(pedido);
+
+            // 3. Auditoría Inmutable
+            var log = new CirugiaLog(orden.Id, usuario, CirugiaEventoConstants.SolicitudInsumoExtra,
+                $"Solicitud ad-hoc ({correlativo}): Insumo {request.InsumoId}, Cantidad {request.Cantidad}");
             _context.CirugiaLogs.Add(log);
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Solicitud ad-hoc {SolicitudId} creada para la orden {OrdenId}", solicitud.Id, orden.Id);
+            _logger.LogInformation("Solicitud ad-hoc {SolicitudId} y Pedido {Correlativo} creados para la orden {OrdenId}", solicitud.Id, correlativo, orden.Id);
             return solicitud.Id;
         }
     }
@@ -95,7 +135,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 return false;
             }
 
-            solicitud.Despachar(request.UsuarioId);
+            var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "admin" : request.UsuarioId;
+            solicitud.Despachar(usuario);
 
             // Descontar stock del almacén de origen
             var stock = await _context.StocksSedes
@@ -121,7 +162,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 _context.InsumosCirugiasPacientes.Add(nuevoConsumo);
             }
 
-            var log = new CirugiaLog(solicitud.OrdenCirugiaId, request.UsuarioId, CirugiaEventoConstants.DespachoInsumos,
+            // Sincronizar PedidoInterSede asociado para que no quede pendiente
+            var tag = $"[CIRUGIA_ADHOC:{solicitud.Id}:";
+            var pedidoAsociado = await _context.PedidosInterSede
+                .Include(p => p.Detalles)
+                .FirstOrDefaultAsync(p => p.Observaciones != null && p.Observaciones.Contains(tag), cancellationToken);
+
+            if (pedidoAsociado != null && pedidoAsociado.Estado == EstadoPedidoInterSede.Solicitado)
+            {
+                foreach (var det in pedidoAsociado.Detalles)
+                {
+                    det.SetDespachado(det.CantidadSolicitada);
+                    det.SetRecibido(det.CantidadSolicitada);
+                }
+                pedidoAsociado.CambiarEstado(EstadoPedidoInterSede.Recibido);
+            }
+
+            var log = new CirugiaLog(solicitud.OrdenCirugiaId, usuario, CirugiaEventoConstants.DespachoInsumos,
                 $"Despachada solicitud ad-hoc #{solicitud.Id}: {solicitud.CantidadSolicitada} unidades del insumo {solicitud.InsumoId}");
             _context.CirugiaLogs.Add(log);
 

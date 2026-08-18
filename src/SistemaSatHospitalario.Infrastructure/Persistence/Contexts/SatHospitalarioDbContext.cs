@@ -56,6 +56,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<TriageEnfermeria> TriagesEnfermeria { get; set; }
         public DbSet<ValoracionFisica> ValoracionesFisicas { get; set; }
         public DbSet<Insumo> Insumos { get; set; }
+        public DbSet<CategoriaInsumo> CategoriasInsumo { get; set; }
         public DbSet<PrincipioActivo> PrincipiosActivos { get; set; }
         public DbSet<InsumoPrincipioActivo> InsumosPrincipiosActivos { get; set; }
         public DbSet<ServicioInsumoReceta> ServiciosInsumoRecetas { get; set; }
@@ -88,14 +89,34 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
         public override int SaveChanges()
         {
+            NormalizeAuditEntries();
             EnforceMovimientoInsumoImmutability();
             return base.SaveChanges();
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            NormalizeAuditEntries();
             EnforceMovimientoInsumoImmutability();
             return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void NormalizeAuditEntries()
+        {
+            foreach (var entry in ChangeTracker.Entries<CirugiaLog>())
+            {
+                if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified)
+                {
+                    entry.State = Microsoft.EntityFrameworkCore.EntityState.Added;
+                }
+            }
+            foreach (var entry in ChangeTracker.Entries<CirugiaObservacionHistorial>())
+            {
+                if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified)
+                {
+                    entry.State = Microsoft.EntityFrameworkCore.EntityState.Added;
+                }
+            }
         }
 
         private void EnforceMovimientoInsumoImmutability()
@@ -691,6 +712,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(i => i.Codigo).IsUnique();
             });
 
+            builder.Entity<CategoriaInsumo>(entity =>
+            {
+                entity.ToTable("CategoriasInsumo");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Nombre).IsRequired().HasMaxLength(150);
+                entity.Property(c => c.Codigo).HasMaxLength(50);
+                entity.HasIndex(c => c.Nombre).IsUnique();
+            });
+
             builder.Entity<PrincipioActivo>(entity =>
             {
                 entity.ToTable("PrincipiosActivos");
@@ -1021,6 +1051,21 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(o => o.SedeQuirofanoId)
                       .OnDelete(DeleteBehavior.SetNull);
 
+                entity.HasOne(o => o.AreaClinica)
+                      .WithMany()
+                      .HasForeignKey(o => o.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(o => o.AreaClinicaOrigen)
+                      .WithMany()
+                      .HasForeignKey(o => o.AreaClinicaOrigenId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(o => o.SedeOrigen)
+                      .WithMany()
+                      .HasForeignKey(o => o.SedeOrigenId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasMany(o => o.Logs)
                       .WithOne(l => l.OrdenCirugia)
                       .HasForeignKey(l => l.OrdenCirugiaId)
@@ -1130,6 +1175,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(l => l.Evento).IsRequired().HasMaxLength(50);
                 entity.Property(l => l.Detalle).HasMaxLength(1000);
 
+                entity.HasOne(l => l.OrdenCirugia)
+                      .WithMany(o => o.Logs)
+                      .HasForeignKey(l => l.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasIndex(l => l.OrdenCirugiaId);
                 entity.HasIndex(l => l.Timestamp);
             });
@@ -1163,6 +1213,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(h => h.Observacion).IsRequired().HasMaxLength(1000);
                 entity.Property(h => h.Tipo).HasConversion<int>();
                 entity.Property(h => h.UsuarioRegistro).IsRequired().HasMaxLength(100);
+
+                entity.HasOne(h => h.OrdenCirugia)
+                      .WithMany(o => o.HistorialObservaciones)
+                      .HasForeignKey(h => h.OrdenCirugiaId)
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(h => h.OrdenCirugiaId);
             });

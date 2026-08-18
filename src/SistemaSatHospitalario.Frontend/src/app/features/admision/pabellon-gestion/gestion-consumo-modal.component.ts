@@ -23,7 +23,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
   template: `
-    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[500] flex items-center justify-center p-4">
       <div class="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col text-white">
         
         <!-- Header -->

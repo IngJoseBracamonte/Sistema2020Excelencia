@@ -1,89 +1,88 @@
-<div class="min-h-screen bg-[#020617] text-slate-200 p-4 md:p-8 font-sans">
-  
-  <!-- Header Principal -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-    <div class="flex items-center space-x-3">
-      <div class="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
-        <lucide-icon [name]="icons.History" class="w-8 h-8 text-amber-400"></lucide-icon>
-      </div>
-      <div>
-        <h1 class="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic">Historiales de Inventario & Auditoría</h1>
-        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] flex items-center gap-2">
-          <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-          Trazabilidad Integral Multidimensional (6 Dimensiones)
-        </p>
+<div class="space-y-6">
+  <!-- ENCABEZADO Y TÍTULO -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-card p-6 rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden">
+    <div class="space-y-1 relative z-10">
+      <div class="flex items-center gap-3">
+        <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 shadow-inner">
+          <lucide-icon [name]="icons.History" class="w-6 h-6"></lucide-icon>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-black text-white tracking-tight uppercase">Historiales de Inventario & Auditoría</h1>
+          <p class="text-xs text-slate-400 font-medium">Trazabilidad Integral Multidimensional (6 Dimensiones)</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Barra de Pestañas de Navegación (6 Niveles) -->
-  <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-white/5 scrollbar-thin">
+  <!-- SELECTOR DE DIMENSIONES / TABS -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
     <button (click)="setTab('ingresos')"
-      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'ingresos', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'ingresos' }"
-      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border"
+      [ngClass]="activeTab() === 'ingresos' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-surface-card text-slate-400 border-white/5 hover:text-white'">
       <lucide-icon [name]="icons.PackageCheck" class="w-4 h-4"></lucide-icon>
-      <span>Ingreso de Medicamentos</span>
+      Ingreso de Medicamentos
     </button>
 
     <button (click)="setTab('compras')"
-      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'compras', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'compras' }"
-      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border"
+      [ngClass]="activeTab() === 'compras' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-surface-card text-slate-400 border-white/5 hover:text-white'">
       <lucide-icon [name]="icons.ShoppingCart" class="w-4 h-4"></lucide-icon>
-      <span>Compras</span>
+      Compras
     </button>
 
     <button (click)="setTab('pedidos')"
-      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'pedidos', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'pedidos' }"
-      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border"
+      [ngClass]="activeTab() === 'pedidos' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-surface-card text-slate-400 border-white/5 hover:text-white'">
       <lucide-icon [name]="icons.FileText" class="w-4 h-4"></lucide-icon>
-      <span>Aprobación de Pedidos</span>
+      Aprobación de Pedidos
     </button>
 
     <button (click)="setTab('envios')"
-      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'envios', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'envios' }"
-      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border"
+      [ngClass]="activeTab() === 'envios' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-surface-card text-slate-400 border-white/5 hover:text-white'">
       <lucide-icon [name]="icons.Send" class="w-4 h-4"></lucide-icon>
-      <span>Envíos a Sub-Áreas</span>
+      Envíos a Sub-Áreas
     </button>
 
     <button (click)="setTab('descartes')"
-      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'descartes', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'descartes' }"
-      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border"
+      [ngClass]="activeTab() === 'descartes' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-surface-card text-slate-400 border-white/5 hover:text-white'">
       <lucide-icon [name]="icons.Trash2" class="w-4 h-4"></lucide-icon>
-      <span>Descartes</span>
+      Descartes
     </button>
 
     <button (click)="setTab('cxp')"
-      [ngClass]="{ 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30': activeTab() === 'cxp', 'bg-surface-card text-slate-400 hover:text-white border border-white/5': activeTab() !== 'cxp' }"
-      class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap">
+      class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border"
+      [ngClass]="activeTab() === 'cxp' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-surface-card text-slate-400 border-white/5 hover:text-white'">
       <lucide-icon [name]="icons.CreditCard" class="w-4 h-4"></lucide-icon>
-      <span>Cuentas por Pagar</span>
+      Cuentas por Pagar
     </button>
   </div>
 
-  <!-- Panel de Filtros Multicriterio por Rango de Fechas -->
-  <div class="bg-surface-card p-5 rounded-[2rem] border border-white/5 shadow-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+  <!-- FILTROS DE AUDITORÍA -->
+  <div class="bg-surface-card p-4 rounded-2xl border border-white/5 flex flex-wrap items-center justify-between gap-4">
     <div class="flex flex-wrap items-center gap-3">
-      <div>
-        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Desde</label>
-        <input type="date" [(ngModel)]="fechaDesde" (ngModelChange)="fechaDesde.set($event); loadCurrentTab()"
-          class="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+      <div class="space-y-1">
+        <label class="text-[10px] uppercase font-black tracking-widest text-slate-500">Fecha Desde</label>
+        <input type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)"
+          class="bg-surface-main/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500" />
       </div>
 
-      <div>
-        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Hasta</label>
-        <input type="date" [(ngModel)]="fechaHasta" (ngModelChange)="fechaHasta.set($event); loadCurrentTab()"
-          class="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+      <div class="space-y-1">
+        <label class="text-[10px] uppercase font-black tracking-widest text-slate-500">Fecha Hasta</label>
+        <input type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)"
+          class="bg-surface-main/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500" />
       </div>
 
-      <div class="relative min-w-[220px]">
-        <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Buscar</label>
-        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="searchQuery.set($event); loadCurrentTab()"
+      <div class="space-y-1">
+        <label class="text-[10px] uppercase font-black tracking-widest text-slate-500">Buscar</label>
+        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
           placeholder="Código, insumo o motivo..."
-          class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          class="bg-surface-main/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 w-48 md:w-64" />
       </div>
 
-      <button (click)="resetFilters()" class="mt-4 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all">
+      <button (click)="resetFilters()"
+        class="mt-4 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition">
         Limpiar Filtros
       </button>
     </div>
@@ -103,28 +102,28 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
-              <th class="pb-3">Fecha</th>
-              <th class="pb-3">Insumo / Medicamento</th>
-              <th class="pb-3 text-center">Cantidad Ingresada</th>
-              <th class="pb-3">Motivo / Carga</th>
-              <th class="pb-3">Usuario Responsable</th>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+              <th class="py-3 px-5 w-44">Fecha</th>
+              <th class="py-3 px-5 min-w-[220px]">Insumo / Medicamento</th>
+              <th class="py-3 px-5 text-center w-44">Cantidad Ingresada</th>
+              <th class="py-3 px-5 min-w-[240px]">Motivo / Carga</th>
+              <th class="py-3 px-5 w-36">Usuario Responsable</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr *ngFor="let item of historialIngresos()" class="hover:bg-white/[0.02]">
-              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-3 font-bold text-white">
-                {{ item.insumoNombre }}
-                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+            <tr *ngFor="let item of historialIngresos()" class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-5 text-slate-400 whitespace-nowrap font-mono text-[11px]">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3.5 px-5 font-bold text-white">
+                <span class="block text-white font-bold">{{ item.insumoNombre }}</span>
+                <p class="text-[10px] font-normal text-slate-400 font-mono mt-0.5">{{ item.insumoCodigo }}</p>
               </td>
-              <td class="py-3 text-center">
-                <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md font-mono font-bold">
+              <td class="py-3.5 px-5 text-center">
+                <span class="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg font-mono font-bold whitespace-nowrap">
                   +{{ item.cantidadOriginal }} {{ item.unidadMedidaOriginal }}
                 </span>
               </td>
-              <td class="py-3 text-slate-300">{{ item.motivo }}</td>
-              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+              <td class="py-3.5 px-5 text-slate-300 leading-relaxed">{{ item.motivo }}</td>
+              <td class="py-3.5 px-5 text-slate-400 font-medium whitespace-nowrap">{{ item.usuario }}</td>
             </tr>
             <tr *ngIf="historialIngresos().length === 0">
               <td colspan="5" class="py-8 text-center text-slate-500 italic">No se encontraron registros de ingresos.</td>
@@ -139,24 +138,24 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
-              <th class="pb-3">Fecha Compra</th>
-              <th class="pb-3">Insumo Comprado</th>
-              <th class="pb-3 text-center">Cantidad</th>
-              <th class="pb-3">Detalle Costo</th>
-              <th class="pb-3">Registrado Por</th>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+              <th class="py-3 px-5 w-44">Fecha Compra</th>
+              <th class="py-3 px-5 min-w-[220px]">Insumo Comprado</th>
+              <th class="py-3 px-5 text-center w-36">Cantidad</th>
+              <th class="py-3 px-5 min-w-[240px]">Detalle Costo</th>
+              <th class="py-3 px-5 w-36">Registrado Por</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr *ngFor="let item of historialCompras()" class="hover:bg-white/[0.02]">
-              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-3 font-bold text-white">
-                {{ item.insumoNombre }}
-                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+            <tr *ngFor="let item of historialCompras()" class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-5 text-slate-400 whitespace-nowrap font-mono text-[11px]">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3.5 px-5 font-bold text-white">
+                <span class="block text-white font-bold">{{ item.insumoNombre }}</span>
+                <p class="text-[10px] font-normal text-slate-400 font-mono mt-0.5">{{ item.insumoCodigo }}</p>
               </td>
-              <td class="py-3 text-center font-mono font-bold text-emerald-400">+{{ item.cantidadOriginal }}</td>
-              <td class="py-3 text-slate-300">{{ item.motivo }}</td>
-              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+              <td class="py-3.5 px-5 text-center font-mono font-bold text-emerald-400">+{{ item.cantidadOriginal }}</td>
+              <td class="py-3.5 px-5 text-slate-300 leading-relaxed">{{ item.motivo }}</td>
+              <td class="py-3.5 px-5 text-slate-400 font-medium whitespace-nowrap">{{ item.usuario }}</td>
             </tr>
             <tr *ngIf="historialCompras().length === 0">
               <td colspan="5" class="py-8 text-center text-slate-500 italic">No se encontraron compras registradas.</td>
@@ -171,28 +170,28 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
-              <th class="pb-3">Correlativo</th>
-              <th class="pb-3">Fecha Solicitud</th>
-              <th class="pb-3">Sub-Área Solicitante</th>
-              <th class="pb-3 text-center">Estado</th>
-              <th class="pb-3">Firmas</th>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+              <th class="py-3 px-5 w-40">Correlativo</th>
+              <th class="py-3 px-5 w-44">Fecha Solicitud</th>
+              <th class="py-3 px-5 min-w-[220px]">Sub-Área Solicitante</th>
+              <th class="py-3 px-5 text-center w-36">Estado</th>
+              <th class="py-3 px-5 min-w-[200px]">Firmas</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr *ngFor="let p of historialPedidos()" class="hover:bg-white/[0.02]">
-              <td class="py-3 font-bold text-indigo-400">{{ p.correlativo || p.id.slice(0, 8) }}</td>
-              <td class="py-3 text-slate-400">{{ p.fechaCreacion | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-3 font-bold text-white">{{ p.sedeSolicitanteNombre }}</td>
-              <td class="py-3 text-center">
-                <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase"
+            <tr *ngFor="let p of historialPedidos()" class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-5 font-bold text-indigo-400 font-mono">{{ p.correlativo || p.id.slice(0, 8) }}</td>
+              <td class="py-3.5 px-5 text-slate-400 font-mono text-[11px] whitespace-nowrap">{{ p.fechaCreacion | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3.5 px-5 font-bold text-white">{{ p.sedeSolicitanteNombre }}</td>
+              <td class="py-3.5 px-5 text-center">
+                <span class="inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase whitespace-nowrap"
                   [ngClass]="{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': p.estado === 'Despachado' || p.estado === 'Aprobado', 'bg-rose-500/10 text-rose-400 border border-rose-500/20': p.estado === 'Rechazado' }">
                   {{ p.estado }}
                 </span>
               </td>
-              <td class="py-3 text-slate-400 text-[11px]">
-                <p>Solicitó: {{ p.usuarioSolicitante }}</p>
-                <p *ngIf="p.usuarioAprobador">Aprobó: {{ p.usuarioAprobador }}</p>
+              <td class="py-3.5 px-5 text-slate-400 text-[11px] space-y-0.5">
+                <p>Solicitó: <strong class="text-slate-300">{{ p.usuarioSolicitante }}</strong></p>
+                <p *ngIf="p.usuarioAprobador">Aprobó: <strong class="text-slate-300">{{ p.usuarioAprobador }}</strong></p>
               </td>
             </tr>
             <tr *ngIf="historialPedidos().length === 0">
@@ -208,28 +207,28 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
-              <th class="pb-3">Fecha Despacho</th>
-              <th class="pb-3">Insumo</th>
-              <th class="pb-3 text-center">Cantidad Enviada</th>
-              <th class="pb-3">Sub-Área Destino</th>
-              <th class="pb-3">Responsable</th>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+              <th class="py-3 px-5 w-44">Fecha Despacho</th>
+              <th class="py-3 px-5 min-w-[220px]">Insumo</th>
+              <th class="py-3 px-5 text-center w-44">Cantidad Enviada</th>
+              <th class="py-3 px-5 min-w-[280px]">Sub-Área Destino</th>
+              <th class="py-3 px-5 w-36">Responsable</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr *ngFor="let item of historialEnvios()" class="hover:bg-white/[0.02]">
-              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-3 font-bold text-white">
-                {{ item.insumoNombre }}
-                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+            <tr *ngFor="let item of historialEnvios()" class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-5 text-slate-400 whitespace-nowrap font-mono text-[11px]">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3.5 px-5 font-bold text-white">
+                <span class="block text-white font-bold">{{ item.insumoNombre }}</span>
+                <p class="text-[10px] font-normal text-slate-400 font-mono mt-0.5">{{ item.insumoCodigo }}</p>
               </td>
-              <td class="py-3 text-center">
-                <span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-md font-mono font-bold">
+              <td class="py-3.5 px-5 text-center">
+                <span class="inline-block px-3 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-lg font-mono font-bold whitespace-nowrap">
                   -{{ item.cantidadOriginal }} {{ item.unidadMedidaOriginal }}
                 </span>
               </td>
-              <td class="py-3 text-indigo-400 font-bold">{{ item.motivo }}</td>
-              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+              <td class="py-3.5 px-5 text-indigo-300 font-medium leading-relaxed">{{ item.motivo }}</td>
+              <td class="py-3.5 px-5 text-slate-400 font-medium whitespace-nowrap">{{ item.usuario }}</td>
             </tr>
             <tr *ngIf="historialEnvios().length === 0">
               <td colspan="5" class="py-8 text-center text-slate-500 italic">No hay historial de envíos directos.</td>
@@ -244,24 +243,24 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
-              <th class="pb-3">Fecha Descarte</th>
-              <th class="pb-3">Insumo Descartado</th>
-              <th class="pb-3 text-center">Cantidad Bajas</th>
-              <th class="pb-3">Motivo / Justificación</th>
-              <th class="pb-3">Usuario Autorizador</th>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+              <th class="py-3 px-5 w-44">Fecha Descarte</th>
+              <th class="py-3 px-5 min-w-[220px]">Insumo Descartado</th>
+              <th class="py-3 px-5 text-center w-36">Cantidad Bajas</th>
+              <th class="py-3 px-5 min-w-[240px]">Motivo / Justificación</th>
+              <th class="py-3 px-5 w-36">Usuario Autorizador</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr *ngFor="let item of historialDescartes()" class="hover:bg-white/[0.02]">
-              <td class="py-3 text-slate-400 whitespace-nowrap">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-3 font-bold text-white">
-                {{ item.insumoNombre }}
-                <p class="text-[10px] font-normal text-slate-400">{{ item.insumoCodigo }}</p>
+            <tr *ngFor="let item of historialDescartes()" class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-5 text-slate-400 whitespace-nowrap font-mono text-[11px]">{{ item.fecha | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-3.5 px-5 font-bold text-white">
+                <span class="block text-white font-bold">{{ item.insumoNombre }}</span>
+                <p class="text-[10px] font-normal text-slate-400 font-mono mt-0.5">{{ item.insumoCodigo }}</p>
               </td>
-              <td class="py-3 text-center font-mono font-bold text-rose-400">-{{ item.cantidadOriginal }}</td>
-              <td class="py-3 text-slate-300 italic">{{ item.motivo }}</td>
-              <td class="py-3 text-slate-400 font-medium">{{ item.usuario }}</td>
+              <td class="py-3.5 px-5 text-center font-mono font-bold text-rose-400">-{{ item.cantidadOriginal }}</td>
+              <td class="py-3.5 px-5 text-slate-300 italic leading-relaxed">{{ item.motivo }}</td>
+              <td class="py-3.5 px-5 text-slate-400 font-medium whitespace-nowrap">{{ item.usuario }}</td>
             </tr>
             <tr *ngIf="historialDescartes().length === 0">
               <td colspan="5" class="py-8 text-center text-slate-500 italic">No se encontraron descartes registrados.</td>
@@ -276,24 +275,24 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/5">
-              <th class="pb-3">Nº Factura / Control</th>
-              <th class="pb-3">Proveedor</th>
-              <th class="pb-3">Fecha Emisión</th>
-              <th class="pb-3 text-center">Total Factura (USD)</th>
-              <th class="pb-3 text-center">Saldo Pendiente</th>
-              <th class="pb-3 text-center">Estado</th>
+            <tr class="text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+              <th class="py-3 px-5 w-40">Nº Factura / Control</th>
+              <th class="py-3 px-5 min-w-[200px]">Proveedor</th>
+              <th class="py-3 px-5 w-36">Fecha Emisión</th>
+              <th class="py-3 px-5 text-center w-36">Total Factura (USD)</th>
+              <th class="py-3 px-5 text-center w-36">Saldo Pendiente</th>
+              <th class="py-3 px-5 text-center w-32">Estado</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
-            <tr *ngFor="let f of historialCxp()" class="hover:bg-white/[0.02]">
-              <td class="py-3 font-bold text-cyan-400">{{ f.numeroFactura }}</td>
-              <td class="py-3 font-bold text-white">{{ f.proveedorNombre }}</td>
-              <td class="py-3 text-slate-400">{{ f.fechaEmision | date:'dd/MM/yyyy' }}</td>
-              <td class="py-3 text-center font-mono font-bold text-slate-200">${{ f.montoTotalUSD | number:'1.2-2' }}</td>
-              <td class="py-3 text-center font-mono font-bold text-amber-400">${{ f.saldoPendienteUSD | number:'1.2-2' }}</td>
-              <td class="py-3 text-center">
-                <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase"
+            <tr *ngFor="let f of historialCxp()" class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-5 font-bold text-cyan-400 font-mono">{{ f.numeroFactura }}</td>
+              <td class="py-3.5 px-5 font-bold text-white">{{ f.proveedorNombre }}</td>
+              <td class="py-3.5 px-5 text-slate-400 font-mono text-[11px] whitespace-nowrap">{{ f.fechaEmision | date:'dd/MM/yyyy' }}</td>
+              <td class="py-3.5 px-5 text-center font-mono font-bold text-slate-200">${{ f.montoTotalUSD | number:'1.2-2' }}</td>
+              <td class="py-3.5 px-5 text-center font-mono font-bold text-amber-400">${{ f.saldoPendienteUSD | number:'1.2-2' }}</td>
+              <td class="py-3.5 px-5 text-center">
+                <span class="inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase whitespace-nowrap"
                   [ngClass]="{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': f.estado === 'Pagado', 'bg-amber-500/10 text-amber-400 border border-amber-500/20': f.estado === 'Pendiente' }">
                   {{ f.estado }}
                 </span>

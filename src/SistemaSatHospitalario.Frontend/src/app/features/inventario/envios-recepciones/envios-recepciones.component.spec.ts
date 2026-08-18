@@ -103,8 +103,33 @@ describe('EnviosRecepcionesComponent', () => {
   it('debe incluir los pedidos en estado "Solicitado" y "Pendiente" en las requisiciones pendientes', () => {
     const pendientes = component.filteredPedidosPendientes();
     expect(pendientes.length).toBe(2);
-    expect(pendientes.some(p => p.id === 'ped-1')).toBeTrue(); // Solicitado
-    expect(pendientes.some(p => p.id === 'ped-2')).toBeTrue(); // Pendiente
-    expect(pendientes.some(p => p.id === 'ped-3')).toBeFalse(); // Despachado (excluido)
+    expect(pendientes.some(p => p.id === 'ped-1')).toBeTrue();
+    expect(pendientes.some(p => p.id === 'ped-2')).toBeTrue();
+    expect(pendientes.some(p => p.id === 'ped-3')).toBeFalse();
+  });
+
+  it('debe incluir únicamente la sede Hospitalización y sub-áreas en subAreasDisponibles excluyendo otras sedes', () => {
+    const mockSedes = [
+      { id: 'sede-1', codigo: 'PRINCIPAL', nombre: 'Almacén Principal', esPrincipal: true, activo: true },
+      { id: '10000000-0000-0000-0000-000000000002', codigo: 'EMERGENCIA', nombre: 'Área de Emergencia', esPrincipal: false, activo: true },
+      { id: '10000000-0000-0000-0000-000000000003', codigo: 'HOSPITALIZACION', nombre: 'Área de Hospitalización', esPrincipal: false, activo: true },
+      { id: '10000000-0000-0000-0000-000000000005', codigo: 'CIRUGIA', nombre: 'Área de Cirugía', esPrincipal: false, activo: true }
+    ];
+    const mockAreas = [
+      { id: 'area-farm', codigo: 'FARMACIA', nombre: 'Farmacia', activo: true }
+    ];
+
+    mockMultiSedeService.getSedes.and.returnValue(of(mockSedes));
+    mockMultiSedeService.getAreasClinicas.and.returnValue(of(mockAreas));
+
+    component.loadData();
+
+    const disponibles = component.subAreasDisponibles();
+    expect(disponibles.length).toBe(2);
+    expect(disponibles.some(d => d.nombre === 'Área de Hospitalización')).toBeTrue();
+    expect(disponibles.some(d => d.nombre === 'Farmacia')).toBeTrue();
+    expect(disponibles.some(d => d.nombre === 'Área de Emergencia')).toBeFalse();
+    expect(disponibles.some(d => d.nombre === 'Área de Cirugía')).toBeFalse();
   });
 });
+

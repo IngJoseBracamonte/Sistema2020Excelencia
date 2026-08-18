@@ -159,6 +159,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         [HttpGet("stock-por-sede")]
         public async Task<IActionResult> GetStockPorSede([FromQuery] Guid sedeId, CancellationToken ct)
         {
+            await ReconciliarDespachosPendientesDeEntradaAsync(sedeId, ct);
+
             var stocks = await _context.StocksSedes
                 .Include(s => s.Insumo)
                 .Where(s => s.SedeId == sedeId && !s.Insumo.IsDeleted)
@@ -180,6 +182,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         [HttpGet("stock-sede/{sedeId}")]
         public async Task<IActionResult> GetStockSedeById(Guid sedeId, CancellationToken ct)
         {
+            await ReconciliarDespachosPendientesDeEntradaAsync(sedeId, ct);
+
             var stocks = await _context.StocksSedes
                 .Include(s => s.Insumo)
                 .Where(s => s.SedeId == sedeId && !s.Insumo.IsDeleted)
@@ -197,6 +201,108 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 .ToListAsync(ct);
 
             return Ok(stocks);
+        }
+
+        private async Task ReconciliarDespachosPendientesDeEntradaAsync(Guid sedeId, CancellationToken ct)
+        {
+            var pedidosDespachados = await _context.PedidosInterSede
+                .Include(p => p.Detalles)
+                    .ThenInclude(d => d.Insumo)
+                .Where(p => p.SedeSolicitanteId == sedeId && p.Estado == EstadoPedidoInterSede.Recibido)
+                .ToListAsync(ct);
+
+            bool hayCambios = false;
+            foreach (var ped in pedidosDespachados)
+            {
+                if (!string.IsNullOrEmpty(ped.Observaciones) && ped.Observaciones.Contains("[GASTO_INTERNO_LABORATORIO]", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                bool tieneEntrada = await _context.MovimientosInsumo
+                    .AnyAsync(m => m.SedeId == sedeId && m.TipoMovimiento == TipoMovimientoInsumo.TransferenciaEntrada && m.Motivo != null && m.Motivo.Contains(ped.Correlativo), ct);
+
+                if (!tieneEntrada)
+                {
+                    foreach (var det in ped.Detalles)
+                    {
+                        var cant = det.CantidadDespachada > 0 ? det.CantidadDespachada : det.CantidadSolicitada;
+                        if (cant > 0)
+                        {
+                            var stockSede = await _context.StocksSedes
+                                .FirstOrDefaultAsync(s => s.InsumoId == det.InsumoId && s.SedeId == sedeId, ct);
+
+                            if (stockSede == null)
+                            {
+                                stockSede = new StockSede(det.InsumoId, sedeId, 0);
+                                _context.StocksSedes.Add(stockSede);
+                            }
+
+                            stockSede.RegistrarMovimientoStock(cant, det.Insumo.PermiteFraccionamiento);
+
+                            var movEntrada = new MovimientoInsumo(
+                                det.InsumoId,
+                                sedeId,
+                                "TransferenciaEntrada",
+                                cant,
+                                det.Insumo.UnidadMedidaBase,
+                                cant,
+                                ped.UsuarioCreador ?? "admin",
+                                $"Recepción por despacho de pedido inter-sede {ped.Correlativo}"
+                            );
+                            _context.MovimientosInsumo.Add(movEntrada);
+                            hayCambios = true;
+                        }
+                    }
+                }
+            }
+
+            // Reconciliar devoluciones de cirugía pendientes hacia Sede Principal
+            if (sedeId == SeedConstants.SedeId_Principal)
+            {
+                var devolucionesCirugia = await _context.InsumosCirugiasPacientes
+                    .Include(i => i.Insumo)
+                    .Where(i => i.CantidadDevuelta > 0)
+                    .ToListAsync(ct);
+
+                foreach (var dev in devolucionesCirugia)
+                {
+                    bool tieneMov = await _context.MovimientosInsumo
+                        .AnyAsync(m => m.InsumoId == dev.InsumoId && m.SedeId == SeedConstants.SedeId_Principal && m.TipoMovimiento == TipoMovimientoInsumo.Ingreso && m.Motivo != null && m.Motivo.Contains(dev.CuentaServicioId.ToString()), ct);
+
+                    if (!tieneMov)
+                    {
+                        var stockPrincipal = await _context.StocksSedes
+                            .FirstOrDefaultAsync(s => s.InsumoId == dev.InsumoId && s.SedeId == SeedConstants.SedeId_Principal, ct);
+
+                        if (stockPrincipal == null)
+                        {
+                            stockPrincipal = new StockSede(dev.InsumoId, SeedConstants.SedeId_Principal, 0);
+                            _context.StocksSedes.Add(stockPrincipal);
+                        }
+
+                        stockPrincipal.RegistrarMovimientoStock(dev.CantidadDevuelta, dev.Insumo?.PermiteFraccionamiento ?? true);
+
+                        var movDev = new MovimientoInsumo(
+                            dev.InsumoId,
+                            SeedConstants.SedeId_Principal,
+                            TipoMovimientoInsumo.Ingreso,
+                            dev.CantidadDevuelta,
+                            dev.Insumo?.UnidadMedidaBase ?? UnidadMedida.UNIDAD,
+                            dev.CantidadDevuelta,
+                            "admin",
+                            $"Devolución de sobrante de cirugía reconciliada (Cuenta: {dev.CuentaServicioId})"
+                        );
+                        _context.MovimientosInsumo.Add(movDev);
+                        hayCambios = true;
+                    }
+                }
+            }
+
+            if (hayCambios)
+            {
+                await _context.SaveChangesAsync(ct);
+            }
         }
 
         [HttpGet("stock-consolidado")]
@@ -229,23 +335,53 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             [FromQuery] DateTime? fechaHasta,
             CancellationToken ct)
         {
-            var query = new GetKardexQuery
+            try
             {
-                SedeId = sedeId,
-                InsumoId = insumoId,
-                FechaDesde = fechaDesde,
-                FechaHasta = fechaHasta
-            };
-            var result = await _mediator.Send(query, ct);
-            return Ok(result);
+                var query = new GetKardexQuery
+                {
+                    SedeId = sedeId,
+                    InsumoId = insumoId,
+                    FechaDesde = fechaDesde,
+                    FechaHasta = fechaHasta
+                };
+                var result = await _mediator.Send(query, ct);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener reporte de Kárdex. SedeId: {SedeId}, InsumoId: {InsumoId}, FechaDesde: {FechaDesde}, FechaHasta: {FechaHasta}", sedeId, insumoId, fechaDesde, fechaHasta);
+                return StatusCode(500, new { message = "Error al procesar la consulta de Kárdex.", error = ex.Message });
+            }
         }
 
         [HttpPost("insumos")]
         public async Task<IActionResult> CreateInsumo([FromBody] CreateInsumoDto dto, CancellationToken ct)
         {
-            if (await _context.Insumos.AnyAsync(i => i.Codigo == dto.Codigo, ct))
+            var existingInsumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Codigo.ToLower() == dto.Codigo.Trim().ToLower(), ct);
+            if (existingInsumo != null)
             {
-                return BadRequest(new { Message = $"Ya existe un insumo con el código {dto.Codigo}." });
+                if (existingInsumo.IsDeleted)
+                {
+                    return Conflict(new
+                    {
+                        Message = $"El código '{dto.Codigo}' pertenece al insumo desactivado '{existingInsumo.Nombre}'.",
+                        InsumoId = existingInsumo.Id,
+                        Codigo = existingInsumo.Codigo,
+                        Nombre = existingInsumo.Nombre,
+                        EstaDesactivado = true
+                    });
+                }
+                else
+                {
+                    return BadRequest(new 
+                    { 
+                        Message = $"Ya existe un insumo activo con el código '{dto.Codigo}' ({existingInsumo.Nombre}).",
+                        InsumoId = existingInsumo.Id,
+                        Codigo = existingInsumo.Codigo,
+                        Nombre = existingInsumo.Nombre,
+                        EstaDesactivado = false
+                    });
+                }
             }
 
             var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
@@ -357,6 +493,111 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
             });
+        }
+
+        // --- Categorías de Insumos CRUD ---
+
+        [HttpGet("categorias")]
+        public async Task<IActionResult> GetCategorias(CancellationToken ct)
+        {
+            var categorias = await _context.CategoriasInsumo
+                .Where(c => c.Activo)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync(ct);
+            return Ok(categorias);
+        }
+
+        [HttpPost("categorias")]
+        public async Task<IActionResult> CreateCategoria([FromBody] CreateCategoriaInsumoDto dto, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+            {
+                return BadRequest(new { Message = "El nombre de la categoría es obligatorio." });
+            }
+
+            var nombreNormalizado = dto.Nombre.Trim();
+            var existing = await _context.CategoriasInsumo
+                .FirstOrDefaultAsync(c => c.Nombre.ToLower() == nombreNormalizado.ToLower(), ct);
+
+            if (existing != null)
+            {
+                if (!existing.Activo)
+                {
+                    existing.SetEstado(true);
+                    await _context.SaveChangesAsync(ct);
+                }
+                return Ok(existing);
+            }
+
+            var categoria = new CategoriaInsumo(nombreNormalizado, dto.Codigo);
+            _context.CategoriasInsumo.Add(categoria);
+            await _context.SaveChangesAsync(ct);
+            return Ok(categoria);
+        }
+
+        [HttpPut("categorias/{id}")]
+        public async Task<IActionResult> UpdateCategoria(Guid id, [FromBody] UpdateCategoriaInsumoDto dto, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+            {
+                return BadRequest(new { Message = "El nombre de la categoría es obligatorio." });
+            }
+
+            var categoria = await _context.CategoriasInsumo.FirstOrDefaultAsync(c => c.Id == id, ct);
+            if (categoria == null)
+            {
+                return NotFound(new { Message = "Categoría no encontrada." });
+            }
+
+            var nombreNormalizado = dto.Nombre.Trim();
+            var duplicate = await _context.CategoriasInsumo
+                .FirstOrDefaultAsync(c => c.Id != id && c.Nombre.ToLower() == nombreNormalizado.ToLower(), ct);
+
+            if (duplicate != null)
+            {
+                return BadRequest(new { Message = $"Ya existe otra categoría con el nombre '{nombreNormalizado}'." });
+            }
+
+            var nombreAnterior = categoria.Nombre;
+            categoria.ActualizarNombre(nombreNormalizado, dto.Codigo);
+
+            if (dto.Activo.HasValue)
+            {
+                categoria.SetEstado(dto.Activo.Value);
+            }
+
+            // Propagar el nuevo nombre a los insumos existentes que tengan esta categoría
+            var insumosConCategoria = await _context.Insumos
+                .Where(i => i.Categoria == nombreAnterior)
+                .ToListAsync(ct);
+
+            foreach (var insumo in insumosConCategoria)
+            {
+                insumo.ActualizarDetalles(
+                    insumo.Nombre,
+                    insumo.UnidadMedidaBase,
+                    insumo.CostoUnitarioBaseUSD,
+                    insumo.PermiteFraccionamiento,
+                    nombreNormalizado
+                );
+            }
+
+            await _context.SaveChangesAsync(ct);
+            return Ok(categoria);
+        }
+
+        [HttpDelete("categorias/{id}")]
+        public async Task<IActionResult> DeleteCategoria(Guid id, CancellationToken ct)
+        {
+            var categoria = await _context.CategoriasInsumo.FirstOrDefaultAsync(c => c.Id == id, ct);
+            if (categoria == null)
+            {
+                return NotFound(new { Message = "Categoría no encontrada." });
+            }
+
+            categoria.SetEstado(false);
+            await _context.SaveChangesAsync(ct);
+            return NoContent();
         }
 
         // --- Principios Activos CRUD & Vinculación ---
@@ -611,6 +852,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
                 stockSede.RegistrarMovimientoStock(item.Cantidad, insumo.PermiteFraccionamiento);
 
+                var descPres = !string.IsNullOrWhiteSpace(item.PresentacionCompra) ? $" [Pres: {item.PresentacionCompra.Trim()}]" : "";
                 var mov = new MovimientoInsumo(
                     item.InsumoId,
                     principalSedeId,
@@ -619,7 +861,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     insumo.UnidadMedidaBase,
                     item.Cantidad,
                     username,
-                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD. Prov: {dto.ProveedorNombre ?? "General"}"
+                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}"
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
@@ -824,6 +1066,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
     }
 
+    public class CreateCategoriaInsumoDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string? Codigo { get; set; }
+    }
+
+    public class UpdateCategoriaInsumoDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string? Codigo { get; set; }
+        public bool? Activo { get; set; }
+    }
+
     public class CreatePrincipioActivoDto
     {
         public string Nombre { get; set; } = string.Empty;
@@ -858,6 +1113,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public Guid InsumoId { get; set; }
         public decimal Cantidad { get; set; }
         public decimal PrecioCostoUSD { get; set; }
+        public string? PresentacionCompra { get; set; }
     }
 
     public class RecordMovementDto

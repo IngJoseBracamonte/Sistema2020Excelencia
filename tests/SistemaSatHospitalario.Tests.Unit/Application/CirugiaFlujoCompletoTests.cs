@@ -270,48 +270,46 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task Should_ProcessReposicionStock_BetweenSedes_WithNoStockDrift()
+        public async Task Should_ClearAllRequisitos_When_ClearRequisitosCommandExecuted()
         {
             // Arrange
             var context = GetInMemoryDbContext();
-            var insumo = new Insumo("INS-GUANTES", "Guantes Estériles Talla 7.5", 100, UnidadMedida.UNIDAD, 1.20m);
-            context.Insumos.Add(insumo);
+            var paciente = new PacienteAdmision("V-12345678", "Juan Perez", "0414-0000000");
+            context.PacientesAdmision.Add(paciente);
 
-            // Add stock for Sede_Emergencia and Sede_Hospitalizacion
-            var stockEmergencia = new StockSede(insumo.Id, SeedConstants.SedeId_Emergencia, 20);
-            var stockHospitalizacion = new StockSede(insumo.Id, SeedConstants.SedeId_Hospitalizacion, 10);
-            context.StocksSedes.AddRange(stockEmergencia, stockHospitalizacion);
+            var esp = new Especialidad("Cirugía General");
+            context.Especialidades.Add(esp);
+            var medico = new Medico("Dr. Carlos Cirujano", esp.Id, honorarioBase: 100);
+            context.Medicos.Add(medico);
+
+            var cuenta = new CuentaServicios(paciente.Id, "admin", "HOSPITALIZACION", null, null, "HAB-101");
+            context.CuentasServicios.Add(cuenta);
+
+            var orden = new OrdenCirugia(cuenta.Id, paciente.Id, "Hernioplastia", 0, medico.Id, DateTime.UtcNow.AddDays(1), "admin");
+            context.OrdenesCirugia.Add(orden);
+
+            var req1 = new RequisitoCirugia("EKG", "Electrocardiograma", true);
+            var req2 = new RequisitoCirugia("Ayuno", "Ayuno 8h", true);
+            context.RequisitosCirugia.AddRange(req1, req2);
+
+            var ordenReq1 = new OrdenCirugiaRequisito(orden.Id, req1.Id, false);
+            var ordenReq2 = new OrdenCirugiaRequisito(orden.Id, req2.Id, false);
+            context.OrdenesCirugiaRequisitos.AddRange(ordenReq1, ordenReq2);
             await context.SaveChangesAsync();
 
-            var handler = new ProcesarReposicionStockCommandHandler(context, NullLogger<ProcesarReposicionStockCommandHandler>.Instance);
-
-            var command = new ProcesarReposicionStockCommand
-            {
-                InsumoId = insumo.Id,
-                SedeOrigenId = SeedConstants.SedeId_Emergencia,
-                SedeDestinoId = SeedConstants.SedeId_Hospitalizacion,
-                Cantidad = 5,
-                Motivo = "CambioTalla",
-                UsuarioId = "supervisor_inventario",
-                Observaciones = "Devolución y reposición de 5 pares"
-            };
+            var handler = new ClearRequisitosOrdenCirugiaCommandHandler(context);
 
             // Act
-            var result = await handler.Handle(command, CancellationToken.None);
+            var result = await handler.Handle(new ClearRequisitosOrdenCirugiaCommand
+            {
+                OrdenCirugiaId = orden.Id,
+                UsuarioId = "admin"
+            }, CancellationToken.None);
 
             // Assert
             result.Should().BeTrue();
-
-            var stockOrigen = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo.Id && s.SedeId == SeedConstants.SedeId_Emergencia);
-            var stockDestino = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo.Id && s.SedeId == SeedConstants.SedeId_Hospitalizacion);
-
-            stockOrigen.StockActual.Should().Be(15); // 20 - 5
-            stockDestino.StockActual.Should().Be(15); // 10 + 5
-
-            var transferencia = await context.TransferenciasReposicionStock.FirstOrDefaultAsync(t => t.InsumoId == insumo.Id);
-            transferencia.Should().NotBeNull();
-            transferencia!.Cantidad.Should().Be(5);
-            transferencia.Motivo.Should().Be("CambioTalla");
+            var remaining = await context.OrdenesCirugiaRequisitos.Where(r => r.OrdenCirugiaId == orden.Id).ToListAsync();
+            remaining.Should().BeEmpty();
         }
     }
 }

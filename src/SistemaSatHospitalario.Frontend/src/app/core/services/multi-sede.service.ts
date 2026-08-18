@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface Sede {
@@ -26,6 +26,8 @@ export interface AreaClinica {
   id: string;
   nombre: string;
   codigo: string;
+  sedeId?: string;
+  sedeNombre?: string;
   activo?: boolean; // Se agrega para resolver el error en cierre-cuenta
   esSubAreaAlmacenPrincipal?: boolean;
   areaPadreId?: string | null;
@@ -80,9 +82,17 @@ export interface SedeDto {
 export class MultiSedeService {
   private http = inject(HttpClient);
 
+  private sedesCache$: Observable<Sede[]> | null = null;
+  private areasCache = new Map<string, Observable<AreaClinica[]>>();
+
   // Sede Contexto Activo (para filtrados de stock reactivos)
   private activeSedeSignal = signal<Sede | null>(null);
   public activeSede = computed(() => this.activeSedeSignal());
+
+  clearCache() {
+    this.sedesCache$ = null;
+    this.areasCache.clear();
+  }
 
   setSedeActiva(sede: Sede | null) {
     this.activeSedeSignal.set(sede);
@@ -114,39 +124,63 @@ export class MultiSedeService {
   }
 
   // --- API SEDES ---
-  getSedes(): Observable<Sede[]> {
-    return this.http.get<Sede[]>(`${environment.apiUrl}/api/Sede`);
+  getSedes(forceRefresh = false): Observable<Sede[]> {
+    if (!this.sedesCache$ || forceRefresh) {
+      this.sedesCache$ = this.http.get<Sede[]>(`${environment.apiUrl}/api/Sede`).pipe(
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+    }
+    return this.sedesCache$;
   }
 
   createSede(dto: { codigo: string; nombre: string; esPrincipal: boolean }): Observable<string> {
-    return this.http.post<string>(`${environment.apiUrl}/api/Sede`, dto);
+    return this.http.post<string>(`${environment.apiUrl}/api/Sede`, dto).pipe(
+      tap(() => this.clearCache())
+    );
   }
 
   updateSede(id: string, dto: { id: string; codigo: string; nombre: string; esPrincipal: boolean }): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/api/Sede/${id}`, dto);
+    return this.http.put(`${environment.apiUrl}/api/Sede/${id}`, dto).pipe(
+      tap(() => this.clearCache())
+    );
   }
 
   deleteSede(id: string): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/api/Sede/${id}`);
+    return this.http.delete(`${environment.apiUrl}/api/Sede/${id}`).pipe(
+      tap(() => this.clearCache())
+    );
   }
 
   // --- API AREAS CLINICAS ---
-  getAreasClinicas(sedeId?: string): Observable<AreaClinica[]> {
-    let params: any = {};
-    if (sedeId) params.sedeId = sedeId;
-    return this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`, { params });
+  getAreasClinicas(sedeId?: string, forceRefresh = false): Observable<AreaClinica[]> {
+    const key = sedeId || 'ALL';
+    if (!this.areasCache.has(key) || forceRefresh) {
+      let params: any = {};
+      if (sedeId) params.sedeId = sedeId;
+      const obs = this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`, { params }).pipe(
+        shareReplay({ bufferSize: 1, refCount: false })
+      );
+      this.areasCache.set(key, obs);
+    }
+    return this.areasCache.get(key)!;
   }
 
   createAreaClinica(dto: { sedeId: string; codigo: string; nombre: string }): Observable<string> {
-    return this.http.post<string>(`${environment.apiUrl}/api/AreaClinica`, dto);
+    return this.http.post<string>(`${environment.apiUrl}/api/AreaClinica`, dto).pipe(
+      tap(() => this.clearCache())
+    );
   }
 
   updateAreaClinica(id: string, dto: { id: string; sedeId: string; codigo: string; nombre: string }): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/api/AreaClinica/${id}`, dto);
+    return this.http.put(`${environment.apiUrl}/api/AreaClinica/${id}`, dto).pipe(
+      tap(() => this.clearCache())
+    );
   }
 
   deleteAreaClinica(id: string): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/api/AreaClinica/${id}`);
+    return this.http.delete(`${environment.apiUrl}/api/AreaClinica/${id}`).pipe(
+      tap(() => this.clearCache())
+    );
   }
 
   // --- API PEDIDOS INTER-SEDE ---
