@@ -24,6 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public async Task<KardexResultDto> Handle(GetKardexQuery request, CancellationToken cancellationToken)
         {
             var baseQuery = _context.MovimientosInsumo
+                .AsNoTracking()
                 .IgnoreQueryFilters()
                 .Include(m => m.Insumo)
                 .Include(m => m.Sede)
@@ -43,8 +44,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (request.FechaDesde.HasValue)
             {
+                var desde = request.FechaDesde.Value.Date;
                 var priorMovements = await baseQuery
-                    .Where(m => m.Fecha < request.FechaDesde.Value)
+                    .Where(m => m.Fecha < desde)
                     .ToListAsync(cancellationToken);
 
                 if (priorMovements.Any())
@@ -59,13 +61,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (request.FechaDesde.HasValue)
             {
-                currentQuery = currentQuery.Where(m => m.Fecha >= request.FechaDesde.Value);
+                var desde = request.FechaDesde.Value.Date;
+                currentQuery = currentQuery.Where(m => m.Fecha >= desde);
             }
 
             if (request.FechaHasta.HasValue)
             {
-                var hastaFinDelDia = request.FechaHasta.Value.Date.AddDays(1).AddTicks(-1);
-                currentQuery = currentQuery.Where(m => m.Fecha <= hastaFinDelDia);
+                var hastaExclusive = request.FechaHasta.Value.Date.AddDays(1);
+                currentQuery = currentQuery.Where(m => m.Fecha < hastaExclusive);
             }
 
             var movimientosList = await currentQuery
@@ -114,6 +117,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     var esEntrada = IsEntrada(m.TipoMovimiento);
                     var cantAbs = Math.Abs(m.CantidadOriginal > 0 ? m.CantidadOriginal : m.CantidadBase);
                     var cantFinal = esEntrada ? cantAbs : -cantAbs;
+                    var unidadTxt = m.Insumo != null ? m.Insumo.UnidadMedidaBase.ToString() : m.UnidadMedidaOriginal.ToString();
 
                     return new KardexMovimientoDto
                     {
@@ -127,9 +131,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         TipoMovimiento = m.TipoMovimiento.ToString(),
                         Cantidad = cantFinal,
                         CantidadBase = cantFinal,
-                        UnidadMedida = m.UnidadMedidaOriginal.ToString(),
+                        UnidadMedida = string.IsNullOrWhiteSpace(unidadTxt) ? "Unidad" : unidadTxt,
                         Usuario = m.Usuario ?? "Sistema",
-                        Motivo = m.Motivo,
+                        Motivo = m.Motivo ?? string.Empty,
                         EsEntrada = esEntrada
                     };
                 }).ToList()

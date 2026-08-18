@@ -94,9 +94,9 @@ describe('PabellonGestionComponent', () => {
   ];
 
   const mockAreasClinicas: AreaClinica[] = [
-    { id: 'area-1', sedeId: 'sede-1', codigo: 'Q1', nombre: 'Quirófano 1', activo: true },
-    { id: 'area-2', sedeId: 'sede-1', codigo: 'Q2', nombre: 'Quirófano 2', activo: true },
-    { id: 'area-3', sedeId: 'sede-1', codigo: 'H101', nombre: 'Habitación 101', activo: true }
+    { id: 'area-1', codigo: 'Q1', nombre: 'Quirófano 1', activo: true },
+    { id: 'area-2', codigo: 'Q2', nombre: 'Quirófano 2', activo: true },
+    { id: 'area-3', codigo: 'H101', nombre: 'Habitación 101', activo: true }
   ];
 
   beforeEach(async () => {
@@ -135,7 +135,7 @@ describe('PabellonGestionComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('debe cargar pacientes quirurgicos, calendario, medicos y habitaciones al inicializarse', () => {
+  it('debe cargar pacientes quirurgicos, calendario, medicos y quirofanos al inicializarse', () => {
     expect(mockPabellonService.getPacientesQuirurgicos).toHaveBeenCalled();
     expect(mockPabellonService.getCalendario).toHaveBeenCalled();
     expect(mockMedicoService.getAll).toHaveBeenCalled();
@@ -143,7 +143,8 @@ describe('PabellonGestionComponent', () => {
     expect(component.pacientesQuirurgicos().length).toBe(1);
     expect(component.calendarioItems().length).toBe(1);
     expect(component.medicos().length).toBe(2);
-    expect(component.habitaciones().length).toBe(3);
+    expect(component.quirofanos().length).toBe(2);
+    expect(component.quirofanos().some(q => q.nombre === 'Habitación 101')).toBeFalse();
   });
 
   it('debe alternar los modos de vista entre tablero y calendario', () => {

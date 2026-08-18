@@ -5,8 +5,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SistemaSatHospitalario.Core.Application.Commands.Admision;
-using SistemaSatHospitalario.Core.Application.Queries.Admision;
+using SistemaSatHospitalario.Core.Application.Commands.Inventario;
+using SistemaSatHospitalario.Core.Application.Queries.Inventario;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.WebAPI.Infrastructure.Security;
 

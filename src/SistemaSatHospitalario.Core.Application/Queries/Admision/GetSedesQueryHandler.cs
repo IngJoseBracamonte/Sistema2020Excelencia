@@ -21,6 +21,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public async Task<List<SedeDto>> Handle(GetSedesQuery request, CancellationToken cancellationToken)
         {
             return await _context.Sedes
+                .AsNoTracking()
                 .Select(s => new SedeDto
                 {
                     Id = s.Id,

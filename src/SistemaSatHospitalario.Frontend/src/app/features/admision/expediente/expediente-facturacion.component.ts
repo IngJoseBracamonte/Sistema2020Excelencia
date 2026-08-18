@@ -83,8 +83,7 @@ export class ExpedienteFacturacionComponent implements OnInit {
   }
 
   reimprimirCompromiso(row: ExpedienteFacturacionRow) {
-    if (!row.cuentaPorCobrarId) return;
-    if (row.tipoIngreso === 'Seguro' || (row.seguroNombre && row.seguroNombre !== 'Particular')) {
+    if (row.tipoIngreso === 'Seguro' || (row.seguroNombre && row.seguroNombre !== 'Particular') || row.seguroNombre?.toUpperCase().includes('PDVSA') || !row.cuentaPorCobrarId) {
       this.reimprimirConformidad(row);
       return;
     }

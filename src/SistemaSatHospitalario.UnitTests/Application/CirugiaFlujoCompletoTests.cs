@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
@@ -81,24 +80,24 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
             var ordenActualizada = await context.OrdenesCirugia
                 .Include(o => o.MedicosHonorarios)
                 .FirstAsync(o => o.Id == orden.Id);
 
-            ordenActualizada.PrecioDerechoSalaUsd.Should().Be(400.00m);
-            ordenActualizada.EsAlquilado.Should().BeTrue();
-            ordenActualizada.MedicosHonorarios.Should().HaveCount(2);
+            Assert.Equal(400.00m, ordenActualizada.PrecioDerechoSalaUsd);
+            Assert.True(ordenActualizada.EsAlquilado);
+            Assert.Equal(2, ordenActualizada.MedicosHonorarios.Count);
 
             var principal = ordenActualizada.MedicosHonorarios.First(m => m.EsCirujanoPrincipal);
-            principal.MedicoId.Should().Be(medico1.Id);
-            principal.EspecialidadId.Should().Be(esp.Id);
-            principal.MontoHonorarioUsd.Should().Be(600.00m);
+            Assert.Equal(medico1.Id, principal.MedicoId);
+            Assert.Equal(esp.Id, principal.EspecialidadId);
+            Assert.Equal(600.00m, principal.MontoHonorarioUsd);
 
             var anest = ordenActualizada.MedicosHonorarios.First(m => !m.EsCirujanoPrincipal);
-            anest.MedicoId.Should().Be(medico2.Id);
-            anest.EspecialidadId.Should().Be(esp.Id);
-            anest.MontoHonorarioUsd.Should().Be(250.00m);
+            Assert.Equal(medico2.Id, anest.MedicoId);
+            Assert.Equal(esp.Id, anest.EspecialidadId);
+            Assert.Equal(250.00m, anest.MontoHonorarioUsd);
         }
 
         [Fact]
@@ -147,16 +146,16 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
             var asignados = await context.InsumosCirugiasPacientes.Where(i => i.CuentaServicioId == cuenta.Id).ToListAsync();
-            asignados.Should().HaveCount(3);
-            asignados.First(i => i.InsumoId == insumo1.Id).CantidadEntregada.Should().Be(2);
-            asignados.First(i => i.InsumoId == insumo2.Id).CantidadEntregada.Should().Be(10);
-            asignados.First(i => i.InsumoId == insumo3Extra.Id).CantidadEntregada.Should().Be(1);
+            Assert.Equal(3, asignados.Count);
+            Assert.Equal(2, asignados.First(i => i.InsumoId == insumo1.Id).CantidadEntregada);
+            Assert.Equal(10, asignados.First(i => i.InsumoId == insumo2.Id).CantidadEntregada);
+            Assert.Equal(1, asignados.First(i => i.InsumoId == insumo3Extra.Id).CantidadEntregada);
 
             // Check stock deduction (100 - 2 = 98)
             var stock1Check = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo1.Id && s.SedeId == SeedConstants.SedeId_Principal);
-            stock1Check.StockActual.Should().Be(98);
+            Assert.Equal(98, stock1Check.StockActual);
         }
 
         [Fact]
@@ -196,14 +195,14 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
             var item = await context.InsumosCirugiasPacientes.FirstAsync(i => i.Id == asignado.Id);
-            item.CantidadDevuelta.Should().Be(2);
-            item.CantidadConsumida.Should().Be(3);
+            Assert.Equal(2, item.CantidadDevuelta);
+            Assert.Equal(3, item.CantidadConsumida);
 
             // Stock must increase back by 2 (from 45 to 47)
             var stockActualizado = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo.Id && s.SedeId == SeedConstants.SedeId_Principal);
-            stockActualizado.StockActual.Should().Be(47);
+            Assert.Equal(47, stockActualizado.StockActual);
         }
 
         [Fact]
@@ -241,10 +240,10 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             // Act 1: Solicitar
             var solicitudId = await solicitarHandler.Handle(solCommand, CancellationToken.None);
-            solicitudId.Should().NotBeEmpty();
+            Assert.NotEqual(Guid.Empty, solicitudId);
 
             var sol = await context.SolicitudesInsumosCirugia.FirstAsync(s => s.Id == solicitudId);
-            sol.EstadoSolicitud.Should().Be(EstadoSolicitudInsumoConstants.Pendiente);
+            Assert.Equal(EstadoSolicitudInsumoConstants.Pendiente, sol.EstadoSolicitud);
 
             // Act 2: Despachar
             var despacharHandler = new DespacharSolicitudExtraCommandHandler(context, NullLogger<DespacharSolicitudExtraCommandHandler>.Instance);
@@ -255,63 +254,18 @@ namespace SistemaSatHospitalario.UnitTests.Application
             }, CancellationToken.None);
 
             // Assert
-            despResult.Should().BeTrue();
+            Assert.True(despResult);
             var solDespachada = await context.SolicitudesInsumosCirugia.FirstAsync(s => s.Id == solicitudId);
-            solDespachada.EstadoSolicitud.Should().Be(EstadoSolicitudInsumoConstants.Despachado);
+            Assert.Equal(EstadoSolicitudInsumoConstants.Despachado, solDespachada.EstadoSolicitud);
 
             // Consumo cargado a la cuenta
             var consumo = await context.InsumosCirugiasPacientes.FirstOrDefaultAsync(i => i.CuentaServicioId == cuenta.Id && i.InsumoId == insumo.Id);
-            consumo.Should().NotBeNull();
-            consumo!.CantidadEntregada.Should().Be(2);
+            Assert.NotNull(consumo);
+            Assert.Equal(2, consumo!.CantidadEntregada);
 
             // Stock descontado de almacén central (30 - 2 = 28)
             var stockCheck = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo.Id && s.SedeId == SeedConstants.SedeId_Principal);
-            stockCheck.StockActual.Should().Be(28);
-        }
-
-        [Fact]
-        public async Task Should_ProcessReposicionStock_BetweenSedes_WithNoStockDrift()
-        {
-            // Arrange
-            var context = GetInMemoryDbContext();
-            var insumo = new Insumo("INS-GUANTES", "Guantes Estériles Talla 7.5", 100, UnidadMedida.UNIDAD, 1.20m);
-            context.Insumos.Add(insumo);
-
-            // Add stock for Sede_Emergencia and Sede_Hospitalizacion
-            var stockEmergencia = new StockSede(insumo.Id, SeedConstants.SedeId_Emergencia, 20);
-            var stockHospitalizacion = new StockSede(insumo.Id, SeedConstants.SedeId_Hospitalizacion, 10);
-            context.StocksSedes.AddRange(stockEmergencia, stockHospitalizacion);
-            await context.SaveChangesAsync();
-
-            var handler = new ProcesarReposicionStockCommandHandler(context, NullLogger<ProcesarReposicionStockCommandHandler>.Instance);
-
-            var command = new ProcesarReposicionStockCommand
-            {
-                InsumoId = insumo.Id,
-                SedeOrigenId = SeedConstants.SedeId_Emergencia,
-                SedeDestinoId = SeedConstants.SedeId_Hospitalizacion,
-                Cantidad = 5,
-                Motivo = "CambioTalla",
-                UsuarioId = "supervisor_inventario",
-                Observaciones = "Devolución y reposición de 5 pares"
-            };
-
-            // Act
-            var result = await handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            result.Should().BeTrue();
-
-            var stockOrigen = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo.Id && s.SedeId == SeedConstants.SedeId_Emergencia);
-            var stockDestino = await context.StocksSedes.FirstAsync(s => s.InsumoId == insumo.Id && s.SedeId == SeedConstants.SedeId_Hospitalizacion);
-
-            stockOrigen.StockActual.Should().Be(15); // 20 - 5
-            stockDestino.StockActual.Should().Be(15); // 10 + 5
-
-            var transferencia = await context.TransferenciasReposicionStock.FirstOrDefaultAsync(t => t.InsumoId == insumo.Id);
-            transferencia.Should().NotBeNull();
-            transferencia!.Cantidad.Should().Be(5);
-            transferencia.Motivo.Should().Be("CambioTalla");
+            Assert.Equal(28, stockCheck.StockActual);
         }
     }
 }

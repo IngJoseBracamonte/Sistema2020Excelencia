@@ -115,14 +115,68 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             );
 
             // 5. Marcar la cama física como ocupada si fue especificada
+            AreaClinica? cama = null;
             if (request.AreaClinicaId.HasValue)
             {
-                var cama = await _context.AreasClinicas
+                cama = await _context.AreasClinicas
+                    .Include(a => a.ServicioTarifaBase)
                     .FirstOrDefaultAsync(a => a.Id == request.AreaClinicaId.Value, cancellationToken);
                 if (cama != null)
                 {
                     cama.MarcarComoOcupada();
                 }
+            }
+
+            // 6. Generar ítem de cargo inicial por Ingreso (Emergencia $0.00, Hospitalización / UCI según tarifa base)
+            bool esIngresoClinico = !string.IsNullOrEmpty(request.TipoIngreso) &&
+                (request.TipoIngreso.Equals("Emergencia", StringComparison.OrdinalIgnoreCase) ||
+                 request.TipoIngreso.Equals("Hospitalizacion", StringComparison.OrdinalIgnoreCase) ||
+                 request.TipoIngreso.Equals("Hospitalización", StringComparison.OrdinalIgnoreCase) ||
+                 request.TipoIngreso.Equals("UCI", StringComparison.OrdinalIgnoreCase));
+
+            if (esIngresoClinico)
+            {
+                bool esEmergencia = request.TipoIngreso.Equals("Emergencia", StringComparison.OrdinalIgnoreCase);
+                decimal precioIngreso = 0.00m;
+                Guid servicioId = Guid.Empty;
+                string? legacyMappingId = null;
+
+                if (!esEmergencia && cama?.ServicioTarifaBase != null)
+                {
+                    precioIngreso = cama.ServicioTarifaBase.PrecioBase;
+                    servicioId = cama.ServicioTarifaBase.Id;
+                    legacyMappingId = cama.ServicioTarifaBase.LegacyMappingId;
+
+                    if (request.ConvenioId.HasValue)
+                    {
+                        var priceConv = await _context.PreciosServicioConvenio
+                            .FirstOrDefaultAsync(p => p.SeguroConvenioId == request.ConvenioId.Value 
+                                                      && p.ServicioClinicoId == cama.ServicioTarifaBaseId.Value, cancellationToken);
+                        if (priceConv != null)
+                        {
+                            precioIngreso = priceConv.PrecioDiferencial;
+                        }
+                    }
+                }
+                else if (cama?.ServicioTarifaBase != null)
+                {
+                    servicioId = cama.ServicioTarifaBase.Id;
+                    legacyMappingId = cama.ServicioTarifaBase.LegacyMappingId;
+                }
+
+                string descripcionCargo = $"Ingreso - {request.TipoIngreso}" + (cama != null ? $" ({cama.Nombre})" : "");
+
+                nuevaCuenta.AgregarServicio(
+                    servicioId,
+                    descripcionCargo,
+                    precioIngreso,
+                    0m, // Honorario
+                    1m, // Cantidad
+                    "Servicio",
+                    request.UsuarioCarga,
+                    legacyMappingId,
+                    cama?.Id
+                );
             }
 
             await _context.CuentasServicios.AddAsync(nuevaCuenta, cancellationToken);

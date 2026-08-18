@@ -110,10 +110,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .AsNoTracking()
                 .Include(o => o.Paciente)
                 .Include(o => o.Medico)
+                    .ThenInclude(m => m.Especialidad)
+                .Include(o => o.SedeQuirofano)
                 .Include(o => o.CuentaServicio)
                     .ThenInclude(c => c.AreaClinica)
+                        .ThenInclude(a => a.Sede)
                 .Include(o => o.CuentaServicio)
                     .ThenInclude(c => c.CamaRetenida)
+                        .ThenInclude(a => a.Sede)
                 .Include(o => o.CuentaServicio)
                     .ThenInclude(c => c.Convenio)
                 .Include(o => o.Requisitos)
@@ -156,13 +160,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             return ordenes.Select(o =>
             {
-                var areaNombre = o.CuentaServicio?.AreaClinica?.Nombre ?? "Sin Asignar";
-                var camaNombre = o.CuentaServicio?.CamaRetenida != null
-                    ? o.CuentaServicio.CamaRetenida.Nombre
-                    : (o.CuentaServicio?.SubAreaClinica ?? "Sin Cama");
-                var ubicacionFormateada = o.CuentaServicio?.CamaRetenida != null
-                    ? $"{areaNombre} - {o.CuentaServicio.CamaRetenida.Nombre}"
-                    : (o.CuentaServicio?.SubAreaClinica ?? areaNombre);
+                var sedeNombre = o.CuentaServicio?.AreaClinica?.Sede?.Nombre ?? (o.SedeQuirofano?.Nombre ?? string.Empty);
+                var camaNombre = o.CuentaServicio?.CamaRetenida?.Nombre ?? (o.CuentaServicio?.AreaClinica?.Nombre ?? o.SalaQuirofano);
+                var ubicacionFormateada = !string.IsNullOrWhiteSpace(sedeNombre) && !string.IsNullOrWhiteSpace(camaNombre)
+                    ? $"{sedeNombre} - {camaNombre}"
+                    : (o.CuentaServicio?.SubAreaClinica ?? (!string.IsNullOrWhiteSpace(camaNombre) ? camaNombre : "Sin Asignar"));
                 var convenioId = o.CuentaServicio?.ConvenioId;
                 var tieneConvenio = convenioId.HasValue && convenioId.Value > 0;
 
@@ -176,7 +178,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Ubicacion = new UbicacionPacienteDto
                     {
                         AreaClinicaId = o.CuentaServicio?.AreaClinicaId,
-                        AreaClinicaNombre = areaNombre,
+                        AreaClinicaNombre = o.CuentaServicio?.AreaClinica?.Nombre ?? (!string.IsNullOrWhiteSpace(sedeNombre) ? sedeNombre : "Sin Asignar"),
                         CamaId = o.CuentaServicio?.CamaRetenidaId,
                         CamaNombre = camaNombre,
                         CamaCodigo = o.CuentaServicio?.CamaRetenida?.Codigo ?? string.Empty,
@@ -211,16 +213,30 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         FechaVerificacion = r.FechaVerificacion,
                         VerificadoPor = r.VerificadoPor
                     }).ToList(),
-                    MedicosHonorarios = o.MedicosHonorarios.Select(m => new MedicoHonorarioItemDto
-                    {
-                        Id = m.Id,
-                        MedicoId = m.MedicoId,
-                        MedicoNombre = m.Medico?.Nombre ?? "Desconocido",
-                        EspecialidadId = m.EspecialidadId,
-                        EspecialidadNombre = m.Especialidad?.Nombre ?? "General",
-                        MontoHonorarioUsd = m.MontoHonorarioUsd,
-                        EsCirujanoPrincipal = m.EsCirujanoPrincipal
-                    }).ToList(),
+                    MedicosHonorarios = o.MedicosHonorarios.Any()
+                        ? o.MedicosHonorarios.Select(m => new MedicoHonorarioItemDto
+                        {
+                            Id = m.Id,
+                            MedicoId = m.MedicoId,
+                            MedicoNombre = m.Medico?.Nombre ?? "Desconocido",
+                            EspecialidadId = m.EspecialidadId,
+                            EspecialidadNombre = m.Especialidad?.Nombre ?? (m.Medico?.Especialidad?.Nombre ?? "General"),
+                            MontoHonorarioUsd = m.MontoHonorarioUsd,
+                            EsCirujanoPrincipal = m.EsCirujanoPrincipal
+                        }).ToList()
+                        : (o.Medico != null ? new List<MedicoHonorarioItemDto>
+                        {
+                            new MedicoHonorarioItemDto
+                            {
+                                Id = Guid.NewGuid(),
+                                MedicoId = o.Medico.Id,
+                                MedicoNombre = o.Medico.Nombre,
+                                EspecialidadId = o.Medico.EspecialidadId,
+                                EspecialidadNombre = o.Medico.Especialidad?.Nombre ?? "Cirugía General",
+                                MontoHonorarioUsd = o.PrecioBaseUsd,
+                                EsCirujanoPrincipal = true
+                            }
+                        } : new List<MedicoHonorarioItemDto>()),
                     InsumosAsignados = insumosPorCuenta
                         .Where(i => i.CuentaServicioId == o.CuentaServicioId)
                         .Select(i => new InsumoCirugiaConsumoDto

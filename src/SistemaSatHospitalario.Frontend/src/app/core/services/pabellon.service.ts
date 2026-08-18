@@ -162,22 +162,6 @@ export interface OrdenCirugiaDetalle extends OrdenCirugia {
   insumosAsignados: InsumoCirugiaConsumo[];
 }
 
-export interface TransferenciaReposicionItem {
-  id: string;
-  insumoId: string;
-  insumoNombre: string;
-  insumoCodigo: string;
-  sedeOrigenId: string;
-  sedeOrigenNombre: string;
-  sedeDestinoId: string;
-  sedeDestinoNombre: string;
-  cantidad: number;
-  motivo: string;
-  fechaTransferencia: string;
-  usuarioId: string;
-  observaciones?: string;
-}
-
 export interface CrearOrdenCirugiaRequest {
   cuentaServicioId: string;
   pacienteId: string;
@@ -243,14 +227,12 @@ export interface ActualizarHonorariosYPreciosRequest {
 export class PabellonService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Pabellon`;
-  private inventarioUrl = `${environment.apiUrl}/api/Inventario/Reposicion`;
 
   // Reactive State mediante Signals
   public calendarioItems = signal<CirugiaCalendarioItem[]>([]);
   public pacientesQuirurgicos = signal<PacienteQuirurgicoItem[]>([]);
   public cirugias = signal<OrdenCirugia[]>([]);
   public requisitosCatalogo = signal<RequisitoCirugia[]>([]);
-  public reposicionesHistorial = signal<TransferenciaReposicionItem[]>([]);
   public loading = signal<boolean>(false);
 
   getCalendario(fechaInicio?: string, fechaFin?: string, salaQuirofano?: string, estado?: string): Observable<CirugiaCalendarioItem[]> {
@@ -358,8 +340,29 @@ export class PabellonService {
     return this.http.post<{ id: string }>(`${this.apiUrl}/RequisitosCatalogo`, { nombre, descripcion, esActivo: true });
   }
 
+  addRequisitoAOrden(ordenId: string, nombre: string, descripcion: string = ''): Observable<{ id: string }> {
+    return this.http.post<{ id: string }>(`${this.apiUrl}/Ordenes/${ordenId}/Requisitos`, { nombre, descripcion });
+  }
+
+  removeRequisitoDeOrden(ordenId: string, requisitoId: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/Ordenes/${ordenId}/Requisitos/${requisitoId}`);
+  }
+
+  clearRequisitosDeOrden(ordenId: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/Ordenes/${ordenId}/Requisitos`);
+  }
+
   toggleRequisito(ordenId: string, requisitoId: string, cumplido: boolean): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(`${this.apiUrl}/Ordenes/${ordenId}/Requisitos/${requisitoId}`, { cumplido });
+  }
+
+  trasladarPaciente(payload: {
+    ordenCirugiaId: string;
+    sedeDestinoId: string;
+    areaClinicaCamaId: string;
+    observacion?: string;
+  }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/Ordenes/${payload.ordenCirugiaId}/Traslado`, payload);
   }
 
   devolucionMasiva(payload: { ordenCirugiaId: string; cuentaId?: string; items: { insumoId: string; cantidadUsada: number }[] }): Observable<{ success: boolean }> {
@@ -368,37 +371,6 @@ export class PabellonService {
 
   cargoExtra(payload: any): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/CargoExtra`, payload);
-  }
-
-  // --- Supervisor de Inventario: Reposición e Intercambio de Insumos ---
-  procesarReposicion(req: {
-    insumoId: string;
-    sedeOrigenId: string;
-    sedeDestinoId: string;
-    cantidad: number;
-    motivo: string;
-    observaciones?: string;
-  }): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(this.inventarioUrl, req);
-  }
-
-  getReposicionesHistorial(params?: {
-    sedeId?: string;
-    insumoId?: string;
-    fechaDesde?: string;
-    fechaHasta?: string;
-    motivo?: string;
-  }): Observable<TransferenciaReposicionItem[]> {
-    let httpParams = new HttpParams();
-    if (params?.sedeId) httpParams = httpParams.set('sedeId', params.sedeId);
-    if (params?.insumoId) httpParams = httpParams.set('insumoId', params.insumoId);
-    if (params?.fechaDesde) httpParams = httpParams.set('fechaDesde', params.fechaDesde);
-    if (params?.fechaHasta) httpParams = httpParams.set('fechaHasta', params.fechaHasta);
-    if (params?.motivo) httpParams = httpParams.set('motivo', params.motivo);
-
-    return this.http.get<TransferenciaReposicionItem[]>(`${this.inventarioUrl}/Historial`, { params: httpParams }).pipe(
-      tap(items => this.reposicionesHistorial.set(items || []))
-    );
   }
 
   getEstadosCirugia(): Observable<any[]> {

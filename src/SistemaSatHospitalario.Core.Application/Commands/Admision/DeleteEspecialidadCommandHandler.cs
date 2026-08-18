@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var entity = await _context.Especialidades.FindAsync(request.Id);
             if (entity == null) return;
 
-            _context.Especialidades.Remove(entity);
+            entity.SetEstado(false);
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

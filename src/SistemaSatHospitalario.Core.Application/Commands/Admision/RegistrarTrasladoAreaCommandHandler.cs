@@ -62,7 +62,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 5. Vincular al Servicio de Catálogo (Maestro de Servicios - HOSPITALARIO) para Métricas y Facturación
             Guid? detalleId = null;
-            if (request.MontoACobrarUsd > 0)
+            if (request.MontoACobrarUsd >= 0)
             {
                 ServicioClinico? servicioCatalogo = null;
                 if (camaDestino.ServicioTarifaBaseId.HasValue)

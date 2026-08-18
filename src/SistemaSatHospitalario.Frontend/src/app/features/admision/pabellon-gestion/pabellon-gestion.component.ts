@@ -74,14 +74,6 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
               Calendario Total
             </button>
           </div>
-
-          <button
-            (click)="abrirModalNuevaCirugia()"
-            class="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-lg shadow-sky-600/20 transition flex items-center gap-2"
-          >
-            <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
-            Programar Cirugía
-          </button>
         </div>
       </div>
 
@@ -99,7 +91,7 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
       @if (vistaModo() === 'calendario') {
         <app-pabellon-calendario
           [cirugias]="calendarioItems()"
-          [habitaciones]="habitaciones()"
+          [quirofanos]="quirofanos()"
           (seleccionarCirugia)="onSeleccionarDeCalendario($event)"
         ></app-pabellon-calendario>
       }
@@ -142,12 +134,12 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
               <!-- Sala / Quirófano y Modalidad de Anestesia -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="text-gray-400 mb-1 block font-semibold">Habitación / Quirófano *</label>
+                  <label class="text-gray-400 mb-1 block font-semibold">Quirófano / Sala Quirúrgica *</label>
                   <select [(ngModel)]="nuevaCirugiaForm.salaQuirofano" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-                    @for (h of habitaciones(); track h.id) {
-                      <option [value]="h.nombre">{{ h.nombre }} ({{ h.codigo }})</option>
+                    @for (q of quirofanos(); track q.id) {
+                      <option [value]="q.nombre">{{ q.nombre }} ({{ q.codigo }})</option>
                     }
-                    @if (habitaciones().length === 0) {
+                    @if (quirofanos().length === 0) {
                       <option value="Quirófano 1">Quirófano 1</option>
                       <option value="Quirófano 2">Quirófano 2</option>
                       <option value="Sala de Partos">Sala de Partos</option>
@@ -251,7 +243,7 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
                 @if (pacienteSeleccionado()) {
                   <div class="mt-2 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl flex items-center justify-between text-xs text-sky-300">
                     <span>👤 {{ pacienteSeleccionado()?.nombre }} (CI: {{ pacienteSeleccionado()?.cedula }})</span>
-                    <span class="text-[10px] text-gray-400 font-mono">Cuenta: {{ nuevaCirugiaForm.cuentaServicioId ? 'Vinculada' : 'Pendiente' }}</span>
+                    <span class="text-[10px] text-emerald-400 font-semibold">✓ Paciente Seleccionado</span>
                   </div>
                 }
               </div>
@@ -291,7 +283,7 @@ export class PabellonGestionComponent implements OnInit {
   public pacienteSeleccionadoDetalle = signal<PacienteQuirurgicoItem | null>(null);
 
   public medicos = signal<{ id: string; nombre: string; especialidad?: string; activo?: boolean }[]>([]);
-  public habitaciones = signal<AreaClinica[]>([]);
+  public quirofanos = signal<AreaClinica[]>([]);
 
   // Búsqueda de Pacientes
   public pacienteSearchQuery = signal<string>('');
@@ -322,7 +314,7 @@ export class PabellonGestionComponent implements OnInit {
 
     this.recargarDatos();
     this.cargarMedicos();
-    this.cargarHabitaciones();
+    this.cargarQuirofanos();
   }
 
   private sincronizarVistaConRuta(): void {
@@ -363,16 +355,47 @@ export class PabellonGestionComponent implements OnInit {
     });
   }
 
-  cargarHabitaciones(): void {
+  cargarQuirofanos(): void {
     this.multiSedeService.getAreasClinicas().subscribe({
       next: (areas: AreaClinica[]) => {
-        const activas = (areas || []).filter(a => a.activo);
-        this.habitaciones.set(activas);
-        if (activas.length > 0 && (!this.nuevaCirugiaForm.salaQuirofano || this.nuevaCirugiaForm.salaQuirofano === 'Quirófano 1')) {
-          this.nuevaCirugiaForm.salaQuirofano = activas[0].nombre;
+        const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
+        // Filtrar exclusivamente los quirófanos (por Sede Cirugía o por nombre/código de quirófano)
+        const soloQuirofanos = (areas || []).filter(a => 
+          a.activo !== false && (
+            a.sedeId === cirugiaSedeId ||
+            (a.sedeNombre || '').toLowerCase().includes('cirug') ||
+            (a.nombre || '').toLowerCase().includes('quiróf') ||
+            (a.nombre || '').toLowerCase().includes('quirof') ||
+            (a.nombre || '').toLowerCase().includes('parto') ||
+            (a.codigo || '').toLowerCase().startsWith('qx') ||
+            (a.codigo || '').toLowerCase().startsWith('q')
+          )
+        );
+
+        if (soloQuirofanos.length > 0) {
+          this.quirofanos.set(soloQuirofanos);
+          if (!this.nuevaCirugiaForm.salaQuirofano || this.nuevaCirugiaForm.salaQuirofano === 'Quirófano 1') {
+            this.nuevaCirugiaForm.salaQuirofano = soloQuirofanos[0].nombre;
+          }
+        } else {
+          // Fallback por defecto si aún no se han anexado quirófanos en BD
+          const defaultQuirofanos: AreaClinica[] = [
+            { id: '10000000-0000-0000-0000-000000000051', codigo: 'QX-1', nombre: 'Quirófano 1', activo: true },
+            { id: '10000000-0000-0000-0000-000000000052', codigo: 'QX-2', nombre: 'Quirófano 2', activo: true },
+            { id: '10000000-0000-0000-0000-000000000053', codigo: 'SALA-PARTOS', nombre: 'Sala de Partos', activo: true }
+          ];
+          this.quirofanos.set(defaultQuirofanos);
+          this.nuevaCirugiaForm.salaQuirofano = 'Quirófano 1';
         }
       },
-      error: (err) => console.error('[PABELLON] Error al cargar habitaciones:', err)
+      error: (err) => {
+        console.error('[PABELLON] Error al cargar quirófanos:', err);
+        this.quirofanos.set([
+          { id: '10000000-0000-0000-0000-000000000051', codigo: 'QX-1', nombre: 'Quirófano 1', activo: true },
+          { id: '10000000-0000-0000-0000-000000000052', codigo: 'QX-2', nombre: 'Quirófano 2', activo: true },
+          { id: '10000000-0000-0000-0000-000000000053', codigo: 'SALA-PARTOS', nombre: 'Sala de Partos', activo: true }
+        ]);
+      }
     });
   }
 
@@ -414,23 +437,9 @@ export class PabellonGestionComponent implements OnInit {
   seleccionarPaciente(p: PatientRecord): void {
     this.pacienteSeleccionado.set(p);
     this.nuevaCirugiaForm.pacienteId = p.id;
+    this.nuevaCirugiaForm.cuentaServicioId = p.id;
     this.pacientesEncontrados.set([]);
     this.pacienteSearchQuery.set(`${p.nombre} ${p.apellidos || ''} (${p.cedula})`);
-
-    // Vincular cuenta de hospitalización o emergencia activa
-    this.http.get<any[]>(`${environment.apiUrl}/api/Enfermeria/cuentas-activas`).subscribe({
-      next: (cuentas) => {
-        const cuentaPaciente = (cuentas || []).find(c => c.pacienteId === p.id || c.pacienteCedula === p.cedula);
-        if (cuentaPaciente) {
-          this.nuevaCirugiaForm.cuentaServicioId = cuentaPaciente.cuentaId || cuentaPaciente.id;
-        } else {
-          this.nuevaCirugiaForm.cuentaServicioId = p.id;
-        }
-      },
-      error: () => {
-        this.nuevaCirugiaForm.cuentaServicioId = p.id;
-      }
-    });
   }
 
   abrirModalNuevaCirugia(): void {
@@ -454,10 +463,9 @@ export class PabellonGestionComponent implements OnInit {
 
   esFormularioValido(): boolean {
     return !!(
-      this.nuevaCirugiaForm.descripcionCirugia.trim() &&
+      this.nuevaCirugiaForm.descripcionCirugia?.trim() &&
       this.nuevaCirugiaForm.medicoId &&
-      this.nuevaCirugiaForm.cuentaServicioId.trim() &&
-      this.nuevaCirugiaForm.pacienteId.trim() &&
+      this.nuevaCirugiaForm.pacienteId?.trim() &&
       this.nuevaCirugiaForm.fechaHoraProgramada
     );
   }

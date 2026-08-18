@@ -2,9 +2,8 @@ import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { PabellonService, TransferenciaReposicionItem } from '../../core/services/pabellon.service';
 import { InventoryService } from '../../core/services/inventory.service';
-import { Insumo } from '../../core/models/inventory.model';
+import { Insumo, TransferenciaReposicionItem } from '../../core/models/inventory.model';
 import { MultiSedeService, Sede } from '../../core/services/multi-sede.service';
 
 @Component({
@@ -220,7 +219,6 @@ import { MultiSedeService, Sede } from '../../core/services/multi-sede.service';
   `
 })
 export class ReposicionInventarioComponent implements OnInit {
-  private pabellonService = inject(PabellonService);
   private inventoryService = inject(InventoryService);
   private multiSedeService = inject(MultiSedeService);
 
@@ -265,7 +263,7 @@ export class ReposicionInventarioComponent implements OnInit {
   }
 
   cargarHistorial() {
-    this.pabellonService.getReposicionesHistorial().subscribe(items => {
+    this.inventoryService.getReposicionesHistorial().subscribe(items => {
       this.historial.set(items || []);
     });
   }
@@ -295,7 +293,7 @@ export class ReposicionInventarioComponent implements OnInit {
     }
 
     this.procesando.set(true);
-    this.pabellonService.procesarReposicion({
+    this.inventoryService.procesarReposicion({
       insumoId: this.insumoSeleccionadoId,
       sedeOrigenId: this.sedeOrigenId,
       sedeDestinoId: this.sedeDestinoId,

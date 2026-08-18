@@ -317,6 +317,82 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
         }
 
+
+        /// <summary>
+        /// Anexa un requisito preoperatorio a una orden de cirugía específica.
+        /// </summary>
+        [HttpPost("Ordenes/{id:guid}/Requisitos")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> AddRequisitoAOrden(Guid id, [FromBody] AddRequisitoToOrdenCirugiaRequest request)
+        {
+            try
+            {
+                var command = new AddRequisitoToOrdenCirugiaCommand
+                {
+                    OrdenCirugiaId = id,
+                    Nombre = request.Nombre,
+                    Descripcion = request.Descripcion,
+                    UsuarioId = CurrentUser
+                };
+                var result = await _mediator.Send(command);
+                return Ok(new { id = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Remueve un requisito preoperatorio de una orden de cirugía.
+        /// </summary>
+        [HttpDelete("Ordenes/{id:guid}/Requisitos/{requisitoId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RemoveRequisitoDeOrden(Guid id, Guid requisitoId)
+        {
+            try
+            {
+                var command = new RemoveRequisitoFromOrdenCirugiaCommand
+                {
+                    OrdenCirugiaId = id,
+                    RequisitoCirugiaId = requisitoId,
+                    UsuarioId = CurrentUser
+                };
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Remueve todos los requisitos preoperatorios de una orden de cirugía de forma masiva.
+        /// </summary>
+        [HttpDelete("Ordenes/{id:guid}/Requisitos")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ClearRequisitosDeOrden(Guid id)
+        {
+            try
+            {
+                var command = new ClearRequisitosOrdenCirugiaCommand
+                {
+                    OrdenCirugiaId = id,
+                    UsuarioId = CurrentUser
+                };
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         /// <summary>
         /// Marca o desmarca un requisito de checklist para una orden de cirugía.
         /// </summary>
@@ -342,10 +418,50 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Realiza el traslado de ubicación de un paciente quirúrgico a un Área y Cama/Quirófano seleccionados.
+        /// </summary>
+        [HttpPost("Ordenes/{id:guid}/Traslado")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> TrasladarPaciente(Guid id, [FromBody] TrasladarPacienteCirugiaRequest request)
+        {
+            try
+            {
+                var command = new TrasladarPacienteCirugiaCommand
+                {
+                    OrdenCirugiaId = id,
+                    SedeDestinoId = request.SedeDestinoId,
+                    AreaClinicaCamaId = request.AreaClinicaCamaId,
+                    Observacion = request.Observacion,
+                    UsuarioId = CurrentUser
+                };
+                var result = await _mediator.Send(command);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+
+    public class TrasladarPacienteCirugiaRequest
+    {
+        public Guid SedeDestinoId { get; set; }
+        public Guid AreaClinicaCamaId { get; set; }
+        public string? Observacion { get; set; }
     }
 
     public class ToggleRequisitoRequest
     {
         public bool Cumplido { get; set; }
+    }
+
+    public class AddRequisitoToOrdenCirugiaRequest
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
     }
 }

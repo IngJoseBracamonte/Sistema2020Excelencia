@@ -13,10 +13,11 @@
 - **Control Flow & Navegación Pure**: Toda la interacción ocurre mediante el `router-outlet` del layout principal sin desplegar modales primarios de edición.
 - **Relación N:M Principios Activos**: Cada insumo o medicamento puede asociarse con N principios activos indicando su concentración individual (ej: Ibuprofeno 400mg + Clorfeniramina 4mg).
 - **Segregación de Funciones Estricta (SoD)**: El personal operativo (Enfermería / Asistentes) en `/enfermeria` únicamente puede crear requisiciones y confirmar recepción de pedidos. Se deshabilitan totalmente los botones y controles de aprobación en Enfermería (`[readOnlyApprovals]="true"`), y se oculta completamente la visibilidad del Stock disponible del Almacén Principal (`!readOnlyApprovals`) para mantener un formulario limpio de requisición sin especulaciones. La evaluación, ajuste de cantidades y despacho queda centralizado exclusivamente en `/inventario/envios-recepciones` para supervisores.
-- **Flujo de Envío Directo a Sub-Áreas (Salida Definitiva de Almacén)**: Las sub-áreas como Laboratorio, Farmacia, Mantenimiento, Consultorios, etc. que operan con sistemas o dinámicas externas NO acumulan ni gestionan saldo de inventario local. Al ejecutar un "Envío a Sub-Área", el sistema descuenta de forma única y atómica el stock físico del Almacén Principal (`SedeId_Principal`) y genera un registro inmutable en `MovimientoInsumo` de tipo `"EnvioSubArea"`, capturando timestamp, insumo, cantidad, sub-área de destino, usuario y motivo.
+- **Flujo de Envío Directo a Sub-Áreas (Salida Definitiva de Almacén)**: Las sub-áreas como Laboratorio, Farmacia, Mantenimiento, etc. que operan con dinámicas externas, junto con la sede de **Hospitalización**, son los únicos destinos permitidos en el selector de Despacho Directo (`EnviosRecepcionesComponent`). Al ejecutar un "Envío a Sub-Área", el sistema descuenta de forma única y atómica el stock físico del Almacén Principal (`SedeId_Principal`) y genera un registro inmutable en `MovimientoInsumo` de tipo `"EnvioSubArea"`, capturando timestamp, insumo, cantidad, sub-área/sede de destino, usuario y motivo.
 - **Simplificación de Formulario & Restricción a Áreas Clínicas**: La Sede Solicitante en Enfermería se sincroniza automáticamente con el área clínica activa (**EMERGENCIA**, **HOSPITALIZACIÓN**, **UCI**, **CIRUGÍA**), dirigiendo la reposición unidireccional directamente hacia el Almacén Principal.
 - **Módulo Consolidado de Historiales (6 Dimensiones de Trazabilidad)**: Ubicado en `/inventario/historiales`. Integra en una sola interfaz reactiva 6 pestañas de auditoría: 1) Historial de Ingreso de Medicamentos, 2) Historial de Compras, 3) Historial de Aprobación de Pedidos, 4) Historial de Envíos a Subáreas, 5) Historial de Descartes y 6) Historial de Cuentas por Pagar. Permite filtrado universal por rango de fechas (`Fecha Desde` / `Fecha Hasta`) y por texto reactivo.
 - **Módulo de Cuentas por Pagar de Inventario (Proveedores)**: Ubicado en `/inventario/cuentas-por-pagar`. Permite gestionar las facturas de proveedores (`OrdenCompraInventario`) y el registro atómico de abonos/pagos (`PagoProveedor`) en $ USD y su conversión oficial a Bs. Valida que ningún abono supere el `SaldoPendienteUSD` actual y transiciona automáticamente la compra a estado **Pagado** al alcanzar el 100% saldado.
+- **Presentación Comercial Descriptiva & Cantidad Kárdex Directa**: En el módulo de Compras y Recepción (`/inventario/compras`), el campo `PresentacionCompra` (`string`, ej: '10 Viales x 10 mL') es puramente informativo. La cantidad ingresada por el usuario (`Cantidad`, `decimal`) representa directamente las unidades físicas totales a sumar al Kárdex de Almacén Principal, prescindiendo de multiplicadores automáticos, fórmulas o conversiones de dosis.
 
 ---
 
@@ -27,6 +28,7 @@ El Sidebar simplifica la navegación bajo la categoría **Inventario**:
 | Ruta Frontend | Componente | Descripción / Responsabilidad |
 |---|---|---|
 | `/inventario/stock` | `StockMultisedeComponent` | Control de existencias por Sede / Consolidado Global y pestaña de Kárdex de Movimientos Diario. |
+| `/inventario/reposicion` | `ReposicionInventarioComponent` | Gestión de reposiciones, devoluciones de insumos y cambios de talla/calibre entre sedes sin desfase de stock. |
 | `/inventario/compras` | `ComprasComponent` | Registro e ingreso de stock central al Almacén Principal sin vencimiento. |
 | `/inventario/cuentas-por-pagar` | `CuentasPorPagarComponent` | Gestión de compras a proveedores, registro de abonos en $ USD / Bs, cálculo de saldos y auditoría de pagos. |
 | `/inventario/envios-recepciones` | `EnviosRecepcionesComponent` | Pestaña 1 (Aprobación de Requisiciones Inter-Sede) + Pestaña 2 (Despacho Directo a Sub-Áreas como Salida Definitiva de Almacén Principal). |
@@ -35,11 +37,12 @@ El Sidebar simplifica la navegación bajo la categoría **Inventario**:
 | `/inventario/descarte` | `DescarteComponent` | Bajas manuales de stock por merma o deterioro con justificación requerida para auditoría. |
 | `/inventario/sedes-areas` | `SedeManagementComponent` | Administración y creación de sucursales físicas (Sedes) y departamentos u áreas clínicas. |
 
-
 ---
 
 ## 3. Especificación CQRS Backend (.NET 9)
 
+- `ProcesarReposicionStockCommand`: Ejecuta transferencias atómicas de insumos entre sedes (descuento en origen, incremento en destino) y registra auditoría inmutable en `TransferenciaReposicionStock`.
+- `GetReposicionesHistorialQuery`: Consulta el historial de transferencias y reposiciones con filtros por sede, insumo, fechas y motivo.
 - `RegistrarCompraCommand`: Incrementa stock atómicamente en Sede Principal y actualiza costo unitario USD.
 - `RegistrarDescarteCommand`: Valida stock central, aplica descuento directo y registra movimiento tipo `Descarte` con motivo de auditoría.
 - `DispatchPedidoInterSedeCommand`: Admite `CantidadesAprobadas` y `ObservacionesPorDetalle`. Al ser aprobado por el Supervisor, ejecuta de forma atómica e inmediata la salida del Almacén Principal (`TransferenciaSalida`) y la recepción/sumado directo en la Sede Solicitante (`TransferenciaEntrada`), cambiando la solicitud a estado `Recibido` sin requerir confirmación manual posterior de Enfermería.

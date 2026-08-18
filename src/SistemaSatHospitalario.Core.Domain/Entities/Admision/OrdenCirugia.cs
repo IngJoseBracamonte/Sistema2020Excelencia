@@ -16,6 +16,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid PacienteId { get; private set; }
         public Guid? AreaClinicaId { get; private set; }
         public Guid? SedeQuirofanoId { get; private set; }
+        public Guid? AreaClinicaOrigenId { get; private set; }
+        public Guid? SedeOrigenId { get; private set; }
         public string DescripcionCirugia { get; private set; }
         public decimal PrecioBaseUsd { get; private set; }
         public decimal PrecioDerechoSalaUsd { get; private set; }
@@ -37,6 +39,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public virtual Medico Medico { get; private set; }
         public virtual AreaClinica? AreaClinica { get; private set; }
         public virtual Sede? SedeQuirofano { get; private set; }
+        public virtual AreaClinica? AreaClinicaOrigen { get; private set; }
+        public virtual Sede? SedeOrigen { get; private set; }
 
         private readonly List<CirugiaLog> _logs = new();
         public virtual IReadOnlyCollection<CirugiaLog> Logs => _logs.AsReadOnly();
@@ -120,6 +124,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             if (!string.IsNullOrWhiteSpace(sala)) SalaQuirofano = sala.Trim();
             if (!string.IsNullOrWhiteSpace(anestesia)) ModalidadAnestesia = anestesia.Trim();
             AgregarLog(usuarioId, "AsignacionSalaAnestesia", $"Sala: {SalaQuirofano}, Anestesia: {ModalidadAnestesia}");
+        }
+
+        public void GuardarUbicacionOrigen(Guid? areaClinicaId, Guid? sedeId)
+        {
+            AreaClinicaOrigenId = areaClinicaId;
+            SedeOrigenId = sedeId;
+        }
+
+        public void LimpiarUbicacionOrigen()
+        {
+            AreaClinicaOrigenId = null;
+            SedeOrigenId = null;
         }
 
         public CirugiaMedicoHonorario AsignarMedicoHonorario(Guid medicoId, Guid especialidadId, decimal honorarioUsd, bool esPrincipal = false)

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -52,23 +53,53 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 1. Registrar devolución en el insumo del paciente
             asignado.RegistrarDevolucion(request.CantidadDevuelta);
 
-            // 2. Reingresar stock a la sede
+            // 2. Reingresar stock a la sede destino (Principal o la indicada)
+            var targetSedeId = request.SedeReingresoId != Guid.Empty ? request.SedeReingresoId : SeedConstants.SedeId_Principal;
             var stockSede = await _context.StocksSedes
-                .FirstOrDefaultAsync(s => s.InsumoId == request.InsumoId && s.SedeId == request.SedeReingresoId, cancellationToken);
+                .FirstOrDefaultAsync(s => s.InsumoId == request.InsumoId && s.SedeId == targetSedeId, cancellationToken);
 
-            if (stockSede != null)
+            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == request.InsumoId, cancellationToken);
+
+            if (stockSede == null)
             {
-                stockSede.RegistrarEntrada(request.CantidadDevuelta);
+                stockSede = new StockSede(request.InsumoId, targetSedeId, 0);
+                _context.StocksSedes.Add(stockSede);
             }
 
-            // 3. Registrar log en la orden de cirugía si existe
+            stockSede.RegistrarMovimientoStock(request.CantidadDevuelta, insumo?.PermiteFraccionamiento ?? true);
+
+            // 3. Registrar Movimiento Inmutable en Kárdex
+            var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "admin" : request.UsuarioId;
+            var movDevolucion = new MovimientoInsumo(
+                request.InsumoId,
+                targetSedeId,
+                TipoMovimientoInsumo.Ingreso,
+                request.CantidadDevuelta,
+                insumo?.UnidadMedidaBase ?? UnidadMedida.UNIDAD,
+                request.CantidadDevuelta,
+                usuario,
+                $"Devolución de sobrante de cirugía (Cuenta: {request.CuentaServicioId})"
+            );
+            _context.MovimientosInsumo.Add(movDevolucion);
+
+            // 4. Ajustar el cargo en la cuenta si existiera
+            var detalleCargo = await _context.DetallesServicioCuenta
+                .FirstOrDefaultAsync(d => d.CuentaServicioId == request.CuentaServicioId && d.ServicioId == request.InsumoId, cancellationToken);
+
+            if (detalleCargo != null)
+            {
+                decimal nuevaCantidad = Math.Max(0, detalleCargo.Cantidad - request.CantidadDevuelta);
+                detalleCargo.ModificarCantidadAdministrativa(nuevaCantidad);
+            }
+
+            // 5. Registrar log en la orden de cirugía si existe
             var orden = await _context.OrdenesCirugia
                 .FirstOrDefaultAsync(o => o.CuentaServicioId == request.CuentaServicioId, cancellationToken);
 
             if (orden != null)
             {
-                var log = new CirugiaLog(orden.Id, request.UsuarioId, CirugiaEventoConstants.DevolucionInsumos,
-                    $"Devolución de {request.CantidadDevuelta} unidades del insumo {request.InsumoId} a la sede {request.SedeReingresoId}. Motivo: {request.Motivo ?? "Sobrante de cirugía"}");
+                var log = new CirugiaLog(orden.Id, usuario, CirugiaEventoConstants.DevolucionInsumos,
+                    $"Devolución de {request.CantidadDevuelta} unidades del insumo {insumo?.Nombre ?? request.InsumoId.ToString()} a la sede {targetSedeId}. Motivo: {request.Motivo ?? "Sobrante de cirugía"}");
                 _context.CirugiaLogs.Add(log);
             }
 
