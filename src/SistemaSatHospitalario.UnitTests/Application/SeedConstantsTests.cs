@@ -20,6 +20,39 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(new Guid("30000000-0000-0000-0000-000000000006"), SeedConstants.AreaId_Cirugia);
         }
 
+        [Fact]
+        public void RequisitosCirugiaConstants_DebenEstarDefinidasYNoSerVacias()
+        {
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000001"), SeedConstants.RequisitoId_Cardiovascular);
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000002"), SeedConstants.RequisitoId_Laboratorio);
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000003"), SeedConstants.RequisitoId_Consentimiento);
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000004"), SeedConstants.RequisitoId_Ayuno);
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000005"), SeedConstants.RequisitoId_ValoracionAnestesica);
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000006"), SeedConstants.RequisitoId_ReservaSangre);
+            Assert.Equal(new Guid("40000000-0000-0000-0000-000000000007"), SeedConstants.RequisitoId_CamaPostoperatoria);
+        }
+
+        [Fact]
+        public void CategoriasInsumoConstants_DebenEstarDefinidasYNoSerVacias()
+        {
+            Assert.Equal(new Guid("50000000-0000-0000-0000-000000000001"), SeedConstants.CategoriaId_Medicamento);
+            Assert.Equal(new Guid("50000000-0000-0000-0000-000000000002"), SeedConstants.CategoriaId_Descartable);
+            Assert.Equal(new Guid("50000000-0000-0000-0000-000000000003"), SeedConstants.CategoriaId_MaterialMedico);
+            Assert.Equal(new Guid("50000000-0000-0000-0000-000000000004"), SeedConstants.CategoriaId_Reactivo);
+            Assert.Equal(new Guid("50000000-0000-0000-0000-000000000005"), SeedConstants.CategoriaId_MaterialQuirurgico);
+            Assert.Equal(new Guid("50000000-0000-0000-0000-000000000006"), SeedConstants.CategoriaId_Otro);
+        }
+
+        [Fact]
+        public void SedesPrincipalesConstants_DebenEstarDefinidasYNoSerVacias()
+        {
+            Assert.Equal(new Guid("10000000-0000-0000-0000-000000000001"), SeedConstants.SedeId_Principal);
+            Assert.Equal(new Guid("10000000-0000-0000-0000-000000000002"), SeedConstants.SedeId_Emergencia);
+            Assert.Equal(new Guid("10000000-0000-0000-0000-000000000003"), SeedConstants.SedeId_Hospitalizacion);
+            Assert.Equal(new Guid("10000000-0000-0000-0000-000000000004"), SeedConstants.SedeId_UCI);
+            Assert.Equal(new Guid("10000000-0000-0000-0000-000000000005"), SeedConstants.SedeId_Cirugia);
+        }
+
         [Theory]
         [InlineData("CIRUGIA", null)]
         [InlineData("CIRUGÍA", null)]

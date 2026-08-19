@@ -12,18 +12,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         private CategoriaInsumo() { }
 
-        public CategoriaInsumo(string nombre, string? codigo = null)
+        public CategoriaInsumo(string nombre, string? codigo = null, Guid? id = null, DateTime? fechaCreacion = null)
         {
             if (string.IsNullOrWhiteSpace(nombre))
             {
                 throw new ArgumentException("El nombre de la categoría no puede estar vacío.", nameof(nombre));
             }
 
-            Id = Guid.NewGuid();
+            Id = id ?? Guid.NewGuid();
             Nombre = nombre.Trim();
             Codigo = codigo?.Trim();
             Activo = true;
-            FechaCreacion = DateTime.UtcNow;
+            FechaCreacion = fechaCreacion ?? DateTime.UtcNow;
         }
 
         public void ActualizarNombre(string nombre, string? codigo = null)

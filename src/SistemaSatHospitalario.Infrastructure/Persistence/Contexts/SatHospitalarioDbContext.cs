@@ -5,6 +5,7 @@ using SistemaSatHospitalario.Core.Domain.Entities.Common;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 using SistemaSatHospitalario.Core.Domain.Common;
+using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 {
@@ -719,6 +720,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(c => c.Nombre).IsRequired().HasMaxLength(150);
                 entity.Property(c => c.Codigo).HasMaxLength(50);
                 entity.HasIndex(c => c.Nombre).IsUnique();
+
+                entity.HasData(
+                    new CategoriaInsumo("Medicamento", "MED", SeedConstants.CategoriaId_Medicamento, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new CategoriaInsumo("Descartable", "DESC", SeedConstants.CategoriaId_Descartable, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new CategoriaInsumo("Material Médico", "MAT-MED", SeedConstants.CategoriaId_MaterialMedico, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new CategoriaInsumo("Reactivo", "REACT", SeedConstants.CategoriaId_Reactivo, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new CategoriaInsumo("Material Quirúrgico", "MAT-QX", SeedConstants.CategoriaId_MaterialQuirurgico, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new CategoriaInsumo("Otro", "OTRO", SeedConstants.CategoriaId_Otro, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+                );
             });
 
             builder.Entity<PrincipioActivo>(entity =>
@@ -844,6 +854,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(s => s.Codigo).IsRequired().HasMaxLength(50);
                 entity.Property(s => s.Nombre).IsRequired().HasMaxLength(150);
                 entity.HasIndex(s => s.Codigo).IsUnique();
+
+                entity.HasData(
+                    new Sede("SEDE-PRINCIPAL", "Almacén Principal / Farmacia Central", true, SeedConstants.SedeId_Principal),
+                    new Sede("SEDE-EMG", "Depósito Emergencia", false, SeedConstants.SedeId_Emergencia),
+                    new Sede("SEDE-HOSP", "Depósito Hospitalización", false, SeedConstants.SedeId_Hospitalizacion),
+                    new Sede("SEDE-UCI", "Depósito UCI", false, SeedConstants.SedeId_UCI),
+                    new Sede("SEDE-CIRUGIA", "Quirófano / Pabellón Central", false, SeedConstants.SedeId_Cirugia)
+                );
             });
 
             builder.Entity<AreaClinica>(entity =>
@@ -865,6 +883,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(a => new { a.SedeId, a.Codigo }).IsUnique();
+
+                entity.HasData(
+                    new AreaClinica(SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, null, SeedConstants.AreaId_Emergencia),
+                    new AreaClinica(SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, null, SeedConstants.AreaId_Hospitalizacion),
+                    new AreaClinica(SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, null, SeedConstants.AreaId_UCI),
+                    new AreaClinica(SeedConstants.SedeId_Principal, "FARMACIA", "Farmacia Central", false, null, SeedConstants.AreaId_Farmacia),
+                    new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central", false, null, SeedConstants.AreaId_Laboratorio),
+                    new AreaClinica(SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1 (Cirugía Mayor)", false, null, SeedConstants.AreaId_Cirugia)
+                );
             });
 
             builder.Entity<ServicioIncluidoArea>(entity =>
@@ -1005,16 +1032,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("TiposServicio");
                 entity.HasKey(t => t.Id);
                 entity.Property(t => t.Id).ValueGeneratedNever();
-                entity.Property(t => t.Nombre).IsRequired().HasMaxLength(50);
-                entity.Property(t => t.Codigo).IsRequired().HasMaxLength(10);
+                entity.Property(t => t.Nombre).IsRequired().HasMaxLength(100);
+                entity.Property(t => t.Codigo).IsRequired().HasMaxLength(50);
 
                 entity.HasData(
-                    new TipoServicio(1, "Medico", "MED"),
-                    new TipoServicio(2, "Laboratorio", "LAB"),
-                    new TipoServicio(3, "RX", "RX"),
-                    new TipoServicio(4, "Tomo", "TOMO"),
-                    new TipoServicio(5, "Insumo", "INS"),
-                    new TipoServicio(6, "Informe", "INF")
+                    new TipoServicio(TipoServicioConstants.Medico, "Servicio Médico / Consulta", "MEDICO"),
+                    new TipoServicio(TipoServicioConstants.Laboratorio, "Examen de Laboratorio", "LAB"),
+                    new TipoServicio(TipoServicioConstants.RX, "Rayos X / Imagenología", "RX"),
+                    new TipoServicio(TipoServicioConstants.Tomo, "Tomografía Axial", "TOMO"),
+                    new TipoServicio(TipoServicioConstants.Insumo, "Insumo / Medicamento", "INSUMO"),
+                    new TipoServicio(TipoServicioConstants.Informe, "Informe / Lectura Médica", "INFORME")
                 );
             });
 
@@ -1188,8 +1215,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("RequisitosCirugia");
                 entity.HasKey(r => r.Id);
-                entity.Property(r => r.Nombre).IsRequired().HasMaxLength(200);
+                entity.Property(r => r.Nombre).IsRequired().HasMaxLength(250);
                 entity.Property(r => r.Descripcion).HasMaxLength(500);
+
+                entity.HasData(
+                    new RequisitoCirugia("Evaluación Cardiovascular / Riesgo Quirúrgico", "Informe de cardiología y electrocardiograma vigente.", true, SeedConstants.RequisitoId_Cardiovascular, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new RequisitoCirugia("Exámenes Preoperatorios (Laboratorio)", "Hematología completa, TP, TPT, Glucemia, Urea, Creatinina y VIH/VDRL.", true, SeedConstants.RequisitoId_Laboratorio, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new RequisitoCirugia("Consentimiento Informado Firmado", "Firma del paciente o familiar responsable para procedimiento quirúrgico y anestesia.", true, SeedConstants.RequisitoId_Consentimiento, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new RequisitoCirugia("Ayuno Verificado (Mínimo 8 Horas)", "Verificación por enfermería de ayuno estricto.", true, SeedConstants.RequisitoId_Ayuno, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new RequisitoCirugia("Valoración Anestésica", "Aprobación formal firmada por el médico anestesiólogo.", true, SeedConstants.RequisitoId_ValoracionAnestesica, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new RequisitoCirugia("Reserva de Sangre / Hemoderivados", "Disponibilidad confirmada con Banco de Sangre (cuando aplique).", true, SeedConstants.RequisitoId_ReservaSangre, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
+                    new RequisitoCirugia("Disponibilidad de Cama Postoperatoria (UCI / Hosp)", "Cama confirmada para el traslado post-quirúrgico.", true, SeedConstants.RequisitoId_CamaPostoperatoria, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+                );
             });
 
             builder.Entity<OrdenCirugiaRequisito>(entity =>
