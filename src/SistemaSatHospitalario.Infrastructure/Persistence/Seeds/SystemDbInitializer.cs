@@ -758,6 +758,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 await SeedMetodosPagoAsync();
                 await SeedTiposServicioAsync();
                 await SeedCategoriasInsumoAsync();
+                await SeedRequisitosCirugiaAsync();
                 await SeedInventorySedesAndMigrateStockAsync();
                 await SeedAreasClinicasAsync();
  
@@ -778,12 +779,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 {
                     var defaultCategorias = new List<CategoriaInsumo>
                     {
-                        new CategoriaInsumo("Medicamento", "MED"),
-                        new CategoriaInsumo("Descartable", "DESC"),
-                        new CategoriaInsumo("Material Médico", "MAT-MED"),
-                        new CategoriaInsumo("Reactivo", "REACT"),
-                        new CategoriaInsumo("Material Quirúrgico", "MAT-QX"),
-                        new CategoriaInsumo("Otro", "OTRO")
+                        new CategoriaInsumo("Medicamento", "MED", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.CategoriaId_Medicamento),
+                        new CategoriaInsumo("Descartable", "DESC", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.CategoriaId_Descartable),
+                        new CategoriaInsumo("Material Médico", "MAT-MED", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.CategoriaId_MaterialMedico),
+                        new CategoriaInsumo("Reactivo", "REACT", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.CategoriaId_Reactivo),
+                        new CategoriaInsumo("Material Quirúrgico", "MAT-QX", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.CategoriaId_MaterialQuirurgico),
+                        new CategoriaInsumo("Otro", "OTRO", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.CategoriaId_Otro)
                     };
 
                     await _context.CategoriasInsumo.AddRangeAsync(defaultCategorias);
@@ -794,6 +795,34 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "No se pudieron sembrar las categorías de insumo iniciales.");
+            }
+        }
+
+        private async Task SeedRequisitosCirugiaAsync()
+        {
+            try
+            {
+                if (!await _context.RequisitosCirugia.AnyAsync())
+                {
+                    var defaultRequisitos = new List<RequisitoCirugia>
+                    {
+                        new RequisitoCirugia("Evaluación Cardiovascular / Riesgo Quirúrgico", "Informe de cardiología y electrocardiograma vigente.", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_Cardiovascular),
+                        new RequisitoCirugia("Exámenes Preoperatorios (Laboratorio)", "Hematología completa, TP, TPT, Glucemia, Urea, Creatinina y VIH/VDRL.", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_Laboratorio),
+                        new RequisitoCirugia("Consentimiento Informado Firmado", "Firma del paciente o familiar responsable para procedimiento quirúrgico y anestesia.", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_Consentimiento),
+                        new RequisitoCirugia("Ayuno Verificado (Mínimo 8 Horas)", "Verificación por enfermería de ayuno estricto.", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_Ayuno),
+                        new RequisitoCirugia("Valoración Anestésica", "Aprobación formal firmada por el médico anestesiólogo.", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_ValoracionAnestesica),
+                        new RequisitoCirugia("Reserva de Sangre / Hemoderivados", "Disponibilidad confirmada con Banco de Sangre (cuando aplique).", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_ReservaSangre),
+                        new RequisitoCirugia("Disponibilidad de Cama Postoperatoria (UCI / Hosp)", "Cama confirmada para el traslado post-quirúrgico.", true, SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.RequisitoId_CamaPostoperatoria)
+                    };
+
+                    await _context.RequisitosCirugia.AddRangeAsync(defaultRequisitos);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Requisitos de cirugía iniciales sembrados exitosamente ({Count} requisitos).", defaultRequisitos.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudieron sembrar los requisitos de cirugía iniciales.");
             }
         }
 
