@@ -77,6 +77,27 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public static readonly Guid UbicacionId_UCICama3 = new Guid("20000000-0000-0000-0000-000000000022");
 
         // ─────────────────────────────────────────────────────────────
+        // REQUISITOS QUIRÚRGICOS (Checklist Preoperatorio)
+        // ─────────────────────────────────────────────────────────────
+        public static readonly Guid RequisitoId_Cardiovascular       = new Guid("40000000-0000-0000-0000-000000000001");
+        public static readonly Guid RequisitoId_Laboratorio          = new Guid("40000000-0000-0000-0000-000000000002");
+        public static readonly Guid RequisitoId_Consentimiento       = new Guid("40000000-0000-0000-0000-000000000003");
+        public static readonly Guid RequisitoId_Ayuno               = new Guid("40000000-0000-0000-0000-000000000004");
+        public static readonly Guid RequisitoId_ValoracionAnestesica = new Guid("40000000-0000-0000-0000-000000000005");
+        public static readonly Guid RequisitoId_ReservaSangre        = new Guid("40000000-0000-0000-0000-000000000006");
+        public static readonly Guid RequisitoId_CamaPostoperatoria   = new Guid("40000000-0000-0000-0000-000000000007");
+
+        // ─────────────────────────────────────────────────────────────
+        // CATEGORÍAS DE INSUMOS
+        // ─────────────────────────────────────────────────────────────
+        public static readonly Guid CategoriaId_Medicamento          = new Guid("50000000-0000-0000-0000-000000000001");
+        public static readonly Guid CategoriaId_Descartable          = new Guid("50000000-0000-0000-0000-000000000002");
+        public static readonly Guid CategoriaId_MaterialMedico       = new Guid("50000000-0000-0000-0000-000000000003");
+        public static readonly Guid CategoriaId_Reactivo             = new Guid("50000000-0000-0000-0000-000000000004");
+        public static readonly Guid CategoriaId_MaterialQuirurgico   = new Guid("50000000-0000-0000-0000-000000000005");
+        public static readonly Guid CategoriaId_Otro                 = new Guid("50000000-0000-0000-0000-000000000006");
+
+        // ─────────────────────────────────────────────────────────────
         // HELPERS: Mapeo TipoIngreso → SedeId de inventario
         // (Elimina el switch de strings en InventoryService.cs)
         // ─────────────────────────────────────────────────────────────

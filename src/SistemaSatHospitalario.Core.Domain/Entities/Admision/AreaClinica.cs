@@ -22,9 +22,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         private AreaClinica() { }
 
-        public AreaClinica(Guid sedeId, string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null)
+        public AreaClinica(Guid sedeId, string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null, Guid? id = null)
         {
-            Id = Guid.NewGuid();
+            Id = id ?? Guid.NewGuid();
             SedeId = sedeId;
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));

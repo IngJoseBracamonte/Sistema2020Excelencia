@@ -19,16 +19,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected RequisitoCirugia() { }
 
-        public RequisitoCirugia(string nombre, string descripcion, bool esActivo = true)
+        public RequisitoCirugia(string nombre, string descripcion, bool esActivo = true, Guid? id = null, DateTime? fechaCreacion = null)
         {
             if (string.IsNullOrWhiteSpace(nombre))
                 throw new ArgumentException("El nombre del requisito es obligatorio.", nameof(nombre));
 
-            Id = Guid.NewGuid();
+            Id = id ?? Guid.NewGuid();
             Nombre = nombre.Trim();
             Descripcion = (descripcion ?? string.Empty).Trim();
             EsActivo = esActivo;
-            FechaCreacion = DateTime.UtcNow;
+            FechaCreacion = fechaCreacion ?? DateTime.UtcNow;
         }
 
         public void Update(string nombre, string descripcion, bool esActivo)
