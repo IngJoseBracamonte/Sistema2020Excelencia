@@ -1,240 +1,269 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { PabellonService, OrdenCirugia, CrearOrdenCirugiaRequest } from '../../../core/services/pabellon.service';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
+import { LucideAngularModule } from 'lucide-angular';
+import {
+  PabellonService,
+  PacienteQuirurgicoItem,
+  CirugiaCalendarioItem,
+  CrearOrdenCirugiaRequest
+} from '../../../core/services/pabellon.service';
 import { MedicoService } from '../../../core/services/medico.service';
 import { PatientService, PatientRecord } from '../../../core/services/patient.service';
+import { MultiSedeService, AreaClinica } from '../../../core/services/multi-sede.service';
 import { environment } from '../../../../environments/environment';
-import { GestionConsumoModalComponent } from './gestion-consumo-modal.component';
+
 import { PabellonCalendarioComponent } from './pabellon-calendario.component';
-import { PabellonMicroComponent } from './pabellon-micro.component';
-import { ReprogramarModalComponent } from './reprogramar-modal.component';
-import { HistorialObservacionesModalComponent } from './historial-observaciones-modal.component';
-import { 
-  LucideAngularModule, 
-  Calendar, 
-  List, 
-  Plus, 
-  Activity, 
-  Clock, 
-  User, 
-  UserCheck, 
-  CheckCircle2, 
-  XCircle, 
-  Play, 
-  Package, 
-  Search, 
-  Filter, 
-  RefreshCcw,
-  Sparkles,
-  AlertTriangle,
-  Stethoscope,
-  Grid,
-  FileText,
-  HeartPulse,
-  Info
-} from 'lucide-angular';
+import { PabellonPacientesListaComponent } from './pabellon-pacientes-lista.component';
+import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component';
 
 @Component({
   selector: 'app-pabellon-gestion',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    LucideAngularModule, 
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
     PabellonCalendarioComponent,
-    PabellonMicroComponent,
-    ReprogramarModalComponent,
-    HistorialObservacionesModalComponent
+    PabellonPacientesListaComponent,
+    PanelDetalleCirugiaComponent
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="p-6 space-y-6 bg-gray-950 min-h-screen text-gray-100 font-sans">
       
       <!-- Top Action & Title Bar -->
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gray-900/60 p-4 rounded-xl border border-gray-800/80 backdrop-blur-md shadow-xl">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gray-900/60 p-4 rounded-2xl border border-gray-800/80 backdrop-blur-md shadow-xl">
         <div class="flex items-center gap-3">
-          <div class="p-3 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400">
+          <div class="p-3 bg-sky-500/10 border border-sky-500/20 rounded-2xl text-sky-400">
             <lucide-icon name="stethoscope" class="w-7 h-7"></lucide-icon>
           </div>
           <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              Pizarra Digital Quirúrgica - Sat Hospitalario
+            <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              Pabellón Quirúrgico & Gestión de Cirugías
             </h1>
-            <p class="text-xs text-gray-400">Programación operativa de pabellón, trazabilidad de cirugías e insumos en tiempo real</p>
+            <p class="text-xs text-gray-400">Programación operativa, checklist preoperatorio y honorarios médicos</p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <!-- Switcher de Modos de Vista -->
+          <!-- Switcher de Modos de Vista Principal -->
           <div class="bg-gray-950 p-1 rounded-xl border border-gray-800 flex items-center gap-1">
-            <button (click)="vistaModo.set('calendario')" [class.bg-sky-600]="vistaModo() === 'calendario'" [class.text-white]="vistaModo() === 'calendario'" [class.text-gray-400]="vistaModo() !== 'calendario'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-              <lucide-icon name="grid" class="w-3.5 h-3.5"></lucide-icon>
-              Pizarra Horaria
+            <button
+              (click)="cambiarModoVista('tablero')"
+              [class.bg-sky-600]="vistaModo() === 'tablero'"
+              [class.text-white]="vistaModo() === 'tablero'"
+              [class.text-gray-400]="vistaModo() !== 'tablero'"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
+            >
+              <lucide-icon name="layout-list" class="w-3.5 h-3.5"></lucide-icon>
+              Tablero de Pacientes
             </button>
-            <button (click)="vistaModo.set('lista')" [class.bg-sky-600]="vistaModo() === 'lista'" [class.text-white]="vistaModo() === 'lista'" [class.text-gray-400]="vistaModo() !== 'lista'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-              <lucide-icon name="list" class="w-3.5 h-3.5"></lucide-icon>
-              Lista Micro
+
+            <button
+              (click)="cambiarModoVista('calendario')"
+              [class.bg-sky-600]="vistaModo() === 'calendario'"
+              [class.text-white]="vistaModo() === 'calendario'"
+              [class.text-gray-400]="vistaModo() !== 'calendario'"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5"
+            >
+              <lucide-icon name="calendar-days" class="w-3.5 h-3.5"></lucide-icon>
+              Calendario Total
             </button>
           </div>
-
-          <button (click)="abrirModalNuevaCirugia()" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-lg shadow-sky-600/20 transition flex items-center gap-2">
-            <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
-            Programar Cirugía
-          </button>
         </div>
       </div>
 
-      <!-- Combined Filter & Search Bar -->
-      <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-900/40 p-3 rounded-xl border border-gray-800/80 backdrop-blur-sm">
-        
-        <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-          <!-- Input Búsqueda -->
-          <div class="relative flex-1 min-w-[220px]">
-            <lucide-icon name="search" class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></lucide-icon>
-            <input type="text" [ngModel]="filtroTexto()" (ngModelChange)="filtroTexto.set($event)" placeholder="Buscar paciente, cédula, cirugía, doctor o especialidad..." class="w-full bg-gray-950 border border-gray-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition">
-          </div>
+      <!-- VISTA 1: TABLERO Y LISTA MAESTRA DE PACIENTES -->
+      @if (vistaModo() === 'tablero') {
+        <app-pabellon-pacientes-lista
+          [pacientes]="pacientesQuirurgicos()"
+          (seleccionarPaciente)="onSeleccionarPaciente($event)"
+          (nuevaCirugia)="abrirModalNuevaCirugia()"
+          (filtrar)="onFiltrarPacientes($event)"
+        ></app-pabellon-pacientes-lista>
+      }
 
-          <!-- Filtro de Estado -->
-          <div class="relative min-w-[160px]">
-            <lucide-icon name="filter" class="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></lucide-icon>
-            <select [ngModel]="filtroEstado()" (ngModelChange)="onFiltroEstadoChange($event)" class="w-full bg-gray-950 border border-gray-800 rounded-xl pl-8 pr-4 py-2 text-xs text-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 appearance-none transition">
-              <option value="">Todos los Estados</option>
-              <option *ngFor="let est of estadosCirugiaCatalog()" [value]="est.id">
-                <ng-container *ngIf="est.codigo">[{{ est.codigo }}] </ng-container>{{ est.nombre }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Filtro por Médico -->
-          <div class="relative min-w-[160px]">
-            <lucide-icon name="user-check" class="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></lucide-icon>
-            <select [ngModel]="filtroMedicoId()" (ngModelChange)="filtroMedicoId.set($event)" class="w-full bg-gray-950 border border-gray-800 rounded-xl pl-8 pr-4 py-2 text-xs text-white focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 appearance-none transition">
-              <option value="">Todos los Médicos</option>
-              <option *ngFor="let med of medicos()" [value]="med.id">{{ med.nombre }}</option>
-            </select>
-          </div>
-        </div>
-
-        <button (click)="cargarOrdenes()" class="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition" title="Refrescar Lista">
-          <lucide-icon name="refresh-ccw" class="w-4 h-4"></lucide-icon>
-        </button>
-      </div>
-
-      <!-- VISTA 1: CALENDARIO / PIZARRA HORARIA -->
-      <div *ngIf="vistaModo() === 'calendario'">
+      <!-- VISTA 2: CALENDARIO QUIRÚRGICO TOTAL -->
+      @if (vistaModo() === 'calendario') {
         <app-pabellon-calendario
-          [cirugias]="ordenesFiltradas()"
-          (seleccionarCirugia)="ordenSeleccionada.set($event)"
+          [cirugias]="calendarioItems()"
+          [quirofanos]="quirofanos()"
+          (seleccionarCirugia)="onSeleccionarDeCalendario($event)"
         ></app-pabellon-calendario>
-      </div>
+      }
 
-      <!-- VISTA 2: LISTA MICRO CON CHECKLIST DE REQUISITOS DB-DRIVEN -->
-      <div *ngIf="vistaModo() === 'lista'">
-        <app-pabellon-micro
-          [cirugias]="ordenesFiltradas()"
-          (cambiarEstado)="onCambiarEstado($event)"
-          (abrirReprogramar)="modalReprogramarCirugia.set($event)"
-          (abrirHistorial)="modalHistorialCirugia.set($event)"
-          (toggleReq)="onToggleRequisito($event)"
-        ></app-pabellon-micro>
-      </div>
+      <!-- PANEL LATERAL CONTEXTUAL POR ROL (DRAWER) -->
+      @if (pacienteSeleccionadoDetalle()) {
+        <app-panel-detalle-cirugia
+          [paciente]="pacienteSeleccionadoDetalle()"
+          (cerrar)="pacienteSeleccionadoDetalle.set(null)"
+          (recargar)="recargarDatos()"
+        ></app-panel-detalle-cirugia>
+      }
 
-      <!-- MODAL REPROGRAMAR CIRUGÍA -->
-      <app-reprogramar-modal
-        *ngIf="modalReprogramarCirugia()"
-        [cirugia]="modalReprogramarCirugia()!"
-        (cerrar)="modalReprogramarCirugia.set(null)"
-        (confirmar)="onConfirmarReprogramacion($event)"
-      ></app-reprogramar-modal>
-
-      <!-- MODAL HISTORIAL DE OBSERVACIONES -->
-      <app-historial-observaciones-modal
-        *ngIf="modalHistorialCirugia()"
-        [pacienteNombre]="modalHistorialCirugia()!.pacienteNombre"
-        [historial]="modalHistorialCirugia()!.historialObservaciones || []"
-        (cerrar)="modalHistorialCirugia.set(null)"
-      ></app-historial-observaciones-modal>
-
-      <!-- Modal Nueva Cirugía -->
-      <div *ngIf="modalNuevaCirugiaVisible()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-xl p-6 space-y-4 text-white">
-          <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-            <h3 class="text-base font-bold text-sky-400 flex items-center gap-2">
-              <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
-              Programar Nueva Cirugía
-            </h3>
-            <button (click)="modalNuevaCirugiaVisible.set(false)" class="text-gray-400 hover:text-white transition">
-              <lucide-icon name="x-circle" class="w-5 h-5"></lucide-icon>
-            </button>
-          </div>
-
-          <div class="space-y-3 text-xs">
-            <div>
-              <label class="text-gray-400 mb-1 block">Descripción del Procedimiento Quirúrgico *</label>
-              <input type="text" [(ngModel)]="nuevaCirugiaForm.descripcionCirugia" placeholder="Ej: Colecistectomía Laparoscópica" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+      <!-- MODAL: PROGRAMAR NUEVA CIRUGÍA -->
+      @if (modalNuevaCirugiaVisible()) {
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl w-full max-w-xl p-6 space-y-4 text-white animate-fade-in">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+              <h3 class="text-base font-bold text-sky-400 flex items-center gap-2">
+                <lucide-icon name="plus" class="w-5 h-5"></lucide-icon>
+                Programar Intervención Quirúrgica
+              </h3>
+              <button (click)="modalNuevaCirugiaVisible.set(false)" class="text-gray-400 hover:text-white transition">
+                <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+              </button>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-3 text-xs">
+              <!-- Descripción de la Cirugía -->
               <div>
-                <label class="text-gray-400 mb-1 block">Especialidad Quirúrgica</label>
-                <input type="text" [(ngModel)]="nuevaCirugiaForm.especialidad" placeholder="Ej: Cirugía General" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                <label class="text-gray-400 mb-1 block font-semibold">Descripción del Procedimiento Quirúrgico *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="nuevaCirugiaForm.descripcionCirugia"
+                  placeholder="Ej: Apendicectomía Laparoscópica"
+                  class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                />
               </div>
-              <div>
-                <label class="text-gray-400 mb-1 block">Precio Base USD ($)</label>
-                <input type="number" [(ngModel)]="nuevaCirugiaForm.precioBaseUsd" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-              </div>
-            </div>
 
-            <div>
-              <label class="text-gray-400 mb-1 block">Razón / Motivo de la Cirugía *</label>
-              <textarea [(ngModel)]="nuevaCirugiaForm.razonCirugia" rows="2" placeholder="Indicación clínica o diagnóstico justificante..." class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"></textarea>
-            </div>
+              <!-- Sala / Quirófano y Modalidad de Anestesia -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-gray-400 mb-1 block font-semibold">Quirófano / Sala Quirúrgica *</label>
+                  <select [(ngModel)]="nuevaCirugiaForm.salaQuirofano" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                    @for (q of quirofanos(); track q.id) {
+                      <option [value]="q.nombre">{{ q.nombre }} ({{ q.codigo }})</option>
+                    }
+                    @if (quirofanos().length === 0) {
+                      <option value="Quirófano 1">Quirófano 1</option>
+                      <option value="Quirófano 2">Quirófano 2</option>
+                      <option value="Sala de Partos">Sala de Partos</option>
+                    }
+                  </select>
+                </div>
 
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-gray-400 mb-1 block">Fecha y Hora Programada *</label>
-                <input type="datetime-local" [(ngModel)]="nuevaCirugiaForm.fechaHoraProgramada" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-              </div>
-              <div>
-                <label class="text-gray-400 mb-1 block">Médico Cirujano *</label>
-                <select [(ngModel)]="nuevaCirugiaForm.medicoId" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-                  <option value="">Seleccione Cirujano</option>
-                  <option *ngFor="let med of medicos()" [value]="med.id">{{ med.nombre }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Buscador de Pacientes DB-Driven -->
-            <div>
-              <label class="text-gray-400 mb-1 block">Buscar Paciente (Cédula o Nombre) *</label>
-              <div class="relative">
-                <input type="text" [ngModel]="pacienteSearchQuery()" (ngModelChange)="buscarPacientes($event)" placeholder="Escriba cédula o nombre del paciente..." class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
-                <div *ngIf="pacientesEncontrados().length > 0" class="absolute left-0 right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-800">
-                  <div *ngFor="let p of pacientesEncontrados()" (click)="seleccionarPaciente(p)" class="p-3 hover:bg-sky-600/20 cursor-pointer flex justify-between items-center transition">
-                    <div>
-                      <span class="text-xs font-bold text-white block">{{ p.nombre }} {{ p.apellidos || '' }}</span>
-                      <span class="text-[10px] text-gray-400">CI: {{ p.cedula }}</span>
-                    </div>
-                    <span class="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-md font-semibold">Seleccionar</span>
-                  </div>
+                <div>
+                  <label class="text-gray-400 mb-1 block font-semibold">Modalidad de Anestesia</label>
+                  <select [(ngModel)]="nuevaCirugiaForm.modalidadAnestesia" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                    <option value="General">General</option>
+                    <option value="Epidural / Raquídea">Epidural / Raquídea</option>
+                    <option value="Sedación Local">Sedación Local</option>
+                    <option value="Bloqueo Regional">Bloqueo Regional</option>
+                  </select>
                 </div>
               </div>
-              <div *ngIf="pacienteSeleccionado()" class="mt-2 p-2 bg-sky-500/10 border border-sky-500/20 rounded-lg flex items-center justify-between text-xs text-sky-300">
-                <span>👤 {{ pacienteSeleccionado()?.nombre }} (CI: {{ pacienteSeleccionado()?.cedula }})</span>
-                <span class="text-[10px] text-gray-400">Cuenta: {{ nuevaCirugiaForm.cuentaServicioId ? 'Vinculada' : 'Pendiente' }}</span>
+
+              <!-- Tarifas Administrativas Iniciales -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-gray-400 mb-1 block font-semibold">Derecho de Sala (USD $)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    [(ngModel)]="nuevaCirugiaForm.precioDerechoSalaUsd"
+                    class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label class="text-gray-400 mb-1 block font-semibold">Precio Base Cirugía (USD $)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    [(ngModel)]="nuevaCirugiaForm.precioBaseUsd"
+                    class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <!-- Flag Alquilado -->
+              <div class="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="nuevoAlquiladoCheck"
+                  [(ngModel)]="nuevaCirugiaForm.esAlquilado"
+                  class="w-4 h-4 rounded text-sky-600 bg-gray-950 border-gray-700 cursor-pointer"
+                />
+                <label for="nuevoAlquiladoCheck" class="text-gray-300 font-medium cursor-pointer">
+                  Pabellón Alquilado (Médico Externo / Tarifa Solo Sala)
+                </label>
+              </div>
+
+              <!-- Fecha Programada y Cirujano Principal -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-gray-400 mb-1 block font-semibold">Fecha y Hora Programada *</label>
+                  <input
+                    type="datetime-local"
+                    [(ngModel)]="nuevaCirugiaForm.fechaHoraProgramada"
+                    class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label class="text-gray-400 mb-1 block font-semibold">Cirujano Principal *</label>
+                  <select [(ngModel)]="nuevaCirugiaForm.medicoId" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                    <option value="">Seleccione Cirujano</option>
+                    @for (med of medicos(); track med.id) {
+                      <option [value]="med.id">{{ med.nombre }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <!-- Buscador de Pacientes DB-Driven -->
+              <div>
+                <label class="text-gray-400 mb-1 block font-semibold">Paciente (Búsqueda por Cédula o Nombre) *</label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    [ngModel]="pacienteSearchQuery()"
+                    (ngModelChange)="buscarPacientes($event)"
+                    placeholder="Escriba cédula o nombre del paciente..."
+                    class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-sky-500"
+                  />
+                  @if (pacientesEncontrados().length > 0) {
+                    <div class="absolute left-0 right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-800">
+                      @for (p of pacientesEncontrados(); track p.id) {
+                        <div (click)="seleccionarPaciente(p)" class="p-3 hover:bg-sky-600/20 cursor-pointer flex justify-between items-center transition">
+                          <div>
+                            <span class="text-xs font-bold text-white block">{{ p.nombre }} {{ p.apellidos || '' }}</span>
+                            <span class="text-[10px] text-gray-400">CI: {{ p.cedula }}</span>
+                          </div>
+                          <span class="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-md font-semibold">Seleccionar</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (pacienteSeleccionado()) {
+                  <div class="mt-2 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl flex items-center justify-between text-xs text-sky-300">
+                    <span>👤 {{ pacienteSeleccionado()?.nombre }} (CI: {{ pacienteSeleccionado()?.cedula }})</span>
+                    <span class="text-[10px] text-emerald-400 font-semibold">✓ Paciente Seleccionado</span>
+                  </div>
+                }
               </div>
             </div>
-          </div>
 
-          <div class="flex justify-end gap-2 pt-3 border-t border-gray-800">
-            <button (click)="modalNuevaCirugiaVisible.set(false)" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-4 py-2 rounded-xl">Cancelar</button>
-            <button (click)="guardarNuevaCirugia()" [disabled]="!esFormularioValido()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-xl disabled:opacity-50 transition shadow-lg shadow-sky-600/20">
-              Guardar y Programar
-            </button>
+            <div class="flex justify-end gap-2 pt-3 border-t border-gray-800">
+              <button (click)="modalNuevaCirugiaVisible.set(false)" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-4 py-2 rounded-xl">
+                Cancelar
+              </button>
+              <button
+                (click)="guardarNuevaCirugia()"
+                [disabled]="!esFormularioValido()"
+                class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-xl disabled:opacity-50 transition shadow-lg shadow-sky-600/20"
+              >
+                Guardar y Programar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      }
 
     </div>
   `
@@ -243,25 +272,24 @@ export class PabellonGestionComponent implements OnInit {
   private pabellonService = inject(PabellonService);
   private medicoService = inject(MedicoService);
   private patientService = inject(PatientService);
+  private multiSedeService = inject(MultiSedeService);
   private http = inject(HttpClient);
+  private router = inject(Router);
 
+  // Estados Reactivos con Signals
+  public vistaModo = signal<'tablero' | 'calendario'>('tablero');
+  public pacientesQuirurgicos = signal<PacienteQuirurgicoItem[]>([]);
+  public calendarioItems = signal<CirugiaCalendarioItem[]>([]);
+  public pacienteSeleccionadoDetalle = signal<PacienteQuirurgicoItem | null>(null);
+
+  public medicos = signal<{ id: string; nombre: string; especialidad?: string; activo?: boolean }[]>([]);
+  public quirofanos = signal<AreaClinica[]>([]);
+
+  // Búsqueda de Pacientes
   public pacienteSearchQuery = signal<string>('');
   public pacientesEncontrados = signal<PatientRecord[]>([]);
   public pacienteSeleccionado = signal<PatientRecord | null>(null);
-  public isSearchingPatient = signal<boolean>(false);
-
-  public vistaModo = signal<'calendario' | 'lista'>('calendario');
-  public ordenes = signal<OrdenCirugia[]>([]);
-  public medicos = signal<{ id: string; nombre: string; especialidad?: string; activo?: boolean }[]>([]);
-  public filtroTexto = signal<string>('');
-  public filtroEstado = signal<string>('');
-  public filtroMedicoId = signal<string>('');
-  public ordenSeleccionada = signal<OrdenCirugia | null>(null);
-
-  public modalConsumoOrdenId = signal<string | null>(null);
   public modalNuevaCirugiaVisible = signal<boolean>(false);
-  public modalReprogramarCirugia = signal<OrdenCirugia | null>(null);
-  public modalHistorialCirugia = signal<OrdenCirugia | null>(null);
 
   public nuevaCirugiaForm: CrearOrdenCirugiaRequest = {
     cuentaServicioId: '',
@@ -270,34 +298,54 @@ export class PabellonGestionComponent implements OnInit {
     precioBaseUsd: 0,
     medicoId: '',
     fechaHoraProgramada: new Date().toISOString().slice(0, 16),
-    especialidad: '',
-    razonCirugia: ''
+    salaQuirofano: 'Quirófano 1',
+    modalidadAnestesia: 'General',
+    esAlquilado: false,
+    precioDerechoSalaUsd: 0
   };
 
-  public estadosCirugiaCatalog = signal<any[]>([]);
-
   ngOnInit(): void {
-    this.pabellonService.getEstadosCirugia().subscribe({
-      next: (estados) => this.estadosCirugiaCatalog.set(estados || [])
+    this.sincronizarVistaConRuta();
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.sincronizarVistaConRuta();
     });
-    this.cargarOrdenes();
+
+    this.recargarDatos();
     this.cargarMedicos();
+    this.cargarQuirofanos();
   }
 
-  onFiltroEstadoChange(val: string): void {
-    this.filtroEstado.set(val);
-    this.cargarOrdenes();
+  private sincronizarVistaConRuta(): void {
+    const url = this.router.url;
+    if (url.includes('/calendario')) {
+      this.vistaModo.set('calendario');
+    } else {
+      this.vistaModo.set('tablero');
+    }
   }
 
-  cargarOrdenes(): void {
-    this.pabellonService.getOrdenes(undefined, undefined, this.filtroEstado() || undefined).subscribe({
-      next: (res) => {
-        const list = res || [];
-        this.ordenes.set(list);
-        if (list.length > 0 && !this.ordenSeleccionada()) {
-          this.ordenSeleccionada.set(list[0]);
+  public cambiarModoVista(modo: 'tablero' | 'calendario'): void {
+    this.vistaModo.set(modo);
+    this.router.navigate(['/pabellon', modo]);
+  }
+
+  recargarDatos(): void {
+    this.pabellonService.getPacientesQuirurgicos().subscribe(items => {
+      this.pacientesQuirurgicos.set(items || []);
+      // Actualizar detalle si está abierto
+      const abierto = this.pacienteSeleccionadoDetalle();
+      if (abierto) {
+        const actualizado = (items || []).find(i => i.id === abierto.id);
+        if (actualizado) {
+          this.pacienteSeleccionadoDetalle.set(actualizado);
         }
       }
+    });
+
+    this.pabellonService.getCalendario().subscribe(items => {
+      this.calendarioItems.set(items || []);
     });
   }
 
@@ -307,56 +355,71 @@ export class PabellonGestionComponent implements OnInit {
     });
   }
 
-  public ordenesFiltradas = computed(() => {
-    let list = this.ordenes();
-    const txt = this.filtroTexto().trim().toLowerCase();
-    const medId = this.filtroMedicoId();
+  cargarQuirofanos(): void {
+    this.multiSedeService.getAreasClinicas().subscribe({
+      next: (areas: AreaClinica[]) => {
+        const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
+        // Filtrar exclusivamente los quirófanos (por Sede Cirugía o por nombre/código de quirófano)
+        const soloQuirofanos = (areas || []).filter(a => 
+          a.activo !== false && (
+            a.sedeId === cirugiaSedeId ||
+            (a.sedeNombre || '').toLowerCase().includes('cirug') ||
+            (a.nombre || '').toLowerCase().includes('quiróf') ||
+            (a.nombre || '').toLowerCase().includes('quirof') ||
+            (a.nombre || '').toLowerCase().includes('parto') ||
+            (a.codigo || '').toLowerCase().startsWith('qx') ||
+            (a.codigo || '').toLowerCase().startsWith('q')
+          )
+        );
 
-    if (medId) {
-      list = list.filter(o => o.medicoId === medId);
-    }
-
-    if (txt) {
-      list = list.filter(o =>
-        (o.pacienteNombre || '').toLowerCase().includes(txt) ||
-        (o.pacienteCedula || '').toLowerCase().includes(txt) ||
-        (o.descripcionCirugia || '').toLowerCase().includes(txt) ||
-        (o.medicoNombre || '').toLowerCase().includes(txt)
-      );
-    }
-
-    return list;
-  });
-
-  onCambiarEstado(event: { cirugiaId: string; nuevoEstado: string }): void {
-    this.pabellonService.cambiarEstado({
-      ordenCirugiaId: event.cirugiaId,
-      nuevoEstado: event.nuevoEstado
-    }).subscribe({
-      next: () => this.cargarOrdenes()
-    });
-  }
-
-  onConfirmarReprogramacion(event: { nuevaFechaHora: string; motivo: string }): void {
-    const target = this.modalReprogramarCirugia();
-    if (!target) return;
-
-    this.pabellonService.reprogramarCirugia({
-      ordenCirugiaId: target.id,
-      nuevaFechaHora: event.nuevaFechaHora,
-      motivo: event.motivo
-    }).subscribe({
-      next: () => {
-        this.modalReprogramarCirugia.set(null);
-        this.cargarOrdenes();
+        if (soloQuirofanos.length > 0) {
+          this.quirofanos.set(soloQuirofanos);
+          if (!this.nuevaCirugiaForm.salaQuirofano || this.nuevaCirugiaForm.salaQuirofano === 'Quirófano 1') {
+            this.nuevaCirugiaForm.salaQuirofano = soloQuirofanos[0].nombre;
+          }
+        } else {
+          // Fallback por defecto si aún no se han anexado quirófanos en BD
+          const defaultQuirofanos: AreaClinica[] = [
+            { id: '10000000-0000-0000-0000-000000000051', codigo: 'QX-1', nombre: 'Quirófano 1', activo: true },
+            { id: '10000000-0000-0000-0000-000000000052', codigo: 'QX-2', nombre: 'Quirófano 2', activo: true },
+            { id: '10000000-0000-0000-0000-000000000053', codigo: 'SALA-PARTOS', nombre: 'Sala de Partos', activo: true }
+          ];
+          this.quirofanos.set(defaultQuirofanos);
+          this.nuevaCirugiaForm.salaQuirofano = 'Quirófano 1';
+        }
+      },
+      error: (err) => {
+        console.error('[PABELLON] Error al cargar quirófanos:', err);
+        this.quirofanos.set([
+          { id: '10000000-0000-0000-0000-000000000051', codigo: 'QX-1', nombre: 'Quirófano 1', activo: true },
+          { id: '10000000-0000-0000-0000-000000000052', codigo: 'QX-2', nombre: 'Quirófano 2', activo: true },
+          { id: '10000000-0000-0000-0000-000000000053', codigo: 'SALA-PARTOS', nombre: 'Sala de Partos', activo: true }
+        ]);
       }
     });
   }
 
-  onToggleRequisito(event: { ordenId: string; requisitoId: string; cumplido: boolean }): void {
-    this.pabellonService.toggleRequisito(event.ordenId, event.requisitoId, event.cumplido).subscribe({
-      next: () => this.cargarOrdenes()
+  onFiltrarPacientes(filtros: { busqueda: string; estado: string }): void {
+    this.pabellonService.getPacientesQuirurgicos(filtros.busqueda, filtros.estado).subscribe(items => {
+      this.pacientesQuirurgicos.set(items || []);
     });
+  }
+
+  onSeleccionarPaciente(p: PacienteQuirurgicoItem): void {
+    this.pacienteSeleccionadoDetalle.set(p);
+  }
+
+  onSeleccionarDeCalendario(cal: CirugiaCalendarioItem): void {
+    const p = this.pacientesQuirurgicos().find(item => item.id === cal.id);
+    if (p) {
+      this.pacienteSeleccionadoDetalle.set(p);
+    } else {
+      this.pabellonService.getPacientesQuirurgicos().subscribe(items => {
+        this.pacientesQuirurgicos.set(items || []);
+        const found = items.find(i => i.id === cal.id);
+        if (found) this.pacienteSeleccionadoDetalle.set(found);
+      });
+    }
   }
 
   buscarPacientes(term: string): void {
@@ -365,40 +428,18 @@ export class PabellonGestionComponent implements OnInit {
       this.pacientesEncontrados.set([]);
       return;
     }
-    this.isSearchingPatient.set(true);
     this.patientService.searchPatients(term.trim()).subscribe({
-      next: (res) => {
-        this.pacientesEncontrados.set(res || []);
-        this.isSearchingPatient.set(false);
-      },
-      error: () => this.isSearchingPatient.set(false)
+      next: (res) => this.pacientesEncontrados.set(res || []),
+      error: () => this.pacientesEncontrados.set([])
     });
   }
 
   seleccionarPaciente(p: PatientRecord): void {
     this.pacienteSeleccionado.set(p);
     this.nuevaCirugiaForm.pacienteId = p.id;
+    this.nuevaCirugiaForm.cuentaServicioId = p.id;
     this.pacientesEncontrados.set([]);
     this.pacienteSearchQuery.set(`${p.nombre} ${p.apellidos || ''} (${p.cedula})`);
-
-    // Buscar si el paciente tiene una cuenta activa
-    this.http.get<any[]>(`${environment.apiUrl}/api/Enfermeria/cuentas-activas`).subscribe({
-      next: (cuentas) => {
-        const cuentaPaciente = (cuentas || []).find(c => c.pacienteId === p.id || c.pacienteCedula === p.cedula);
-        if (cuentaPaciente) {
-          this.nuevaCirugiaForm.cuentaServicioId = cuentaPaciente.cuentaId || cuentaPaciente.id;
-        } else {
-          if (!this.nuevaCirugiaForm.cuentaServicioId) {
-            this.nuevaCirugiaForm.cuentaServicioId = p.id;
-          }
-        }
-      },
-      error: () => {
-        if (!this.nuevaCirugiaForm.cuentaServicioId) {
-          this.nuevaCirugiaForm.cuentaServicioId = p.id;
-        }
-      }
-    });
   }
 
   abrirModalNuevaCirugia(): void {
@@ -412,18 +453,19 @@ export class PabellonGestionComponent implements OnInit {
       precioBaseUsd: 0,
       medicoId: '',
       fechaHoraProgramada: new Date().toISOString().slice(0, 16),
-      especialidad: '',
-      razonCirugia: ''
+      salaQuirofano: 'Quirófano 1',
+      modalidadAnestesia: 'General',
+      esAlquilado: false,
+      precioDerechoSalaUsd: 0
     };
     this.modalNuevaCirugiaVisible.set(true);
   }
 
   esFormularioValido(): boolean {
     return !!(
-      this.nuevaCirugiaForm.descripcionCirugia.trim() &&
+      this.nuevaCirugiaForm.descripcionCirugia?.trim() &&
       this.nuevaCirugiaForm.medicoId &&
-      this.nuevaCirugiaForm.cuentaServicioId.trim() &&
-      this.nuevaCirugiaForm.pacienteId.trim() &&
+      this.nuevaCirugiaForm.pacienteId?.trim() &&
       this.nuevaCirugiaForm.fechaHoraProgramada
     );
   }
@@ -434,7 +476,7 @@ export class PabellonGestionComponent implements OnInit {
     this.pabellonService.crearOrden(this.nuevaCirugiaForm).subscribe({
       next: () => {
         this.modalNuevaCirugiaVisible.set(false);
-        this.cargarOrdenes();
+        this.recargarDatos();
       }
     });
   }

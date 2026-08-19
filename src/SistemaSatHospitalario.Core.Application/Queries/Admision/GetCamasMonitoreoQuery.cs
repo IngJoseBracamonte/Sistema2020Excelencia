@@ -28,10 +28,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<CamaMonitoreoDto>> Handle(GetCamasMonitoreoQuery request, CancellationToken cancellationToken)
         {
-            // 1. Obtener todas las camas activas en el sistema (excluyendo Almacén Principal)
+            // 1. Obtener todas las camas activas en el sistema (excluyendo Almacén Principal y Quirófanos de Cirugía)
+            var cirugiaSedeId = SeedConstants.SedeId_Cirugia;
             var camas = await _context.AreasClinicas
                 .Include(a => a.Sede)
-                .Where(a => a.Activo && (a.Sede == null || !a.Sede.EsPrincipal))
+                .Where(a => a.Activo && (a.Sede == null || (!a.Sede.EsPrincipal && !a.Sede.Nombre.ToLower().Contains("cirug"))) && a.SedeId != cirugiaSedeId)
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener todas las cuentas abiertas vinculadas a alguna cama (o retenidas)

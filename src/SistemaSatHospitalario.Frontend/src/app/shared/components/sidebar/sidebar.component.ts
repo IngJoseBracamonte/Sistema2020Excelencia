@@ -25,7 +25,8 @@ import {
     Github,
     FlaskConical,
     Bed,
-    Building
+    Building,
+    Scissors
 } from 'lucide-angular';
 
 @Component({
@@ -46,7 +47,9 @@ export class SidebarComponent implements OnInit {
         medica: false,
         settings: false,
         facturacion: false,
-        enfermeria: false
+        enfermeria: false,
+        cirugia: false,
+        inventario: false
     });
 
     ngOnInit() {
@@ -68,6 +71,12 @@ export class SidebarComponent implements OnInit {
         }
         if (url.includes('/enfermeria')) {
             this.dropdownsOpen.set({ ...this.dropdownsOpen(), enfermeria: true });
+        }
+        if (url.includes('/pabellon')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), cirugia: true });
+        }
+        if (url.includes('/inventario')) {
+            this.dropdownsOpen.set({ ...this.dropdownsOpen(), inventario: true });
         }
     }
 
@@ -93,10 +102,11 @@ export class SidebarComponent implements OnInit {
         Github: Github,
         Lab: FlaskConical,
         Bed: Bed,
-        Building: Building
+        Building: Building,
+        Scissors: Scissors
     };
 
-    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion' | 'enfermeria') {
+    toggleDropdown(key: 'caja' | 'medica' | 'settings' | 'reportes' | 'facturacion' | 'enfermeria' | 'cirugia' | 'inventario') {
         this.dropdownsOpen.update(prev => ({
             ...prev,
             [key]: !prev[key as keyof typeof prev]

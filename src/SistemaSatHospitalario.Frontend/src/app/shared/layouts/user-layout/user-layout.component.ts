@@ -18,7 +18,7 @@ import { NotificationCenterComponent } from '../../components/notification-cente
       <!-- Main Content Area -->
       <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <!-- Top Bar / Header -->
-        <header class="h-16 flex items-center justify-between px-6 md:px-12 bg-surface/50 backdrop-blur-md border-b border-white/5 z-[200]">
+        <header class="h-16 flex items-center justify-between px-6 md:px-12 bg-surface/50 backdrop-blur-md border-b border-white/5 z-10">
           <div class="flex items-center gap-4">
           </div>
           
@@ -33,7 +33,7 @@ import { NotificationCenterComponent } from '../../components/notification-cente
         </header>
         
         <!-- Vista de contenido con scroll -->
-        <div class="flex-1 overflow-y-auto pt-4 px-2 md:px-6 pb-6">
+        <div class="flex-1 overflow-y-auto pt-4 px-2 md:px-6 pb-6 relative z-20">
 
           <div class="max-w-7xl mx-auto animate-fade-in-up">
             <router-outlet></router-outlet>

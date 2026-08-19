@@ -52,7 +52,32 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             if (recipes == null || !recipes.Any())
             {
-                return;
+                Insumo? directInsumo = null;
+                if (_context.Insumos != null)
+                {
+                    directInsumo = await _context.Insumos
+                        .FirstOrDefaultAsync(i => (serviceId != Guid.Empty && i.Id == serviceId) ||
+                                                  (!string.IsNullOrEmpty(serviceCodigo) && i.Codigo == serviceCodigo), cancellationToken);
+                }
+
+                if (directInsumo != null)
+                {
+                    var selfRecipe = new ServicioInsumoReceta(
+                        directInsumo.Id,
+                        directInsumo.Codigo,
+                        directInsumo.Id,
+                        1m,
+                        directInsumo.UnidadMedidaBase
+                    )
+                    {
+                        Insumo = directInsumo
+                    };
+                    recipes = new List<ServicioInsumoReceta> { selfRecipe };
+                }
+                else
+                {
+                    return;
+                }
             }
 
             var targetSedeId = sedeId;
@@ -368,6 +393,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     bool esGastoInterno = !string.IsNullOrEmpty(pedido.Observaciones) && 
                         pedido.Observaciones.Contains("[GASTO_INTERNO_LABORATORIO]", StringComparison.OrdinalIgnoreCase);
 
+                    bool esCirugiaAdHoc = (pedido.SedeSolicitanteId == SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia) ||
+                        (!string.IsNullOrEmpty(pedido.Observaciones) && pedido.Observaciones.Contains("[CIRUGIA_ADHOC:"));
+
                     // Validar stock disponible en la sede proveedora y descontar stock
                     foreach (var detalle in pedido.Detalles)
                     {
@@ -422,10 +450,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                             detalle.SetRecibido(cantidadADespachar);
 
                             // Registrar movimiento de salida en Sede Proveedora
-                            var tipoMovSalida = esGastoInterno ? "ConsumoInterno" : "TransferenciaSalida";
+                            var tipoMovSalida = esGastoInterno ? "ConsumoInterno" : (esCirugiaAdHoc ? "DespachoQuirofano" : "TransferenciaSalida");
                             var motivoSalidaTxt = esGastoInterno 
                                 ? $"Nota de Entrega por Consumo Interno de Laboratorio/Mantenimiento ({pedido.Correlativo})"
-                                : $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante (Cant. Aprobada: {cantidadADespachar})";
+                                : (esCirugiaAdHoc 
+                                    ? $"Despacho de urgencia hacia Quirófano ({pedido.Correlativo}): {detalle.Insumo.Nombre}" 
+                                    : $"Despacho de pedido inter-sede {pedido.Correlativo} hacia sede solicitante (Cant. Aprobada: {cantidadADespachar})");
 
                             var movimientoSalida = new MovimientoInsumo(
                                 detalle.InsumoId,
@@ -439,7 +469,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                             );
                             _context.MovimientosInsumo.Add(movimientoSalida);
 
-                            // 2. Si no es Gasto Interno, sumar inmediatamente el stock a la Sede Solicitante y registrar TransferenciaEntrada
+                            // 2. Si no es Gasto Interno (Consumo Inmediato de Lab/Mantenimiento), sumar inmediatamente el stock a la Sede Solicitante (incluyendo Cirugía / Quirófano)
                             if (!esGastoInterno)
                             {
                                 var stockSolicitante = await _context.StocksSedes
@@ -465,6 +495,37 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                     $"Recepción por despacho de pedido inter-sede {pedido.Correlativo}"
                                 );
                                 _context.MovimientosInsumo.Add(movimientoEntrada);
+                            }
+
+                            // 3. Si viene asociado a una Solicitud Ad-Hoc de Cirugía, marcar la solicitud como despachada y registrar en log
+                            if (esCirugiaAdHoc)
+                            {
+                                if (!string.IsNullOrEmpty(pedido.Observaciones) && pedido.Observaciones.Contains("[CIRUGIA_ADHOC:"))
+                                {
+                                    var startIdx = pedido.Observaciones.IndexOf("[CIRUGIA_ADHOC:") + 15;
+                                    var endIdx = pedido.Observaciones.IndexOf(':', startIdx);
+                                    var ordenEndIdx = pedido.Observaciones.IndexOf(']', endIdx);
+                                    if (endIdx > startIdx && ordenEndIdx > endIdx)
+                                    {
+                                        var solIdStr = pedido.Observaciones.Substring(startIdx, endIdx - startIdx);
+                                        var ordIdStr = pedido.Observaciones.Substring(endIdx + 1, ordenEndIdx - endIdx - 1);
+                                        if (Guid.TryParse(solIdStr, out var solId) && Guid.TryParse(ordIdStr, out var ordId))
+                                        {
+                                            var sol = await _context.SolicitudesInsumosCirugia
+                                                .Include(s => s.OrdenCirugia)
+                                                .FirstOrDefaultAsync(s => s.Id == solId, cancellationToken);
+
+                                            if (sol != null && sol.EstadoSolicitud == SistemaSatHospitalario.Core.Domain.Entities.Admision.EstadoSolicitudInsumoConstants.Pendiente)
+                                            {
+                                                sol.Despachar(usuario);
+
+                                                var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(ordId, usuario, SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaEventoConstants.DespachoInsumos,
+                                                    $"Despachado pedido {pedido.Correlativo} desde Almacén Central: {cantidadADespachar} {detalle.Insumo.UnidadMedidaBase} de '{detalle.Insumo.Nombre}'.");
+                                                _context.CirugiaLogs.Add(log);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -509,6 +570,35 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             pedido.CambiarEstado(EstadoPedidoInterSede.Rechazado);
             pedido.SetObservaciones($"{pedido.Observaciones} | [RECHAZADO por {usuario}: {motivo}]".Trim());
+
+            // Si es pedido quirúrgico ad-hoc, sincronizar rechazo en SolicitudInsumoCirugia
+            if (!string.IsNullOrEmpty(pedido.Observaciones) && pedido.Observaciones.Contains("[CIRUGIA_ADHOC:"))
+            {
+                try
+                {
+                    var startIdx = pedido.Observaciones.IndexOf("[CIRUGIA_ADHOC:") + 15;
+                    var endIdx = pedido.Observaciones.IndexOf(':', startIdx);
+                    if (endIdx > startIdx)
+                    {
+                        var solIdStr = pedido.Observaciones.Substring(startIdx, endIdx - startIdx);
+                        if (Guid.TryParse(solIdStr, out var solId))
+                        {
+                            var sol = await _context.SolicitudesInsumosCirugia.FirstOrDefaultAsync(s => s.Id == solId, cancellationToken);
+                            if (sol != null && sol.EstadoSolicitud == SistemaSatHospitalario.Core.Domain.Entities.Admision.EstadoSolicitudInsumoConstants.Pendiente)
+                            {
+                                sol.Rechazar(usuario, motivo);
+                                var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(sol.OrdenCirugiaId, usuario, "RechazoInsumoExtra",
+                                    $"Solicitud ad-hoc rechazada por Almacén Central: {motivo}");
+                                _context.CirugiaLogs.Add(log);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error al sincronizar rechazo de solicitud de cirugía");
+                }
+            }
 
             _logger.LogInformation("Pedido inter-sede {Correlativo} rechazada por {Usuario}. Motivo: {Motivo}", pedido.Correlativo, usuario, motivo);
 

@@ -1,3 +1,11 @@
+export interface CategoriaInsumo {
+  id: string;
+  nombre: string;
+  codigo?: string;
+  activo: boolean;
+  fechaCreacion?: string;
+}
+
 export interface PrincipioActivo {
   id: string;
   nombre: string;
@@ -156,6 +164,7 @@ export interface PurchaseItem {
   insumoId: string;
   cantidad: number;
   precioCostoUSD: number;
+  presentacionCompra?: string;
 }
 
 export interface RecordPurchase {
@@ -166,3 +175,29 @@ export interface RecordPurchase {
   tasaCambio?: number;
   items: PurchaseItem[];
 }
+
+export interface TransferenciaReposicionItem {
+  id: string;
+  insumoId: string;
+  insumoNombre: string;
+  insumoCodigo: string;
+  sedeOrigenId: string;
+  sedeOrigenNombre: string;
+  sedeDestinoId: string;
+  sedeDestinoNombre: string;
+  cantidad: number;
+  motivo: string;
+  fechaTransferencia: string;
+  usuarioId: string;
+  observaciones?: string;
+}
+
+export interface ProcesarReposicionRequest {
+  insumoId: string;
+  sedeOrigenId: string;
+  sedeDestinoId: string;
+  cantidad: number;
+  motivo?: string;
+  observaciones?: string;
+}
+

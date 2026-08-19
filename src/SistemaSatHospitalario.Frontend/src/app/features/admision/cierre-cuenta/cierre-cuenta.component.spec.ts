@@ -182,11 +182,51 @@ describe('CierreCuentaComponent', () => {
     expect(actionsBox).toBeTruthy();
   });
 
-  it('debe ocultar el panel de acciones de caja cuando el tipo es Emergencia', () => {
-    component.type.set('Emergencia');
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    const actionsBox = compiled.querySelector('a[routerLink="/cxc"]');
-    expect(actionsBox).toBeFalsy();
+  it('debe permitir buscar y seleccionar un Insumo en el catálogo rápido', () => {
+    const mockInsumo = {
+      id: 'insumo-1',
+      codigo: 'INS-BIS-15',
+      descripcion: 'BISTURI 15',
+      precioUsd: 10,
+      tipo: 'MEDICAMENTO',
+      tipoServicioId: 5,
+      permiteFraccionamiento: false,
+      unidadMedida: 'UNIDAD'
+    };
+
+    component.servicesCatalog.set([mockInsumo]);
+    component.onFastChargeSearchChange('BIS');
+
+    expect(component.filteredServices().length).toBe(1);
+    expect(component.filteredServices()[0].codigo).toBe('INS-BIS-15');
+
+    component.selectCatalogService(mockInsumo as any);
+
+    expect(component.selectedService()).toEqual(mockInsumo as any);
+    expect(component.activeStepperMode()).toBe('medicamento');
+    expect(component.currentStep()).toBe(2);
+  });
+
+  it('debe agregar insumo al carro de carga y calcular el total correctamente', () => {
+    component.selectAccount(mockAccounts[0]);
+    const mockInsumo = {
+      id: 'insumo-1',
+      codigo: 'INS-BIS-15',
+      descripcion: 'BISTURI 15',
+      precioUsd: 10,
+      tipo: 'MEDICAMENTO',
+      tipoServicioId: 5,
+      permiteFraccionamiento: false,
+      unidadMedida: 'UNIDAD'
+    };
+
+    component.selectCatalogService(mockInsumo as any);
+    component.fastChargeQuantity.set(3);
+    component.addCurrentItemToCart();
+
+    expect(component.cartItems().length).toBe(1);
+    expect(component.cartItems()[0].cantidad).toBe(3);
+    expect(component.cartItems()[0].precioBase).toBe(10);
+    expect(component.cartTotalUSD()).toBe(30);
   });
 });

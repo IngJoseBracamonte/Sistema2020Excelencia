@@ -87,7 +87,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var entity = await _context.Medicos.FindAsync(new object[] { request.Id }, cancellationToken);
             if (entity == null) return false;
 
-            _context.Medicos.Remove(entity);
+            entity.SetEstado(false);
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }

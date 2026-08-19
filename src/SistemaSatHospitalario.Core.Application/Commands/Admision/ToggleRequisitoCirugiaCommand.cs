@@ -54,7 +54,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var nombreReq = itemReq.RequisitoCirugia?.Nombre ?? "Requisito";
             var estadoStr = request.Cumplido ? "Cumplido [V]" : "Pendiente [X]";
 
-            var log = new CirugiaLog(request.OrdenCirugiaId, request.UsuarioId, "VerificacionRequisito", $"Requisito '{nombreReq}' marcado como: {estadoStr}");
+            var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "admin" : request.UsuarioId;
+            var log = new CirugiaLog(request.OrdenCirugiaId, usuario, "VerificacionRequisito", $"Requisito '{nombreReq}' marcado como: {estadoStr}");
             await _context.CirugiaLogs.AddAsync(log, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);

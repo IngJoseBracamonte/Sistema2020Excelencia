@@ -89,37 +89,46 @@
         <!-- Operativo / Gestión -->
         <div *ngIf="!isRxAssistant() || isAdmin()" class="text-[10px] font-black text-muted uppercase tracking-[0.2em] px-3 mt-6 mb-2 opacity-60">Operativo / Gestión</div>
         
-        <!-- Grupo Inventario -->
-        <div *ngIf="auth.isInventorySupervisor() || isAdmin()" class="space-y-1">
-            <div class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] px-3 mt-4 mb-2 opacity-80 flex items-center gap-1.5">
-                <lucide-icon [name]="icons.Catalog" class="w-3.5 h-3.5"></lucide-icon>
-                <span>Inventario</span>
+        <!-- Dropdown: Cirugía / Pabellón -->
+        <div *ngIf="isAdministrativeGroup() || isAdmin()" class="space-y-1">
+            <button (click)="toggleDropdown('cirugia')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().cirugia }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Scissors" class="w-5 h-5 mr-3 text-rose-400"></lucide-icon>
+                    Cirugía
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().cirugia"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().cirugia" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/pabellon/tablero" routerLinkActive="active-sublink" class="nav-subitem">Tablero de Pacientes</a>
+                <a routerLink="/pabellon/calendario" routerLinkActive="active-sublink" class="nav-subitem">Calendario Total</a>
             </div>
-            <div class="pl-3 space-y-1 border-l border-indigo-500/20 ml-3">
-                <a routerLink="/inventario/stock" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Stock por Sedes / Áreas
-                </a>
-                <a routerLink="/inventario/compras" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Compras & Entradas
-                </a>
-                <a routerLink="/inventario/cuentas-por-pagar" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Cuentas por Pagar
-                </a>
-                <a routerLink="/inventario/envios-recepciones" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Envíos y Recepciones
-                </a>
-                <a routerLink="/inventario/historiales" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Historiales
-                </a>
-                <a routerLink="/inventario/catalogo" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Catálogo & Principios Activos
-                </a>
-                <a routerLink="/inventario/descarte" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Descarte & Bajas
-                </a>
-                <a routerLink="/inventario/sedes-areas" routerLinkActive="active-sublink" class="nav-subitem flex items-center py-1.5 px-3 text-xs font-bold rounded-xl hover:bg-white/5 transition-all text-slate-300">
-                    Sedes & Áreas Clínicas
-                </a>
+        </div>
+
+        <!-- Dropdown: Inventario -->
+        <div *ngIf="auth.isInventorySupervisor() || isAdmin()" class="space-y-1">
+            <button (click)="toggleDropdown('inventario')" 
+                class="w-full flex items-center justify-between nav-item group"
+                [ngClass]="{ 'bg-white/5': dropdownsOpen().inventario }">
+                <div class="flex items-center">
+                    <lucide-icon [name]="icons.Catalog" class="w-5 h-5 mr-3 text-indigo-400"></lucide-icon>
+                    Inventario
+                </div>
+                <lucide-icon [name]="icons.ChevronDown" class="w-4 h-4 transition-transform duration-300"
+                    [class.rotate-180]="dropdownsOpen().inventario"></lucide-icon>
+            </button>
+            <div *ngIf="dropdownsOpen().inventario" class="pl-8 space-y-1 animate-fade-in">
+                <a routerLink="/inventario/stock" routerLinkActive="active-sublink" class="nav-subitem">Stock por Sedes / Áreas</a>
+                <a routerLink="/inventario/reposicion" routerLinkActive="active-sublink" class="nav-subitem">Reposición de Insumos</a>
+                <a routerLink="/inventario/compras" routerLinkActive="active-sublink" class="nav-subitem">Compras & Entradas</a>
+                <a routerLink="/inventario/cuentas-por-pagar" routerLinkActive="active-sublink" class="nav-subitem">Cuentas por Pagar</a>
+                <a routerLink="/inventario/envios-recepciones" routerLinkActive="active-sublink" class="nav-subitem">Envíos y Recepciones</a>
+                <a routerLink="/inventario/historiales" routerLinkActive="active-sublink" class="nav-subitem">Historiales</a>
+                <a routerLink="/inventario/catalogo" routerLinkActive="active-sublink" class="nav-subitem">Catálogo & Principios Activos</a>
+                <a routerLink="/inventario/descarte" routerLinkActive="active-sublink" class="nav-subitem">Descarte & Bajas</a>
+                <a routerLink="/inventario/sedes-areas" routerLinkActive="active-sublink" class="nav-subitem">Sedes & Áreas Clínicas</a>
             </div>
         </div>
         

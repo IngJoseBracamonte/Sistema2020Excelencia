@@ -23,6 +23,7 @@ export const routes: Routes = [
             // --- Módulo Inventario v2 ---
             { path: 'inventario/stock', loadComponent: () => import('./features/inventario/stock/stock-multisede.component').then(m => m.StockMultisedeComponent) },
             { path: 'inventario/solicitudes', loadComponent: () => import('./features/admin/inventory/pedidos-inter-sede.component').then(m => m.PedidosInterSedeComponent) },
+            { path: 'inventario/reposicion', loadComponent: () => import('./features/inventario/reposicion-inventario.component').then(m => m.ReposicionInventarioComponent) },
             { path: 'inventario/compras', loadComponent: () => import('./features/inventario/compras/compras.component').then(m => m.ComprasComponent) },
             { path: 'inventario/envios-recepciones', loadComponent: () => import('./features/inventario/envios-recepciones/envios-recepciones.component').then(m => m.EnviosRecepcionesComponent) },
             { path: 'inventario/pedidos', redirectTo: 'inventario/envios-recepciones', pathMatch: 'full' },
@@ -73,7 +74,12 @@ export const routes: Routes = [
             { path: 'admin/seguros/gerencia', loadComponent: () => import('./features/admin/seguros-gerencia/management-insurance-dashboard.component').then(m => m.ManagementInsuranceDashboardComponent) },
             { path: 'github-test', loadComponent: () => import('./features/github-test/github-test.component').then(m => m.GithubTestComponent) },
             { path: 'enfermeria', loadComponent: () => import('./features/enfermeria/enfermeria.component').then(m => m.EnfermeriaComponent) },
-            { path: 'pabellon/gestion', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            
+            // --- Módulo Cirugía / Pabellón ---
+            { path: 'pabellon/tablero', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            { path: 'pabellon/calendario', loadComponent: () => import('./features/admision/pabellon-gestion/pabellon-gestion.component').then(m => m.PabellonGestionComponent) },
+            { path: 'pabellon/gestion', redirectTo: 'pabellon/tablero', pathMatch: 'full' },
+            { path: 'pabellon', redirectTo: 'pabellon/tablero', pathMatch: 'full' },
 
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]

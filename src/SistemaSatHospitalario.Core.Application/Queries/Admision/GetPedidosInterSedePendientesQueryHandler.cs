@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -6,6 +7,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
@@ -21,6 +24,62 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<List<PedidoInterSedeDto>> Handle(GetPedidosInterSedePendientesQuery request, CancellationToken cancellationToken)
         {
+            // Auto-sincronización de solicitudes quirúrgicas pendientes huérfanas
+            var solicitudesQuirofano = await _context.SolicitudesInsumosCirugia
+                .Include(s => s.OrdenCirugia)
+                    .ThenInclude(o => o.Paciente)
+                .Where(s => s.EstadoSolicitud == EstadoSolicitudInsumoConstants.Pendiente)
+                .ToListAsync(cancellationToken);
+
+            bool hayCambios = false;
+            foreach (var sol in solicitudesQuirofano)
+            {
+                var tag = $"[CIRUGIA_ADHOC:{sol.Id}:";
+                bool yaExiste = await _context.PedidosInterSede
+                    .AnyAsync(p => p.Observaciones != null && p.Observaciones.Contains(tag), cancellationToken);
+
+                if (!yaExiste)
+                {
+                    var year = DateTime.UtcNow.Year.ToString();
+                    var latestCorrelativo = await _context.PedidosInterSede
+                        .Where(p => p.Correlativo.StartsWith($"PED-{year}-"))
+                        .OrderByDescending(p => p.Correlativo.Length)
+                        .ThenByDescending(p => p.Correlativo)
+                        .Select(p => p.Correlativo)
+                        .FirstOrDefaultAsync(cancellationToken);
+
+                    int nextSeq = 1;
+                    if (!string.IsNullOrEmpty(latestCorrelativo) && latestCorrelativo.Length >= 13)
+                    {
+                        var numPart = latestCorrelativo.Substring(latestCorrelativo.LastIndexOf('-') + 1);
+                        if (int.TryParse(numPart, out int lastSeq))
+                        {
+                            nextSeq = lastSeq + 1;
+                        }
+                    }
+                    var correlativo = $"PED-{year}-{nextSeq.ToString().PadLeft(4, '0')}";
+                    var pacNombre = sol.OrdenCirugia?.Paciente != null 
+                        ? sol.OrdenCirugia.Paciente.NombreCorto
+                        : "Paciente Quirúrgico";
+
+                    var pedido = new PedidoInterSede(
+                        correlativo,
+                        SeedConstants.SedeId_Cirugia,
+                        sol.AlmacenOrigenId != Guid.Empty ? sol.AlmacenOrigenId : SeedConstants.SedeId_Principal,
+                        sol.UsuarioSolicitud ?? "Sistema",
+                        $"[CIRUGIA_ADHOC:{sol.Id}:{sol.OrdenCirugiaId}] Paciente: {pacNombre} | Urgencia: {sol.Observaciones}"
+                    );
+                    pedido.AgregarDetalle(new PedidoInterSedeDetalle(sol.InsumoId, sol.CantidadSolicitada));
+                    _context.PedidosInterSede.Add(pedido);
+                    hayCambios = true;
+                }
+            }
+
+            if (hayCambios)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
             var query = _context.PedidosInterSede
                 .IgnoreQueryFilters()
                 .Include(p => p.SedeSolicitante)

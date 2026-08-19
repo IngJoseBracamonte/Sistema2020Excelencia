@@ -47,6 +47,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             StockActual = StockActual + cantidadBase;
         }
 
+        public void RegistrarSalida(decimal cantidad, bool permiteFraccionamiento = true)
+        {
+            RegistrarMovimientoStock(-Math.Abs(cantidad), permiteFraccionamiento);
+        }
+
+        public void RegistrarEntrada(decimal cantidad, bool permiteFraccionamiento = true)
+        {
+            RegistrarMovimientoStock(Math.Abs(cantidad), permiteFraccionamiento);
+        }
+
         public void EstablecerStockCierre(decimal stockFisicoReal)
         {
             StockActual = stockFisicoReal;
