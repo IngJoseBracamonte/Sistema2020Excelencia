@@ -68,7 +68,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
-        private readonly IMediator? _mediator;
 
         public CargarServicioACuentaCommandHandler(
             IBillingRepository repository, 
@@ -88,7 +87,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _inventoryService = inventoryService;
             _legacyRepository = legacyRepository;
             _logger = logger;
-            _mediator = mediator;
             
             if (strategyFactory != null)
             {

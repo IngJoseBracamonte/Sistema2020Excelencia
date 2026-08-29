@@ -51,10 +51,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RegistrarMovimientoStock(decimal cantidadBase)
         {
+              // La gestión de existencias se realiza por sede en StockSede.
         }
 
         public void EstablecerStockCierre(decimal stockFisicoReal)
         {
+              // La gestión de existencias se realiza por sede en StockSede.
         }
 
         public void ActualizarDetalles(string nombre, decimal costoUSD)
