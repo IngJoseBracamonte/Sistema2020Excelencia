@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
@@ -20,12 +19,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class ToggleRequisitoCirugiaCommandHandler : IRequestHandler<ToggleRequisitoCirugiaCommand, bool>
     {
         private readonly IApplicationDbContext _context;
-        private readonly ILogger<ToggleRequisitoCirugiaCommandHandler> _logger;
 
-        public ToggleRequisitoCirugiaCommandHandler(IApplicationDbContext context, ILogger<ToggleRequisitoCirugiaCommandHandler> logger)
+            public ToggleRequisitoCirugiaCommandHandler(IApplicationDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<bool> Handle(ToggleRequisitoCirugiaCommand request, CancellationToken cancellationToken)

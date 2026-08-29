@@ -609,7 +609,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid pedidoId,
             string usuario,
             Dictionary<Guid, decimal> discrepancias,
-            CancellationToken cancellationToken)
+                CancellationToken cancellationToken = default)
         {
             var pedido = await _context.PedidosInterSede
                 .Include(p => p.Detalles)
