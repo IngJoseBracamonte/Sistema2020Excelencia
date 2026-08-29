@@ -26,7 +26,7 @@ services:
 
   # --- WebAPI (.NET 9 Backend) ---
   api:
-    # image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
+    image: ghcr.io/ingjosebracamonte/sistema-sat-api:latest
     build:
       context: ./src
       dockerfile: SistemaSatHospitalario.WebAPI/Dockerfile
@@ -81,7 +81,7 @@ services:
 
   # --- Frontend (Angular PWA + Nginx Proxy) ---
   frontend:
-    # image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
+    image: ghcr.io/ingjosebracamonte/sistema-sat-frontend:latest
     build:
       context: ./src/SistemaSatHospitalario.Frontend
       dockerfile: Dockerfile
@@ -153,3 +153,4 @@ volumes:
     name: sat-api-logs
   redis-data:
     name: sat-redis-data
+
