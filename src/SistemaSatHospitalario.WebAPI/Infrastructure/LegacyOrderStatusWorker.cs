@@ -28,22 +28,19 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("[V16.3] Legacy Order Status Worker iniciado.");
-
             while (!stoppingToken.IsCancellationRequested)
             {
-                try
-                {
-                    await PollLegacyStatus(stoppingToken);
+                try 
+                { 
+                    await PollLegacyStatus(stoppingToken); 
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error en el ciclo de monitoreo de órdenes legacy.");
+                catch (Exception ex) 
+                { 
+                    _logger.LogError(ex, "Error consultando estado legacy"); 
                 }
-
-                await Task.Delay(_pollInterval, stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }
-        }
+}
 
         private async Task PollLegacyStatus(CancellationToken ct)
         {

@@ -12,7 +12,7 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy.Migrations
 {
     [DbContext(typeof(Sistema2020LegacyDbContext))]
-    [Migration("20260819120357_InitialLegacy")]
+    [Migration("20260829150854_InitialLegacy")]
     partial class InitialLegacy
     {
         /// <inheritdoc />

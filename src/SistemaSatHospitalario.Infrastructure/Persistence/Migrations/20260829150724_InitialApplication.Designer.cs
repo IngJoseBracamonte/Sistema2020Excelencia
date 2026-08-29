@@ -12,7 +12,7 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SatHospitalarioDbContext))]
-    [Migration("20260819120339_InitialApplication")]
+    [Migration("20260829150724_InitialApplication")]
     partial class InitialApplication
     {
         /// <inheritdoc />

@@ -12,7 +12,7 @@ using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 namespace SistemaSatHospitalario.Infrastructure.Identity.Migrations
 {
     [DbContext(typeof(SatHospitalarioIdentityDbContext))]
-    [Migration("20260819120319_InitialIdentity")]
+    [Migration("20260829150733_InitialIdentity")]
     partial class InitialIdentity
     {
         /// <inheritdoc />
