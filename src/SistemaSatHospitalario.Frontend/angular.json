@@ -73,6 +73,17 @@
               ],
               "outputHashing": "all",
               "serviceWorker": "ngsw-config.json"
+            },
+            "host-dev": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.host-dev.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -90,6 +101,10 @@
             },
             "development": {
               "buildTarget": "SistemaSatHospitalario.Frontend:build:development",
+              "proxyConfig": "proxy.conf.js"
+            },
+            "host-dev": {
+              "buildTarget": "SistemaSatHospitalario.Frontend:build:host-dev",
               "proxyConfig": "proxy.conf.js"
             }
           },
@@ -120,5 +135,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

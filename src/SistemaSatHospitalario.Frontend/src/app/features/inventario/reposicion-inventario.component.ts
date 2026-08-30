@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { InventoryService } from '../../core/services/inventory.service';
 import { Insumo, TransferenciaReposicionItem } from '../../core/models/inventory.model';
-import { MultiSedeService, Sede } from '../../core/services/multi-sede.service';
+import { AreaClinica, MultiSedeService, Sede } from '../../core/services/multi-sede.service';
 
 @Component({
   selector: 'app-reposicion-inventario',
@@ -63,7 +63,7 @@ import { MultiSedeService, Sede } from '../../core/services/multi-sede.service';
               class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
             >
               @for (s of sedes(); track s.id) {
-                <option [value]="s.id">{{ s.nombre }} {{ s.esPrincipal ? '(Almacén Principal)' : '' }}</option>
+                <option [value]="s.id">{{ etiquetaAreaYSubAreas(s) }}</option>
               }
             </select>
           </div>
@@ -76,7 +76,7 @@ import { MultiSedeService, Sede } from '../../core/services/multi-sede.service';
               class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
             >
               @for (s of sedes(); track s.id) {
-                <option [value]="s.id">{{ s.nombre }} {{ s.esPrincipal ? '(Almacén Principal)' : '' }}</option>
+                <option [value]="s.id">{{ etiquetaAreaYSubAreas(s) }}</option>
               }
             </select>
           </div>
@@ -224,6 +224,7 @@ export class ReposicionInventarioComponent implements OnInit {
 
   catalogoInsumos = signal<Insumo[]>([]);
   sedes = signal<Sede[]>([]);
+  subAreas = signal<AreaClinica[]>([]);
   historial = signal<TransferenciaReposicionItem[]>([]);
 
   insumoSeleccionadoId = '';
@@ -260,6 +261,21 @@ export class ReposicionInventarioComponent implements OnInit {
         this.sedeDestinoId = sedes[0].id;
       }
     });
+
+    this.multiSedeService.getAreasClinicas().subscribe(areas => {
+      this.subAreas.set((areas || []).filter(area => area.activo !== false));
+    });
+  }
+
+  etiquetaAreaYSubAreas(sede: Sede): string {
+    const subAreas = this.subAreas()
+      .filter(area => area.sedeId === sede.id || area.sedeNombre === sede.nombre)
+      .map(area => area.nombre);
+    const area = sede.esPrincipal ? `${sede.nombre} (Almacén Principal)` : sede.nombre;
+
+    return subAreas.length > 0
+      ? `Área: ${area} | Subáreas: ${subAreas.join(', ')}`
+      : `Área: ${area}`;
   }
 
   cargarHistorial() {

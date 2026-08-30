@@ -163,7 +163,7 @@ export interface OrdenCirugiaDetalle extends OrdenCirugia {
 }
 
 export interface CrearOrdenCirugiaRequest {
-  cuentaServicioId: string;
+  cuentaServicioId?: string;
   pacienteId: string;
   descripcionCirugia: string;
   precioBaseUsd: number;

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -87,7 +87,7 @@ import { OrdenCirugia } from '../../../core/services/pabellon.service';
     </div>
   `
 })
-export class ReprogramarModalComponent {
+export class ReprogramarModalComponent implements OnInit {
   @Input({ required: true }) cirugia!: OrdenCirugia;
   @Output() cerrar = new EventEmitter<void>();
   @Output() confirmar = new EventEmitter<{ nuevaFechaHora: string; motivo: string }>();

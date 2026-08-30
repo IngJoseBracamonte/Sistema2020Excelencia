@@ -222,7 +222,7 @@ export class PabellonCalendarioComponent {
   // Muestra estrictamente los quirófanos asignados al área de Cirugía
   salasDisponibles = computed(() => {
     const listQ = (this.quirofanos() || []).map(q => q.nombre.trim()).filter(Boolean);
-    return Array.from(new Set(listQ)).sort();
+    return Array.from(new Set(listQ)).sort((first, second) => first.localeCompare(second));
   });
 
   cirugiasFiltradas = computed(() => {
