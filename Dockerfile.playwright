@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy package.json and install dependencies
 COPY src/SistemaSatHospitalario.Frontend/package*.json ./
-RUN npm install axios --legacy-peer-deps
+RUN npm ci --ignore-scripts --prefer-offline --no-audit --legacy-peer-deps
 
 # Copy the rest of the frontend files (where tests are usually located)
 COPY src/SistemaSatHospitalario.Frontend/ ./
@@ -14,6 +14,9 @@ RUN npx playwright install --with-deps
 
 # Copy the reporting script
 COPY playwright-runner.js ./
+
+RUN chown -R pwuser:pwuser /app
+USER pwuser
 
 # Run the tests every 15 minutes
 CMD ["node", "playwright-runner.js"]

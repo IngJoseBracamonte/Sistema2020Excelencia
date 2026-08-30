@@ -12,6 +12,7 @@ using SistemaSatHospitalario.Core.Domain.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -408,10 +409,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // --- AUTO-CREACIÓN EN MAESTRO DE SERVICIOS (DESACTIVADO, PRECIO 0, CÓDIGO ALEATORIO) ---
             string prefix = (dto.Categoria ?? "").ToUpperInvariant().Contains(TipoServicioConstants.CategoriaMedicamento.ToUpperInvariant()) ? "MED-AUT-" : "INS-AUT-";
             string randomCode;
-            var random = new Random();
             do
             {
-                randomCode = $"{prefix}{random.Next(1000, 9999)}";
+                 randomCode = $"{prefix}{RandomNumberGenerator.GetInt32(1000, 10000)}";
             } while (await _context.ServiciosClinicos.AnyAsync(s => s.Codigo == randomCode, ct));
 
             var servicioClinico = new ServicioClinico(

@@ -10,6 +10,7 @@ import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { concatMap, tap, catchError, finalize, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed, toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { SettingsService } from './settings.service';
+import { generateSecureUuid } from '../utils/secure-id';
 
 /**
  * BillingFacadeService (Pachón Pro V7.0)
@@ -295,13 +296,7 @@ export class BillingFacadeService {
       })
     };
     
-    // Generación de Clave de Idempotencia (V12.0 Robustness - Safe for HTTP non-secure contexts)
-    const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-          const r = Math.random() * 16 | 0;
-          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
+    const idempotencyKey = generateSecureUuid();
 
     return this.facturacionService.syncBulk(payload, idempotencyKey).pipe(
       tap((res: any) => {

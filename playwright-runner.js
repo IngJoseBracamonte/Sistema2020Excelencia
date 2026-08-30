@@ -1,8 +1,7 @@
 const { exec } = require('child_process');
-const axios = require('axios');
 
-const API_URL = process.env.API_URL || 'http://api:8080/api/Tickets/report';
-const TESTING_TOKEN = 'S4T_Hosp_Testing_2026';
+const API_URL = process.env.API_URL;
+const TESTING_TOKEN = process.env.TESTING_TOKEN;
 const INTERVAL = 15 * 60 * 1000; // 15 minutes
 
 async function runTests() {
@@ -14,15 +13,27 @@ async function runTests() {
             console.error(stderr);
 
             try {
-                await axios.post(API_URL, {
+                    if (!API_URL || !TESTING_TOKEN) {
+                        throw new Error('API_URL y TESTING_TOKEN deben configurarse para reportar fallos de pruebas.');
+                    }
+
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Testing-Token': TESTING_TOKEN
+                        },
+                        body: JSON.stringify({
                     requestPath: 'E2E/Playwright/Docker',
                     metodoHTTP: 'TEST',
                     mensajeExcepcion: 'Fallo CrÃtico en Pruebas de Integridad E2E (Playwright)',
                     stackTrace: stdout + '\n' + stderr,
                     usuarioAsociado: 'Playwright_Bot'
-                }, {
-                    headers: { 'X-Testing-Token': TESTING_TOKEN }
                 });
+
+                    if (!response.ok) {
+                        throw new Error(`La API devolvió el estado ${response.status}.`);
+                    }
                 console.log(`[${new Date().toISOString()}] âœ… Alerta enviada al sistema de tickets.`);
             } catch (apiError) {
                 console.error(`[${new Date().toISOString()}] â Œ No se pudo enviar la alerta a la API:`, apiError.message);

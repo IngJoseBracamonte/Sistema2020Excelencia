@@ -19,6 +19,7 @@ import { MedicoService, Medico } from '../../core/services/medico.service';
 import { MultiSedeService, SedeDto, AreaClinica } from '../../core/services/multi-sede.service';
 import { PatientService, PatientRecord } from '../../core/services/patient.service';
 import { FacturacionService } from '../../core/services/facturacion.service';
+import { generateSecureUuid } from '../../core/utils/secure-id';
 import { TIPO_INGRESO, TipoIngresoType, matchTipoIngreso, normalizeTipoIngreso } from '../../core/constants/tipo-ingreso.constants';
 import {
   LucideAngularModule,
@@ -888,7 +889,7 @@ export class EnfermeriaComponent implements OnInit {
     const service = this.selectedService();
     if (!active || !service) return;
 
-    const getUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    const getUuid = generateSecureUuid;
 
     const classification = this.itemClassification();
     const isFixedQty = classification === ITEM_CLASSIFICATIONS.CONSULTA ||

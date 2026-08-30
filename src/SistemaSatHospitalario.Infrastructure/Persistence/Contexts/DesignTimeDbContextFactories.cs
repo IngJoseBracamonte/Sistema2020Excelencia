@@ -16,7 +16,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             if (provider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
             {
-                var conStr = "Server=localhost;Port=3306;Database=SatHospitalario;Uid=root;Pwd=Labordono1818;Connection Timeout=20;";
+                 var conStr = DesignTimeConnectionSettings.GetRequiredConnectionString("ConnectionStrings__mysql-system");
                 optionsBuilder.UseMySql(conStr, new MySqlServerVersion(new Version(8, 0, 21)));
             }
             else
@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             if (provider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
             {
-                var conStr = "Server=localhost;Port=3306;Database=SatHospitalarioIdentity;Uid=root;Pwd=Labordono1818;Connection Timeout=20;";
+                 var conStr = DesignTimeConnectionSettings.GetRequiredConnectionString("ConnectionStrings__mysql-identity");
                 optionsBuilder.UseMySql(conStr, new MySqlServerVersion(new Version(8, 0, 21)));
             }
             else
@@ -48,4 +48,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             return new SatHospitalarioIdentityDbContext(optionsBuilder.Options);
         }
     }
+
+        internal static class DesignTimeConnectionSettings
+        {
+            internal static string GetRequiredConnectionString(string variableName) =>
+                Environment.GetEnvironmentVariable(variableName)
+                ?? throw new InvalidOperationException($"{variableName} debe configurarse para crear el contexto de diseño.");
+        }
 }

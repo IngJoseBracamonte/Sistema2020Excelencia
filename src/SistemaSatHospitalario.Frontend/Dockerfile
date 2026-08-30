@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Copiar package files e instalar dependencias (cache layer)
 COPY package*.json ./
-RUN npm install --prefer-offline --no-audit --legacy-peer-deps
+RUN npm ci --ignore-scripts --prefer-offline --no-audit --legacy-peer-deps
 
 # Copiar código fuente y compilar
 COPY . .
