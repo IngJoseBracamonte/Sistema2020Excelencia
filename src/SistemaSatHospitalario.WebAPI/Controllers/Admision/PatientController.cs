@@ -37,6 +37,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             return Ok(result);
         }
 
+        [HttpGet("search/quirurgico")]
+        public async Task<ActionResult<List<PatientDto>>> SearchSurgical([FromQuery] string term)
+        {
+            var result = await _mediator.Send(new SearchSurgicalPatientsQuery { SearchTerm = term });
+            return Ok(result);
+        }
+
+        [HttpPost("registro-quirurgico")]
+        public async Task<ActionResult<PatientDto>> RegisterSurgical([FromBody] RegisterSurgicalPatientCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return CreatedAtAction(nameof(SearchSurgical), new { term = result.Cedula }, result);
+        }
+
         [HttpPut]
         public async Task<ActionResult<bool>> Update([FromBody] UpdatePatientCommand command)
         {

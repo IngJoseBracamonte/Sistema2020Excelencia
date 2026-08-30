@@ -26,6 +26,15 @@ export interface PatientRecord {
   activo?: boolean;
 }
 
+export interface RegisterSurgicalPatientRequest {
+  cedula: string;
+  nombre: string;
+  apellidos: string;
+  celular: string;
+  fechaNacimiento?: string;
+  direccion?: string;
+}
+
 export interface HistoryServiceDetail {
   descripcion: string;
   precio: number;
@@ -52,6 +61,16 @@ export class PatientService {
 
   searchPatients(term: string): Observable<PatientRecord[]> {
     return this.http.get<PatientRecord[]>(`${this.apiUrl}/search?term=${term}`);
+  }
+
+  searchSurgicalPatients(term: string): Observable<PatientRecord[]> {
+    return this.http.get<PatientRecord[]>(`${this.apiUrl}/search/quirurgico`, {
+      params: { term }
+    });
+  }
+
+  registerSurgicalPatient(patient: RegisterSurgicalPatientRequest): Observable<PatientRecord> {
+    return this.http.post<PatientRecord>(`${this.apiUrl}/registro-quirurgico`, patient);
   }
 
   createPatient(patient: Partial<PatientRecord>): Observable<PatientRecord> {

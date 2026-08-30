@@ -12,7 +12,7 @@ import {
   CrearOrdenCirugiaRequest
 } from '../../../core/services/pabellon.service';
 import { MedicoService } from '../../../core/services/medico.service';
-import { PatientService, PatientRecord } from '../../../core/services/patient.service';
+import { PatientService, PatientRecord, RegisterSurgicalPatientRequest } from '../../../core/services/patient.service';
 import { MultiSedeService, AreaClinica } from '../../../core/services/multi-sede.service';
 import { environment } from '../../../../environments/environment';
 
@@ -216,7 +216,17 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
 
               <!-- Buscador de Pacientes DB-Driven -->
               <div>
-                <label class="text-gray-400 mb-1 block font-semibold">Paciente (Búsqueda por Cédula o Nombre) *</label>
+                <div class="mb-1 flex items-center justify-between gap-3">
+                  <label class="text-gray-400 block font-semibold">Paciente (Búsqueda por Cédula o Nombre) *</label>
+                  <button
+                    type="button"
+                    (click)="abrirRegistroPaciente()"
+                    data-testid="abrir-registro-paciente"
+                    class="text-sky-400 hover:text-sky-300 font-semibold transition"
+                  >
+                    Registrar paciente
+                  </button>
+                </div>
                 <div class="relative">
                   <input
                     type="text"
@@ -240,6 +250,17 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
                   }
                 </div>
 
+                @if (pacienteSearchQuery().trim().length >= 2 && pacientesEncontrados().length === 0) {
+                  <button
+                    type="button"
+                    (click)="abrirRegistroPaciente()"
+                    data-testid="registrar-paciente-sin-resultados"
+                    class="mt-2 text-xs text-sky-400 hover:text-sky-300 font-semibold transition"
+                  >
+                    No se encontró el paciente. Registrarlo ahora
+                  </button>
+                }
+
                 @if (pacienteSeleccionado()) {
                   <div class="mt-2 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl flex items-center justify-between text-xs text-sky-300">
                     <span>👤 {{ pacienteSeleccionado()?.nombre }} (CI: {{ pacienteSeleccionado()?.cedula }})</span>
@@ -259,6 +280,65 @@ import { PanelDetalleCirugiaComponent } from './panel-detalle-cirugia.component'
                 class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-xl disabled:opacity-50 transition shadow-lg shadow-sky-600/20"
               >
                 Guardar y Programar
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (modalRegistroPacienteVisible()) {
+        <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div class="w-full max-w-lg space-y-4 rounded-2xl border border-gray-800 bg-gray-900 p-6 text-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+              <h3 class="flex items-center gap-2 text-base font-bold text-sky-400">
+                <lucide-icon name="user-plus" class="h-5 w-5"></lucide-icon>
+                Registrar paciente
+              </h3>
+              <button type="button" (click)="modalRegistroPacienteVisible.set(false)" class="text-gray-400 hover:text-white" aria-label="Cerrar registro de paciente">
+                <lucide-icon name="x" class="h-5 w-5"></lucide-icon>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+              <div>
+                <label class="mb-1 block font-semibold text-gray-400">Cédula o Pasaporte *</label>
+                <input [(ngModel)]="nuevoPacienteForm.cedula" (ngModelChange)="verificarPacienteExistente($event)" data-testid="registro-paciente-cedula" type="text" class="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none" />
+                @if (verificandoPacienteExistente()) {
+                  <p class="mt-1 text-[11px] text-gray-400">Verificando paciente...</p>
+                } @else if (pacienteExistente()) {
+                  <div class="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-100">
+                    <p class="font-semibold">Este paciente ya está registrado.</p>
+                    <p class="mt-0.5 text-amber-200/80">{{ pacienteExistente()!.nombre }} {{ pacienteExistente()!.apellidos || '' }}</p>
+                    <button type="button" (click)="usarPacienteExistente()" class="mt-1.5 font-semibold text-sky-300 hover:text-sky-200">Usar paciente existente</button>
+                  </div>
+                }
+              </div>
+              <div>
+                <label class="mb-1 block font-semibold text-gray-400">Teléfono</label>
+                <input [(ngModel)]="nuevoPacienteForm.celular" data-testid="registro-paciente-telefono" type="tel" class="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="mb-1 block font-semibold text-gray-400">Nombre *</label>
+                <input [(ngModel)]="nuevoPacienteForm.nombre" data-testid="registro-paciente-nombre" type="text" class="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="mb-1 block font-semibold text-gray-400">Apellidos</label>
+                <input [(ngModel)]="nuevoPacienteForm.apellidos" data-testid="registro-paciente-apellidos" type="text" class="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="mb-1 block font-semibold text-gray-400">Dirección</label>
+                <input [(ngModel)]="nuevoPacienteForm.direccion" data-testid="registro-paciente-direccion" type="text" class="w-full rounded-xl border border-gray-700 bg-gray-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none" />
+              </div>
+            </div>
+
+            @if (errorRegistroPaciente()) {
+              <p class="text-xs text-red-400">{{ errorRegistroPaciente() }}</p>
+            }
+
+            <div class="flex justify-end gap-2 border-t border-gray-800 pt-3">
+              <button type="button" (click)="modalRegistroPacienteVisible.set(false)" class="rounded-xl bg-gray-800 px-4 py-2 text-xs text-gray-300 hover:bg-gray-700">Cancelar</button>
+              <button type="button" (click)="registrarPacienteQuirurgico()" [disabled]="!esRegistroPacienteValido() || registrandoPaciente() || verificandoPacienteExistente() || pacienteExistente()" data-testid="guardar-registro-paciente" class="rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-500 disabled:opacity-50">
+                {{ registrandoPaciente() ? 'Guardando...' : 'Guardar paciente' }}
               </button>
             </div>
           </div>
@@ -290,6 +370,12 @@ export class PabellonGestionComponent implements OnInit {
   public pacientesEncontrados = signal<PatientRecord[]>([]);
   public pacienteSeleccionado = signal<PatientRecord | null>(null);
   public modalNuevaCirugiaVisible = signal<boolean>(false);
+  public modalRegistroPacienteVisible = signal<boolean>(false);
+  public registrandoPaciente = signal<boolean>(false);
+  public errorRegistroPaciente = signal<string>('');
+  public verificandoPacienteExistente = signal<boolean>(false);
+  public pacienteExistente = signal<PatientRecord | null>(null);
+  public nuevoPacienteForm: RegisterSurgicalPatientRequest = this.crearFormularioPaciente();
 
   public nuevaCirugiaForm: CrearOrdenCirugiaRequest = {
     cuentaServicioId: '',
@@ -428,7 +514,7 @@ export class PabellonGestionComponent implements OnInit {
       this.pacientesEncontrados.set([]);
       return;
     }
-    this.patientService.searchPatients(term.trim()).subscribe({
+    this.patientService.searchSurgicalPatients(term.trim()).subscribe({
       next: (res) => this.pacientesEncontrados.set(res || []),
       error: () => this.pacientesEncontrados.set([])
     });
@@ -437,7 +523,7 @@ export class PabellonGestionComponent implements OnInit {
   seleccionarPaciente(p: PatientRecord): void {
     this.pacienteSeleccionado.set(p);
     this.nuevaCirugiaForm.pacienteId = p.id;
-    this.nuevaCirugiaForm.cuentaServicioId = p.id;
+    this.nuevaCirugiaForm.cuentaServicioId = undefined;
     this.pacientesEncontrados.set([]);
     this.pacienteSearchQuery.set(`${p.nombre} ${p.apellidos || ''} (${p.cedula})`);
   }
@@ -461,6 +547,86 @@ export class PabellonGestionComponent implements OnInit {
     this.modalNuevaCirugiaVisible.set(true);
   }
 
+  abrirRegistroPaciente(): void {
+    this.errorRegistroPaciente.set('');
+    this.verificandoPacienteExistente.set(false);
+    this.pacienteExistente.set(null);
+    this.nuevoPacienteForm = {
+      ...this.crearFormularioPaciente(),
+      cedula: this.pacienteSearchQuery().trim()
+    };
+    if (this.nuevoPacienteForm.cedula) {
+      this.verificarPacienteExistente(this.nuevoPacienteForm.cedula);
+    }
+    this.modalRegistroPacienteVisible.set(true);
+  }
+
+  verificarPacienteExistente(cedula: string): void {
+    const cedulaNormalizada = cedula.trim().toLowerCase();
+    this.pacienteExistente.set(null);
+
+    if (cedulaNormalizada.length < 2) {
+      this.verificandoPacienteExistente.set(false);
+      return;
+    }
+
+    this.verificandoPacienteExistente.set(true);
+    this.patientService.searchSurgicalPatients(cedula.trim()).subscribe({
+      next: pacientes => {
+        if (this.nuevoPacienteForm.cedula.trim().toLowerCase() !== cedulaNormalizada) {
+          return;
+        }
+
+        const paciente = (pacientes || []).find(item => item.cedula.trim().toLowerCase() === cedulaNormalizada) || null;
+        this.pacienteExistente.set(paciente);
+        this.verificandoPacienteExistente.set(false);
+      },
+      error: () => {
+        if (this.nuevoPacienteForm.cedula.trim().toLowerCase() === cedulaNormalizada) {
+          this.verificandoPacienteExistente.set(false);
+        }
+      }
+    });
+  }
+
+  usarPacienteExistente(): void {
+    const paciente = this.pacienteExistente();
+    if (!paciente) {
+      return;
+    }
+
+    this.seleccionarPaciente(paciente);
+    this.modalRegistroPacienteVisible.set(false);
+  }
+
+  esRegistroPacienteValido(): boolean {
+    return !!(
+      this.nuevoPacienteForm.cedula.trim() &&
+      this.nuevoPacienteForm.nombre.trim() &&
+      !this.pacienteExistente()
+    );
+  }
+
+  registrarPacienteQuirurgico(): void {
+    if (!this.esRegistroPacienteValido() || this.registrandoPaciente() || this.verificandoPacienteExistente()) {
+      return;
+    }
+
+    this.registrandoPaciente.set(true);
+    this.errorRegistroPaciente.set('');
+    this.patientService.registerSurgicalPatient(this.nuevoPacienteForm).subscribe({
+      next: patient => {
+        this.seleccionarPaciente(patient);
+        this.modalRegistroPacienteVisible.set(false);
+        this.registrandoPaciente.set(false);
+      },
+      error: () => {
+        this.errorRegistroPaciente.set('No se pudo registrar el paciente. Verifique los datos e intente nuevamente.');
+        this.registrandoPaciente.set(false);
+      }
+    });
+  }
+
   esFormularioValido(): boolean {
     return !!(
       this.nuevaCirugiaForm.descripcionCirugia?.trim() &&
@@ -473,11 +639,22 @@ export class PabellonGestionComponent implements OnInit {
   guardarNuevaCirugia(): void {
     if (!this.esFormularioValido()) return;
 
-    this.pabellonService.crearOrden(this.nuevaCirugiaForm).subscribe({
+    const { cuentaServicioId, ...orden } = this.nuevaCirugiaForm;
+    this.pabellonService.crearOrden(orden).subscribe({
       next: () => {
         this.modalNuevaCirugiaVisible.set(false);
         this.recargarDatos();
       }
     });
+  }
+
+  private crearFormularioPaciente(): RegisterSurgicalPatientRequest {
+    return {
+      cedula: '',
+      nombre: '',
+      apellidos: '',
+      celular: '',
+      direccion: ''
+    };
   }
 }
