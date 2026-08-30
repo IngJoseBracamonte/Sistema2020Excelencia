@@ -117,9 +117,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
 
                 var stats = new
                 {
-                    Pacientes = await GetTableCountAsync(connection, "datospersonales"),
-                    Ordenes = await GetTableCountAsync(connection, "ordenes"),
-                    Resultados = await GetTableCountAsync(connection, "resultadospaciente")
+                    Pacientes = await GetTableCountAsync(connection, LegacyTable.Pacientes),
+                    Ordenes = await GetTableCountAsync(connection, LegacyTable.Ordenes),
+                    Resultados = await GetTableCountAsync(connection, LegacyTable.Resultados)
                 };
 
                 await connection.CloseAsync();
@@ -172,16 +172,29 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
         }
 
 
-        private static async Task<int> GetTableCountAsync(MySqlConnector.MySqlConnection connection, string tableName)
+        private static async Task<int> GetTableCountAsync(MySqlConnector.MySqlConnection connection, LegacyTable table)
         {
             try
             {
                 using var cmd = connection.CreateCommand();
-                cmd.CommandText = $"SELECT COUNT(*) FROM `{tableName}`";
+                cmd.CommandText = table switch
+                {
+                    LegacyTable.Pacientes => "SELECT COUNT(*) FROM `datospersonales`",
+                    LegacyTable.Ordenes => "SELECT COUNT(*) FROM `ordenes`",
+                    LegacyTable.Resultados => "SELECT COUNT(*) FROM `resultadospaciente`",
+                    _ => throw new ArgumentOutOfRangeException(nameof(table), table, null)
+                };
                 var result = await cmd.ExecuteScalarAsync();
                 return Convert.ToInt32(result);
             }
             catch { return -1; }
+        }
+
+        private enum LegacyTable
+        {
+            Pacientes,
+            Ordenes,
+            Resultados
         }
     }
 }

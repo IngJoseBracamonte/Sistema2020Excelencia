@@ -1294,7 +1294,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                             }
                             using (var cmd = conn.CreateCommand())
                             {
-                                cmd.CommandText = $"SELECT StockActual FROM Insumos WHERE Id = '{insumo.Id}';";
+                                cmd.CommandText = "SELECT StockActual FROM Insumos WHERE Id = @insumoId;";
+                                AddParameter(cmd, "@insumoId", insumo.Id);
                                 var val = await cmd.ExecuteScalarAsync();
                                 if (val != null && val != DBNull.Value)
                                 {
