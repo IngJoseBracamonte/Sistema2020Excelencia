@@ -1,10 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities;
@@ -14,15 +11,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 {
     public class InventoryLoadingStrategy : IServiceLoadingStrategy
     {
-        private readonly IInventoryService _inventoryService;
-        private readonly IApplicationDbContext _context;
-
-        public InventoryLoadingStrategy(IInventoryService inventoryService, IApplicationDbContext context)
-        {
-            _inventoryService = inventoryService;
-            _context = context;
-        }
-
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
         {
             return tipoServicio.Equals("Insumo", StringComparison.OrdinalIgnoreCase) || 

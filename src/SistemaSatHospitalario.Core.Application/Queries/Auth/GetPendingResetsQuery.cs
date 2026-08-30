@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Auth
         private readonly IIdentityService _identityService;
         public GetPendingResetsQueryHandler(IIdentityService identityService) => _identityService = identityService;
 
-        public async Task<List<PasswordResetRequestDto>> Handle(GetPendingResetsQuery request, CancellationToken ct) 
+        public async Task<List<PasswordResetRequestDto>> Handle(GetPendingResetsQuery request, CancellationToken cancellationToken) 
             => await _identityService.GetPendingResetRequestsAsync();
     }
 }

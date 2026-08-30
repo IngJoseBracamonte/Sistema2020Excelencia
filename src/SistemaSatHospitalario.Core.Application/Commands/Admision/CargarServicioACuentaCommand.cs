@@ -98,7 +98,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
                     new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
                     new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
-                    new Common.Strategies.InventoryLoadingStrategy(inventoryService, context),
+                    new Common.Strategies.InventoryLoadingStrategy(),
                     new Common.Strategies.OperatingRoomLoadingStrategy(),
                     new Common.Strategies.FallbackLoadingStrategy()
                 };

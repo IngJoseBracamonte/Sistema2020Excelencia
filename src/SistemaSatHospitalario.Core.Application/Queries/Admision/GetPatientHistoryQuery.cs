@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using MediatR;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -20,12 +18,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetPatientHistoryQueryHandler : IRequestHandler<GetPatientHistoryQuery, List<PatientHistoryDto>>
     {
         private readonly IBillingRepository _billingRepository;
-        private readonly IApplicationDbContext _context;
 
-        public GetPatientHistoryQueryHandler(IBillingRepository billingRepository, IApplicationDbContext context)
+        public GetPatientHistoryQueryHandler(IBillingRepository billingRepository)
         {
             _billingRepository = billingRepository;
-            _context = context;
         }
 
         public async Task<List<PatientHistoryDto>> Handle(GetPatientHistoryQuery request, CancellationToken cancellationToken)

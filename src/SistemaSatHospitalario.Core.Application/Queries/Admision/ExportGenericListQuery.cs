@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-using SistemaSatHospitalario.Core.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -32,13 +31,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly IExcelService _excelService;
-        private readonly IIdentityService _identityService;
 
-        public ExportGenericListQueryHandler(IApplicationDbContext context, IExcelService excelService, IIdentityService identityService)
+        public ExportGenericListQueryHandler(IApplicationDbContext context, IExcelService excelService)
         {
             _context = context;
             _excelService = excelService;
-            _identityService = identityService;
         }
 
         public async Task<byte[]> Handle(ExportGenericListQuery request, CancellationToken cancellationToken)

@@ -28,12 +28,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
             _currentUser = currentUser;
         }
 
-        public async Task<Unit> Handle(AsignarMedicoAServicioCommand request, CancellationToken ct)
+        public async Task<Unit> Handle(AsignarMedicoAServicioCommand request, CancellationToken cancellationToken)
         {
-            var detalle = await _context.DetallesServicioCuenta.FindAsync(new object[] { request.DetalleServicioId }, ct);
+            var detalle = await _context.DetallesServicioCuenta.FindAsync(new object[] { request.DetalleServicioId }, cancellationToken);
             if (detalle == null) throw new InvalidOperationException("Detalle no encontrado.");
 
-            var medico = await _context.Medicos.FindAsync(new object[] { request.MedicoId }, ct);
+            var medico = await _context.Medicos.FindAsync(new object[] { request.MedicoId }, cancellationToken);
             if (medico == null) throw new InvalidOperationException("Médico no encontrado.");
 
             // Guardar estado anterior para auditoría
@@ -41,7 +41,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
             string? medicoAnteriorNombre = null;
             if (medicoAnteriorId.HasValue)
             {
-                var anterior = await _context.Medicos.FindAsync(new object[] { medicoAnteriorId.Value }, ct);
+                var anterior = await _context.Medicos.FindAsync(new object[] { medicoAnteriorId.Value }, cancellationToken);
                 medicoAnteriorNombre = anterior?.Nombre;
             }
 
@@ -49,7 +49,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
 
             // Buscar si este médico tiene un honorario específico para este servicio
             var customHonorarium = await _context.HonorariosMedicosServicios
-                .FirstOrDefaultAsync(h => h.ServicioId == detalle.ServicioId && h.MedicoId == request.MedicoId, ct);
+                .FirstOrDefaultAsync(h => h.ServicioId == detalle.ServicioId && h.MedicoId == request.MedicoId, cancellationToken);
 
             decimal honorarioAsignado = customHonorarium?.MontoHonorario ?? detalle.Honorario;
 
@@ -62,7 +62,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
                 _currentUser.UserName ?? "Sistema", request.Observaciones);
             _context.LogsAsignacionHonorario.Add(log);
 
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }
     }
