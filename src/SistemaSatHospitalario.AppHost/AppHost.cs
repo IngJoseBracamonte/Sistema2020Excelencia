@@ -1,4 +1,3 @@
-using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Configuration;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -33,69 +32,6 @@ var jwtSecret = builder.AddParameter("jwt-secret", secret: true);
 var smtpUser = builder.AddParameter("smtp-user", secret: true);
 var smtpPass = builder.AddParameter("smtp-pass", secret: true);
 
-// Funciones de utilidad para cadenas de conexión
-string ProcessConnStr(string? connStr) 
-{
-    if (string.IsNullOrEmpty(connStr)) return "";
-    
-    // Forzamos 127.0.0.1 en lugar de localhost para evitar problemas IPv6 en Windows
-    // [V14.1 Fix] Solo aplicamos reemplazo si detectamos localhost/127.0.0.1
-    // para no dañar endpoints de Aiven/Render en producción.
-    var processed = connStr;
-    if (connStr.Contains("localhost") || connStr.Contains("127.0.0.1"))
-    {
-        processed = processed.Replace("localhost", useDocker ? "host.docker.internal" : "127.0.0.1")
-                             .Replace("127.0.0.1", useDocker ? "host.docker.internal" : "127.0.0.1");
-    }
-
-    // Aseguramos parámetros críticos para MySql 8.0+ y compatibilidad legacy
-    if (!processed.Contains("AllowPublicKeyRetrieval", StringComparison.OrdinalIgnoreCase))
-        processed += (processed.Contains("?") || processed.Contains(";") ? ";" : "") + "AllowPublicKeyRetrieval=True";
-    if (!processed.Contains("SslMode", StringComparison.OrdinalIgnoreCase))
-        processed += ";SslMode=None";
-    if (!processed.Contains("Allow User Variables", StringComparison.OrdinalIgnoreCase))
-        processed += ";Allow User Variables=True";
-        
-    return processed;
-}
-
-// Priorizamos los secretos directos (pueden ser reales) sobre los de Parameters (pueden ser placeholders)
-string GetConnectionString(string key) => builder.Configuration[key] 
-                                         ?? builder.Configuration[$"Parameters:{key}"] 
-                                         ?? "";
-
-// Función local para aplicar la configuración común a la API
-void ConfigureApi(IResourceBuilder<IResourceWithEnvironment> resource, IResourceBuilder<IResourceWithEndpoints> frontendResource)
-{
-    var legacyConn = GetConnectionString("mysql-legacy-query");
-    if (!string.IsNullOrEmpty(legacyConn))
-    {
-        resource.WithEnvironment("ConnectionStrings__LegacyConnection", ProcessConnStr(legacyConn));
-    }
-    
-    resource.WithEnvironment("DatabaseProvider", dbProviderName);
-    
-    var systemConn = ProcessConnStr(GetConnectionString("mysql-system-query"));
-    if (!string.IsNullOrEmpty(systemConn)) resource.WithEnvironment("ConnectionStrings__mysql-system", systemConn);
-    
-    var identityConn = ProcessConnStr(GetConnectionString("mysql-identity-query"));
-    if (!string.IsNullOrEmpty(identityConn)) resource.WithEnvironment("ConnectionStrings__mysql-identity", identityConn);
-    
-    var jwtSecret = GetConnectionString("jwt-secret");
-    if (!string.IsNullOrEmpty(jwtSecret)) resource.WithEnvironment("JwtConfig__Secret", jwtSecret);
-    
-    var smtpUser = GetConnectionString("smtp-user");
-    if (!string.IsNullOrEmpty(smtpUser)) resource.WithEnvironment("EmailSettings__SmtpUser", smtpUser);
-    
-    var smtpPass = GetConnectionString("smtp-pass");
-    if (!string.IsNullOrEmpty(smtpPass)) resource.WithEnvironment("EmailSettings__SmtpPass", smtpPass);
-
-    resource.WithEnvironment("JwtConfig__Issuer", builder.Configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI")
-        .WithEnvironment("JwtConfig__Audience", builder.Configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA")
-        // Whitelist both localhost and explicit IPs to avoid CORS issues with fixed IP binding
-        .WithEnvironment("AllowedOrigins", $"{frontendResource.GetEndpoint("http")},https://sathospital.netlify.app,http://localhost:4200,http://127.0.0.1:4200,http://0.0.0.0:4200,http://localhost:80,http://localhost");
-}
-
 if (useDocker)
 {
     var apiDocker = builder.AddDockerfile("api", "..", "SistemaSatHospitalario.WebAPI/Dockerfile")
@@ -107,7 +43,7 @@ if (useDocker)
         .WithExternalHttpEndpoints()
         .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:18889");
 
-    ConfigureApi(apiDocker, frontendDocker);
+    AppHostConfiguration.ConfigureApiEnvironment(apiDocker, frontendDocker, builder.Configuration, dbProviderName, useDocker);
 }
 else
 {
@@ -121,7 +57,7 @@ else
         .WithReference(apiProject.GetEndpoint("endpoint-api"))
         .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:18889");
 
-    ConfigureApi(apiProject, frontendNpm);
+    AppHostConfiguration.ConfigureApiEnvironment(apiProject, frontendNpm, builder.Configuration, dbProviderName, useDocker);
 }
 
 builder.Build().Run();

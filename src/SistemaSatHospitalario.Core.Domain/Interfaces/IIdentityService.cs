@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SistemaSatHospitalario.Core.Domain.Interfaces
@@ -23,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Domain.Interfaces
         Task<bool> UpdateUserPermissionsAsync(Guid userId, List<string> permissions);
 
         // Password Reset Workflow
-        Task<bool> RequestPasswordResetAsync(string username);
+            Task<bool> RequestPasswordResetAsync(string username, CancellationToken cancellationToken = default);
         Task<List<PasswordResetRequestDto>> GetPendingResetRequestsAsync();
         Task<bool> ApprovePasswordResetAsync(Guid requestId, string adminUser);
         Task<bool> CompletePasswordResetAsync(string username, string newPassword);

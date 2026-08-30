@@ -53,40 +53,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new KeyNotFoundException($"No se encontró el insumo con ID {request.InsumoId}.");
             }
 
-            // Validación DB-Driven de la Sub-Área Clínica o Sede destino
-            string subAreaNombreResolved = "Sub-Área";
-            if (request.AreaClinicaId != Guid.Empty)
-            {
-                var areaClinica = await _context.AreasClinicas
-                    .FirstOrDefaultAsync(a => a.Id == request.AreaClinicaId, cancellationToken);
-
-                if (areaClinica != null)
-                {
-                    subAreaNombreResolved = string.IsNullOrWhiteSpace(areaClinica.Codigo)
-                        ? areaClinica.Nombre
-                        : $"[{areaClinica.Codigo}] {areaClinica.Nombre}";
-                }
-                else
-                {
-                    var sede = await _context.Sedes
-                        .FirstOrDefaultAsync(s => s.Id == request.AreaClinicaId, cancellationToken);
-
-                    if (sede != null)
-                    {
-                        subAreaNombreResolved = string.IsNullOrWhiteSpace(sede.Codigo)
-                            ? sede.Nombre
-                            : $"[{sede.Codigo}] {sede.Nombre}";
-                    }
-                    else if (!string.IsNullOrWhiteSpace(request.NombreSubArea))
-                    {
-                        subAreaNombreResolved = request.NombreSubArea;
-                    }
-                }
-            }
-            else if (!string.IsNullOrWhiteSpace(request.NombreSubArea))
-            {
-                subAreaNombreResolved = request.NombreSubArea;
-            }
+            var subAreaNombreResolved = await ResolveDestinationNameAsync(request, cancellationToken);
 
             var sedePrincipalId = SeedConstants.SedeId_Principal;
             var stockPrincipal = await _context.StocksSedes
@@ -137,6 +104,37 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 MovimientoId = movimiento.Id,
                 Message = $"Despacho directo de {request.Cantidad} unidades de '{insumo.Nombre}' a [{subAreaNombreResolved}] registrado exitosamente."
             };
+        }
+
+        private async Task<string> ResolveDestinationNameAsync(
+            EnviarASubAreaCommand request,
+            CancellationToken cancellationToken)
+        {
+            if (request.AreaClinicaId == Guid.Empty)
+            {
+                return string.IsNullOrWhiteSpace(request.NombreSubArea) ? "Sub-Área" : request.NombreSubArea;
+            }
+
+            var areaClinica = await _context.AreasClinicas
+                .FirstOrDefaultAsync(a => a.Id == request.AreaClinicaId, cancellationToken);
+            if (areaClinica != null)
+            {
+                return FormatDestinationName(areaClinica.Codigo, areaClinica.Nombre);
+            }
+
+            var sede = await _context.Sedes
+                .FirstOrDefaultAsync(s => s.Id == request.AreaClinicaId, cancellationToken);
+            if (sede != null)
+            {
+                return FormatDestinationName(sede.Codigo, sede.Nombre);
+            }
+
+            return string.IsNullOrWhiteSpace(request.NombreSubArea) ? "Sub-Área" : request.NombreSubArea;
+        }
+
+        private static string FormatDestinationName(string? codigo, string nombre)
+        {
+            return string.IsNullOrWhiteSpace(codigo) ? nombre : $"[{codigo}] {nombre}";
         }
     }
 }

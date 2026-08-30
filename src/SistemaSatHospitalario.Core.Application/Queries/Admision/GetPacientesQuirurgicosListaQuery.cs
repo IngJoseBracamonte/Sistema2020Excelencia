@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -131,20 +132,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(o => o.Logs)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(request.Estado))
-            {
-                var estado = request.Estado.Trim();
-                query = query.Where(o => o.Estado == estado);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.Busqueda))
-            {
-                var search = request.Busqueda.Trim().ToLower();
-                query = query.Where(o =>
-                    o.Paciente.NombreCorto.ToLower().Contains(search) ||
-                    o.Paciente.CedulaPasaporte.ToLower().Contains(search) ||
-                    o.DescripcionCirugia.ToLower().Contains(search));
-            }
+            query = ApplyFilters(query, request);
 
             var ordenes = await query
                 .OrderByDescending(o => o.FechaHoraProgramada)
@@ -271,6 +259,28 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     }).ToList()
                 };
             }).ToList();
+        }
+
+        private static IQueryable<OrdenCirugia> ApplyFilters(
+            IQueryable<OrdenCirugia> query,
+            GetPacientesQuirurgicosListaQuery request)
+        {
+            if (!string.IsNullOrWhiteSpace(request.Estado))
+            {
+                var estado = request.Estado.Trim();
+                query = query.Where(o => o.Estado == estado);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Busqueda))
+            {
+                var search = request.Busqueda.Trim().ToLower();
+                query = query.Where(o =>
+                    o.Paciente.NombreCorto.ToLower().Contains(search) ||
+                    o.Paciente.CedulaPasaporte.ToLower().Contains(search) ||
+                    o.DescripcionCirugia.ToLower().Contains(search));
+            }
+
+            return query;
         }
     }
 }

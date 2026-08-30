@@ -27,10 +27,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
             _currentUser = currentUser;
         }
 
-        public async Task<Unit> Handle(SetHonorarioDefaultCommand request, CancellationToken ct)
+        public async Task<Unit> Handle(SetHonorarioDefaultCommand request, CancellationToken cancellationToken)
         {
             var config = await _context.HonorariosConfig
-                .FirstOrDefaultAsync(h => h.CategoriaServicio == request.CategoriaServicio, ct);
+            .FirstOrDefaultAsync(h => h.CategoriaServicio == request.CategoriaServicio, cancellationToken);
 
             var usuario = _currentUser.UserName ?? "Sistema";
 
@@ -49,7 +49,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
             string? medicoNombre = null;
             if (request.MedicoId.HasValue)
             {
-                var medico = await _context.Medicos.FindAsync(new object[] { request.MedicoId.Value }, ct);
+                var medico = await _context.Medicos.FindAsync(new object[] { request.MedicoId.Value }, cancellationToken);
                 medicoNombre = medico?.Nombre;
             }
 
@@ -60,7 +60,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
                 usuario, request.Observaciones);
             _context.LogsAsignacionHonorario.Add(log);
 
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesAsync(cancellationToken);
             return Unit.Value;
         }
     }

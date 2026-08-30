@@ -65,7 +65,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IApplicationDbContext _context;
         private readonly IHonorariumMapperService _mapperService;
         private readonly IInventoryService _inventoryService;
-        private readonly ILegacyLabRepository _legacyRepository;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
 
@@ -85,7 +84,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _context = context;
             _mapperService = mapperService;
             _inventoryService = inventoryService;
-            _legacyRepository = legacyRepository;
             _logger = logger;
             
             if (strategyFactory != null)
@@ -100,7 +98,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
                     new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
                     new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
-                    new Common.Strategies.InventoryLoadingStrategy(inventoryService, context),
+                    new Common.Strategies.InventoryLoadingStrategy(),
                     new Common.Strategies.OperatingRoomLoadingStrategy(),
                     new Common.Strategies.FallbackLoadingStrategy()
                 };
