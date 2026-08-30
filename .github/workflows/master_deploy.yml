@@ -1,5 +1,4 @@
 name: master_deploy_orchestration
-
 on:
   push:
     branches: [ main, master ]
@@ -12,17 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-    - name: Setup .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461b3d9c # v4
-      with:
-        dotnet-version: '9.0.x'
-    - name: Restore dependencies
-      run: dotnet restore src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj
-    - name: Build
-      run: dotnet build src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj --no-restore -c Release
-    - name: Trigger Render Deploy
-      if: github.event_name == 'push'
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore dependencies
+        run: dotnet restore src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj
+      - name: Build
+        run: dotnet build src/SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj --no-restore -c Release
+      - name: Trigger Render Deploy
+        if: github.event_name == 'push'
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-      run: |
+        run: |
           curl --fail --request POST "$RENDER_DEPLOY_HOOK_URL"
