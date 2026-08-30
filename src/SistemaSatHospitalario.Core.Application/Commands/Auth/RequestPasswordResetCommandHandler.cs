@@ -19,13 +19,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Auth
 
         public async Task<bool> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
         {
-            var result = await _identityService.RequestPasswordResetAsync(request.Username);
+                var result = await _identityService.RequestPasswordResetAsync(request.Username, cancellationToken);
             
             if (result)
             {
                 await _notificationService.SendNotificationToGroupAsync("Admin", 
                     "Nueva Solicitud de Reset de Password", 
-                    $"El usuario {request.Username} ha solicitado un reset de contraseña.");
+                        $"El usuario {request.Username} ha solicitado un reset de contraseña.",
+                        ct: cancellationToken);
             }
 
             return result;

@@ -65,7 +65,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IApplicationDbContext _context;
         private readonly IHonorariumMapperService _mapperService;
         private readonly IInventoryService _inventoryService;
-        private readonly ILegacyLabRepository _legacyRepository;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
 
@@ -85,7 +84,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _context = context;
             _mapperService = mapperService;
             _inventoryService = inventoryService;
-            _legacyRepository = legacyRepository;
             _logger = logger;
             
             if (strategyFactory != null)

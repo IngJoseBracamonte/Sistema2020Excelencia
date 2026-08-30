@@ -196,14 +196,14 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
         }
 
         // Password Reset Workflow Implementation
-        public async Task<bool> RequestPasswordResetAsync(string username)
+            public async Task<bool> RequestPasswordResetAsync(string username, CancellationToken cancellationToken = default)
         {
             var user = await _userManager.FindByNameAsync(username);
             if (user == null) return false;
 
             // Check if there is already a pending request
             var existing = await _context.PasswordResetRequests
-                .AnyAsync(x => x.UsuarioId == user.Id && x.Estado == "Pendiente");
+                .AnyAsync(x => x.UsuarioId == user.Id && x.Estado == "Pendiente", cancellationToken);
             
             if (existing) return true; // Already requested
 
@@ -215,7 +215,7 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
             };
 
             _context.PasswordResetRequests.Add(request);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
