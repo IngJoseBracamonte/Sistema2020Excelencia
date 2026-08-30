@@ -29,46 +29,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers
     {
         private readonly IMediator _mediator;
         private readonly UserManager<UsuarioHospital> _userManager;
-        private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
-        public AuthController(IMediator mediator, UserManager<UsuarioHospital> userManager, Microsoft.Extensions.Configuration.IConfiguration configuration)
+            public AuthController(IMediator mediator, UserManager<UsuarioHospital> userManager)
         {
             _mediator = mediator;
             _userManager = userManager;
-            _configuration = configuration;
         }
-
-        [HttpPost("debug-token")]
-        [AllowAnonymous]
-        public IActionResult DebugToken([FromBody] ValidateTokenRequest req)
-        {
-            var handler = new global::System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            var jwtSecret = _configuration["JwtConfig:Secret"] ?? "DefaultSecretKey_MustBeChangedInProduction_1234567890123456";
-            var key = global::System.Text.Encoding.ASCII.GetBytes(jwtSecret);
-
-            try
-            {
-                handler.ValidateToken(req.Token, new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidIssuer = _configuration["JwtConfig:Issuer"] ?? "SistemaSatHospitalarioAPI",
-                    ValidateAudience = true,
-                    ValidAudience = _configuration["JwtConfig:Audience"] ?? "SistemaSatHospitalario_PWA",
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                }, out var validatedToken);
-
-                return Ok(new { valid = true, claims = ((global::System.IdentityModel.Tokens.Jwt.JwtSecurityToken)validatedToken).Claims.Select(c => new { c.Type, c.Value }) });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { valid = false, error = ex.Message, stack = ex.StackTrace, secretUsed = jwtSecret.Substring(0, 5) + "..." });
-            }
-        }
-        
-        public class ValidateTokenRequest { public string Token { get; set; } = string.Empty; }
 
         [HttpPost("login")]
         [AllowAnonymous]

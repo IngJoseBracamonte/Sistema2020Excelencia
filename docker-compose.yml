@@ -131,7 +131,8 @@ services:
     container_name: sat-playwright-bot
     restart: unless-stopped
     environment:
-      - API_URL=http://api:8080/api/Tickets/report
+      - API_URL=${PLAYWRIGHT_API_URL}
+      - TESTING_TOKEN=${PLAYWRIGHT_TESTING_TOKEN}
       - BASE_URL=http://frontend:80
     depends_on:
       api:

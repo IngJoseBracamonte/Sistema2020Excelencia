@@ -64,7 +64,8 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
 
         public static IServiceCollection AddCustomIdentityAndJwt(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
         {
-            var jwtSecret = configuration["JwtConfig:Secret"] ?? "DefaultSecretKey_MustBeChangedInProduction_1234567890123456";
+                var jwtSecret = configuration["JwtConfig:Secret"]
+                    ?? throw new InvalidOperationException("JwtConfig:Secret debe configurarse mediante un proveedor de secretos seguro.");
             var key = Encoding.ASCII.GetBytes(jwtSecret);
 
             services.AddAuthentication(options =>

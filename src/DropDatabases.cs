@@ -4,9 +4,11 @@ using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Infrastructure.Identity.Contexts;
 using SistemaSatHospitalario.Infrastructure.Persistence.Legacy;
 
-string connSystem = "server=localhost;database=SatHospitalario;user=root;password=Labordono1818;AllowPublicKeyRetrieval=True;SslMode=None";
-string connIdentity = "server=localhost;database=SatHospitalarioIdentity;user=root;password=Labordono1818;AllowPublicKeyRetrieval=True;SslMode=None";
-string connLegacy = "server=localhost;database=sistema2020;user=root;password=Labordono1818;AllowPublicKeyRetrieval=True;SslMode=None;Allow User Variables=True";
+var databasePassword = Environment.GetEnvironmentVariable("MYSQL_PASSWORD")
+    ?? throw new InvalidOperationException("MYSQL_PASSWORD debe configurarse para ejecutar esta utilidad.");
+string connSystem = $"server=localhost;database=SatHospitalario;user=root;password={databasePassword};AllowPublicKeyRetrieval=True;SslMode=None";
+string connIdentity = $"server=localhost;database=SatHospitalarioIdentity;user=root;password={databasePassword};AllowPublicKeyRetrieval=True;SslMode=None";
+string connLegacy = $"server=localhost;database=sistema2020;user=root;password={databasePassword};AllowPublicKeyRetrieval=True;SslMode=None;Allow User Variables=True";
 
 Console.WriteLine("--- ELIMINANDO BASES DE DATOS PARA RESET TOTAL ---");
 

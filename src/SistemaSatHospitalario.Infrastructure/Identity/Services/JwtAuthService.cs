@@ -83,7 +83,9 @@ namespace SistemaSatHospitalario.Infrastructure.Identity.Services
                 // Deduplicate permissions
                 allPermissions = allPermissions.Distinct().ToList();
 
-                var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"] ?? "SuperSecretKeyHospitalario2026_Excelencia_V15_System_Token_Validation_Key!");
+                var secret = _configuration["JwtConfig:Secret"]
+                    ?? throw new InvalidOperationException("JwtConfig:Secret debe configurarse mediante un proveedor de secretos seguro.");
+                var key = Encoding.ASCII.GetBytes(secret);
                 var tokenHandler = new JwtSecurityTokenHandler();
 
                 var claims = new List<Claim>

@@ -1327,7 +1327,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                 }
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = $"UPDATE MovimientosInsumo SET SedeId = '{SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal}' WHERE SedeId IS NULL OR SedeId = '00000000-0000-0000-0000-000000000000';";
+                    cmd.CommandText = "UPDATE MovimientosInsumo SET SedeId = @principalSedeId WHERE SedeId IS NULL OR SedeId = '00000000-0000-0000-0000-000000000000';";
+                    AddParameter(cmd, "@principalSedeId", SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal);
                     int affected = await cmd.ExecuteNonQueryAsync();
                     if (affected > 0)
                     {
@@ -1395,7 +1396,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             Guid? id = null;
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = $"SELECT `Id` FROM `Sedes` WHERE `Codigo` = '{codigo}' LIMIT 1;";
+                 cmd.CommandText = "SELECT `Id` FROM `Sedes` WHERE `Codigo` = @codigo LIMIT 1;";
+                 AddParameter(cmd, "@codigo", codigo);
                 var val = await cmd.ExecuteScalarAsync();
                 if (val != null && val != DBNull.Value && val.ToString() is string valStr && !string.IsNullOrEmpty(valStr))
                 {
@@ -1438,25 +1440,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                cmd.CommandText = $"UPDATE `Sedes` SET `Id` = '{newId}' WHERE `Id` = '{oldId}';";
+                AddMigrationIdParameters(cmd, oldId, newId);
+                cmd.CommandText = "UPDATE `Sedes` SET `Id` = @newId WHERE `Id` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `StocksSede` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `StocksSede` SET `SedeId` = @newId WHERE `SedeId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `MovimientosInsumo` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `MovimientosInsumo` SET `SedeId` = @newId WHERE `SedeId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `CierresInventario` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `CierresInventario` SET `SedeId` = @newId WHERE `SedeId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `AreasClinicas` SET `SedeId` = '{newId}' WHERE `SedeId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `AreasClinicas` SET `SedeId` = @newId WHERE `SedeId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `PedidosInterSede` SET `SedeSolicitanteId` = '{newId}' WHERE `SedeSolicitanteId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `PedidosInterSede` SET `SedeSolicitanteId` = @newId WHERE `SedeSolicitanteId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `PedidosInterSede` SET `SedeProveedoraId` = '{newId}' WHERE `SedeProveedoraId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `PedidosInterSede` SET `SedeProveedoraId` = @newId WHERE `SedeProveedoraId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
                 if (!_context.Database.IsSqlite())
@@ -1494,13 +1497,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                cmd.CommandText = $"UPDATE `AreasClinicas` SET `Id` = '{newId}' WHERE `Id` = '{oldId}';";
+                AddMigrationIdParameters(cmd, oldId, newId);
+                cmd.CommandText = "UPDATE `AreasClinicas` SET `Id` = @newId WHERE `Id` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `CitasMedicas` SET `AreaClinicaId` = '{newId}' WHERE `AreaClinicaId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `CitasMedicas` SET `AreaClinicaId` = @newId WHERE `AreaClinicaId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
-                cmd.CommandText = $"UPDATE `CuentasServicios` SET `AreaClinicaId` = '{newId}' WHERE `AreaClinicaId` = '{oldId}';";
+                cmd.CommandText = "UPDATE `CuentasServicios` SET `AreaClinicaId` = @newId WHERE `AreaClinicaId` = @oldId;";
                 await cmd.ExecuteNonQueryAsync();
 
                 if (!_context.Database.IsSqlite())
@@ -1517,6 +1521,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
 
             _logger.LogInformation($"[MIGRATION] Área Clínica ID migrado de {oldId} a {newId} (incluyendo tablas relacionadas).");
         }
+
+            private static void AddMigrationIdParameters(System.Data.Common.DbCommand command, Guid oldId, Guid newId)
+            {
+                AddParameter(command, "@oldId", oldId);
+                AddParameter(command, "@newId", newId);
+            }
+
+            private static void AddParameter(System.Data.Common.DbCommand command, string name, object value)
+            {
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = name;
+                parameter.Value = value;
+                command.Parameters.Add(parameter);
+            }
 
         private async Task SeedInsumosYRecetasTestAsync()
         {

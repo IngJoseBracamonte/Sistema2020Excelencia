@@ -10,7 +10,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
         {
             var optionsBuilder = new DbContextOptionsBuilder<Sistema2020LegacyDbContext>();
             var serverVersion = new MySqlServerVersion(new Version(8, 0, 21)); // Dummy version for DesignTime
-            optionsBuilder.UseMySql("Server=localhost;Database=sistema2020;Uid=root;Pwd=Labordono1818;", serverVersion);
+                var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__LegacyConnection")
+                    ?? throw new InvalidOperationException("ConnectionStrings__LegacyConnection debe configurarse para crear el contexto de diseño.");
+                optionsBuilder.UseMySql(connectionString, serverVersion);
 
             return new Sistema2020LegacyDbContext(optionsBuilder.Options);
         }

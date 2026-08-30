@@ -26,6 +26,7 @@ import { CajaService, DailyClosingReport } from '../../../core/services/caja.ser
 import { PrintService } from '../../../core/services/print.service';
 import { ConveniosService } from '../../../core/services/convenios.service';
 import { SettingsService } from '../../../core/services/settings.service';
+import { generateSecureUuid } from '../../../core/utils/secure-id';
 import { SupervisorAuthDialogComponent } from '../../../shared/components/supervisor-auth-dialog/supervisor-auth-dialog.component';
 import { FilterByDayPipe } from '../../../shared/pipes/filter-by-day.pipe';
 import { ViewChild } from '@angular/core';
@@ -1183,12 +1184,7 @@ export class FacturacionComponent {
       comentario: this.comentarioCita() || undefined
     };
 
-    const idempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-          const r = Math.random() * 16 | 0;
-          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
+    const idempotencyKey = generateSecureUuid();
 
     try {
       const res: any = await firstValueFrom(this.facturacionService.cargarServicio(payload, idempotencyKey));
