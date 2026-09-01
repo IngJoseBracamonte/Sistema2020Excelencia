@@ -466,12 +466,68 @@ export class EnfermeriaComponent implements OnInit {
     return (filtered && filtered.length > 0) ? filtered : camas;
   });
 
+  // Filtro de fecha + paginación (estilo app móvil)
+  public dateFilter = signal<'todos' | 'hoy' | 'ayer' | '7dias' | 'rango'>('todos');
+  public fechaDesde = signal<string>('');
+  public fechaHasta = signal<string>('');
+  public currentPage = signal<number>(1);
+  public readonly pageSize = 8;
+
+  private matchesDateFilter(acc: CuentaAdministrativa): boolean {
+    const filter = this.dateFilter();
+    if (filter === 'todos') return true;
+
+    const raw = acc.fechaCarga || acc.fechaIngreso || acc.fechaApertura;
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return false;
+
+    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const now = new Date();
+
+    switch (filter) {
+      case 'hoy':
+        return d >= startOfDay(now);
+      case 'ayer': {
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return d >= startOfDay(yesterday) && d < startOfDay(now);
+      }
+      case '7dias': {
+        const week = new Date(now);
+        week.setDate(week.getDate() - 7);
+        return d >= startOfDay(week);
+      }
+      case 'rango': {
+        const desde = this.fechaDesde() ? new Date(this.fechaDesde() + 'T00:00:00') : null;
+        const hasta = this.fechaHasta() ? new Date(this.fechaHasta() + 'T23:59:59') : null;
+        if (desde && d < desde) return false;
+        if (hasta && d > hasta) return false;
+        return true;
+      }
+      default:
+        return true;
+    }
+  }
+
+  public setDateFilter(filter: 'todos' | 'hoy' | 'ayer' | '7dias' | 'rango'): void {
+    this.dateFilter.set(filter);
+    this.currentPage.set(1);
+  }
+
+  public onSearchTermChange(term: string): void {
+    this.searchTerm.set(term);
+    this.currentPage.set(1);
+  }
+
   public filteredAccounts = computed(() => {
     const list = this.activeAccounts();
     const term = this.searchTerm().trim();
     const currentTab = this.nursingAreaFilter();
 
-    const areaFiltered = list.filter(acc => matchTipoIngreso(acc.tipoIngreso, currentTab));
+    const areaFiltered = list.filter(acc =>
+      matchTipoIngreso(acc.tipoIngreso, currentTab) && this.matchesDateFilter(acc)
+    );
 
     if (!term) return areaFiltered;
     const termNorm = normalizeTipoIngreso(term);
@@ -481,6 +537,18 @@ export class EnfermeriaComponent implements OnInit {
       normalizeTipoIngreso(acc.tipoIngreso).includes(termNorm)
     );
   });
+
+  public pagedAccounts = computed(() =>
+    this.filteredAccounts().slice(0, this.currentPage() * this.pageSize)
+  );
+
+  public hasMoreAccounts = computed(() =>
+    this.filteredAccounts().length > this.pagedAccounts().length
+  );
+
+  public loadMoreAccounts(): void {
+    this.currentPage.update(p => p + 1);
+  }
 
   public estadoActualPaciente = computed(() => {
     const history = this.nursingHistory();
@@ -563,6 +631,7 @@ export class EnfermeriaComponent implements OnInit {
 
   public refreshAccounts(): void {
     this.isLoading.set(true);
+    this.currentPage.set(1);
     this.http.get<CuentaAdministrativa[]>(`${environment.apiUrl}/api/Billing/cuentas-administrativas?estado=Abierta`)
       .subscribe({
         next: (res) => {
