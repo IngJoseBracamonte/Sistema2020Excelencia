@@ -90,7 +90,7 @@
                     
                     <!-- Donut Chart por Origen -->
                     <div class="flex justify-center">
-                        <apx-chart *ngIf="originChartOptions.chart"
+                        <apx-chart *ngIf="originChartOptions.chart && originChartOptions.series && originChartOptions.labels"
                             [series]="originChartOptions.series!"
                             [chart]="originChartOptions.chart!"
                             [labels]="originChartOptions.labels!"
@@ -158,7 +158,7 @@
 
                 <!-- Visualización: Area Chart (ApexCharts) -->
                 <div class="pt-2">
-                    <apx-chart *ngIf="revenueChartOptions.chart"
+                    <apx-chart *ngIf="revenueChartOptions.chart && revenueChartOptions.series && revenueChartOptions.xaxis"
                         [series]="revenueChartOptions.series!"
                         [chart]="revenueChartOptions.chart!"
                         [xaxis]="revenueChartOptions.xaxis!"
@@ -188,7 +188,7 @@
 
                 <!-- Visualización: Vertical Bar Chart (ApexCharts) -->
                 <div>
-                    <apx-chart *ngIf="purchasesChartOptions.chart"
+                    <apx-chart *ngIf="purchasesChartOptions.chart && purchasesChartOptions.series && purchasesChartOptions.xaxis"
                         [series]="purchasesChartOptions.series!"
                         [chart]="purchasesChartOptions.chart!"
                         [xaxis]="purchasesChartOptions.xaxis!"

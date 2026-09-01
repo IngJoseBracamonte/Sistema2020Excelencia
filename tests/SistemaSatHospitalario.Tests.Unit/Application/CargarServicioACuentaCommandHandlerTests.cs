@@ -52,6 +52,9 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             var emptyMedicos = new List<Medico>().AsQueryable().BuildMockDbSet().Object;
             _contextMock.Setup(c => c.Medicos).Returns(emptyMedicos);
 
+            var emptyAreasClinicas = new List<AreaClinica>().AsQueryable().BuildMockDbSet().Object;
+            _contextMock.Setup(c => c.AreasClinicas).Returns(emptyAreasClinicas);
+
             var mockInventory = new Mock<IInventoryService>();
             var mockLegacyLab = new Mock<ILegacyLabRepository>();
 
@@ -114,7 +117,48 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             _repositoryMock.Verify(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()), Times.Once);
             _repositoryMock.Verify(r => r.GuardarCambiosAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         }
+        [Fact]
+        public async Task Should_ConvertAreaClinicaIdToNull_When_GuidIsEmpty()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
 
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            _contextMock.Setup(c => c.PacientesAdmision)
+                .Returns(new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet().Object);
+
+            var service = new ServicioClinico("C001", "Consulta", 100, "Medico");
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(service, servicioId);
+            _contextMock.Setup(c => c.ServiciosClinicos)
+                .Returns(new List<ServicioClinico> { service }.AsQueryable().BuildMockDbSet().Object);
+
+            _repositoryMock.Setup(r => r.ObtenerCuentaAbiertaPorPacienteAsync(pacienteId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CuentaServicios)null);
+
+            var command = new CargarServicioACuentaCommand
+            {
+                PacienteId = pacienteId,
+                TipoIngreso = "Particular",
+                ServicioId = servicioId.ToString(),
+                Descripcion = "Consulta",
+                Precio = 100,
+                Cantidad = 1,
+                TipoServicio = "Medico",
+                MedicoId = Guid.NewGuid(),
+                HoraCita = DateTime.Today.AddHours(10),
+                UsuarioCarga = "Admin",
+                AreaClinicaId = Guid.Empty // Enviar Guid.Empty debe convertirse internamente a null
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            result.Should().NotBeNull();
+            _repositoryMock.Verify(r => r.AgregarCuentaAsync(It.IsAny<CuentaServicios>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
         [Fact]
         public async Task Should_ReuseExistingAccount_When_Available()
         {
@@ -318,6 +362,56 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             cuentaEspecifica.Detalles.Should().HaveCount(1);
             var createdDetail = cuentaEspecifica.Detalles.First();
             createdDetail.TipoServicioId.Should().Be(SistemaSatHospitalario.Core.Domain.Constants.TipoServicioConstants.Medico);
+        }
+
+        [Fact]
+        public async Task Should_PreferNormalizedServiceType_When_RequestTypeIsContradictory()
+        {
+            // Arrange
+            var pacienteId = Guid.NewGuid();
+            var cuentaId = Guid.NewGuid();
+            var servicioId = Guid.NewGuid();
+            var cuenta = new CuentaServicios(pacienteId, "Admin", "Particular");
+            typeof(CuentaServicios).GetProperty("Id")?.SetValue(cuenta, cuentaId);
+
+            var paciente = new PacienteAdmision("123", "Test Patient", "555-1234");
+            typeof(PacienteAdmision).GetProperty("Id")?.SetValue(paciente, pacienteId);
+            _contextMock.Setup(c => c.PacientesAdmision)
+                .Returns(new List<PacienteAdmision> { paciente }.AsQueryable().BuildMockDbSet().Object);
+
+            var servicio = new ServicioClinico("MED-001", "Consulta General", 100, "Medico")
+            {
+                Category = SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation
+            };
+            typeof(ServicioClinico).GetProperty("Id")?.SetValue(servicio, servicioId);
+            _contextMock.Setup(c => c.ServiciosClinicos)
+                .Returns(new List<ServicioClinico> { servicio }.AsQueryable().BuildMockDbSet().Object);
+
+            _repositoryMock.Setup(r => r.ObtenerCuentaPorIdAsync(cuentaId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(cuenta);
+
+            var command = new CargarServicioACuentaCommand
+            {
+                CuentaId = cuentaId,
+                PacienteId = pacienteId,
+                TipoIngreso = "Particular",
+                ServicioId = servicioId.ToString(),
+                Descripcion = "Consulta General",
+                Precio = 100,
+                Cantidad = 1,
+                TipoServicio = "Laboratorio",
+                MedicoId = Guid.NewGuid(),
+                HoraCita = DateTime.Today.AddHours(10),
+                UsuarioCarga = "Admin"
+            };
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            var detalle = cuenta.Detalles.Should().ContainSingle().Subject;
+            detalle.TipoServicio.Should().Be("MEDICO");
+            detalle.TipoServicioId.Should().Be(SistemaSatHospitalario.Core.Domain.Constants.TipoServicioConstants.Medico);
         }
     }
 }

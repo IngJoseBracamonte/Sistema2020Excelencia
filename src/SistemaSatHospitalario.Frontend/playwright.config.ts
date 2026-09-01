@@ -4,13 +4,14 @@ export default defineConfig({
   testDir: './e2e',
   // Timeout global por test: 60s
   timeout: 60_000,
-  fullyParallel: true,
+  // Los escenarios E2E comparten pacientes, cuentas, camas y catálogo.
+  fullyParallel: false,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 1, // 1 retry en local
-  workers: process.env['CI'] ? 1 : undefined,
+  workers: 1,
   reporter: [['html'], ['list']],
   use: {
-    baseURL: process.env.BASE_URL || 'https://localhost:4200',
+    baseURL: 'https://localhost',
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     actionTimeout: 15_000,

@@ -16,6 +16,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaAccion { get; private set; }
         public string? Observaciones { get; private set; }
 
+        public virtual DetalleServicioCuenta DetalleServicio { get; private set; } = null!;
+        public virtual Medico? MedicoAnterior { get; private set; }
+        public virtual Medico? MedicoNuevo { get; private set; }
+
         protected LogAsignacionHonorario() { }
 
         public LogAsignacionHonorario(

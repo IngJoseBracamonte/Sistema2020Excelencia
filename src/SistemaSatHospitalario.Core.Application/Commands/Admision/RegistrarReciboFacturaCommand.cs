@@ -63,46 +63,33 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             decimal totalCuenta = cuenta.CalcularTotal();
             decimal totalPagado = 0;
 
-            var listaPagosValidados = new List<(DetallesPagoDto Pago, decimal Equivalente, decimal Tasa)>();
+            var listaPagosValidados = new List<(DetallesPagoDto Pago, CatalogoMetodoPago MetodoPago, decimal Equivalente, decimal Tasa)>();
 
             foreach (var p in request.PagosMultidivisa)
             {
                 var metodoPagoEntidad = metodosPagoCatalog.FirstOrDefault(m => m.Valor == p.MetodoPago || m.Nombre == p.MetodoPago);
+                if (metodoPagoEntidad == null)
+                {
+                    throw new InvalidOperationException($"El método de pago '{p.MetodoPago}' no está activo o no existe.");
+                }
+
                 decimal equivalenteBase = p.EquivalenteAbonadoBase;
                 decimal tasaAplicada = 1m;
 
-                if (metodoPagoEntidad != null)
+                if (metodoPagoEntidad.GrupoMoneda == 1)
                 {
-                    if (metodoPagoEntidad.GrupoMoneda == 1)
-                    {
-                        tasaAplicada = 1m;
-                        equivalenteBase = p.MontoAbonadoMoneda;
-                    }
-                    else if (metodoPagoEntidad.GrupoMoneda == 2)
-                    {
-                        tasaAplicada = request.TasaCambioDia;
-                        if (tasaAplicada <= 0) throw new InvalidOperationException("La tasa de cambio del día debe ser mayor a cero para pagos en Bolívares.");
-                        equivalenteBase = Math.Round(p.MontoAbonadoMoneda / tasaAplicada, 2);
-                    }
+                    tasaAplicada = 1m;
+                    equivalenteBase = p.MontoAbonadoMoneda;
                 }
-                else
+                else if (metodoPagoEntidad.GrupoMoneda == 2)
                 {
-                    // Fallback
-                    var lower = p.MetodoPago.ToLower();
-                    if (lower.Contains("bs") || lower.Contains("móvil") || lower.Contains("punto"))
-                    {
-                        tasaAplicada = request.TasaCambioDia;
-                        equivalenteBase = tasaAplicada > 0 ? Math.Round(p.MontoAbonadoMoneda / tasaAplicada, 2) : 0;
-                    }
-                    else
-                    {
-                        tasaAplicada = 1m;
-                        equivalenteBase = p.MontoAbonadoMoneda;
-                    }
+                    tasaAplicada = request.TasaCambioDia;
+                    if (tasaAplicada <= 0) throw new InvalidOperationException("La tasa de cambio del día debe ser mayor a cero para pagos en Bolívares.");
+                    equivalenteBase = Math.Round(p.MontoAbonadoMoneda / tasaAplicada, 2);
                 }
 
                 totalPagado += equivalenteBase;
-                listaPagosValidados.Add((p, equivalenteBase, tasaAplicada));
+                listaPagosValidados.Add((p, metodoPagoEntidad, equivalenteBase, tasaAplicada));
             }
 
             decimal montoVueltoUSD = Math.Max(0, totalPagado - totalCuenta);
@@ -112,7 +99,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             foreach (var item in listaPagosValidados)
             {
-                recibo.AgregarDetallePago(item.Pago.MetodoPago, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, request.CajeroUserId);
+                recibo.AgregarDetallePago(item.MetodoPago.Valor, item.MetodoPago.Id, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, request.CajeroUserId);
             }
 
             // 4. Validar montos y cierre condicional (V11.5 Senior Pattern)

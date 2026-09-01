@@ -111,8 +111,8 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             details.TotalCobrado.Should().Be(90m); // 100 - 10 = 90 USD
             details.TotalIngresado.Should().Be(90m);
             details.Diferencia.Should().Be(0m);
-            details.DeclaracionCierreJson.Should().NotBeNullOrWhiteSpace();
-            details.DeclaracionCierreJson.Should().Contain("Dolar Efectivo");
+            details.Declaraciones.Should().ContainSingle(d => d.MetodoPago == "Dolar Efectivo");
+            details.Declaraciones.Single(d => d.MetodoPago == "Dolar Efectivo").MontoIngreso.Should().Be(100m);
         }
 
         [Fact]

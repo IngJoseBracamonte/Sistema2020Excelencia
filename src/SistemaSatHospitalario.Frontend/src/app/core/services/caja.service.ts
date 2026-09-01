@@ -53,6 +53,19 @@ export interface CajaDetailDto {
   totalCobrado?: number;
   diferencia?: number;
   declaracionCierreJson?: string;
+  declaraciones?: CajaDeclaracionMetodoDto[];
+}
+
+export interface CajaDeclaracionMetodoDto {
+  metodoPagoId: string;
+  metodoPago: string;
+  nombreMetodoPago: string;
+  montoIngreso: number;
+  montoVueltos: number;
+  montoEsperadoIngreso: number;
+  montoEsperadoVueltos: number;
+  diferenciaOriginal: number;
+  diferenciaBase: number;
 }
 
 export interface CajaSummaryDto {

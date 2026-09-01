@@ -74,6 +74,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
+                command.UsuarioCarga = User.GetUserName();
                 var result = await _mediator.Send(command);
                 return Ok(new { 
                     Message = "Servicios cargados masivamente con éxito.", 
@@ -87,8 +88,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error inesperado en CargarServiciosMasivo");
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = ex.Message });
+                _logger.LogError(ex,
+                    "Error inesperado en CargarServiciosMasivo para paciente {PacienteId}, cuenta {CuentaId} e items {ItemCount}",
+                    command.PacienteId,
+                    command.CuentaId,
+                    command.Items?.Count ?? 0);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Error = "Ha ocurrido un error inesperado al procesar los servicios." });
             }
         }
 

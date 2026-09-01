@@ -290,15 +290,13 @@ export class TrasladosDestinoComponent {
 
       const payload = {
         cuentaId: cuentaId,
-        areaDestinoId: areaId,
         areaDestino: areaObj?.nombre || 'ÁREA DESTINO',
         camaDestinoId: this.selectedCamaId(),
         cantidadHoras: Number(this.cantidadHoras()) || 1,
         cambiaMedicoTratante: Boolean(this.cambiaMedico()),
         nuevoMedicoId: nuevoMedicoIdSaneado,
         observacion: (this.observacionTraslado() || '').trim(),
-        montoACobrarUsd: Number(this.montoTrasladoInput()) || 0,
-        honorarioUsd: Number(this.honorarioTrasladoInput()) || 0
+        montoACobrarUsd: Number(this.montoTrasladoInput()) || 0
       };
 
       this.http.post(`${environment.apiUrl}/api/Enfermeria/TrasladoArea`, payload).subscribe({

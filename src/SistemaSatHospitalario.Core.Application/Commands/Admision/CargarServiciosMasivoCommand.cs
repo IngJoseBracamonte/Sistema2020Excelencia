@@ -54,15 +54,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         public async Task<List<CargarServicioResult>> Handle(CargarServiciosMasivoCommand request, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Iniciando CargarServiciosMasivo para Paciente {PacienteId} con {Count} items.", request.PacienteId, request.Items.Count);
+            var items = request.Items ?? throw new InvalidOperationException("Debe indicar al menos un servicio para la carga masiva.");
+            _logger.LogInformation("Iniciando CargarServiciosMasivo para Paciente {PacienteId}, cuenta {CuentaId} con {Count} items.", request.PacienteId, request.CuentaId, items.Count);
             
             var results = new List<CargarServicioResult>();
             
             using var transaction = await _context.BeginTransactionAsync(cancellationToken);
             try
             {
-                foreach (var item in request.Items)
+                for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
                 {
+                    var item = items[itemIndex];
+                    _logger.LogDebug("Procesando item {ItemIndex} de carga masiva. Servicio {ServicioId}.", itemIndex + 1, item.ServicioId);
                     var singleCommand = new CargarServicioACuentaCommand
                     {
                         CuentaId = request.CuentaId,
@@ -100,7 +103,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error durante la carga masiva. Revirtiendo transacción.");
+                _logger.LogError(ex,
+                    "Error durante la carga masiva para paciente {PacienteId}, cuenta {CuentaId}, tras procesar {ProcessedCount} items. Revirtiendo transacción.",
+                    request.PacienteId,
+                    request.CuentaId,
+                    results.Count);
                 if (transaction != null)
                 {
                     await transaction.RollbackAsync(cancellationToken);

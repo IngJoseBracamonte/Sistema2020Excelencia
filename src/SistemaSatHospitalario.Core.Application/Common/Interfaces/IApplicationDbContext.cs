@@ -11,6 +11,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
     public interface IApplicationDbContext
     {
         DbSet<CajaDiaria> CajasDiarias { get; }
+        DbSet<CajaDeclaracionMetodo> CajasDeclaracionesMetodos { get; }
         DbSet<ReciboFactura> RecibosFactura { get; }
         DbSet<DetallePago> DetallesPago { get; }
         DbSet<SeguroConvenio> SegurosConvenios { get; }
@@ -48,6 +49,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<HonorarioMedicoServicio> HonorariosMedicosServicios { get; }
         DbSet<GarantiaItem> GarantiasItems { get; }
         DbSet<HistorialModificacionCuenta> HistorialModificacionCuentas { get; }
+        DbSet<HistorialModificacionCuentaDetalle> HistorialModificacionCuentaDetalles { get; }
         DbSet<TriageEnfermeria> TriagesEnfermeria { get; }
         DbSet<ValoracionFisica> ValoracionesFisicas { get; }
         DbSet<Insumo> Insumos { get; }

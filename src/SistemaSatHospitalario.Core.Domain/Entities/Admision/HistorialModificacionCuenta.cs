@@ -40,6 +40,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         // Detalle en JSON de cambios de precios de servicios
         public string? DetalleServiciosCambiosJson { get; private set; }
+        public virtual ICollection<HistorialModificacionCuentaDetalle> DetallesModificados { get; private set; } = new List<HistorialModificacionCuentaDetalle>();
 
         protected HistorialModificacionCuenta() { }
 

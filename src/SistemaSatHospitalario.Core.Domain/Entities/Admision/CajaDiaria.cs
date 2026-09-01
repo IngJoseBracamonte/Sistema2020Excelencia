@@ -22,6 +22,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal? TotalIngresado { get; protected set; }
         public decimal? TotalCobrado { get; protected set; }
         public decimal? Diferencia { get; protected set; }
+        public virtual ICollection<CajaDeclaracionMetodo> DeclaracionesPorMetodo { get; protected set; } = new List<CajaDeclaracionMetodo>();
 
         protected CajaDiaria() { }
 
@@ -43,14 +44,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaCierre = DateTime.UtcNow;
         }
 
-        public void CerrarPorAsistente(string declaracionJson, decimal totalIngresado, decimal totalCobrado, decimal diferencia)
+        public void CerrarPorAsistente(decimal totalIngresado, decimal totalCobrado, decimal diferencia)
         {
             if (Estado == EstadoConstants.CajaCerrada || Estado == EstadoConstants.CajaCerradaPorAsistente) 
                 throw new InvalidOperationException("La caja ya se encuentra cerrada o en proceso de consolidación.");
             
             Estado = EstadoConstants.CajaCerradaPorAsistente;
             FechaCierre = DateTime.UtcNow;
-            DeclaracionCierreJson = declaracionJson;
+            DeclaracionCierreJson = null;
             TotalIngresado = totalIngresado;
             TotalCobrado = totalCobrado;
             Diferencia = diferencia;

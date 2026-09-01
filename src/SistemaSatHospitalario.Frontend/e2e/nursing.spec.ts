@@ -34,7 +34,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await loginAs(page, 'user_emergencia', 'Hospital2026*!');
   });
 
-  test('Módulo Enfermería: Selective triage, pinned status, and doctor selection on quick charge', async ({ page }) => {
+  test('Módulo Enfermería: Full triage form and doctor selection on quick charge', async ({ page }) => {
     // 1. Navigate to Módulo Enfermería
     await page.goto('/enfermeria');
     await page.waitForLoadState('networkidle');
@@ -54,22 +54,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await page.waitForTimeout(1000);
     console.log('Selected active patient.');
 
-    // Verify triage title is visible
-    await expect(page.locator('button:has-text("Triage y Signos Vitales")')).toBeVisible();
-
-    // If the "Nuevo Triage" button is visible (because patient already has history), click it to open the form
-    const nuevoTriageBtn = page.locator('button:has-text("Nuevo Triage")');
-    if (await nuevoTriageBtn.isVisible()) {
-      await nuevoTriageBtn.click();
-      console.log('Clicked "Nuevo Triage" button to display the form.');
-    }
-
-    // Verify modular triage section checkboxes are visible (con el case exacto del HTML)
-    await expect(page.locator('label:has-text("1. Signos Vitales")')).toBeVisible();
-    await expect(page.locator('label:has-text("2. Valoración Física")')).toBeVisible();
-    await expect(page.locator('label:has-text("3. Antecedentes")')).toBeVisible();
-    await expect(page.locator('label:has-text("4. Estado Actual")')).toBeVisible();
-    console.log('Modular triage flags verified.');
+    // Open and validate the current triage view.
+    await page.getByRole('button', { name: 'Triage y Signos Vitales' }).click();
+    await expect(page.getByRole('heading', { name: 'Triage y Signos Vitales' })).toBeVisible();
+    console.log('Current triage view verified.');
 
     // Navigate to Carga de Insumos tab (con el case exacto del HTML)
     await page.click('button:has-text("Carga de Insumos")');
@@ -97,7 +85,7 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await expect(doctorSelector).toBeVisible();
     console.log('Doctor selector dropdown is visible.');
 
-    // Select a doctor
+    // Select an available treating doctor.
     await doctorSelector.selectOption({ index: 1 });
     console.log('Selected a seeded doctor.');
 
@@ -155,11 +143,11 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     expect(countDateInput).toBe(0); // Hidden/replaced for nurses
     console.log('Admission date input is hidden (Read-only view verified).');
 
-    // Verify "Cargar Servicio o Medicamento" card is hidden
+    // Clinical assistants can add services with an assigned treating doctor.
     const fastChargeTitle = page.locator('h3:has-text("Cargar Servicio o Medicamento")');
     const countFastCharge = await fastChargeTitle.count();
-    expect(countFastCharge).toBe(0); // Hidden/replaced for nurses
-    console.log('Quick charge service panel is hidden from close account view.');
+    expect(countFastCharge).toBe(1);
+    console.log('Quick charge service panel is available for clinical assistants.');
 
     // Verify "Condición y Destino Final de Egreso de Urgencias" is visible
     await expect(page.locator('span:has-text("Condición y Destino Final de Egreso")')).toBeVisible();

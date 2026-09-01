@@ -39,7 +39,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var service = new ServicioClinico("S01", "Cirugía Prueba", 100.00m, "MEDICO");
             service.RequiereInventario = true;
 
-            var recipe = new ServicioInsumoReceta(service.Id, service.Codigo, insumo.Id, 2.00m, UnidadMedida.G);
+            var recipe = new ServicioInsumoReceta(service.Id, insumo.Id, 2.00m, UnidadMedida.G);
             recipe.Insumo = insumo;
 
             var stockSede = new StockSede(insumo.Id, SeedConstants.SedeId_Principal, 50.00m);
@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var service = new ServicioClinico("S01", "Cirugía Prueba", 100.00m, "MEDICO");
             service.RequiereInventario = true;
 
-            var recipe = new ServicioInsumoReceta(service.Id, service.Codigo, insumo.Id, 2.00m, UnidadMedida.G);
+            var recipe = new ServicioInsumoReceta(service.Id, insumo.Id, 2.00m, UnidadMedida.G);
             recipe.Insumo = insumo;
 
             var stockSede = new StockSede(insumo.Id, SeedConstants.SedeId_Principal, 50.00m);

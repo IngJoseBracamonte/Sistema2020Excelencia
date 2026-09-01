@@ -59,10 +59,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             EstadoFiscal = EstadoConstants.Anulada;
         }
 
-        public void AgregarDetallePago(string metodoPago, string referencia, decimal montoCambiario, decimal equivalenteBase, decimal tasaCambioAplicada = 1.0m, string usuarioCarga = "admin")
+        public void AgregarDetallePago(string metodoPago, Guid metodoPagoId, string referencia, decimal montoCambiario, decimal equivalenteBase, decimal tasaCambioAplicada = 1.0m, string usuarioCarga = "admin")
         {
             if (EstadoFiscal == EstadoConstants.Anulada) throw new InvalidOperationException("No se pueden agregar pagos a un recibo anulado.");
-            _detallesPago.Add(new DetallePago(Id, metodoPago, referencia, montoCambiario, equivalenteBase, tasaCambioAplicada, usuarioCarga));
+            if (metodoPagoId == Guid.Empty) throw new ArgumentException("El método de pago es requerido.", nameof(metodoPagoId));
+            _detallesPago.Add(new DetallePago(Id, metodoPago, referencia, montoCambiario, equivalenteBase, tasaCambioAplicada, usuarioCarga, metodoPagoId));
         }
 
         public decimal ObtenerTotalPagadoBase() => _detallesPago.Sum(p => p.EquivalenteAbonadoBase);

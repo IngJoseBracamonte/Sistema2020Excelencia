@@ -96,7 +96,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 {
                     if (Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida>(r.UnidadMedidaConsumo, true, out var uom))
                     {
-                        var receta = new ServicioInsumoReceta(item.Id, item.Codigo, r.InsumoId, r.Cantidad, uom);
+                        var receta = new ServicioInsumoReceta(item.Id, r.InsumoId, r.Cantidad, uom);
                         _context.ServiciosInsumoRecetas.Add(receta);
                     }
                 }

@@ -269,19 +269,15 @@ export class CajasComponent implements OnInit, OnDestroy {
   }
 
   auditarCaja(caja: any) {
-    if (!caja.declaracionCierreJson) {
+    const desglose = this.obtenerDesglose(caja);
+    if (desglose.length === 0) {
       alert("Esta caja no cuenta con una declaración detallada (es un cierre del sistema anterior o incompleto).");
       return;
     }
-    try {
-      const desglose = JSON.parse(caja.declaracionCierreJson);
-      this.selectedCajaParaAuditar.set({
-        ...caja,
-        desglose
-      });
-    } catch (e) {
-      alert("Error al deserializar la declaración de cierre.");
-    }
+    this.selectedCajaParaAuditar.set({
+      ...caja,
+      desglose
+    });
   }
 
   cerrarAuditoria() {
@@ -343,6 +339,9 @@ export class CajasComponent implements OnInit, OnDestroy {
   }
 
   obtenerDesglose(caja: any): any[] {
+    if (Array.isArray(caja.declaraciones) && caja.declaraciones.length > 0) {
+      return caja.declaraciones;
+    }
     if (!caja.declaracionCierreJson) return [];
     try {
       return JSON.parse(caja.declaracionCierreJson);

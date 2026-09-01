@@ -16,6 +16,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
         public string Categoria { get; private set; }
+        public Guid? CategoriaInsumoId { get; private set; }
+        public virtual CategoriaInsumo? CategoriaInsumo { get; private set; }
 
         // Borrado Lógico (Soft Delete)
         public bool IsDeleted { get; private set; }
@@ -72,6 +74,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CostoUnitarioBaseUSD = costoUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
             Categoria = categoria;
+        }
+
+        public void AsignarCategoria(CategoriaInsumo categoria)
+        {
+            ArgumentNullException.ThrowIfNull(categoria);
+
+            CategoriaInsumoId = categoria.Id;
+            CategoriaInsumo = categoria;
+            Categoria = categoria.Nombre;
         }
 
         // Overload para compatibilidad legacy mientras se completa migración total

@@ -34,6 +34,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
             {
                 var query = _context.OrdenesCompraInventario
                     .AsNoTracking()
+                    .Include(o => o.Proveedor)
                     .Include(o => o.Pagos)
                     .AsQueryable();
 
@@ -46,7 +47,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                 if (!string.IsNullOrWhiteSpace(request.Busqueda))
                 {
                     var term = request.Busqueda.Trim();
-                    query = query.Where(o => (o.ProveedorNombre != null && EF.Functions.Like(o.ProveedorNombre, $"%{term}%")) ||
+                    query = query.Where(o => (o.Proveedor != null && EF.Functions.Like(o.Proveedor.RazonSocial, $"%{term}%")) ||
+                                             (o.ProveedorNombre != null && EF.Functions.Like(o.ProveedorNombre, $"%{term}%")) ||
                                              (o.NumeroFactura != null && EF.Functions.Like(o.NumeroFactura, $"%{term}%")));
                 }
 
@@ -69,7 +71,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                     Id = o.Id,
                     NumeroFactura = o.NumeroFactura,
                     ProveedorId = o.ProveedorId,
-                    ProveedorNombre = o.ProveedorNombre,
+                    ProveedorNombre = o.Proveedor?.RazonSocial ?? o.ProveedorNombre,
                     FechaEmision = o.FechaEmision,
                     MontoTotalUSD = o.MontoTotalUSD,
                     MontoTotalBs = o.MontoTotalBs,
@@ -82,7 +84,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                         Id = p.Id,
                         OrdenCompraId = o.Id,
                         NumeroFactura = o.NumeroFactura,
-                        ProveedorNombre = o.ProveedorNombre,
+                        ProveedorNombre = o.Proveedor?.RazonSocial ?? o.ProveedorNombre,
                         FechaPago = p.FechaPago,
                         MontoAbonadoUSD = p.MontoAbonadoUSD,
                         TasaCambio = p.TasaCambio,
