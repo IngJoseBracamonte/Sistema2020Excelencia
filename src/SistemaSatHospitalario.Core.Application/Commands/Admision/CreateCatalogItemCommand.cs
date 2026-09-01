@@ -1,13 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -49,7 +49,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 HonorariumCategory = request.HonorariumCategory,
                 RequiereInventario = request.RequiereInventario,
                 ServicioInformeId = request.ServicioInformeId,
-                EsServicioInforme = request.EsServicioInforme || (request.TipoServicioId == TipoServicioConstants.Informe) || request.Tipo.Equals("INFORME", StringComparison.OrdinalIgnoreCase)
+                EsServicioInforme = request.EsServicioInforme 
+                    || (request.TipoServicioId == TipoServicioConstants.Informe) 
+                    || string.Equals(request.Tipo, "INFORME", StringComparison.OrdinalIgnoreCase)
             };
 
             if (request.TipoServicioId.HasValue)
@@ -57,39 +59,57 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 item.TipoServicioId = request.TipoServicioId.Value;
             }
 
-            // Validar Invariantes de Dominio (ej: PrecioBase >= HonorarioBase para Informes)
+            // Validar Invariantes de Dominio
             item.ValidarInvariantes();
 
             await _context.ServiciosClinicos.AddAsync(item, cancellationToken);
-            
+
+            // 1. Filtrar, parsear y validar existencia de Sugerencias en BD
             if (request.SugerenciasIds != null && request.SugerenciasIds.Any())
             {
-                foreach (var sugeridoId in request.SugerenciasIds)
+                var sugerenciasGuids = request.SugerenciasIds
+                    .Select(id => Guid.TryParse(id, out var parsed) ? parsed : (Guid?)null)
+                    .Where(g => g.HasValue)
+                    .Select(g => g!.Value)
+                    .Distinct()
+                    .ToList();
+
+                if (sugerenciasGuids.Any())
                 {
-                    if (Guid.TryParse(sugeridoId, out var parsedId))
+                    // Consultar únicamente los IDs que realmente existen en la tabla serviciosclinicos
+                    var sugerenciasExistentes = await _context.ServiciosClinicos
+                        .AsNoTracking()
+                        .Where(s => sugerenciasGuids.Contains(s.Id))
+                        .Select(s => s.Id)
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var sugeridoId in sugerenciasExistentes)
                     {
-                        var sugerencia = new ServicioSugerencia(item.Id, parsedId);
+                        var sugerencia = new ServicioSugerencia(item.Id, sugeridoId);
                         _context.ServiciosSugerencias.Add(sugerencia);
                     }
                 }
             }
 
-            // Guardar honorarios específicos por médico
-            var honorarios = (request.HonorariosMedicos != null && request.HonorariosMedicos.Any()) ? request.HonorariosMedicos : request.HonorariosEspecificos;
+            // 2. Guardar honorarios específicos por médico
+            var honorarios = (request.HonorariosMedicos != null && request.HonorariosMedicos.Any()) 
+                ? request.HonorariosMedicos 
+                : request.HonorariosEspecificos;
+
             if (honorarios != null && honorarios.Any())
             {
-                foreach (var h in honorarios)
+                foreach (var h in honorarios.Where(h => h.Honorario > 0))
                 {
-                    if (h.Honorario > 0)
-                    {
-                        var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
-                        _context.HonorariosMedicosServicios.Add(newHon);
-                    }
+                    var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
+                    _context.HonorariosMedicosServicios.Add(newHon);
                 }
             }
 
-            // Guardar receta BOM de insumos
-            var recetaItems = (request.RecetaInsumos != null && request.RecetaInsumos.Any()) ? request.RecetaInsumos : request.Receta;
+            // 3. Guardar receta BOM de insumos
+            var recetaItems = (request.RecetaInsumos != null && request.RecetaInsumos.Any()) 
+                ? request.RecetaInsumos 
+                : request.Receta;
+
             if (recetaItems != null && recetaItems.Any())
             {
                 foreach (var r in recetaItems)
