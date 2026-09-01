@@ -10,7 +10,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid InsumoId { get; private set; }
         public decimal Cantidad { get; private set; }
         public UnidadMedida UnidadMedidaConsumo { get; private set; }
-
+        
         public virtual ServicioClinico ServicioClinico { get; private set; }
         public virtual Insumo Insumo { get; set; }
 

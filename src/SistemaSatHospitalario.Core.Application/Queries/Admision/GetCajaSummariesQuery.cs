@@ -26,7 +26,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public decimal GranTotalBs { get; set; }
         public List<CajaDetailDto> Cierres { get; set; } = new();
 
-        // Métricas de consolidación en tiempo real (Fase 2)
         public int CajasActivas { get; set; }
         public int CierresPendientes { get; set; }
         public int CierresRealizados { get; set; }
@@ -46,7 +45,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public decimal MontoInicialBs { get; set; }
         public string Estado { get; set; } = string.Empty;
         
-        // Campos de auditoría (V13.0)
         public decimal? TotalIngresado { get; set; }
         public decimal? TotalCobrado { get; set; }
         public decimal? Diferencia { get; set; }
@@ -81,8 +79,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var start = request.Desde.Date;
             var end = request.Hasta.Date.AddDays(1).AddTicks(-1);
 
-            // Consultar todas las cajas dentro del rango de fechas
+            // Consultar todas las cajas deshabilitando tracking y forzando SingleQuery para compatibilidad con MySQL
             var query = _context.CajasDiarias
+                .AsNoTracking()
+                .AsSingleQuery()
                 .Include(c => c.DeclaracionesPorMetodo)
                     .ThenInclude(d => d.MetodoPago)
                 .Where(c => c.FechaApertura >= start && c.FechaApertura <= end);
@@ -112,8 +112,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 Declaraciones = c.DeclaracionesPorMetodo.Select(d => new CajaDeclaracionMetodoDto
                 {
                     MetodoPagoId = d.MetodoPagoId,
-                    MetodoPago = d.MetodoPago.Valor,
-                    NombreMetodoPago = d.MetodoPago.Nombre,
+                    MetodoPago = d.MetodoPago?.Valor ?? string.Empty,
+                    NombreMetodoPago = d.MetodoPago?.Nombre ?? string.Empty,
                     MontoIngreso = d.MontoIngresado,
                     MontoVueltos = d.MontoVueltos,
                     MontoEsperadoIngreso = d.MontoEsperadoIngreso,
@@ -123,16 +123,18 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }).ToList()
             }).ToList();
 
-            // Calcular el acumulado en tiempo real para las cajas que siguen abiertas
             var openCajaIds = list.Where(c => c.Estado == EstadoConstants.CajaAbierta).Select(c => c.Id).ToList();
             if (openCajaIds.Any())
             {
                 var catalogoMetodos = await _context.CatalogoMetodosPago
+                    .AsNoTracking()
                     .Where(m => m.Activo)
                     .OrderBy(m => m.Orden)
                     .ToListAsync(cancellationToken);
 
                 var openCajaRecibos = await _context.RecibosFactura
+                    .AsNoTracking()
+                    .AsSingleQuery()
                     .Include(r => r.DetallesPago)
                     .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
                     .ToListAsync(cancellationToken);
@@ -170,9 +172,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                 esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
                             }
 
-                            decimal esperadoNetoOriginal = esperadoIngresoOriginal - esperadoVueltosOriginal;
                             decimal esperadoNetoBase = esperadoIngresoBase - esperadoVueltosBase;
-
                             totalCobradoBaseUSD += esperadoNetoBase;
 
                             declaraciones.Add(new CajaDeclaracionMetodoDto
@@ -197,7 +197,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }
             }
 
-            // Calcular estadísticas del día de hoy para el panel de consolidación
             var today = DateTime.UtcNow.Date;
             var tomorrow = today.AddDays(1);
             var cajasHoy = list.Where(c => c.Apertura >= today && c.Apertura < tomorrow).ToList();
@@ -206,13 +205,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var cierresPendientes = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente);
             var cierresRealizados = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerrada);
 
-            // Excluir cajas abiertas de la suma de recaudado/esperado diario para no alterar la diferencia neta diaria
             decimal totalRecaudado = cajasHoy.Where(c => c.Estado != EstadoConstants.CajaAbierta).Sum(c => c.TotalIngresado ?? 0);
             decimal totalEsperado = cajasHoy.Where(c => c.Estado != EstadoConstants.CajaAbierta).Sum(c => c.TotalCobrado ?? 0);
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
             decimal efectivoEnBoveda = totalRecaudado;
 
-            // Histórico general
             decimal granTotalDivisa = list.Sum(x => x.TotalIngresado ?? x.MontoInicialDivisa);
             decimal granTotalBs = list.Sum(x => x.MontoInicialBs);
 
