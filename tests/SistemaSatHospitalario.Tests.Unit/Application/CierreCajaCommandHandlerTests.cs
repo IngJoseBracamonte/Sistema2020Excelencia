@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -139,10 +138,10 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Diferencia: 128 - 130 = -2 USD
             caja.Diferencia.Should().Be(-2m);
 
-            // Verify json declaration contains keys
-            caja.DeclaracionCierreJson.Should().NotBeNullOrWhiteSpace();
-            caja.DeclaracionCierreJson.Should().Contain("Dolar Efectivo");
-            caja.DeclaracionCierreJson.Should().Contain("Efectivo BS");
+            caja.DeclaracionCierreJson.Should().BeNull();
+            _context.CajasDeclaracionesMetodos.Local.Should().HaveCount(2);
+            _context.CajasDeclaracionesMetodos.Local.Should().Contain(d => d.CajaDiariaId == cajaId && d.MontoIngresado == 95m);
+            _context.CajasDeclaracionesMetodos.Local.Should().Contain(d => d.CajaDiariaId == cajaId && d.MontoIngresado == 1900m);
         }
 
         [Fact]
@@ -151,7 +150,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             // Arrange
             // Seed two boxes: one open, one closed por asistente, one consolidated
             var caja1 = new CajaDiaria(10m, 50m, "cajero1", "cajero1");
-            caja1.CerrarPorAsistente("{}", 100m, 100m, 0m);
+            caja1.CerrarPorAsistente(100m, 100m, 0m);
 
             var caja2 = new CajaDiaria(15m, 100m, "cajero2", "cajero2");
             

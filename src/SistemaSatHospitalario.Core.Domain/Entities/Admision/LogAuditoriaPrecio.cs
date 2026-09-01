@@ -15,6 +15,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string AutorizadoPor { get; private set; }
         public DateTime FechaModificacion { get; private set; }
 
+        public virtual DetalleServicioCuenta DetalleServicio { get; private set; } = null!;
+
         protected LogAuditoriaPrecio() { }
 
         public LogAuditoriaPrecio(

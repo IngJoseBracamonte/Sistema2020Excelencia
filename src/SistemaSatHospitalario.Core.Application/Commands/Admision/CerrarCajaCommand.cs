@@ -9,7 +9,6 @@ using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
-using System.Text.Json;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -59,6 +58,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var allPayments = recibos.SelectMany(r => r.DetallesPago).ToList();
 
             var listMetodosDesglose = new List<object>();
+            var declaracionesPorMetodo = new List<CajaDeclaracionMetodo>();
             decimal totalIngresadoBaseUSD = 0;
             decimal totalCobradoBaseUSD = 0;
             decimal totalDeclaradoVueltosBaseUSD = 0;
@@ -137,13 +137,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     DiferenciaOriginal = diferenciaOriginal,
                     DiferenciaBase = diferenciaBase
                 });
+
+                declaracionesPorMetodo.Add(new CajaDeclaracionMetodo(
+                    cajaAbierta.Id,
+                    metodo.Id,
+                    declaradoIngresoOriginal,
+                    declaradoVueltosOriginal,
+                    esperadoIngresoOriginal,
+                    esperadoVueltosOriginal,
+                    diferenciaOriginal,
+                    diferenciaBase));
             }
 
             decimal totalDiferenciaUSD = totalIngresadoBaseUSD - totalCobradoBaseUSD;
-            string declaracionJson = JsonSerializer.Serialize(listMetodosDesglose);
 
             // Cambiar estado a CerradaPorAsistente
-            cajaAbierta.CerrarPorAsistente(declaracionJson, totalIngresadoBaseUSD, totalCobradoBaseUSD, totalDiferenciaUSD);
+            _context.CajasDeclaracionesMetodos.AddRange(declaracionesPorMetodo);
+            cajaAbierta.CerrarPorAsistente(totalIngresadoBaseUSD, totalCobradoBaseUSD, totalDiferenciaUSD);
             await _repository.GuardarCambiosAsync(cancellationToken);
 
             return new CerrarCajaResult

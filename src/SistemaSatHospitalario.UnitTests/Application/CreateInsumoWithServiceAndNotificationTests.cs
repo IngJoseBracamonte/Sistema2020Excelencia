@@ -54,7 +54,6 @@ namespace SistemaSatHospitalario.UnitTests.Application
 
             var receta = new ServicioInsumoReceta(
                 servicioClinico.Id,
-                servicioClinico.Codigo,
                 insumo.Id,
                 1m,
                 UnidadMedida.UNIDAD

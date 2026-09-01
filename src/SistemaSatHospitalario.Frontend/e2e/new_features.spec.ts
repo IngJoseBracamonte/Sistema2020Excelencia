@@ -23,6 +23,9 @@ test.describe('New Features Integrity Tests', () => {
     // Set the start date filter back to include seeded records
     const desdeInput = page.locator('input[type="date"]').first();
     await desdeInput.fill('2026-05-25');
+
+    const convenioFilter = page.locator('select').nth(1);
+    await convenioFilter.selectOption('todos');
     
     // Click the FILTRAR button
     await page.click('button:has-text("FILTRAR")');
@@ -31,14 +34,9 @@ test.describe('New Features Integrity Tests', () => {
     // Wait for the table/loading to finish
     await page.waitForSelector('table');
 
-    // Wait for at least one receivable row to be loaded
-    const rowSelector = 'tbody tr.group\\/row';
-    await page.waitForSelector(rowSelector, { timeout: 10000 });
-    console.log('Receivables rows are visible.');
-
-    // Click "Ver Detalles de Factura" (first button in Actions cell)
+    // Wait for and select the first receivable with a details action.
     const detailBtn = page.locator('button[title="Ver Detalles de Factura"]').first();
-    await expect(detailBtn).toBeVisible();
+    await expect(detailBtn).toBeVisible({ timeout: 10000 });
     await detailBtn.click();
     console.log('Clicked "Ver Detalles de Factura" button.');
 

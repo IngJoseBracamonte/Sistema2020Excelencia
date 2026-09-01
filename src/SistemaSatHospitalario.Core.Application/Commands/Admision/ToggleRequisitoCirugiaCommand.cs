@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
@@ -19,43 +20,59 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class ToggleRequisitoCirugiaCommandHandler : IRequestHandler<ToggleRequisitoCirugiaCommand, bool>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ILogger<ToggleRequisitoCirugiaCommandHandler> _logger;
 
-            public ToggleRequisitoCirugiaCommandHandler(IApplicationDbContext context)
+        public ToggleRequisitoCirugiaCommandHandler(IApplicationDbContext context, ILogger<ToggleRequisitoCirugiaCommandHandler> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<bool> Handle(ToggleRequisitoCirugiaCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Procesando actualización de requisito {RequisitoId} para la orden {OrdenId}", 
+                request.RequisitoCirugiaId, request.OrdenCirugiaId);
+
+            string nombreReq;
+
             var itemReq = await _context.OrdenesCirugiaRequisitos
                 .Include(r => r.RequisitoCirugia)
                 .FirstOrDefaultAsync(r => r.OrdenCirugiaId == request.OrdenCirugiaId && r.RequisitoCirugiaId == request.RequisitoCirugiaId, cancellationToken);
 
             if (itemReq == null)
             {
-                var reqMaestro = await _context.RequisitosCirugia.FirstOrDefaultAsync(r => r.Id == request.RequisitoCirugiaId, cancellationToken);
+                var reqMaestro = await _context.RequisitosCirugia
+                    .FirstOrDefaultAsync(r => r.Id == request.RequisitoCirugiaId, cancellationToken);
+
                 if (reqMaestro == null)
                 {
+                    _logger.LogWarning("No se encontró el requisito quirúrgico con ID: {RequisitoId}", request.RequisitoCirugiaId);
                     throw new InvalidOperationException($"No se encontró el requisito quirúrgico con ID: {request.RequisitoCirugiaId}");
                 }
 
                 itemReq = new OrdenCirugiaRequisito(request.OrdenCirugiaId, reqMaestro.Id, request.Cumplido);
                 itemReq.SetCumplido(request.Cumplido, request.UsuarioId);
                 await _context.OrdenesCirugiaRequisitos.AddAsync(itemReq, cancellationToken);
+
+                nombreReq = reqMaestro.Nombre;
             }
             else
             {
                 itemReq.SetCumplido(request.Cumplido, request.UsuarioId);
+                nombreReq = itemReq.RequisitoCirugia?.Nombre ?? "Requisito";
             }
 
-            var nombreReq = itemReq.RequisitoCirugia?.Nombre ?? "Requisito";
             var estadoStr = request.Cumplido ? "Cumplido [V]" : "Pendiente [X]";
-
             var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "admin" : request.UsuarioId;
+
             var log = new CirugiaLog(request.OrdenCirugiaId, usuario, "VerificacionRequisito", $"Requisito '{nombreReq}' marcado como: {estadoStr}");
             await _context.CirugiaLogs.AddAsync(log, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Requisito '{NombreReq}' actualizado correctamente a {Estado} por {Usuario}", 
+                nombreReq, estadoStr, usuario);
+
             return true;
         }
     }

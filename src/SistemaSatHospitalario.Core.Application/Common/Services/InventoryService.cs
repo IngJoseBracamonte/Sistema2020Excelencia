@@ -43,11 +43,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 return; // Omit inventory deduction as requested
             }
 
-            // Fetch recipes matching this service
+            // Fetch recipes through the normalized service relationship.
             var recipes = await _context.ServiciosInsumoRecetas
                 .Include(r => r.Insumo)
-                .Where(r => (serviceId != Guid.Empty && r.ServicioClinicoId == serviceId) ||
-                            (!string.IsNullOrEmpty(serviceCodigo) && r.ServicioCodigo == serviceCodigo))
+                .Where(r => serviceId != Guid.Empty && r.ServicioClinicoId == serviceId)
                 .ToListAsync(cancellationToken);
 
             if (recipes == null || !recipes.Any())
@@ -64,7 +63,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 {
                     var selfRecipe = new ServicioInsumoReceta(
                         directInsumo.Id,
-                        directInsumo.Codigo,
                         directInsumo.Id,
                         1m,
                         directInsumo.UnidadMedidaBase

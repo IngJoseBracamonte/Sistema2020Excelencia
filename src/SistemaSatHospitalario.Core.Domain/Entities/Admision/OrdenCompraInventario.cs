@@ -10,6 +10,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string NumeroFactura { get; private set; } = string.Empty;
         public Guid? ProveedorId { get; private set; }
         public string ProveedorNombre { get; private set; } = string.Empty;
+        public virtual Proveedor? Proveedor { get; private set; }
         public DateTime FechaEmision { get; private set; }
         public decimal MontoTotalUSD { get; private set; }
         public decimal MontoTotalBs { get; private set; }
@@ -47,6 +48,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SaldoPendienteUSD = MontoTotalUSD;
             Estado = "PorPagar";
             Observaciones = observaciones;
+        }
+
+        public void AsignarProveedor(Proveedor proveedor)
+        {
+            ArgumentNullException.ThrowIfNull(proveedor);
+
+            ProveedorId = proveedor.Id;
+            Proveedor = proveedor;
+            ProveedorNombre = proveedor.RazonSocial;
         }
 
         public PagoProveedor RegistrarAbono(decimal montoAbonadoUSD, decimal tasaCambio, string metodoPago, string referencia, string usuarioId, string? observaciones = null)

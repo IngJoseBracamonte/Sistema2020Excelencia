@@ -121,7 +121,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             dbCuenta.Detalles.Should().ContainSingle();
             
             var detail = dbCuenta.Detalles.First();
-            detail.TipoServicio.Should().Be("Medico");
+            detail.TipoServicio.Should().Be("MEDICO");
             // expectedPrecio = baseService.PrecioBase + doctorHonorary (30.00 + 25.50 = 55.50)
             detail.Precio.Should().Be(55.50m); 
             detail.Honorario.Should().Be(25.50m); // assigned to pediatrician's honorarium
@@ -369,7 +369,7 @@ namespace SistemaSatHospitalario.Tests.Unit.Application
             dbCuenta.Detalles.Should().ContainSingle();
 
             var detail = dbCuenta.Detalles.First();
-            detail.TipoServicio.Should().Be("Insumo");
+            detail.TipoServicio.Should().Be("Insumo / Medicamento");
             detail.Precio.Should().Be(5.00m);
             detail.Cantidad.Should().Be(3);
             detail.LegacyMappingId.Should().BeNull(); // No mapping set

@@ -44,7 +44,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var stockSede = new StockSede(insumo1.Id, sedePrincipal.Id, 50); // Sede Principal con stock inicial de 50
             insumo1.StocksPorSede.Add(stockSede);
 
-            var recetaInsumo = new ServicioInsumoReceta(servicioCirugia.Id, servicioCirugia.Codigo, insumo1.Id, 10, UnidadMedida.UNIDAD);
+            var recetaInsumo = new ServicioInsumoReceta(servicioCirugia.Id, insumo1.Id, 10, UnidadMedida.UNIDAD);
             recetaInsumo.Insumo = insumo1; // EF Navigation load
 
             var cuenta = new CuentaServicios(paciente.Id, "Cajero", "Particular");

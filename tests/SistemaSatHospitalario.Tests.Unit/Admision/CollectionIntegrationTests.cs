@@ -112,8 +112,12 @@ namespace SistemaSatHospitalario.Tests.Unit.Admision
             // Caso: Pago a las 23:00 local de HOY (en UTC ya es mañana)
             var fechaPagoUtcToday = todayLocal.AddHours(23).AddHours(4); 
 
+            var metodoPago = new CatalogoMetodoPago("Efectivo", "Efectivo", 1);
+            _context.CatalogoMetodosPago.Add(metodoPago);
+            await _context.SaveChangesAsync();
+
             var recibo = new ReciboFactura(_seed.CuentaId, _seed.PacienteId, _seed.CajaId, 50.00m, 10.00m);
-            recibo.AgregarDetallePago("Efectivo", "REF", 10.00m, 10.00m, 1.0m, "admin");
+            recibo.AgregarDetallePago("Efectivo", metodoPago.Id, "REF", 10.00m, 10.00m, 1.0m, "admin");
             var detalle = recibo.DetallesPago.First();
             
             // Forzamos la fecha de pago para el test de zona horaria

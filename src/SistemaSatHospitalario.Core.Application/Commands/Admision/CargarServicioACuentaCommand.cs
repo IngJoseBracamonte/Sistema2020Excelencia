@@ -126,7 +126,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 baseService = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == svcId, cancellationToken);
             }
 
-            bool esConsulta = EstadoConstants.EsConsulta(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
+            var tipoServicioEfectivo = ResolveTipoServicioEfectivo(baseService, request.TipoServicio);
+            bool esConsulta = baseService?.TipoServicioId == TipoServicioConstants.Medico
+                              || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation
+                              || EstadoConstants.EsConsulta(tipoServicioEfectivo);
 
             await ValidarPrecioYClaveSupervisorAsync(request, baseService, esConsulta, cancellationToken);
 
@@ -135,8 +138,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
-            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory);
-            bool esRx = baseService != null && (baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Tomography) || request.TipoServicio == EstadoConstants.RX || request.TipoServicio == EstadoConstants.TOMO;
+            bool esLab = baseService?.TipoServicioId == TipoServicioConstants.Laboratorio
+                         || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory
+                         || EstadoConstants.EsLaboratorio(tipoServicioEfectivo);
+            bool esRx = baseService?.TipoServicioId is TipoServicioConstants.RX or TipoServicioConstants.Tomo
+                        || baseService?.Category is SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology or SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Tomography
+                        || tipoServicioEfectivo == EstadoConstants.RX
+                        || tipoServicioEfectivo == EstadoConstants.TOMO;
 
             // Regla Polimórfica de Cantidad: Consulta, Laboratorio y RX son unidades unitarias estrictas (1)
             decimal finalCantidad = (esConsulta || esLab || esRx) ? 1m : Math.Max(1m, request.Cantidad);
@@ -246,10 +254,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 finalPrecio, 
                 finalHonorario,
                 finalCantidad, 
-                request.TipoServicio, 
+                tipoServicioEfectivo,
                 request.UsuarioCarga,
                 legacyId,
-                request.AreaClinicaId);
+                request.AreaClinicaId,
+                baseService?.TipoServicioId > 0 ? baseService.TipoServicioId : null);
 
             if (_context.DetallesServicioCuenta != null)
             {
@@ -257,13 +266,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // Auto-asignación de Médico Responsable y honorarios
-            await AsignarMedicosYHonorariosAsync(request, detalle, esConsulta, cancellationToken);
+            await AsignarMedicosYHonorariosAsync(request, detalle, tipoServicioEfectivo, esConsulta, cancellationToken);
 
             // 5. Notificaciones e Integraciones Externas
             await NotificarSistemasExternosAsync(request, cancellationToken);
 
             // Invocar la estrategia correspondiente mediante la Factory (GoF Pattern)
-            var strategy = _strategyFactory.GetStrategy(request.TipoServicio, baseService);
+            var strategy = _strategyFactory.GetStrategy(tipoServicioEfectivo, baseService);
             await strategy.ExecuteAsync(request, cuenta, paciente, detalle, baseService, cancellationToken);
 
             // Deducir stock del almacén de la zona de origen para cualquier servicio cargado (BOM/Receta)
@@ -317,6 +326,25 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _logger.LogInformation("Servicio cargado exitosamente en cuenta {CuentaId}. Detalle: {DetalleId}", cuenta.Id, detalle.Id);
 
             return new CargarServicioResult(cuenta.Id, detalle.Id);
+        }
+
+        private static string ResolveTipoServicioEfectivo(ServicioClinico? servicio, string tipoSolicitado)
+        {
+            if (servicio == null || servicio.TipoServicioId <= 0)
+            {
+                return tipoSolicitado;
+            }
+
+            return servicio.TipoServicioId switch
+            {
+                TipoServicioConstants.Medico => EstadoConstants.Medico,
+                TipoServicioConstants.Laboratorio => EstadoConstants.Laboratorio,
+                TipoServicioConstants.RX => EstadoConstants.RX,
+                TipoServicioConstants.Tomo => EstadoConstants.TOMO,
+                TipoServicioConstants.Insumo => TipoServicioConstants.TipoInsumoMedicamento,
+                TipoServicioConstants.Informe => TipoServicioConstants.InformeString,
+                _ => servicio.TipoServicio
+            };
         }
 
         private async Task ValidarPrecioYClaveSupervisorAsync(
@@ -408,6 +436,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private async Task AsignarMedicosYHonorariosAsync(
             CargarServicioACuentaCommand request,
             DetalleServicioCuenta detalle,
+            string tipoServicioEfectivo,
             bool esConsulta,
             CancellationToken cancellationToken)
         {
@@ -433,7 +462,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             else if (detalle.Honorario > 0 && !esConsulta)
             {
                 Guid? serviceId = Guid.TryParse(request.ServicioId, out var sid) ? sid : null;
-                string? categoriaMapeada = await _mapperService.MapToCategoryAsync(request.TipoServicio, serviceId);
+                string? categoriaMapeada = await _mapperService.MapToCategoryAsync(tipoServicioEfectivo, serviceId);
                 Guid? finalMedicoId = request.MedicoId;
                 string sourceAccion = HonorarioConstants.AccionAsignacionManual;
 

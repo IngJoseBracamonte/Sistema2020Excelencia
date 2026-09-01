@@ -35,8 +35,14 @@ export class CatalogPage {
     'honorarioBase',
     'honorariumCategory',
     'requiereInventario',
+    'tipoServicioId',
+    'servicioInformeId',
+    'esServicioInforme',
     'sugerenciasIds',
     'honorariosMedicos',
+    'honorariosEspecificos',
+    'recetaInsumos',
+    'receta',
     'requiereContraste',
     'protocoloTecnico'
   ]);

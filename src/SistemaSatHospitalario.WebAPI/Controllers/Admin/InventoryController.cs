@@ -104,6 +104,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     i.CostoUnitarioBaseUSD,
                     i.PermiteFraccionamiento,
                     i.Categoria,
+                    CategoriaInsumo = i.CategoriaInsumo == null ? null : new
+                    {
+                        i.CategoriaInsumo.Id,
+                        i.CategoriaInsumo.Codigo,
+                        i.CategoriaInsumo.Nombre
+                    },
                     i.IsDeleted,
                     i.FechaInactivacion,
                     i.OcultoEnTraslados,
@@ -145,6 +151,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
                 insumo.Categoria,
+                CategoriaInsumo = insumo.CategoriaInsumo == null ? null : new
+                {
+                    insumo.CategoriaInsumo.Id,
+                    insumo.CategoriaInsumo.Codigo,
+                    insumo.CategoriaInsumo.Nombre
+                },
                 insumo.IsDeleted,
                 insumo.FechaInactivacion,
                 insumo.OcultoEnTraslados,
@@ -385,7 +397,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 }
             }
 
-            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
+            var categoria = await ResolveCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
+            if (categoria == null)
+            {
+                return BadRequest(new { Message = "Debe indicar una categoría de insumo activa y existente." });
+            }
+
+            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, categoria.Nombre);
+            insumo.AsignarCategoria(categoria);
             _context.Insumos.Add(insumo);
 
             if (dto.StockInicial > 0)
@@ -407,7 +426,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             }
 
             // --- AUTO-CREACIÓN EN MAESTRO DE SERVICIOS (DESACTIVADO, PRECIO 0, CÓDIGO ALEATORIO) ---
-            string prefix = (dto.Categoria ?? "").ToUpperInvariant().Contains(TipoServicioConstants.CategoriaMedicamento.ToUpperInvariant()) ? "MED-AUT-" : "INS-AUT-";
+            string prefix = categoria.Nombre.ToUpperInvariant().Contains(TipoServicioConstants.CategoriaMedicamento.ToUpperInvariant()) ? "MED-AUT-" : "INS-AUT-";
             string randomCode;
             do
             {
@@ -430,7 +449,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // Vinculación de Receta (BOM) con la cantidad de 1 unidad del insumo
             var receta = new ServicioInsumoReceta(
                 servicioClinico.Id,
-                servicioClinico.Codigo,
                 insumo.Id,
                 1m,
                 dto.UnidadMedidaBase
@@ -459,6 +477,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
                 insumo.Categoria,
+                CategoriaInsumo = new { categoria.Id, categoria.Codigo, categoria.Nombre },
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados,
                 ServicioClinicoId = servicioClinico.Id,
@@ -472,13 +491,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == id, ct);
             if (insumo == null) return NotFound();
 
+            var categoria = await ResolveCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
+            if (categoria == null)
+            {
+                return BadRequest(new { Message = "Debe indicar una categoría de insumo activa y existente." });
+            }
+
             insumo.ActualizarDetalles(
                 dto.Nombre, 
                 dto.UnidadMedidaBase, 
                 dto.CostoUnitarioBaseUSD, 
                 dto.PermiteFraccionamiento, 
-                dto.Categoria
+                categoria.Nombre
             );
+            insumo.AsignarCategoria(categoria);
             await _context.SaveChangesAsync(ct);
             return Ok(new
             {
@@ -490,6 +516,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
                 insumo.Categoria,
+                CategoriaInsumo = new { categoria.Id, categoria.Codigo, categoria.Nombre },
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
             });
@@ -566,20 +593,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 categoria.SetEstado(dto.Activo.Value);
             }
 
-            // Propagar el nuevo nombre a los insumos existentes que tengan esta categoría
+            // Asignar la FK canónica a filas heredadas y actualizar el alias de compatibilidad.
             var insumosConCategoria = await _context.Insumos
-                .Where(i => i.Categoria == nombreAnterior)
+                .Where(i => i.CategoriaInsumoId == categoria.Id || i.Categoria == nombreAnterior)
                 .ToListAsync(ct);
 
             foreach (var insumo in insumosConCategoria)
             {
-                insumo.ActualizarDetalles(
-                    insumo.Nombre,
-                    insumo.UnidadMedidaBase,
-                    insumo.CostoUnitarioBaseUSD,
-                    insumo.PermiteFraccionamiento,
-                    nombreNormalizado
-                );
+                insumo.AsignarCategoria(categoria);
             }
 
             await _context.SaveChangesAsync(ct);
@@ -814,6 +835,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 return BadRequest(new { Message = "No hay ítems en la compra." });
             }
 
+            if (!dto.ProveedorId.HasValue || dto.ProveedorId.Value == Guid.Empty)
+            {
+                return BadRequest(new { Message = "Debe indicar un proveedor activo mediante ProveedorId." });
+            }
+
+            var proveedor = await _context.Proveedores
+                .FirstOrDefaultAsync(p => p.Id == dto.ProveedorId.Value && p.Activo, ct);
+            if (proveedor == null)
+            {
+                return BadRequest(new { Message = "El proveedor indicado no existe o está inactivo." });
+            }
+
             var username = User.Identity?.Name ?? "System";
             var principalSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
 
@@ -861,7 +894,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     insumo.UnidadMedidaBase,
                     item.Cantidad,
                     username,
-                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}"
+                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {proveedor.RazonSocial}"
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
@@ -872,19 +905,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // 2. Registrar automáticamente la Cuenta por Pagar / Orden de Compra de manera defensiva
             try
             {
-                var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
                 var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
                 var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
 
                 var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
                     numFact,
-                    provNombre,
+                    proveedor.RazonSocial,
                     DateTime.Now,
                     totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
                     tasa,
-                    dto.ProveedorId,
+                    proveedor.Id,
                     $"Ingreso atómico de compra de insumos registrado por {username}."
                 );
+                ordenCompra.AsignarProveedor(proveedor);
                 _context.OrdenesCompraInventario.Add(ordenCompra);
                 await _context.SaveChangesAsync(ct);
             }
@@ -961,7 +994,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                                      {
                                          Id = r.Id,
                                          ServicioClinicoId = r.ServicioClinicoId,
-                                         ServicioCodigo = r.ServicioCodigo,
                                          InsumoId = r.InsumoId,
                                          InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
                                          Cantidad = r.Cantidad,
@@ -996,7 +1028,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
             var receta = new ServicioInsumoReceta(
                 servicio.Id,
-                servicio.Codigo,
                 insumo.Id,
                 dto.Cantidad,
                 unidad
@@ -1009,7 +1040,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             {
                 Id = receta.Id,
                 ServicioClinicoId = receta.ServicioClinicoId,
-                ServicioCodigo = receta.ServicioCodigo,
                 InsumoId = receta.InsumoId,
                 InsumoNombre = insumo.Nombre,
                 Cantidad = receta.Cantidad,
@@ -1027,12 +1057,27 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             await _context.SaveChangesAsync(ct);
             return Ok(new { Message = "Receta eliminada con éxito." });
         }
+
+        private Task<CategoriaInsumo?> ResolveCategoriaInsumoAsync(Guid? categoriaInsumoId, string? categoria, CancellationToken ct)
+        {
+            if (categoriaInsumoId.HasValue && categoriaInsumoId.Value != Guid.Empty)
+            {
+                return _context.CategoriasInsumo
+                    .FirstOrDefaultAsync(c => c.Id == categoriaInsumoId.Value && c.Activo, ct);
+            }
+
+            var categoriaNormalizada = string.IsNullOrWhiteSpace(categoria)
+                ? TipoServicioConstants.CategoriaMedicamento
+                : categoria.Trim();
+
+            return _context.CategoriasInsumo
+                .FirstOrDefaultAsync(c => c.Activo && c.Nombre.ToLower() == categoriaNormalizada.ToLower(), ct);
+        }
     }
 
     public class CreateRecetaDto
     {
         public Guid ServicioClinicoId { get; set; }
-        public string? ServicioCodigo { get; set; }
         public Guid InsumoId { get; set; }
         public decimal Cantidad { get; set; }
         public string? UnidadMedidaConsumo { get; set; }
@@ -1054,6 +1099,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
+        public Guid? CategoriaInsumoId { get; set; }
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
     }
 
@@ -1063,6 +1109,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
+        public Guid? CategoriaInsumoId { get; set; }
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
     }
 

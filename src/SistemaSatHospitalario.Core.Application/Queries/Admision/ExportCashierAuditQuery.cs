@@ -58,6 +58,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .ToListAsync(cancellationToken);
 
             var cajaIds = cajas.Select(c => c.Id).ToList();
+            var declaracionesPorCaja = await _context.CajasDeclaracionesMetodos
+                .AsNoTracking()
+                .Include(d => d.MetodoPago)
+                .Where(d => cajaIds.Contains(d.CajaDiariaId))
+                .ToListAsync(cancellationToken);
+            var declaracionesPorCajaId = declaracionesPorCaja
+                .GroupBy(d => d.CajaDiariaId)
+                .ToDictionary(g => g.Key, g => g.ToList());
             var recibos = await _context.RecibosFactura.AsNoTracking()
                 .Include(r => r.DetallesPago)
                 .Include(r => r.CuentaServicio)
@@ -78,8 +86,19 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 var pagosDetallados = ObtenerPagosDetallados(userRecibos, caja, catalogoMetodos);
 
-                List<MetodoDeclaradoDto>? declarados = null;
-                if (caja.Estado != EstadoConstants.CajaAbierta && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
+                List<MetodoDeclaradoDto>? declarados = declaracionesPorCajaId
+                    .GetValueOrDefault(caja.Id)?
+                    .Select(d => new MetodoDeclaradoDto
+                    {
+                        MetodoPago = d.MetodoPago.Valor,
+                        MontoIngreso = d.MontoIngresado,
+                        MontoVueltos = d.MontoVueltos
+                    })
+                    .ToList();
+
+                if ((declarados == null || declarados.Count == 0)
+                    && caja.Estado != EstadoConstants.CajaAbierta
+                    && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
                 {
                     try
                     {

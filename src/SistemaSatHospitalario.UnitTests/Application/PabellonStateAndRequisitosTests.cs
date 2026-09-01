@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
@@ -143,7 +144,11 @@ namespace SistemaSatHospitalario.UnitTests.Application
             using (var testDb = new SatHospitalarioDbContext(options))
             {
                 var loggerMock = new Mock<ILogger<ToggleRequisitoCirugiaCommandHandler>>();
-                var handler = new ToggleRequisitoCirugiaCommandHandler(testDb, loggerMock.Object);
+                
+                var handler = new ToggleRequisitoCirugiaCommandHandler(
+                    testDb,
+                    loggerMock.Object
+                );
 
                 var command = new ToggleRequisitoCirugiaCommand
                 {

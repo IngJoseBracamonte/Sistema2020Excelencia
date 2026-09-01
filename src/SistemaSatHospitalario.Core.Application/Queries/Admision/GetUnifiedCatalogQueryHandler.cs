@@ -64,7 +64,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                      {
                                          Id = r.Id,
                                          ServicioClinicoId = r.ServicioClinicoId,
-                                         ServicioCodigo = r.ServicioCodigo,
                                          InsumoId = r.InsumoId,
                                          InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
                                          InsumoCodigo = i != null ? i.Codigo : "",
@@ -143,7 +142,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     {
                         Id = Guid.NewGuid(),
                         ServicioClinicoId = insumo.Id,
-                        ServicioCodigo = insumo.Codigo,
                         InsumoId = insumo.Id,
                         InsumoNombre = insumo.Nombre,
                         InsumoCodigo = insumo.Codigo,

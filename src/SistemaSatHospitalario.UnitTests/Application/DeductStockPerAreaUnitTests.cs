@@ -55,7 +55,7 @@ namespace SistemaSatHospitalario.UnitTests.Application
             servicio.RequiereInventario = true;
             await db.ServiciosClinicos.AddAsync(servicio);
 
-            var receta = new ServicioInsumoReceta(servicio.Id, servicio.Codigo, insumo.Id, 2m, UnidadMedida.UNIDAD);
+            var receta = new ServicioInsumoReceta(servicio.Id, insumo.Id, 2m, UnidadMedida.UNIDAD);
             receta.Insumo = insumo;
             await db.ServiciosInsumoRecetas.AddAsync(receta);
 

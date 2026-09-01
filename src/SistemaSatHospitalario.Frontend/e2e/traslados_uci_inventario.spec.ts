@@ -89,7 +89,8 @@ test.describe('E2E: Traslados, UCI e Inventario Permisivo (V1.3.0)', () => {
     console.log('Selected newly admitted patient.');
 
     // 9. Verificar que se muestra la información clínica
-    await expect(page.locator('h3:has-text("Triage y Signos Vitales")')).toBeVisible();
+    await page.getByRole('button', { name: 'Triage y Signos Vitales' }).click();
+    await expect(page.getByRole('heading', { name: 'Triage y Signos Vitales' })).toBeVisible();
     await expect(page.locator('span:has-text("Emergencia")').first()).toBeVisible();
 
     // ─────────────────────────────────────────────────────────────────────────────

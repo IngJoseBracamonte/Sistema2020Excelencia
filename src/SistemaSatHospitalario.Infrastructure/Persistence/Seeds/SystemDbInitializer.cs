@@ -660,9 +660,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                         ");
                     }
 
-                    // 3. Verificar/crear columnas IsDeleted y FechaInactivacion en Insumos
+                    // 3. Verificar/crear columnas de transición y soft delete en Insumos
                     bool hasIsDeleted = false;
                     bool hasFechaInactivacion = false;
+                    bool hasCategoriaInsumoId = false;
 
                     using (var cmd = conn.CreateCommand())
                     {
@@ -676,12 +677,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                                     var name = reader["name"]?.ToString() ?? string.Empty;
                                     if (name.Equals("IsDeleted", StringComparison.OrdinalIgnoreCase)) hasIsDeleted = true;
                                     if (name.Equals("FechaInactivacion", StringComparison.OrdinalIgnoreCase)) hasFechaInactivacion = true;
+                                    if (name.Equals("CategoriaInsumoId", StringComparison.OrdinalIgnoreCase)) hasCategoriaInsumoId = true;
                                 }
                             }
                         }
                         else
                         {
-                            cmd.CommandText = "SHOW COLUMNS FROM `Insumos` WHERE Field IN ('IsDeleted', 'FechaInactivacion');";
+                            cmd.CommandText = "SHOW COLUMNS FROM `Insumos` WHERE Field IN ('IsDeleted', 'FechaInactivacion', 'CategoriaInsumoId');";
                             using (var reader = await cmd.ExecuteReaderAsync())
                             {
                                 while (await reader.ReadAsync())
@@ -689,6 +691,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                                     var field = reader["Field"]?.ToString() ?? string.Empty;
                                     if (field.Equals("IsDeleted", StringComparison.OrdinalIgnoreCase)) hasIsDeleted = true;
                                     if (field.Equals("FechaInactivacion", StringComparison.OrdinalIgnoreCase)) hasFechaInactivacion = true;
+                                    if (field.Equals("CategoriaInsumoId", StringComparison.OrdinalIgnoreCase)) hasCategoriaInsumoId = true;
                                 }
                             }
                         }
@@ -698,6 +701,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                         await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Insumos` ADD COLUMN `IsDeleted` INTEGER NOT NULL DEFAULT 0;" : "ALTER TABLE `Insumos` ADD COLUMN `IsDeleted` TINYINT(1) NOT NULL DEFAULT 0;");
                     if (!hasFechaInactivacion)
                         await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Insumos` ADD COLUMN `FechaInactivacion` TEXT NULL;" : "ALTER TABLE `Insumos` ADD COLUMN `FechaInactivacion` DATETIME NULL;");
+                    if (!hasCategoriaInsumoId)
+                        await _context.Database.ExecuteSqlRawAsync(isSqlite ? "ALTER TABLE `Insumos` ADD COLUMN `CategoriaInsumoId` TEXT NULL;" : "ALTER TABLE `Insumos` ADD COLUMN `CategoriaInsumoId` CHAR(36) NULL;");
 
                     // 4. Verificar/crear columna ObservacionDespacho en PedidosInterSedeDetalles
                     bool hasObservacionDespacho = false;

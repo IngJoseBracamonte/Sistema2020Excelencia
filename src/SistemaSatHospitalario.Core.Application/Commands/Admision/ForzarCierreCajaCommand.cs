@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
@@ -55,7 +55,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             var allPayments = recibos.SelectMany(r => r.DetallesPago).ToList();
 
-            var listMetodosDesglose = new List<object>();
+            var declaracionesPorMetodo = new List<CajaDeclaracionMetodo>();
             decimal totalCobradoBaseUSD = 0;
 
             // Agrupar los métodos del catálogo que no son vueltos
@@ -89,27 +89,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 totalCobradoBaseUSD += esperadoNetoBase;
 
                 // Forzar cierre: el monto ingresado físico declarado coincide exactamente con lo esperado del sistema
-                listMetodosDesglose.Add(new
-                {
-                    MetodoPago = metodo.Valor,
-                    Nombre = metodo.Nombre,
-                    EsUSD = metodo.EsUSD,
-                    MontoIngreso = esperadoIngresoOriginal,
-                    MontoVueltos = esperadoVueltosOriginal,
-                    TotalDeclarado = esperadoNetoOriginal,
-                    MontoEsperadoIngreso = esperadoIngresoOriginal,
-                    MontoEsperadoVueltos = esperadoVueltosOriginal,
-                    TotalEsperado = esperadoNetoOriginal,
-                    DiferenciaOriginal = 0m,
-                    DiferenciaBase = 0m,
-                    Forzado = true
-                });
+                declaracionesPorMetodo.Add(new CajaDeclaracionMetodo(
+                    caja.Id,
+                    metodo.Id,
+                    esperadoIngresoOriginal,
+                    esperadoVueltosOriginal,
+                    esperadoIngresoOriginal,
+                    esperadoVueltosOriginal,
+                    0m,
+                    0m));
             }
 
-            string declaracionJson = JsonSerializer.Serialize(listMetodosDesglose);
-
             // Transición a CerradaPorAsistente de forma automatizada por el Administrador (Diferencia = 0)
-            caja.CerrarPorAsistente(declaracionJson, totalCobradoBaseUSD, totalCobradoBaseUSD, 0m);
+            foreach (var declaracion in declaracionesPorMetodo)
+            {
+                _context.CajasDeclaracionesMetodos.Add(declaracion);
+            }
+            caja.CerrarPorAsistente(totalCobradoBaseUSD, totalCobradoBaseUSD, 0m);
 
             await _context.SaveChangesAsync(cancellationToken);
 

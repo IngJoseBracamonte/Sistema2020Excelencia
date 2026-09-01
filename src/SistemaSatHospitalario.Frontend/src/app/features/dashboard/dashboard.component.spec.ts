@@ -22,4 +22,8 @@ describe('DashboardComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should not render charts before loading insights', () => {
+    expect(fixture.nativeElement.querySelectorAll('apx-chart')).toHaveSize(0);
+  });
 });

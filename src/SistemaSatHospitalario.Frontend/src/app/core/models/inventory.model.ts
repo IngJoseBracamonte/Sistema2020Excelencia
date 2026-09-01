@@ -87,7 +87,6 @@ export interface CierreInventarioDetalle {
 export interface ServicioInsumoReceta {
   id: string;
   servicioClinicoId: string;
-  servicioCodigo: string;
   servicioClinico?: any;
   insumoId: string;
   insumo?: Insumo;

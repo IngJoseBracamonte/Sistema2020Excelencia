@@ -51,6 +51,20 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public decimal? TotalCobrado { get; set; }
         public decimal? Diferencia { get; set; }
         public string? DeclaracionCierreJson { get; set; }
+        public List<CajaDeclaracionMetodoDto> Declaraciones { get; set; } = new();
+    }
+
+    public class CajaDeclaracionMetodoDto
+    {
+        public Guid MetodoPagoId { get; set; }
+        public string MetodoPago { get; set; } = string.Empty;
+        public string NombreMetodoPago { get; set; } = string.Empty;
+        public decimal MontoIngreso { get; set; }
+        public decimal MontoVueltos { get; set; }
+        public decimal MontoEsperadoIngreso { get; set; }
+        public decimal MontoEsperadoVueltos { get; set; }
+        public decimal DiferenciaOriginal { get; set; }
+        public decimal DiferenciaBase { get; set; }
     }
 
     public class GetCajaSummariesQueryHandler : IRequestHandler<GetCajaSummariesQuery, CajaSummaryDto>
@@ -69,6 +83,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             // Consultar todas las cajas dentro del rango de fechas
             var query = _context.CajasDiarias
+                .Include(c => c.DeclaracionesPorMetodo)
+                    .ThenInclude(d => d.MetodoPago)
                 .Where(c => c.FechaApertura >= start && c.FechaApertura <= end);
 
             if (!string.IsNullOrEmpty(request.UsuarioId))
@@ -92,7 +108,19 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 TotalIngresado = c.TotalIngresado,
                 TotalCobrado = c.TotalCobrado,
                 Diferencia = c.Diferencia,
-                DeclaracionCierreJson = c.DeclaracionCierreJson
+                DeclaracionCierreJson = c.DeclaracionCierreJson,
+                Declaraciones = c.DeclaracionesPorMetodo.Select(d => new CajaDeclaracionMetodoDto
+                {
+                    MetodoPagoId = d.MetodoPagoId,
+                    MetodoPago = d.MetodoPago.Valor,
+                    NombreMetodoPago = d.MetodoPago.Nombre,
+                    MontoIngreso = d.MontoIngresado,
+                    MontoVueltos = d.MontoVueltos,
+                    MontoEsperadoIngreso = d.MontoEsperadoIngreso,
+                    MontoEsperadoVueltos = d.MontoEsperadoVueltos,
+                    DiferenciaOriginal = d.DiferenciaOriginal,
+                    DiferenciaBase = d.DiferenciaBase
+                }).ToList()
             }).ToList();
 
             // Calcular el acumulado en tiempo real para las cajas que siguen abiertas
@@ -118,7 +146,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         var recibos = receiptsByCaja.TryGetValue(item.Id, out var rList) ? rList : new List<ReciboFactura>();
                         var allPayments = recibos.SelectMany(r => r.DetallesPago).ToList();
 
-                        var listMetodosDesglose = new List<object>();
+                        var declaraciones = new List<CajaDeclaracionMetodoDto>();
                         decimal totalCobradoBaseUSD = 0;
 
                         var metodosPrincipales = catalogoMetodos.Where(m => !m.EsVuelto).ToList();
@@ -147,17 +175,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                             totalCobradoBaseUSD += esperadoNetoBase;
 
-                            listMetodosDesglose.Add(new
+                            declaraciones.Add(new CajaDeclaracionMetodoDto
                             {
+                                MetodoPagoId = metodo.Id,
                                 MetodoPago = metodo.Valor,
-                                Nombre = metodo.Nombre,
-                                EsUSD = metodo.EsUSD,
+                                NombreMetodoPago = metodo.Nombre,
                                 MontoIngreso = esperadoIngresoOriginal,
                                 MontoVueltos = esperadoVueltosOriginal,
-                                TotalDeclarado = esperadoNetoOriginal,
                                 MontoEsperadoIngreso = esperadoIngresoOriginal,
                                 MontoEsperadoVueltos = esperadoVueltosOriginal,
-                                TotalEsperado = esperadoNetoOriginal,
                                 DiferenciaOriginal = 0m,
                                 DiferenciaBase = 0m
                             });
@@ -166,7 +192,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         item.TotalCobrado = totalCobradoBaseUSD;
                         item.TotalIngresado = totalCobradoBaseUSD;
                         item.Diferencia = 0m;
-                        item.DeclaracionCierreJson = JsonSerializer.Serialize(listMetodosDesglose);
+                        item.Declaraciones = declaraciones;
                     }
                 }
             }
