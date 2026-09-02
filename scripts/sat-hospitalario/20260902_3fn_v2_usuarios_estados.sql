@@ -39,26 +39,11 @@ BEGIN
            OR `UsuarioRegistroId` NOT REGEXP '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
 
     -- ========================================================================
-    -- 3. CuentasPorCobrar.UsuarioAuditoriaId desde username legacy
+    -- 3. REPORTE DE VERIFICACIÓN
     -- ========================================================================
-    UPDATE `CuentasPorCobrar` c
-    JOIN `Usuarios` u ON c.`UsuarioAuditoria` = u.`UserName`
-    SET c.`UsuarioAuditoriaId` = u.`Id`
-    WHERE c.`UsuarioAuditoria` IS NOT NULL
-      AND c.`UsuarioAuditoriaId` IS NULL;
-
-    -- ========================================================================
-    -- 4. CompromisosPago.UsuarioCreacionId desde username legacy
-    -- ========================================================================
-    UPDATE `CompromisosPago` c
-    JOIN `Usuarios` u ON c.`UsuarioCreacion` = u.`UserName`
-    SET c.`UsuarioCreacionId` = u.`Id`
-    WHERE c.`UsuarioCreacion` IS NOT NULL
-      AND c.`UsuarioCreacionId` IS NULL;
-
-    -- ========================================================================
-    -- 5. REPORTE DE VERIFICACIÓN
-    -- ========================================================================
+    -- NOTA: Se eliminó el backfill de usuarios por username (Usuarios.UserName).
+    -- Las FKs de usuario se pueblan desde el código de aplicación al momento de
+    -- escribir (ICurrentUserService.UserId), no por correspondencia de texto.
     SELECT
         (SELECT COUNT(*) FROM `CitasMedicas` WHERE `EstadoId` NOT IN (SELECT `Id` FROM `EstadosCitaMedica`)) AS CitasEstadoHuerfano,
         (SELECT COUNT(*) FROM `CirugiasObservacionesHistorial` WHERE `UsuarioRegistroId` IS NOT NULL) AS ObservacionesConFk,

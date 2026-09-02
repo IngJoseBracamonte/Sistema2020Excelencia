@@ -21,11 +21,27 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         [Obsolete("Usar TipoServicioId / TipoServicioNav. Columna legacy pendiente de DROP.")]
         public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo, Informe
         public int TipoServicioId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCargaId"/> (FK lógica a Usuarios, PK Guid).
+        /// Se mantiene mapeado como alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar UsuarioCargaId. Columna legacy pendiente de DROP.")]
         public string UsuarioCarga { get; private set; }
-        public string? UsuarioCargaId { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que cargó el servicio.</summary>
+        public Guid? UsuarioCargaId { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public string? LegacyMappingId { get; private set; }
         public Guid? MedicoResponsableId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): categoría de honorario en texto libre. Fuente de verdad:
+        /// la categoría se deriva de <see cref="TipoServicioId"/> y el médico responsable.
+        /// Se mantiene mapeado como alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Derivar de TipoServicioId / MedicoResponsable. Columna legacy pendiente de DROP.")]
         public string? CategoriaHonorario { get; private set; }
         public Guid? AreaClinicaId { get; private set; }
 
@@ -65,11 +81,21 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public bool Realizado { get; private set; }
         public DateTime? FechaRealizacion { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre del técnico en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioTecnicoId"/> (FK lógica a Usuarios, PK Guid).
+        /// Se mantiene mapeado como alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar UsuarioTecnicoId. Columna legacy pendiente de DROP.")]
         public string? UsuarioTecnico { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del técnico que realizó el servicio.</summary>
+        public Guid? UsuarioTecnicoId { get; private set; }
 
         protected DetalleServicioCuenta() { }
 
-        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null, int? tipoServicioId = null, string? usuarioCargaId = null)
+        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null, int? tipoServicioId = null, Guid? usuarioCargaId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -82,7 +108,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             TipoServicio = tipoServicio ?? string.Empty;
 #pragma warning restore CS0618
             TipoServicioId = tipoServicioId ?? Constants.TipoServicioConstants.Insumo;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
+#pragma warning restore CS0618
             UsuarioCargaId = usuarioCargaId;
             LegacyMappingId = legacyMappingId;
             FechaCarga = DateTime.UtcNow;
@@ -104,16 +132,42 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void MarcarRealizado(string usuario)
         {
             if (Realizado) return;
-            
+
             Realizado = true;
             FechaRealizacion = DateTime.UtcNow;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioTecnico = usuario;
+#pragma warning restore CS0618
+            // 3FN: si el valor es un GUID válido, poblar también la FK
+            if (Guid.TryParse(usuario, out var parsed))
+            {
+                UsuarioTecnicoId = parsed;
+            }
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void MarcarRealizado(Guid usuarioId, string? usuarioNombreAlias = null)
+        {
+            if (Realizado) return;
+            if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
+
+            Realizado = true;
+            FechaRealizacion = DateTime.UtcNow;
+            UsuarioTecnicoId = usuarioId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias))
+            {
+                UsuarioTecnico = usuarioNombreAlias;
+            }
+#pragma warning restore CS0618
         }
 
         public void AsignarMedicoResponsable(Guid medicoId, string categoria, decimal? honorario = null)
         {
             MedicoResponsableId = medicoId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             CategoriaHonorario = categoria;
+#pragma warning restore CS0618
             if (honorario.HasValue)
             {
                 Honorario = honorario.Value;

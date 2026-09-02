@@ -148,6 +148,29 @@
 
 ---
 
+### TAREA 7: Normalización de `DetalleServicioCuenta` (FKs de usuario y limpieza de texto libre)
+- **Problema**: La tabla `DetallesServicioCuenta` almacena `UsuarioCarga` (longtext), `UsuarioTecnico` (longtext) y `CategoriaHonorario` (longtext) como texto libre, violando 3FN. `UsuarioCargaId` existe pero como `varchar(255)` (no `char(36)`).
+- **Acciones Arquitectónicas**:
+  1. **Base de Datos / Migración**:
+     - Convertir `UsuarioCargaId` de `varchar(255)` a `char(36)` (Guid).
+     - Agregar `UsuarioTecnicoId` `char(36)` NULL.
+     - **NO** hacer backfill por username (las FKs se pueblan desde el código con `ICurrentUserService.UserId`).
+  2. **Capa Dominio (`Core.Domain`)**:
+     - `DetalleServicioCuenta.cs`:
+       - `UsuarioCarga` (string) → `[Obsolete]` (alias legacy).
+       - `UsuarioCargaId` → `Guid?` (FK lógica a Usuarios).
+       - `UsuarioTecnico` (string) → `[Obsolete]` (alias legacy).
+       - `UsuarioTecnicoId` → `Guid?` (FK lógica a Usuarios).
+       - `CategoriaHonorario` (string) → `[Obsolete]` (se deriva de `TipoServicioId` + `MedicoResponsable`).
+       - `MarcarRealizado(string)` → parsea Guid si es válido; overload `MarcarRealizado(Guid, string?)`.
+  3. **Capa Infraestructura (`Core.Infrastructure`)**:
+     - Configurar `UsuarioCargaId` y `UsuarioTecnicoId` como `char(36)` con índices (sin FK física — la tabla `Usuarios` vive en el contexto Identity).
+  4. **Capa Aplicación & Frontend**:
+     - Handlers que escriben: pasar `ICurrentUserService.UserId` (Guid) en lugar de username.
+     - DTOs: exponer `UsuarioCargaNombre` / `UsuarioTecnicoNombre` proyectados desde Identity.
+
+---
+
 ## ⏳ Tareas Adicionales por Evaluar y Agregar (En Proceso de Review)
 *(Se irán detallando y versionando a medida que indiques los siguientes cambios en las entidades de dominio base)*
 

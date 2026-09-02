@@ -385,6 +385,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(d => d.TipoServicioId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                // 3FN: FKs lógicas a Usuarios (Identity, PK Guid). Sin restricción FK física
+                // porque la tabla Usuarios vive en el contexto de Identity.
+                entity.Property(d => d.UsuarioCargaId).HasColumnType("char(36)");
+                entity.Property(d => d.UsuarioTecnicoId).HasColumnType("char(36)");
+                entity.HasIndex(d => d.UsuarioCargaId);
+                entity.HasIndex(d => d.UsuarioTecnicoId);
             });
 
             builder.Entity<CitaMedica>(entity =>
