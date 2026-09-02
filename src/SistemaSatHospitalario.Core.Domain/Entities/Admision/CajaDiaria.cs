@@ -11,7 +11,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime? FechaCierre { get; protected set; }
         public decimal MontoInicialDivisa { get; protected set; }
         public decimal MontoInicialBs { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): texto del estado. Fuente de verdad: <see cref="EstadoId"/>
+        /// (FK a EstadosCaja). Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar EstadoId / EstadoNav. Columna legacy pendiente de DROP.")]
         public string Estado { get; protected set; } // "Abierta", "CerradaPorAsistente" o "Cerrada"
+
+        /// <summary>FK al catálogo EstadosCaja (3FN).</summary>
+        public int EstadoId { get; protected set; }
+
+        /// <summary>Navegación al catálogo de estados de caja.</summary>
+        public virtual EstadoCaja EstadoNav { get; protected set; } = null!;
         
         // Identidad del Responsable (Micro-Ciclo 28)
 
@@ -55,8 +67,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaApertura = DateTime.UtcNow;
             MontoInicialDivisa = montoInicialDivisa;
             MontoInicialBs = montoInicialBs;
-            Estado = EstadoConstants.CajaAbierta;
+            EstadoId = EstadoCajaConstants.AbiertaId;
 #pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            Estado = EstadoConstants.CajaAbierta;
             UsuarioId = usuarioId;
             NombreUsuario = nombreUsuario;
 #pragma warning restore CS0618
@@ -64,19 +77,31 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
         }
 
+        /// <summary>3FN: cambio de estado por FK; sincroniza el alias legacy.</summary>
+        private void SetEstado(int estadoId)
+        {
+            EstadoId = estadoId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            Estado = EstadoCajaConstants.ToLegacyString(estadoId);
+#pragma warning restore CS0618
+        }
+
+        /// <summary>3FN: indica si la caja está abierta (fuente de verdad: EstadoId).</summary>
+        public bool EstaAbierta => EstadoId == EstadoCajaConstants.AbiertaId;
+
         public void CerrarCaja()
         {
-            if (Estado == EstadoConstants.CajaCerrada) throw new InvalidOperationException("La caja ya se encuentra cerrada.");
-            Estado = EstadoConstants.CajaCerrada;
+            if (EstadoId == EstadoCajaConstants.CerradaId) throw new InvalidOperationException("La caja ya se encuentra cerrada.");
+            SetEstado(EstadoCajaConstants.CerradaId);
             FechaCierre = DateTime.UtcNow;
         }
 
         public void CerrarPorAsistente(decimal totalIngresado, decimal totalCobrado, decimal diferencia)
         {
-            if (Estado == EstadoConstants.CajaCerrada || Estado == EstadoConstants.CajaCerradaPorAsistente) 
+            if (EstadoId == EstadoCajaConstants.CerradaId || EstadoId == EstadoCajaConstants.CerradaPorAsistenteId)
                 throw new InvalidOperationException("La caja ya se encuentra cerrada o en proceso de consolidación.");
-            
-            Estado = EstadoConstants.CajaCerradaPorAsistente;
+
+            SetEstado(EstadoCajaConstants.CerradaPorAsistenteId);
             FechaCierre = DateTime.UtcNow;
 #pragma warning disable CS0618 // limpieza del residuo legacy
             DeclaracionCierreJson = null;
@@ -88,8 +113,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void ConsolidarCaja()
         {
-            if (Estado == EstadoConstants.CajaCerrada) throw new InvalidOperationException("La caja ya se encuentra consolidada.");
-            Estado = EstadoConstants.CajaCerrada;
+            if (EstadoId == EstadoCajaConstants.CerradaId) throw new InvalidOperationException("La caja ya se encuentra consolidada.");
+            SetEstado(EstadoCajaConstants.CerradaId);
         }
     }
 }

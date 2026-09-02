@@ -28,6 +28,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<DetalleServicioCuenta> DetallesServicioCuenta { get; set; }
         public DbSet<CitaMedica> CitasMedicas { get; set; }
         public DbSet<EstadoCitaMedica> EstadosCitaMedica { get; set; }
+        public DbSet<EstadoCaja> EstadosCaja { get; set; }
+        public DbSet<EstadoCuenta> EstadosCuenta { get; set; }
+        public DbSet<TipoIngreso> TiposIngreso { get; set; }
+        public DbSet<EstadoFiscal> EstadosFiscales { get; set; }
         public DbSet<Medico> Medicos { get; set; }
         public DbSet<TasaCambio> TasaCambio { get; set; }
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
@@ -168,6 +172,30 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 // porque la tabla Usuarios vive en el contexto de Identity.
                 entity.Property(c => c.UsuarioIdentityId).HasColumnType("char(36)");
                 entity.HasIndex(c => c.UsuarioIdentityId);
+
+                // 3FN: FK al catálogo de estados de caja
+                entity.HasOne(c => c.EstadoNav)
+                      .WithMany()
+                      .HasForeignKey(c => c.EstadoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(c => c.EstadoId);
+            });
+
+            // 3FN: Catálogo de estados de caja diaria
+            builder.Entity<EstadoCaja>(entity =>
+            {
+                entity.ToTable("EstadosCaja");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Codigo).IsUnique();
+
+                entity.HasData(
+                    new EstadoCaja(SistemaSatHospitalario.Core.Domain.Constants.EstadoCajaConstants.AbiertaId, "ABIERTA", "Abierta"),
+                    new EstadoCaja(SistemaSatHospitalario.Core.Domain.Constants.EstadoCajaConstants.CerradaPorAsistenteId, "CERRADA_POR_ASISTENTE", "Cerrada por Asistente"),
+                    new EstadoCaja(SistemaSatHospitalario.Core.Domain.Constants.EstadoCajaConstants.CerradaId, "CERRADA", "Cerrada")
+                );
             });
 
             builder.Entity<CajaDeclaracionMetodo>(entity =>
@@ -217,6 +245,30 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 // 3FN: FK lógica a Usuarios (Identity, PK Guid)
                 entity.Property(r => r.UsuarioEmisionId).HasColumnType("char(36)");
                 entity.HasIndex(r => r.UsuarioEmisionId);
+
+                // 3FN: FK al catálogo de estados fiscales
+                entity.HasOne(r => r.EstadoFiscalNav)
+                      .WithMany()
+                      .HasForeignKey(r => r.EstadoFiscalId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(r => r.EstadoFiscalId);
+            });
+
+            // 3FN: Catálogo de estados fiscales de recibo/factura
+            builder.Entity<EstadoFiscal>(entity =>
+            {
+                entity.ToTable("EstadosFiscales");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Codigo).IsUnique();
+
+                entity.HasData(
+                    new EstadoFiscal(SistemaSatHospitalario.Core.Domain.Constants.EstadoFiscalConstants.BorradorId, "BORRADOR", "Borrador"),
+                    new EstadoFiscal(SistemaSatHospitalario.Core.Domain.Constants.EstadoFiscalConstants.EmitidaId, "EMITIDA", "Emitida"),
+                    new EstadoFiscal(SistemaSatHospitalario.Core.Domain.Constants.EstadoFiscalConstants.AnuladaId, "ANULADA", "Anulada")
+                );
             });
 
             builder.Entity<DetallePago>(entity =>
@@ -389,8 +441,58 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(c => c.UsuarioValidacionId);
                 entity.HasIndex(c => c.UsuarioAuditoriaId);
 
+                // 3FN: FKs a catálogos de estado y tipo de ingreso
+                entity.HasOne(c => c.EstadoNav)
+                      .WithMany()
+                      .HasForeignKey(c => c.EstadoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(c => c.EstadoId);
+
+                entity.HasOne(c => c.TipoIngresoNav)
+                      .WithMany()
+                      .HasForeignKey(c => c.TipoIngresoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(c => c.TipoIngresoId);
+
                 // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.FechaCarga);
+            });
+
+            // 3FN: Catálogo de estados de cuenta de servicios
+            builder.Entity<EstadoCuenta>(entity =>
+            {
+                entity.ToTable("EstadosCuenta");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Codigo).IsUnique();
+
+                entity.HasData(
+                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.AbiertaId, "ABIERTA", "Abierta"),
+                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.FacturadaId, "FACTURADA", "Facturada"),
+                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.AnuladaId, "ANULADA", "Anulada"),
+                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.ValidadaId, "VALIDADA", "Validada")
+                );
+            });
+
+            // 3FN: Catálogo de tipos de ingreso
+            builder.Entity<TipoIngreso>(entity =>
+            {
+                entity.ToTable("TiposIngreso");
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Id).ValueGeneratedNever();
+                entity.Property(t => t.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(t => t.Nombre).IsRequired().HasMaxLength(100);
+                entity.HasIndex(t => t.Codigo).IsUnique();
+
+                entity.HasData(
+                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.ParticularId, "PARTICULAR", "Particular"),
+                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.SeguroId, "SEGURO", "Seguro"),
+                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.HospitalizacionId, "HOSPITALIZACION", "Hospitalización"),
+                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.EmergenciaId, "EMERGENCIA", "Emergencia"),
+                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.UciId, "UCI", "UCI")
+                );
             });
 
             builder.Entity<DetalleServicioCuenta>(entity =>
