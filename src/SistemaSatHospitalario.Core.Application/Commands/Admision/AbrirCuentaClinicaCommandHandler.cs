@@ -40,57 +40,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException($"El paciente con ID {pacSearchStr} no existe.");
             }
 
-            // 2. Validar especialidad del médico si aplica
-            if (request.MedicoId.HasValue && !string.IsNullOrEmpty(request.TipoIngreso))
-            {
-                bool isHospitalizacionOrUci = request.TipoIngreso.Equals("Hospitalizacion", StringComparison.OrdinalIgnoreCase) ||
-                                              request.TipoIngreso.Equals("UCI", StringComparison.OrdinalIgnoreCase);
-                if (isHospitalizacionOrUci)
-                {
-                    var doctor = await _context.Medicos
-                        .Include(m => m.Especialidad)
-                        .FirstOrDefaultAsync(m => m.Id == request.MedicoId.Value, cancellationToken);
-
-                    if (doctor == null)
-                    {
-                        throw new InvalidOperationException($"El médico con ID {request.MedicoId} no existe.");
-                    }
-
-                    bool esUCI = request.TipoIngreso.Equals("UCI", StringComparison.OrdinalIgnoreCase);
-                    bool specialtyIsValid = true;
-
-                    if (esUCI)
-                    {
-                        var specName = doctor.Especialidad?.Nombre?.ToUpper() ?? "";
-                        if (!specName.Contains("INTENSIVISTA") && !specName.Contains("CRITICO") && !specName.Contains("CRÍTICO"))
-                        {
-                            specialtyIsValid = false;
-                        }
-                    }
-                    else
-                    {
-                        // Hospitalizacion validation
-                        var specName = doctor.Especialidad?.Nombre?.ToUpper() ?? "";
-                        if (specName.Contains("ODONTOLOG") || specName.Contains("DENTISTA") || specName.Contains("ESTETICA"))
-                        {
-                            specialtyIsValid = false;
-                        }
-                    }
-
-                    if (!specialtyIsValid)
-                    {
-                        if (!request.PermitirBypassExcepcionMedica)
-                        {
-                            throw new InvalidOperationException($"El médico {doctor.Nombre} tiene la especialidad {doctor.Especialidad?.Nombre ?? "desconocida"}, la cual no es válida para el área de {request.TipoIngreso}.");
-                        }
-                        else
-                        {
-                            _logger.LogWarning("ADVERTENCIA DE SEGURIDAD CLÍNICA: Admisión a {TipoIngreso} con Médico Especialista no apto ({MedicoNombre} - {Especialidad}) bypassada por el usuario {Usuario}",
-                                request.TipoIngreso, doctor.Nombre, doctor.Especialidad?.Nombre, request.UsuarioCarga);
-                        }
-                    }
-                }
-            }
+      
 
             // 3. Buscar si ya tiene una cuenta abierta de ese tipo de ingreso
             var cuentaExistente = await _context.CuentasServicios
