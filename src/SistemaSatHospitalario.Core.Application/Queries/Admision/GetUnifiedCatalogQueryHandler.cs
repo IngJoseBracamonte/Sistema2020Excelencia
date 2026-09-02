@@ -125,6 +125,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var existingCodes = new HashSet<string>(result.Select(r => r.Codigo), StringComparer.OrdinalIgnoreCase);
             var directInsumos = await _context.Insumos
                 .AsNoTracking()
+                .Include(i => i.CategoriaInsumo)
                 .Where(i => !i.IsDeleted)
                 .ToListAsync(cancellationToken);
 
@@ -135,7 +136,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     continue;
                 }
 
-                var editorType = ResolveEditorType(insumo.Categoria, false);
+                // 3FN: preferir el nombre canónico desde la FK; fallback al alias legacy
+                var categoriaNombre = insumo.CategoriaInsumo?.Nombre
+#pragma warning disable CS0618
+                    ?? insumo.Categoria;
+#pragma warning restore CS0618
+                var editorType = ResolveEditorType(categoriaNombre, false);
                 var selfReceta = new List<ServicioInsumoRecetaDto>
                 {
                     new ServicioInsumoRecetaDto

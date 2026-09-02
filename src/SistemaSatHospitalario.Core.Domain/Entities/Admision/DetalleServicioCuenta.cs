@@ -11,6 +11,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal Precio { get; private set; }
         public decimal Honorario { get; private set; }
         public decimal Cantidad { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): texto del tipo de servicio. Fuente de verdad: <see cref="TipoServicioId"/>
+        /// y la navegación <see cref="TipoServicioNav"/>. Se mantiene mapeado como alias de
+        /// compatibilidad hasta el DROP de columna (delta posterior a validación en producción).
+        /// Código nuevo debe usar TipoServicioId / TipoServicioNav.Nombre.
+        /// </summary>
+        [Obsolete("Usar TipoServicioId / TipoServicioNav. Columna legacy pendiente de DROP.")]
         public string TipoServicio { get; private set; } // Medico, RX, Laboratorio, Insumo, Informe
         public int TipoServicioId { get; private set; }
         public string UsuarioCarga { get; private set; }
@@ -70,7 +78,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Precio = precio;
             Honorario = honorario;
             Cantidad = cantidad;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             TipoServicio = tipoServicio ?? string.Empty;
+#pragma warning restore CS0618
             TipoServicioId = tipoServicioId ?? Constants.TipoServicioConstants.Insumo;
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
             UsuarioCargaId = usuarioCargaId;

@@ -96,6 +96,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     })
                     .ToList();
 
+                // 3FN: fallback legacy solo para cajas históricas sin filas en CajasDeclaracionesMetodos
+#pragma warning disable CS0618
                 if ((declarados == null || declarados.Count == 0)
                     && caja.Estado != EstadoConstants.CajaAbierta
                     && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
@@ -106,6 +108,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     }
                     catch { }
                 }
+#pragma warning restore CS0618
 
                 var desgloseMetodos = CalcularDesgloseMetodos(
                     userRecibos,

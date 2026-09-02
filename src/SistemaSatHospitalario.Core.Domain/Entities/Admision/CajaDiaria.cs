@@ -18,6 +18,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string NombreUsuario { get; protected set; }
 
         // Campos de Auditoría y Cierre en 2 Fases (V13.0)
+
+        /// <summary>
+        /// LEGACY (3FN): JSON desnormalizado de declaración de cierre.
+        /// Fuente de verdad: <see cref="DeclaracionesPorMetodo"/> (tabla CajasDeclaracionesMetodos).
+        /// Se mantiene mapeado solo como fallback de lectura para cajas históricas
+        /// hasta el DROP de columna (delta posterior a validación en producción).
+        /// </summary>
+        [Obsolete("Usar DeclaracionesPorMetodo. Columna legacy pendiente de DROP.")]
         public string? DeclaracionCierreJson { get; protected set; }
         public decimal? TotalIngresado { get; protected set; }
         public decimal? TotalCobrado { get; protected set; }
@@ -51,7 +59,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             
             Estado = EstadoConstants.CajaCerradaPorAsistente;
             FechaCierre = DateTime.UtcNow;
+#pragma warning disable CS0618 // limpieza del residuo legacy
             DeclaracionCierreJson = null;
+#pragma warning restore CS0618
             TotalIngresado = totalIngresado;
             TotalCobrado = totalCobrado;
             Diferencia = diferencia;

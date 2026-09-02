@@ -82,7 +82,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // Consultar todas las cajas deshabilitando tracking y forzando SingleQuery para compatibilidad con MySQL
             var query = _context.CajasDiarias
                 .AsNoTracking()
-                .AsSingleQuery()
                 .Include(c => c.DeclaracionesPorMetodo)
                     .ThenInclude(d => d.MetodoPago)
                 .Where(c => c.FechaApertura >= start && c.FechaApertura <= end);
@@ -108,7 +107,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 TotalIngresado = c.TotalIngresado,
                 TotalCobrado = c.TotalCobrado,
                 Diferencia = c.Diferencia,
+#pragma warning disable CS0618 // fallback legacy para cajas históricas (frontend lo usa si Declaraciones está vacío)
                 DeclaracionCierreJson = c.DeclaracionCierreJson,
+#pragma warning restore CS0618
                 Declaraciones = c.DeclaracionesPorMetodo.Select(d => new CajaDeclaracionMetodoDto
                 {
                     MetodoPagoId = d.MetodoPagoId,
@@ -134,7 +135,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 var openCajaRecibos = await _context.RecibosFactura
                     .AsNoTracking()
-                    .AsSingleQuery()
                     .Include(r => r.DetallesPago)
                     .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
                     .ToListAsync(cancellationToken);

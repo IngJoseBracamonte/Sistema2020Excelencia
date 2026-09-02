@@ -15,6 +15,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public UnidadMedida UnidadMedidaBase { get; private set; }
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): texto libre de categoría. Fuente de verdad es <see cref="CategoriaInsumoId"/>.
+        /// Se mantiene mapeado solo como alias de compatibilidad hasta el DROP de columna
+        /// (delta posterior a validación en producción). No escribir desde código nuevo.
+        /// </summary>
+        [Obsolete("Usar CategoriaInsumoId / CategoriaInsumo. Columna legacy pendiente de DROP.")]
         public string Categoria { get; private set; }
         public Guid? CategoriaInsumoId { get; private set; }
         public virtual CategoriaInsumo? CategoriaInsumo { get; private set; }
@@ -42,7 +49,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             UnidadMedidaBase = unidadMedidaBase;
             CostoUnitarioBaseUSD = costoUnitarioBaseUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
+#pragma warning disable CS0618 // alias legacy; preferir AsignarCategoria(CategoriaInsumo)
             Categoria = categoria;
+#pragma warning restore CS0618
             OcultoEnTraslados = false;
             IsDeleted = false;
             FechaInactivacion = null;
@@ -73,7 +82,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             UnidadMedidaBase = unidadMedidaBase;
             CostoUnitarioBaseUSD = costoUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
+#pragma warning disable CS0618 // alias legacy; preferir AsignarCategoria(CategoriaInsumo)
             Categoria = categoria;
+#pragma warning restore CS0618
         }
 
         public void AsignarCategoria(CategoriaInsumo categoria)
@@ -82,7 +93,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             CategoriaInsumoId = categoria.Id;
             CategoriaInsumo = categoria;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             Categoria = categoria.Nombre;
+#pragma warning restore CS0618
         }
 
         // Overload para compatibilidad legacy mientras se completa migración total
