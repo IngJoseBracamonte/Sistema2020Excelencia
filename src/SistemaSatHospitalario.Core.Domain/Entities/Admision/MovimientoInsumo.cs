@@ -10,7 +10,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid SedeId { get; private set; }
         public TipoMovimientoInsumo TipoMovimiento { get; private set; }
         public decimal CantidadBase { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): unidad de medida como enum persistido en varchar(20).
+        /// Fuente de verdad: <see cref="UnidadMedidaOriginalId"/> (FK a UnidadesMedida).
+        /// Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar UnidadMedidaOriginalId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
         public UnidadMedida UnidadMedidaOriginal { get; private set; }
+
+        /// <summary>FK al catálogo UnidadesMedida (3FN).</summary>
+        public int UnidadMedidaOriginalId { get; private set; }
+
+        /// <summary>Navegación al catálogo de unidades de medida.</summary>
+        public virtual UnidadMedidaCatalogo UnidadMedidaNav { get; private set; } = null!;
         public decimal CantidadOriginal { get; private set; }
 
         /// <summary>
@@ -44,7 +57,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SedeId = sedeId;
             TipoMovimiento = tipoMovimiento;
             CantidadBase = cantidadBase;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UnidadMedidaOriginal = unidadMedidaOriginal;
+#pragma warning restore CS0618
+            UnidadMedidaOriginalId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaOriginal);
             CantidadOriginal = cantidadOriginal;
 #pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));

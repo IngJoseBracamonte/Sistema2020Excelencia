@@ -29,6 +29,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<EstadoCuenta> EstadosCuenta { get; }
         DbSet<TipoIngreso> TiposIngreso { get; }
         DbSet<EstadoFiscal> EstadosFiscales { get; }
+        DbSet<UnidadMedidaCatalogo> UnidadesMedida { get; }
         DbSet<Medico> Medicos { get; }
         DbSet<TasaCambio> TasaCambio { get; }
         DbSet<ServicioClinico> ServiciosClinicos { get; }

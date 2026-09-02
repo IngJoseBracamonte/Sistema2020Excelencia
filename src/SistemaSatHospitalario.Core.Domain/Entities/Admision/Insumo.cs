@@ -12,7 +12,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Nombre { get; private set; }
         public virtual ICollection<StockSede> StocksPorSede { get; private set; } = new List<StockSede>();
         public decimal StockActual => Enumerable.Sum(StocksPorSede, s => s.StockActual);
+
+        /// <summary>
+        /// LEGACY (3FN): unidad de medida como enum persistido en varchar(20).
+        /// Fuente de verdad: <see cref="UnidadMedidaId"/> (FK a UnidadesMedida).
+        /// Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar UnidadMedidaId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
         public UnidadMedida UnidadMedidaBase { get; private set; }
+
+        /// <summary>FK al catálogo UnidadesMedida (3FN).</summary>
+        public int UnidadMedidaId { get; private set; }
+
+        /// <summary>Navegación al catálogo de unidades de medida.</summary>
+        public virtual UnidadMedidaCatalogo UnidadMedidaNav { get; private set; } = null!;
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
 
@@ -46,7 +59,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Id = Guid.NewGuid();
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UnidadMedidaBase = unidadMedidaBase;
+#pragma warning restore CS0618
+            UnidadMedidaId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaBase);
             CostoUnitarioBaseUSD = costoUnitarioBaseUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
 #pragma warning disable CS0618 // alias legacy; preferir AsignarCategoria(CategoriaInsumo)
@@ -79,7 +95,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria)
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UnidadMedidaBase = unidadMedidaBase;
+#pragma warning restore CS0618
+            UnidadMedidaId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaBase);
             CostoUnitarioBaseUSD = costoUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
 #pragma warning disable CS0618 // alias legacy; preferir AsignarCategoria(CategoriaInsumo)

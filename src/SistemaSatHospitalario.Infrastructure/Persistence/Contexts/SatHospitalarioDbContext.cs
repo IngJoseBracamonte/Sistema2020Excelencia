@@ -32,6 +32,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<EstadoCuenta> EstadosCuenta { get; set; }
         public DbSet<TipoIngreso> TiposIngreso { get; set; }
         public DbSet<EstadoFiscal> EstadosFiscales { get; set; }
+        public DbSet<UnidadMedidaCatalogo> UnidadesMedida { get; set; }
         public DbSet<Medico> Medicos { get; set; }
         public DbSet<TasaCambio> TasaCambio { get; set; }
         public DbSet<ServicioClinico> ServiciosClinicos { get; set; }
@@ -949,6 +950,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.Nombre).IsRequired().HasMaxLength(200);
                 entity.Ignore(i => i.StockActual);
                 entity.Property(i => i.UnidadMedidaBase).HasConversion<string>().IsRequired().HasMaxLength(20);
+                // 3FN: FK al catálogo de unidades de medida
+                entity.HasOne(i => i.UnidadMedidaNav)
+                      .WithMany()
+                      .HasForeignKey(i => i.UnidadMedidaId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(i => i.UnidadMedidaId);
                 entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
                 entity.Property(i => i.PermiteFraccionamiento).IsRequired().HasDefaultValue(true);
                 entity.Property(i => i.Categoria).HasMaxLength(50).HasDefaultValue("Medicamento");
@@ -959,6 +966,28 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.Indicaciones);
                 entity.Property(i => i.FechaVencimiento);
                 entity.HasIndex(i => i.Codigo).IsUnique();
+            });
+
+            // 3FN: Catálogo de unidades de medida
+            builder.Entity<UnidadMedidaCatalogo>(entity =>
+            {
+                entity.ToTable("UnidadesMedida");
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.Id).ValueGeneratedNever();
+                entity.Property(u => u.Codigo).IsRequired().HasMaxLength(20);
+                entity.Property(u => u.Nombre).IsRequired().HasMaxLength(100);
+                entity.Property(u => u.Simbolo).HasMaxLength(20);
+                entity.HasIndex(u => u.Codigo).IsUnique();
+
+                entity.HasData(
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.UnidadId, "UNIDAD", "Unidad", "UND", true),
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.KgId, "KG", "Kilogramo", "kg", true),
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.GramoId, "G", "Gramo", "g", true),
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.DecigramoId, "DG", "Decigramo", "dg", true),
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.MiligramoId, "MG", "Miligramo", "mg", true),
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.LitroId, "L", "Litro", "L", true),
+                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.MililitroId, "ML", "Mililitro", "mL", true)
+                );
             });
 
             builder.Entity<CategoriaInsumo>(entity =>
@@ -1009,6 +1038,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("ServiciosInsumoRecetas");
                 entity.HasKey(r => r.Id);
                 entity.Property(r => r.UnidadMedidaConsumo).HasConversion<string>().IsRequired().HasMaxLength(20);
+                // 3FN: FK al catálogo de unidades de medida
+                entity.HasOne(r => r.UnidadMedidaNav)
+                      .WithMany()
+                      .HasForeignKey(r => r.UnidadMedidaConsumoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(r => r.UnidadMedidaConsumoId);
                 entity.Property(r => r.Cantidad).HasPrecision(18, 4);
 
                 entity.HasOne(r => r.ServicioClinico)
@@ -1047,6 +1082,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(m => m.TipoMovimiento).IsRequired().HasMaxLength(50);
                 entity.Property(m => m.CantidadBase).HasPrecision(18, 4);
                 entity.Property(m => m.UnidadMedidaOriginal).HasConversion<string>().IsRequired().HasMaxLength(20);
+                // 3FN: FK al catálogo de unidades de medida
+                entity.HasOne(m => m.UnidadMedidaNav)
+                      .WithMany()
+                      .HasForeignKey(m => m.UnidadMedidaOriginalId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(m => m.UnidadMedidaOriginalId);
                 entity.Property(m => m.CantidadOriginal).HasPrecision(18, 4);
                 entity.Property(m => m.Usuario).IsRequired().HasMaxLength(100);
                 entity.Property(m => m.Motivo).HasMaxLength(500);
