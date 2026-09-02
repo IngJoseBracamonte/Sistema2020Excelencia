@@ -23,6 +23,7 @@ import {
 import { CajaService, ResumenCajaGlobalDto, CajaSummaryDto, DailyClosingReport } from '../../../core/services/caja.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { CatalogLookupService } from '../../../core/services/catalog-lookup.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { Subscription } from 'rxjs';
 
@@ -55,6 +56,7 @@ export class CajasComponent implements OnInit, OnDestroy {
   private cajaService = inject(CajaService);
   public authService = inject(AuthService);
   private catalogService = inject(CatalogService);
+  private catalogLookup = inject(CatalogLookupService);
   private settingsService = inject(SettingsService);
   private tasaSubscription?: Subscription;
 
@@ -121,14 +123,21 @@ export class CajasComponent implements OnInit, OnDestroy {
     });
   });
 
-  // Filtro de cierres reactivo
+  // Filtro de cierres reactivo (3FN: usa códigos del catálogo EstadosCaja)
   public cierresFiltrados = computed(() => {
     const list = this.historialAdmin()?.cierres || [];
     const filter = this.filterState();
     if (filter === 'TODAS') return list;
-    if (filter === 'ABIERTAS') return list.filter(c => c.estado === 'Abierta');
-    if (filter === 'PENDIENTES') return list.filter(c => c.estado === 'CerradaPorAsistente');
-    if (filter === 'CONSOLIDADAS') return list.filter(c => c.estado === 'Cerrada');
+
+    // Mapear filtro a código de catálogo (fallback a texto legacy si el catálogo no cargó)
+    const estados = this.catalogLookup.estadosCaja();
+    const codigoAbierta = estados.find(e => e.codigo === 'ABIERTA')?.nombre ?? 'Abierta';
+    const codigoCerradaPorAsistente = estados.find(e => e.codigo === 'CERRADA_POR_ASISTENTE')?.nombre ?? 'CerradaPorAsistente';
+    const codigoCerrada = estados.find(e => e.codigo === 'CERRADA')?.nombre ?? 'Cerrada';
+
+    if (filter === 'ABIERTAS') return list.filter(c => c.estado === codigoAbierta);
+    if (filter === 'PENDIENTES') return list.filter(c => c.estado === codigoCerradaPorAsistente);
+    if (filter === 'CONSOLIDADAS') return list.filter(c => c.estado === codigoCerrada);
     return list;
   });
 
@@ -157,6 +166,8 @@ export class CajasComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.checkStatus();
     this.loadCatalogMethods();
+    // 3FN: cargar catálogo de estados de caja para filtros
+    this.catalogLookup.loadEstadosCaja().subscribe();
     
     // Escuchar la tasa de cambio en vivo
     this.settingsService.refreshTasa();
