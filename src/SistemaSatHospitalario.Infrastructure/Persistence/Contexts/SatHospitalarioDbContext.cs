@@ -164,7 +164,30 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(c => c.DeclaracionCierreJson).HasColumnType("longtext");
             });
 
+            builder.Entity<CajaDeclaracionMetodo>(entity =>
+            {
+                entity.ToTable("CajasDeclaracionesMetodos");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.MontoIngresado).HasPrecision(18, 2);
+                entity.Property(c => c.MontoVueltos).HasPrecision(18, 2);
+                entity.Property(c => c.MontoEsperadoIngreso).HasPrecision(18, 2);
+                entity.Property(c => c.MontoEsperadoVueltos).HasPrecision(18, 2);
+                entity.Property(c => c.DiferenciaOriginal).HasPrecision(18, 2);
+                entity.Property(c => c.DiferenciaBase).HasPrecision(18, 2);
 
+                entity.HasOne(c => c.CajaDiaria)
+                      .WithMany()
+                      .HasForeignKey(c => c.CajaDiariaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(c => c.MetodoPago)
+                      .WithMany()
+                      .HasForeignKey(c => c.MetodoPagoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(c => new { c.CajaDiariaId, c.MetodoPagoId }).IsUnique();
+                entity.HasIndex(c => c.MetodoPagoId);
+            });
 
             builder.Entity<ReciboFactura>(entity =>
             {
@@ -199,36 +222,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(d => d.ReciboFacturaId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                    entity.HasOne(d => d.MetodoPagoNav)
-                        .WithMany()
-                        .HasForeignKey(d => d.MetodoPagoId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                 // Índice para reporte de ingresos (Fase 7)
                 entity.HasIndex(d => d.FechaPago);
-                    entity.HasIndex(d => d.MetodoPagoId);
             });
-
-                builder.Entity<CajaDeclaracionMetodo>(entity =>
-                {
-                    entity.ToTable("CajasDeclaracionesMetodos");
-                    entity.HasKey(d => d.Id);
-                    entity.Property(d => d.MontoIngresado).HasPrecision(18, 2);
-                    entity.Property(d => d.MontoVueltos).HasPrecision(18, 2);
-                    entity.Property(d => d.MontoEsperadoIngreso).HasPrecision(18, 2);
-                    entity.Property(d => d.MontoEsperadoVueltos).HasPrecision(18, 2);
-                    entity.Property(d => d.DiferenciaOriginal).HasPrecision(18, 2);
-                    entity.Property(d => d.DiferenciaBase).HasPrecision(18, 2);
-                    entity.HasOne(d => d.CajaDiaria)
-                        .WithMany(c => c.DeclaracionesPorMetodo)
-                        .HasForeignKey(d => d.CajaDiariaId)
-                        .OnDelete(DeleteBehavior.Cascade);
-                    entity.HasOne(d => d.MetodoPago)
-                        .WithMany()
-                        .HasForeignKey(d => d.MetodoPagoId)
-                        .OnDelete(DeleteBehavior.Restrict);
-                    entity.HasIndex(d => new { d.CajaDiariaId, d.MetodoPagoId }).IsUnique();
-                });
 
             builder.Entity<SeguroConvenio>(entity =>
             {
@@ -255,18 +251,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("LogsAsignacionHonorario");
                 entity.HasKey(l => l.Id);
                 entity.Property(l => l.TipoAccion).IsRequired().HasMaxLength(50);
-                entity.HasOne(l => l.DetalleServicio)
-                    .WithMany()
-                    .HasForeignKey(l => l.DetalleServicioId)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(l => l.MedicoAnterior)
-                    .WithMany()
-                    .HasForeignKey(l => l.MedicoAnteriorId)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(l => l.MedicoNuevo)
-                    .WithMany()
-                    .HasForeignKey(l => l.MedicoNuevoId)
-                    .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(l => l.FechaAccion);
                 entity.HasIndex(l => l.DetalleServicioId);
             });
@@ -609,11 +593,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(a => a.UsuarioOperador).IsRequired().HasMaxLength(100);
                 entity.Property(a => a.AutorizadoPor).IsRequired().HasMaxLength(100);
                 entity.Property(a => a.DescripcionServicio).IsRequired().HasMaxLength(500);
-                entity.HasOne(a => a.DetalleServicio)
-                    .WithMany()
-                    .HasForeignKey(a => a.DetalleServicioId)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasIndex(a => a.DetalleServicioId);
             });
 
             builder.Entity<OrdenImagen>(entity =>
@@ -742,23 +721,26 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             builder.Entity<HistorialModificacionCuentaDetalle>(entity =>
             {
                 entity.ToTable("HistorialModificacionCuentaDetalles");
-                entity.HasKey(d => d.Id);
-                entity.Property(d => d.PrecioAnterior).HasPrecision(18, 2);
-                entity.Property(d => d.PrecioNuevo).HasPrecision(18, 2);
-                entity.Property(d => d.HonorarioAnterior).HasPrecision(18, 2);
-                entity.Property(d => d.HonorarioNuevo).HasPrecision(18, 2);
-                entity.Property(d => d.CantidadAnterior).HasPrecision(18, 4);
-                entity.Property(d => d.CantidadNueva).HasPrecision(18, 4);
-                entity.HasOne(d => d.HistorialModificacionCuenta)
-                    .WithMany(h => h.DetallesModificados)
-                    .HasForeignKey(d => d.HistorialModificacionCuentaId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(d => d.DetalleServicio)
-                    .WithMany()
-                    .HasForeignKey(d => d.DetalleServicioId)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasIndex(d => d.HistorialModificacionCuentaId);
-                entity.HasIndex(d => d.DetalleServicioId);
+                entity.HasKey(h => h.Id);
+                entity.Property(h => h.PrecioAnterior).HasPrecision(18, 2);
+                entity.Property(h => h.PrecioNuevo).HasPrecision(18, 2);
+                entity.Property(h => h.HonorarioAnterior).HasPrecision(18, 2);
+                entity.Property(h => h.HonorarioNuevo).HasPrecision(18, 2);
+                entity.Property(h => h.CantidadAnterior).HasPrecision(18, 2);
+                entity.Property(h => h.CantidadNueva).HasPrecision(18, 2);
+
+                entity.HasOne(h => h.HistorialModificacionCuenta)
+                      .WithMany()
+                      .HasForeignKey(h => h.HistorialModificacionCuentaId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(h => h.DetalleServicio)
+                      .WithMany()
+                      .HasForeignKey(h => h.DetalleServicioId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(h => h.HistorialModificacionCuentaId);
+                entity.HasIndex(h => h.DetalleServicioId);
             });
 
             builder.Entity<Insumo>(entity =>
@@ -772,11 +754,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
                 entity.Property(i => i.PermiteFraccionamiento).IsRequired().HasDefaultValue(true);
                 entity.Property(i => i.Categoria).HasMaxLength(50).HasDefaultValue("Medicamento");
-                entity.HasOne(i => i.CategoriaInsumo)
-                    .WithMany()
-                    .HasForeignKey(i => i.CategoriaInsumoId)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasIndex(i => i.CategoriaInsumoId);
                 entity.Property(i => i.IsDeleted).IsRequired().HasDefaultValue(false);
                 entity.Property(i => i.FechaInactivacion);
                 entity.Property(i => i.OcultoEnTraslados).IsRequired().HasDefaultValue(false);
@@ -1344,18 +1321,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
                 entity.Property(o => o.Observaciones).HasMaxLength(1000);
 
-                    entity.HasOne(o => o.Proveedor)
-                        .WithMany()
-                        .HasForeignKey(o => o.ProveedorId)
-                        .OnDelete(DeleteBehavior.Restrict);
-
                 entity.HasMany(o => o.Pagos)
                       .WithOne(p => p.OrdenCompra)
                       .HasForeignKey(p => p.OrdenCompraId)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(o => o.NumeroFactura);
-                entity.HasIndex(o => o.ProveedorId);
                 entity.HasIndex(o => o.ProveedorNombre);
                 entity.HasIndex(o => o.Estado);
             });
