@@ -246,6 +246,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(h => h.CategoriaServicio).IsRequired().HasMaxLength(50);
                 entity.HasOne(h => h.MedicoDefault).WithMany().HasForeignKey(h => h.MedicoDefaultId).OnDelete(DeleteBehavior.SetNull);
                 entity.HasIndex(h => h.CategoriaServicio).IsUnique();
+                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
+                // porque la tabla Usuarios vive en el contexto de Identity.
+                entity.Property(h => h.UsuarioConfiguroId).HasColumnType("char(36)");
+                entity.HasIndex(h => h.UsuarioConfiguroId);
             });
 
             builder.Entity<LogAsignacionHonorario>(entity =>
