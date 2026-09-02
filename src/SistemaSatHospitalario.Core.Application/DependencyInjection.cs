@@ -26,6 +26,9 @@ namespace SistemaSatHospitalario.Core.Application
             services.AddScoped<Common.Services.IHonorariumMapperService, Common.Services.HonorariumMapperService>();
             services.AddScoped<Common.Services.IInventoryService, Common.Services.InventoryService>();
 
+            // 3FN: Servicio central de catálogos cacheados (Cache-Aside + invalidación reactiva)
+            services.AddScoped<Common.Services.ICatalogLookupService, Common.Services.CatalogLookupService>();
+
             // Strategies and Factory (GoF Pattern)
             services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.ConsultationLoadingStrategy>();
             services.AddScoped<Common.Strategies.IServiceLoadingStrategy, Common.Strategies.LegacyLabLoadingStrategy>();

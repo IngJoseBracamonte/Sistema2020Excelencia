@@ -22,11 +22,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     {
         private readonly IMediator _mediator;
         private readonly ILogger<CatalogController> _logger;
+        private readonly SistemaSatHospitalario.Core.Application.Common.Services.ICatalogLookupService _catalogLookup;
 
-        public CatalogController(IMediator mediator, ILogger<CatalogController> logger)
+        public CatalogController(IMediator mediator, ILogger<CatalogController> logger, SistemaSatHospitalario.Core.Application.Common.Services.ICatalogLookupService catalogLookup)
         {
             _mediator = mediator;
             _logger = logger;
+            _catalogLookup = catalogLookup;
         }
 
         [HttpGet]
@@ -182,6 +184,83 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             context.ServiciosInsumoRecetas.Remove(receta);
             await context.SaveChangesAsync(ct);
             return Ok(new { Message = "Receta eliminada con éxito." });
+        }
+
+        // ================================================================
+        // 3FN: Endpoints de catálogos cacheados (T6)
+        // ================================================================
+
+        /// <summary>Catálogo de unidades de medida (cacheado).</summary>
+        [HttpGet("catalogos/unidades-medida")]
+        public async Task<IActionResult> GetUnidadesMedida(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetUnidadesMedidaAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de estados de cita médica (cacheado).</summary>
+        [HttpGet("catalogos/estados-cita")]
+        public async Task<IActionResult> GetEstadosCita(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetEstadosCitaAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de estados de caja (cacheado).</summary>
+        [HttpGet("catalogos/estados-caja")]
+        public async Task<IActionResult> GetEstadosCaja(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetEstadosCajaAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de estados de cuenta (cacheado).</summary>
+        [HttpGet("catalogos/estados-cuenta")]
+        public async Task<IActionResult> GetEstadosCuenta(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetEstadosCuentaAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de tipos de ingreso (cacheado).</summary>
+        [HttpGet("catalogos/tipos-ingreso")]
+        public async Task<IActionResult> GetTiposIngreso(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetTiposIngresoAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de estados fiscales (cacheado).</summary>
+        [HttpGet("catalogos/estados-fiscales")]
+        public async Task<IActionResult> GetEstadosFiscales(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetEstadosFiscalesAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de motivos de autorización (cacheado).</summary>
+        [HttpGet("catalogos/motivos-autorizacion")]
+        public async Task<IActionResult> GetMotivosAutorizacion(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetMotivosAutorizacionAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Catálogo de categorías de insumo (cacheado).</summary>
+        [HttpGet("catalogos/categorias-insumo")]
+        public async Task<IActionResult> GetCategoriasInsumo(CancellationToken ct)
+        {
+            var result = await _catalogLookup.GetCategoriasInsumoAsync(ct);
+            return Ok(result);
+        }
+
+        /// <summary>Invalida todos los catálogos cacheados (solo Admin).</summary>
+        [HttpPost("catalogos/invalidate")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
+        public IActionResult InvalidateCatalogs()
+        {
+            _catalogLookup.InvalidateAll();
+            return Ok(new { Message = "Caché de catálogos invalidado." });
         }
     }
 
