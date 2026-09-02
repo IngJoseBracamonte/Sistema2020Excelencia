@@ -12,7 +12,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? MedicoAnteriorNombre { get; private set; }
         public Guid? MedicoNuevoId { get; private set; }
         public string? MedicoNuevoNombre { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioOperadorId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioOperadorId. Columna legacy pendiente de DROP.")]
         public string UsuarioOperador { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del operador que ejecutó la acción.</summary>
+        public Guid? UsuarioOperadorId { get; private set; }
         public DateTime FechaAccion { get; private set; }
         public string? Observaciones { get; private set; }
 
@@ -36,7 +45,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MedicoAnteriorNombre = medicoAnteriorNombre;
             MedicoNuevoId = medicoNuevoId;
             MedicoNuevoNombre = medicoNuevoNombre;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioOperador = usuarioOperador;
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioOperadorId = Guid.TryParse(usuarioOperador, out var parsed) ? parsed : (Guid?)null;
             FechaAccion = DateTime.UtcNow;
             Observaciones = observaciones;
         }

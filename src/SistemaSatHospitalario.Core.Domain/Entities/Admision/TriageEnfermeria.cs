@@ -14,7 +14,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int SaturacionO2 { get; private set; }
         public int? GlicemiaCapilar { get; private set; }
         public DateTime FechaRegistro { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioRegistroId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioRegistroId. Columna legacy pendiente de DROP.")]
         public string UsuarioRegistro { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que registró el triage.</summary>
+        public Guid? UsuarioRegistroId { get; private set; }
         public string? DescripcionRapida { get; private set; }
         public string? DescripcionDetallada { get; private set; }
 
@@ -45,7 +54,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SaturacionO2 = saturacionO2;
             GlicemiaCapilar = glicemiaCapilar;
             FechaRegistro = DateTime.UtcNow;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioRegistro = usuarioRegistro ?? throw new ArgumentNullException(nameof(usuarioRegistro));
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioRegistroId = Guid.TryParse(usuarioRegistro, out var parsed) ? parsed : (Guid?)null;
             DescripcionRapida = descripcionRapida;
             DescripcionDetallada = descripcionDetallada;
         }

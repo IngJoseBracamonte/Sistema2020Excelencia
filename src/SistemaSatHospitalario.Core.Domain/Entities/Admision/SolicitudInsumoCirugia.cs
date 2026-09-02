@@ -14,9 +14,27 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid AlmacenOrigenId { get; private set; }
         public string EstadoSolicitud { get; private set; } // Pendiente, Despachado, Rechazado
         public DateTime FechaSolicitud { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioSolicitudId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioSolicitudId. Columna legacy pendiente de DROP.")]
         public string UsuarioSolicitud { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que solicitó.</summary>
+        public Guid? UsuarioSolicitudId { get; private set; }
         public DateTime? FechaDespacho { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioDespachoId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioDespachoId. Columna legacy pendiente de DROP.")]
         public string? UsuarioDespacho { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que despachó.</summary>
+        public Guid? UsuarioDespachoId { get; private set; }
         public string? Observaciones { get; private set; }
 
         // Navegación

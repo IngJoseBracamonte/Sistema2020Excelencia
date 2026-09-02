@@ -27,7 +27,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string AntecedentesMedicos { get; private set; }
         
         public DateTime FechaRegistro { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioRegistroId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioRegistroId. Columna legacy pendiente de DROP.")]
         public string UsuarioRegistro { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que registró la valoración.</summary>
+        public Guid? UsuarioRegistroId { get; private set; }
 
         public virtual CuentaServicios CuentaServicio { get; private set; }
 

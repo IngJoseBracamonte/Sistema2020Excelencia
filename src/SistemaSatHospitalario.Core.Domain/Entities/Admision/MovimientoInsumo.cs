@@ -12,8 +12,23 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CantidadBase { get; private set; }
         public UnidadMedida UnidadMedidaOriginal { get; private set; }
         public decimal CantidadOriginal { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string Usuario { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
+        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string? UsuarioId { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que registró el movimiento.</summary>
+        public Guid? UsuarioIdentityId { get; private set; }
         public DateTime Fecha { get; private set; }
         public string Motivo { get; private set; }
 
@@ -31,8 +46,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CantidadBase = cantidadBase;
             UnidadMedidaOriginal = unidadMedidaOriginal;
             CantidadOriginal = cantidadOriginal;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
             UsuarioId = usuarioId;
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
             Fecha = DateTime.UtcNow;
             Motivo = motivo ?? string.Empty;
         }

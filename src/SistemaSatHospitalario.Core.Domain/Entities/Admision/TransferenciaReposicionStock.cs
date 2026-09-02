@@ -16,7 +16,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Motivo { get; private set; }
         public string? Observaciones { get; private set; }
         public DateTime FechaTransferencia { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
+        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string UsuarioId { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que ejecutó la transferencia.</summary>
+        public Guid? UsuarioIdentityId { get; private set; }
 
         // Navegación
         public virtual Insumo Insumo { get; private set; }

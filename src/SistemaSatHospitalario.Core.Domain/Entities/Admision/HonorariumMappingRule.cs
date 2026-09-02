@@ -18,7 +18,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public MappingRuleType MatchType { get; private set; }
         public int Priority { get; private set; }
         public bool IsActive { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCreoId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioCreoId. Columna legacy pendiente de DROP.")]
         public string UsuarioCreo { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que creó la regla.</summary>
+        public Guid? UsuarioCreoId { get; private set; }
         public DateTime FechaCreacion { get; private set; }
 
         protected HonorariumMappingRule() { }
@@ -31,7 +40,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MatchType = matchType;
             Priority = priority;
             IsActive = true;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioCreo = usuario;
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioCreoId = Guid.TryParse(usuario, out var parsed) ? parsed : (Guid?)null;
             FechaCreacion = DateTime.UtcNow;
         }
 

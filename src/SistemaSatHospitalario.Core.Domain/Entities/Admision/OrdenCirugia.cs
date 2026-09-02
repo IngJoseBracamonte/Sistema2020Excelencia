@@ -26,7 +26,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Estado { get; private set; }
         public string? MotivoCancelacion { get; private set; }
         public DateTime FechaCreacion { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCreacionId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioCreacionId. Columna legacy pendiente de DROP.")]
         public string UsuarioCreacion { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que creó la orden.</summary>
+        public Guid? UsuarioCreacionId { get; private set; }
 
         // Nuevos campos operativos
         public string SalaQuirofano { get; private set; }

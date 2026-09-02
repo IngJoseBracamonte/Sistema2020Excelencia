@@ -1568,6 +1568,74 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(p => p.RIF).IsUnique();
                 entity.HasIndex(p => p.RazonSocial);
             });
+
+            // ================================================================
+            // 3FN: FKs lógicas a Usuarios (Identity, PK Guid) — char(36) + índice.
+            // Sin restricción FK física porque la tabla Usuarios vive en el
+            // contexto de Identity (SatHospitalarioIdentityDbContext).
+            // ================================================================
+            builder.Entity<CirugiaLog>().Property(c => c.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<CirugiaLog>().HasIndex(c => c.UsuarioIdentityId);
+
+            builder.Entity<AuditLog>().Property(a => a.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<AuditLog>().HasIndex(a => a.UsuarioIdentityId);
+
+            builder.Entity<DocumentLog>().Property(d => d.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<DocumentLog>().HasIndex(d => d.UsuarioIdentityId);
+
+            builder.Entity<LogAsignacionHonorario>().Property(l => l.UsuarioOperadorId).HasColumnType("char(36)");
+            builder.Entity<LogAsignacionHonorario>().HasIndex(l => l.UsuarioOperadorId);
+
+            builder.Entity<LogAuditoriaPrecio>().Property(l => l.UsuarioOperadorId).HasColumnType("char(36)");
+            builder.Entity<LogAuditoriaPrecio>().Property(l => l.AutorizadoPorId).HasColumnType("char(36)");
+            builder.Entity<LogAuditoriaPrecio>().HasIndex(l => l.UsuarioOperadorId);
+            builder.Entity<LogAuditoriaPrecio>().HasIndex(l => l.AutorizadoPorId);
+
+            builder.Entity<ErrorTicket>().Property(e => e.UsuarioAsociadoId).HasColumnType("char(36)");
+            builder.Entity<ErrorTicket>().Property(e => e.ResueltoPorId).HasColumnType("char(36)");
+            builder.Entity<ErrorTicket>().HasIndex(e => e.UsuarioAsociadoId);
+            builder.Entity<ErrorTicket>().HasIndex(e => e.ResueltoPorId);
+
+            builder.Entity<TriageEnfermeria>().Property(t => t.UsuarioRegistroId).HasColumnType("char(36)");
+            builder.Entity<TriageEnfermeria>().HasIndex(t => t.UsuarioRegistroId);
+
+            builder.Entity<ValoracionFisica>().Property(v => v.UsuarioRegistroId).HasColumnType("char(36)");
+            builder.Entity<ValoracionFisica>().HasIndex(v => v.UsuarioRegistroId);
+
+            builder.Entity<SolicitudInsumoCirugia>().Property(s => s.UsuarioSolicitudId).HasColumnType("char(36)");
+            builder.Entity<SolicitudInsumoCirugia>().Property(s => s.UsuarioDespachoId).HasColumnType("char(36)");
+            builder.Entity<SolicitudInsumoCirugia>().HasIndex(s => s.UsuarioSolicitudId);
+            builder.Entity<SolicitudInsumoCirugia>().HasIndex(s => s.UsuarioDespachoId);
+
+            builder.Entity<PedidoInterSede>().Property(p => p.UsuarioCreadorId).HasColumnType("char(36)");
+            builder.Entity<PedidoInterSede>().HasIndex(p => p.UsuarioCreadorId);
+
+            builder.Entity<TransferenciaReposicionStock>().Property(t => t.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<TransferenciaReposicionStock>().HasIndex(t => t.UsuarioIdentityId);
+
+            builder.Entity<CierreInventario>().Property(c => c.UsuarioId).HasColumnType("char(36)");
+            builder.Entity<CierreInventario>().HasIndex(c => c.UsuarioId);
+
+            builder.Entity<ReservaTemporal>().Property(r => r.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<ReservaTemporal>().HasIndex(r => r.UsuarioIdentityId);
+
+            builder.Entity<HonorarioMedicoServicio>().Property(h => h.UsuarioModificoId).HasColumnType("char(36)");
+            builder.Entity<HonorarioMedicoServicio>().HasIndex(h => h.UsuarioModificoId);
+
+            builder.Entity<HonorariumMappingRule>().Property(h => h.UsuarioCreoId).HasColumnType("char(36)");
+            builder.Entity<HonorariumMappingRule>().HasIndex(h => h.UsuarioCreoId);
+
+            builder.Entity<OrdenCirugia>().Property(o => o.UsuarioCreacionId).HasColumnType("char(36)");
+            builder.Entity<OrdenCirugia>().HasIndex(o => o.UsuarioCreacionId);
+
+            builder.Entity<PagoProveedor>().Property(p => p.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<PagoProveedor>().HasIndex(p => p.UsuarioIdentityId);
+
+            builder.Entity<Notification>().Property(n => n.TargetUserGuidId).HasColumnType("char(36)");
+            builder.Entity<Notification>().HasIndex(n => n.TargetUserGuidId);
+
+            builder.Entity<MovimientoInsumo>().Property(m => m.UsuarioIdentityId).HasColumnType("char(36)");
+            builder.Entity<MovimientoInsumo>().HasIndex(m => m.UsuarioIdentityId);
         }
 
     }
