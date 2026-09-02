@@ -20,7 +20,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal MontoVueltoUSD { get; protected set; } // Pachón Pro V11.2 Change Support
         public decimal TasaBcvUsada => TasaCambioDia;
         public DateTime FechaEmision { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioEmisionId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioEmisionId. Columna legacy pendiente de DROP.")]
         public string? UsuarioEmision { get; protected set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que emitió el recibo.</summary>
+        public Guid? UsuarioEmisionId { get; protected set; }
         public string Estado => EstadoFiscal;
 
         public CuentaServicios CuentaServicio { get; protected set; }
@@ -50,7 +59,27 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             if (EstadoFiscal != EstadoConstants.Borrador) throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
             NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioEmision = usuarioEmision ?? throw new ArgumentNullException(nameof(usuarioEmision));
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            if (Guid.TryParse(usuarioEmision, out var parsed))
+            {
+                UsuarioEmisionId = parsed;
+            }
+            EstadoFiscal = EstadoConstants.Emitida;
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void Emitir(string nroControlFiscal, Guid usuarioEmisionId, string? usuarioNombreAlias = null)
+        {
+            if (EstadoFiscal != EstadoConstants.Borrador) throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
+            if (usuarioEmisionId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioEmisionId));
+            NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
+            UsuarioEmisionId = usuarioEmisionId;
+#pragma warning disable CS0618
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias)) UsuarioEmision = usuarioNombreAlias;
+#pragma warning restore CS0618
             EstadoFiscal = EstadoConstants.Emitida;
         }
 

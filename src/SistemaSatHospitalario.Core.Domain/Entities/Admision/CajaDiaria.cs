@@ -14,7 +14,22 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Estado { get; protected set; } // "Abierta", "CerradaPorAsistente" o "Cerrada"
         
         // Identidad del Responsable (Micro-Ciclo 28)
+
+        /// <summary>
+        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
+        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string UsuarioId { get; protected set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del cajero responsable.</summary>
+        public Guid? UsuarioIdentityId { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del usuario. Se deriva de
+        /// <see cref="UsuarioIdentityId"/> vía Identity. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Derivar de UsuarioIdentityId vía Identity. Columna legacy pendiente de DROP.")]
         public string NombreUsuario { get; protected set; }
 
         // Campos de Auditoría y Cierre en 2 Fases (V13.0)
@@ -41,8 +56,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoInicialDivisa = montoInicialDivisa;
             MontoInicialBs = montoInicialBs;
             Estado = EstadoConstants.CajaAbierta;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioId = usuarioId;
             NombreUsuario = nombreUsuario;
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
         }
 
         public void CerrarCaja()

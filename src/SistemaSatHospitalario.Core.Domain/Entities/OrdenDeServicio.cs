@@ -9,6 +9,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
         public int NumeroLlegadaDiario { get; protected set; }
         // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del paciente. Fuente de verdad:
+        /// la navegación <see cref="Paciente"/> vía <see cref="PacienteId"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar Paciente.NombreCorto vía PacienteId. Columna legacy pendiente de DROP.")]
         public string NombrePaciente { get; protected set; }
         public string TipoIngreso { get; protected set; } // Particular, Seguro, Hospitalizacion, Emergencia
         public EstadoFacturacion EstadoFacturacion { get; protected set; }

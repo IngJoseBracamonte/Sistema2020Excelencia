@@ -11,16 +11,28 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         
         // Paciente anterior y nuevo
         public Guid? PacienteAnteriorId { get; private set; }
+
+        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: PacienteAnteriorId → PacientesAdmision.</summary>
+        [Obsolete("Derivar del paciente vía PacienteAnteriorId. Columna legacy pendiente de DROP.")]
         public string? PacienteAnteriorNombre { get; private set; }
         public Guid? PacienteNuevoId { get; private set; }
+
+        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: PacienteNuevoId → PacientesAdmision.</summary>
+        [Obsolete("Derivar del paciente vía PacienteNuevoId. Columna legacy pendiente de DROP.")]
         public string? PacienteNuevoNombre { get; private set; }
 
         // Tipo de ingreso/Convenio anterior y nuevo
         public string? TipoIngresoAnterior { get; private set; }
         public string? TipoIngresoNuevo { get; private set; }
         public int? ConvenioAnteriorId { get; private set; }
+
+        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: ConvenioAnteriorId → SegurosConvenios.</summary>
+        [Obsolete("Derivar del convenio vía ConvenioAnteriorId. Columna legacy pendiente de DROP.")]
         public string? ConvenioAnteriorNombre { get; private set; }
         public int? ConvenioNuevoId { get; private set; }
+
+        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: ConvenioNuevoId → SegurosConvenios.</summary>
+        [Obsolete("Derivar del convenio vía ConvenioNuevoId. Columna legacy pendiente de DROP.")]
         public string? ConvenioNuevoNombre { get; private set; }
 
         // Totales de la cuenta anterior y nuevo
@@ -39,6 +51,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CxCSaldoNuevoUSD { get; private set; }
 
         // Detalle en JSON de cambios de precios de servicios
+
+        /// <summary>
+        /// LEGACY (3FN): JSON desnormalizado de cambios. Fuente de verdad:
+        /// la colección normalizada <see cref="DetallesModificados"/>
+        /// (tabla HistorialModificacionCuentaDetalles). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar DetallesModificados. Columna legacy pendiente de DROP.")]
         public string? DetalleServiciosCambiosJson { get; private set; }
         public virtual ICollection<HistorialModificacionCuentaDetalle> DetallesModificados { get; private set; } = new List<HistorialModificacionCuentaDetalle>();
 

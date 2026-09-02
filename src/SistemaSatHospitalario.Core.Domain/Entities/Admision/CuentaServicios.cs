@@ -11,7 +11,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; private set; }
         public Guid? CuentaPrincipalId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCargaId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioCargaId. Columna legacy pendiente de DROP.")]
         public string UsuarioCarga { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que cargó la cuenta.</summary>
+        public Guid? UsuarioCargaId { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public DateTime? FechaCierre { get; private set; }
         public string Estado { get; private set; } // Abierta, Facturada, Anulada
@@ -36,9 +45,21 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         
         // --- AUDIT & VALIDATION (Senior Traceability V15.0) ---
+
+        /// <summary>LEGACY (3FN): texto plano. Fuente de verdad: <see cref="UsuarioValidacionId"/>.</summary>
+        [Obsolete("Usar UsuarioValidacionId. Columna legacy pendiente de DROP.")]
         public string? UsuarioValidacion { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que validó.</summary>
+        public Guid? UsuarioValidacionId { get; private set; }
         public DateTime? FechaValidacion { get; private set; }
+
+        /// <summary>LEGACY (3FN): texto plano. Fuente de verdad: <see cref="UsuarioAuditoriaId"/>.</summary>
+        [Obsolete("Usar UsuarioAuditoriaId. Columna legacy pendiente de DROP.")]
         public string? UsuarioAuditoria { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que auditó.</summary>
+        public Guid? UsuarioAuditoriaId { get; private set; }
         public DateTime? FechaAuditoria { get; private set; }
         public string? DestinoPaciente { get; private set; }
         public string? PersonalRelevo { get; private set; }
@@ -48,11 +69,15 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null)
+        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null, Guid? usuarioCargaId = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
+#pragma warning restore CS0618
+            // 3FN: si no se pasa la FK explícita, intentar parsear el texto como GUID
+            UsuarioCargaId = usuarioCargaId ?? (Guid.TryParse(usuarioCarga, out var parsedCarga) ? parsedCarga : (Guid?)null);
             FechaCarga = DateTime.UtcNow;
             Estado = EstadoConstants.Abierta;
             TipoIngreso = tipoIngreso ?? EstadoConstants.Particular;
@@ -171,16 +196,51 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Validar(string usuario)
         {
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioValidacion = usuario ?? throw new ArgumentNullException(nameof(usuario));
+#pragma warning restore CS0618
+            if (Guid.TryParse(usuario, out var parsedValidacion))
+            {
+                UsuarioValidacionId = parsedValidacion;
+            }
+            FechaValidacion = DateTime.UtcNow;
+            Estado = EstadoConstants.Validada;
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void Validar(Guid usuarioId, string? usuarioNombreAlias = null)
+        {
+            if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
+            UsuarioValidacionId = usuarioId;
+#pragma warning disable CS0618
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias)) UsuarioValidacion = usuarioNombreAlias;
+#pragma warning restore CS0618
             FechaValidacion = DateTime.UtcNow;
             Estado = EstadoConstants.Validada;
         }
 
         public void Auditar(string usuario)
         {
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
+#pragma warning restore CS0618
+            if (Guid.TryParse(usuario, out var parsedAuditoria))
+            {
+                UsuarioAuditoriaId = parsedAuditoria;
+            }
             FechaAuditoria = DateTime.UtcNow;
             // La auditoría puede ser un estado final o una marca sobre una cuenta facturada
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void Auditar(Guid usuarioId, string? usuarioNombreAlias = null)
+        {
+            if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
+            UsuarioAuditoriaId = usuarioId;
+#pragma warning disable CS0618
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias)) UsuarioAuditoria = usuarioNombreAlias;
+#pragma warning restore CS0618
+            FechaAuditoria = DateTime.UtcNow;
         }
 
         public void AsignarLegacyOrder(int legacyOrderId)

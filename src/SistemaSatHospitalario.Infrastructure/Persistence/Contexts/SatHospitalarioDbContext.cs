@@ -164,6 +164,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(c => c.TotalCobrado).HasPrecision(18, 2);
                 entity.Property(c => c.Diferencia).HasPrecision(18, 2);
                 entity.Property(c => c.DeclaracionCierreJson).HasColumnType("longtext");
+                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
+                // porque la tabla Usuarios vive en el contexto de Identity.
+                entity.Property(c => c.UsuarioIdentityId).HasColumnType("char(36)");
+                entity.HasIndex(c => c.UsuarioIdentityId);
             });
 
             builder.Entity<CajaDeclaracionMetodo>(entity =>
@@ -209,6 +213,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Ignore(r => r.Estado);
+
+                // 3FN: FK lógica a Usuarios (Identity, PK Guid)
+                entity.Property(r => r.UsuarioEmisionId).HasColumnType("char(36)");
+                entity.HasIndex(r => r.UsuarioEmisionId);
             });
 
             builder.Entity<DetallePago>(entity =>
@@ -226,6 +234,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 // Índice para reporte de ingresos (Fase 7)
                 entity.HasIndex(d => d.FechaPago);
+
+                // 3FN: FK lógica a Usuarios (Identity, PK Guid)
+                entity.Property(d => d.UsuarioCargaId).HasColumnType("char(36)");
+                entity.HasIndex(d => d.UsuarioCargaId);
             });
 
             builder.Entity<SeguroConvenio>(entity =>
@@ -367,6 +379,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.Property(c => c.SubAreaClinica)
                       .HasMaxLength(100);
+
+                // 3FN: FKs lógicas a Usuarios (Identity, PK Guid). Sin restricción FK física
+                // porque la tabla Usuarios vive en el contexto de Identity.
+                entity.Property(c => c.UsuarioCargaId).HasColumnType("char(36)");
+                entity.Property(c => c.UsuarioValidacionId).HasColumnType("char(36)");
+                entity.Property(c => c.UsuarioAuditoriaId).HasColumnType("char(36)");
+                entity.HasIndex(c => c.UsuarioCargaId);
+                entity.HasIndex(c => c.UsuarioValidacionId);
+                entity.HasIndex(c => c.UsuarioAuditoriaId);
 
                 // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.FechaCarga);

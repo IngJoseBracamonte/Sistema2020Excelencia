@@ -9,6 +9,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public string NumeroFactura { get; private set; } = string.Empty;
         public Guid? ProveedorId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del proveedor. Fuente de verdad:
+        /// la navegación <see cref="Proveedor"/> vía <see cref="ProveedorId"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar Proveedor.RazonSocial vía ProveedorId. Columna legacy pendiente de DROP.")]
         public string ProveedorNombre { get; private set; } = string.Empty;
         public virtual Proveedor? Proveedor { get; private set; }
         public DateTime FechaEmision { get; private set; }
