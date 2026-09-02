@@ -24,6 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<CuentaServicios> CuentasServicios { get; }
         DbSet<DetalleServicioCuenta> DetallesServicioCuenta { get; }
         DbSet<CitaMedica> CitasMedicas { get; }
+        DbSet<EstadoCitaMedica> EstadosCitaMedica { get; }
         DbSet<Medico> Medicos { get; }
         DbSet<TasaCambio> TasaCambio { get; }
         DbSet<ServicioClinico> ServiciosClinicos { get; }
@@ -31,6 +32,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         DbSet<BloqueoHorario> BloqueosHorarios { get; }
         DbSet<PrecioServicioConvenio> PreciosServicioConvenio { get; }
         DbSet<CuentaPorCobrar> CuentasPorCobrar { get; }
+        DbSet<CompromisoPago> CompromisosPago { get; }
+        DbSet<MotivoAutorizacion> MotivosAutorizacion { get; }
         DbSet<ErrorTicket> ErrorTickets { get; }
         DbSet<Especialidad> Especialidades { get; }
         DbSet<ConfiguracionGeneral> ConfiguracionGeneral { get; }

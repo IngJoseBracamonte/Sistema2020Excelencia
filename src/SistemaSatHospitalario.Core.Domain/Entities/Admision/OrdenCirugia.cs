@@ -214,20 +214,23 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             var fechaAnterior = FechaHoraProgramada;
             FechaHoraProgramada = nuevaFecha;
-            
+
             var detalle = $"Reprogramada de {fechaAnterior:dd/MM/yyyy HH:mm} a {nuevaFecha:dd/MM/yyyy HH:mm}. Motivo: {motivo}";
             AgregarLog(usuarioId, "Reprogramacion", detalle);
-            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugia.Reprogramacion, usuarioId, usuarioId);
+            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugia.Reprogramacion, usuarioId, ParseUsuarioId(usuarioId));
         }
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugia tipo = Enums.TipoObservacionCirugia.ObservacionMedica, string usuarioRegistro = "Sistema", string? usuarioRegistroId = null)
+        private static Guid? ParseUsuarioId(string? usuarioId)
+            => Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
+
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugia tipo = Enums.TipoObservacionCirugia.ObservacionMedica, string usuarioRegistro = "Sistema", Guid? usuarioRegistroId = null)
         {
             var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro, usuarioRegistroId);
             _historialObservaciones.Add(item);
             return item;
         }
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro, string? usuarioRegistroId = null)
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro, Guid? usuarioRegistroId = null)
         {
             var tipoEnum = tipo?.ToLowerInvariant() switch
             {

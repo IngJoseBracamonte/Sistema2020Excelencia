@@ -16,7 +16,17 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; private set; }
         public string Estado { get; private set; } // Pendiente, Parcial, Pagada
         public bool IsAudited { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): username en texto plano. Fuente de verdad: <see cref="UsuarioAuditoriaId"/>
+        /// (FK lógica a Usuarios, PK Guid). Se mantiene mapeado como alias de compatibilidad
+        /// hasta el DROP de columna (delta posterior a validación en producción).
+        /// </summary>
+        [Obsolete("Usar UsuarioAuditoriaId. Columna legacy pendiente de DROP.")]
         public string? UsuarioAuditoria { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que auditó.</summary>
+        public Guid? UsuarioAuditoriaId { get; private set; }
         public DateTime? FechaAuditoria { get; private set; }
         public bool CompromisoGenerado { get; private set; }
         public bool GarantiaGenerada { get; private set; }
@@ -53,7 +63,26 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void MarcarComoAuditada(string usuario)
         {
             IsAudited = true;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
+#pragma warning restore CS0618
+            // 3FN: si el valor es un GUID válido, poblar también la FK
+            UsuarioAuditoriaId = Guid.TryParse(usuario, out var parsed) ? parsed : UsuarioAuditoriaId;
+            FechaAuditoria = DateTime.UtcNow;
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void MarcarComoAuditada(Guid usuarioId, string? usuarioNombreAlias = null)
+        {
+            if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
+            IsAudited = true;
+            UsuarioAuditoriaId = usuarioId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias))
+            {
+                UsuarioAuditoria = usuarioNombreAlias;
+            }
+#pragma warning restore CS0618
             FechaAuditoria = DateTime.UtcNow;
         }
 
