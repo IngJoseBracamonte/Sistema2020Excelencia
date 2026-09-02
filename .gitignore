@@ -454,3 +454,12 @@ TestResults/
 # Sensitive installation data
 instalacion/
 
+# Documentation & Deployment & Agent directories
+docs/
+deploy/
+agent/
+Agent/
+
+# PowerShell scripts
+*.ps1
+
