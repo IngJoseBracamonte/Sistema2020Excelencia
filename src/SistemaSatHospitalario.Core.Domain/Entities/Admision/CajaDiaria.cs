@@ -54,8 +54,26 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         /// </summary>
         [Obsolete("Usar DeclaracionesPorMetodo. Columna legacy pendiente de DROP.")]
         public string? DeclaracionCierreJson { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): total ingresado calculado y persistido. Fuente de verdad:
+        /// <see cref="DeclaracionesPorMetodo"/>.Sum(d => d.MontoIngresado). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Calcular como DeclaracionesPorMetodo.Sum(d => d.MontoIngresado). Columna legacy pendiente de DROP.")]
         public decimal? TotalIngresado { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): total cobrado calculado y persistido. Fuente de verdad:
+        /// <see cref="DeclaracionesPorMetodo"/>.Sum(d => d.MontoEsperadoIngreso). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Calcular como DeclaracionesPorMetodo.Sum(d => d.MontoEsperadoIngreso). Columna legacy pendiente de DROP.")]
         public decimal? TotalCobrado { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): diferencia calculada y persistida. Fuente de verdad:
+        /// <see cref="TotalIngresado"/> - <see cref="TotalCobrado"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Calcular como TotalIngresado - TotalCobrado. Columna legacy pendiente de DROP.")]
         public decimal? Diferencia { get; protected set; }
         public virtual ICollection<CajaDeclaracionMetodo> DeclaracionesPorMetodo { get; protected set; } = new List<CajaDeclaracionMetodo>();
 
@@ -105,10 +123,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaCierre = DateTime.UtcNow;
 #pragma warning disable CS0618 // limpieza del residuo legacy
             DeclaracionCierreJson = null;
-#pragma warning restore CS0618
             TotalIngresado = totalIngresado;
             TotalCobrado = totalCobrado;
             Diferencia = diferencia;
+#pragma warning restore CS0618
         }
 
         public void ConsolidarCaja()

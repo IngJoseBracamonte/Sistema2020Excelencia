@@ -11,6 +11,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int GlasgowOcular { get; private set; }
         public int GlasgowVerbal { get; private set; }
         public int GlasgowMotor { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): total Glasgow calculado y persistido. Fuente de verdad:
+        /// <see cref="GlasgowOcular"/> + <see cref="GlasgowVerbal"/> + <see cref="GlasgowMotor"/>.
+        /// Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Calcular como GlasgowOcular + GlasgowVerbal + GlasgowMotor. Columna legacy pendiente de DROP.")]
         public int GlasgowTotal { get; private set; }
         
         public string ViaAerea { get; private set; } // Permeable, Obstruida, Con Apoyo Mecánico
@@ -104,7 +111,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             GlasgowOcular = glasgowOcular;
             GlasgowVerbal = glasgowVerbal;
             GlasgowMotor = glasgowMotor;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             GlasgowTotal = glasgowTotal;
+#pragma warning restore CS0618
             ViaAerea = viaAerea ?? throw new ArgumentNullException(nameof(viaAerea));
             Ventilacion = ventilacion ?? throw new ArgumentNullException(nameof(ventilacion));
             Pulso = pulso ?? throw new ArgumentNullException(nameof(pulso));
@@ -115,7 +124,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             AccesosVenosos = accesosVenosos ?? "";
             Pertenencias = pertenencias ?? "";
             AntecedentesMedicos = antecedentesMedicos ?? "";
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioRegistro = usuarioRegistro ?? throw new ArgumentNullException(nameof(usuarioRegistro));
+#pragma warning restore CS0618
         }
     }
 }

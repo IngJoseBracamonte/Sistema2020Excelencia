@@ -170,7 +170,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UsuarioIdentityId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("SistemaSatHospitalario.Core.Domain.Entities.Admision.BloqueoHorario", b =>
