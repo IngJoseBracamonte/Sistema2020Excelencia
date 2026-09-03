@@ -10,10 +10,38 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid SedeId { get; private set; }
         public TipoMovimientoInsumo TipoMovimiento { get; private set; }
         public decimal CantidadBase { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): unidad de medida como enum persistido en varchar(20).
+        /// Fuente de verdad: <see cref="UnidadMedidaOriginalId"/> (FK a UnidadesMedida).
+        /// Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar UnidadMedidaOriginalId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
         public UnidadMedida UnidadMedidaOriginal { get; private set; }
+
+        /// <summary>FK al catálogo UnidadesMedida (3FN).</summary>
+        public int UnidadMedidaOriginalId { get; private set; }
+
+        /// <summary>Navegación al catálogo de unidades de medida.</summary>
+        public virtual UnidadMedidaCatalogo UnidadMedidaNav { get; private set; } = null!;
         public decimal CantidadOriginal { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string Usuario { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
+        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string? UsuarioId { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que registró el movimiento.</summary>
+        public Guid? UsuarioIdentityId { get; private set; }
         public DateTime Fecha { get; private set; }
         public string Motivo { get; private set; }
 
@@ -29,10 +57,17 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SedeId = sedeId;
             TipoMovimiento = tipoMovimiento;
             CantidadBase = cantidadBase;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UnidadMedidaOriginal = unidadMedidaOriginal;
+#pragma warning restore CS0618
+            UnidadMedidaOriginalId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaOriginal);
             CantidadOriginal = cantidadOriginal;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
             UsuarioId = usuarioId;
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
             Fecha = DateTime.UtcNow;
             Motivo = motivo ?? string.Empty;
         }

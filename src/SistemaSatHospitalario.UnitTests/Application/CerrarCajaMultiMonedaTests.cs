@@ -46,6 +46,10 @@ namespace SistemaSatHospitalario.UnitTests.Application
             var recibosList = new List<ReciboFactura> { recibo };
             _mockContext.Setup(c => c.RecibosFactura).Returns(recibosList.BuildMockDbSet().Object);
 
+            // 3FN: el handler persiste las declaraciones normalizadas en CajasDeclaracionesMetodos
+            _mockContext.Setup(c => c.CajasDeclaracionesMetodos)
+                .Returns(new List<CajaDeclaracionMetodo>().BuildMockDbSet().Object);
+
             var handler = new CerrarCajaCommandHandler(_mockRepo.Object, _mockContext.Object);
 
             // Declaración:

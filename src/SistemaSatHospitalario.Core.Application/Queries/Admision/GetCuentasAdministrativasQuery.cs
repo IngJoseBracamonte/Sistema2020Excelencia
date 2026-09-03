@@ -62,7 +62,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             var cuentas = await query
                 .OrderByDescending(c => c.FechaCarga)
-                .Take(50)
                 .ToListAsync(cancellationToken);
 
             var result = new List<CuentaAdministrativaDto>();

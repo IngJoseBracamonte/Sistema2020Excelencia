@@ -9,9 +9,21 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
         public int NumeroLlegadaDiario { get; protected set; }
         // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del paciente. Fuente de verdad:
+        /// la navegación <see cref="Paciente"/> vía <see cref="PacienteId"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar Paciente.NombreCorto vía PacienteId. Columna legacy pendiente de DROP.")]
         public string NombrePaciente { get; protected set; }
         public string TipoIngreso { get; protected set; } // Particular, Seguro, Hospitalizacion, Emergencia
         public EstadoFacturacion EstadoFacturacion { get; protected set; }
+
+        /// <summary>
+        /// LEGACY (3FN): total cobrado calculado y persistido. Fuente de verdad:
+        /// los detalles de la orden (tabla hija). Alias de compatibilidad hasta el DROP.
+        /// </summary>
+        [Obsolete("Calcular desde los detalles de la orden. Columna legacy pendiente de DROP.")]
         public decimal TotalCobrado { get; protected set; }
         public DateTime FechaCreacion { get; protected set; }
         
@@ -32,14 +44,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
             TipoIngreso = tipoIngreso ?? throw new ArgumentNullException(nameof(tipoIngreso));
             EstadoFacturacion = tipoIngreso == "Seguro" ? EstadoFacturacion.FacturaFiscal : EstadoFacturacion.SinFactura;
             FechaCreacion = DateTime.UtcNow;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             TotalCobrado = 0;
+#pragma warning restore CS0618
             ConvenioId = convenioId;
         }
 
         public void ActualizarTotalCobrado(decimal nuevoTotal)
         {
             if (nuevoTotal < 0) throw new ArgumentException("El total no puede ser negativo.");
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             TotalCobrado = nuevoTotal;
+#pragma warning restore CS0618
         }
 
         public void AsignarConvenio(int convenioId)

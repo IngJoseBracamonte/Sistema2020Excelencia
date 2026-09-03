@@ -447,3 +447,19 @@ playwright-db.config.ts
 *.sqlite
 test_*.db
 TestResults/
+
+# Database dumps & SQL scripts
+*.sql
+
+# Sensitive installation data
+instalacion/
+
+# Documentation & Deployment & Agent directories
+docs/
+deploy/
+agent/
+Agent/
+
+# PowerShell scripts
+*.ps1
+

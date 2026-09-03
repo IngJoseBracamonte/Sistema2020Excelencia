@@ -41,6 +41,33 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             _logger = logger;
         }
 
+        /// <summary>
+        /// 3FN: resuelve la categoría normalizada. Prioridad: 1) CategoriaInsumoId (FK),
+        /// 2) coincidencia única por nombre (case/space-insensitive) sobre el texto legacy.
+        /// Devuelve null si no hay match único (el insumo conserva solo el alias de texto).
+        /// </summary>
+        private async Task<CategoriaInsumo?> ResolverCategoriaInsumoAsync(Guid? categoriaInsumoId, string? categoriaTexto, CancellationToken ct)
+        {
+            if (categoriaInsumoId.HasValue)
+            {
+                return await _context.CategoriasInsumo
+                    .FirstOrDefaultAsync(c => c.Id == categoriaInsumoId.Value && c.Activo, ct);
+            }
+
+            if (string.IsNullOrWhiteSpace(categoriaTexto))
+            {
+                return null;
+            }
+
+            var normalizado = categoriaTexto.Trim().ToUpper();
+            var coincidencias = await _context.CategoriasInsumo
+                .Where(c => c.Activo && c.Nombre.ToUpper() == normalizado)
+                .Take(2)
+                .ToListAsync(ct);
+
+            return coincidencias.Count == 1 ? coincidencias[0] : null;
+        }
+
         [HttpGet("stock/by-code/{codigo}")]
         public async Task<IActionResult> GetStockByCodigo(string codigo, CancellationToken ct)
         {
@@ -75,6 +102,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 .Include(i => i.PrincipiosActivos)
                     .ThenInclude(pa => pa.PrincipioActivo)
                 .Include(i => i.StocksPorSede)
+                .Include(i => i.CategoriaInsumo)
                 .AsQueryable();
 
             if (excludeHidden == true)
@@ -103,13 +131,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
                     i.CostoUnitarioBaseUSD,
                     i.PermiteFraccionamiento,
-                    i.Categoria,
-                    CategoriaInsumo = i.CategoriaInsumo == null ? null : new
-                    {
-                        i.CategoriaInsumo.Id,
-                        i.CategoriaInsumo.Codigo,
-                        i.CategoriaInsumo.Nombre
-                    },
+                    Categoria = i.CategoriaInsumo != null ? i.CategoriaInsumo.Nombre : i.Categoria,
+                    i.CategoriaInsumoId,
                     i.IsDeleted,
                     i.FechaInactivacion,
                     i.OcultoEnTraslados,
@@ -132,6 +155,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 .Include(i => i.PrincipiosActivos)
                     .ThenInclude(pa => pa.PrincipioActivo)
                 .Include(i => i.StocksPorSede)
+                .Include(i => i.CategoriaInsumo)
                 .FirstOrDefaultAsync(i => i.Id == id, ct);
 
             if (insumo == null) return NotFound();
@@ -150,13 +174,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                insumo.Categoria,
-                CategoriaInsumo = insumo.CategoriaInsumo == null ? null : new
-                {
-                    insumo.CategoriaInsumo.Id,
-                    insumo.CategoriaInsumo.Codigo,
-                    insumo.CategoriaInsumo.Nombre
-                },
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.FechaInactivacion,
                 insumo.OcultoEnTraslados,
@@ -397,14 +416,15 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 }
             }
 
-            var categoria = await ResolveCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
-            if (categoria == null)
+            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
+
+            // 3FN: asignar categoría normalizada por FK (tiene prioridad sobre el texto legacy)
+            var categoriaInsumo = await ResolverCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
+            if (categoriaInsumo != null)
             {
-                return BadRequest(new { Message = "Debe indicar una categoría de insumo activa y existente." });
+                insumo.AsignarCategoria(categoriaInsumo);
             }
 
-            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, categoria.Nombre);
-            insumo.AsignarCategoria(categoria);
             _context.Insumos.Add(insumo);
 
             if (dto.StockInicial > 0)
@@ -426,7 +446,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             }
 
             // --- AUTO-CREACIÓN EN MAESTRO DE SERVICIOS (DESACTIVADO, PRECIO 0, CÓDIGO ALEATORIO) ---
-            string prefix = categoria.Nombre.ToUpperInvariant().Contains(TipoServicioConstants.CategoriaMedicamento.ToUpperInvariant()) ? "MED-AUT-" : "INS-AUT-";
+            string prefix = (dto.Categoria ?? "").ToUpperInvariant().Contains(TipoServicioConstants.CategoriaMedicamento.ToUpperInvariant()) ? "MED-AUT-" : "INS-AUT-";
             string randomCode;
             do
             {
@@ -476,8 +496,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                insumo.Categoria,
-                CategoriaInsumo = new { categoria.Id, categoria.Codigo, categoria.Nombre },
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados,
                 ServicioClinicoId = servicioClinico.Id,
@@ -491,20 +511,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == id, ct);
             if (insumo == null) return NotFound();
 
-            var categoria = await ResolveCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
-            if (categoria == null)
+            insumo.ActualizarDetalles(
+                dto.Nombre,
+                dto.UnidadMedidaBase,
+                dto.CostoUnitarioBaseUSD,
+                dto.PermiteFraccionamiento,
+                dto.Categoria
+            );
+
+            // 3FN: asignar categoría normalizada por FK (tiene prioridad sobre el texto legacy)
+            var categoriaInsumo = await ResolverCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
+            if (categoriaInsumo != null)
             {
-                return BadRequest(new { Message = "Debe indicar una categoría de insumo activa y existente." });
+                insumo.AsignarCategoria(categoriaInsumo);
             }
 
-            insumo.ActualizarDetalles(
-                dto.Nombre, 
-                dto.UnidadMedidaBase, 
-                dto.CostoUnitarioBaseUSD, 
-                dto.PermiteFraccionamiento, 
-                categoria.Nombre
-            );
-            insumo.AsignarCategoria(categoria);
             await _context.SaveChangesAsync(ct);
             return Ok(new
             {
@@ -515,8 +536,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                insumo.Categoria,
-                CategoriaInsumo = new { categoria.Id, categoria.Codigo, categoria.Nombre },
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
             });
@@ -593,7 +614,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 categoria.SetEstado(dto.Activo.Value);
             }
 
-            // Asignar la FK canónica a filas heredadas y actualizar el alias de compatibilidad.
+            // 3FN: propagar el nuevo nombre canónico a los insumos vinculados por FK
+            // (el alias de texto Categoria se sincroniza dentro de AsignarCategoria)
             var insumosConCategoria = await _context.Insumos
                 .Where(i => i.CategoriaInsumoId == categoria.Id || i.Categoria == nombreAnterior)
                 .ToListAsync(ct);
@@ -821,7 +843,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
             });
@@ -833,18 +856,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             if (dto.Items == null || !dto.Items.Any())
             {
                 return BadRequest(new { Message = "No hay ítems en la compra." });
-            }
-
-            if (!dto.ProveedorId.HasValue || dto.ProveedorId.Value == Guid.Empty)
-            {
-                return BadRequest(new { Message = "Debe indicar un proveedor activo mediante ProveedorId." });
-            }
-
-            var proveedor = await _context.Proveedores
-                .FirstOrDefaultAsync(p => p.Id == dto.ProveedorId.Value && p.Activo, ct);
-            if (proveedor == null)
-            {
-                return BadRequest(new { Message = "El proveedor indicado no existe o está inactivo." });
             }
 
             var username = User.Identity?.Name ?? "System";
@@ -867,13 +878,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
                 totalCompraUSD += Math.Round(item.Cantidad * item.PrecioCostoUSD, 2);
 
-                insumo.ActualizarDetalles(
-                    insumo.Nombre,
-                    insumo.UnidadMedidaBase,
-                    item.PrecioCostoUSD,
-                    insumo.PermiteFraccionamiento,
-                    insumo.Categoria
-                );
+                // 3FN: solo actualizar datos de precio; la categoría se gestiona vía CategoriaInsumoId
+                insumo.ActualizarDetalles(insumo.Nombre, item.PrecioCostoUSD);
 
                 var stockSede = await _context.StocksSedes
                     .FirstOrDefaultAsync(s => s.InsumoId == item.InsumoId && s.SedeId == principalSedeId, ct);
@@ -894,7 +900,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     insumo.UnidadMedidaBase,
                     item.Cantidad,
                     username,
-                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {proveedor.RazonSocial}"
+                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}"
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
@@ -905,19 +911,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // 2. Registrar automáticamente la Cuenta por Pagar / Orden de Compra de manera defensiva
             try
             {
+                var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
                 var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
                 var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
 
                 var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
                     numFact,
-                    proveedor.RazonSocial,
+                    provNombre,
                     DateTime.Now,
                     totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
                     tasa,
-                    proveedor.Id,
+                    dto.ProveedorId,
                     $"Ingreso atómico de compra de insumos registrado por {username}."
                 );
-                ordenCompra.AsignarProveedor(proveedor);
                 _context.OrdenesCompraInventario.Add(ordenCompra);
                 await _context.SaveChangesAsync(ct);
             }
@@ -1057,22 +1063,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             await _context.SaveChangesAsync(ct);
             return Ok(new { Message = "Receta eliminada con éxito." });
         }
-
-        private Task<CategoriaInsumo?> ResolveCategoriaInsumoAsync(Guid? categoriaInsumoId, string? categoria, CancellationToken ct)
-        {
-            if (categoriaInsumoId.HasValue && categoriaInsumoId.Value != Guid.Empty)
-            {
-                return _context.CategoriasInsumo
-                    .FirstOrDefaultAsync(c => c.Id == categoriaInsumoId.Value && c.Activo, ct);
-            }
-
-            var categoriaNormalizada = string.IsNullOrWhiteSpace(categoria)
-                ? TipoServicioConstants.CategoriaMedicamento
-                : categoria.Trim();
-
-            return _context.CategoriasInsumo
-                .FirstOrDefaultAsync(c => c.Activo && c.Nombre.ToLower() == categoriaNormalizada.ToLower(), ct);
-        }
     }
 
     public class CreateRecetaDto
@@ -1099,8 +1089,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
-        public Guid? CategoriaInsumoId { get; set; }
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
+        /// <summary>3FN: FK al catálogo CategoriasInsumo. Si se envía, tiene prioridad sobre el texto Categoria.</summary>
+        public Guid? CategoriaInsumoId { get; set; }
     }
 
     public class UpdateInsumoDto
@@ -1109,8 +1100,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public UnidadMedida UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
-        public Guid? CategoriaInsumoId { get; set; }
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
+        /// <summary>3FN: FK al catálogo CategoriasInsumo. Si se envía, tiene prioridad sobre el texto Categoria.</summary>
+        public Guid? CategoriaInsumoId { get; set; }
     }
 
     public class CreateCategoriaInsumoDto

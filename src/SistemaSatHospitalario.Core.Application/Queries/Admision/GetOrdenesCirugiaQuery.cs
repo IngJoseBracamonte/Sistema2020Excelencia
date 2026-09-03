@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Interfaces;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -27,6 +28,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public string Tipo { get; set; } = string.Empty;
         public DateTime FechaRegistro { get; set; }
         public string UsuarioRegistro { get; set; } = string.Empty;
+        /// <summary>3FN: FK lógica a Usuarios (Identity).</summary>
+        public Guid? UsuarioRegistroId { get; set; }
+        /// <summary>3FN: nombre resuelto desde Identity (fallback a UsuarioRegistro legacy).</summary>
+        public string? UsuarioRegistroNombre { get; set; }
     }
 
     public class OrdenCirugiaDto
@@ -86,10 +91,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetOrdenesCirugiaQueryHandler : IRequestHandler<GetOrdenesCirugiaQuery, List<OrdenCirugiaDto>>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IIdentityService _identityService;
 
-        public GetOrdenesCirugiaQueryHandler(IApplicationDbContext context)
+        public GetOrdenesCirugiaQueryHandler(IApplicationDbContext context, IIdentityService identityService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _identityService = identityService ?? throw new ArgumentNullException(nameof(identityService));
         }
 
         public async Task<List<OrdenCirugiaDto>> Handle(GetOrdenesCirugiaQuery request, CancellationToken cancellationToken)
@@ -124,7 +131,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     (targetState == "Finalizado" && o.Estado == "Completada"));
             }
 
-            return await query
+            var ordenes = await query
                 .OrderBy(o => o.FechaHoraProgramada)
                 .Select(o => new OrdenCirugiaDto
                 {
@@ -158,10 +165,48 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Observacion = h.Observacion,
                         Tipo = h.Tipo.ToString(),
                         FechaRegistro = h.FechaRegistro,
-                        UsuarioRegistro = h.UsuarioRegistro
+#pragma warning disable CS0618 // alias legacy como fallback
+                        UsuarioRegistro = h.UsuarioRegistro,
+#pragma warning restore CS0618
+                        UsuarioRegistroId = h.UsuarioRegistroId
                     }).OrderByDescending(h => h.FechaRegistro).ToList()
                 })
                 .ToListAsync(cancellationToken);
+
+            // 3FN: resolver nombres de usuario desde Identity (fuente de verdad: UsuarioRegistroId)
+            await ResolverNombresUsuariosAsync(ordenes);
+
+            return ordenes;
+        }
+
+        /// <summary>
+        /// Resuelve UsuarioRegistroNombre desde Identity usando UsuarioRegistroId.
+        /// Fallback al alias legacy UsuarioRegistro cuando no hay FK o el usuario no existe.
+        /// </summary>
+        internal async Task ResolverNombresUsuariosAsync(IEnumerable<OrdenCirugiaDto> ordenes)
+        {
+            var historiales = ordenes.SelectMany(o => o.HistorialObservaciones).ToList();
+            if (historiales.Count == 0) return;
+
+            var userIds = historiales
+                .Where(h => h.UsuarioRegistroId.HasValue)
+                .Select(h => h.UsuarioRegistroId!.Value)
+                .Distinct()
+                .ToHashSet();
+
+            if (userIds.Count == 0) return;
+
+            var users = await _identityService.GetUsersAsync();
+            var userMap = users.Where(u => userIds.Contains(u.Id))
+                .ToDictionary(u => u.Id, u => !string.IsNullOrWhiteSpace(u.FullName) ? u.FullName : u.Username);
+
+            foreach (var h in historiales)
+            {
+                if (h.UsuarioRegistroId.HasValue && userMap.TryGetValue(h.UsuarioRegistroId.Value, out var nombre))
+                {
+                    h.UsuarioRegistroNombre = nombre;
+                }
+            }
         }
     }
 
@@ -173,10 +218,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetOrdenCirugiaDetalleQueryHandler : IRequestHandler<GetOrdenCirugiaDetalleQuery, OrdenCirugiaDetalleDto?>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IIdentityService _identityService;
 
-        public GetOrdenCirugiaDetalleQueryHandler(IApplicationDbContext context)
+        public GetOrdenCirugiaDetalleQueryHandler(IApplicationDbContext context, IIdentityService identityService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _identityService = identityService ?? throw new ArgumentNullException(nameof(identityService));
         }
 
         public async Task<OrdenCirugiaDetalleDto?> Handle(GetOrdenCirugiaDetalleQuery request, CancellationToken cancellationToken)
@@ -209,7 +256,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 })
                 .ToListAsync(cancellationToken);
 
-            return new OrdenCirugiaDetalleDto
+            var detalle = new OrdenCirugiaDetalleDto
             {
                 Id = orden.Id,
                 CuentaServicioId = orden.CuentaServicioId,
@@ -241,7 +288,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Observacion = h.Observacion,
                     Tipo = h.Tipo.ToString(),
                     FechaRegistro = h.FechaRegistro,
-                    UsuarioRegistro = h.UsuarioRegistro
+#pragma warning disable CS0618 // alias legacy como fallback
+                    UsuarioRegistro = h.UsuarioRegistro,
+#pragma warning restore CS0618
+                    UsuarioRegistroId = h.UsuarioRegistroId
                 }).OrderByDescending(h => h.FechaRegistro).ToList(),
                 Logs = orden.Logs.Select(l => new CirugiaLogDto
                 {
@@ -254,6 +304,31 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }).OrderByDescending(l => l.Timestamp).ToList(),
                 InsumosAsignados = insumosAsignados
             };
+
+            // 3FN: resolver nombres de usuario desde Identity (fuente de verdad: UsuarioRegistroId)
+            var historiales = detalle.HistorialObservaciones;
+            var userIds = historiales
+                .Where(h => h.UsuarioRegistroId.HasValue)
+                .Select(h => h.UsuarioRegistroId!.Value)
+                .Distinct()
+                .ToHashSet();
+
+            if (userIds.Count > 0)
+            {
+                var users = await _identityService.GetUsersAsync();
+                var userMap = users.Where(u => userIds.Contains(u.Id))
+                    .ToDictionary(u => u.Id, u => !string.IsNullOrWhiteSpace(u.FullName) ? u.FullName : u.Username);
+
+                foreach (var h in historiales)
+                {
+                    if (h.UsuarioRegistroId.HasValue && userMap.TryGetValue(h.UsuarioRegistroId.Value, out var nombre))
+                    {
+                        h.UsuarioRegistroNombre = nombre;
+                    }
+                }
+            }
+
+            return detalle;
         }
     }
 }

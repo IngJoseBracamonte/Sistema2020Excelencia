@@ -26,7 +26,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Estado { get; private set; }
         public string? MotivoCancelacion { get; private set; }
         public DateTime FechaCreacion { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCreacionId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioCreacionId. Columna legacy pendiente de DROP.")]
         public string UsuarioCreacion { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que creó la orden.</summary>
+        public Guid? UsuarioCreacionId { get; private set; }
 
         // Nuevos campos operativos
         public string SalaQuirofano { get; private set; }
@@ -214,20 +223,23 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             var fechaAnterior = FechaHoraProgramada;
             FechaHoraProgramada = nuevaFecha;
-            
+
             var detalle = $"Reprogramada de {fechaAnterior:dd/MM/yyyy HH:mm} a {nuevaFecha:dd/MM/yyyy HH:mm}. Motivo: {motivo}";
             AgregarLog(usuarioId, "Reprogramacion", detalle);
-            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugia.Reprogramacion, usuarioId, usuarioId);
+            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugia.Reprogramacion, usuarioId, ParseUsuarioId(usuarioId));
         }
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugia tipo = Enums.TipoObservacionCirugia.ObservacionMedica, string usuarioRegistro = "Sistema", string? usuarioRegistroId = null)
+        private static Guid? ParseUsuarioId(string? usuarioId)
+            => Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
+
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugia tipo = Enums.TipoObservacionCirugia.ObservacionMedica, string usuarioRegistro = "Sistema", Guid? usuarioRegistroId = null)
         {
             var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro, usuarioRegistroId);
             _historialObservaciones.Add(item);
             return item;
         }
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro, string? usuarioRegistroId = null)
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, string tipo, string usuarioRegistro, Guid? usuarioRegistroId = null)
         {
             var tipoEnum = tipo?.ToLowerInvariant() switch
             {

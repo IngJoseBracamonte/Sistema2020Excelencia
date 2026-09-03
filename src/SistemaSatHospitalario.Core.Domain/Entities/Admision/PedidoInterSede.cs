@@ -16,7 +16,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; private set; }
         public DateTime? FechaDespacho { get; private set; }
         public DateTime? FechaRecepcion { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCreadorId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioCreadorId. Columna legacy pendiente de DROP.")]
         public string UsuarioCreador { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que creó el pedido.</summary>
+        public Guid? UsuarioCreadorId { get; private set; }
         public string Observaciones { get; private set; }
 
         public virtual ICollection<PedidoInterSedeDetalle> Detalles { get; private set; } = new List<PedidoInterSedeDetalle>();
@@ -34,7 +43,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Correlativo = correlativo ?? throw new ArgumentNullException(nameof(correlativo));
             SedeSolicitanteId = sedeSolicitanteId;
             SedeProveedoraId = sedeProveedoraId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioCreador = usuarioCreador ?? throw new ArgumentNullException(nameof(usuarioCreador));
+#pragma warning restore CS0618
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioCreadorId = Guid.TryParse(usuarioCreador, out var parsed) ? parsed : (Guid?)null;
             Observaciones = observaciones ?? string.Empty;
             Estado = EstadoPedidoInterSede.Solicitado;
             FechaCreacion = DateTime.UtcNow;

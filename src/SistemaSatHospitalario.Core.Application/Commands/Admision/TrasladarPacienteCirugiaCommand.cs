@@ -184,7 +184,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             
             // Registrar auditoría inmutable a través de la raíz agregada
             var log = orden.AgregarLog(usuario, "Traslado", $"Paciente trasladado a {sedeNombre} - {camaNombre}{obsTexto}");
-            var hist = orden.AgregarHistorialObservacion($"Traslado a {sedeNombre} - {camaNombre}{obsTexto}", TipoObservacionCirugia.ObservacionMedica, usuario, usuario);
+            var usuarioGuid = Guid.TryParse(usuario, out var parsedUsuario) ? parsedUsuario : (Guid?)null;
+            var hist = orden.AgregarHistorialObservacion($"Traslado a {sedeNombre} - {camaNombre}{obsTexto}", TipoObservacionCirugia.ObservacionMedica, usuario, usuarioGuid);
 
             await _context.CirugiaLogs.AddAsync(log, cancellationToken);
             await _context.CirugiasObservacionesHistorial.AddAsync(hist, cancellationToken);

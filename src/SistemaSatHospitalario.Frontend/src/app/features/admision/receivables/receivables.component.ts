@@ -25,6 +25,7 @@ import { ReceivablesService, PendingAR, SettleARRequest, PaymentItemDto } from '
 import { FacturacionService } from '../../../core/services/facturacion.service';
 import { SettingsService } from '../../../core/services/settings.service';
 import { CatalogService } from '../../../core/services/catalog.service';
+import { CatalogLookupService } from '../../../core/services/catalog-lookup.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -57,6 +58,7 @@ export class ReceivablesComponent implements OnInit {
   private facturacionService = inject(FacturacionService);
   private settingsService = inject(SettingsService);
   private catalogService = inject(CatalogService);
+  private catalogLookup = inject(CatalogLookupService);
   private tasaSubscription?: Subscription;
 
   // Signals para estado
@@ -166,9 +168,11 @@ export class ReceivablesComponent implements OnInit {
   ngOnInit() {
     this.refresh();
     this.loadPaymentCatalogs();
+    // 3FN: cargar catálogo de motivos de autorización para el diálogo de compromisos
+    this.catalogLookup.loadMotivosAutorizacion().subscribe();
     // Forzar actualización de tasa al entrar al módulo (Senior Pattern)
     this.settingsService.refreshTasa();
-    
+
     this.tasaSubscription = this.settingsService.tasa$.subscribe(tasa => {
       this.tasaCambio.set(tasa);
     });

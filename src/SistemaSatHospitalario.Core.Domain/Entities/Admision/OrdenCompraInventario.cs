@@ -9,12 +9,37 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public string NumeroFactura { get; private set; } = string.Empty;
         public Guid? ProveedorId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del proveedor. Fuente de verdad:
+        /// la navegación <see cref="Proveedor"/> vía <see cref="ProveedorId"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar Proveedor.RazonSocial vía ProveedorId. Columna legacy pendiente de DROP.")]
         public string ProveedorNombre { get; private set; } = string.Empty;
         public virtual Proveedor? Proveedor { get; private set; }
         public DateTime FechaEmision { get; private set; }
         public decimal MontoTotalUSD { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): monto en bolívares calculado y persistido. Fuente de verdad:
+        /// <see cref="MontoTotalUSD"/> × tasa de cambio del día (no persistida aquí).
+        /// Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Calcular como MontoTotalUSD * tasaCambio. Columna legacy pendiente de DROP.")]
         public decimal MontoTotalBs { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): total abonado calculado y persistido. Fuente de verdad:
+        /// <see cref="Pagos"/>.Sum(p => p.MontoAbonadoUSD). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Calcular como Pagos.Sum(p => p.MontoAbonadoUSD). Columna legacy pendiente de DROP.")]
         public decimal TotalAbonadoUSD { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): saldo pendiente calculado y persistido. Fuente de verdad:
+        /// <see cref="MontoTotalUSD"/> - <see cref="TotalAbonadoUSD"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Calcular como MontoTotalUSD - TotalAbonadoUSD. Columna legacy pendiente de DROP.")]
         public decimal SaldoPendienteUSD { get; private set; }
         public string Estado { get; private set; } = "PorPagar"; // PorPagar, Pagado
         public string? Observaciones { get; private set; }
@@ -40,12 +65,16 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Id = Guid.NewGuid();
             NumeroFactura = numeroFactura.Trim();
             ProveedorId = proveedorId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             ProveedorNombre = proveedorNombre.Trim();
+#pragma warning restore CS0618
             FechaEmision = fechaEmision;
             MontoTotalUSD = Math.Round(montoTotalUSD, 2);
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             MontoTotalBs = Math.Round(montoTotalUSD * tasaCambio, 2);
             TotalAbonadoUSD = 0m;
             SaldoPendienteUSD = MontoTotalUSD;
+#pragma warning restore CS0618
             Estado = "PorPagar";
             Observaciones = observaciones;
         }
@@ -77,6 +106,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             Pagos.Add(pago);
 
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             TotalAbonadoUSD = Math.Round(TotalAbonadoUSD + montoAbonadoUSD, 2);
             SaldoPendienteUSD = Math.Round(MontoTotalUSD - TotalAbonadoUSD, 2);
 
@@ -86,6 +116,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 SaldoPendienteUSD = 0m;
                 Estado = "Pagado";
             }
+#pragma warning restore CS0618
 
             return pago;
         }

@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, Hos
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../../core/services/inventory.service';
+import { CatalogLookupService } from '../../../core/services/catalog-lookup.service';
 import { Insumo, PrincipioActivo, CategoriaInsumo, CreateInsumo, UpdateInsumo } from '../../../core/models/inventory.model';
 import { 
   LucideAngularModule, 
@@ -28,6 +29,7 @@ import {
 })
 export class CatalogoComponent implements OnInit {
   private inventoryService = inject(InventoryService);
+  private catalogLookup = inject(CatalogLookupService);
 
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
@@ -96,7 +98,8 @@ export class CatalogoComponent implements OnInit {
   public successMessage = signal<string | null>(null);
   public errorMessage = signal<string | null>(null);
 
-  readonly unidadesMedida = ['UNIDAD', 'KG', 'G', 'DG', 'MG', 'L', 'ML'];
+  // 3FN: unidades de medida desde el catálogo cacheado (reemplaza el array hardcodeado)
+  readonly unidadesMedida = computed(() => this.catalogLookup.unidadesMedida().map(u => u.codigo));
 
   readonly icons = {
     Package,
@@ -132,6 +135,9 @@ export class CatalogoComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    // 3FN: cargar catálogos cacheados (unidades de medida, categorías)
+    this.catalogLookup.loadUnidadesMedida().subscribe();
+    this.catalogLookup.loadCategoriasInsumo().subscribe();
   }
 
   loadData() {
@@ -148,12 +154,24 @@ export class CatalogoComponent implements OnInit {
       next: (res) => this.principiosActivosList.set(res)
     });
 
-    this.inventoryService.getCategorias().subscribe({
+    // 3FN: categorías desde el catálogo cacheado (fallback al servicio legacy si falla)
+    this.catalogLookup.loadCategoriasInsumo().subscribe({
       next: (cats) => {
-        this.categoriasInsumoList.set(cats);
+        this.categoriasInsumoList.set(cats.map(c => ({ id: c.id, nombre: c.nombre, codigo: c.codigo, activo: true, fechaCreacion: new Date() })));
         if (!this.isEditing() && cats.length > 0 && !this.insumoForm().categoria) {
           this.insumoForm.update(p => ({ ...p, categoria: cats[0].nombre }));
         }
+      },
+      error: () => {
+        // Fallback al servicio legacy si el catálogo no está disponible
+        this.inventoryService.getCategorias().subscribe({
+          next: (cats) => {
+            this.categoriasInsumoList.set(cats);
+            if (!this.isEditing() && cats.length > 0 && !this.insumoForm().categoria) {
+              this.insumoForm.update(p => ({ ...p, categoria: cats[0].nombre }));
+            }
+          }
+        });
       }
     });
   }

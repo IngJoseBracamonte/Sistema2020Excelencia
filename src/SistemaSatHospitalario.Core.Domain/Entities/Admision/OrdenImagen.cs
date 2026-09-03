@@ -12,6 +12,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public int Id { get; set; }
         public Guid CuentaId { get; set; }
         public Guid PacienteId { get; set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del paciente. Fuente de verdad:
+        /// la navegación <see cref="Paciente"/> vía <see cref="PacienteId"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar Paciente.NombreCorto vía PacienteId. Columna legacy pendiente de DROP.")]
         public string PacienteNombre { get; set; } = string.Empty;
         public string Estudio { get; set; } = string.Empty;
         public string TipoServicio { get; set; } = string.Empty; // RX o TOMO
@@ -25,6 +31,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? ValidadorPor { get; set; }
         public DateTime? FechaValidacion { get; set; }
         public Guid? MedicoSolicitanteId { get; set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre desnormalizado del médico. Fuente de verdad:
+        /// la navegación <see cref="MedicoSolicitante"/> vía <see cref="MedicoSolicitanteId"/>. Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar MedicoSolicitante.Nombre vía MedicoSolicitanteId. Columna legacy pendiente de DROP.")]
         public string? MedicoSolicitanteNombre { get; set; }
         public string? Informe { get; set; }
 

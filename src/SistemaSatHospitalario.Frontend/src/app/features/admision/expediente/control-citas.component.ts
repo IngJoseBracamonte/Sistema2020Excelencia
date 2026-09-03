@@ -20,6 +20,7 @@ import {
   MessageSquare
 } from 'lucide-angular';
 import { ExpedienteService, ControlCitaRow } from '../../../core/services/expediente.service';
+import { CatalogLookupService } from '../../../core/services/catalog-lookup.service';
 
 @Component({
   selector: 'app-control-citas',
@@ -46,6 +47,7 @@ export class ControlCitasComponent implements OnInit {
   };
 
   private expedienteService = inject(ExpedienteService);
+  private catalogLookup = inject(CatalogLookupService);
   private router = inject(Router);
 
   // Signals
@@ -85,6 +87,8 @@ export class ControlCitasComponent implements OnInit {
 
   ngOnInit() {
     this.refresh();
+    // 3FN: cargar catálogo de estados de cita para filtros
+    this.catalogLookup.loadEstadosCita().subscribe();
   }
 
   refresh() {
@@ -129,7 +133,10 @@ export class ControlCitasComponent implements OnInit {
       return;
     }
 
-    const citasActivas = doc.citas.filter(c => c.estado !== 'Cancelada' && c.estado !== 'Cancelado');
+    // 3FN: usar código del catálogo (fallback a texto legacy si el catálogo no cargó)
+    const estados = this.catalogLookup.estadosCita();
+    const codigoCancelada = estados.find(e => e.codigo === 'CANCELADA')?.nombre ?? 'Cancelada';
+    const citasActivas = doc.citas.filter(c => c.estado !== codigoCancelada && c.estado !== 'Cancelado');
     if (citasActivas.length === 0) {
       alert('No hay pacientes activos hoy para enviar en la lista.');
       return;

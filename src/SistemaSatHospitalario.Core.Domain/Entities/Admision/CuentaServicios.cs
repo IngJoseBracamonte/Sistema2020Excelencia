@@ -11,11 +11,38 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; private set; }
         public Guid? CuentaPrincipalId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
+        /// <see cref="UsuarioCargaId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// </summary>
+        [Obsolete("Usar UsuarioCargaId. Columna legacy pendiente de DROP.")]
         public string UsuarioCarga { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que cargó la cuenta.</summary>
+        public Guid? UsuarioCargaId { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public DateTime? FechaCierre { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): texto del estado. Fuente de verdad: <see cref="EstadoId"/>
+        /// (FK a EstadosCuenta). Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar EstadoId / EstadoNav. Columna legacy pendiente de DROP.")]
         public string Estado { get; private set; } // Abierta, Facturada, Anulada
+
+        /// <summary>FK al catálogo EstadosCuenta (3FN).</summary>
+        public int EstadoId { get; private set; }
+
+        /// <summary>
+        /// LEGACY (3FN): texto del tipo de ingreso. Fuente de verdad: <see cref="TipoIngresoId"/>
+        /// (FK a TiposIngreso). Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar TipoIngresoId / TipoIngresoNav. Columna legacy pendiente de DROP.")]
         public string TipoIngreso { get; private set; } // Particular, Seguro, Hospitalizacion, Emergencia
+
+        /// <summary>FK al catálogo TiposIngreso (3FN).</summary>
+        public int TipoIngresoId { get; private set; }
         public int? ConvenioId { get; private set; }
         public int? LegacyOrderId { get; private set; }
         public string? ProcesamientoEstado { get; private set; } // PENDIENTE, PROCESADA
@@ -30,15 +57,29 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public virtual AreaClinica? AreaClinica { get; private set; }
         public virtual AreaClinica? CamaRetenida { get; private set; }
         public virtual Medico? Medico { get; private set; }
+        public virtual EstadoCuenta EstadoNav { get; private set; } = null!;
+        public virtual TipoIngreso TipoIngresoNav { get; private set; } = null!;
  
         public virtual ICollection<TriageEnfermeria> Triages { get; private set; } = new List<TriageEnfermeria>();
         public virtual ICollection<ValoracionFisica> Valoraciones { get; private set; } = new List<ValoracionFisica>();
 
         
         // --- AUDIT & VALIDATION (Senior Traceability V15.0) ---
+
+        /// <summary>LEGACY (3FN): texto plano. Fuente de verdad: <see cref="UsuarioValidacionId"/>.</summary>
+        [Obsolete("Usar UsuarioValidacionId. Columna legacy pendiente de DROP.")]
         public string? UsuarioValidacion { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que validó.</summary>
+        public Guid? UsuarioValidacionId { get; private set; }
         public DateTime? FechaValidacion { get; private set; }
+
+        /// <summary>LEGACY (3FN): texto plano. Fuente de verdad: <see cref="UsuarioAuditoriaId"/>.</summary>
+        [Obsolete("Usar UsuarioAuditoriaId. Columna legacy pendiente de DROP.")]
         public string? UsuarioAuditoria { get; private set; }
+
+        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que auditó.</summary>
+        public Guid? UsuarioAuditoriaId { get; private set; }
         public DateTime? FechaAuditoria { get; private set; }
         public string? DestinoPaciente { get; private set; }
         public string? PersonalRelevo { get; private set; }
@@ -48,14 +89,22 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null)
+        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null, Guid? usuarioCargaId = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
+#pragma warning restore CS0618
+            // 3FN: si no se pasa la FK explícita, intentar parsear el texto como GUID
+            UsuarioCargaId = usuarioCargaId ?? (Guid.TryParse(usuarioCarga, out var parsedCarga) ? parsedCarga : (Guid?)null);
             FechaCarga = DateTime.UtcNow;
+            EstadoId = EstadoCuentaConstants.AbiertaId;
+            TipoIngresoId = TipoIngresoConstants.FromLegacyString(tipoIngreso);
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             Estado = EstadoConstants.Abierta;
             TipoIngreso = tipoIngreso ?? EstadoConstants.Particular;
+#pragma warning restore CS0618
             ConvenioId = convenioId;
             AreaClinicaId = areaClinicaId;
             SubAreaClinica = subAreaClinica;
@@ -142,12 +191,24 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             PersonalRelevo = personalRelevo;
         }
 
+        /// <summary>3FN: cambio de estado por FK; sincroniza el alias legacy.</summary>
+        private void SetEstado(int estadoId)
+        {
+            EstadoId = estadoId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            Estado = EstadoCuentaConstants.ToLegacyString(estadoId);
+#pragma warning restore CS0618
+        }
+
+        /// <summary>3FN: indica si la cuenta está abierta (fuente de verdad: EstadoId).</summary>
+        public bool EstaAbierta => EstadoId == EstadoCuentaConstants.AbiertaId;
+
         public void Facturar()
         {
-            if (Estado != EstadoConstants.Abierta)
+            if (EstadoId != EstadoCuentaConstants.AbiertaId)
                 throw new InvalidOperationException("Solo se pueden facturar cuentas abiertas.");
-            
-            Estado = EstadoConstants.Facturada;
+
+            SetEstado(EstadoCuentaConstants.FacturadaId);
             FechaCierre = DateTime.UtcNow;
 
             // [PHASE-5] Raise Domain Event for downstream processing
@@ -156,31 +217,66 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Reabrir()
         {
-            if (Estado != EstadoConstants.Facturada)
+            if (EstadoId != EstadoCuentaConstants.FacturadaId)
                 throw new InvalidOperationException("Solo se pueden reabrir cuentas que hayan sido facturadas (check-out).");
 
-            Estado = EstadoConstants.Abierta;
+            SetEstado(EstadoCuentaConstants.AbiertaId);
             FechaCierre = null;
         }
 
         public void Anular()
         {
-            Estado = EstadoConstants.Anulada;
+            SetEstado(EstadoCuentaConstants.AnuladaId);
             FechaCierre = DateTime.UtcNow;
         }
 
         public void Validar(string usuario)
         {
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioValidacion = usuario ?? throw new ArgumentNullException(nameof(usuario));
+#pragma warning restore CS0618
+            if (Guid.TryParse(usuario, out var parsedValidacion))
+            {
+                UsuarioValidacionId = parsedValidacion;
+            }
             FechaValidacion = DateTime.UtcNow;
-            Estado = EstadoConstants.Validada;
+            SetEstado(EstadoCuentaConstants.ValidadaId);
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void Validar(Guid usuarioId, string? usuarioNombreAlias = null)
+        {
+            if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
+            UsuarioValidacionId = usuarioId;
+#pragma warning disable CS0618
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias)) UsuarioValidacion = usuarioNombreAlias;
+#pragma warning restore CS0618
+            FechaValidacion = DateTime.UtcNow;
+            SetEstado(EstadoCuentaConstants.ValidadaId);
         }
 
         public void Auditar(string usuario)
         {
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
+#pragma warning restore CS0618
+            if (Guid.TryParse(usuario, out var parsedAuditoria))
+            {
+                UsuarioAuditoriaId = parsedAuditoria;
+            }
             FechaAuditoria = DateTime.UtcNow;
             // La auditoría puede ser un estado final o una marca sobre una cuenta facturada
+        }
+
+        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
+        public void Auditar(Guid usuarioId, string? usuarioNombreAlias = null)
+        {
+            if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
+            UsuarioAuditoriaId = usuarioId;
+#pragma warning disable CS0618
+            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias)) UsuarioAuditoria = usuarioNombreAlias;
+#pragma warning restore CS0618
+            FechaAuditoria = DateTime.UtcNow;
         }
 
         public void AsignarLegacyOrder(int legacyOrderId)
@@ -204,7 +300,21 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 throw new ArgumentException($"Tipo de ingreso inválido: {tipoIngreso}");
             }
 
+            TipoIngresoId = TipoIngresoConstants.FromLegacyString(tipoIngreso);
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
             TipoIngreso = tipoIngreso;
+#pragma warning restore CS0618
+            ConvenioId = convenioId;
+        }
+
+        /// <summary>3FN: variante con FK explícita al catálogo TiposIngreso.</summary>
+        public void CambiarTipoIngresoAdministrativo(int tipoIngresoId, int? convenioId)
+        {
+            if (tipoIngresoId <= 0) throw new ArgumentException("El tipo de ingreso es obligatorio.", nameof(tipoIngresoId));
+            TipoIngresoId = tipoIngresoId;
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            TipoIngreso = TipoIngresoConstants.ToLegacyString(tipoIngresoId);
+#pragma warning restore CS0618
             ConvenioId = convenioId;
         }
 
