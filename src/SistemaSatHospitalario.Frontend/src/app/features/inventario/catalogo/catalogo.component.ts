@@ -157,7 +157,7 @@ export class CatalogoComponent implements OnInit {
     // 3FN: categorías desde el catálogo cacheado (fallback al servicio legacy si falla)
     this.catalogLookup.loadCategoriasInsumo().subscribe({
       next: (cats) => {
-        this.categoriasInsumoList.set(cats.map(c => ({ id: c.id, nombre: c.nombre, codigo: c.codigo, activo: true, fechaCreacion: new Date() })));
+        this.categoriasInsumoList.set(cats.map(c => ({ id: c.id, nombre: c.nombre, codigo: c.codigo, activo: true, fechaCreacion: new Date().toISOString() })));
         if (!this.isEditing() && cats.length > 0 && !this.insumoForm().categoria) {
           this.insumoForm.update(p => ({ ...p, categoria: cats[0].nombre }));
         }
