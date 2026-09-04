@@ -16,7 +16,7 @@
         "docker.io/sonarsource/sonarqube-mcp"
       ],
       "env": {
-        "SONARQUBE_TOKEN": "916ae6ae5c15234973d25e17888f077363a4b651",
+        "SONARQUBE_TOKEN": "${env:SONARQUBE_TOKEN}",
         "SONARQUBE_ORG": "ingjosebracamonte",
         "SONARQUBE_URL": "https://sonarcloud.io"
       }

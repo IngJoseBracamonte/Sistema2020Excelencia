@@ -64,15 +64,17 @@ namespace SistemaSatHospitalario.WebAPI.Infrastructure
             return true;
         }
 
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
+
         private string ScrubPii(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
             
             // Mask numeric strings of 7+ digits (potential IDs or Phones)
-            var scrubbed = System.Text.RegularExpressions.Regex.Replace(input, @"\d{7,}", "[MASKED_ID]");
+            var scrubbed = System.Text.RegularExpressions.Regex.Replace(input, @"\d{7,}", "[MASKED_ID]", System.Text.RegularExpressions.RegexOptions.None, RegexTimeout);
             
             // Mask potential PII in common DB error patterns like "entry '...' for key"
-            scrubbed = System.Text.RegularExpressions.Regex.Replace(scrubbed, @"entry '([^']+)' for key", "entry '[MASKED_DATA]' for key");
+            scrubbed = System.Text.RegularExpressions.Regex.Replace(scrubbed, @"entry '([^']+)' for key", "entry '[MASKED_DATA]' for key", System.Text.RegularExpressions.RegexOptions.None, RegexTimeout);
             
             return scrubbed;
         }

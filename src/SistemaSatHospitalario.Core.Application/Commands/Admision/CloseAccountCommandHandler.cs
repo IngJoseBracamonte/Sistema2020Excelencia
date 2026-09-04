@@ -19,6 +19,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class CloseAccountCommandHandler : IRequestHandler<CloseAccountCommand, CloseAccountResult>
     {
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
+
         private readonly IApplicationDbContext _context;
         private readonly ILegacyLabRepository _legacyRepository;
         private readonly ICajaAdministrativaRepository _cajaRepository;
@@ -341,7 +343,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (string.IsNullOrEmpty(mappingId) && item.Descripcion.Contains(EstadoConstants.PrefixLab))
                 {
                     // Senior Self-Healing: Extract first positive integer after the prefix
-                    var match = Regex.Match(item.Descripcion, $@"{Regex.Escape(EstadoConstants.PrefixLab)}(\d+)");
+                    var match = Regex.Match(item.Descripcion, $@"{Regex.Escape(EstadoConstants.PrefixLab)}(\d+)", RegexOptions.None, RegexTimeout);
                     if (match.Success)
                     {
                         mappingId = match.Groups[1].Value;

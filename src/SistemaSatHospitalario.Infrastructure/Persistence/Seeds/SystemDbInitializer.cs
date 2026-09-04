@@ -831,6 +831,45 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
         }
 
+        /// <summary>
+        /// Tablas de datos de prueba a purgar, en orden de dependencia (hijos primero).
+        /// Lista interna controlada — no proviene de input externo.
+        /// </summary>
+        private static readonly IReadOnlyList<string> TablesToPurge = new[]
+        {
+            "DetallesPago",
+            "RecibosFacturas",
+            "HistorialModificacionCuentas",
+            "DetallesServicioMedicosResponsables",
+            "DetallesServicioCuenta",
+            "ConsumosServiciosRealizados",
+            "InsumosCirugiasPacientes",
+            "CirugiaLogs",
+            "OrdenesCirugia",
+            "CuentasServicios",
+            "PedidosInterSedeDetalles",
+            "PedidosInterSede",
+            "MovimientosInsumo",
+            "CierresInventarioDetalles",
+            "CierresInventario",
+            "TriagesEnfermeria",
+            "ValoracionesFisicas",
+            "CitasMedicas",
+            "OrdenesImagenes",
+            "OrdenesDeServicio",
+            "OrdenesRX",
+            "CajasDiarias",
+            "HistorialesLimpiezasCamas",
+            "PacientesAdmision",
+            "SegurosConvenios",
+            "ServiciosInsumoRecetas",
+            "InsumosPrincipiosActivos",
+            "PrincipiosActivos",
+            "CategoriasInsumo",
+            "StocksSedes",
+            "Insumos"
+        };
+
         private async Task PurgeAllTestDataAsync()
         {
             _logger.LogInformation("[PURGE] Ejecutando limpieza completa de datos de prueba en la base de datos moderna...");
@@ -838,87 +877,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             try
             {
                 var conn = _context.Database.GetDbConnection();
-                bool closeConnection = false;
-                if (conn.State != System.Data.ConnectionState.Open)
-                {
-                    await conn.OpenAsync();
-                    closeConnection = true;
-                }
+                var closeConnection = await EnsureConnectionOpenAsync(conn);
+                var isSqlite = _context.Database.IsSqlite();
 
-                bool isSqlite = _context.Database.IsSqlite();
-
-                var tablesToPurge = new[]
-                {
-                    "DetallesPago",
-                    "RecibosFacturas",
-                    "HistorialModificacionCuentas",
-                    "DetallesServicioMedicosResponsables",
-                    "DetallesServicioCuenta",
-                    "ConsumosServiciosRealizados",
-                    "InsumosCirugiasPacientes",
-                    "CirugiaLogs",
-                    "OrdenesCirugia",
-                    "CuentasServicios",
-                    "PedidosInterSedeDetalles",
-                    "PedidosInterSede",
-                    "MovimientosInsumo",
-                    "CierresInventarioDetalles",
-                    "CierresInventario",
-                    "TriagesEnfermeria",
-                    "ValoracionesFisicas",
-                    "CitasMedicas",
-                    "OrdenesImagenes",
-                    "OrdenesDeServicio",
-                    "OrdenesRX",
-                    "CajasDiarias",
-                    "HistorialesLimpiezasCamas",
-                    "PacientesAdmision",
-                    "SegurosConvenios",
-                    "ServiciosInsumoRecetas",
-                    "InsumosPrincipiosActivos",
-                    "PrincipiosActivos",
-                    "CategoriasInsumo",
-                    "StocksSedes",
-                    "Insumos"
-                };
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    if (!isSqlite)
-                    {
-                        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 0;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    else
-                    {
-                        cmd.CommandText = "PRAGMA foreign_keys = OFF;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-
-                    foreach (var table in tablesToPurge)
-                    {
-                        try
-                        {
-                            cmd.CommandText = $"DELETE FROM `{table}`;";
-                            await cmd.ExecuteNonQueryAsync();
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning($"[PURGE] Aviso al limpiar tabla {table}: {ex.Message}");
-                        }
-                    }
-
-                    if (!isSqlite)
-                    {
-                        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 1;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    else
-                    {
-                        cmd.CommandText = "PRAGMA foreign_keys = ON;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                }
+                using var cmd = conn.CreateCommand();
+                await SetForeignKeyChecksAsync(cmd, isSqlite, enabled: false);
+                await PurgeTablesAsync(cmd);
+                await SetForeignKeyChecksAsync(cmd, isSqlite, enabled: true);
 
                 if (closeConnection)
                 {
@@ -930,6 +895,49 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[PURGE] Error durante la purga de datos de prueba.");
+            }
+        }
+
+        /// <summary>Abre la conexión si está cerrada. Retorna true si este método la abrió (y por tanto debe cerrarla).</summary>
+        private static async Task<bool> EnsureConnectionOpenAsync(System.Data.Common.DbConnection conn)
+        {
+            if (conn.State == System.Data.ConnectionState.Open)
+            {
+                return false;
+            }
+
+            await conn.OpenAsync();
+            return true;
+        }
+
+        /// <summary>Habilita o deshabilita las FK checks según el proveedor de base de datos.</summary>
+        private static async Task SetForeignKeyChecksAsync(System.Data.Common.DbCommand cmd, bool isSqlite, bool enabled)
+        {
+            cmd.CommandText = (isSqlite, enabled) switch
+            {
+                (true, true) => "PRAGMA foreign_keys = ON;",
+                (true, false) => "PRAGMA foreign_keys = OFF;",
+                (false, true) => "SET FOREIGN_KEY_CHECKS = 1;",
+                (false, false) => "SET FOREIGN_KEY_CHECKS = 0;"
+            };
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>Ejecuta el DELETE por cada tabla de la lista controlada, tolerando errores individuales.</summary>
+        private async Task PurgeTablesAsync(System.Data.Common.DbCommand cmd)
+        {
+            foreach (var table in TablesToPurge)
+            {
+                try
+                {
+                    // Seguro: 'table' proviene de la lista estática TablesToPurge, no de input externo.
+                    cmd.CommandText = $"DELETE FROM `{table}`;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[PURGE] Aviso al limpiar tabla {Table}", table);
+                }
             }
         }
 
