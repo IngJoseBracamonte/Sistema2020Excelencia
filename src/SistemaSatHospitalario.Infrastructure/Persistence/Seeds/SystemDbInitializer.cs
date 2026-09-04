@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
@@ -831,6 +832,45 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             }
         }
 
+        /// <summary>
+        /// Tablas de datos de prueba a purgar, en orden de dependencia (hijos primero).
+        /// Lista interna controlada — no proviene de input externo.
+        /// </summary>
+        private static readonly IReadOnlyList<string> TablesToPurge = new[]
+        {
+            "DetallesPago",
+            "RecibosFacturas",
+            "HistorialModificacionCuentas",
+            "DetallesServicioMedicosResponsables",
+            "DetallesServicioCuenta",
+            "ConsumosServiciosRealizados",
+            "InsumosCirugiasPacientes",
+            "CirugiaLogs",
+            "OrdenesCirugia",
+            "CuentasServicios",
+            "PedidosInterSedeDetalles",
+            "PedidosInterSede",
+            "MovimientosInsumo",
+            "CierresInventarioDetalles",
+            "CierresInventario",
+            "TriagesEnfermeria",
+            "ValoracionesFisicas",
+            "CitasMedicas",
+            "OrdenesImagenes",
+            "OrdenesDeServicio",
+            "OrdenesRX",
+            "CajasDiarias",
+            "HistorialesLimpiezasCamas",
+            "PacientesAdmision",
+            "SegurosConvenios",
+            "ServiciosInsumoRecetas",
+            "InsumosPrincipiosActivos",
+            "PrincipiosActivos",
+            "CategoriasInsumo",
+            "StocksSedes",
+            "Insumos"
+        };
+
         private async Task PurgeAllTestDataAsync()
         {
             _logger.LogInformation("[PURGE] Ejecutando limpieza completa de datos de prueba en la base de datos moderna...");
@@ -838,87 +878,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             try
             {
                 var conn = _context.Database.GetDbConnection();
-                bool closeConnection = false;
-                if (conn.State != System.Data.ConnectionState.Open)
-                {
-                    await conn.OpenAsync();
-                    closeConnection = true;
-                }
+                var closeConnection = await EnsureConnectionOpenAsync(conn);
+                var isSqlite = _context.Database.IsSqlite();
 
-                bool isSqlite = _context.Database.IsSqlite();
-
-                var tablesToPurge = new[]
-                {
-                    "DetallesPago",
-                    "RecibosFacturas",
-                    "HistorialModificacionCuentas",
-                    "DetallesServicioMedicosResponsables",
-                    "DetallesServicioCuenta",
-                    "ConsumosServiciosRealizados",
-                    "InsumosCirugiasPacientes",
-                    "CirugiaLogs",
-                    "OrdenesCirugia",
-                    "CuentasServicios",
-                    "PedidosInterSedeDetalles",
-                    "PedidosInterSede",
-                    "MovimientosInsumo",
-                    "CierresInventarioDetalles",
-                    "CierresInventario",
-                    "TriagesEnfermeria",
-                    "ValoracionesFisicas",
-                    "CitasMedicas",
-                    "OrdenesImagenes",
-                    "OrdenesDeServicio",
-                    "OrdenesRX",
-                    "CajasDiarias",
-                    "HistorialesLimpiezasCamas",
-                    "PacientesAdmision",
-                    "SegurosConvenios",
-                    "ServiciosInsumoRecetas",
-                    "InsumosPrincipiosActivos",
-                    "PrincipiosActivos",
-                    "CategoriasInsumo",
-                    "StocksSedes",
-                    "Insumos"
-                };
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    if (!isSqlite)
-                    {
-                        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 0;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    else
-                    {
-                        cmd.CommandText = "PRAGMA foreign_keys = OFF;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-
-                    foreach (var table in tablesToPurge)
-                    {
-                        try
-                        {
-                            cmd.CommandText = $"DELETE FROM `{table}`;";
-                            await cmd.ExecuteNonQueryAsync();
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning($"[PURGE] Aviso al limpiar tabla {table}: {ex.Message}");
-                        }
-                    }
-
-                    if (!isSqlite)
-                    {
-                        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 1;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                    else
-                    {
-                        cmd.CommandText = "PRAGMA foreign_keys = ON;";
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                }
+                using var cmd = conn.CreateCommand();
+                await SetForeignKeyChecksAsync(cmd, isSqlite, enabled: false);
+                await PurgeTablesAsync(cmd);
+                await SetForeignKeyChecksAsync(cmd, isSqlite, enabled: true);
 
                 if (closeConnection)
                 {
@@ -930,6 +896,49 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[PURGE] Error durante la purga de datos de prueba.");
+            }
+        }
+
+        /// <summary>Abre la conexión si está cerrada. Retorna true si este método la abrió (y por tanto debe cerrarla).</summary>
+        private static async Task<bool> EnsureConnectionOpenAsync(System.Data.Common.DbConnection conn)
+        {
+            if (conn.State == System.Data.ConnectionState.Open)
+            {
+                return false;
+            }
+
+            await conn.OpenAsync();
+            return true;
+        }
+
+        /// <summary>Habilita o deshabilita las FK checks según el proveedor de base de datos.</summary>
+        private static async Task SetForeignKeyChecksAsync(System.Data.Common.DbCommand cmd, bool isSqlite, bool enabled)
+        {
+            cmd.CommandText = (isSqlite, enabled) switch
+            {
+                (true, true) => "PRAGMA foreign_keys = ON;",
+                (true, false) => "PRAGMA foreign_keys = OFF;",
+                (false, true) => "SET FOREIGN_KEY_CHECKS = 1;",
+                (false, false) => "SET FOREIGN_KEY_CHECKS = 0;"
+            };
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>Ejecuta el DELETE por cada tabla de la lista controlada, tolerando errores individuales.</summary>
+        private async Task PurgeTablesAsync(System.Data.Common.DbCommand cmd)
+        {
+            foreach (var table in TablesToPurge)
+            {
+                try
+                {
+                    // Seguro: 'table' proviene de la lista estática TablesToPurge, no de input externo.
+                    cmd.CommandText = $"DELETE FROM `{table}`;";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[PURGE] Aviso al limpiar tabla {Table}", table);
+                }
             }
         }
 
@@ -1355,23 +1364,45 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         {
             _logger.LogInformation("[SEED] Verificando existencia de quirófanos y áreas clínicas base...");
 
-            var defaultAreas = new (Guid SedeId, string Codigo, string Nombre, bool EsAdmision)[]
+            // 1. Asegurar las clasificaciones de área (Cama, Quirófano, Sala de Parto)
+            var clasificaciones = new (Guid Id, string Codigo, string Descripcion)[]
+            {
+                (SeedConstants.ClasificacionId_Cama, "CAMA", "Cama"),
+                (SeedConstants.ClasificacionId_Quirofano, "QUIROFANO", "Quirófano"),
+                (SeedConstants.ClasificacionId_SalaParto, "SALA_PARTO", "Sala de Parto")
+            };
+
+            foreach (var cls in clasificaciones)
+            {
+                var clsExists = await _context.ClasificacionesAreas
+                    .AnyAsync(c => c.Id == cls.Id);
+                if (!clsExists)
+                {
+                    _context.ClasificacionesAreas.Add(new ClasificacionArea(cls.Codigo, cls.Descripcion, cls.Id));
+                    _logger.LogInformation("[SEED] Clasificación de área creada: {Codigo} - {Descripcion}", cls.Codigo, cls.Descripcion);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            // 2. Áreas clínicas base con su clasificación
+            var defaultAreas = new (Guid SedeId, string Codigo, string Nombre, bool EsAdmision, Guid ClasificacionId)[]
             {
                 // Sede Cirugía (Quirófanos)
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1", false),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "QX-2", "Quirófano 2", false),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "SALA-PARTOS", "Sala de Partos", false),
+                (SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1", false, SeedConstants.ClasificacionId_Quirofano),
+                (SeedConstants.SedeId_Cirugia, "QX-2", "Quirófano 2", false, SeedConstants.ClasificacionId_Quirofano),
+                (SeedConstants.SedeId_Cirugia, "SALA-PARTOS", "Sala de Partos", false, SeedConstants.ClasificacionId_SalaParto),
 
                 // Sede Hospitalización (Habitaciones)
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, "HAB-102", "Habitación 102", false),
+                (SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, SeedConstants.ClasificacionId_Cama),
+                (SeedConstants.SedeId_Hospitalizacion, "HAB-102", "Habitación 102", false, SeedConstants.ClasificacionId_Cama),
 
                 // Sede Emergencia (Boxes)
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia, "BOX-2", "Box Emergencia 2", true),
+                (SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, SeedConstants.ClasificacionId_Cama),
+                (SeedConstants.SedeId_Emergencia, "BOX-2", "Box Emergencia 2", true, SeedConstants.ClasificacionId_Cama),
 
                 // Sede UCI
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false)
+                (SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, SeedConstants.ClasificacionId_Cama)
             };
 
             foreach (var def in defaultAreas)
@@ -1380,7 +1411,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     .AnyAsync(a => a.SedeId == def.SedeId && a.Codigo == def.Codigo);
                 if (!exists)
                 {
-                    var area = new AreaClinica(def.SedeId, def.Codigo, def.Nombre, def.EsAdmision);
+                    var area = new AreaClinica(def.SedeId, def.Codigo, def.Nombre, def.EsAdmision, null, null, def.ClasificacionId);
                     _context.AreasClinicas.Add(area);
                     _logger.LogInformation("[SEED] Área/Quirófano creado: {Codigo} - {Nombre}", def.Codigo, def.Nombre);
                 }

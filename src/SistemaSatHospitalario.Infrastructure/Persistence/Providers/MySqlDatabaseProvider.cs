@@ -27,6 +27,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                     b => {
                         b.MigrationsAssembly(typeof(SatHospitalarioIdentityDbContext).Assembly.FullName);
                         b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
+                        b.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
                     }));
         }
 
@@ -45,6 +46,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                         b.MigrationsAssembly(typeof(SatHospitalarioDbContext).Assembly.FullName);
                         b.SchemaBehavior(Pomelo.EntityFrameworkCore.MySql.Infrastructure.MySqlSchemaBehavior.Ignore);
                         b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                        b.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
                     }));
         }
 
@@ -72,7 +74,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Providers
                         version = new MySqlServerVersion(new Version(8, 0, 21));
                     }
 
-                    options.UseMySql(conStr, version);
+                    options.UseMySql(conStr, version,
+                        b => b.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null));
                 }
                 else
                 {

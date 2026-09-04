@@ -47,6 +47,9 @@ RUN mkdir -p /app/Logs
 
 COPY --from=publish /app/publish .
 
+# Seguridad: ejecutar como usuario no-root (la imagen base de ASP.NET incluye el usuario 'app')
+USER app
+
 EXPOSE 8080
 
 # Health check nativo Docker — verifica endpoint /health del sistema

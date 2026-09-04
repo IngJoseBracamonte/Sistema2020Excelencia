@@ -185,15 +185,7 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
       next: (areas: any[]) => {
         const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
         const listaQuirofanos = (areas || []).filter(a =>
-          a.activo !== false && (
-            a.sedeId === cirugiaSedeId ||
-            (a.sedeNombre || '').toLowerCase().includes('cirug') ||
-            (a.nombre || '').toLowerCase().includes('quiróf') ||
-            (a.nombre || '').toLowerCase().includes('quirof') ||
-            (a.nombre || '').toLowerCase().includes('parto') ||
-            (a.codigo || '').toLowerCase().startsWith('qx') ||
-            (a.codigo || '').toLowerCase().startsWith('q')
-          )
+          a.activo !== false && (a.sedeId === cirugiaSedeId)
         );
         this.quirofanos.set(listaQuirofanos);
       },
@@ -222,18 +214,17 @@ export class HospitalizacionComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Camas filtradas por sede seleccionada (excluyendo Almacén Principal y Quirófanos de Cirugía)
+  // Camas filtradas por sede seleccionada (excluyendo Almacén Principal y Quirófanos/Sala de Partos de Cirugía)
   public camasFiltradas = computed(() => {
-    const cirugiaSedeId = '10000000-0000-0000-0000-000000000005';
-    const list = this.camas().filter(c => 
-      !c.esPrincipal && 
-      !(c.sedeNombre || '').toLowerCase().includes('principal') &&
-      c.sedeId !== cirugiaSedeId &&
-      !(c.sedeNombre || '').toLowerCase().includes('cirug') &&
-      !(c.nombre || '').toLowerCase().includes('quiróf') &&
-      !(c.nombre || '').toLowerCase().includes('quirof') &&
-      !(c.nombre || '').toLowerCase().includes('parto') &&
-      !(c.codigo || '').toLowerCase().startsWith('qx')
+    const sedePrincipalId = '10000000-0000-0000-0000-000000000001';
+    const clasificacionesExcluidas = [
+      '60000000-0000-0000-0000-000000000002', // Quirófano
+      '60000000-0000-0000-0000-000000000003'  // Sala de Parto
+    ];
+    const list = this.camas().filter(c =>
+      !c.esPrincipal &&
+      c.sedeId !== sedePrincipalId &&
+      !clasificacionesExcluidas.includes(c.clasificacionId || '')
     );
     const filter = this.selectedSedeFilter().toLowerCase().trim();
     if (!filter) return list;

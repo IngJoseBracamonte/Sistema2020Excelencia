@@ -77,6 +77,13 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public static readonly Guid UbicacionId_UCICama3 = new Guid("20000000-0000-0000-0000-000000000022");
 
         // ─────────────────────────────────────────────────────────────
+        // CLASIFICACIONES DE ÁREA CLÍNICA (Tipo de área: Cama, Quirófano, Sala de Parto)
+        // ─────────────────────────────────────────────────────────────
+        public static readonly Guid ClasificacionId_Cama = new Guid("60000000-0000-0000-0000-000000000001");
+        public static readonly Guid ClasificacionId_Quirofano = new Guid("60000000-0000-0000-0000-000000000002");
+        public static readonly Guid ClasificacionId_SalaParto = new Guid("60000000-0000-0000-0000-000000000003");
+
+        // ─────────────────────────────────────────────────────────────
         // REQUISITOS QUIRÚRGICOS (Checklist Preoperatorio)
         // ─────────────────────────────────────────────────────────────
         public static readonly Guid RequisitoId_Cardiovascular       = new Guid("40000000-0000-0000-0000-000000000001");

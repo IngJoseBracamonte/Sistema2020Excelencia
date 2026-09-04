@@ -9,5 +9,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string Codigo { get; set; }
         public string Nombre { get; set; }
         public bool Activo { get; set; }
+        public Guid? ClasificacionId { get; set; }
     }
 }

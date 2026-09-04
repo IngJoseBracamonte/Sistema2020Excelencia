@@ -28,6 +28,7 @@ export interface AreaClinica {
   codigo: string;
   sedeId?: string;
   sedeNombre?: string;
+  clasificacionId?: string;
   activo?: boolean; // Se agrega para resolver el error en cierre-cuenta
   esSubAreaAlmacenPrincipal?: boolean;
   areaPadreId?: string | null;
