@@ -39,7 +39,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
             }
 
-            entity.Update(request.Codigo, request.Nombre);
+            entity.Update(request.Codigo, request.Nombre, clasificacionId: request.ClasificacionId);
             entity.SetEstado(request.Activo);
 
             await _context.SaveChangesAsync(cancellationToken);

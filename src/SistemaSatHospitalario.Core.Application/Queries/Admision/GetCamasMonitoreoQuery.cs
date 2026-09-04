@@ -32,7 +32,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var cirugiaSedeId = SeedConstants.SedeId_Cirugia;
             var camas = await _context.AreasClinicas
                 .Include(a => a.Sede)
-                .Where(a => a.Activo && (a.Sede == null || (!a.Sede.EsPrincipal && !a.Sede.Nombre.ToLower().Contains("cirug"))) && a.SedeId != cirugiaSedeId)
+                .Where(a => a.Activo
+                    && a.ClasificacionId == SeedConstants.ClasificacionId_Cama
+                    && (a.Sede == null || !a.Sede.EsPrincipal)
+                    && a.SedeId != cirugiaSedeId)
                 .ToListAsync(cancellationToken);
 
             // 2. Obtener todas las cuentas abiertas vinculadas a alguna cama (o retenidas)
@@ -62,6 +65,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     CamaId = cama.Id,
                     SedeId = cama.SedeId,
+                    ClasificacionId = cama.ClasificacionId,
                     Codigo = cama.Codigo,
                     Nombre = cama.Nombre,
                     SedeNombre = cama.Sede?.Nombre ?? "Sede General",

@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -19,10 +20,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public bool EsAreaAdmision { get; private set; }
         public Guid? ServicioTarifaBaseId { get; private set; }
         public virtual ServicioClinico? ServicioTarifaBase { get; private set; }
+        public Guid ClasificacionId { get; private set; }
+        public virtual ClasificacionArea? Clasificacion { get; private set; }
 
         private AreaClinica() { }
 
-        public AreaClinica(Guid sedeId, string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null, Guid? id = null)
+        public AreaClinica(Guid sedeId, string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null, Guid? id = null, Guid? clasificacionId = null)
         {
             Id = id ?? Guid.NewGuid();
             SedeId = sedeId;
@@ -32,14 +35,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Estado = EstadoUbicacion.Disponible;
             EsAreaAdmision = esAreaAdmision;
             ServicioTarifaBaseId = servicioTarifaBaseId;
+            ClasificacionId = clasificacionId ?? SeedConstants.ClasificacionId_Cama;
         }
 
-        public void Update(string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null)
+        public void Update(string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null, Guid? clasificacionId = null)
         {
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             EsAreaAdmision = esAreaAdmision;
             ServicioTarifaBaseId = servicioTarifaBaseId;
+            if (clasificacionId.HasValue)
+            {
+                ClasificacionId = clasificacionId.Value;
+            }
         }
 
         public void SetEstado(bool activo)

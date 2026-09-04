@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Infrastructure.Identity.Seeds;
 using SistemaSatHospitalario.Infrastructure.Persistence.Contexts;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
@@ -1363,23 +1364,45 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
         {
             _logger.LogInformation("[SEED] Verificando existencia de quirófanos y áreas clínicas base...");
 
-            var defaultAreas = new (Guid SedeId, string Codigo, string Nombre, bool EsAdmision)[]
+            // 1. Asegurar las clasificaciones de área (Cama, Quirófano, Sala de Parto)
+            var clasificaciones = new (Guid Id, string Codigo, string Descripcion)[]
+            {
+                (SeedConstants.ClasificacionId_Cama, "CAMA", "Cama"),
+                (SeedConstants.ClasificacionId_Quirofano, "QUIROFANO", "Quirófano"),
+                (SeedConstants.ClasificacionId_SalaParto, "SALA_PARTO", "Sala de Parto")
+            };
+
+            foreach (var cls in clasificaciones)
+            {
+                var clsExists = await _context.ClasificacionesAreas
+                    .AnyAsync(c => c.Id == cls.Id);
+                if (!clsExists)
+                {
+                    _context.ClasificacionesAreas.Add(new ClasificacionArea(cls.Codigo, cls.Descripcion, cls.Id));
+                    _logger.LogInformation("[SEED] Clasificación de área creada: {Codigo} - {Descripcion}", cls.Codigo, cls.Descripcion);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            // 2. Áreas clínicas base con su clasificación
+            var defaultAreas = new (Guid SedeId, string Codigo, string Nombre, bool EsAdmision, Guid ClasificacionId)[]
             {
                 // Sede Cirugía (Quirófanos)
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1", false),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "QX-2", "Quirófano 2", false),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Cirugia, "SALA-PARTOS", "Sala de Partos", false),
+                (SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1", false, SeedConstants.ClasificacionId_Quirofano),
+                (SeedConstants.SedeId_Cirugia, "QX-2", "Quirófano 2", false, SeedConstants.ClasificacionId_Quirofano),
+                (SeedConstants.SedeId_Cirugia, "SALA-PARTOS", "Sala de Partos", false, SeedConstants.ClasificacionId_SalaParto),
 
                 // Sede Hospitalización (Habitaciones)
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Hospitalizacion, "HAB-102", "Habitación 102", false),
+                (SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, SeedConstants.ClasificacionId_Cama),
+                (SeedConstants.SedeId_Hospitalizacion, "HAB-102", "Habitación 102", false, SeedConstants.ClasificacionId_Cama),
 
                 // Sede Emergencia (Boxes)
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true),
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Emergencia, "BOX-2", "Box Emergencia 2", true),
+                (SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, SeedConstants.ClasificacionId_Cama),
+                (SeedConstants.SedeId_Emergencia, "BOX-2", "Box Emergencia 2", true, SeedConstants.ClasificacionId_Cama),
 
                 // Sede UCI
-                (SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false)
+                (SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, SeedConstants.ClasificacionId_Cama)
             };
 
             foreach (var def in defaultAreas)
@@ -1388,7 +1411,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     .AnyAsync(a => a.SedeId == def.SedeId && a.Codigo == def.Codigo);
                 if (!exists)
                 {
-                    var area = new AreaClinica(def.SedeId, def.Codigo, def.Nombre, def.EsAdmision);
+                    var area = new AreaClinica(def.SedeId, def.Codigo, def.Nombre, def.EsAdmision, null, null, def.ClasificacionId);
                     _context.AreasClinicas.Add(area);
                     _logger.LogInformation("[SEED] Área/Quirófano creado: {Codigo} - {Nombre}", def.Codigo, def.Nombre);
                 }

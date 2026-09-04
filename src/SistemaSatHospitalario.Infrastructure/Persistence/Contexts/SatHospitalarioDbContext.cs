@@ -76,6 +76,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<CierreInventarioDetalle> CierresInventarioDetalles { get; set; }
         public DbSet<Sede> Sedes { get; set; }
         public DbSet<AreaClinica> AreasClinicas { get; set; }
+        public DbSet<ClasificacionArea> ClasificacionesAreas { get; set; }
         public DbSet<StockSede> StocksSedes { get; set; }
         public DbSet<PedidoInterSede> PedidosInterSede { get; set; }
         public DbSet<PedidoInterSedeDetalle> PedidosInterSedeDetalles { get; set; }
@@ -1152,6 +1153,21 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 );
             });
 
+            builder.Entity<ClasificacionArea>(entity =>
+            {
+                entity.ToTable("ClasificacionesAreas");
+                entity.HasKey(c => c.Id);
+                entity.Property(c => c.Codigo).IsRequired().HasMaxLength(50);
+                entity.Property(c => c.Descripcion).IsRequired().HasMaxLength(150);
+                entity.HasIndex(c => c.Codigo).IsUnique();
+
+                entity.HasData(
+                    new ClasificacionArea("CAMA", "Cama", SeedConstants.ClasificacionId_Cama),
+                    new ClasificacionArea("QUIROFANO", "Quirófano", SeedConstants.ClasificacionId_Quirofano),
+                    new ClasificacionArea("SALA_PARTO", "Sala de Parto", SeedConstants.ClasificacionId_SalaParto)
+                );
+            });
+
             builder.Entity<AreaClinica>(entity =>
             {
                 entity.ToTable("AreasClinicas");
@@ -1164,6 +1180,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany(s => s.AreasClinicas)
                       .HasForeignKey(a => a.SedeId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Clasificacion)
+                      .WithMany()
+                      .HasForeignKey(a => a.ClasificacionId)
+                      .OnDelete(DeleteBehavior.Restrict);
                 
                 entity.HasOne(a => a.ServicioTarifaBase)
                       .WithMany()
@@ -1173,12 +1194,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(a => new { a.SedeId, a.Codigo }).IsUnique();
 
                 entity.HasData(
-                    new AreaClinica(SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, null, SeedConstants.AreaId_Emergencia),
-                    new AreaClinica(SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, null, SeedConstants.AreaId_Hospitalizacion),
-                    new AreaClinica(SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, null, SeedConstants.AreaId_UCI),
-                    new AreaClinica(SeedConstants.SedeId_Principal, "FARMACIA", "Farmacia Central", false, null, SeedConstants.AreaId_Farmacia),
-                    new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central", false, null, SeedConstants.AreaId_Laboratorio),
-                    new AreaClinica(SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1 (Cirugía Mayor)", false, null, SeedConstants.AreaId_Cirugia)
+                    new AreaClinica(SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, null, SeedConstants.AreaId_Emergencia, SeedConstants.ClasificacionId_Cama),
+                    new AreaClinica(SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, null, SeedConstants.AreaId_Hospitalizacion, SeedConstants.ClasificacionId_Cama),
+                    new AreaClinica(SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, null, SeedConstants.AreaId_UCI, SeedConstants.ClasificacionId_Cama),
+                    new AreaClinica(SeedConstants.SedeId_Principal, "FARMACIA", "Farmacia Central", false, null, SeedConstants.AreaId_Farmacia, SeedConstants.ClasificacionId_Cama),
+                    new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central", false, null, SeedConstants.AreaId_Laboratorio, SeedConstants.ClasificacionId_Cama),
+                    new AreaClinica(SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1 (Cirugía Mayor)", false, null, SeedConstants.AreaId_Cirugia, SeedConstants.ClasificacionId_Quirofano)
                 );
             });
 

@@ -40,7 +40,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException("Ya existe una área clínica activa con el mismo código en esta sede.");
             }
 
-            var entity = new AreaClinica(request.SedeId, request.Codigo, request.Nombre);
+            var entity = new AreaClinica(request.SedeId, request.Codigo, request.Nombre, clasificacionId: request.ClasificacionId);
             _context.AreasClinicas.Add(entity);
             await _context.SaveChangesAsync(cancellationToken);
             return entity.Id;
