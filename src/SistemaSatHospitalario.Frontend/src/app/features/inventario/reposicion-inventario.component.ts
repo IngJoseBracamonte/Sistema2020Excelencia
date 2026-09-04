@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -42,17 +42,38 @@ import { AreaClinica, MultiSedeService, Sede } from '../../core/services/multi-s
         </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Insumo / Medicamento -->
-          <div class="lg:col-span-2">
+          <!-- Insumo / Medicamento (búsqueda por código o nombre, compatible con lector de barras) -->
+          <div class="lg:col-span-2 relative">
             <label class="text-[11px] font-semibold text-gray-400 block mb-1.5">Insumo o Medicamento</label>
-            <select
-              [(ngModel)]="insumoSeleccionadoId"
-              class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
-            >
-              @for (ins of catalogoInsumos(); track ins.id) {
-                <option [value]="ins.id">{{ ins.nombre }} ({{ ins.codigo }})</option>
-              }
-            </select>
+            <input
+              type="text"
+              [ngModel]="insumoBusqueda()"
+              (ngModelChange)="onBusquedaInsumoChange($event)"
+              (focus)="mostrarSugerenciasInsumo.set(true)"
+              (blur)="onBlurBusquedaInsumo()"
+              placeholder="Escanee código o escriba el nombre del insumo..."
+              class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-white placeholder-gray-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
+              autocomplete="off"
+            />
+            @if (mostrarSugerenciasInsumo() && sugerenciasInsumo().length > 0) {
+              <div class="absolute z-50 left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                @for (ins of sugerenciasInsumo(); track ins.id) {
+                  <button
+                    type="button"
+                    (mousedown)="seleccionarInsumo(ins)"
+                    class="w-full text-left px-3 py-2 text-xs hover:bg-sky-500/10 border-b border-gray-800/60 last:border-0 transition"
+                  >
+                    <span class="font-bold text-white block">{{ ins.nombre }}</span>
+                    <span class="text-[10px] text-gray-400 font-mono">{{ ins.codigo }}</span>
+                  </button>
+                }
+              </div>
+            }
+            @if (mostrarSugerenciasInsumo() && insumoBusqueda().length > 0 && sugerenciasInsumo().length === 0) {
+              <div class="absolute z-50 left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-3 text-xs text-gray-500">
+                No se encontraron insumos con ese código o nombre.
+              </div>
+            }
           </div>
 
           <!-- Sede / Sub-Área Origen -->
@@ -237,6 +258,47 @@ export class ReposicionInventarioComponent implements OnInit {
   procesando = signal<boolean>(false);
   mensajeFeedback = signal<string>('');
   esErrorFeedback = signal<boolean>(false);
+
+  // Búsqueda de insumo por código o nombre (compatible con lector de código de barras)
+  insumoBusqueda = signal<string>('');
+  mostrarSugerenciasInsumo = signal<boolean>(false);
+
+  sugerenciasInsumo = computed(() => {
+    const term = this.insumoBusqueda().trim().toLowerCase();
+    const catalogo = this.catalogoInsumos();
+    if (!term) return catalogo.slice(0, 50);
+    return catalogo
+      .filter(i =>
+        i.nombre.toLowerCase().includes(term) ||
+        (i.codigo && i.codigo.toLowerCase().includes(term))
+      )
+      .slice(0, 50);
+  });
+
+  onBusquedaInsumoChange(valor: string) {
+    this.insumoBusqueda.set(valor);
+    this.mostrarSugerenciasInsumo.set(true);
+
+    // Lector de código de barras: coincidencia exacta por código → selección automática
+    const term = valor.trim().toLowerCase();
+    if (term.length >= 4) {
+      const exacto = this.catalogoInsumos().find(i => i.codigo && i.codigo.toLowerCase() === term);
+      if (exacto) {
+        this.seleccionarInsumo(exacto);
+      }
+    }
+  }
+
+  seleccionarInsumo(ins: Insumo) {
+    this.insumoSeleccionadoId = ins.id;
+    this.insumoBusqueda.set(`${ins.nombre} (${ins.codigo})`);
+    this.mostrarSugerenciasInsumo.set(false);
+  }
+
+  onBlurBusquedaInsumo() {
+    // Pequeño delay para permitir el click en la sugerencia antes de cerrar
+    setTimeout(() => this.mostrarSugerenciasInsumo.set(false), 200);
+  }
 
   ngOnInit() {
     this.cargarDatosMaestros();
