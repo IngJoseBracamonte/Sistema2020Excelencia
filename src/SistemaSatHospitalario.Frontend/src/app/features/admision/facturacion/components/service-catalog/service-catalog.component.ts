@@ -54,12 +54,17 @@ export class ServiceCatalogComponent {
   }
 
   public seleccionarTipoConsulta(s: CatalogItem) {
-    const desc = this.normalizeString(s.descripcion);
-    const match = this.especialidades().find((e: string) => {
-      const normalizedSpecialty = this.normalizeString(e);
-      return desc.includes(normalizedSpecialty.substring(0, 4));
-    });
-    if (match) this.selectedEsp = match;
+    if (s.especialidadId) {
+      const match = this.billingFacade.especialidadesFull()?.find(e => e.id === s.especialidadId);
+      if (match) {
+        this.selectedEsp = match.nombre;
+        return;
+      }
+    }
+    const exactMatch = this.especialidades().find((e: string) => e.toUpperCase() === s.descripcion.toUpperCase());
+    if (exactMatch) {
+      this.selectedEsp = exactMatch;
+    }
   }
 
   public isSuggested(serviceId: string): boolean {

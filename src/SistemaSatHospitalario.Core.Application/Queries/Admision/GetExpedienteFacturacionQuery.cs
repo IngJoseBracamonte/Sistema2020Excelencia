@@ -62,10 +62,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 query = query.Where(x => x.d.FechaCarga <= end);
             }
 
-            // Filtro Laboratorio
+            // Filtro Laboratorio por ID canónico (TipoServicioConstants.Laboratorio = 2)
             if (!facturarLaboratorio)
             {
-                query = query.Where(x => x.d.TipoServicio != "Laboratorio");
+                query = query.Where(x => x.d.TipoServicioId != TipoServicioConstants.Laboratorio);
             }
 
             // Filtro por tipo de paciente (convenios, particulares, todo)

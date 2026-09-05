@@ -43,6 +43,7 @@ export class BillingFacadeService {
   public servicesCatalog = signal<CatalogItem[]>([]);
   public medicos = signal<any[]>([]);
   public especialidades = signal<string[]>([]);
+  public especialidadesFull = signal<any[]>([]);
   public catalogMetodosPago = signal<any[]>([]);
 
   // --- Selectores (Computed Signals) ---
@@ -157,10 +158,7 @@ export class BillingFacadeService {
   public isMethodBs(methodName: string): boolean {
     const method = this.catalogMetodosPago().find(m => m.value === methodName || m.name === methodName);
     if (method) return method.grupoMoneda === CurrencyIds.VES;
-    
-    // Fallback logic for legacy strings
-    const m = (methodName || '').toLowerCase();
-    return m.includes('bs') || m.includes('móvil') || m.includes('punto');
+    return false;
   }
 
   // --- Acciones de Negocio ---

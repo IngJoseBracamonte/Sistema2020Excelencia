@@ -5,6 +5,7 @@ import { MultiSedeService, Sede, PedidoInterSede } from '../../../core/services/
 import { InventoryService } from '../../../core/services/inventory.service';
 import { Insumo } from '../../../core/models/inventory.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { SEDE_IDS } from '../../../core/constants/sede.constants';
 
 export type TipoDestinoSolicitud = 'DEPÓSITO_OPERATIVO' | 'GASTO_INTERNO_LABORATORIO';
 
@@ -295,13 +296,13 @@ export class PedidosInterSedeComponent implements OnInit {
     if (!area || !this.sedes.length) return;
     const norm = area.toUpperCase();
     if (norm.includes('UCI')) {
-      const uciSede = this.sedes.find(s => s.nombre.toUpperCase().includes('UCI') || s.codigo?.toUpperCase() === 'UCI' || s.id === '10000000-0000-0000-0000-000000000004');
+      const uciSede = this.sedes.find(s => s.id === SEDE_IDS.UCI);
       if (uciSede) this.newPedido.sedeSolicitanteId = uciSede.id;
     } else if (norm.includes('HOSPITALIZACION')) {
-      const hospSede = this.sedes.find(s => s.nombre.toUpperCase().includes('HOSP') || s.codigo?.toUpperCase() === 'HOSPITALIZACION' || s.id === '10000000-0000-0000-0000-000000000003');
+      const hospSede = this.sedes.find(s => s.id === SEDE_IDS.HOSPITALIZACION);
       if (hospSede) this.newPedido.sedeSolicitanteId = hospSede.id;
     } else {
-      const emgSede = this.sedes.find(s => s.nombre.toUpperCase().includes('EMERG') || s.codigo?.toUpperCase() === 'EMERGENCIA' || s.id === '10000000-0000-0000-0000-000000000002');
+      const emgSede = this.sedes.find(s => s.id === SEDE_IDS.EMERGENCIA);
       if (emgSede) this.newPedido.sedeSolicitanteId = emgSede.id;
     }
   }
@@ -369,7 +370,7 @@ export class PedidosInterSedeComponent implements OnInit {
 
   get filteredSedes(): Sede[] {
     if (this.isOnlyEmergency()) {
-      return this.sedes.filter(s => s.codigo?.toUpperCase() === 'EMERGENCIA' || s.id === '10000000-0000-0000-0000-000000000002');
+      return this.sedes.filter(s => s.id === SEDE_IDS.EMERGENCIA);
     }
     return this.sedes;
   }

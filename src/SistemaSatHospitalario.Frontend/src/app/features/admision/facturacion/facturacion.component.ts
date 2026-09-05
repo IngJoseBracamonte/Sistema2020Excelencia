@@ -225,7 +225,9 @@ export class FacturacionComponent {
 
     // 5. Cargar Especialidades Dinámicas
     this.specialtyService.getAll().pipe(takeUntilDestroyed()).subscribe(res => {
-      this.billingFacade.especialidades.set(res.filter(e => e.activo).map(e => e.nombre));
+      const active = res.filter(e => e.activo);
+      this.billingFacade.especialidades.set(active.map(e => e.nombre));
+      this.billingFacade.especialidadesFull.set(active);
     });
 
     // 6. Cargar Convenios Dinámicos (Pachón Pro)
@@ -318,9 +320,9 @@ export class FacturacionComponent {
     if (matches.length > 0) {
       this.suggestedServices.set(matches);
     } else {
-      // Fallback a General si no hay específico
+      // Fallback a General si no hay específico (por ID canónico)
       const general = this.billingFacade.servicesCatalog().filter((s: CatalogItem) => 
-        s.id === 'S001' || s.descripcion.toUpperCase().includes('GENERAL')
+        s.id === 'S001' || s.codigo === 'S001'
       );
       this.suggestedServices.set(general);
     }

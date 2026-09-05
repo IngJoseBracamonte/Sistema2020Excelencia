@@ -109,7 +109,7 @@ export class CuentasPorPagarComponent implements OnInit, OnDestroy {
         const mapped: CatalogoMetodoPagoDto[] = (res || []).map(x => ({
           id: String(x.id || x.valor || x.value || x.nombre),
           nombre: x.nombre || x.name || x.valor,
-          monedaId: (x.grupoMoneda === 2 || x.grupoMoneda === 'VES' || (x.nombre || '').toUpperCase().includes('BS') || (x.nombre || '').toUpperCase().includes('PAGO MÓVIL') || (x.nombre || '').toUpperCase().includes('PUNTO')) ? MONEDA_BS_ID : MONEDA_USD_ID,
+          monedaId: (x.grupoMoneda === 2 || x.grupoMoneda === 'VES') ? MONEDA_BS_ID : MONEDA_USD_ID,
           activo: x.activo ?? true
         })).filter(m => m.activo);
 

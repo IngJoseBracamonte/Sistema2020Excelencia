@@ -136,7 +136,7 @@
                                 <div class="flex items-center gap-3 mt-1">
                                     <p class="text-[9px] text-muted font-bold uppercase tracking-widest">{{ s.tipo }}
                                     </p>
-                                    <button *ngIf="s.tipo.toUpperCase().includes('CONSULTA')"
+                                    <button *ngIf="s.isConsultation"
                                         (click)="seleccionarTipoConsulta(s); $event.stopPropagation()"
                                         class="text-[8px] text-primary hover:text-primary-glow font-black uppercase tracking-widest flex items-center gap-1 group/btn">
                                         <lucide-icon name="search" class="w-2.5 h-2.5"></lucide-icon>

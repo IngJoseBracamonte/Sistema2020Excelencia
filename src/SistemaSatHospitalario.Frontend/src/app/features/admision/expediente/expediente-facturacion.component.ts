@@ -18,6 +18,7 @@ import {
 } from 'lucide-angular';
 import { ExpedienteService, ExpedienteFacturacionRow } from '../../../core/services/expediente.service';
 import { FacturacionService } from '../../../core/services/facturacion.service';
+import { TIPO_INGRESO } from '../../../core/constants/tipo-ingreso.constants';
 
 @Component({
   selector: 'app-expediente-facturacion',
@@ -83,7 +84,10 @@ export class ExpedienteFacturacionComponent implements OnInit {
   }
 
   reimprimirCompromiso(row: ExpedienteFacturacionRow) {
-    if (row.tipoIngreso === 'Seguro' || (row.seguroNombre && row.seguroNombre !== 'Particular') || row.seguroNombre?.toUpperCase().includes('PDVSA') || !row.cuentaPorCobrarId) {
+    const esSeguro = row.tipoIngreso === TIPO_INGRESO.SEGURO || 
+      (row.seguroNombre && row.seguroNombre.toUpperCase() !== TIPO_INGRESO.PARTICULAR.toUpperCase());
+    const esPdvsa = row.seguroNombre?.toUpperCase().includes('PDVSA'); // Pendiente flag canónico del API
+    if (esSeguro || esPdvsa || !row.cuentaPorCobrarId) {
       this.reimprimirConformidad(row);
       return;
     }
