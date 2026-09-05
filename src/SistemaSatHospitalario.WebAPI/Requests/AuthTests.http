@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:5000
+# Credenciales corregidas según el Seed (IdentityDbInitializer)
+@adminUser = admin
+@adminPass = Admin123*!
+
+# @authToken = Bearer <PEGA_AQUI_EL_TOKEN_DEL_LOGIN>
+
+### 1. Login (Obtener Token)
+# Si este falla, revisa el Log de la API para ver errores de CheckPasswordAsync.
+# @name login
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+    "username": "{{adminUser}}",
+    "password": "{{adminPass}}"
+}
+
+### 2. Guardar Token (Requiere REST Client de VS Code)
+@token = {{login.response.body.token}}
+
+### 3. Debug Token (Verificar por qué el 401)
+# Este endpoint decodifica el token localmente para ver claims, issuer y audience.
+POST {{baseUrl}}/api/Auth/debug-token
+Content-Type: application/json
+
+{
+    "token": "{{token}}"
+}
+
+### 4. Consultar Usuarios (Debug Seed)
+# Verifica si el usuario 'admin' existe realmente en DB y si está activo.
+GET {{baseUrl}}/api/Auth/debug-users
+
+### 5. Probar Endpoint Protegido (Dashboard)
+# Si falla con 401 pero el paso 3 dice que es válido, el problema es el Middleware de Program.cs.
+GET {{baseUrl}}/api/Dashboard/Insights
+Authorization: Bearer {{token}}
+Accept: application/json

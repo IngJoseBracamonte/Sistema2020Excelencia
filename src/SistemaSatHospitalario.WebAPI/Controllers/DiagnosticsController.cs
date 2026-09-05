@@ -1,0 +1,200 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.DTOs.Diagnostics;
+using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using SistemaSatHospitalario.Infrastructure.Common.Helpers;
+using System.Runtime.InteropServices;
+
+namespace SistemaSatHospitalario.WebAPI.Controllers
+{
+    /// <summary>
+    /// [PHASE-6] Advanced Diagnostics for "Insight" analysis.
+    /// Provides technical transparency to catch "Possible Bugs" in the infrastructure.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [ApiController]
+    [Route("api/[controller]")]
+    public class DiagnosticsController : ControllerBase
+    {
+        private readonly IApplicationDbContext _context;
+        private readonly IDateTimeProvider _dateTime;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<DiagnosticsController> _logger;
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+        private static readonly DateTime _startTime = DateTime.UtcNow;
+
+        public DiagnosticsController(
+            IApplicationDbContext context, 
+            IDateTimeProvider dateTime,
+            IConfiguration configuration,
+            ILogger<DiagnosticsController> logger,
+            Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+        {
+            _context = context;
+            _dateTime = dateTime;
+            _configuration = configuration;
+            _logger = logger;
+            _env = env;
+        }
+
+        [AllowAnonymous]
+        [HttpGet("environment-status")]
+        public IActionResult GetEnvironmentStatus()
+        {
+            return Ok(new
+            {
+                EnvironmentName = _env.EnvironmentName,
+                IsDevelopment = _env.IsDevelopment(),
+                IsProduction = _env.IsProduction(),
+                Runtime = RuntimeInformation.FrameworkDescription,
+                OS = RuntimeInformation.OSDescription,
+                ServerTime = DateTime.UtcNow
+            });
+        }
+
+        [HttpGet("HealthInsight")]
+        public async Task<ActionResult<TechnicalInsightDto>> GetHealthInsight()
+        {
+            var stopwatch = Stopwatch.StartNew();
+            
+            // Analyze DB Health (Potential Bug: Connection Pool Exhaustion)
+            bool isDbHealthy = false;
+            try {
+                await _context.Database.ExecuteSqlRawAsync("SELECT 1");
+                isDbHealthy = true;
+            } catch { }
+            stopwatch.Stop();
+
+            var currentProcess = Process.GetCurrentProcess();
+
+            var insight = new TechnicalInsightDto
+            {
+                ServerTime = _dateTime.UtcNow,
+                HospitalTime = _dateTime.HospitalNow,
+                Uptime = (DateTime.UtcNow - _startTime).ToString(@"dd\.hh\:mm\:ss"),
+                MemoryUsageBytes = currentProcess.WorkingSet64,
+                DatabaseLatencyMs = stopwatch.Elapsed.TotalMilliseconds,
+                SystemStatus = isDbHealthy ? "Optimal" : "Degraded",
+                
+                // Possible Bug Discovery: Fetch recent ErrorTickets
+                RecentAnomalies = await _context.ErrorTickets
+                    .AsNoTracking()
+                    .OrderByDescending(e => e.FechaCreacion)
+                    .Take(5)
+                    .Select(e => new ErrorSummaryDto {
+                        Timestamp = e.FechaCreacion,
+                        Message = e.MensajeExcepcion ?? "Unknown error",
+                        Path = e.RequestPath ?? "N/A"
+                    })
+                    .ToListAsync()
+            };
+
+            return Ok(insight);
+        }
+
+        [HttpGet("legacy-status")]
+        public async Task<IActionResult> GetLegacyStatus()
+        {
+            var rawConnStr = _configuration.GetConnectionString("LegacyConnection");
+
+            if (string.IsNullOrEmpty(rawConnStr))
+            {
+                return Ok(new { Status = "NOT_CONFIGURED", Timestamp = DateTime.UtcNow });
+            }
+
+            try
+            {
+                // Senior Architecture: Normalize (preserve case for legacy) and Enhance for Cloud
+                var conStr = ConnectionStringHelper.NormalizeMySqlConnectionString(rawConnStr, forceLowercase: false);
+                conStr = ConnectionStringHelper.EnhanceForCloud(conStr);
+
+                var builder = new MySqlConnector.MySqlConnectionStringBuilder(conStr);
+                
+                using var connection = new MySqlConnector.MySqlConnection(conStr);
+                await connection.OpenAsync();
+
+                var stats = new
+                {
+                    Pacientes = await GetTableCountAsync(connection, LegacyTable.Pacientes),
+                    Ordenes = await GetTableCountAsync(connection, LegacyTable.Ordenes),
+                    Resultados = await GetTableCountAsync(connection, LegacyTable.Resultados)
+                };
+
+                await connection.CloseAsync();
+
+                return Ok(new
+                {
+                    Status = "CONNECTED",
+                    Server = builder.Server,
+                    Database = builder.Database,
+                    TableCounts = stats,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { Status = "ERROR", Message = ex.Message, Timestamp = DateTime.UtcNow });
+            }
+        }
+
+        [HttpGet("migrations")]
+        public async Task<IActionResult> GetMigrationsStatus()
+        {
+            try
+            {
+                var applied = (await _context.Database.GetAppliedMigrationsAsync()).ToList();
+                var pending = (await _context.Database.GetPendingMigrationsAsync()).ToList();
+                var all = _context.Database.GetMigrations().ToList();
+
+                var list = all.Select(m => new
+                {
+                    Name = m,
+                    Applied = applied.Contains(m),
+                    Pending = pending.Contains(m)
+                }).ToList();
+
+                return Ok(new
+                {
+                    Success = true,
+                    AppliedCount = applied.Count,
+                    PendingCount = pending.Count,
+                    TotalCount = all.Count,
+                    Migrations = list
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting migrations status");
+                return StatusCode(500, new { Success = false, Message = ex.Message });
+            }
+        }
+
+
+        private static async Task<int> GetTableCountAsync(MySqlConnector.MySqlConnection connection, LegacyTable table)
+        {
+            try
+            {
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = table switch
+                {
+                    LegacyTable.Pacientes => "SELECT COUNT(*) FROM `datospersonales`",
+                    LegacyTable.Ordenes => "SELECT COUNT(*) FROM `ordenes`",
+                    LegacyTable.Resultados => "SELECT COUNT(*) FROM `resultadospaciente`",
+                    _ => throw new ArgumentOutOfRangeException(nameof(table), table, null)
+                };
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch { return -1; }
+        }
+
+        private enum LegacyTable
+        {
+            Pacientes,
+            Ordenes,
+            Resultados
+        }
+    }
+}

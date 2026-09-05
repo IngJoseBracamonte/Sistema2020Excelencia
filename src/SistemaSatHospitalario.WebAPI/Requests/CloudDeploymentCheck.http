@@ -1,0 +1,42 @@
+### Cloud Deployment Smoke Test
+# Reemplaza {{cloudUrl}} con la URL de tu API (ej: https://sat-hospitalario.onrender.com)
+
+@baseUrl = http://localhost:5218
+@adminUser = admin
+@adminPass = Admin123*!
+
+# 1. Health Check (Sin Auth)
+GET {{baseUrl}}/health
+Accept: application/json
+
+###
+
+# 2. Login para obtener Token
+# @name login
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+    "username": "{{adminUser}}",
+    "password": "{{adminPass}}"
+}
+
+###
+
+# 3. Verificar Dashboard (Con Token)
+@authToken = {{login.response.body.token}}
+
+GET {{baseUrl}}/api/Dashboard/Insights
+Authorization: Bearer {{authToken}}
+
+###
+
+# 4. Verificar Auditoría (Con Token)
+GET {{baseUrl}}/api/Expediente/billing
+Authorization: Bearer {{authToken}}
+
+###
+
+# 5. Check Infraestructura y Latencia DB Nube
+GET {{baseUrl}}/api/Diagnostics/HealthInsight
+Authorization: Bearer {{authToken}}
