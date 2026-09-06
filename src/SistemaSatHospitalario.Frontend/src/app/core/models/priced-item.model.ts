@@ -48,6 +48,7 @@ export abstract class BasePricedItem {
   comentario?: string;
   detalleId?: string;
   hora?: string;
+  especialidadId?: string;
 
   // Getters delegados para compatibilidad de migración (PascalCase -> camelCase)
   get SugerenciasIds(): string[] | undefined { return this.sugerenciasIds; }
@@ -122,6 +123,7 @@ export abstract class BasePricedItem {
     this.comentario = data.comentario ?? data.Comentario;
     this.detalleId = data.detalleId ?? data.DetalleId;
     this.hora = data.hora ?? data.Hora;
+    this.especialidadId = data.especialidadId ?? data.EspecialidadId;
 
     const priceVal = this.precioUsd ?? 0;
     if (data.honorarioUsd !== undefined && data.honorarioUsd !== null) {
