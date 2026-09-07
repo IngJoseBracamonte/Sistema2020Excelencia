@@ -48,7 +48,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         from ar in arGroup.DefaultIfEmpty()
                         join cita in _context.CitasMedicas on c.Id equals cita.CuentaServicioId into citaGroup
                         from cita in citaGroup.DefaultIfEmpty()
-                        select new { d, c, p, rf, sm, ar, CitaEstado = cita != null ? cita.Estado : null };
+                        select new { d, c, p, rf, sm, ar, CitaEstado = cita != null ? EstadoCitaConstants.ToLegacyString(cita.EstadoId) : null };
 
             if (request.StartDate.HasValue)
             {

@@ -51,7 +51,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var citaExistente = await _context.CitasMedicas.AnyAsync(c => 
                 c.MedicoId == request.MedicoId && 
                 c.HoraPautada == targetHora && 
-                c.Estado != EstadoConstants.Cancelado, cancellationToken);
+                c.EstadoId != EstadoCitaConstants.CanceladaId, cancellationToken);
 
             if (citaExistente) 
                 throw new InvalidOperationException("Ya existe una cita médica(En Espera/Atendida) en este horario exacto.");

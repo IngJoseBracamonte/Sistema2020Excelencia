@@ -62,7 +62,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var colisionCita = await _context.CitasMedicas
                 .AnyAsync(c => c.MedicoId == request.MedicoId 
                             && c.HoraPautada == targetHora 
-                            && c.Estado != EstadoConstants.Cancelado, 
+                            && c.EstadoId != EstadoCitaConstants.CanceladaId, 
                             cancellationToken);
 
             var colisionBloqueo = await _context.BloqueosHorarios

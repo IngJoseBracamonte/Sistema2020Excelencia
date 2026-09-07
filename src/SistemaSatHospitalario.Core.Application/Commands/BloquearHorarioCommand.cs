@@ -1,5 +1,6 @@
 using MediatR;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using System;
 using System.Linq;
@@ -37,7 +38,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
             var conCita = _context.CitasMedicas.Any(c => 
                 c.MedicoId == request.MedicoId && 
                 c.HoraPautada == request.HoraPautada && 
-                c.Estado != "Cancelado");
+                c.EstadoId != EstadoCitaConstants.CanceladaId);
 
             if (conCita) return false;
 

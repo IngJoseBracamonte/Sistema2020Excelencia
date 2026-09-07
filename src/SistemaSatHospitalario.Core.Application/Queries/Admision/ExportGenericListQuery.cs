@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -102,7 +103,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     c.CuentaServicio.Paciente.NombreCorto,
                     c.Medico.Nombre,
                     c.Medico.Especialidad.Nombre,
-                    c.Estado,
+                    EstadoCitaConstants.ToLegacyString(c.EstadoId),
                     req.IsAuditMode ? (object)c.FechaRegistro : null,
                     req.IsAuditMode ? c.Comentario : null
                 );

@@ -99,7 +99,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // 3FN: fallback legacy solo para cajas históricas sin filas en CajasDeclaracionesMetodos
 #pragma warning disable CS0618
                 if ((declarados == null || declarados.Count == 0)
-                    && caja.Estado != EstadoConstants.CajaAbierta
+                    && caja.EstadoId != EstadoCajaConstants.AbiertaId
                     && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
                 {
                     try
@@ -122,7 +122,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     Username = caja.NombreUsuario,
                     FullName = userMap.TryGetValue(caja.UsuarioId, out var name) ? name : caja.NombreUsuario,
-                    EstadoCaja = caja.Estado == EstadoConstants.CajaAbierta ? "ABIERTA" : (caja.Estado == EstadoConstants.CajaCerradaPorAsistente ? "CERRADA (PENDIENTE)" : "CONSOLIDADA"),
+                    EstadoCaja = caja.EstadoId == EstadoCajaConstants.AbiertaId ? "ABIERTA" : (caja.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId ? "CERRADA (PENDIENTE)" : "CONSOLIDADA"),
                     TotalCobrado = totalCajaCobrado,
                     TotalIngresado = totalCajaIngresado,
                     Diferencia = totalCajaIngresado - totalCajaCobrado,

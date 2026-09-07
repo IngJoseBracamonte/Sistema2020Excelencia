@@ -107,7 +107,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     FormaPago = formaPago,
                     MontoUSD = montoTotal,
                     MontoHonorario = montoHonorario,
-                    Estado = cita.Estado,
+                    Estado = EstadoCitaConstants.ToLegacyString(cita.EstadoId),
                     Observaciones = cita.Comentario ?? "",
                     Turno = turnosContador[cita.MedicoId],
                     CuentaServicioId = cita.CuentaServicioId,

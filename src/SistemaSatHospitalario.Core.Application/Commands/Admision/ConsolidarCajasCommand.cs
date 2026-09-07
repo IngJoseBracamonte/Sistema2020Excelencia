@@ -45,7 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .ToListAsync(cancellationToken);
 
             // Consolidar todas las cajas que estén "CerradaPorAsistente"
-            var cajasPorConsolidar = cajasHoy.Where(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente).ToList();
+            var cajasPorConsolidar = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId).ToList();
             foreach (var caja in cajasPorConsolidar)
             {
                 caja.ConsolidarCaja();
@@ -54,12 +54,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             await _context.SaveChangesAsync(cancellationToken);
 
             // Recalcular métricas para el resultado
-            var cajasActivas = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaAbierta);
-            var cierresPendientes = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente);
-            var cierresRealizados = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerrada);
+            var cajasActivas = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.AbiertaId);
+            var cierresPendientes = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId);
+            var cierresRealizados = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaId);
 
-            decimal totalRecaudado = cajasHoy.Where(c => c.Estado == EstadoConstants.CajaCerrada).Sum(c => c.TotalIngresado ?? 0);
-            decimal totalEsperado = cajasHoy.Where(c => c.Estado == EstadoConstants.CajaCerrada).Sum(c => c.TotalCobrado ?? 0);
+            decimal totalRecaudado = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaId).Sum(c => c.TotalIngresado ?? 0);
+            decimal totalEsperado = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaId).Sum(c => c.TotalCobrado ?? 0);
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
 
             // Efectivo en Bóveda: sumar lo ingresado en Efectivo de las cajas cerradas/consolidadas

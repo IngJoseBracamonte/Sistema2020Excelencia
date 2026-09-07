@@ -69,7 +69,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Turnos Pautados Hoy
                 response.TurnosPautadosHoy = await _context.CitasMedicas
                     .AsNoTracking()
-                    .Where(c => c.HoraPautada >= todayLocal && c.HoraPautada < tomorrowLocal && c.Estado != EstadoConstants.Cancelado)
+                    .Where(c => c.HoraPautada >= todayLocal && c.HoraPautada < tomorrowLocal && c.EstadoId != EstadoCitaConstants.CanceladaId)
                     .CountAsync(cancellationToken);
                 
                 _logger.LogInformation("[INSIGHTS] Turnos Pautados Hoy: {Count}", response.TurnosPautadosHoy);
