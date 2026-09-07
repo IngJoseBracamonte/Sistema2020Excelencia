@@ -41,7 +41,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         {
             // Buscamos todas las cajas abiertas actualmente (una por usuario/turno)
             var cajasAbiertas = await _context.CajasDiarias
-                .Where(c => c.Estado == EstadoConstants.Abierta)
+                .Where(c => c.EstadoId == EstadoCajaConstants.AbiertaId)
                 .ToListAsync(cancellationToken);
 
             // Obtenemos los montos recaudados por cada caja abierta sumando sus recibos
@@ -58,7 +58,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     TurnoId = caja.Id,
                     CajeroUserId = caja.NombreUsuario,
-                    Estado = caja.Estado,
+                    Estado = EstadoCajaConstants.ToLegacyString(caja.EstadoId),
                     RecaudadoBase = recaudado
                 });
             }

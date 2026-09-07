@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var tomorrow = today.AddDays(1);
 
             var cajaAbierta = await _context.CajasDiarias
-                .FirstOrDefaultAsync(c => c.Estado == EstadoConstants.CajaAbierta && c.UsuarioId == request.UserId, cancellationToken);
+                .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId && c.UsuarioId == request.UserId, cancellationToken);
 
             var query = _context.RecibosFactura
                 .Include(r => r.DetallesPago)

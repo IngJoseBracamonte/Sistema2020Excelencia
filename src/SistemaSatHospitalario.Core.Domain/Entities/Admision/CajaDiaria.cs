@@ -12,13 +12,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal MontoInicialDivisa { get; protected set; }
         public decimal MontoInicialBs { get; protected set; }
 
-        /// <summary>
-        /// LEGACY (3FN): texto del estado. Fuente de verdad: <see cref="EstadoId"/>
-        /// (FK a EstadosCaja). Alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Usar EstadoId / EstadoNav. Columna legacy pendiente de DROP.")]
-        public string Estado { get; protected set; } // "Abierta", "CerradaPorAsistente" o "Cerrada"
-
         /// <summary>FK al catálogo EstadosCaja (3FN).</summary>
         public int EstadoId { get; protected set; }
 
@@ -87,7 +80,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoInicialBs = montoInicialBs;
             EstadoId = EstadoCajaConstants.AbiertaId;
 #pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Estado = EstadoConstants.CajaAbierta;
             UsuarioId = usuarioId;
             NombreUsuario = nombreUsuario;
 #pragma warning restore CS0618
@@ -99,9 +91,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         private void SetEstado(int estadoId)
         {
             EstadoId = estadoId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Estado = EstadoCajaConstants.ToLegacyString(estadoId);
-#pragma warning restore CS0618
         }
 
         /// <summary>3FN: indica si la caja está abierta (fuente de verdad: EstadoId).</summary>

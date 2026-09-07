@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 throw new InvalidOperationException("No se encontró la caja especificada.");
             }
 
-            if (caja.Estado != EstadoConstants.CajaAbierta)
+            if (caja.EstadoId != EstadoCajaConstants.AbiertaId)
             {
                 throw new InvalidOperationException("La caja ya no se encuentra abierta.");
             }

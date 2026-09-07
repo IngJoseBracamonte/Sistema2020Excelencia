@@ -23,20 +23,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         public async Task<CajaDiaria?> ObtenerCajaAbiertaAsync(CancellationToken cancellationToken)
         {
             return await _context.CajasDiarias
-                                 .FirstOrDefaultAsync(c => c.Estado == EstadoConstants.CajaAbierta, cancellationToken);
+                                 .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId, cancellationToken);
         }
 
         public async Task<CajaDiaria?> ObtenerCajaAbiertaNoTrackingAsync(CancellationToken cancellationToken)
         {
             return await _context.CajasDiarias
                                  .AsNoTracking()
-                                 .FirstOrDefaultAsync(c => c.Estado == EstadoConstants.CajaAbierta, cancellationToken);
+                                 .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId, cancellationToken);
         }
 
         public async Task<CajaDiaria?> ObtenerCajaAbiertaPorUsuarioAsync(string usuarioId, CancellationToken cancellationToken)
         {
             return await _context.CajasDiarias
-                                 .FirstOrDefaultAsync(c => c.Estado == EstadoConstants.CajaAbierta && c.UsuarioId == usuarioId, cancellationToken);
+                                 .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId && c.UsuarioId == usuarioId, cancellationToken);
         }
 
         public async Task AgregarCajaAsync(CajaDiaria caja, CancellationToken cancellationToken)
@@ -52,7 +52,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         public async Task<CajaDiaria?> ObtenerCajaAbiertaConDetallesAsync(CancellationToken cancellationToken)
         {
             return await _context.CajasDiarias
-                                 .FirstOrDefaultAsync(c => c.Estado == EstadoConstants.CajaAbierta, cancellationToken);
+                                 .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId, cancellationToken);
         }
 
         public async Task<IEnumerable<CajaDiaria>> ObtenerHistorialCierresAsync(DateTime desde, DateTime hasta, string? usuarioId, CancellationToken cancellationToken)
@@ -61,7 +61,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             var end = hasta.Date.AddDays(1).AddTicks(-1);
 
             var query = _context.CajasDiarias
-                                .Where(c => c.Estado == EstadoConstants.CajaCerrada && c.FechaCierre >= start && c.FechaCierre <= end);
+                                .Where(c => c.EstadoId == EstadoCajaConstants.CerradaId && c.FechaCierre >= start && c.FechaCierre <= end);
 
             if (!string.IsNullOrEmpty(usuarioId))
             {

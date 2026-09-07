@@ -67,7 +67,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                    PacienteNombre = p != null ? p.NombreCorto : "Paciente #" + c.PacienteId,
                                    HoraPautada = c.HoraPautada,
                                    CuentaId = c.CuentaServicioId,
-                                   Estado = c.Estado
+                                   Estado = EstadoCitaConstants.ToLegacyString(c.EstadoId)
                                })
                                .ToListAsync(cancellationToken);
 

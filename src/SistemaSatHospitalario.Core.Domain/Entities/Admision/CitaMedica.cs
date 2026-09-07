@@ -12,14 +12,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid CuentaServicioId { get; private set; }
         public DateTime HoraPautada { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): texto del estado. Fuente de verdad: <see cref="EstadoId"/>
-        /// (FK a EstadosCitaMedica). Se mantiene mapeado como alias de compatibilidad
-        /// hasta el DROP de columna (delta posterior a validación en producción).
-        /// </summary>
-        [Obsolete("Usar EstadoId / EstadoNav. Columna legacy pendiente de DROP.")]
-        public string Estado { get; private set; } // Pendiente, Confirmada, Cancelada, Atendida
-
         /// <summary>FK al catálogo EstadosCitaMedica (3FN).</summary>
         public int EstadoId { get; private set; }
         public string? Comentario { get; private set; }
@@ -41,9 +33,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CuentaServicioId = cuentaServicioId;
             HoraPautada = horaPautada;
             EstadoId = EstadoCitaConstants.PendienteId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Estado = EstadoConstants.Pendiente;
-#pragma warning restore CS0618
             Comentario = comentario;
             FechaRegistro = DateTime.UtcNow;
             AreaClinicaId = areaClinicaId;
@@ -67,9 +56,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void SetEstado(int estadoId)
         {
             EstadoId = estadoId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Estado = EstadoCitaConstants.ToLegacyString(estadoId);
-#pragma warning restore CS0618
         }
 
         public void CambiarPacienteAdministrativo(Guid nuevoPacienteId)

@@ -44,6 +44,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public decimal MontoInicialDivisa { get; set; }
         public decimal MontoInicialBs { get; set; }
         public string Estado { get; set; } = string.Empty;
+        public int EstadoId { get; set; }
         
         public decimal? TotalIngresado { get; set; }
         public decimal? TotalCobrado { get; set; }
@@ -103,7 +104,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 Cierre = c.FechaCierre,
                 MontoInicialDivisa = c.MontoInicialDivisa,
                 MontoInicialBs = c.MontoInicialBs,
-                Estado = c.Estado,
+                Estado = EstadoCajaConstants.ToLegacyString(c.EstadoId),
+                EstadoId = c.EstadoId,
                 TotalIngresado = c.TotalIngresado,
                 TotalCobrado = c.TotalCobrado,
                 Diferencia = c.Diferencia,
@@ -124,7 +126,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }).ToList()
             }).ToList();
 
-            var openCajaIds = list.Where(c => c.Estado == EstadoConstants.CajaAbierta).Select(c => c.Id).ToList();
+            var openCajaIds = list.Where(c => c.EstadoId == EstadoCajaConstants.AbiertaId).Select(c => c.Id).ToList();
             if (openCajaIds.Any())
             {
                 var catalogoMetodos = await _context.CatalogoMetodosPago
@@ -143,7 +145,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 foreach (var item in list)
                 {
-                    if (item.Estado == EstadoConstants.CajaAbierta)
+                    if (item.EstadoId == EstadoCajaConstants.AbiertaId)
                     {
                         var recibos = receiptsByCaja.TryGetValue(item.Id, out var rList) ? rList : new List<ReciboFactura>();
                         var allPayments = recibos.SelectMany(r => r.DetallesPago).ToList();
@@ -201,12 +203,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var tomorrow = today.AddDays(1);
             var cajasHoy = list.Where(c => c.Apertura >= today && c.Apertura < tomorrow).ToList();
 
-            var cajasActivas = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaAbierta);
-            var cierresPendientes = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerradaPorAsistente);
-            var cierresRealizados = cajasHoy.Count(c => c.Estado == EstadoConstants.CajaCerrada);
+            var cajasActivas = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.AbiertaId);
+            var cierresPendientes = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId);
+            var cierresRealizados = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaId);
 
-            decimal totalRecaudado = cajasHoy.Where(c => c.Estado != EstadoConstants.CajaAbierta).Sum(c => c.TotalIngresado ?? 0);
-            decimal totalEsperado = cajasHoy.Where(c => c.Estado != EstadoConstants.CajaAbierta).Sum(c => c.TotalCobrado ?? 0);
+            decimal totalRecaudado = cajasHoy.Where(c => c.EstadoId != EstadoCajaConstants.AbiertaId).Sum(c => c.TotalIngresado ?? 0);
+            decimal totalEsperado = cajasHoy.Where(c => c.EstadoId != EstadoCajaConstants.AbiertaId).Sum(c => c.TotalCobrado ?? 0);
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
             decimal efectivoEnBoveda = totalRecaudado;
 

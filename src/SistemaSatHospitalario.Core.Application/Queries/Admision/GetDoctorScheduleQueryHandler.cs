@@ -47,7 +47,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var citas = await _context.CitasMedicas
                 .Where(c => c.MedicoId == request.MedicoId 
                          && c.HoraPautada >= today && c.HoraPautada < tomorrow 
-                         && c.Estado != EstadoConstants.Cancelado)
+                         && c.EstadoId != EstadoCitaConstants.CanceladaId)
                 .ToListAsync(cancellationToken);
 
             var reservas = await _context.ReservasTemporales

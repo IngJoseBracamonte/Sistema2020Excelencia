@@ -75,7 +75,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task<bool> ExisteCitaSimultaneaAsync(Guid medicoId, DateTime hora, CancellationToken cancellationToken)
         {
-            return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.Estado != EstadoConstants.Cancelado, cancellationToken);
+            return await _context.CitasMedicas.AnyAsync(c => c.MedicoId == medicoId && c.HoraPautada == hora && c.EstadoId != EstadoCitaConstants.CanceladaId, cancellationToken);
         }
 
         public async Task CancelarCitaMedicaAsync(Guid cuentaId, Guid medicoId, DateTime hora, CancellationToken cancellationToken)

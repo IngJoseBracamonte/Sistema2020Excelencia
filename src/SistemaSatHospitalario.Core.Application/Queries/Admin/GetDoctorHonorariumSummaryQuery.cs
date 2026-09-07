@@ -42,7 +42,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                     on cita.CuentaServicioId equals detail.CuentaServicioId
                 join medico in _context.Medicos
                     on cita.MedicoId equals medico.Id
-                where cita.Estado == EstadoConstants.Atendida
+                where cita.EstadoId == EstadoCitaConstants.AtendidaId
                    && cs.Estado != EstadoConstants.Anulada
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end

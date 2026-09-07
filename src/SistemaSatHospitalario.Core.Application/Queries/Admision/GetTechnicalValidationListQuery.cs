@@ -74,7 +74,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Id = c.Id,
                         Medico = c.Medico.Nombre,
                         Hora = c.HoraPautada,
-                        Estado = c.Estado,
+                        Estado = EstadoCitaConstants.ToLegacyString(c.EstadoId),
                         Comentario = c.Comentario
                     })
                     .ToListAsync(ct);
