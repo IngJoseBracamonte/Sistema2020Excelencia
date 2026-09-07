@@ -94,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                     var medicoId = request.MedicoInterpreteId ?? request.MedicoId;
                     if (medicoId.HasValue)
                     {
-                        reportDetail.AsignarMedicoResponsable(medicoId.Value, TipoServicioConstants.RadiologiaEspecialidad, reportService.HonorarioBase);
+                        reportDetail.AsignarMedicoResponsable(medicoId.Value, reportService.HonorarioBase);
                     }
 
                     if (_context.DetallesServicioCuenta != null)
