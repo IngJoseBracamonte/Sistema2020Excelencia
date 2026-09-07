@@ -15,13 +15,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Referencia { get; private set; } = string.Empty;
 
         /// <summary>
-        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
-        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// FK lógica a Usuarios (Identity, PK Guid) del usuario que registró el pago.
         /// </summary>
-        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
-        public string UsuarioId { get; private set; } = string.Empty;
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que registró el pago.</summary>
         public Guid? UsuarioIdentityId { get; private set; }
         public string? Observaciones { get; private set; }
 
@@ -44,9 +39,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoAbonadoBs = Math.Round(montoAbonadoUSD * tasaCambio, 2);
             MetodoPago = metodoPago ?? "Transferencia";
             Referencia = referencia ?? string.Empty;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioId = usuarioId ?? "admin";
-#pragma warning restore CS0618
             // 3FN: poblar la FK si el texto es un GUID válido
             UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
             Observaciones = observaciones;

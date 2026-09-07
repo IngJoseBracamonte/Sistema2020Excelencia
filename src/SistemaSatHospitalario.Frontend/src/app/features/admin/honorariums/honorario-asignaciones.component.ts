@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '../../../../environments/environment';
-import { HONORARIO_CATEGORIAS } from '../../../core/constants/honorario.constants';
 
 @Component({
   selector: 'app-honorario-asignaciones',
@@ -187,20 +186,10 @@ export class HonorarioAsignacionesComponent implements OnInit {
     const item = this.selectedItem();
     this.http.post(`${environment.apiUrl}/api/AsignacionHonorarios/asignar`, {
       detalleServicioId: item.detalleId,
-      medicoId: medico.id,
-      categoriaHonorario: this.mapearCategoria(item.tipoServicio)
+      medicoId: medico.id
     }).subscribe(() => {
       this.showModal.set(false);
       this.cargarPendientes();
     });
-  }
-
-  private mapearCategoria(tipo: string): string {
-    const t = tipo?.toUpperCase();
-    if (t.includes('RX') || t.includes('IMAGEN')) return HONORARIO_CATEGORIAS.RX;
-    if (t.includes('INFORME')) return HONORARIO_CATEGORIAS.INFORME;
-    if (t.includes('CITO')) return HONORARIO_CATEGORIAS.CITOLOGIA;
-    if (t.includes('BIOPSIA')) return HONORARIO_CATEGORIAS.BIOPSIA;
-    return HONORARIO_CATEGORIAS.CONSULTA;
   }
 }

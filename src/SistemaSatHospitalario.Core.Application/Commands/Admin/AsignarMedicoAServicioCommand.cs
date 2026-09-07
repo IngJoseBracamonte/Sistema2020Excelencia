@@ -13,7 +13,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
     {
         public Guid DetalleServicioId { get; set; }
         public Guid MedicoId { get; set; }
-        public string CategoriaHonorario { get; set; } = string.Empty;
         public string? Observaciones { get; set; }
     }
 
@@ -53,7 +52,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
 
             decimal honorarioAsignado = customHonorarium?.MontoHonorario ?? detalle.Honorario;
 
-            detalle.AsignarMedicoResponsable(request.MedicoId, request.CategoriaHonorario, honorarioAsignado);
+            detalle.AsignarMedicoResponsable(request.MedicoId, honorarioAsignado);
 
             var log = new LogAsignacionHonorario(
                 request.DetalleServicioId, detalle.Descripcion, tipoAccion,

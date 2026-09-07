@@ -47,10 +47,10 @@ namespace SistemaSatHospitalario.Infrastructure.Services
             await _hubContext.Clients.Group(groupName).SendAsync("ReceiveNotification", dto, ct);
         }
 
-        public async Task CreatePersistentNotificationAsync(string title, string message, string type, string? targetUserId = null, string? targetRole = null, string? actionUrl = null, CancellationToken ct = default)
+        public async Task CreatePersistentNotificationAsync(string title, string message, string type, Guid? targetUserGuidId = null, string? targetRole = null, string? actionUrl = null, CancellationToken ct = default)
         {
             // 1. Persist to Database
-            var notification = new Notification(title, message, type, targetUserId, targetRole, actionUrl);
+            var notification = new Notification(title, message, type, targetUserGuidId, targetRole, actionUrl);
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync(ct);
 
@@ -64,9 +64,9 @@ namespace SistemaSatHospitalario.Infrastructure.Services
                 Metadata = new { notification.Id, actionUrl }
             };
 
-            if (!string.IsNullOrEmpty(targetUserId))
+            if (targetUserGuidId.HasValue)
             {
-                await _hubContext.Clients.User(targetUserId).SendAsync("ReceiveSilentNotification", dto, ct);
+                await _hubContext.Clients.User(targetUserGuidId.Value.ToString()).SendAsync("ReceiveSilentNotification", dto, ct);
             }
             else if (!string.IsNullOrEmpty(targetRole))
             {

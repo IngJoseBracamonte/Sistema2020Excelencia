@@ -487,7 +487,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                             decimal honorarioAsignado = customHonorarium?.MontoHonorario ?? detalle.Honorario;
 
-                            detalle.AsignarMedicoResponsable(finalMedicoId.Value, categoriaMapeada ?? HonorarioConstants.CategoriaOtros, honorarioAsignado);
+                            detalle.AsignarMedicoResponsable(finalMedicoId.Value, honorarioAsignado);
                             
                             var medicoNombre = (await _context.Medicos.FindAsync(new object[] { finalMedicoId.Value }, ct))?.Nombre;
                             _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(

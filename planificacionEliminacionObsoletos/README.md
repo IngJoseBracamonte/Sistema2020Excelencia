@@ -33,7 +33,7 @@ Cada propiedad obsoleta tiene **1 archivo de análisis** en esta carpeta. Este R
 | 9 | `CierreInventario.Usuario` | `UsuarioId` | [CierreInventario__Usuario.md](CierreInventario__Usuario.md) | [ ] |
 | 10 | `CirugiaLog.UsuarioId` | `UsuarioIdentityId` | [CirugiaLog__UsuarioId.md](CirugiaLog__UsuarioId.md) | [ ] |
 | 11 | `CirugiaObservacionHistorial.UsuarioRegistro` | `UsuarioRegistroId` | [CirugiaObservacionHistorial__UsuarioRegistro.md](CirugiaObservacionHistorial__UsuarioRegistro.md) | [ ] |
-| 12 | `CitaMedica.Estado` | `EstadoId / EstadoNav` | [CitaMedica__Estado.md](CitaMedica__Estado.md) | [ ] |
+| 12 | `CitaMedica.Estado` | `EstadoId / EstadoNav` | [CitaMedica__Estado.md](CitaMedica__Estado.md) | [x] |
 | 13 | `CompromisoPago.UsuarioCreacion` | `UsuarioCreacionId` | [CompromisoPago__UsuarioCreacion.md](CompromisoPago__UsuarioCreacion.md) | [ ] |
 | 14 | `CuentaPorCobrar.UsuarioAuditoria` | `UsuarioAuditoriaId` | [CuentaPorCobrar__UsuarioAuditoria.md](CuentaPorCobrar__UsuarioAuditoria.md) | [ ] |
 | 15 | `CuentaServicios.UsuarioCarga` | `UsuarioCargaId` | [CuentaServicios__UsuarioCarga.md](CuentaServicios__UsuarioCarga.md) | [ ] |

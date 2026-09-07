@@ -38,7 +38,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             if (!string.IsNullOrEmpty(request.NurseUsername))
             {
                 var usernameLower = request.NurseUsername.ToLower();
-                triageQuery = triageQuery.Where(t => t.UsuarioRegistro.ToLower().Contains(usernameLower));
+                triageQuery = triageQuery.Where(t => t.UsuarioRegistroId != null && t.UsuarioRegistroId.ToString()!.ToLower().Contains(usernameLower));
             }
 
             var triages = await triageQuery.ToListAsync(cancellationToken);
@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 list.Add(new NurseActivityDto
                 {
                     Fecha = t.FechaRegistro,
-                    Usuario = t.UsuarioRegistro,
+                    Usuario = t.UsuarioRegistroId?.ToString() ?? "",
                     PacienteCedula = pacienteCedula,
                     PacienteNombre = pacienteNombre,
                     TipoActividad = "Triage / Constantes Vitales",

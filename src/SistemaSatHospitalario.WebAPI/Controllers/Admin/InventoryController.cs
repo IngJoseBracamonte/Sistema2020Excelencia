@@ -131,7 +131,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
                     i.CostoUnitarioBaseUSD,
                     i.PermiteFraccionamiento,
-                    Categoria = i.CategoriaInsumo != null ? i.CategoriaInsumo.Nombre : i.Categoria,
+                    Categoria = i.CategoriaInsumo != null ? i.CategoriaInsumo.Nombre : string.Empty,
                     i.CategoriaInsumoId,
                     i.IsDeleted,
                     i.FechaInactivacion,
@@ -174,7 +174,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? string.Empty,
                 insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.FechaInactivacion,
@@ -416,7 +416,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 }
             }
 
-            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
+            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento);
 
             // 3FN: asignar categoría normalizada por FK (tiene prioridad sobre el texto legacy)
             var categoriaInsumo = await ResolverCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
@@ -496,7 +496,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? string.Empty,
                 insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados,
@@ -515,8 +515,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 dto.Nombre,
                 dto.UnidadMedidaBase,
                 dto.CostoUnitarioBaseUSD,
-                dto.PermiteFraccionamiento,
-                dto.Categoria
+                dto.PermiteFraccionamiento
             );
 
             // 3FN: asignar categoría normalizada por FK (tiene prioridad sobre el texto legacy)
@@ -537,7 +536,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
                 Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
-                insumo.CategoriaInsumoId,
+                insumo.CategoriaInsumoId,string.Empty
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
             });
@@ -617,8 +616,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // 3FN: propagar el nuevo nombre canónico a los insumos vinculados por FK
             // (el alias de texto Categoria se sincroniza dentro de AsignarCategoria)
             var insumosConCategoria = await _context.Insumos
-                .Where(i => i.CategoriaInsumoId == categoria.Id || i.Categoria == nombreAnterior)
-                .ToListAsync(ct);
+                .Where(i => i.CategoriaInsumoId == categoria.Id
 
             foreach (var insumo in insumosConCategoria)
             {
@@ -845,7 +843,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.PermiteFraccionamiento,
                 Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
                 insumo.CategoriaInsumoId,
-                insumo.IsDeleted,
+                insumo.IsDeleted,string.Empty
                 insumo.OcultoEnTraslados
             });
         }
@@ -911,13 +909,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // 2. Registrar automáticamente la Cuenta por Pagar / Orden de Compra de manera defensiva
             try
             {
-                var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
                 var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
                 var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
 
                 var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
                     numFact,
-                    provNombre,
                     DateTime.Now,
                     totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
                     tasa,

@@ -485,7 +485,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                     decimal honorarioAsignado = customHonorarium?.MontoHonorario ?? detalle.Honorario;
 
-                    detalle.AsignarMedicoResponsable(finalMedicoId.Value, categoriaMapeada ?? HonorarioConstants.CategoriaOtros, honorarioAsignado);
+                    detalle.AsignarMedicoResponsable(finalMedicoId.Value, honorarioAsignado);
                     
                     // También agregarlo a la lista de múltiples médicos con rol default para consistencia
                     detalle.AgregarMedicoResponsable(finalMedicoId.Value, HonorarioConstants.RolMedicoResponsable, honorarioAsignado);

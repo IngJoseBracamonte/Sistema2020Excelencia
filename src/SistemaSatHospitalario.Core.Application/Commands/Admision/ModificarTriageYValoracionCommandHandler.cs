@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 Pertenencias = valoracion.Pertenencias,
                 AntecedentesMedicos = valoracion.AntecedentesMedicos,
                 FechaRegistro = triage.FechaRegistro,
-                UsuarioRegistro = triage.UsuarioRegistro,
+                UsuarioRegistro = triage.UsuarioRegistroId?.ToString() ?? "",
                 DescripcionRapida = triage.DescripcionRapida,
                 DescripcionDetallada = triage.DescripcionDetallada
             };

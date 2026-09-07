@@ -28,13 +28,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DateTime FechaCreacion { get; private set; }
 
         /// <summary>
-        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
-        /// <see cref="UsuarioCreacionId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
+        /// FK lógica a Usuarios (Identity, PK Guid) del usuario que creó la orden.
         /// </summary>
-        [Obsolete("Usar UsuarioCreacionId. Columna legacy pendiente de DROP.")]
-        public string UsuarioCreacion { get; private set; }
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que creó la orden.</summary>
         public Guid? UsuarioCreacionId { get; private set; }
 
         // Nuevos campos operativos
@@ -112,7 +107,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             EsAlquilado = esAlquilado;
             Estado = EstadoCirugiaConstants.Programada;
             FechaCreacion = DateTime.UtcNow;
-            UsuarioCreacion = usuarioCreacion.Trim();
+            // 3FN: poblar la FK si el texto es un GUID válido
+            UsuarioCreacionId = Guid.TryParse(usuarioCreacion, out var parsed) ? parsed : (Guid?)null;
             _currentState = new ProgramadaState();
         }
 

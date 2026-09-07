@@ -148,7 +148,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Estado = o.Estado,
                     MotivoCancelacion = o.MotivoCancelacion,
                     FechaCreacion = o.FechaCreacion,
-                    UsuarioCreacion = o.UsuarioCreacion,
                     Requisitos = o.Requisitos.Select(r => new OrdenCirugiaRequisitoDto
                     {
                         Id = r.Id,
@@ -165,10 +164,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Observacion = h.Observacion,
                         Tipo = h.Tipo.ToString(),
                         FechaRegistro = h.FechaRegistro,
-#pragma warning disable CS0618 // alias legacy como fallback
-                        UsuarioRegistro = h.UsuarioRegistro,
-#pragma warning restore CS0618
-                        UsuarioRegistroId = h.UsuarioRegistroId
+                        UsuarioRegistroId = h.UsuarioRegistroId,
                     }).OrderByDescending(h => h.FechaRegistro).ToList()
                 })
                 .ToListAsync(cancellationToken);
@@ -271,7 +267,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 Estado = orden.Estado,
                 MotivoCancelacion = orden.MotivoCancelacion,
                 FechaCreacion = orden.FechaCreacion,
-                UsuarioCreacion = orden.UsuarioCreacion,
                 Requisitos = orden.Requisitos.Select(r => new OrdenCirugiaRequisitoDto
                 {
                     Id = r.Id,
@@ -288,9 +283,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Observacion = h.Observacion,
                     Tipo = h.Tipo.ToString(),
                     FechaRegistro = h.FechaRegistro,
-#pragma warning disable CS0618 // alias legacy como fallback
-                    UsuarioRegistro = h.UsuarioRegistro,
-#pragma warning restore CS0618
                     UsuarioRegistroId = h.UsuarioRegistroId
                 }).OrderByDescending(h => h.FechaRegistro).ToList(),
                 Logs = orden.Logs.Select(l => new CirugiaLogDto

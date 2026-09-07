@@ -390,7 +390,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     $"Nueva Orden Directa de RX: {order.PacienteNombre}",
                     $"Se requiere validación del estudio de RX '{order.Estudio}' registrado por la estación.",
                     "Warning",
-                    targetUserId: null,
+                    targetUserGuidId: null,
                     targetRole: null,
                     actionUrl: "/admin/audit/cuentas?tab=ordenes-directas",
                     ct: default

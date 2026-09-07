@@ -190,7 +190,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     FechaHoraProgramada = o.FechaHoraProgramada,
                     Estado = o.Estado,
                     FechaCreacion = o.FechaCreacion,
-                    UsuarioCreacion = o.UsuarioCreacion,
+                    UsuarioCreacion = o.UsuarioCreacionId?.ToString() ?? "",
                     Requisitos = o.Requisitos.Select(r => new OrdenCirugiaRequisitoDto
                     {
                         Id = r.Id,

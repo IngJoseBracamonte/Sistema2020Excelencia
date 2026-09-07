@@ -33,6 +33,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Inventario
         {
             var orden = await _context.OrdenesCompraInventario
                 .Include(o => o.Pagos)
+                .Include(o => o.Proveedor)
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCompraId, cancellationToken);
 
             if (orden == null)
@@ -58,14 +59,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Inventario
                 Id = pago.Id,
                 OrdenCompraId = orden.Id,
                 NumeroFactura = orden.NumeroFactura,
-                ProveedorNombre = orden.ProveedorNombre,
+                ProveedorNombre = orden.Proveedor?.RazonSocial ?? string.Empty,
                 FechaPago = pago.FechaPago,
                 MontoAbonadoUSD = pago.MontoAbonadoUSD,
                 TasaCambio = pago.TasaCambio,
                 MontoAbonadoBs = pago.MontoAbonadoBs,
                 MetodoPago = pago.MetodoPago,
                 Referencia = pago.Referencia,
-                UsuarioId = pago.UsuarioId,
+                UsuarioId = pago.UsuarioIdentityId?.ToString() ?? "",
                 Observaciones = pago.Observaciones
             };
         }
