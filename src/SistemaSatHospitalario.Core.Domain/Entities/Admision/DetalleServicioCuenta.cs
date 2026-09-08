@@ -36,13 +36,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? LegacyMappingId { get; private set; }
         public Guid? MedicoResponsableId { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): categoría de honorario en texto libre. Fuente de verdad:
-        /// la categoría se deriva de <see cref="TipoServicioId"/> y el médico responsable.
-        /// Se mantiene mapeado como alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Derivar de TipoServicioId / MedicoResponsable. Columna legacy pendiente de DROP.")]
-        public string? CategoriaHonorario { get; private set; }
         public Guid? AreaClinicaId { get; private set; }
 
         // Vínculo relacional Padre-Hijo (Informe vinculado a Estudio Base)
@@ -162,12 +155,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 #pragma warning restore CS0618
         }
 
-        public void AsignarMedicoResponsable(Guid medicoId, string categoria, decimal? honorario = null)
+        public void AsignarMedicoResponsable(Guid medicoId, decimal? honorario = null)
         {
             MedicoResponsableId = medicoId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            CategoriaHonorario = categoria;
-#pragma warning restore CS0618
             if (honorario.HasValue)
             {
                 Honorario = honorario.Value;

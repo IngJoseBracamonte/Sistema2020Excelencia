@@ -94,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                     var medicoId = request.MedicoInterpreteId ?? request.MedicoId;
                     if (medicoId.HasValue)
                     {
-                        reportDetail.AsignarMedicoResponsable(medicoId.Value, TipoServicioConstants.RadiologiaEspecialidad, reportService.HonorarioBase);
+                        reportDetail.AsignarMedicoResponsable(medicoId.Value, reportService.HonorarioBase);
                     }
 
                     if (_context.DetallesServicioCuenta != null)
@@ -155,7 +155,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 
             // Emitir evento desacoplado vía MediatR para SignalR bandejas
             string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
+            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngresoNav.Nombre;
             var notification = new ServicioCargadoNotification(
                 esRx ? TipoServicioConstants.RayosXString : TipoServicioConstants.TomografiaString,
                 request.OrigenCarga ?? request.TipoIngreso,

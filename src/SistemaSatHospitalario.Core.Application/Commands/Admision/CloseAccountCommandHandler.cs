@@ -392,7 +392,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         private async Task ProcessImagingOrders(Guid patientId, List<DetalleServicioCuenta> detalles, CancellationToken ct)
         {
-            var items = detalles.Where(d => d.TipoServicio == EstadoConstants.RX || d.TipoServicio == EstadoConstants.TOMO).ToList();
+            var items = detalles.Where(d => d.TipoServicioNav.Nombre == EstadoConstants.RX || d.TipoServicioNav.Nombre == EstadoConstants.TOMO).ToList();
             if (!items.Any()) return;
 
             var paciente = await _context.PacientesAdmision.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId, ct);
@@ -401,11 +401,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             foreach (var item in items)
             {
                 bool requiereInforme = item.MedicoResponsableId.HasValue;
-                if (item.TipoServicio == EstadoConstants.RX)
+                if (item.TipoServicioNav.Nombre == EstadoConstants.RX)
                 {
                     await _ordenExternaService.EnviarOrdenRXAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct, requiereInforme, item.MedicoResponsableId);
                 }
-                else if (item.TipoServicio == EstadoConstants.TOMO)
+                else if (item.TipoServicioNav.Nombre == EstadoConstants.TOMO)
                 {
                     await _ordenExternaService.EnviarOrdenTomoAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct, requiereInforme, item.MedicoResponsableId);
                 }

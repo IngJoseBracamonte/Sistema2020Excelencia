@@ -597,7 +597,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(t => t.TensionArterial).HasMaxLength(20).IsRequired();
                 entity.Property(t => t.MotivoConsulta).HasMaxLength(500).IsRequired();
                 entity.Property(t => t.Temperatura).HasPrecision(4, 2);
-                entity.Property(t => t.UsuarioRegistro).HasMaxLength(100).IsRequired();
+                
                 entity.HasIndex(t => t.FechaRegistro);
             });
 
@@ -866,9 +866,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
                 entity.Property(n => n.Message).IsRequired().HasMaxLength(500);
                 entity.Property(n => n.Type).IsRequired().HasMaxLength(50);
-                entity.Property(n => n.TargetUserId).HasMaxLength(100);
+                entity.Property(n => n.TargetUserGuidId);
                 entity.Property(n => n.TargetRole).HasMaxLength(100);
-                entity.HasIndex(n => n.TargetUserId);
+                entity.HasIndex(n => n.TargetUserGuidId);
                 entity.HasIndex(n => n.TargetRole);
                 entity.HasIndex(n => n.Timestamp);
             });
@@ -950,7 +950,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.Codigo).IsRequired().HasMaxLength(50);
                 entity.Property(i => i.Nombre).IsRequired().HasMaxLength(200);
                 entity.Ignore(i => i.StockActual);
-                entity.Property(i => i.UnidadMedidaBase).HasConversion<string>().IsRequired().HasMaxLength(20);
+                entity.Ignore(i => i.UnidadMedidaBase);
                 // 3FN: FK al catálogo de unidades de medida
                 entity.HasOne(i => i.UnidadMedidaNav)
                       .WithMany()
@@ -959,7 +959,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(i => i.UnidadMedidaId);
                 entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
                 entity.Property(i => i.PermiteFraccionamiento).IsRequired().HasDefaultValue(true);
-                entity.Property(i => i.Categoria).HasMaxLength(50).HasDefaultValue("Medicamento");
+                entity.Property(i => i.CategoriaInsumoId);
                 entity.Property(i => i.IsDeleted).IsRequired().HasDefaultValue(false);
                 entity.Property(i => i.FechaInactivacion);
                 entity.Property(i => i.OcultoEnTraslados).IsRequired().HasDefaultValue(false);
@@ -1365,7 +1365,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(o => o.ModalidadAnestesia).HasMaxLength(100);
                 entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
                 entity.Property(o => o.MotivoCancelacion).HasMaxLength(500);
-                entity.Property(o => o.UsuarioCreacion).IsRequired().HasMaxLength(100);
 
                 entity.HasOne(o => o.CuentaServicio)
                       .WithMany()
@@ -1577,7 +1576,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("OrdenesCompraInventario");
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.NumeroFactura).IsRequired().HasMaxLength(100);
-                entity.Property(o => o.ProveedorNombre).IsRequired().HasMaxLength(250);
                 entity.Property(o => o.MontoTotalUSD).HasPrecision(18, 2);
                 entity.Property(o => o.MontoTotalBs).HasPrecision(18, 2);
                 entity.Property(o => o.TotalAbonadoUSD).HasPrecision(18, 2);
@@ -1591,9 +1589,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(o => o.NumeroFactura);
-                entity.HasIndex(o => o.ProveedorNombre);
                 entity.HasIndex(o => o.Estado);
-            });
 
             builder.Entity<PagoProveedor>(entity =>
             {
@@ -1604,7 +1600,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(p => p.MontoAbonadoBs).HasPrecision(18, 2);
                 entity.Property(p => p.MetodoPago).IsRequired().HasMaxLength(50);
                 entity.Property(p => p.Referencia).HasMaxLength(100);
-                entity.Property(p => p.UsuarioId).HasMaxLength(100);
+                entity.Property(p => p.UsuarioIdentityId).HasColumnType("char(36)");
                 entity.Property(p => p.Observaciones).HasMaxLength(1000);
             });
 
@@ -1698,6 +1694,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             builder.Entity<MovimientoInsumo>().Property(m => m.UsuarioIdentityId).HasColumnType("char(36)");
             builder.Entity<MovimientoInsumo>().HasIndex(m => m.UsuarioIdentityId);
+        });
         }
 
     }

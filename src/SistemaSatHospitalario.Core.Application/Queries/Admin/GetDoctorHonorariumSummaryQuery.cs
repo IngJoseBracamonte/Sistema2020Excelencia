@@ -47,7 +47,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
                    && (detail.TipoServicioId == TipoServicioConstants.Medico 
-                       || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta 
                        || detail.TipoServicio == EstadoConstants.Medico 
                        || detail.TipoServicio == "MEDICO" 
                        || detail.TipoServicio == "Medico" 
@@ -59,7 +58,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                     detail.Honorario,
                     detail.Precio,
                     detail.Cantidad,
-                    detail.CategoriaHonorario,
                     MedicoHonorarioBase = medico.HonorarioBase
                 }
             ).ToListAsync(cancellationToken);
@@ -74,7 +72,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
                    && !(detail.TipoServicioId == TipoServicioConstants.Medico 
-                        || detail.CategoriaHonorario == HonorarioConstants.CategoriaConsulta 
                         || detail.TipoServicio == EstadoConstants.Medico 
                         || detail.TipoServicio == "MEDICO" 
                         || detail.TipoServicio == "Medico" 
@@ -86,8 +83,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                     MedicoId = (Guid?)detail.MedicoResponsableId,
                     detail.Honorario,
                     detail.Precio,
-                    detail.Cantidad,
-                    detail.CategoriaHonorario
+                    detail.Cantidad
                 }
             ).ToListAsync(cancellationToken);
 
@@ -98,16 +94,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                     // Cadena de fallback: Honorario explícito en detalle -> Honorario base del médico -> Precio del servicio
                     Honorario = x.Honorario > 0 ? x.Honorario : (x.MedicoHonorarioBase > 0 ? x.MedicoHonorarioBase : x.Precio),
                     x.Cantidad,
-                    Categoria = x.CategoriaHonorario ?? HonorarioConstants.CategoriaConsulta
+                    Categoria = HonorarioConstants.CategoriaConsulta
                 })
                 .Concat(fromServicios.Select(x => new
                 {
                     x.MedicoId,
                     Honorario = x.Honorario,
                     x.Cantidad,
-                    Categoria = x.CategoriaHonorario ?? HonorarioConstants.CategoriaOtros
+                    Categoria = HonorarioConstants.CategoriaOtros
                 }))
-                .Where(x => x.MedicoId.HasValue && x.Honorario > 0)
+                .Where(x => x.Honorario > 0)
                 .ToList();
 
             // ═══ Paso 4: Nombres de médicos ═══

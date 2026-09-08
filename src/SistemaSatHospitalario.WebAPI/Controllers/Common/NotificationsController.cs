@@ -25,12 +25,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Common
         [HttpGet("latest")]
         public async Task<IActionResult> GetLatest()
         {
-            var userId = _currentUser.UserId?.ToString();
+            var userId = _currentUser.UserId;
             var role = _currentUser.Role;
 
             var notifications = await _context.Notifications
-                .Where(n => (n.TargetUserId == null && n.TargetRole == null) || 
-                            n.TargetUserId == userId || 
+                .Where(n => (n.TargetUserGuidId == null && n.TargetRole == null) || 
+                            n.TargetUserGuidId == userId || 
                             n.TargetRole == role)
                 .OrderByDescending(n => n.Timestamp)
                 .Take(20)
@@ -54,13 +54,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Common
         [HttpPost("read-all")]
         public async Task<IActionResult> MarkAllAsRead()
         {
-            var userId = _currentUser.UserId?.ToString();
+            var userId = _currentUser.UserId;
             var role = _currentUser.Role;
 
             var unread = await _context.Notifications
                 .Where(n => !n.IsRead && 
-                            ((n.TargetUserId == null && n.TargetRole == null) || 
-                             n.TargetUserId == userId || 
+                            ((n.TargetUserGuidId == null && n.TargetRole == null) || 
+                             n.TargetUserGuidId == userId || 
                              n.TargetRole == role))
                 .ToListAsync();
 

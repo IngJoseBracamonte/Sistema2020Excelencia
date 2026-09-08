@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         /// Alias de compatibilidad hasta el DROP de columna.
         /// </summary>
         [Obsolete("Usar UnidadMedidaId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
-        public UnidadMedida UnidadMedidaBase { get; private set; }
+        public UnidadMedida UnidadMedidaBase => Constants.UnidadMedidaConstants.ToEnum(UnidadMedidaId);
 
         /// <summary>FK al catálogo UnidadesMedida (3FN).</summary>
         public int UnidadMedidaId { get; private set; }
@@ -29,13 +29,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): texto libre de categoría. Fuente de verdad es <see cref="CategoriaInsumoId"/>.
-        /// Se mantiene mapeado solo como alias de compatibilidad hasta el DROP de columna
-        /// (delta posterior a validación en producción). No escribir desde código nuevo.
-        /// </summary>
-        [Obsolete("Usar CategoriaInsumoId / CategoriaInsumo. Columna legacy pendiente de DROP.")]
-        public string Categoria { get; private set; }
         public Guid? CategoriaInsumoId { get; private set; }
         public virtual CategoriaInsumo? CategoriaInsumo { get; private set; }
 
@@ -54,20 +47,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected Insumo() { }
 
-        public Insumo(string codigo, string nombre, decimal stockActual, UnidadMedida unidadMedidaBase, decimal costoUnitarioBaseUSD, bool permiteFraccionamiento = true, string categoria = "Medicamento")
+        public Insumo(string codigo, string nombre, decimal stockActual, UnidadMedida unidadMedidaBase, decimal costoUnitarioBaseUSD, bool permiteFraccionamiento = true)
         {
             Id = Guid.NewGuid();
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UnidadMedidaBase = unidadMedidaBase;
-#pragma warning restore CS0618
             UnidadMedidaId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaBase);
             CostoUnitarioBaseUSD = costoUnitarioBaseUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
-#pragma warning disable CS0618 // alias legacy; preferir AsignarCategoria(CategoriaInsumo)
-            Categoria = categoria;
-#pragma warning restore CS0618
             OcultoEnTraslados = false;
             IsDeleted = false;
             FechaInactivacion = null;
@@ -92,18 +79,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CostoUnitarioBaseUSD = costoUSD;
         }
 
-        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria)
+        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento)
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UnidadMedidaBase = unidadMedidaBase;
-#pragma warning restore CS0618
             UnidadMedidaId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaBase);
             CostoUnitarioBaseUSD = costoUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
-#pragma warning disable CS0618 // alias legacy; preferir AsignarCategoria(CategoriaInsumo)
-            Categoria = categoria;
-#pragma warning restore CS0618
         }
 
         public void AsignarCategoria(CategoriaInsumo categoria)
@@ -112,18 +93,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             CategoriaInsumoId = categoria.Id;
             CategoriaInsumo = categoria;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Categoria = categoria.Nombre;
-#pragma warning restore CS0618
         }
 
         // Overload para compatibilidad legacy mientras se completa migración total
-        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string categoria, string? reactivos, string? indicaciones, DateTime? vencimiento)
+        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string? reactivos, string? indicaciones, DateTime? vencimiento)
         {
-            ActualizarDetalles(nombre, unidadMedidaBase, costoUSD, permiteFraccionamiento, categoria);
-            ReactivosCombinados = reactivos;
-            Indicaciones = indicaciones;
-            FechaVencimiento = vencimiento;
+            ActualizarDetalles(nombre, unidadMedidaBase, costoUSD, permiteFraccionamiento);
         }
 
         public void SoftDelete()

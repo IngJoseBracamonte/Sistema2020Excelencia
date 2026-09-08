@@ -26,7 +26,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
         public DateTime FechaCarga { get; set; }
         public Guid? MedicoAsignadoId { get; set; }
         public string? MedicoAsignadoNombre { get; set; }
-        public string? CategoriaHonorario { get; set; }
         public bool EsAutoAsignado { get; set; }
     }
 
@@ -70,9 +69,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                     Honorario = d.Honorario,
                     PacienteNombre = d.CuentaServicio.Paciente.NombreCorto,
                     FechaCarga = d.FechaCarga,
-                    MedicoAsignadoId = d.MedicoResponsableId,
-                    CategoriaHonorario = d.CategoriaHonorario
-                }).ToListAsync(ct);
+                    MedicoAsignadoId = d.MedicoResponsableId
+                })
+                .ToListAsync(ct);
 
             // Enrich with medico names
             var medicoIds = data.Where(d => d.MedicoAsignadoId.HasValue).Select(d => d.MedicoAsignadoId.Value).Distinct().ToList();

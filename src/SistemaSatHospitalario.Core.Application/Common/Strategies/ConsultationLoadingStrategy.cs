@@ -83,7 +83,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 
             // Notificación MediatR desacoplada
             string nombrePaciente = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
+            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngresoNav.Nombre;
             var notification = new ServicioCargadoNotification(
                 "CONSULTA",
                 request.OrigenCarga ?? request.TipoIngreso,

@@ -89,7 +89,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = stockPrincipal,
-                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString()
+                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre.ToString()
             });
         }
 
@@ -128,10 +128,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     i.Codigo,
                     i.Nombre,
                     StockActual = i.StocksPorSede.Where(s => s.SedeId == targetSedeId).Select(s => (decimal?)s.StockActual).FirstOrDefault() ?? 0,
-                    UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
+                    UnidadMedidaBase = i.UnidadMedidaNav.Nombre.ToString(),
                     i.CostoUnitarioBaseUSD,
                     i.PermiteFraccionamiento,
-                    Categoria = i.CategoriaInsumo != null ? i.CategoriaInsumo.Nombre : i.Categoria,
+                    Categoria = i.CategoriaInsumo != null ? i.CategoriaInsumo.Nombre : string.Empty,
                     i.CategoriaInsumoId,
                     i.IsDeleted,
                     i.FechaInactivacion,
@@ -171,10 +171,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = stockPrincipal,
-                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? string.Empty,
                 insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.FechaInactivacion,
@@ -201,7 +201,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     s.InsumoId,
                     InsumoCodigo = s.Insumo.Codigo,
                     InsumoNombre = s.Insumo.Nombre,
-                    UnidadMedidaBase = s.Insumo.UnidadMedidaBase.ToString(),
+                    UnidadMedidaBase = s.Insumo.UnidadMedidaNav.Nombre.ToString(),
                     s.StockActual,
                     s.StockMinimo,
                     s.StockMaximo
@@ -224,7 +224,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     InsumoId = s.InsumoId,
                     Codigo = s.Insumo.Codigo,
                     Nombre = s.Insumo.Nombre,
-                    UnidadMedidaBase = s.Insumo.UnidadMedidaBase.ToString(),
+                    UnidadMedidaBase = s.Insumo.UnidadMedidaNav.Nombre.ToString(),
                     StockActual = s.StockActual,
                     StockMinimo = s.StockMinimo,
                     StockMaximo = s.StockMaximo
@@ -277,9 +277,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                                 sedeId,
                                 "TransferenciaEntrada",
                                 cant,
-                                det.Insumo.UnidadMedidaBase,
+                               (SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida)det.Insumo.UnidadMedidaNav.Id,
                                 cant,
-                                ped.UsuarioCreador ?? "admin",
+                                ped.UsuarioCreadorId.ToString(),
                                 $"Recepción por despacho de pedido inter-sede {ped.Correlativo}"
                             );
                             _context.MovimientosInsumo.Add(movEntrada);
@@ -320,7 +320,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                             SeedConstants.SedeId_Principal,
                             TipoMovimientoInsumo.Ingreso,
                             dev.CantidadDevuelta,
-                            dev.Insumo?.UnidadMedidaBase ?? UnidadMedida.UNIDAD,
+                            (SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida)dev.Insumo.UnidadMedidaNav.Id,
                             dev.CantidadDevuelta,
                             "admin",
                             $"Devolución de sobrante de cirugía reconciliada (Cuenta: {dev.CuentaServicioId})"
@@ -348,7 +348,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     InsumoId = i.Id,
                     Codigo = i.Codigo,
                     Nombre = i.Nombre,
-                    UnidadMedidaBase = i.UnidadMedidaBase.ToString(),
+                    UnidadMedidaBase = i.UnidadMedidaNav.Nombre.ToString(),
                     StockActual = i.StocksPorSede.Any() ? i.StocksPorSede.Sum(s => s.StockActual) : i.StockActual,
                     StockMinimo = 5,
                     SedeNombre = "Consolidado Global"
@@ -416,7 +416,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 }
             }
 
-            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento, dto.Categoria);
+            var insumo = new Insumo(dto.Codigo, dto.Nombre, dto.StockInicial, dto.UnidadMedidaBase, dto.CostoUnitarioBaseUSD, dto.PermiteFraccionamiento);
 
             // 3FN: asignar categoría normalizada por FK (tiene prioridad sobre el texto legacy)
             var categoriaInsumo = await ResolverCategoriaInsumoAsync(dto.CategoriaInsumoId, dto.Categoria, ct);
@@ -493,10 +493,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = insumo.StockActual,
-                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre ?? string.Empty,
                 insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados,
@@ -515,8 +515,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 dto.Nombre,
                 dto.UnidadMedidaBase,
                 dto.CostoUnitarioBaseUSD,
-                dto.PermiteFraccionamiento,
-                dto.Categoria
+                dto.PermiteFraccionamiento
             );
 
             // 3FN: asignar categoría normalizada por FK (tiene prioridad sobre el texto legacy)
@@ -533,10 +532,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = insumo.StockActual,
-                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre,
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre,
                 insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
@@ -617,8 +616,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // 3FN: propagar el nuevo nombre canónico a los insumos vinculados por FK
             // (el alias de texto Categoria se sincroniza dentro de AsignarCategoria)
             var insumosConCategoria = await _context.Insumos
-                .Where(i => i.CategoriaInsumoId == categoria.Id || i.Categoria == nombreAnterior)
-                .ToListAsync(ct);
+                .Where(i => i.CategoriaInsumoId == categoria.Id)
+                .ToListAsync(ct); 
 
             foreach (var insumo in insumosConCategoria)
             {
@@ -840,10 +839,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = insumo.StockActual,
-                UnidadMedidaBase = insumo.UnidadMedidaBase.ToString(),
+                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre.ToString(),
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
-                Categoria = insumo.CategoriaInsumo?.Nombre ?? insumo.Categoria,
+                Categoria = insumo.CategoriaInsumo?.Nombre,
                 insumo.CategoriaInsumoId,
                 insumo.IsDeleted,
                 insumo.OcultoEnTraslados
@@ -897,7 +896,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     principalSedeId,
                     "Ingreso",
                     item.Cantidad,
-                    insumo.UnidadMedidaBase,
+                    (SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida)insumo.UnidadMedidaNav.Id,
                     item.Cantidad,
                     username,
                     $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}"
@@ -911,13 +910,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             // 2. Registrar automáticamente la Cuenta por Pagar / Orden de Compra de manera defensiva
             try
             {
-                var provNombre = !string.IsNullOrWhiteSpace(dto.ProveedorNombre) ? dto.ProveedorNombre.Trim() : "Proveedor General";
                 var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
                 var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
 
                 var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
                     numFact,
-                    provNombre,
                     DateTime.Now,
                     totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
                     tasa,
@@ -1003,7 +1000,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                                          InsumoId = r.InsumoId,
                                          InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
                                          Cantidad = r.Cantidad,
-                                         UnidadMedidaConsumo = r.UnidadMedidaConsumo.ToString()
+                                         UnidadMedidaConsumo = r.UnidadMedidaNav.Nombre
                                      }).ToListAsync(ct);
 
                 return Ok(recetas);
@@ -1030,7 +1027,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 return NotFound(new { Message = "El servicio clínico o el insumo no existen." });
             }
 
-            Enum.TryParse<UnidadMedida>(dto.UnidadMedidaConsumo ?? insumo.UnidadMedidaBase.ToString(), true, out var unidad);
+            Enum.TryParse<UnidadMedida>(dto.UnidadMedidaConsumo ?? insumo.UnidadMedidaNav.Nombre.ToString(), true, out var unidad);
 
             var receta = new ServicioInsumoReceta(
                 servicio.Id,
@@ -1043,14 +1040,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             await _context.SaveChangesAsync(ct);
 
             return Ok(new
-            {
-                Id = receta.Id,
-                ServicioClinicoId = receta.ServicioClinicoId,
-                InsumoId = receta.InsumoId,
-                InsumoNombre = insumo.Nombre,
-                Cantidad = receta.Cantidad,
-                UnidadMedidaConsumo = receta.UnidadMedidaConsumo.ToString()
-            });
+                {
+                    Id = receta.Id,
+                    ServicioClinicoId = receta.ServicioClinicoId,
+                    InsumoId = receta.InsumoId,
+                    InsumoNombre = insumo.Nombre,
+                    Cantidad = receta.Cantidad,
+                    UnidadMedidaConsumo = receta.UnidadMedidaNav?.Nombre
+                });
         }
 
         [HttpDelete("recetas/{id}")]

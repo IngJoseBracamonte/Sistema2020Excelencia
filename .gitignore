@@ -464,6 +464,11 @@ deploy/
 agent/
 Agent/
 
+# Plan de eliminación de obsoletos (privado, por niveles de prioridad)
+plan_eliminacion_obsoletos/
+planificacionEliminacionObsoletos
+Planificacion_de_Inventario
+
 # PowerShell scripts
 *.ps1
 

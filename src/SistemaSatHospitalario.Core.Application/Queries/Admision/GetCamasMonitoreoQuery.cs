@@ -122,7 +122,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             return new CamaMonitoreoTriageDto
                             {
                                 FechaRegistro = t.FechaRegistro,
-                                UsuarioRegistro = t.UsuarioRegistro,
+                                UsuarioRegistro = t.UsuarioRegistroId?.ToString() ?? "",
                                 MotivoConsulta = t.MotivoConsulta,
                                 TensionArterial = t.TensionArterial,
                                 FrecuenciaCardiaca = t.FrecuenciaCardiaca,

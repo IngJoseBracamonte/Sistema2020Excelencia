@@ -31,16 +31,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
             var query = _context.PagosProveedores
                 .AsNoTracking()
                 .Include(p => p.OrdenCompra)
+                    .ThenInclude(o => o.Proveedor)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.Busqueda))
             {
                 var term = request.Busqueda.Trim().ToLower();
                 query = query.Where(p => 
-                    p.OrdenCompra.ProveedorNombre.ToLower().Contains(term) || 
+                    (p.OrdenCompra.Proveedor != null && p.OrdenCompra.Proveedor.RazonSocial.ToLower().Contains(term)) || 
                     p.OrdenCompra.NumeroFactura.ToLower().Contains(term) ||
                     p.Referencia.ToLower().Contains(term) ||
-                    p.UsuarioId.ToLower().Contains(term)
+                    (p.UsuarioIdentityId != null && p.UsuarioIdentityId.ToString()!.ToLower().Contains(term))
                 );
             }
 
@@ -63,14 +64,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                 Id = p.Id,
                 OrdenCompraId = p.OrdenCompraId,
                 NumeroFactura = p.OrdenCompra.NumeroFactura,
-                ProveedorNombre = p.OrdenCompra.ProveedorNombre,
+                ProveedorNombre = p.OrdenCompra.Proveedor?.RazonSocial ?? string.Empty,
                 FechaPago = p.FechaPago,
                 MontoAbonadoUSD = p.MontoAbonadoUSD,
                 TasaCambio = p.TasaCambio,
                 MontoAbonadoBs = p.MontoAbonadoBs,
                 MetodoPago = p.MetodoPago,
                 Referencia = p.Referencia,
-                UsuarioId = p.UsuarioId,
+                UsuarioId = p.UsuarioIdentityId?.ToString() ?? "",
                 Observaciones = p.Observaciones
             }).ToList();
         }

@@ -48,7 +48,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                 {
                     var term = request.Busqueda.Trim();
                     query = query.Where(o => (o.Proveedor != null && EF.Functions.Like(o.Proveedor.RazonSocial, $"%{term}%")) ||
-                                             (o.ProveedorNombre != null && EF.Functions.Like(o.ProveedorNombre, $"%{term}%")) ||
                                              (o.NumeroFactura != null && EF.Functions.Like(o.NumeroFactura, $"%{term}%")));
                 }
 
@@ -71,7 +70,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                     Id = o.Id,
                     NumeroFactura = o.NumeroFactura,
                     ProveedorId = o.ProveedorId,
-                    ProveedorNombre = o.Proveedor?.RazonSocial ?? o.ProveedorNombre,
+                    ProveedorNombre = o.Proveedor?.RazonSocial ?? string.Empty,
                     FechaEmision = o.FechaEmision,
                     MontoTotalUSD = o.MontoTotalUSD,
                     MontoTotalBs = o.MontoTotalBs,
@@ -84,14 +83,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                         Id = p.Id,
                         OrdenCompraId = o.Id,
                         NumeroFactura = o.NumeroFactura,
-                        ProveedorNombre = o.Proveedor?.RazonSocial ?? o.ProveedorNombre,
+                        ProveedorNombre = o.Proveedor?.RazonSocial ?? string.Empty,
                         FechaPago = p.FechaPago,
                         MontoAbonadoUSD = p.MontoAbonadoUSD,
                         TasaCambio = p.TasaCambio,
                         MontoAbonadoBs = p.MontoAbonadoBs,
                         MetodoPago = p.MetodoPago,
                         Referencia = p.Referencia,
-                        UsuarioId = p.UsuarioId,
+                        UsuarioId = p.UsuarioIdentityId?.ToString() ?? "",
                         Observaciones = p.Observaciones
                     }).OrderByDescending(p => p.FechaPago).ToList()
                 }).ToList();

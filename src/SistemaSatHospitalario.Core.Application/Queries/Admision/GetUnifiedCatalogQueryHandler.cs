@@ -136,11 +136,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     continue;
                 }
 
-                // 3FN: preferir el nombre canónico desde la FK; fallback al alias legacy
-                var categoriaNombre = insumo.CategoriaInsumo?.Nombre
-#pragma warning disable CS0618
-                    ?? insumo.Categoria;
-#pragma warning restore CS0618
+                // 3FN: preferir el nombre canónico desde la FK
+                var categoriaNombre = insumo.CategoriaInsumo?.Nombre ?? string.Empty;
                 var editorType = ResolveEditorType(categoriaNombre, false);
                 var selfReceta = new List<ServicioInsumoRecetaDto>
                 {

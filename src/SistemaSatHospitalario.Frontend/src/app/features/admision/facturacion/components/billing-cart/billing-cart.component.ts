@@ -65,7 +65,7 @@ export class BillingCartComponent {
       return !!s.isConsultation;
     }
     if (s.tipoServicioId === 1 || s.categoryId === 1 || s.CategoryId === 1) return true;
-    if (s.honorariumCategory === 'CONSULTA' || s.categoriaHonorario === 'CONSULTA' || s.tipoServicio === 'MEDICO') return true;
+    if (s.honorariumCategory === 'CONSULTA' || s.tipoServicio === 'MEDICO') return true;
     const tipo = s.tipo || s.Tipo || s.tipoServicio;
     if (!tipo) return false;
     const t = tipo.toUpperCase();
