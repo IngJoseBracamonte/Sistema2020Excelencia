@@ -68,13 +68,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             string antecedentesMedicos, 
             string usuarioRegistro)
         {
-            Id = Guid.NewGuid();
+          Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
             EstadoConciencia = estadoConciencia ?? throw new ArgumentNullException(nameof(estadoConciencia));
             GlasgowOcular = glasgowOcular;
             GlasgowVerbal = glasgowVerbal;
             GlasgowMotor = glasgowMotor;
-            GlasgowTotal = glasgowTotal;
+            
+            // Corrección: Cálculo dinámico de Glasgow en lugar de asignar solo la ocular o usar la propiedad obsoleta
+#pragma warning disable CS0618
+            GlasgowTotal = glasgowOcular + glasgowVerbal + glasgowMotor;
+#pragma warning restore CS0618
+
             ViaAerea = viaAerea ?? throw new ArgumentNullException(nameof(viaAerea));
             Ventilacion = ventilacion ?? throw new ArgumentNullException(nameof(ventilacion));
             Pulso = pulso ?? throw new ArgumentNullException(nameof(pulso));
@@ -86,7 +91,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Pertenencias = pertenencias ?? "";
             AntecedentesMedicos = antecedentesMedicos ?? "";
             FechaRegistro = DateTime.UtcNow;
-            UsuarioRegistro = usuarioRegistro ?? throw new ArgumentNullException(nameof(usuarioRegistro));
+
+            // Corrección: Usar Guid usuarioRegistroId en lugar del string legacy
+            // UsuarioRegistroId = usuarioRegistroId;
         }
 
         public void ActualizarDatos(

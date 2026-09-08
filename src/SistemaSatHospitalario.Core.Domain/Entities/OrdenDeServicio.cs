@@ -35,12 +35,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
 
         protected OrdenDeServicio() { }
 
-        protected OrdenDeServicio(int numeroLlegada, Guid pacienteId, string nombrePaciente, string tipoIngreso, int? convenioId = null)
+       protected OrdenDeServicio(int numeroLlegada, Guid pacienteId, string tipoIngreso, int? convenioId = null)
         {
             Id = Guid.NewGuid();
             NumeroLlegadaDiario = numeroLlegada;
             PacienteId = pacienteId;
-            NombrePaciente = nombrePaciente ?? throw new ArgumentNullException(nameof(nombrePaciente));
             TipoIngreso = tipoIngreso ?? throw new ArgumentNullException(nameof(tipoIngreso));
             EstadoFacturacion = tipoIngreso == "Seguro" ? EstadoFacturacion.FacturaFiscal : EstadoFacturacion.SinFactura;
             FechaCreacion = DateTime.UtcNow;

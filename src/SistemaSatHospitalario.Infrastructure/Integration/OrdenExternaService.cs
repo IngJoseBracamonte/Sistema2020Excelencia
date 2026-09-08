@@ -46,7 +46,7 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = orden.Id,
                 status = orden.Estado,
-                patientName = orden.PacienteNombre,
+                patientName = orden.Paciente.NombreCompleto,
                 patientCedula = patientCedula,
                 servicioNombre = orden.Estudio,
                 tipoServicio = orden.TipoServicio,
@@ -76,7 +76,7 @@ namespace SistemaSatHospitalario.Infrastructure.Integration
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = orden.Id,
                 status = orden.Estado,
-                patientName = orden.PacienteNombre,
+                patientName = orden.Paciente.NombreCompleto,
                 patientCedula = patientCedula,
                 servicioNombre = orden.Estudio,
                 tipoServicio = orden.TipoServicio,

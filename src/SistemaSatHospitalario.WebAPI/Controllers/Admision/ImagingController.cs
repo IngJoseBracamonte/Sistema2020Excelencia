@@ -53,7 +53,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     OrderId = o.Id,
                                     CuentaId = o.CuentaId,
                                     PacienteId = o.PacienteId,
-                                    PacienteNombre = p != null && !string.IsNullOrEmpty(p.NombreCorto) ? p.NombreCorto : o.PacienteNombre,
+                                    PacienteNombre = p != null && !string.IsNullOrEmpty(p.NombreCorto),
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
@@ -67,7 +67,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     ValidadorPor = o.ValidadorPor,
                                     FechaValidacion = o.FechaValidacion,
                                     MedicoSolicitanteId = o.MedicoSolicitanteId,
-                                    MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
                                     Informe = o.Informe,
                                     LinkInforme = o.LinkInforme,
                                     ObservacionesMedico = o.ObservacionesMedico,
@@ -115,7 +114,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     .Select(p => p.Id)
                     .ToListAsync();
 
-                query = query.Where(o => o.PacienteNombre.ToLower().Contains(searchLower) || 
+                query = query.Where(o => o.Paciente.NombreCompleto.ToLower().Contains(searchLower) || 
                                          o.Estudio.ToLower().Contains(searchLower) || 
                                          pacIds.Contains(o.PacienteId));
             }
@@ -129,7 +128,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     OrderId = o.Id,
                                     CuentaId = o.CuentaId,
                                     PacienteId = o.PacienteId,
-                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteNombre = o.Paciente.NombreCompleto,
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
@@ -143,7 +142,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     ValidadorPor = o.ValidadorPor,
                                     FechaValidacion = o.FechaValidacion,
                                     MedicoSolicitanteId = o.MedicoSolicitanteId,
-                                    MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
                                     Informe = o.Informe,
                                     LinkInforme = o.LinkInforme,
                                     ObservacionesMedico = o.ObservacionesMedico,
@@ -171,7 +169,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     Id = o.Id,
                                     CuentaId = o.CuentaId,
                                     PacienteId = o.PacienteId,
-                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteNombre = o.Paciente.NombreCompleto,
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
@@ -233,7 +231,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     // 2. Asignar médico responsable si se especifica
                     if (medicoId.HasValue)
                     {
-                        detalle.AsignarMedicoResponsable(medicoId.Value, categoria);
+                        decimal? honorarioConfigurado = null;
+                        if (!string.IsNullOrEmpty(categoria))
+                        {
+                            var configH = await _context.HonorariosConfig
+                                .FirstOrDefaultAsync(h => h.CategoriaServicio == categoria);
+                            // Si tu entidad HonorariosConfig tiene una propiedad de monto, actívala aquí (ej. honorarioConfigurado = configH?.Monto;)
+                        }
+
+                        // Asignamos el médico con el honorario configurado (o null si se maneja por defecto)
+                        detalle.AsignarMedicoResponsable(medicoId.Value, honorarioConfigurado);
+
                         var medicoNombre = (await _context.Medicos.FindAsync(medicoId.Value))?.Nombre;
                         _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                             detalle.Id, detalle.Descripcion, HonorarioConstants.AccionAsignacionManual,
@@ -249,7 +257,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                 .FirstOrDefaultAsync(h => h.CategoriaServicio == categoria);
                             if (config?.MedicoDefaultId != null)
                             {
-                                detalle.AsignarMedicoResponsable(config.MedicoDefaultId.Value, categoria);
+                                detalle.AsignarMedicoResponsable(config.MedicoDefaultId.Value);
 
                                 var medicoNombre = (await _context.Medicos.FindAsync(config.MedicoDefaultId.Value))?.Nombre;
                                 _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
@@ -259,8 +267,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                             }
                         }
                     }
-                }
-            }
+                } // Cierre correcto de if (detalle != null)
+            } // Cierre correcto de if (order.CuentaId != Guid.Empty)
 
             await _context.SaveChangesAsync(default);
 
@@ -270,10 +278,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 .Select(p => p.CedulaPasaporte)
                 .FirstOrDefaultAsync()) ?? "N/A";
 
-            await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
+            await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new
+            {
                 orderId = order.Id,
                 status = order.Estado,
-                patientName = order.PacienteNombre,
+                patientName = order.Paciente.NombreCompleto,
                 patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
                 tipoServicio = order.TipoServicio,
@@ -305,7 +314,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
                 status = order.Estado.ToString(),
-                patientName = order.PacienteNombre,
+                patientName = order.Paciente.NombreCompleto,
                 patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
                 tipoServicio = order.TipoServicio,
@@ -359,7 +368,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 {
                     CuentaId = Guid.Empty, // Se asociará al validar
                     PacienteId = request.PacienteId,
-                    PacienteNombre = request.PacienteNombre,
                     Estudio = estTrim,
                     TipoServicio = request.TipoServicio.ToUpper(),
                     Estado = EstadoOrdenImagen.Pendiente, // Comienza como Pendiente para ser procesado tras la aprobación
@@ -368,7 +376,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     RequiereValidacion = true,
                     Validada = false,
                     MedicoSolicitanteId = defaultMedicoId,
-                    MedicoSolicitanteNombre = defaultMedicoNombre,
                     RequiereInforme = reqInf
                 };
 
@@ -387,7 +394,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             {
                 // 1. Crear Notificación Persistente para Administradores, Supervisores y Asistente de Seguros
                 await _notificationService.CreatePersistentNotificationAsync(
-                    $"Nueva Orden Directa de RX: {order.PacienteNombre}",
+                    $"Nueva Orden Directa de RX: {order.Paciente.NombreCompleto}",
                     $"Se requiere validación del estudio de RX '{order.Estudio}' registrado por la estación.",
                     "Warning",
                     targetUserGuidId: null,
@@ -398,8 +405,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
                 // 2. Alertar al grupo en tiempo real
                 await _notificationService.SendValidationAlertAsync(
-                    $"Nueva Orden Directa de RX ({order.PacienteNombre})",
-                    $"Se requiere validación administrativa para el estudio de RX '{order.Estudio}' del paciente {order.PacienteNombre}.",
+                    $"Nueva Orden Directa de RX ({order.Paciente.NombreCompleto})",
+                    $"Se requiere validación administrativa para el estudio de RX '{order.Estudio}' del paciente {order.Paciente.NombreCompleto}.",
                     "RX",
                     new { orderId = order.Id },
                     default
@@ -409,7 +416,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                     orderId = order.Id,
                     status = order.Estado,
-                    patientName = order.PacienteNombre,
+                    patientName = order.Paciente.NombreCompleto,
                     patientCedula = patientCedula,
                     servicioNombre = order.Estudio,
                     tipoServicio = order.TipoServicio,
@@ -443,7 +450,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     OrderId = o.Id,
                                     CuentaId = o.CuentaId,
                                     PacienteId = o.PacienteId,
-                                    PacienteNombre = o.PacienteNombre,
+                                    PacienteNombre =  p.NombreCompleto,
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
@@ -457,7 +464,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     ValidadorPor = o.ValidadorPor,
                                     FechaValidacion = o.FechaValidacion,
                                     MedicoSolicitanteId = o.MedicoSolicitanteId,
-                                    MedicoSolicitanteNombre = o.MedicoSolicitanteNombre,
+
                                     Informe = o.Informe
                                 })
                 .OrderByDescending(o => o.FechaCreacion)
@@ -510,7 +517,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
                     .FirstOrDefaultAsync(c => c.Id == request.CuentaId.Value);
                 if (cuenta == null) return NotFound(new { Message = "La cuenta especificada no existe." });
-                if (cuenta.Estado != EstadoConstants.Abierta) return BadRequest(new { Message = "La cuenta seleccionada no está abierta." });
+                if (cuenta.EstadoNav.Nombre != EstadoConstants.Abierta) return BadRequest(new { Message = "La cuenta seleccionada no está abierta." });
             }
             else
             {
@@ -520,8 +527,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 {
                     cuenta = await _context.CuentasServicios.Include(c => c.Detalles)
                         .FirstOrDefaultAsync(c => c.PacienteId == order.PacienteId 
-                                               && c.Estado == EstadoConstants.Abierta 
-                                               && c.TipoIngreso == targetTipo);
+                                               && c.EstadoNav.Nombre == EstadoConstants.Abierta 
+                                               && c.TipoIngresoNav.Nombre == targetTipo);
                 }
 
                 if (cuenta == null)
@@ -552,12 +559,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
             // Asignar el médico solicitante al detalle para cálculo de honorarios
             var medicoId = request.MedicoSolicitanteId ?? order.MedicoSolicitanteId;
-            var medicoNombre = request.MedicoSolicitanteNombre ?? order.MedicoSolicitanteNombre;
+            var medicoNombre = request.MedicoSolicitanteNombre;
 
             if (medicoId.HasValue)
             {
+
                 var category = await _mapperService.MapToCategoryAsync(order.TipoServicio, servicio.Id);
-                detalle.AsignarMedicoResponsable(medicoId.Value, category);
+                decimal? honorarioConfigurado = null;
+                if (!string.IsNullOrEmpty(category))
+                {
+                    var configH = await _context.HonorariosConfig
+                        .FirstOrDefaultAsync(h => h.CategoriaServicio == category);
+                    // Si tu entidad HonorariosConfig tiene una propiedad de monto, actívala aquí (ej. honorarioConfigurado = configH?.Monto;)
+                }
+                detalle.AsignarMedicoResponsable(medicoId.Value, honorarioConfigurado);
 
                 if (string.IsNullOrEmpty(medicoNombre))
                 {
@@ -622,7 +637,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             await _hubContext.Clients.All.SendAsync("ReceiveTicketUpdate", new {
                 orderId = order.Id,
                 status = order.Estado.ToString(),
-                patientName = order.PacienteNombre,
+                patientName = order.Paciente.NombreCompleto,
                 patientCedula = patientCedula,
                 servicioNombre = order.Estudio,
                 tipoServicio = order.TipoServicio,

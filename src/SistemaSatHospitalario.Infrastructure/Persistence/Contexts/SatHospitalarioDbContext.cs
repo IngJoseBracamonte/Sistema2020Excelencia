@@ -597,7 +597,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(t => t.TensionArterial).HasMaxLength(20).IsRequired();
                 entity.Property(t => t.MotivoConsulta).HasMaxLength(500).IsRequired();
                 entity.Property(t => t.Temperatura).HasPrecision(4, 2);
-                entity.Property(t => t.UsuarioRegistro).HasMaxLength(100).IsRequired();
+                
                 entity.HasIndex(t => t.FechaRegistro);
             });
 
@@ -1365,7 +1365,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(o => o.ModalidadAnestesia).HasMaxLength(100);
                 entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
                 entity.Property(o => o.MotivoCancelacion).HasMaxLength(500);
-                entity.Property(o => o.UsuarioCreacion).IsRequired().HasMaxLength(100);
 
                 entity.HasOne(o => o.CuentaServicio)
                       .WithMany()
@@ -1590,8 +1589,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(o => o.NumeroFactura);
-                entity.HasIndex(o => o.ProveedorNombre);
-                entity.HasIndex(o => o.
+                entity.HasIndex(o => o.Estado);
 
             builder.Entity<PagoProveedor>(entity =>
             {
@@ -1696,6 +1694,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             builder.Entity<MovimientoInsumo>().Property(m => m.UsuarioIdentityId).HasColumnType("char(36)");
             builder.Entity<MovimientoInsumo>().HasIndex(m => m.UsuarioIdentityId);
+        });
         }
 
     }
