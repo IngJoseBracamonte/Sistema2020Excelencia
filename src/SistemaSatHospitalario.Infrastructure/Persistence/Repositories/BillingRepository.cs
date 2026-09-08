@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         {
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
-                .FirstOrDefaultAsync(c => c.PacienteId == pacienteId && c.Estado == EstadoConstants.Abierta, cancellationToken);
+                .FirstOrDefaultAsync(c => c.PacienteId == pacienteId && c.EstadoId == EstadoConstants.AbiertaId, cancellationToken);
         }
 
         public async Task<CuentaServicios?> ObtenerCuentaPorIdAsync(Guid cuentaId, CancellationToken cancellationToken)
