@@ -106,7 +106,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     var bloqueoAdmin = bloqueosIndividuales.FirstOrDefault(b => b.HoraPautada == current);
                     
                     bool esCitaPropia = (internalPacienteId.HasValue && citaOcupada?.PacienteId == internalPacienteId.Value);
-                    bool esReservaPropia = request.UsuarioId != null && reservaVigente?.UsuarioId == request.UsuarioId;
+                    bool esReservaPropia = request.UsuarioId != null && reservaVigente?.UsuarioIdentityId.ToString() == request.UsuarioId;
                     
                     string comentario = EstadoConstants.LabelLibre;
                     Guid? targetId = null;

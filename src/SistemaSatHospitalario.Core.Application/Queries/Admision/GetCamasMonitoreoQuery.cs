@@ -129,7 +129,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                 FrecuenciaRespiratoria = t.FrecuenciaRespiratoria,
                                 Temperatura = t.Temperatura,
                                 SaturacionO2 = t.SaturacionO2,
-                                GlasgowTotal = valoracion?.GlasgowTotal ?? 15
+                                GlasgowTotal = valoracion != null ? valoracion.GlasgowOcular + valoracion.GlasgowVerbal + valoracion.GlasgowMotor : 15
                             };
                         }).ToList();
                     }

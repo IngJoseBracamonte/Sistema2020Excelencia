@@ -69,10 +69,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetCajaSummariesQueryHandler : IRequestHandler<GetCajaSummariesQuery, CajaSummaryDto>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public GetCajaSummariesQueryHandler(IApplicationDbContext context)
+        public GetCajaSummariesQueryHandler(IApplicationDbContext context, IUserResolverService userResolver)
         {
             _context = context;
+            _userResolver = userResolver;
         }
 
         public async Task<CajaSummaryDto> Handle(GetCajaSummariesQuery request, CancellationToken cancellationToken)
@@ -89,17 +91,35 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrEmpty(request.UsuarioId))
             {
-                query = query.Where(c => c.UsuarioId == request.UsuarioId);
+                if (Guid.TryParse(request.UsuarioId, out var userIdGuid))
+                {
+                    query = query.Where(c => c.UsuarioIdentityId == userIdGuid);
+                }
+                else
+                {
+                    var resolvedId = await _userResolver.ResolveUserIdByUsernameAsync(request.UsuarioId, cancellationToken);
+                    query = resolvedId.HasValue
+                        ? query.Where(c => c.UsuarioIdentityId == resolvedId.Value)
+                        : query.Where(c => false);
+                }
             }
 
             var listCajas = await query
                 .OrderByDescending(c => c.FechaApertura)
                 .ToListAsync(cancellationToken);
 
+            var cajaUserIds = listCajas
+                .Where(c => c.UsuarioIdentityId.HasValue)
+                .Select(c => c.UsuarioIdentityId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userMap = await _userResolver.GetDisplayNameMapAsync(cajaUserIds, cancellationToken);
+
             var list = listCajas.Select(c => new CajaDetailDto
             {
                 Id = c.Id,
-                Usuario = c.NombreUsuario,
+                Usuario = c.UsuarioIdentityId.HasValue && userMap.TryGetValue(c.UsuarioIdentityId.Value, out var nombre) ? nombre : "Sistema",
                 Apertura = c.FechaApertura,
                 Cierre = c.FechaCierre,
                 MontoInicialDivisa = c.MontoInicialDivisa,
@@ -138,7 +158,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var openCajaRecibos = await _context.RecibosFactura
                     .AsNoTracking()
                     .Include(r => r.DetallesPago)
-                    .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                     .ToListAsync(cancellationToken);
 
                 var receiptsByCaja = openCajaRecibos.GroupBy(r => r.CajaDiariaId!.Value).ToDictionary(g => g.Key, g => g.ToList());

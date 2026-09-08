@@ -246,13 +246,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         CantidadSolicitada = s.CantidadSolicitada,
                         EstadoSolicitud = s.EstadoSolicitud,
                         FechaSolicitud = s.FechaSolicitud,
-                        UsuarioSolicitud = s.UsuarioSolicitud
+                        UsuarioSolicitud = s.UsuarioSolicitudId?.ToString()
                     }).ToList(),
                     Logs = o.Logs.Select(l => new CirugiaLogDto
                     {
                         Id = l.Id,
                         OrdenCirugiaId = l.OrdenCirugiaId,
-                        UsuarioId = l.UsuarioId,
+                        UsuarioId = l.UsuarioIdentityId?.ToString() ?? string.Empty,
                         Evento = l.Evento,
                         Detalle = l.Detalle,
                         Timestamp = l.Timestamp

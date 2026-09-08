@@ -104,7 +104,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             var targetHora = new DateTime(hora.Year, hora.Month, hora.Day, hora.Hour, hora.Minute, 0, DateTimeKind.Unspecified);
 
             await _context.ReservasTemporales
-                .Where(r => r.MedicoId == medicoId && r.HoraPautada == targetHora && r.UsuarioId == usuarioId)
+                .Where(r => r.MedicoId == medicoId && r.HoraPautada == targetHora && r.UsuarioIdentityId.ToString() == usuarioId)
                 .ExecuteDeleteAsync(cancellationToken);
         }
 

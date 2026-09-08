@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 2. Calcular saldo pendiente de la cuenta
             decimal totalCuenta = cuenta.CalcularTotal();
             decimal totalPagado = await _context.RecibosFactura
-                .Where(r => r.CuentaServicioId == cuenta.Id && r.EstadoFiscal != EstadoConstants.Anulada)
+                .Where(r => r.CuentaServicioId == cuenta.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                 .SumAsync(r => (decimal?)r.TotalFacturadoUSD, cancellationToken) ?? 0m;
 
             decimal saldoPendiente = Math.Max(0m, totalCuenta - totalPagado);
@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 6. Registrar Auditoría Inmutable (AuditLog)
             var auditLog = new AuditLog
             {
-                UserId = string.IsNullOrWhiteSpace(request.UsuarioAlta) ? "Sistema" : request.UsuarioAlta,
+                UsuarioIdentityId = Guid.TryParse(request.UsuarioAlta, out var uid) ? uid : (Guid?)null,
                 ActionType = "ALTA_MEDICA",
                 OldValue = $"Estado: {cuenta.Estado}, Area: {cuenta.AreaClinicaId}, SaldoPendiente: ${saldoPendiente:F2}",
                 NewValue = $"TipoAlta: {request.TipoAlta}, SolvenciaConfirmada: {request.ConfirmadoPorEnfermeriaSinSolvencia}, Obs: {request.Observaciones}",

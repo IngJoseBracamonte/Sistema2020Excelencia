@@ -36,10 +36,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetHistorialMovimientosQueryHandler : IRequestHandler<GetHistorialMovimientosQuery, List<HistorialMovimientoDto>>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public GetHistorialMovimientosQueryHandler(IApplicationDbContext context)
+        public GetHistorialMovimientosQueryHandler(IApplicationDbContext context, IUserResolverService userResolver)
         {
             _context = context;
+            _userResolver = userResolver;
         }
 
         public async Task<List<HistorialMovimientoDto>> Handle(GetHistorialMovimientosQuery request, CancellationToken cancellationToken)
@@ -71,29 +73,55 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 query = query.Where(m =>
                     (m.Insumo != null && m.Insumo.Nombre != null && m.Insumo.Nombre.ToLower().Contains(searchLower)) ||
                     (m.Insumo != null && m.Insumo.Codigo != null && m.Insumo.Codigo.ToLower().Contains(searchLower)) ||
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
                     (m.Usuario != null && m.Usuario.ToLower().Contains(searchLower)) ||
+#pragma warning restore CS0618
                     (m.Motivo != null && m.Motivo.ToLower().Contains(searchLower))
                 );
             }
 
-            var items = await query
+            var movimientos = await query
                 .OrderByDescending(m => m.Fecha)
-                .Select(m => new HistorialMovimientoDto
+                .Select(m => new
                 {
-                    Id = m.Id,
-                    InsumoId = m.InsumoId,
+                    m.Id,
+                    m.InsumoId,
                     InsumoCodigo = m.Insumo != null ? m.Insumo.Codigo : "N/A",
                     InsumoNombre = m.Insumo != null ? m.Insumo.Nombre : "Insumo Eliminado",
-                    SedeId = m.SedeId,
-                    TipoMovimiento = m.TipoMovimiento.ToString(),
-                    CantidadBase = m.CantidadBase,
-                    CantidadOriginal = m.CantidadOriginal,
-                    UnidadMedidaOriginal = m.UnidadMedidaOriginal.ToString(),
-                    Usuario = m.Usuario ?? "Sistema",
-                    Fecha = m.Fecha,
-                    Motivo = m.Motivo ?? ""
+                    m.SedeId,
+                    m.TipoMovimiento,
+                    m.CantidadBase,
+                    m.CantidadOriginal,
+                    m.UnidadMedidaOriginal,
+                    m.UsuarioIdentityId,
+                    m.Fecha,
+                    m.Motivo
                 })
                 .ToListAsync(cancellationToken);
+
+            var userIds = movimientos
+                .Where(x => x.UsuarioIdentityId.HasValue)
+                .Select(x => x.UsuarioIdentityId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userMap = await _userResolver.GetDisplayNameMapAsync(userIds, cancellationToken);
+
+            var items = movimientos.Select(m => new HistorialMovimientoDto
+            {
+                Id = m.Id,
+                InsumoId = m.InsumoId,
+                InsumoCodigo = m.InsumoCodigo,
+                InsumoNombre = m.InsumoNombre,
+                SedeId = m.SedeId,
+                TipoMovimiento = m.TipoMovimiento.ToString(),
+                CantidadBase = m.CantidadBase,
+                CantidadOriginal = m.CantidadOriginal,
+                UnidadMedidaOriginal = m.UnidadMedidaOriginal.ToString(),
+                Usuario = m.UsuarioIdentityId.HasValue && userMap.TryGetValue(m.UsuarioIdentityId.Value, out var nombre) ? nombre : "Sistema",
+                Fecha = m.Fecha,
+                Motivo = m.Motivo ?? ""
+            }).ToList();
 
             return items;
         }

@@ -289,7 +289,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     Id = l.Id,
                     OrdenCirugiaId = l.OrdenCirugiaId,
-                    UsuarioId = l.UsuarioId,
+                    UsuarioId = l.UsuarioIdentityId?.ToString() ?? string.Empty,
                     Evento = l.Evento,
                     Detalle = l.Detalle,
                     Timestamp = l.Timestamp

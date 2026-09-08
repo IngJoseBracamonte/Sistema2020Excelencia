@@ -7,6 +7,8 @@ namespace SistemaSatHospitalario.Core.Domain.Enums
         Consumo = 3,
         AjusteCierre = 4,
         TransferenciaEntrada = 5,
-        TransferenciaSalida = 6
+        TransferenciaSalida = 6,
+        Devolucion = 7,
+        EnvioInterno = 8
     }
 }

@@ -1,12 +1,11 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -85,9 +84,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var movimiento = new MovimientoInsumo(
                 request.InsumoId,
                 targetSedeId,
-                "Devolución",
+                TipoMovimientoInsumo.Devolucion,
                 request.CantidadRestar,
-                kitAsignacion.Insumo.UnidadMedidaBase,
+                (UnidadMedida)kitAsignacion.Insumo.UnidadMedidaId,
                 request.CantidadRestar,
                 request.Usuario,
                 $"Retorno/Devolución de Quirófano a stock (Cuenta ID: {request.CuentaId})"

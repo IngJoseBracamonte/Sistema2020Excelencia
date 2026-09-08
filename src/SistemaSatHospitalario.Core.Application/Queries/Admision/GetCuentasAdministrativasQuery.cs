@@ -70,13 +70,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 var recibo = await _context.RecibosFactura
                     .AsNoTracking()
-                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                     .OrderByDescending(r => r.FechaEmision)
                     .FirstOrDefaultAsync(cancellationToken);
 
                 var totalPagado = await _context.RecibosFactura
                     .AsNoTracking()
-                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                     .SumAsync(r => (decimal?)r.TotalFacturadoUSD, cancellationToken) ?? 0m;
 
                 var totalCuenta = c.CalcularTotal();
@@ -112,7 +112,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Precio = d.Precio,
                         Honorario = d.Honorario,
                         Cantidad = d.Cantidad,
-                        TipoServicio = d.TipoServicio,
+                        TipoServicio = d.TipoServicioNav.Nombre,
                         FechaCarga = d.FechaCarga,
                         LegacyMappingId = d.LegacyMappingId,
                         IncluidoEnTarifaBase = d.IncluidoEnTarifaBase,

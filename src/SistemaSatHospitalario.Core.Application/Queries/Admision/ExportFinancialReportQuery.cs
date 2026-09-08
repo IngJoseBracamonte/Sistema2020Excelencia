@@ -50,7 +50,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             ar.MontoPagadoBase,
                             ar.Estado,
                             IsAudited = ar.IsAudited || cta.ConvenioId == null,
-                            ar.UsuarioAuditoria,
+                            ar.UsuarioAuditoriaId,
                             ar.FechaAuditoria,
                             PacienteNombre = pac.NombreCorto,
                             PacienteCedula = pac.CedulaPasaporte,
@@ -84,7 +84,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     x.IsAudited,
                     x.FechaCreacion,
                     UsuarioIngreso = firstDetail != null ? (userMap.ContainsKey(firstDetail.UsuarioCarga) ? userMap[firstDetail.UsuarioCarga] : firstDetail.UsuarioCarga) : "SISTEMA",
-                    UsuarioAuditoria = !string.IsNullOrEmpty(x.UsuarioAuditoria) && userMap.ContainsKey(x.UsuarioAuditoria) ? userMap[x.UsuarioAuditoria] : x.UsuarioAuditoria,
+                    UsuarioAuditoria = x.UsuarioAuditoriaId.HasValue && userMap.TryGetValue(x.UsuarioAuditoriaId.Value.ToString(), out var auditorName) ? auditorName : "SISTEMA",
                     x.FechaAuditoria,
                     Pagos = payments.Where(p => p.ReciboFactura.CuentaServicioId == x.CuentaId)
                                     .Select(p => new {

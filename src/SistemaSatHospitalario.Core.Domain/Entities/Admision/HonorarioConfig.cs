@@ -50,10 +50,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         private void SetUsuarioConfiguro(string usuario, Guid? usuarioId)
         {
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioConfiguro = usuario;
-#pragma warning restore CS0618
-            // 3FN: si no se pasa la FK explícita, intentar parsear el texto como GUID
             UsuarioConfiguroId = usuarioId ?? (Guid.TryParse(usuario, out var parsed) ? parsed : (Guid?)null);
         }
     }

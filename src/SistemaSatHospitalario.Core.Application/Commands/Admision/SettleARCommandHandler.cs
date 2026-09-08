@@ -52,7 +52,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             try
             {
                 var recibo = await _context.RecibosFactura
-                    .FirstOrDefaultAsync(r => r.CuentaServicioId == ar.CuentaServicioId && r.EstadoFiscal == EstadoConstants.Borrador, cancellationToken);
+                    .FirstOrDefaultAsync(r => r.CuentaServicioId == ar.CuentaServicioId && r.EstadoFiscalNav.Nombre == EstadoConstants.Borrador, cancellationToken);
 
                 Guid reciboId;
                 if (recibo == null)

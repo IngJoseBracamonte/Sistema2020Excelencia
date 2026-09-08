@@ -13,10 +13,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetNurseAuditReportQueryHandler : IRequestHandler<GetNurseAuditReportQuery, List<NurseActivityDto>>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public GetNurseAuditReportQueryHandler(IApplicationDbContext context)
+        public GetNurseAuditReportQueryHandler(IApplicationDbContext context, IUserResolverService userResolver)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _userResolver = userResolver;
         }
 
         public async Task<List<NurseActivityDto>> Handle(GetNurseAuditReportQuery request, CancellationToken cancellationToken)
@@ -52,11 +54,21 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrEmpty(request.NurseUsername))
             {
-                var usernameLower = request.NurseUsername.ToLower();
-                detailsQuery = detailsQuery.Where(d => d.UsuarioCarga.ToLower().Contains(usernameLower));
+                var resolvedId = await _userResolver.ResolveUserIdByUsernameAsync(request.NurseUsername, cancellationToken);
+                detailsQuery = resolvedId.HasValue
+                    ? detailsQuery.Where(d => d.UsuarioCargaId == resolvedId.Value)
+                    : detailsQuery.Where(d => false);
             }
 
             var details = await detailsQuery.ToListAsync(cancellationToken);
+
+            var detailUserIds = details
+                .Where(d => d.UsuarioCargaId.HasValue)
+                .Select(d => d.UsuarioCargaId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userMap = await _userResolver.GetDisplayNameMapAsync(detailUserIds, cancellationToken);
 
             // 3. Consolidar y ordenar
             var list = new List<NurseActivityDto>();
@@ -89,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 list.Add(new NurseActivityDto
                 {
                     Fecha = d.FechaCarga,
-                    Usuario = d.UsuarioCarga,
+                    Usuario = d.UsuarioCargaId.HasValue && userMap.TryGetValue(d.UsuarioCargaId.Value, out var nombre) ? nombre : "Sistema",
                     PacienteCedula = pacienteCedula,
                     PacienteNombre = pacienteNombre,
                     TipoActividad = $"Carga de {d.TipoServicio}",

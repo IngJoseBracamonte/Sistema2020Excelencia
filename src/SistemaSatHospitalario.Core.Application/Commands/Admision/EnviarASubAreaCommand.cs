@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -63,7 +64,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (stockDisponible < request.Cantidad)
             {
                 throw new InvalidOperationException(
-                    $"Stock insuficiente en Almacén Principal para '{insumo.Nombre}'. Disponible: {stockDisponible} {insumo.UnidadMedidaBase}, Solicitado: {request.Cantidad}.");
+                    $"Stock insuficiente en Almacén Principal para '{insumo.Nombre}'. Disponible: {stockDisponible} {insumo.UnidadMedidaNav.Nombre}, Solicitado: {request.Cantidad}.");
             }
 
             // Descuento exclusivo del Almacén Principal (Salida definitiva / Consumo Interno)
@@ -83,9 +84,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var movimiento = new MovimientoInsumo(
                 request.InsumoId,
                 sedePrincipalId,
-                "EnvioSubArea",
+                TipoMovimientoInsumo.EnvioInterno,
                 request.Cantidad,
-                insumo.UnidadMedidaBase,
+                (UnidadMedida)insumo.UnidadMedidaId,
                 request.Cantidad,
                 request.Usuario,
                 motivoDetallado
@@ -96,7 +97,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             _logger.LogInformation(
                 "[ENVIO SUBAREA] Se despacharon {Cantidad} {Unidad} de '{Insumo}' a la sub-área [{SubArea}] por usuario {Usuario}.",
-                request.Cantidad, insumo.UnidadMedidaBase, insumo.Nombre, subAreaNombreResolved, request.Usuario);
+                request.Cantidad, insumo.UnidadMedidaNav.Nombre, insumo.Nombre, subAreaNombreResolved, request.Usuario);
 
             return new EnviarASubAreaResponseDto
             {

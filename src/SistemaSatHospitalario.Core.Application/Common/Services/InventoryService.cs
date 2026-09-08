@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
@@ -65,7 +66,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         directInsumo.Id,
                         directInsumo.Id,
                         1m,
-                        directInsumo.UnidadMedidaBase
+                        (UnidadMedida)directInsumo.UnidadMedidaId
                     )
                     {
                         Insumo = directInsumo
@@ -119,7 +120,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     {
                         if (recipe.Insumo == null) continue;
 
-                        decimal conversionFactor = GetConversionFactor(recipe.UnidadMedidaConsumo, recipe.Insumo.UnidadMedidaBase);
+                        decimal conversionFactor = GetConversionFactor((UnidadMedida)recipe.UnidadMedidaConsumoId, UnidadMedidaConstants.ToEnum(recipe.Insumo.UnidadMedidaId));
                         decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
 
                         Guid stockDeductionSedeId = targetSedeId ?? SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
@@ -138,7 +139,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         if (stockSede.StockActual < 0)
                         {
                             _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras consumir {Consumido} {UnidadMedida} para el servicio '{ServicioDescripcion}' (Detalle Cuenta: {DetalleId}) en Sede {SedeId}.",
-                                recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaBase, qtyBaseNeeded, recipe.Insumo.UnidadMedidaBase, serviceDescripcion, detalleId, targetSedeId);
+                                recipe.Insumo.Nombre, recipe.Insumo.Codigo, stockSede.StockActual, recipe.Insumo.UnidadMedidaNav.Nombre, qtyBaseNeeded, recipe.Insumo.UnidadMedidaNav.Nombre, serviceDescripcion, detalleId, targetSedeId);
                         }
 
                         decimal costTotalUSD = recipe.Insumo.CostoUnitarioBaseUSD * qtyBaseNeeded;
@@ -153,11 +154,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         var movimiento = new MovimientoInsumo(
                             recipe.InsumoId,
                             targetSedeId.Value,
-                            "Consumo",
+                            TipoMovimientoInsumo.Consumo,
                             -qtyBaseNeeded,
-                            recipe.UnidadMedidaConsumo,
+                            (UnidadMedida)recipe.UnidadMedidaConsumoId,
                             recipe.Cantidad * cantidadServicio,
-                            usuarioCarga,
                             $"Consumo automático por facturación de servicio {serviceDescripcion} (Cuenta ID: {cuentaId})"
                         );
                         _context.MovimientosInsumo.Add(movimiento);
@@ -212,7 +212,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new KeyNotFoundException($"No se encontró el insumo con ID {insumoId}");
             }
 
-            decimal conversionFactor = GetConversionFactor(unidadMedidaOriginal, insumo.UnidadMedidaBase);
+            decimal conversionFactor = GetConversionFactor(unidadMedidaOriginal, UnidadMedidaConstants.ToEnum(insumo.UnidadMedidaId));
             decimal qtyBase = cantidadOriginal * conversionFactor;
 
             if (tipoMovimiento.Equals("Descarte", StringComparison.OrdinalIgnoreCase))
@@ -233,7 +233,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             if (stockSede.StockActual < 0)
             {
                 _logger.LogWarning("ALERTA DE STOCK INSUFICIENTE EN SEDE: El insumo '{InsumoNombre}' ({InsumoCodigo}) ha quedado en stock negativo ({StockActual} {UnidadMedida}) tras registrar un movimiento de tipo '{TipoMovimiento}' de {Consumido} {UnidadOriginal} en Sede {SedeId}.",
-                    insumo.Nombre, insumo.Codigo, stockSede.StockActual, insumo.UnidadMedidaBase, tipoMovimiento, cantidadOriginal, unidadMedidaOriginal, sedeId);
+                    insumo.Nombre, insumo.Codigo, stockSede.StockActual, insumo.UnidadMedidaNav.Nombre, tipoMovimiento, cantidadOriginal, unidadMedidaOriginal, sedeId);
             }
 
             var movimiento = new MovimientoInsumo(
@@ -293,9 +293,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             var movimiento = new MovimientoInsumo(
                 insumoId,
                 targetSedeId,
-                "Descarte",
+                TipoMovimientoInsumo.Descarte,
                 -cantidad,
-                insumo.UnidadMedidaBase,
+                (UnidadMedida)insumo.UnidadMedidaId,
                 cantidad,
                 usuario,
                 motivo.Trim()
@@ -346,12 +346,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 var adjustmentMov = new MovimientoInsumo(
                     insumo.Id,
                     sedeId,
-                    "AjusteCierre",
+                   TipoMovimientoInsumo.AjusteCierre,
                     variance,
-                    insumo.UnidadMedidaBase,
+                    (UnidadMedida)insumo.UnidadMedidaId,
                     variance,
                     usuario,
-                    $"Ajuste automático por cierre de inventario en Sede {sedeId}. Diferencia (Fisico - Teorico) = {variance} {insumo.UnidadMedidaBase}."
+                    $"Ajuste automático por cierre de inventario en Sede {sedeId}. Diferencia (Fisico - Teorico) = {variance} {(UnidadMedida)insumo.UnidadMedidaId}."
                 );
                 _context.MovimientosInsumo.Add(adjustmentMov);
             }
@@ -458,9 +458,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                             var movimientoSalida = new MovimientoInsumo(
                                 detalle.InsumoId,
                                 pedido.SedeProveedoraId,
-                                tipoMovSalida,
+                                TipoMovimientoInsumo.TransferenciaSalida,
                                 -cantidadADespachar,
-                                detalle.Insumo.UnidadMedidaBase,
+                                (UnidadMedida)detalle.Insumo.UnidadMedidaId,
                                 cantidadADespachar,
                                 usuario,
                                 motivoSalidaTxt
@@ -485,9 +485,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                 var movimientoEntrada = new MovimientoInsumo(
                                     detalle.InsumoId,
                                     pedido.SedeSolicitanteId,
-                                    "TransferenciaEntrada",
+                                    TipoMovimientoInsumo.TransferenciaEntrada,
                                     cantidadADespachar,
-                                    detalle.Insumo.UnidadMedidaBase,
+                                    (UnidadMedida)detalle.Insumo.UnidadMedidaId,
                                     cantidadADespachar,
                                     usuario,
                                     $"Recepción por despacho de pedido inter-sede {pedido.Correlativo}"
@@ -518,7 +518,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                                 sol.Despachar(usuario);
 
                                                 var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(ordId, usuario, SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaEventoConstants.DespachoInsumos,
-                                                    $"Despachado pedido {pedido.Correlativo} desde Almacén Central: {cantidadADespachar} {detalle.Insumo.UnidadMedidaBase} de '{detalle.Insumo.Nombre}'.");
+                                                    $"Despachado pedido {pedido.Correlativo} desde Almacén Central: {cantidadADespachar} {detalle.Insumo.UnidadMedidaNav.Nombre} de '{detalle.Insumo.Nombre}'.");
                                                 _context.CirugiaLogs.Add(log);
                                             }
                                         }
@@ -647,9 +647,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 var movimiento = new MovimientoInsumo(
                     detalle.InsumoId,
                     pedido.SedeSolicitanteId,
-                    "TransferenciaEntrada",
+                    TipoMovimientoInsumo.TransferenciaEntrada,
                     cantidadRecibida,
-                    detalle.Insumo.UnidadMedidaBase,
+                    (UnidadMedida)detalle.Insumo.UnidadMedidaId,
                     cantidadRecibida,
                     usuario,
                     $"Recepción de pedido inter-sede {pedido.Correlativo}"

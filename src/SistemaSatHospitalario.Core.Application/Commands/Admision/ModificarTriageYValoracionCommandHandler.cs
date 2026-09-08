@@ -89,7 +89,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 GlasgowOcular = valoracion.GlasgowOcular,
                 GlasgowVerbal = valoracion.GlasgowVerbal,
                 GlasgowMotor = valoracion.GlasgowMotor,
-                GlasgowTotal = valoracion.GlasgowTotal,
+                GlasgowTotal = valoracion.GlasgowOcular + valoracion.GlasgowVerbal + valoracion.GlasgowMotor,
                 ViaAerea = valoracion.ViaAerea,
                 Ventilacion = valoracion.Ventilacion,
                 Pulso = valoracion.Pulso,

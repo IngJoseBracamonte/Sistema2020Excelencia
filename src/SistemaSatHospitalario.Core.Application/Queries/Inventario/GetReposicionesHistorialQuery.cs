@@ -94,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                     Cantidad = t.Cantidad,
                     Motivo = t.Motivo,
                     FechaTransferencia = t.FechaTransferencia,
-                    UsuarioId = t.UsuarioId,
+                    UsuarioId = t.UsuarioIdentityId.ToString(),
                     Observaciones = t.Observaciones
                 })
                 .ToListAsync(cancellationToken);

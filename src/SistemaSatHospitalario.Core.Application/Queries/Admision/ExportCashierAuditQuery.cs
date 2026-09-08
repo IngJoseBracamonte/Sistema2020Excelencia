@@ -39,7 +39,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var start = request.Date.Date;
             var end = start.AddDays(1).AddTicks(-1);
 
-            var userMap = (await _identityService.GetUsersAsync()).ToDictionary(u => u.Id.ToString(), u => u.FullName);
+            var users = await _identityService.GetUsersAsync();
+            var userMap = users.ToDictionary(u => u.Id.ToString(), u => u.FullName);
+            var usernameMap = users.ToDictionary(u => u.Id.ToString(), u => u.Username);
 
             // 1. Obtener todas las cajas para el día seleccionado
             var cajasQuery = _context.CajasDiarias.AsNoTracking()
@@ -47,7 +49,19 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrEmpty(request.UserId))
             {
-                cajasQuery = cajasQuery.Where(c => c.UsuarioId == request.UserId || c.NombreUsuario == request.UserId);
+                if (Guid.TryParse(request.UserId, out var userIdGuid))
+                {
+                    cajasQuery = cajasQuery.Where(c => c.UsuarioIdentityId == userIdGuid);
+                }
+                else
+                {
+                    var resolvedUser = users.FirstOrDefault(u =>
+                        string.Equals(u.Username, request.UserId, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(u.FullName, request.UserId, StringComparison.OrdinalIgnoreCase));
+                    cajasQuery = resolvedUser != null
+                        ? cajasQuery.Where(c => c.UsuarioIdentityId == resolvedUser.Id)
+                        : cajasQuery.Where(c => false);
+                }
             }
 
             var cajas = await cajasQuery.ToListAsync(cancellationToken);
@@ -70,7 +84,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(r => r.DetallesPago)
                 .Include(r => r.CuentaServicio)
                     .ThenInclude(cs => cs.Paciente)
-                .Where(r => r.CajaDiariaId.HasValue && cajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
+                .Where(r => r.CajaDiariaId.HasValue && cajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                 .ToListAsync(cancellationToken);
 
             var receiptsByCaja = recibos.GroupBy(r => r.CajaDiariaId!.Value).ToDictionary(g => g.Key, g => g.ToList());
@@ -84,7 +98,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var userRecibos = receiptsByCaja.TryGetValue(caja.Id, out var rList) ? rList : new List<ReciboFactura>();
                 var allPayments = userRecibos.SelectMany(r => r.DetallesPago).ToList();
 
-                var pagosDetallados = ObtenerPagosDetallados(userRecibos, caja, catalogoMetodos);
+                var pagosDetallados = ObtenerPagosDetallados(userRecibos,catalogoMetodos);
 
                 List<MetodoDeclaradoDto>? declarados = declaracionesPorCajaId
                     .GetValueOrDefault(caja.Id)?
@@ -96,8 +110,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     })
                     .ToList();
 
-                // 3FN: fallback legacy solo para cajas históricas sin filas en CajasDeclaracionesMetodos
-#pragma warning disable CS0618
                 if ((declarados == null || declarados.Count == 0)
                     && caja.EstadoId != EstadoCajaConstants.AbiertaId
                     && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
@@ -108,7 +120,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     }
                     catch { }
                 }
-#pragma warning restore CS0618
 
                 var desgloseMetodos = CalcularDesgloseMetodos(
                     userRecibos,
@@ -120,8 +131,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 cajerosReport.Add(new CajeroReportDto
                 {
-                    Username = caja.NombreUsuario,
-                    FullName = userMap.TryGetValue(caja.UsuarioId, out var name) ? name : caja.NombreUsuario,
+                    Username = caja.UsuarioIdentityId.HasValue && usernameMap.TryGetValue(caja.UsuarioIdentityId.Value.ToString(), out var uname) ? uname : "Sistema",
+                    FullName = caja.UsuarioIdentityId.HasValue && userMap.TryGetValue(caja.UsuarioIdentityId.Value.ToString(), out var name) ? name : (caja.UsuarioIdentityId.HasValue && usernameMap.TryGetValue(caja.UsuarioIdentityId.Value.ToString(), out var uname2) ? uname2 : "Sistema"),
                     EstadoCaja = caja.EstadoId == EstadoCajaConstants.AbiertaId ? "ABIERTA" : (caja.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId ? "CERRADA (PENDIENTE)" : "CONSOLIDADA"),
                     TotalCobrado = totalCajaCobrado,
                     TotalIngresado = totalCajaIngresado,
@@ -138,44 +149,64 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         }
 
         private List<PagoDetalladoDto> ObtenerPagosDetallados(
-            List<ReciboFactura> userRecibos,
-            CajaDiaria caja,
-            List<CatalogoMetodoPago> catalogoMetodos)
+      List<ReciboFactura> userRecibos,
+      List<CatalogoMetodoPago> catalogoMetodos)
         {
+            if (userRecibos == null || userRecibos.Count == 0)
+                return [];
+
+            // Preindexación segura utilizando ToLookup o GroupBy para evitar excepciones por IDs duplicados
+            var catalogoDict = catalogoMetodos
+                .GroupBy(m => m.Id)
+                .ToDictionary(g => g.Key, g => g.First());
+
             var pagosDetallados = new List<PagoDetalladoDto>();
+
             foreach (var r in userRecibos)
             {
+                if (r.DetallesPago == null || r.DetallesPago.Count == 0)
+                    continue;
+
+                // Cálculos a nivel de recibo (se calculan una sola vez por recibo)
                 decimal totalPagadoRecibo = r.DetallesPago.Sum(dp => dp.EquivalenteAbonadoBase);
                 decimal vueltoRecibo = r.MontoVueltoUSD;
                 decimal pendienteRecibo = Math.Max(0, r.TotalFacturadoUSD - totalPagadoRecibo);
 
+                string pacienteNombre = r.CuentaServicio?.Paciente?.NombreCorto;
+                string pacienteCedula = r.CuentaServicio?.Paciente?.CedulaPasaporte;
+
                 foreach (var p in r.DetallesPago.Where(x => x.MontoAbonadoMoneda > 0))
                 {
-                    var metodoCatalogObj = catalogoMetodos.FirstOrDefault(m => m.Valor == p.MetodoPago);
-                    bool isUSD = metodoCatalogObj?.EsUSD ?? (p.MetodoPago == "Dolar Efectivo" || p.MetodoPago == "Zelle");
-                    string vueltoDadoPor = vueltoRecibo > 0 ? (r.UsuarioEmision ?? caja.NombreUsuario ?? "System") : "-";
+                    var metodoCatalogObj = p.MetodoPagoId.HasValue
+                     ? catalogoDict.GetValueOrDefault(p.MetodoPagoId.Value)
+                     : null;
+
+                    bool isUSD = metodoCatalogObj?.EsUSD ?? false;
+                    string nombreMetodo = metodoCatalogObj?.Nombre
+                        ?? p.MetodoPagoNav?.Nombre
+                        ?? "Desconocido";
 
                     pagosDetallados.Add(new PagoDetalladoDto
                     {
                         Fecha = p.FechaPago,
-                        PacienteNombre = r.CuentaServicio.Paciente.NombreCorto,
-                        PacienteCedula = r.CuentaServicio.Paciente.CedulaPasaporte,
+                        PacienteNombre = pacienteNombre,
+                        PacienteCedula = pacienteCedula,
                         Concepto = $"Recibo: {r.NumeroRecibo}",
-                        MetodoPago = p.MetodoPago,
+                        MetodoPago = nombreMetodo,
                         Moneda = isUSD ? "$" : "Bs.",
                         MontoMonedaOriginal = p.MontoAbonadoMoneda,
                         EquivalenteUSD = p.EquivalenteAbonadoBase,
-                        IngresadoPor = p.UsuarioCarga,
-                        VueltoDadoPor = vueltoDadoPor,
+                        IngresadoPor = p.UsuarioCargaId.ToString(),
+                        VueltoDadoPor = p.UsuarioCargaId.ToString(),
                         TotalCuentaUSD = r.TotalFacturadoUSD,
                         PendienteCuentaUSD = pendienteRecibo,
                         VueltoUSD = vueltoRecibo
                     });
                 }
             }
+
             return pagosDetallados;
         }
-
         private List<DesgloseMetodoDto> CalcularDesgloseMetodos(
             List<ReciboFactura> userRecibos,
             List<DetallePago> allPayments,

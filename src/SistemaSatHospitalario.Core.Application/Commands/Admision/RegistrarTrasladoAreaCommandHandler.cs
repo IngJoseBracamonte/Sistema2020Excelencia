@@ -130,7 +130,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // Registrar Auditoría Inmutable (AuditLog)
             var auditLog = new AuditLog
             {
-                UserId = string.IsNullOrWhiteSpace(request.UsuarioTraslado) ? "Sistema" : request.UsuarioTraslado,
+                UsuarioIdentityId = Guid.TryParse(request.UsuarioTraslado, out var uid) ? uid : (Guid?)null,
                 ActionType = "TRASLADO_AREA",
                 OldValue = $"AreaOrigen: {cuenta.SubAreaClinica ?? "N/A"}",
                 NewValue = $"AreaDestino: {request.AreaDestino}, Cama: {request.CamaDestinoId}, Monto: ${request.MontoACobrarUsd:F2}",

@@ -42,7 +42,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 FechaCreacion = p.FechaCreacion,
                 FechaDespacho = p.FechaDespacho,
                 FechaRecepcion = p.FechaRecepcion,
-                UsuarioCreador = p.UsuarioCreador,
+                UsuarioCreador = p.UsuarioCreadorId.ToString(),
                 Observaciones = p.Observaciones,
                 Detalles = p.Detalles.Select(d => new PedidoInterSedeDetalleDto
                 {

@@ -32,11 +32,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly IExcelService _excelService;
+        private readonly IUserResolverService _userResolver;
 
-        public ExportGenericListQueryHandler(IApplicationDbContext context, IExcelService excelService)
+        public ExportGenericListQueryHandler(IApplicationDbContext context, IExcelService excelService, IUserResolverService userResolver)
         {
             _context = context;
             _excelService = excelService;
+            _userResolver = userResolver;
         }
 
         public async Task<byte[]> Handle(ExportGenericListQuery request, CancellationToken cancellationToken)
@@ -121,9 +123,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var list = await (from d in _context.DetallesServicioCuenta.AsNoTracking()
                               join c in _context.CuentasServicios.AsNoTracking() on d.CuentaServicioId equals c.Id
                               join p in _context.PacientesAdmision.AsNoTracking() on c.PacienteId equals p.Id
-                              where (d.TipoServicio == "RX" || d.TipoServicio == "TOMOGRAFIA" || d.TipoServicio == "ESTUDIO")
+                              where (d.TipoServicioId == TipoServicioConstants.RX || d.TipoServicioId == TipoServicioConstants.Tomo)
                                  && d.FechaCarga >= start && d.FechaCarga <= end
                               select new { d, p }).OrderByDescending(x => x.d.FechaCarga).ToListAsync(ct);
+
+            var diagUserIds = list.Where(x => x.d.UsuarioCargaId.HasValue).Select(x => x.d.UsuarioCargaId!.Value).Distinct().ToList();
+            var diagUserMap = await _userResolver.GetDisplayNameMapAsync(diagUserIds, ct);
 
             DataTable dt = new DataTable();
             dt.Columns.Add("FECHA", typeof(DateTime));
@@ -143,14 +148,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 dt.Rows.Add(
                     item.d.FechaCarga,
-                    item.d.TipoServicio,
+                    item.d.TipoServicioNav.Nombre,
                     item.p.NombreCorto,
                     item.d.Descripcion,
                     item.d.Realizado ? "PROCESADO" : "PENDIENTE",
-                    req.IsAuditMode ? item.d.UsuarioTecnico : null,
-                    req.IsAuditMode ? (object?)item.d.FechaRealizacion : null,
-                    req.IsAuditMode ? item.d.UsuarioCarga : null
-                );
+                    req.IsAuditMode ? (object?)item.d.FechaRealizacion : null
+                    );
             }
             return dt;
         }
@@ -190,17 +193,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         private async Task<DataTable> GetHonorariumsReport(ExportGenericListQuery req, CancellationToken ct)
         {
             var start = req.StartDate?.Date ?? DateTime.Today;
-            var end = req.EndDate.HasValue 
-                ? req.EndDate.Value.Date.AddDays(1).AddTicks(-1) 
+            var end = req.EndDate.HasValue
+                ? req.EndDate.Value.Date.AddDays(1).AddTicks(-1)
                 : DateTime.MaxValue;
 
             var summary = await (from cita in _context.CitasMedicas
                                  join cs in _context.CuentasServicios on cita.CuentaServicioId equals cs.Id
                                  join detail in _context.DetallesServicioCuenta on cs.Id equals detail.CuentaServicioId
-                                 where cs.Estado == "Facturada"
-                                    && cs.FechaCierre >= start 
+                                 where cs.EstadoId == (int)EstadoCuentaServicio.Abierta
+                                    && cs.FechaCierre >= start
                                     && cs.FechaCierre <= end
-                                    && (detail.TipoServicio == "Medico" || detail.TipoServicio == "CONSULTA")
+                                    && (detail.TipoServicioId == TipoServicioConstants.Medico)
                                  group detail by new { cita.Medico.Nombre } into g
                                  select new
                                  {

@@ -72,7 +72,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             int glasgowOcular = request.RegistrarValoracionFisica ? request.GlasgowOcular : (lastValoracion?.GlasgowOcular ?? request.GlasgowOcular);
             int glasgowVerbal = request.RegistrarValoracionFisica ? request.GlasgowVerbal : (lastValoracion?.GlasgowVerbal ?? request.GlasgowVerbal);
             int glasgowMotor = request.RegistrarValoracionFisica ? request.GlasgowMotor : (lastValoracion?.GlasgowMotor ?? request.GlasgowMotor);
-            int glasgowTotal = request.RegistrarValoracionFisica ? request.GlasgowTotal : (lastValoracion?.GlasgowTotal ?? request.GlasgowTotal);
+            int glasgowTotal = request.RegistrarValoracionFisica ? request.GlasgowTotal : (lastValoracion?.GlasgowOcular ?? 0) + (lastValoracion?.GlasgowVerbal ?? 0) + (lastValoracion?.GlasgowMotor ?? 0);
             string viaAerea = request.RegistrarValoracionFisica ? request.ViaAerea : (lastValoracion?.ViaAerea ?? request.ViaAerea ?? "Permeable");
             string ventilacion = request.RegistrarValoracionFisica ? request.Ventilacion : (lastValoracion?.Ventilacion ?? request.Ventilacion ?? "Normal");
             string pulso = request.RegistrarValoracionFisica ? request.Pulso : (lastValoracion?.Pulso ?? request.Pulso ?? "Rítmico");
@@ -127,7 +127,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 GlasgowOcular = valoracion.GlasgowOcular,
                 GlasgowVerbal = valoracion.GlasgowVerbal,
                 GlasgowMotor = valoracion.GlasgowMotor,
-                GlasgowTotal = valoracion.GlasgowTotal,
+                GlasgowTotal = valoracion.GlasgowOcular + valoracion.GlasgowVerbal + valoracion.GlasgowMotor,
                 ViaAerea = valoracion.ViaAerea,
                 Ventilacion = valoracion.Ventilacion,
                 Pulso = valoracion.Pulso,

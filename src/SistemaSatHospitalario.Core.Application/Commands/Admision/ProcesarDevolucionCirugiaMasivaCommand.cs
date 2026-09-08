@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -82,9 +83,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 var movimiento = new MovimientoInsumo(
                     item.InsumoId,
                     SeedConstants.SedeId_Principal,
-                    "Devolución",
+                    TipoMovimientoInsumo.Devolucion,
                     cantidadADevolver,
-                    kitAsignacion.Insumo.UnidadMedidaBase,
+                    (UnidadMedida)kitAsignacion.Insumo.UnidadMedidaId,
                     cantidadADevolver,
                     request.UsuarioId,
                     $"Devolución masiva de Quirófano a Sede Principal (Orden: {request.OrdenCirugiaId})");

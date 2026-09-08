@@ -29,11 +29,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly ICajaAdministrativaRepository _repository;
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public CerrarCajaCommandHandler(ICajaAdministrativaRepository repository, IApplicationDbContext context)
+        public CerrarCajaCommandHandler(ICajaAdministrativaRepository repository, IApplicationDbContext context, IUserResolverService userResolver)
         {
             _repository = repository;
             _context = context;
+            _userResolver = userResolver;
         }
 
         public async Task<CerrarCajaResult> Handle(CerrarCajaCommand request, CancellationToken cancellationToken)
@@ -163,7 +165,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 TotalVueltoUSD = totalDeclaradoVueltosBaseUSD,
                 TotalIngresosBS = totalDeclaradoIngresosBS,
                 ConteoVentas = recibos.Count,
-                Usuario = cajaAbierta.NombreUsuario,
+                Usuario = await _userResolver.ResolveDisplayNameAsync(cajaAbierta.UsuarioIdentityId, "Sistema", cancellationToken),
                 FechaCierre = DateTime.UtcNow
             };
         }

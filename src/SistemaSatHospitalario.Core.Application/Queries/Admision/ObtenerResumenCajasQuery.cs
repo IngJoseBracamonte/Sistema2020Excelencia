@@ -31,10 +31,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class ObtenerResumenCajasQueryHandler : IRequestHandler<ObtenerResumenCajasQuery, ResumenCajaGlobalDto>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public ObtenerResumenCajasQueryHandler(IApplicationDbContext context)
+        public ObtenerResumenCajasQueryHandler(IApplicationDbContext context, IUserResolverService userResolver)
         {
             _context = context;
+            _userResolver = userResolver;
         }
 
         public async Task<ResumenCajaGlobalDto> Handle(ObtenerResumenCajasQuery request, CancellationToken cancellationToken)
@@ -47,17 +49,25 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // Obtenemos los montos recaudados por cada caja abierta sumando sus recibos
             var turnos = new List<ResumenTurnoDto>();
 
+            var cajaUserIds = cajasAbiertas
+                .Where(c => c.UsuarioIdentityId.HasValue)
+                .Select(c => c.UsuarioIdentityId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userMap = await _userResolver.GetDisplayNameMapAsync(cajaUserIds, cancellationToken);
+
             foreach (var caja in cajasAbiertas)
             {
                 var recaudado = await _context.RecibosFactura
-                    .Where(r => r.CajaDiariaId == caja.Id && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .Where(r => r.CajaDiariaId == caja.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                     .SelectMany(r => r.DetallesPago)
                     .SumAsync(p => p.EquivalenteAbonadoBase, cancellationToken);
 
                 turnos.Add(new ResumenTurnoDto
                 {
                     TurnoId = caja.Id,
-                    CajeroUserId = caja.NombreUsuario,
+                    CajeroUserId = caja.UsuarioIdentityId.HasValue && userMap.TryGetValue(caja.UsuarioIdentityId.Value, out var nombre) ? nombre : "Sistema",
                     Estado = EstadoCajaConstants.ToLegacyString(caja.EstadoId),
                     RecaudadoBase = recaudado
                 });

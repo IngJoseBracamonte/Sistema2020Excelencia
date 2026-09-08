@@ -28,10 +28,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var configs = await _context.HonorariosConfig
                 .Include(h => h.MedicoDefault)
                 .Select(h => new {
-                    h.Id, h.CategoriaServicio,
+                    h.Id,
+                    h.CategoriaServicio,
                     h.MedicoDefaultId,
-                    MedicoDefaultNombre = h.MedicoDefault != null ? h.MedicoDefault.Nombre : null,
-                    h.UsuarioConfiguro, h.FechaConfiguracion, h.NotasConfig
+                    h.MedicoDefault.Nombre,
+                    h.UsuarioConfiguroId,
+                    h.FechaConfiguracion,
+                    h.NotasConfig
                 }).ToListAsync();
             return Ok(configs);
         }

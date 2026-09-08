@@ -123,15 +123,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                      from i in ri.DefaultIfEmpty()
                                      select new
                                      {
-                                         Id = r.Id,
-                                         ServicioClinicoId = r.ServicioClinicoId,
-                                         InsumoId = r.InsumoId,
-                                         InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
-                                         InsumoCodigo = i != null ? i.Codigo : "",
-                                         Cantidad = r.Cantidad,
-                                         UnidadMedidaConsumo = r.UnidadMedidaConsumo.ToString()
+                                         r.Id,
+                                         r.ServicioClinicoId,
+                                         r.InsumoId,
+                                         i.Nombre,
+                                         i.Codigo,
+                                         r.Cantidad,
+                                         UnidadMedidaConsumo = r.UnidadMedidaNav.Nombre
                                      }).ToListAsync(ct);
-
                 return Ok(recetas);
             }
             catch (Exception ex)

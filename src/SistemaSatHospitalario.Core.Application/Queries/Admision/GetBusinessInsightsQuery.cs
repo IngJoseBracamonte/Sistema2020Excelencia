@@ -24,13 +24,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         private readonly ICurrentUserService _currentUserService;
         private readonly IDateTimeProvider _dateTime;
         private readonly ILogger<GetBusinessInsightsQueryHandler> _logger;
+        private readonly IUserResolverService _userResolver;
 
-        public GetBusinessInsightsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTime, ILogger<GetBusinessInsightsQueryHandler> logger)
+        public GetBusinessInsightsQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IDateTimeProvider dateTime, ILogger<GetBusinessInsightsQueryHandler> logger, IUserResolverService userResolver)
         {
             _context = context;
             _currentUserService = currentUserService;
             _dateTime = dateTime;
             _logger = logger;
+            _userResolver = userResolver;
         }
 
         public async Task<BusinessInsightsDto> Handle(GetBusinessInsightsQuery request, CancellationToken cancellationToken)
@@ -53,7 +55,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Ventas Netas hoy (Facturado hoy) - Senior Correction: Usamos FechaPago real de los detalles
                 response.TotalVentasHoy = await _context.DetallesPago
                     .AsNoTracking()
-                    .Where(d => d.FechaPago >= todayUtc && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscal != EstadoConstants.Anulada)
+                    .Where(d => d.FechaPago >= todayUtc && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                     .SumAsync(d => d.EquivalenteAbonadoBase, cancellationToken);
                 
                 _logger.LogInformation("[INSIGHTS] Total Ventas Hoy: {Total}", response.TotalVentasHoy);
@@ -85,7 +87,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                 response.TotalOrdenesRxHoy = ordenesRx.Count;
                 response.OrdenesRxProcesadasHoy = ordenesRx.Count(o => o.Procesada);
-                response.VentasRxHoy = ordenesRx.Sum(o => o.TotalCobrado);
             }
 
             // 3. Detalles Financieros (Exclusivo Administrador)
@@ -102,11 +103,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     .AsNoTracking()
                     .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
                     .SelectMany(c => c.Detalles)
-                    .Select(d => new { d.TipoServicio, d.Precio, d.Cantidad })
+                    .Select(d => new { d.TipoServicioNav.Nombre, d.Precio, d.Cantidad })
                     .ToListAsync(cancellationToken);
 
                 response.VentasPorEspecialidad = specialtyDetails
-                    .GroupBy(d => d.TipoServicio)
+                    .GroupBy(d => d.Nombre)
                     .Select(g => new RevenueBySpecialtyDto
                     {
                         Especialidad = g.Key,
@@ -180,7 +181,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     var lastWeekStartUtc = todayUtc.AddDays(-6);
                     var rawPayments = await _context.DetallesPago
                         .AsNoTracking()
-                        .Where(d => d.FechaPago >= lastWeekStartUtc && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscal != EstadoConstants.Anulada)
+                        .Where(d => d.FechaPago >= lastWeekStartUtc && d.FechaPago < tomorrowUtc && d.ReciboFactura.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                         .Select(d => new { d.FechaPago, d.EquivalenteAbonadoBase })
                         .ToListAsync(cancellationToken);
                     
@@ -292,9 +293,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                             a.Timestamp,
                             a.NewValue,
                             a.OldValue,
-                            a.UserId
+                            a.UsuarioIdentityId
                         })
                         .ToListAsync(cancellationToken);
+
+                    var auditUserIds = rawAudits
+                        .Where(a => a.UsuarioIdentityId.HasValue)
+                        .Select(a => a.UsuarioIdentityId!.Value)
+                        .Distinct()
+                        .ToList();
+
+                    var userMap = await _userResolver.GetDisplayNameMapAsync(auditUserIds, cancellationToken);
 
                     var recentAudits = rawAudits
                         .Select(a =>
@@ -305,12 +314,16 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                 : actType.Contains("Inven", StringComparison.OrdinalIgnoreCase) ? "Inventario"
                                 : "Sistema";
 
+                            var usuario = a.UsuarioIdentityId.HasValue && userMap.TryGetValue(a.UsuarioIdentityId.Value, out var nombre)
+                                ? nombre
+                                : "admin";
+
                             return new DashboardAuditEntryDto
                             {
                                 Modulo = mod,
                                 Timestamp = a.Timestamp,
                                 Descripcion = $"{actType}: {a.NewValue ?? a.OldValue ?? "Registro actualizado"}",
-                                Usuario = string.IsNullOrEmpty(a.UserId) ? "admin" : a.UserId,
+                                Usuario = usuario,
                                 TipoEvento = actType
                             };
                         })
