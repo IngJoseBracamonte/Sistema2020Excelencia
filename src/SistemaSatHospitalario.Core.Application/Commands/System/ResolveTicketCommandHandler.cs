@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.System
 
             ticket.Resuelto = true;
             ticket.ComentariosResolucion = request.ComentariosResolucion;
-            ticket.ResueltoPor = request.ResueltoPorUsuarioId;
+            ticket.ResueltoPorId = request.ResueltoPorUsuarioId;
             ticket.FechaResolucion = DateTime.UtcNow;
 
             await _context.SaveChangesAsync(cancellationToken);

@@ -26,11 +26,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var query = _context.CuentasServicios
                 .Include(c => c.Detalles)
                 .AsNoTracking()
-                .Where(c => c.PacienteId == request.PacienteId && c.EstadoId == EstadoConstants.Abierta);
+                .Where(c => c.PacienteId == request.PacienteId && c.EstadoId == EstadoCuentaConstants.AbiertaId);
 
             if (!string.IsNullOrEmpty(request.TipoIngreso))
             {
-                query = query.Where(c => c.TipoIngreso == request.TipoIngreso);
+                query = query.Where(c => c.TipoIngresoNav.Nombre == request.TipoIngreso);
             }
 
             var activeCuenta = await query.FirstOrDefaultAsync(cancellationToken);
@@ -77,7 +77,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     }
 
                     var desc = (request.Consolidar && accountsToProcess.Count > 1) 
-                        ? $"[{cuenta.TipoIngreso}] {d.Descripcion}" 
+                        ? $"[{cuenta.TipoIngresoNav.Nombre}] {d.Descripcion}" 
                         : d.Descripcion;
 
                     detallesDto.Add(new OpenAccountDetailDto
@@ -88,7 +88,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Precio = d.Precio,
                         Honorario = d.Honorario,
                         Cantidad = d.Cantidad,
-                        TipoServicio = d.TipoServicio,
+                        TipoServicio = d.TipoServicioNav.Nombre,
                         FechaCarga = d.FechaCarga,
                         LegacyMappingId = d.LegacyMappingId,
                         MedicoResponsableId = d.MedicoResponsableId,
@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 Id = activeCuenta.Id,
                 PacienteId = activeCuenta.PacienteId,
-                TipoIngreso = activeCuenta.TipoIngreso,
+                TipoIngreso = activeCuenta.TipoIngresoNav.Nombre,
                 ConvenioId = activeCuenta.ConvenioId,
                 Detalles = detallesDto
             };

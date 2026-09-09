@@ -104,7 +104,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Usuario = d.UsuarioCargaId.HasValue && userMap.TryGetValue(d.UsuarioCargaId.Value, out var nombre) ? nombre : "Sistema",
                     PacienteCedula = pacienteCedula,
                     PacienteNombre = pacienteNombre,
-                    TipoActividad = $"Carga de {d.TipoServicio}",
+                    TipoActividad = $"Carga de {d.TipoServicioNav.Nombre}",
                     Detalle = $"Descripción: {d.Descripcion} | Cantidad: {d.Cantidad}"
                 });
             }

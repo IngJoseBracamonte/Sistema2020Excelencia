@@ -26,4 +26,8 @@ public interface IUserResolverService
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A dictionary mapping user IDs to display names.</returns>
     Task<Dictionary<Guid, string>> GetDisplayNameMapAsync(IEnumerable<Guid> userIds, CancellationToken cancellationToken);
+
+    Task<Guid?> ResolveUserIdByUsernameAsync(string username, CancellationToken cancellationToken);
+    Task<string?> ResolveUserIdAsync(Guid? targetUserId, CancellationToken cancellationToken);
+
 }

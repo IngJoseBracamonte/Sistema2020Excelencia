@@ -65,7 +65,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 TotalRecaudadoBase = allPayments.Sum(p => p.EquivalenteAbonadoBase),
                 IsCajaAbierta = cajaAbierta != null,
                 DesgloseMetodos = allPayments
-                    .GroupBy(p => p.MetodoPago)
+                    .GroupBy(p => p.MetodoPagoNav.Nombre)
                     .Select(g => new PaymentMethodSummaryDto
                     {
                         Metodo = g.Key,

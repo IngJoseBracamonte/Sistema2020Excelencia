@@ -48,7 +48,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 FechaEmision = recibo.FechaEmision,
                 PacienteNombre = recibo.PacienteId == Guid.Empty ? EstadoConstants.Particular : (paciente?.NombreCorto ?? EstadoConstants.Desconocido),
                 PacienteCedula = paciente?.CedulaPasaporte ?? EstadoConstants.Desconocido,
-                TipoIngreso = cuenta?.TipoIngreso ?? EstadoConstants.Particular,
+                TipoIngreso = cuenta?.TipoIngresoNav.Nombre ?? EstadoConstants.Particular,
                 TotalUSD = recibo.TotalFacturadoUSD,
                 TasaBcv = recibo.TasaBcvUsada,
                 TotalBS = recibo.TotalFacturadoUSD * recibo.TasaBcvUsada,
@@ -61,7 +61,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }).ToList() ?? new List<ReciboDetallePdfDto>(),
                 Pagos = recibo.DetallesPago.Select(p => new PagoDetallePdfDto
                 {
-                    MetodoPago = p.MetodoPago,
+                    MetodoPago = p.MetodoPagoNav.Nombre,
                     MontoOriginal = p.MontoAbonadoMoneda,
                     EquivalenteBase = p.EquivalenteAbonadoBase,
                     Referencia = p.ReferenciaBancaria

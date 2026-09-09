@@ -7,6 +7,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.System
     {
         public Guid TicketId { get; set; }
         public string? ComentariosResolucion { get; set; }
-        public string? ResueltoPorUsuarioId { get; set; }
+        public Guid? ResueltoPorUsuarioId { get; set; }
     }
 }

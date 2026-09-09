@@ -43,14 +43,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 join medico in _context.Medicos
                     on cita.MedicoId equals medico.Id
                 where cita.EstadoId == EstadoCitaConstants.AtendidaId
-                   && cs.EstadoId != EstadoConstants.Anulada
+                   && cs.EstadoId != EstadoCuentaConstants.AnuladaId
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
-                   && (detail.TipoServicioId == TipoServicioConstants.Medico 
-                       || detail.TipoServicio == EstadoConstants.Medico 
-                       || detail.TipoServicio == "MEDICO" 
-                       || detail.TipoServicio == "Medico" 
-                       || (detail.TipoServicio != null && (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO")))))
+                   && (detail.TipoServicioId == TipoServicioConstants.Medico)
                    && (detail.MedicoResponsableId == cita.MedicoId || detail.MedicoResponsableId == null)
                 select new
                 {
@@ -68,14 +64,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 from detail in _context.DetallesServicioCuenta
                 join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
                 where detail.Realizado
-                   && cs.EstadoId != EstadoConstants.Anulada
+                   && cs.EstadoId != EstadoCuentaConstants.AnuladaId
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
-                   && !(detail.TipoServicioId == TipoServicioConstants.Medico 
-                        || detail.TipoServicio == EstadoConstants.Medico 
-                        || detail.TipoServicio == "MEDICO" 
-                        || detail.TipoServicio == "Medico" 
-                        || (detail.TipoServicio != null && (detail.TipoServicio.Contains("CONS") || (detail.TipoServicio.Contains("MEDI") && !detail.TipoServicio.Contains("MEDICINA") && !detail.TipoServicio.Contains("MEDICAMENTO")))))
+                   && !(detail.TipoServicioId == TipoServicioConstants.Medico)
                    && (detail.FechaRealizacion ?? detail.FechaCarga) >= start
                    && (detail.FechaRealizacion ?? detail.FechaCarga) <= end
                 select new

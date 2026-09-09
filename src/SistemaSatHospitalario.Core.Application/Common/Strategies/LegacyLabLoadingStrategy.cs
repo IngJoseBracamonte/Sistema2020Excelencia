@@ -52,9 +52,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             CancellationToken cancellationToken)
         {
             bool isClinical = !string.IsNullOrEmpty(request.OrigenCarga) || 
-                              cuenta.TipoIngreso == EstadoConstants.Hospitalizacion || 
-                              cuenta.TipoIngreso == EstadoConstants.Emergencia || 
-                              cuenta.TipoIngreso == "UCI";
+                              cuenta.TipoIngresoNav.Nombre == EstadoConstants.Hospitalizacion || 
+                              cuenta.TipoIngresoNav.Nombre == EstadoConstants.Emergencia || 
+                              cuenta.TipoIngresoNav.Nombre == EstadoConstants.UCI;
 
             // Extracción robusta de LegacyMappingId con fallbacks
             string? mappingString = !string.IsNullOrEmpty(detalle.LegacyMappingId)
@@ -126,7 +126,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 
             // Emitir evento desacoplado vía MediatR
             string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngreso;
+            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngresoNav.Nombre;
             var notification = new ServicioCargadoNotification(
                 "LAB",
                 request.OrigenCarga ?? request.TipoIngreso,

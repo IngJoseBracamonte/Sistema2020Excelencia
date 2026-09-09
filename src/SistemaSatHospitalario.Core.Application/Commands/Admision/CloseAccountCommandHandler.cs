@@ -53,7 +53,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .FirstOrDefaultAsync(c => c.Id == request.CuentaId, cancellationToken);
 
             if (cuenta == null) throw new Exception("Cuenta no encontrada.");
-            if (cuenta.EstadoId != EstadoConstants.Abierta) throw new Exception("La cuenta ya ha sido procesada.");
+            if (cuenta.EstadoId != EstadoCuentaConstants.AbiertaId) throw new Exception("La cuenta ya ha sido procesada.");
 
             // Resolver consolidación si aplica
             List<CuentaServicios> accountsToBill;
@@ -153,7 +153,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // 4.1 Validamos existencia física (AsNoTracking para frescura total)
                 var existe = await _context.CuentasServicios
                     .AsNoTracking()
-                    .AnyAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoConstants.Abierta, cancellationToken);
+                    .AnyAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoCuentaConstants.AbiertaId, cancellationToken);
                 
                 if (!existe) throw new Exception("La cuenta no existe o ya fue procesada.");
 
@@ -169,7 +169,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 // Extraemos items para pasarlos después
-                var itemsLab = accountsToBill.SelectMany(c => c.Detalles).Where(d => EstadoConstants.EsLaboratorio(d.TipoServicio)).ToList();
+                var itemsLab = accountsToBill.SelectMany(c => c.Detalles).Where(d => EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre)).ToList();
 
                 // 4.3 Determinamos si se cierra la cuenta o permanece abierta como abono parcial
                 bool debeCerrarCuenta = !request.MantenerCuentaAbierta && (totalPagado >= (totalCuenta - 0.01m) || request.CerrarConSaldoPendiente);
@@ -325,7 +325,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _logger.LogTrace($"[LEGACY-SYNC] Total detalles en cuenta: {labItems.Count}");
             foreach (var d in labItems)
             {
-                _logger.LogTrace($"[LEGACY-SYNC]   -> Detalle: '{d.Descripcion}' | TipoServicio: '{d.TipoServicio}' | EsLab: {EstadoConstants.EsLaboratorio(d.TipoServicio)} | LegacyMappingId: '{d.LegacyMappingId}'");
+                _logger.LogTrace($"[LEGACY-SYNC]   -> Detalle: '{d.Descripcion}' | TipoServicio: '{d.TipoServicioNav.Nombre}' | EsLab: {EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre)} | LegacyMappingId: '{d.LegacyMappingId}'");
             }
 
             if (!labItems.Any())

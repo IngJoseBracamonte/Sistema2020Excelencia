@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // El facturador es el que cargó el servicio si está pendiente, 
                 // o el que facturó (de la caja) si está facturado.
                 // Según el usuario: "Nombre Real, Rol"
-                string facturadorId = x.rf != null ? (x.rf.CajaDiariaId.HasValue ? _context.CajasDiarias.FirstOrDefault(cd => cd.Id == x.rf.CajaDiariaId)?.UsuarioIdentityId?.ToString() : x.d.UsuarioCarga) : x.d.UsuarioCarga;
+                string facturadorId = _context.CajasDiarias.FirstOrDefault(cd => cd.Id == x.rf.CajaDiariaId)?.UsuarioIdentityId?.ToString();
                 
                 string facturadorInfo = "SISTEMA";
                 if (!string.IsNullOrEmpty(facturadorId) && userMap.TryGetValue(facturadorId, out var user))
@@ -115,7 +115,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 if (x.rf != null)
                 {
                     var payment = _context.DetallesPago.FirstOrDefault(dp => dp.ReciboFacturaId == x.rf.Id);
-                    metodo = payment?.MetodoPago ?? "CRÉDITO";
+                    metodo = payment?.MetodoPagoNav.Nombre;
                 }
 
                 return new ExpedienteFacturacionDto
@@ -126,7 +126,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PacienteCedula = x.p.CedulaPasaporte,
                     PacienteTelefono = x.p.TelefonoContact,
                     Estudio = x.d.Descripcion,
-                    TipoIngreso = x.c.TipoIngreso,
+                    TipoIngreso = x.c.TipoIngresoNav.Nombre,
                     SeguroNombre = x.sm?.Nombre ?? "PARTICULAR",
                     MetodoPago = metodo,
                     MontoUSD = x.d.Precio * x.d.Cantidad,

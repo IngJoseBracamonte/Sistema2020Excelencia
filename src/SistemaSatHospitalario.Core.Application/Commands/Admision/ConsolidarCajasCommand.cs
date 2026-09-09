@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -58,8 +59,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var cierresPendientes = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId);
             var cierresRealizados = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaId);
 
-            decimal totalRecaudado = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaId).Sum(c => c.TotalIngresado ?? 0);
-            decimal totalEsperado = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaId).Sum(c => c.TotalCobrado ?? 0);
+            decimal totalRecaudado = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaId).FirstOrDefault()?.DeclaracionesPorMetodo.Sum(x => x.MontoIngresado) ?? 0;
+            decimal totalEsperado = cajasHoy.Where(c => c.EstadoId == EstadoCajaConstants.CerradaId).FirstOrDefault()?.DeclaracionesPorMetodo.Sum(x => x.MontoEsperadoIngreso) ?? 0;
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
 
             // Efectivo en Bóveda: sumar lo ingresado en Efectivo de las cajas cerradas/consolidadas

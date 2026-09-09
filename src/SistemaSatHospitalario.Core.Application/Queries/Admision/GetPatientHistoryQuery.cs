@@ -34,15 +34,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 CuentaId = c.Id,
                 FechaCreacion = c.FechaCarga, // Alineado con Domain
                 FechaCierre = c.FechaCierre,
-                Estado = c.EstadoId,
-                TipoIngreso = c.TipoIngreso,
+                Estado = c.EstadoNav.Nombre,
+                TipoIngreso = c.TipoIngresoNav.Nombre,
                 Total = c.CalcularTotal(),
                 Servicios = c.Detalles.Select(d => new HistoryServiceDetailDto
                 {
                     Descripcion = d.Descripcion,
                     Precio = d.Precio,
                     Cantidad = d.Cantidad,
-                    TipoServicio = d.TipoServicio
+                    TipoServicio = d.TipoServicioNav.Nombre
                 }).ToList()
             }).ToList();
         }

@@ -111,7 +111,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Observaciones = cita.Comentario ?? "",
                     Turno = turnosContador[cita.MedicoId],
                     CuentaServicioId = cita.CuentaServicioId,
-                    TipoIngreso = cita.CuentaServicio?.TipoIngreso ?? "Particular"
+                    TipoIngreso = cita.CuentaServicio?.TipoIngresoNav.Nombre ?? "Particular"
                 });
             }
 

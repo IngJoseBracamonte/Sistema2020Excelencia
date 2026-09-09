@@ -105,7 +105,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 // Fallback para servicios de laboratorio cargados directamente en la cuenta nativa
                 var labDetalles = cuenta.Detalles
-                    .Where(d => d.TipoServicioId == TipoServicioConstants.Laboratorio || (d.TipoServicio != null && d.TipoServicio.ToUpper() == "LABORATORIO"))
+                    .Where(d => d.TipoServicioId == TipoServicioConstants.Laboratorio || (d.TipoServicioNav.Nombre != null && d.TipoServicioNav.Nombre.ToUpper() == EstadoConstants.Laboratorio))
                     .ToList();
 
                 int idx = 1;

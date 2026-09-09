@@ -1,12 +1,13 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -87,7 +88,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 var cuentaAbierta = await _context.CuentasServicios
-                    .FirstOrDefaultAsync(cuenta => cuenta.PacienteId == request.PacienteId && cuenta.EstadoId == "Abierta", cancellationToken);
+                    .FirstOrDefaultAsync(cuenta => cuenta.PacienteId == request.PacienteId && cuenta.EstadoId == EstadoCuentaConstants.AbiertaId, cancellationToken);
                 if (cuentaAbierta != null)
                 {
                     return cuentaAbierta.Id;

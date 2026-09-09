@@ -306,7 +306,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 var effectiveAreaId = request.AreaClinicaId ?? cuenta.AreaClinicaId;
                 targetSedeId = effectiveAreaId.HasValue
                     ? (await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Id == effectiveAreaId.Value, cancellationToken))?.SedeId
-                    : SeedConstants.ResolveSedeInventario(cuenta.TipoIngreso, cuenta.SubAreaClinica);
+                    : SeedConstants.ResolveSedeInventario(cuenta.TipoIngresoNav.Nombre, cuenta.SubAreaClinica);
             }
 
             await _inventoryService.DeductInventoryForServiceDetailAsync(
