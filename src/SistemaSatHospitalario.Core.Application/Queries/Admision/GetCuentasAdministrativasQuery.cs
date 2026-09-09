@@ -47,17 +47,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 if (request.TipoIngreso == EstadoConstants.Hospitalizacion)
                 {
-                    query = query.Where(c => c.TipoIngreso == EstadoConstants.Hospitalizacion || c.TipoIngreso == SubAreas.UCI);
+                    query = query.Where(c => c.TipoIngresoNav.Nombre == EstadoConstants.Hospitalizacion || c.TipoIngresoNav.Nombre == SubAreas.UCI);
                 }
                 else
                 {
-                    query = query.Where(c => c.TipoIngreso == request.TipoIngreso);
+                    query = query.Where(c => c.TipoIngresoNav.Nombre == request.TipoIngreso);
                 }
             }
 
             if (!string.IsNullOrEmpty(request.Estado))
             {
-                query = query.Where(c => c.EstadoId == request.Estado);
+                query = query.Where(c => c.EstadoNav.Nombre.Contains(request.Estado));
             }
 
             var cuentas = await query
@@ -90,8 +90,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PacienteCedula = c.Paciente?.CedulaPasaporte ?? string.Empty,
                     FechaCarga = c.FechaCarga,
                     FechaCierre = c.FechaCierre,
-                    Estado = c.EstadoId,
-                    TipoIngreso = c.TipoIngreso,
+                    Estado = c.EstadoNav.Nombre,
                     ConvenioId = c.ConvenioId,
                     SeguroNombre = c.Convenio?.Nombre ?? "PARTICULAR",
                     Total = totalCuenta,

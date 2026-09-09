@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 1. Obtener la cuenta activa del paciente por AdmisionId (CuentaId) o PacienteId
             var cuenta = await _context.CuentasServicios
                 .Include(c => c.Detalles)
-                .FirstOrDefaultAsync(c => (c.Id == request.AdmisionId || c.PacienteId == request.PacienteId) && c.EstadoId == EstadoConstants.Abierta, cancellationToken);
+                .FirstOrDefaultAsync(c => (c.Id == request.AdmisionId || c.PacienteId == request.PacienteId) && c.EstadoId == EstadoCuentaConstants.AbiertaId, cancellationToken);
 
             if (cuenta == null)
             {

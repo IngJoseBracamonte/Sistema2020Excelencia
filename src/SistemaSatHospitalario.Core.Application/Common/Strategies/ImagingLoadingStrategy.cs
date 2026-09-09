@@ -53,7 +53,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             bool requiereInforme = request.RequiereInforme || 
                                    request.MedicoInterpreteId.HasValue ||
                                    (baseService != null && (baseService.ServicioInformeId.HasValue || baseService.EsServicioInforme)) ||
-                                   (cuenta.TipoIngreso ?? "").StartsWith(EstadoConstants.Seguro, StringComparison.OrdinalIgnoreCase) || 
+                                   (cuenta.TipoIngresoNav.Nombre ?? "").StartsWith(EstadoConstants.Seguro, StringComparison.OrdinalIgnoreCase) || 
                                    (request.OrigenCarga ?? "").StartsWith(EstadoConstants.Seguro, StringComparison.OrdinalIgnoreCase);
 
             if (requiereInforme)

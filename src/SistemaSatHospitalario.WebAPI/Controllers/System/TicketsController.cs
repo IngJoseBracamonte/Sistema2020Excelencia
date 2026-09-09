@@ -36,7 +36,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.System
             {
                 TicketId = id,
                 ComentariosResolucion = request.ComentariosResolucion,
-                ResueltoPorUsuarioId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ResueltoPorUsuarioId = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userIdGuid)
+           ? userIdGuid
+           : Guid.Empty // O null, dependiendo de si tu command usa Guid o Guid?
             };
 
             var success = await _mediator.Send(command);

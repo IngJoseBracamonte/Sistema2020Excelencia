@@ -65,8 +65,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PrecioModificado = x.PrecioModificado,
                     HonorarioAnterior = x.HonorarioAnterior,
                     NuevoHonorario = x.NuevoHonorario,
-                    UsuarioOperador = x.UsuarioOperador,
-                    AutorizadoPor = x.AutorizadoPor,
                     FechaModificacion = x.FechaModificacion
                 })
                 .ToListAsync(ct);

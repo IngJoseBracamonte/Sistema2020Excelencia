@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // Verificar si tiene transacciones asociadas (DetallesPago)
             var hasPayments = await _context.DetallesPago
-                .AnyAsync(dp => dp.MetodoPago == metodo.Valor || dp.MetodoPago == metodo.Nombre, cancellationToken);
+                .AnyAsync(dp => dp.MetodoPagoNav.Nombre == metodo.Valor || dp.MetodoPagoNav.Nombre == metodo.Nombre, cancellationToken);
 
             if (hasPayments)
             {

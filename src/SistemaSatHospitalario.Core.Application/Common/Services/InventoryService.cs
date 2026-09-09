@@ -94,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     }
                     else
                     {
-                        targetSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.ResolveSedeInventario(cuenta.TipoIngreso, cuenta.SubAreaClinica);
+                        targetSedeId = SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.ResolveSedeInventario(cuenta.TipoIngresoNav.Nombre, cuenta.SubAreaClinica);
                     }
                 }
 

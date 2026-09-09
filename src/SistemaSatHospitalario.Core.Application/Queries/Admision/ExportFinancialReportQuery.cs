@@ -83,12 +83,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     x.Estado,
                     x.IsAudited,
                     x.FechaCreacion,
-                    UsuarioIngreso = firstDetail != null ? (userMap.ContainsKey(firstDetail.UsuarioCarga) ? userMap[firstDetail.UsuarioCarga] : firstDetail.UsuarioCarga) : "SISTEMA",
-                    UsuarioAuditoria = x.UsuarioAuditoriaId.HasValue && userMap.TryGetValue(x.UsuarioAuditoriaId.Value.ToString(), out var auditorName) ? auditorName : "SISTEMA",
+                    UsuarioAuditoria = x.UsuarioAuditoriaId.HasValue && userMap.TryGetValue(x.UsuarioAuditoriaId.Value.ToString(), out var auditorName),
                     x.FechaAuditoria,
                     Pagos = payments.Where(p => p.ReciboFactura.CuentaServicioId == x.CuentaId)
                                     .Select(p => new {
-                                        Metodo = p.MetodoPago,
+                                        Metodo = p.MetodoPagoNav.Nombre,
                                         Referencia = p.ReferenciaBancaria,
                                         MontoBase = p.EquivalenteAbonadoBase
                                     }).ToList()

@@ -110,17 +110,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     })
                     .ToList();
 
-                if ((declarados == null || declarados.Count == 0)
-                    && caja.EstadoId != EstadoCajaConstants.AbiertaId
-                    && !string.IsNullOrEmpty(caja.DeclaracionCierreJson))
-                {
-                    try
-                    {
-                        declarados = JsonSerializer.Deserialize<List<MetodoDeclaradoDto>>(caja.DeclaracionCierreJson);
-                    }
-                    catch { }
-                }
-
                 var desgloseMetodos = CalcularDesgloseMetodos(
                     userRecibos,
                     allPayments,
@@ -227,7 +216,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 else if (metodo.Valor == "Efectivo BS") vueltoMetodoValor = "Vuelto Efectivo BS";
                 else if (metodo.Valor == "Pago Movil") vueltoMetodoValor = "Vuelto Pago Movil";
 
-                var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
+                var pagosMetodo = allPayments.Where(p => p.MetodoPagoNav.Nombre == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
                 decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
                 decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
 
@@ -235,7 +224,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 decimal esperadoVueltosBase = 0;
                 if (!string.IsNullOrEmpty(vueltoMetodoValor))
                 {
-                    var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
+                    var vueltosMetodo = allPayments.Where(p => p.MetodoPagoNav.Nombre == vueltoMetodoValor).ToList();
                     esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
                     esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
                 }

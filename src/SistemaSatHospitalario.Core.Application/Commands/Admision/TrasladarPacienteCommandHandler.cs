@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 1. Obtener la cuenta activa actual del paciente
             var cuentaActual = await _context.CuentasServicios
                 .Include(c => c.Detalles)
-                .FirstOrDefaultAsync(c => c.PacienteId == request.PacienteId && c.EstadoId == EstadoConstants.Abierta, cancellationToken);
+                .FirstOrDefaultAsync(c => c.PacienteId == request.PacienteId && c.EstadoId == EstadoCuentaConstants.AbiertaId, cancellationToken);
 
             if (cuentaActual == null)
             {

@@ -79,10 +79,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoInicialDivisa = montoInicialDivisa;
             MontoInicialBs = montoInicialBs;
             EstadoId = EstadoCajaConstants.AbiertaId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioId = usuarioId;
-            NombreUsuario = nombreUsuario;
-#pragma warning restore CS0618
             // 3FN: poblar la FK si el texto es un GUID válido
             UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
         }
@@ -110,12 +106,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             SetEstado(EstadoCajaConstants.CerradaPorAsistenteId);
             FechaCierre = DateTime.UtcNow;
-#pragma warning disable CS0618 // limpieza del residuo legacy
-            DeclaracionCierreJson = null;
-            TotalIngresado = totalIngresado;
-            TotalCobrado = totalCobrado;
-            Diferencia = diferencia;
-#pragma warning restore CS0618
         }
 
         public void ConsolidarCaja()

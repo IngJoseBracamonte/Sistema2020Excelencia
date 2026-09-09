@@ -59,7 +59,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // Buscar cuenta de servicios activa si no venía cargada en la navegación
             var cuenta = await _context.CuentasServicios
-                .FirstOrDefaultAsync(c => c.Id == orden.CuentaServicioId || (c.PacienteId == orden.PacienteId && c.EstadoId == EstadoConstants.Abierta), cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == orden.CuentaServicioId || (c.PacienteId == orden.PacienteId && c.EstadoId == EstadoCuentaConstants.AbiertaId), cancellationToken);
 
             if (cuenta == null)
             {

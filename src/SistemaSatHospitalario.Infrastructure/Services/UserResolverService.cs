@@ -2,6 +2,8 @@ namespace SistemaSatHospitalario.Infrastructure.Services;
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
@@ -11,6 +13,7 @@ using SistemaSatHospitalario.Core.Domain.Constants;
 public sealed class UserResolverService : IUserResolverService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserManager<IdentityUser> _userManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserResolverService"/> class.
@@ -18,10 +21,17 @@ public sealed class UserResolverService : IUserResolverService
     /// <param name="httpContextAccessor">
     /// Accessor for the current HTTP context.
     /// </param>
-    public UserResolverService(IHttpContextAccessor httpContextAccessor)
+    /// <param name="userManager">
+    /// The ASP.NET Core Identity user manager.
+    /// </param>
+    public UserResolverService(
+        IHttpContextAccessor httpContextAccessor,
+        UserManager<IdentityUser> userManager)
     {
         _httpContextAccessor = httpContextAccessor
             ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _userManager = userManager
+            ?? throw new ArgumentNullException(nameof(userManager));
     }
 
     /// <inheritdoc />
@@ -122,5 +132,41 @@ public sealed class UserResolverService : IUserResolverService
         }
 
         return user;
+    }
+
+    /// <inheritdoc />
+    public Task<Guid?> ResolveUserIdByUsernameAsync(string username, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return Task.FromResult<Guid?>(GetCurrentUserId());
+        }
+
+        var currentUser = _httpContextAccessor.HttpContext?.User;
+        var currentUserName = currentUser?.Identity?.Name;
+
+        if (string.Equals(currentUserName, username, StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult<Guid?>(GetCurrentUserId());
+        }
+
+        throw new InvalidOperationException("No se puede resolver un usuario diferente al autenticado sin consultar la base de datos.");
+    }
+
+    /// <inheritdoc />
+    public async Task<string> ResolveUserIdAsync(Guid? targetUserId, CancellationToken cancellationToken)
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+
+        // Si pasan un ID específico, buscamos el usuario en la base de datos usando UserManager
+        var user = await _userManager.FindByIdAsync(targetUserId.Value.ToString());
+
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"El usuario con ID '{targetUserId}' no existe en el sistema.");
+        }
+
+        // Retornamos el nombre de usuario (ajusta a u.UserName o u.Email según tu modelo de identidad)
+        return user.UserName;
     }
 }

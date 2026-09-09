@@ -109,7 +109,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             var userMap = await _userResolver.GetDisplayNameMapAsync(
                 cajaUserIds,
-                cancellationToken);
+                cancellationToken); 
 
             var list = listCajas.Select(c => new CajaDetailDto
             {

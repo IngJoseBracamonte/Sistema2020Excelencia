@@ -37,7 +37,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                 ReciboId = rf != null ? (Guid?)rf.Id : null,
                                 PacienteNombre = pac.NombreCorto,
                                 PacienteCedula = pac.CedulaPasaporte,
-                                TipoIngreso = cta.TipoIngreso,
+                                TipoIngreso = cta.TipoIngresoNav.Nombre,
                                 SeguroNombre = conv != null ? conv.Nombre : EstadoConstants.Particular,
                                 MontoTotal = ar.MontoTotalBase,
                                 MontoPagadoBase = ar.MontoPagadoBase,
@@ -110,7 +110,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Select(dp => new
                 {
                     dp.ReciboFacturaId,
-                    dp.MetodoPago,
+                    dp.MetodoPagoNav.Nombre,
                     dp.ReferenciaBancaria,
                     dp.EquivalenteAbonadoBase,
                     dp.MontoAbonadoMoneda
@@ -152,7 +152,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                          select new PaymentHistoryDto
                          {
                              Fecha = r.FechaEmision,
-                             Metodo = dp.MetodoPago,
+                             Metodo = dp.Nombre,
                              Referencia = dp.ReferenciaBancaria,
                              MontoBase = dp.EquivalenteAbonadoBase,
                              MontoCambiario = dp.MontoAbonadoMoneda

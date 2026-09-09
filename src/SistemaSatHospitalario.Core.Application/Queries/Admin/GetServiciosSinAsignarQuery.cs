@@ -40,7 +40,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
             var excluirLista = new List<string> { "Laboratorio", "LAB", "INSUMO", "Insumo", "Consulta", "CONSULTA" };
             var query = _context.DetallesServicioCuenta
                 .Include(d => d.CuentaServicio).ThenInclude(c => c.Paciente)
-                .Where(d => !excluirLista.Contains(d.TipoServicio) && d.Honorario > 0)
+                .Where(d => !excluirLista.Contains(d.TipoServicioNav.Nombre) && d.Honorario > 0)
                 .AsQueryable();
 
             if (request.FechaDesde.HasValue)
@@ -65,7 +65,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 {
                     DetalleId = d.Id,
                     Descripcion = d.Descripcion,
-                    TipoServicio = d.TipoServicio,
+                    TipoServicio = d.TipoServicioNav.Nombre,
                     Honorario = d.Honorario,
                     PacienteNombre = d.CuentaServicio.Paciente.NombreCorto,
                     FechaCarga = d.FechaCarga,

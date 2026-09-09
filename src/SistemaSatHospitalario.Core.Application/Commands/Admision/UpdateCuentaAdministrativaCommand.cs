@@ -60,7 +60,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 Guid pacienteAnteriorId = cuenta.PacienteId;
                 string? pacienteAnteriorNombre = (await _context.PacientesAdmision.AsNoTracking().FirstOrDefaultAsync(p => p.Id == pacienteAnteriorId, cancellationToken))?.NombreCompleto;
                 
-                string tipoIngresoAnterior = cuenta.TipoIngreso;
+                string tipoIngresoAnterior = cuenta.TipoIngresoNav.Nombre;
                 int? convenioAnteriorId = cuenta.ConvenioId;
                 string? convenioAnteriorNombre = convenioAnteriorId.HasValue 
                     ? (await _context.SegurosConvenios.AsNoTracking().FirstOrDefaultAsync(c => c.Id == convenioAnteriorId.Value, cancellationToken))?.Nombre 
@@ -283,7 +283,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 await _context.SaveChangesAsync(cancellationToken);
 
                 // --- CAPTURAR ESTADO NUEVO Y AGREGAR LOG DE AUDITORÍA ---
-                string tipoIngresoNuevo = cuenta.TipoIngreso;
+                string tipoIngresoNuevo = cuenta.TipoIngresoNav.Nombre;
                 int? convenioNuevoIdVal = cuenta.ConvenioId;
                 string? convenioNuevoNombreVal = "PARTICULAR";
 

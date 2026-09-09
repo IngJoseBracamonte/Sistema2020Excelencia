@@ -20,7 +20,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public async Task<RegistrarCambioCamaResult> Handle(RegistrarCambioCamaCommand request, CancellationToken cancellationToken)
         {
             var cuenta = await _context.CuentasServicios
-                .FirstOrDefaultAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoConstants.Abierta, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoCuentaConstants.AbiertaId, cancellationToken);
 
             if (cuenta == null)
             {

@@ -445,6 +445,7 @@ blob-report/
 
 # Database E2E Tests & Temporary Test DBs (Ignored)
 e2e-db-tests/
+DatabaseTestConfiguration.cs
 playwright-db.config.ts
 *.db
 *.db-journal

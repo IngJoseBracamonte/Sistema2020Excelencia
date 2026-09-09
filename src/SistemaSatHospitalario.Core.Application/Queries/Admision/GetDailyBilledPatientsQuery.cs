@@ -45,7 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             // Cargamos cuentas primero (Sin el JOIN para evitar exclusiones si hay huérfanos)
             var billedAccounts = await _context.CuentasServicios
                 .AsNoTracking()
-                .Where(c => c.EstadoId == EstadoConstants.Facturada && 
+                .Where(c => c.EstadoId == EstadoCuentaConstants.FacturadaId && 
                             c.FechaCierre != null &&
                             c.FechaCierre >= startRange && 
                             c.FechaCierre <= endRange)

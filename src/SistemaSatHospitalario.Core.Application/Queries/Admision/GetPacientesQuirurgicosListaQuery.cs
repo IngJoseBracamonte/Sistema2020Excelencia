@@ -174,7 +174,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     },
                     IngresoCobertura = new TipoIngresoCoberturaDto
                     {
-                        Tipo = o.CuentaServicio?.TipoIngreso ?? "Hospitalizacion",
+                        Tipo = o.CuentaServicio?.TipoIngresoNav.Nombre ?? "Hospitalizacion",
                         ConvenioId = convenioId,
                         ConvenioNombre = o.CuentaServicio?.Convenio?.Nombre,
                         EsAsegurado = tieneConvenio

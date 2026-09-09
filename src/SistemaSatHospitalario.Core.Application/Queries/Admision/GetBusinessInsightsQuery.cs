@@ -63,7 +63,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Pacientes Atendidos -> Refactor: Mostramos INGRESOS de hoy para reflejar actividad real
                 response.PacientesAtendidosHoy = await _context.CuentasServicios
                     .AsNoTracking()
-                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
+                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoCuentaConstants.AnuladaId)
                     .CountAsync(cancellationToken);
                 
                 _logger.LogInformation("[INSIGHTS] Pacientes Atendidos Hoy: {Count}", response.PacientesAtendidosHoy);
@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Ventas por Especialidad (Top 5 hoy)
                 var specialtyDetails = await _context.CuentasServicios
                     .AsNoTracking()
-                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
+                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoCuentaConstants.AnuladaId)
                     .SelectMany(c => c.Detalles)
                     .Select(d => new { d.TipoServicioNav.Nombre, d.Precio, d.Cantidad })
                     .ToListAsync(cancellationToken);
@@ -124,7 +124,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         .AsNoTracking()
                         .Include(c => c.Convenio)
                         .Include(c => c.Detalles)
-                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoCuentaConstants.AnuladaId)
                         .Select(c => new
                         {
                             SeguroNombre = c.Convenio != null ? c.Convenio.Nombre : null,
@@ -155,7 +155,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     var totalOrdenesHoy = await _context.CuentasServicios
                         .AsNoTracking()
-                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoCuentaConstants.AnuladaId)
                         .CountAsync(cancellationToken);
 
                     if (totalOrdenesHoy == 0)
@@ -230,7 +230,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // 4. Desglose Multidimensional por Servicio (Laboratorio, Rayos X, Tomografía, Cirugías)
                 try
                 {
-                    var labCount = response.TotalVentasHoy > 0 ? await _context.CuentasServicios.AsNoTracking().Where(c => c.TipoIngreso == "Laboratorio").CountAsync(cancellationToken) : 0;
+                    var labCount = response.TotalVentasHoy > 0 ? await _context.CuentasServicios.AsNoTracking().Where(c => c.TipoIngresoNav.Nombre == "Laboratorio").CountAsync(cancellationToken) : 0;
                     var rxCount = response.TotalOrdenesRxHoy;
                     var tomoCount = await _context.OrdenesImagenes.AsNoTracking().Where(o => o.FechaCreacion >= todayUtc && o.FechaCreacion < tomorrowUtc).CountAsync(cancellationToken);
                     var cirugiaCount = await _context.OrdenesCirugia.AsNoTracking().Where(o => o.FechaCreacion >= todayUtc && o.FechaCreacion < tomorrowUtc).CountAsync(cancellationToken);
@@ -249,9 +249,9 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     // 5. Desglose Multidimensional por Origen
                     var particularCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.ConvenioId == null).CountAsync(cancellationToken);
                     var seguroCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.ConvenioId != null).CountAsync(cancellationToken);
-                    var emergenciaCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.TipoIngreso == "Emergencia").CountAsync(cancellationToken);
-                    var hospCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.TipoIngreso == "Hospitalizacion").CountAsync(cancellationToken);
-                    var uciCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.TipoIngreso == "UCI").CountAsync(cancellationToken);
+                    var emergenciaCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.TipoIngresoNav.Nombre == "Emergencia").CountAsync(cancellationToken);
+                    var hospCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.TipoIngresoNav.Nombre == "Hospitalizacion").CountAsync(cancellationToken);
+                    var uciCount = await _context.CuentasServicios.AsNoTracking().Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.TipoIngresoNav.Nombre == "UCI").CountAsync(cancellationToken);
                     var quirofanoCount = cirugiaCount;
 
                     var totalOrigen = particularCount + seguroCount + emergenciaCount + hospCount + uciCount + quirofanoCount;
@@ -352,7 +352,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     // Alert 1: Cuentas sin procesar de hoy (Potential Revenue Leak)
                     var unprocessedAccounts = await _context.CuentasServicios
                         .AsNoTracking()
-                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId == "Procesando")
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc)
                         .CountAsync(cancellationToken);
 
                     if (unprocessedAccounts > 0)

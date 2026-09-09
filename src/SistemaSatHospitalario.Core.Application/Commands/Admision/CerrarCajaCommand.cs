@@ -82,7 +82,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 // Calcular esperados del sistema
                 // Ingreso esperado (pagos positivos)
-                var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
+                var pagosMetodo = allPayments.Where(p => p.MetodoPagoNav.Nombre == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
                 decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
                 decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
 
@@ -91,7 +91,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 decimal esperadoVueltosBase = 0;
                 if (!string.IsNullOrEmpty(vueltoMetodoValor))
                 {
-                    var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
+                    var vueltosMetodo = allPayments.Where(p => p.MetodoPagoNav.Nombre == vueltoMetodoValor).ToList();
                     esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
                     esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
                 }
@@ -165,7 +165,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 TotalVueltoUSD = totalDeclaradoVueltosBaseUSD,
                 TotalIngresosBS = totalDeclaradoIngresosBS,
                 ConteoVentas = recibos.Count,
-                Usuario = await _userResolver.ResolveDisplayNameAsync(cajaAbierta.UsuarioIdentityId, "Sistema", cancellationToken),
+                Usuario = await _userResolver.ResolveUserIdAsync(cajaAbierta.UsuarioIdentityId,cancellationToken),
                 FechaCierre = DateTime.UtcNow
             };
         }

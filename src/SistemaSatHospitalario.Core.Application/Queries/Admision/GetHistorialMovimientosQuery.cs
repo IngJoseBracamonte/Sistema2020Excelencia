@@ -92,7 +92,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     m.TipoMovimiento,
                     m.CantidadBase,
                     m.CantidadOriginal,
-                    m.UnidadMedidaOriginal,
                     m.UsuarioIdentityId,
                     m.Fecha,
                     m.Motivo
@@ -117,7 +116,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 TipoMovimiento = m.TipoMovimiento.ToString(),
                 CantidadBase = m.CantidadBase,
                 CantidadOriginal = m.CantidadOriginal,
-                UnidadMedidaOriginal = m.UnidadMedidaOriginal.ToString(),
                 Usuario = m.UsuarioIdentityId.HasValue && userMap.TryGetValue(m.UsuarioIdentityId.Value, out var nombre) ? nombre : "Sistema",
                 Fecha = m.Fecha,
                 Motivo = m.Motivo ?? ""

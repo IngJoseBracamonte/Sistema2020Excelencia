@@ -102,7 +102,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                          Descripcion = d.Descripcion,
                                          FechaCarga = d.FechaCarga,
                                          Realizado = d.Realizado,
-                                         TipoSeguro = c.TipoIngreso
+                                         TipoSeguro = c.TipoIngresoNav.Nombre
                                      }).ToListAsync(ct);
                 response.Estudios.AddRange(rxItems);
             }
@@ -120,7 +120,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                          Descripcion = d.Descripcion,
                                          FechaCarga = d.FechaCarga,
                                          Realizado = d.Realizado,
-                                         TipoSeguro = c.TipoIngreso
+                                         TipoSeguro = c.TipoIngresoNav.Nombre
                                      }).ToListAsync(ct);
                 response.Estudios.AddRange(tomoItems);
             }

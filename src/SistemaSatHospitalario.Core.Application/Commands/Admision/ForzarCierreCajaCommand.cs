@@ -70,7 +70,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 else if (metodo.Valor == "Pago Movil") vueltoMetodoValor = "Vuelto Pago Movil";
 
                 // Calcular esperados del sistema
-                var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
+                var pagosMetodo = allPayments.Where(p => p.MetodoPagoNav.Nombre == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
                 decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
                 decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
 
@@ -78,7 +78,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 decimal esperadoVueltosBase = 0;
                 if (!string.IsNullOrEmpty(vueltoMetodoValor))
                 {
-                    var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
+                    var vueltosMetodo = allPayments.Where(p => p.MetodoPagoNav.Nombre == vueltoMetodoValor).ToList();
                     esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
                     esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
                 }

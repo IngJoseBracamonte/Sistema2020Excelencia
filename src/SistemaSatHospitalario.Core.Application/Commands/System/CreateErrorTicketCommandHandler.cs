@@ -27,7 +27,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.System
                 MetodoHTTP = request.MetodoHTTP,
                 MensajeExcepcion = request.MensajeExcepcion,
                 StackTrace = request.StackTrace,
-                UsuarioAsociado = request.UsuarioAsociado,
                 FechaCreacion = DateTime.UtcNow,
                 Resuelto = false
             };
