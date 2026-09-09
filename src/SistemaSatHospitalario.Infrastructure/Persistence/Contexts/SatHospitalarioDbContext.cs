@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Common;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Common;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-
-using SistemaSatHospitalario.Core.Domain.Common;
-using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Enums;
+using System.Reflection.Emit;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 {
@@ -144,6 +144,25 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
+            // DIAGNÓSTICO TEMPORAL
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    var type = property.ClrType;
+
+                    if (type != null &&
+                        type != typeof(string) &&
+                        type != typeof(byte[]) &&
+                        typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                    {
+                        Console.WriteLine(
+                            $"🚨 COLECCIÓN MAPEADA COMO PROPERTY: " +
+                            $"{entityType.ClrType?.FullName}.{property.Name} " +
+                            $"=> {type.FullName}");
+                    }
+                }
+            }
             base.OnModelCreating(builder);
 
             // MySQL no soporta esquemas, se ignora para compatibilidad multi-proveedor
