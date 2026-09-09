@@ -18,19 +18,19 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected ServicioInsumoReceta() { }
 
-        public ServicioInsumoReceta(Guid servicioClinicoId, Guid insumoId, decimal cantidad, UnidadMedida unidadMedidaConsumo)
+        public ServicioInsumoReceta(Guid servicioClinicoId, Guid insumoId, decimal cantidad, UnidadMedidaEnum unidadMedidaConsumo)
         {
             Id = Guid.NewGuid();
             ServicioClinicoId = servicioClinicoId;
             InsumoId = insumoId;
             Cantidad = cantidad;
-            UnidadMedidaConsumoId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaConsumo);
+            UnidadMedidaConsumoId = (int)unidadMedidaConsumo;
         }
 
-        public void ActualizarReceta(decimal cantidad, UnidadMedida unidadMedidaConsumo)
+        public void ActualizarReceta(decimal cantidad, UnidadMedidaEnum unidadMedidaConsumo)
         {
             Cantidad = cantidad;
-            UnidadMedidaConsumoId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaConsumo);
+            UnidadMedidaConsumoId = (int)unidadMedidaConsumo;
         }
     }
 }

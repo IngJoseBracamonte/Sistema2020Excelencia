@@ -93,7 +93,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var rxItems = await (from d in _context.DetallesServicioCuenta
                                      join s in _context.ServiciosClinicos on d.ServicioId equals s.Id
                                      join c in _context.CuentasServicios on d.CuentaServicioId equals c.Id
-                                     where s.Category == ServiceCategory.Radiology 
+                                     where s.Category == ServiceCategoryConstants.Radiology 
                                         && d.FechaCarga >= targetDate && d.FechaCarga < nextDate
                                      select new ServiceValidationDto
                                      {
@@ -111,7 +111,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var tomoItems = await (from d in _context.DetallesServicioCuenta
                                      join s in _context.ServiciosClinicos on d.ServicioId equals s.Id
                                      join c in _context.CuentasServicios on d.CuentaServicioId equals c.Id
-                                     where s.Category == ServiceCategory.Tomography
+                                     where s.Category == ServiceCategoryConstants.Tomography
                                         && d.FechaCarga >= targetDate && d.FechaCarga < nextDate
                                      select new ServiceValidationDto
                                      {

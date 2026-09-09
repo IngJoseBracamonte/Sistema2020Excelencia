@@ -158,14 +158,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
                 foreach (var ins in dto.Insumos)
                 {
-                    Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida>(ins.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
+                    Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants>(ins.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
                     var receta = new ServicioInsumoReceta(servicio.Id, ins.InsumoId, ins.Cantidad, uom);
                     context.ServiciosInsumoRecetas.Add(receta);
                 }
             }
             else if (dto.InsumoId != Guid.Empty)
             {
-                Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida>(dto.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
+                Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants>(dto.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
                 var receta = new ServicioInsumoReceta(servicio.Id, dto.InsumoId, dto.Cantidad, uom);
                 context.ServiciosInsumoRecetas.Add(receta);
             }

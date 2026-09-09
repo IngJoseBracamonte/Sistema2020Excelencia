@@ -161,7 +161,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Tipo = editorType,
                     TipoServicioId = TipoServicioConstants.Insumo,
                     EditorType = editorType,
-                    CategoryId = (int)ServiceCategory.Insumo,
+                    CategoryId = (int)ServiceCategoryConstants.Insumo,
                     EsLegacy = false,
                     Activo = true,
                     PrecioUsd = insumo.CostoUnitarioBaseUSD > 0 ? insumo.CostoUnitarioBaseUSD : 1.00m,
@@ -230,7 +230,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Descripcion = p.Descripcion,
                     Tipo = "LABORATORIO",
                     EditorType = "LABORATORIO",
-                    CategoryId = (int)ServiceCategory.Laboratory,
+                    CategoryId = (int)ServiceCategoryConstants.Laboratory,
                     EsLegacy = true,
                     Activo = true,
                     PrecioUsd = finalUsd

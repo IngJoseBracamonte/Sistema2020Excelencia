@@ -1,6 +1,6 @@
 namespace SistemaSatHospitalario.Core.Domain.Enums
 {
-    public enum ServiceCategory
+    public enum ServiceCategoryConstants
     {
         Other = 0,
         Consultation = 1,

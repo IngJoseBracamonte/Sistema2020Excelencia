@@ -85,7 +85,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     SeedConstants.SedeId_Principal,
                     TipoMovimientoInsumo.Devolucion,
                     cantidadADevolver,
-                    (UnidadMedida)kitAsignacion.Insumo.UnidadMedidaId,
+                    (UnidadMedidaEnum)kitAsignacion.Insumo.UnidadMedidaId,
                     cantidadADevolver,
                     request.UsuarioId,
                     $"Devolución masiva de Quirófano a Sede Principal (Orden: {request.OrdenCirugiaId})");

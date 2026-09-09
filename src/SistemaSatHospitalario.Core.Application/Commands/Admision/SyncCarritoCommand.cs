@@ -174,8 +174,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                             var baseService = await _context.ServiciosClinicos.AsNoTracking().FirstOrDefaultAsync(s => s.Id == svcId, ct);
                             if (baseService != null)
                             {
-                                bool itemEsConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation;
-                                bool itemEsLab = EstadoConstants.EsLaboratorio(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory;
+                                bool itemEsConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Consultation;
+                                bool itemEsLab = EstadoConstants.EsLaboratorio(item.TipoServicio) || baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Laboratory;
 
                                 decimal basePrice = baseService.PrecioBase;
                                 if (request.ConvenioId.HasValue)
@@ -271,7 +271,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     }
 
                     bool esLab = EstadoConstants.EsLaboratorio(item.TipoServicio);
-                    bool esConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation);
+                    bool esConsulta = EstadoConstants.EsConsulta(item.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Consultation);
 
                     if (esConsulta)
                     {

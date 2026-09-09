@@ -122,7 +122,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 foreach (var r in request.RecetaInsumos)
                 {
-                    if (Enum.TryParse<UnidadMedida>(r.UnidadMedidaConsumo, true, out var uom))
+                    if (Enum.TryParse<UnidadMedidaEnum>(r.UnidadMedidaConsumo, true, out var uom))
                     {
                         var receta = new ServicioInsumoReceta(item.Id, r.InsumoId, r.Cantidad, uom);
                         _context.ServiciosInsumoRecetas.Add(receta);

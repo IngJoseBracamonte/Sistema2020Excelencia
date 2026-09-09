@@ -89,7 +89,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         SeedConstants.SedeId_Principal,
                         TipoMovimientoInsumo.TransferenciaSalida,
                         request.Cantidad,
-                        (UnidadMedida)insumo.UnidadMedidaId,
+                        (UnidadMedidaEnum)insumo.UnidadMedidaId,
                         -request.Cantidad,
                         request.UsuarioId,
                         $"Consumo extra en Quirófano (Orden: {request.OrdenCirugiaId})");

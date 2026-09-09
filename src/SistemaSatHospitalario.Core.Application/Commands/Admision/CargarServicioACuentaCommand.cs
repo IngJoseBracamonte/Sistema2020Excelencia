@@ -128,7 +128,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             var tipoServicioEfectivo = ResolveTipoServicioEfectivo(baseService, request.TipoServicio);
             bool esConsulta = baseService?.TipoServicioId == TipoServicioConstants.Medico
-                              || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation
+                              || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Consultation
                               || EstadoConstants.EsConsulta(tipoServicioEfectivo);
 
             await ValidarPrecioYClaveSupervisorAsync(request, baseService, esConsulta, cancellationToken);
@@ -139,10 +139,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
             bool esLab = baseService?.TipoServicioId == TipoServicioConstants.Laboratorio
-                         || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory
+                         || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Laboratory
                          || EstadoConstants.EsLaboratorio(tipoServicioEfectivo);
             bool esRx = baseService?.TipoServicioId is TipoServicioConstants.RX or TipoServicioConstants.Tomo
-                        || baseService?.Category is SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology or SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Tomography
+                        || baseService?.Category is SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Radiology or SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Tomography
                         || tipoServicioEfectivo == EstadoConstants.RX
                         || tipoServicioEfectivo == EstadoConstants.TOMO;
 
@@ -355,7 +355,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             if (request.IsPrivilegedUser || baseService == null) return;
 
-            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory);
+            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Laboratory);
 
             decimal basePrice = baseService.PrecioBase;
             if (request.ConvenioId.HasValue)

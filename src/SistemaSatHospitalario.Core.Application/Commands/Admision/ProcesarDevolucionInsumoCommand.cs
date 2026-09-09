@@ -75,7 +75,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 targetSedeId,
                 TipoMovimientoInsumo.Ingreso,
                 request.CantidadDevuelta,
-                (UnidadMedida)insumo?.UnidadMedidaId,
+                (UnidadMedidaEnum)insumo?.UnidadMedidaId,
                 request.CantidadDevuelta,
                 usuario,
                 $"Devolución de sobrante de cirugía (Cuenta: {request.CuentaServicioId})"

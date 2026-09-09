@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -94,7 +95,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 foreach (var r in recetaItems)
                 {
-                    if (Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedida>(r.UnidadMedidaConsumo, true, out var uom))
+                    if (Enum.TryParse<UnidadMedidaEnum>(r.UnidadMedidaConsumo, true, out var uom))
                     {
                         var receta = new ServicioInsumoReceta(item.Id, r.InsumoId, r.Cantidad, uom);
                         _context.ServiciosInsumoRecetas.Add(receta);

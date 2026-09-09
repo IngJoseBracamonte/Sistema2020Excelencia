@@ -86,7 +86,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 sedePrincipalId,
                 TipoMovimientoInsumo.EnvioInterno,
                 request.Cantidad,
-                (UnidadMedida)insumo.UnidadMedidaId,
+                (UnidadMedidaEnum)insumo.UnidadMedidaId,
                 request.Cantidad,
                 request.Usuario,
                 motivoDetallado

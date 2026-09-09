@@ -1,4 +1,3 @@
-using System;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Enums;
 

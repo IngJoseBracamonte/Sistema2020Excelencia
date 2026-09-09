@@ -168,14 +168,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .Include(p => p.Detalles)
                 .FirstOrDefaultAsync(p => p.Observaciones != null && p.Observaciones.Contains(tag), cancellationToken);
 
-            if (pedidoAsociado != null && pedidoAsociado.Estado == EstadoPedidoInterSede.Solicitado)
+            if (pedidoAsociado != null && pedidoAsociado.Estado == EstadoPedidoInterSedeConstants.Solicitado)
             {
                 foreach (var det in pedidoAsociado.Detalles)
                 {
                     det.SetDespachado(det.CantidadSolicitada);
                     det.SetRecibido(det.CantidadSolicitada);
                 }
-                pedidoAsociado.CambiarEstado(EstadoPedidoInterSede.Recibido);
+                pedidoAsociado.CambiarEstado(EstadoPedidoInterSedeConstants.Recibido);
             }
 
             var log = new CirugiaLog(solicitud.OrdenCirugiaId, usuario, CirugiaEventoConstants.DespachoInsumos,

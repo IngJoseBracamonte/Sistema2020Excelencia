@@ -1,4 +1,5 @@
 using System;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -11,33 +12,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public TipoMovimientoInsumo TipoMovimiento { get; private set; }
         public decimal CantidadBase { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): unidad de medida como enum persistido en varchar(20).
-        /// Fuente de verdad: <see cref="UnidadMedidaOriginalId"/> (FK a UnidadesMedida).
-        /// Alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Usar UnidadMedidaOriginalId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
-        public UnidadMedida UnidadMedidaOriginal { get; private set; }
-
-        /// <summary>FK al catálogo UnidadesMedida (3FN).</summary>
         public int UnidadMedidaOriginalId { get; private set; }
 
         /// <summary>Navegación al catálogo de unidades de medida.</summary>
         public virtual UnidadMedidaCatalogo UnidadMedidaNav { get; private set; } = null!;
         public decimal CantidadOriginal { get; private set; }
-
-        /// <summary>
-        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
-        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
-        public string Usuario { get; private set; }
-
-        /// <summary>
-        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
-        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
         public string? UsuarioId { get; private set; }
 
         /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que registró el movimiento.</summary>
@@ -50,21 +29,21 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected MovimientoInsumo() { }
 
-        public MovimientoInsumo(Guid insumoId, Guid sedeId, TipoMovimientoInsumo tipoMovimiento, decimal cantidadBase, UnidadMedida unidadMedidaOriginal, decimal cantidadOriginal, string motivo, string? usuarioId = null)
+        public MovimientoInsumo(Guid insumoId, Guid sedeId, TipoMovimientoInsumo tipoMovimiento, decimal cantidadBase, UnidadMedidaEnum unidadMedidaOriginal, decimal cantidadOriginal, string motivo, string? usuarioId = null)
         {
             Id = Guid.NewGuid();
             InsumoId = insumoId;
             SedeId = sedeId;
             TipoMovimiento = tipoMovimiento;
             CantidadBase = cantidadBase;
-            UnidadMedidaOriginalId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaOriginal);
+            UnidadMedidaOriginalId = UnidadMedidaConstants.FromEnum(unidadMedidaOriginal);
             CantidadOriginal = cantidadOriginal;
             UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
             Fecha = DateTime.UtcNow;
             Motivo = motivo ?? string.Empty;
         }
 
-        public MovimientoInsumo(Guid insumoId, Guid sedeId, string tipoMovimiento, decimal cantidadBase, UnidadMedida unidadMedidaOriginal, decimal cantidadOriginal, string motivo, string? usuarioId = null)
+        public MovimientoInsumo(Guid insumoId, Guid sedeId, string tipoMovimiento, decimal cantidadBase, UnidadMedidaEnum unidadMedidaOriginal, decimal cantidadOriginal, string motivo, string? usuarioId = null)
             : this(insumoId, sedeId, ParseTipoMovimiento(tipoMovimiento), cantidadBase, unidadMedidaOriginal, cantidadOriginal, motivo, usuarioId)
         {
         }

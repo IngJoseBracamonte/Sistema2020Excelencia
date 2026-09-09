@@ -86,7 +86,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(p => p.SedeProveedora)
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Insumo)
-                .Where(p => p.Estado == EstadoPedidoInterSede.Solicitado || p.Estado == EstadoPedidoInterSede.Aprobado)
+                .Where(p => p.Estado == EstadoPedidoInterSedeConstants.Solicitado || p.Estado == EstadoPedidoInterSedeConstants.Aprobado)
                 .OrderByDescending(p => p.FechaCreacion);
 
             var items = await query.ToListAsync(cancellationToken);

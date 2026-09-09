@@ -86,7 +86,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 targetSedeId,
                 TipoMovimientoInsumo.Devolucion,
                 request.CantidadRestar,
-                (UnidadMedida)kitAsignacion.Insumo.UnidadMedidaId,
+                (UnidadMedidaEnum)kitAsignacion.Insumo.UnidadMedidaId,
                 request.CantidadRestar,
                 request.Usuario,
                 $"Retorno/Devolución de Quirófano a stock (Cuenta ID: {request.CuentaId})"

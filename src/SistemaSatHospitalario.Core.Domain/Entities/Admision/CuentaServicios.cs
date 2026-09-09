@@ -94,6 +94,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaCarga = DateTime.UtcNow;
             EstadoId = EstadoCuentaConstants.AbiertaId;
             TipoIngresoId = TipoIngresoConstants.FromLegacyString(tipoIngreso);
+#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
+            TipoIngreso = TipoIngresoConstants.ToLegacyString(TipoIngresoId);
+#pragma warning restore CS0618
             ConvenioId = convenioId;
             AreaClinicaId = areaClinicaId;
             SubAreaClinica = subAreaClinica;

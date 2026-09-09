@@ -30,7 +30,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
         {
             return EstadoConstants.EsConsulta(tipoServicio) || 
-                   (baseService != null && baseService.Category == ServiceCategory.Consultation);
+                   (baseService != null && baseService.Category == ServiceCategoryConstants.Consultation);
         }
 
         public async Task ExecuteAsync(

@@ -66,7 +66,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         directInsumo.Id,
                         directInsumo.Id,
                         1m,
-                        (UnidadMedida)directInsumo.UnidadMedidaId
+                        (UnidadMedidaEnum)directInsumo.UnidadMedidaId
                     )
                     {
                         Insumo = directInsumo
@@ -120,7 +120,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     {
                         if (recipe.Insumo == null) continue;
 
-                        decimal conversionFactor = GetConversionFactor((UnidadMedida)recipe.UnidadMedidaConsumoId, UnidadMedidaConstants.ToEnum(recipe.Insumo.UnidadMedidaId));
+                        decimal conversionFactor = GetConversionFactor((UnidadMedidaEnum)recipe.UnidadMedidaConsumoId, (UnidadMedidaEnum)recipe.Insumo.UnidadMedidaId);
                         decimal qtyBaseNeeded = recipe.Cantidad * conversionFactor * cantidadServicio;
 
                         Guid stockDeductionSedeId = targetSedeId ?? SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
@@ -156,7 +156,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                             targetSedeId.Value,
                             TipoMovimientoInsumo.Consumo,
                             -qtyBaseNeeded,
-                            (UnidadMedida)recipe.UnidadMedidaConsumoId,
+                            (UnidadMedidaEnum)recipe.UnidadMedidaConsumoId,
                             recipe.Cantidad * cantidadServicio,
                             $"Consumo automático por facturación de servicio {serviceDescripcion} (Cuenta ID: {cuentaId})"
                         );
@@ -201,7 +201,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid sedeId,
             string tipoMovimiento,
             decimal cantidadOriginal,
-            UnidadMedida unidadMedidaOriginal,
+            UnidadMedidaEnum unidadMedidaOriginal,
             string usuario,
             string motivo,
             CancellationToken cancellationToken)
@@ -212,7 +212,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new KeyNotFoundException($"No se encontró el insumo con ID {insumoId}");
             }
 
-            decimal conversionFactor = GetConversionFactor(unidadMedidaOriginal, UnidadMedidaConstants.ToEnum(insumo.UnidadMedidaId));
+            decimal conversionFactor = GetConversionFactor(unidadMedidaOriginal, Domain.Constants.UnidadMedidaConstants.ToEnum(insumo.UnidadMedidaId));
             decimal qtyBase = cantidadOriginal * conversionFactor;
 
             if (tipoMovimiento.Equals("Descarte", StringComparison.OrdinalIgnoreCase))
@@ -295,7 +295,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 targetSedeId,
                 TipoMovimientoInsumo.Descarte,
                 -cantidad,
-                (UnidadMedida)insumo.UnidadMedidaId,
+                (UnidadMedidaEnum)insumo.UnidadMedidaId,
                 cantidad,
                 usuario,
                 motivo.Trim()
@@ -348,10 +348,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     sedeId,
                    TipoMovimientoInsumo.AjusteCierre,
                     variance,
-                    (UnidadMedida)insumo.UnidadMedidaId,
+                    (UnidadMedidaEnum)insumo.UnidadMedidaId,
                     variance,
                     usuario,
-                    $"Ajuste automático por cierre de inventario en Sede {sedeId}. Diferencia (Fisico - Teorico) = {variance} {(UnidadMedida)insumo.UnidadMedidaId}."
+                    $"Ajuste automático por cierre de inventario en Sede {sedeId}. Diferencia (Fisico - Teorico) = {variance} {(UnidadMedidaEnum)insumo.UnidadMedidaId}."
                 );
                 _context.MovimientosInsumo.Add(adjustmentMov);
             }
@@ -383,7 +383,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         throw new KeyNotFoundException($"No se encontró el pedido inter-sede con ID {pedidoId}");
                     }
 
-                    if (pedido.Estado != EstadoPedidoInterSede.Solicitado)
+                    if (pedido.Estado != EstadoPedidoInterSedeConstants.Solicitado)
                     {
                         throw new InvalidOperationException("El pedido no está en un estado que permita despacho.");
                     }
@@ -460,7 +460,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                 pedido.SedeProveedoraId,
                                 TipoMovimientoInsumo.TransferenciaSalida,
                                 -cantidadADespachar,
-                                (UnidadMedida)detalle.Insumo.UnidadMedidaId,
+                                (UnidadMedidaEnum)detalle.Insumo.UnidadMedidaId,
                                 cantidadADespachar,
                                 usuario,
                                 motivoSalidaTxt
@@ -487,7 +487,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                     pedido.SedeSolicitanteId,
                                     TipoMovimientoInsumo.TransferenciaEntrada,
                                     cantidadADespachar,
-                                    (UnidadMedida)detalle.Insumo.UnidadMedidaId,
+                                    (UnidadMedidaEnum)detalle.Insumo.UnidadMedidaId,
                                     cantidadADespachar,
                                     usuario,
                                     $"Recepción por despacho de pedido inter-sede {pedido.Correlativo}"
@@ -528,7 +528,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                         }
                     }
 
-                    pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
+                    pedido.CambiarEstado(EstadoPedidoInterSedeConstants.Recibido);
 
                     await _context.SaveChangesAsync(cancellationToken);
                     break;
@@ -561,12 +561,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new KeyNotFoundException($"No se encontró el pedido inter-sede con ID {pedidoId}");
             }
 
-            if (pedido.Estado != EstadoPedidoInterSede.Solicitado)
+            if (pedido.Estado != EstadoPedidoInterSedeConstants.Solicitado)
             {
                 throw new InvalidOperationException("Solo se pueden rechazar pedidos que se encuentren en estado Solicitado.");
             }
 
-            pedido.CambiarEstado(EstadoPedidoInterSede.Rechazado);
+            pedido.CambiarEstado(EstadoPedidoInterSedeConstants.Rechazado);
             pedido.SetObservaciones($"{pedido.Observaciones} | [RECHAZADO por {usuario}: {motivo}]".Trim());
 
             // Si es pedido quirúrgico ad-hoc, sincronizar rechazo en SolicitudInsumoCirugia
@@ -619,7 +619,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 throw new KeyNotFoundException($"No se encontró el pedido inter-sede con ID {pedidoId}");
             }
 
-            if (pedido.Estado != EstadoPedidoInterSede.Despachado)
+            if (pedido.Estado != EstadoPedidoInterSedeConstants.Despachado)
             {
                 throw new InvalidOperationException("El pedido no está en un estado que permita recepción.");
             }
@@ -649,7 +649,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     pedido.SedeSolicitanteId,
                     TipoMovimientoInsumo.TransferenciaEntrada,
                     cantidadRecibida,
-                    (UnidadMedida)detalle.Insumo.UnidadMedidaId,
+                    (UnidadMedidaEnum)detalle.Insumo.UnidadMedidaId,
                     cantidadRecibida,
                     usuario,
                     $"Recepción de pedido inter-sede {pedido.Correlativo}"
@@ -657,37 +657,37 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 _context.MovimientosInsumo.Add(movimiento);
             }
 
-            pedido.CambiarEstado(EstadoPedidoInterSede.Recibido);
+            pedido.CambiarEstado(EstadoPedidoInterSedeConstants.Recibido);
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public static decimal GetConversionFactor(UnidadMedida origen, UnidadMedida destino)
+        public static decimal GetConversionFactor(UnidadMedidaEnum origen, UnidadMedidaEnum destino)
         {
             if (origen == destino) return 1.0m;
 
-            if (origen == UnidadMedida.L && destino == UnidadMedida.ML) return 1000m;
-            if (origen == UnidadMedida.ML && destino == UnidadMedida.L) return 0.001m;
+            if (origen == UnidadMedidaEnum.L && destino == UnidadMedidaEnum.ML) return 1000m;
+            if (origen == UnidadMedidaEnum.ML && destino == UnidadMedidaEnum.L) return 0.001m;
 
             decimal origenEnGramos = origen switch
             {
-                UnidadMedida.KG => 1000m,
-                UnidadMedida.G => 1m,
-                UnidadMedida.DG => 0.1m,
-                UnidadMedida.MG => 0.001m,
+                UnidadMedidaEnum.KG => 1000m,
+                UnidadMedidaEnum.G => 1m,
+                UnidadMedidaEnum.DG => 0.1m,
+                UnidadMedidaEnum.MG => 0.001m,
                 _ => 1m
             };
 
             decimal gramosADestino = destino switch
             {
-                UnidadMedida.KG => 0.001m,
-                UnidadMedida.G => 1m,
-                UnidadMedida.DG => 10m,
-                UnidadMedida.MG => 1000m,
+                UnidadMedidaEnum.KG => 0.001m,
+                UnidadMedidaEnum.G => 1m,
+                UnidadMedidaEnum.DG => 10m,
+                UnidadMedidaEnum.MG => 1000m,
                 _ => 1m
             };
 
-            bool esMasaOrigen = origen == UnidadMedida.KG || origen == UnidadMedida.G || origen == UnidadMedida.DG || origen == UnidadMedida.MG;
-            bool esMasaDestino = destino == UnidadMedida.KG || destino == UnidadMedida.G || destino == UnidadMedida.DG || destino == UnidadMedida.MG;
+            bool esMasaOrigen = origen == UnidadMedidaEnum.KG || origen == UnidadMedidaEnum.G || origen == UnidadMedidaEnum.DG || origen == UnidadMedidaEnum.MG;
+            bool esMasaDestino = destino == UnidadMedidaEnum.KG || destino == UnidadMedidaEnum.G || destino == UnidadMedidaEnum.DG || destino == UnidadMedidaEnum.MG;
 
             if (esMasaOrigen && esMasaDestino)
             {

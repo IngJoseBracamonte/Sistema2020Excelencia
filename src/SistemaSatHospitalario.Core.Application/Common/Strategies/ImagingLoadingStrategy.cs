@@ -30,8 +30,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
         {
-            return (baseService != null && (baseService.Category == ServiceCategory.Radiology || 
-                                            baseService.Category == ServiceCategory.Tomography || 
+            return (baseService != null && (baseService.Category == ServiceCategoryConstants.Radiology || 
+                                            baseService.Category == ServiceCategoryConstants.Tomography || 
                                             baseService.TipoServicioId == TipoServicioConstants.RayosX || 
                                             baseService.TipoServicioId == TipoServicioConstants.Tomografia)) || 
                    tipoServicio == TipoServicioConstants.RayosXString || 

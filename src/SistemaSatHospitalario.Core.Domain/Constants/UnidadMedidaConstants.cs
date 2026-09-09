@@ -1,3 +1,4 @@
+using SistemaSatHospitalario.Core.Domain.Enums;
 namespace SistemaSatHospitalario.Core.Domain.Constants
 {
     /// <summary>
@@ -15,10 +16,10 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
         public const int MililitroId = 7;
 
         /// <summary>Mapea el enum legacy al ID del catálogo.</summary>
-        public static int FromEnum(Enums.UnidadMedida unidad) => (int)unidad;
+        public static int FromEnum(Enums.UnidadMedidaEnum unidad) => (int)unidad;
 
         /// <summary>Mapea el ID del catálogo al enum legacy.</summary>
-        public static Enums.UnidadMedida ToEnum(int unidadId) => (Enums.UnidadMedida)unidadId;
+        public static Enums.UnidadMedidaEnum ToEnum(int unidadId) => (Enums.UnidadMedidaEnum)unidadId;
 
         /// <summary>Mapea el código de texto (varchar legacy) al ID del catálogo.</summary>
         public static int FromCodigo(string? codigo) => codigo?.Trim().ToUpperInvariant() switch

@@ -6,6 +6,7 @@ using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 
 using SistemaSatHospitalario.Core.Domain.Common;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 {
@@ -547,10 +548,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(e => e.Codigo).IsUnique();
 
                 entity.HasData(
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.PendienteId, "PENDIENTE", "Pendiente"),
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.ConfirmadaId, "CONFIRMADA", "Confirmada"),
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.AtendidaId, "ATENDIDA", "Atendida"),
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.CanceladaId, "CANCELADA", "Cancelada")
+                    new EstadoCitaMedica(EstadoCitaConstants.PendienteId, "PENDIENTE", "Pendiente"),
+                    new EstadoCitaMedica(EstadoCitaConstants.ConfirmadaId, "CONFIRMADA", "Confirmada"),
+                    new EstadoCitaMedica(EstadoCitaConstants.AtendidaId, "ATENDIDA", "Atendida"),
+                    new EstadoCitaMedica(EstadoCitaConstants.CanceladaId, "CANCELADA", "Cancelada")
                 );
             });
 
@@ -1153,40 +1154,114 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 );
             });
 
-            builder.Entity<AreaClinica>(entity =>
-            {
-                entity.ToTable("AreasClinicas");
-                entity.HasKey(a => a.Id);
-                entity.Property(a => a.Codigo).IsRequired().HasMaxLength(50);
-                entity.Property(a => a.Nombre).IsRequired().HasMaxLength(150);
-                entity.Property(a => a.Estado).IsRequired();
-                entity.Property(a => a.EsAreaAdmision).IsRequired();
-                entity.HasOne(a => a.Sede)
-                      .WithMany(s => s.AreasClinicas)
-                      .HasForeignKey(a => a.SedeId)
-                      .OnDelete(DeleteBehavior.Cascade);
+           builder.Entity<AreaClinica>(entity =>
+{
+    entity.ToTable("AreasClinicas");
+    entity.HasKey(a => a.Id);
+    entity.Property(a => a.Codigo).IsRequired().HasMaxLength(50);
+    entity.Property(a => a.Nombre).IsRequired().HasMaxLength(150);
+    entity.Property(a => a.Estado).HasConversion<int>().IsRequired();
+    entity.Property(a => a.EsAreaAdmision).IsRequired();
 
-                entity.HasOne(a => a.Clasificacion)
-                      .WithMany()
-                      .HasForeignKey(a => a.ClasificacionId)
-                      .OnDelete(DeleteBehavior.Restrict);
-                
-                entity.HasOne(a => a.ServicioTarifaBase)
-                      .WithMany()
-                      .HasForeignKey(a => a.ServicioTarifaBaseId)
-                      .OnDelete(DeleteBehavior.SetNull);
+    entity.HasOne(a => a.Sede)
+          .WithMany(s => s.AreasClinicas)
+          .HasForeignKey(a => a.SedeId)
+          .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(a => new { a.SedeId, a.Codigo }).IsUnique();
+    entity.HasOne(a => a.Clasificacion)
+          .WithMany()
+          .HasForeignKey(a => a.ClasificacionId)
+          .OnDelete(DeleteBehavior.Restrict);
+    
+    entity.HasOne(a => a.ServicioTarifaBase)
+          .WithMany()
+          .HasForeignKey(a => a.ServicioTarifaBaseId)
+          .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasData(
-                    new AreaClinica(SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, null, SeedConstants.AreaId_Emergencia, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, null, SeedConstants.AreaId_Hospitalizacion, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, null, SeedConstants.AreaId_UCI, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Principal, "FARMACIA", "Farmacia Central", false, null, SeedConstants.AreaId_Farmacia, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central", false, null, SeedConstants.AreaId_Laboratorio, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1 (Cirugía Mayor)", false, null, SeedConstants.AreaId_Cirugia, SeedConstants.ClasificacionId_Quirofano)
-                );
-            });
+    entity.HasIndex(a => new { a.SedeId, a.Codigo }).IsUnique();
+
+    // Usar objetos anónimos evita que EF Core inspeccione navegaciones en HasData
+    entity.HasData(
+        new 
+        { 
+            Id = SeedConstants.AreaId_Emergencia, 
+            SedeId = SeedConstants.SedeId_Emergencia, 
+            Codigo = "BOX-1", 
+            Nombre = "Box Emergencia 1", 
+            Activo = true, 
+            Estado = EstadoUbicacion.Disponible, 
+            EsSubAreaAlmacenPrincipal = false,
+            EsAreaAdmision = true, 
+            ServicioTarifaBaseId = (Guid?)null, 
+            ClasificacionId = SeedConstants.ClasificacionId_Cama 
+        },
+        new 
+        { 
+            Id = SeedConstants.AreaId_Hospitalizacion, 
+            SedeId = SeedConstants.SedeId_Hospitalizacion, 
+            Codigo = "HAB-101", 
+            Nombre = "Habitación 101", 
+            Activo = true, 
+            Estado = EstadoUbicacion.Disponible, 
+            EsSubAreaAlmacenPrincipal = false,
+            EsAreaAdmision = false, 
+            ServicioTarifaBaseId = (Guid?)null, 
+            ClasificacionId = SeedConstants.ClasificacionId_Cama 
+        },
+        new 
+        { 
+            Id = SeedConstants.AreaId_UCI, 
+            SedeId = SeedConstants.SedeId_UCI, 
+            Codigo = "UCI-1", 
+            Nombre = "Cama UCI 1", 
+            Activo = true, 
+            Estado = EstadoUbicacion.Disponible, 
+            EsSubAreaAlmacenPrincipal = false,
+            EsAreaAdmision = false, 
+            ServicioTarifaBaseId = (Guid?)null, 
+            ClasificacionId = SeedConstants.ClasificacionId_Cama 
+        },
+        new 
+        { 
+            Id = SeedConstants.AreaId_Farmacia, 
+            SedeId = SeedConstants.SedeId_Principal, 
+            Codigo = "FARMACIA", 
+            Nombre = "Farmacia Central", 
+            Activo = true, 
+            Estado = EstadoUbicacion.Disponible, 
+            EsSubAreaAlmacenPrincipal = false,
+            EsAreaAdmision = false, 
+            ServicioTarifaBaseId = (Guid?)null, 
+            ClasificacionId = SeedConstants.ClasificacionId_Cama 
+        },
+        new 
+        { 
+            Id = SeedConstants.AreaId_Laboratorio, 
+            SedeId = SeedConstants.SedeId_Principal, 
+            Codigo = "LABORATORIO", 
+            Nombre = "Laboratorio Central", 
+            Activo = true, 
+            Estado = EstadoUbicacion.Disponible, 
+            EsSubAreaAlmacenPrincipal = false,
+            EsAreaAdmision = false, 
+            ServicioTarifaBaseId = (Guid?)null, 
+            ClasificacionId = SeedConstants.ClasificacionId_Cama 
+        },
+        new 
+        { 
+            Id = SeedConstants.AreaId_Cirugia, 
+            SedeId = SeedConstants.SedeId_Cirugia, 
+            Codigo = "QX-1", 
+            Nombre = "Quirófano 1 (Cirugía Mayor)", 
+            Activo = true, 
+            Estado = EstadoUbicacion.Disponible, 
+            EsSubAreaAlmacenPrincipal = false,
+            EsAreaAdmision = false, 
+            ServicioTarifaBaseId = (Guid?)null, 
+            ClasificacionId = SeedConstants.ClasificacionId_Quirofano 
+        }
+    );
+});
 
             builder.Entity<ServicioIncluidoArea>(entity =>
             {
