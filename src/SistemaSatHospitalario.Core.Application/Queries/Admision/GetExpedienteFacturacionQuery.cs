@@ -133,7 +133,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     FacturadoPor = facturadorInfo,
                     Estado = (x.CitaEstado == EstadoConstants.Cancelado || x.CitaEstado == EstadoConstants.Cancelada) 
                         ? "No Efectuado" 
-                        : ((x.c.Estado == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente"),
+                        : ((x.c.EstadoId == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente"),
                     TipoServicio = x.d.TipoServicio,
                     CuentaPorCobrarId = x.ar?.Id,
                     QuienAutorizo = x.ar?.QuienAutorizo,

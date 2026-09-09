@@ -63,7 +63,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Pacientes Atendidos -> Refactor: Mostramos INGRESOS de hoy para reflejar actividad real
                 response.PacientesAtendidosHoy = await _context.CuentasServicios
                     .AsNoTracking()
-                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
+                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
                     .CountAsync(cancellationToken);
                 
                 _logger.LogInformation("[INSIGHTS] Pacientes Atendidos Hoy: {Count}", response.PacientesAtendidosHoy);
@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // Ventas por Especialidad (Top 5 hoy)
                 var specialtyDetails = await _context.CuentasServicios
                     .AsNoTracking()
-                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
+                    .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
                     .SelectMany(c => c.Detalles)
                     .Select(d => new { d.TipoServicioNav.Nombre, d.Precio, d.Cantidad })
                     .ToListAsync(cancellationToken);
@@ -124,7 +124,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         .AsNoTracking()
                         .Include(c => c.Convenio)
                         .Include(c => c.Detalles)
-                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
                         .Select(c => new
                         {
                             SeguroNombre = c.Convenio != null ? c.Convenio.Nombre : null,
@@ -155,7 +155,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     var totalOrdenesHoy = await _context.CuentasServicios
                         .AsNoTracking()
-                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado != EstadoConstants.Anulada)
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId != EstadoConstants.Anulada)
                         .CountAsync(cancellationToken);
 
                     if (totalOrdenesHoy == 0)
@@ -352,7 +352,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     // Alert 1: Cuentas sin procesar de hoy (Potential Revenue Leak)
                     var unprocessedAccounts = await _context.CuentasServicios
                         .AsNoTracking()
-                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.Estado == "Procesando")
+                        .Where(c => c.FechaCarga >= todayUtc && c.FechaCarga < tomorrowUtc && c.EstadoId == "Procesando")
                         .CountAsync(cancellationToken);
 
                     if (unprocessedAccounts > 0)

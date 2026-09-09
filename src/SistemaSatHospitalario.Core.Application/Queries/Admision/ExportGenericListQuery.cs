@@ -185,7 +185,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             foreach (var item in list)
             {
-                dt.Rows.Add(item.d.FechaCarga, item.p.NombreCorto, item.d.Descripcion, item.d.Precio * item.d.Cantidad, item.c.Estado, req.IsAuditMode ? item.d.UsuarioCarga : null);
+                dt.Rows.Add(item.d.FechaCarga, item.p.NombreCorto, item.d.Descripcion, item.d.Precio * item.d.Cantidad, item.c.EstadoId, req.IsAuditMode ? item.d.UsuarioCarga : null);
             }
             return dt;
         }

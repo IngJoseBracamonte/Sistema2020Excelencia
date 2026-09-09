@@ -41,12 +41,10 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
         public async Task<ResumenCajaGlobalDto> Handle(ObtenerResumenCajasQuery request, CancellationToken cancellationToken)
         {
-            // Buscamos todas las cajas abiertas actualmente (una por usuario/turno)
             var cajasAbiertas = await _context.CajasDiarias
                 .Where(c => c.EstadoId == EstadoCajaConstants.AbiertaId)
                 .ToListAsync(cancellationToken);
 
-            // Obtenemos los montos recaudados por cada caja abierta sumando sus recibos
             var turnos = new List<ResumenTurnoDto>();
 
             var cajaUserIds = cajasAbiertas

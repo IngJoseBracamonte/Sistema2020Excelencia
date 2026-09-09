@@ -22,7 +22,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             var cuenta = await _context.CuentasServicios
                 .Include(c => c.Detalles)
-                .FirstOrDefaultAsync(c => c.Id == request.CuentaId && c.Estado == EstadoConstants.Abierta, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoConstants.Abierta, cancellationToken);
 
             if (cuenta == null)
             {

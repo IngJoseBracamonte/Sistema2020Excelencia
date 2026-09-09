@@ -26,7 +26,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var query = _context.CuentasServicios
                 .Include(c => c.Detalles)
                 .AsNoTracking()
-                .Where(c => c.PacienteId == request.PacienteId && c.Estado == EstadoConstants.Abierta);
+                .Where(c => c.PacienteId == request.PacienteId && c.EstadoId == EstadoConstants.Abierta);
 
             if (!string.IsNullOrEmpty(request.TipoIngreso))
             {
