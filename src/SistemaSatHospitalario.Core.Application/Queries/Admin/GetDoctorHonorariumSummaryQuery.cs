@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 join medico in _context.Medicos
                     on cita.MedicoId equals medico.Id
                 where cita.EstadoId == EstadoCitaConstants.AtendidaId
-                   && cs.Estado != EstadoConstants.Anulada
+                   && cs.EstadoId != EstadoConstants.Anulada
                    && cita.HoraPautada >= start
                    && cita.HoraPautada <= end
                    && (detail.TipoServicioId == TipoServicioConstants.Medico 
@@ -68,7 +68,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admin
                 from detail in _context.DetallesServicioCuenta
                 join cs in _context.CuentasServicios on detail.CuentaServicioId equals cs.Id
                 where detail.Realizado
-                   && cs.Estado != EstadoConstants.Anulada
+                   && cs.EstadoId != EstadoConstants.Anulada
                    && detail.Honorario > 0
                    && detail.MedicoResponsableId != null
                    && !(detail.TipoServicioId == TipoServicioConstants.Medico 

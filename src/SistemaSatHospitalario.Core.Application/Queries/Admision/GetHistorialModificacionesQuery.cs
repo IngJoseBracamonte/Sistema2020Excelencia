@@ -70,15 +70,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     FechaModificacion = h.FechaModificacion,
                     Usuario = h.Usuario,
                     PacienteAnteriorId = h.PacienteAnteriorId,
-                    PacienteAnteriorNombre = h.PacienteAnteriorNombre,
                     PacienteNuevoId = h.PacienteNuevoId,
-                    PacienteNuevoNombre = h.PacienteNuevoNombre,
                     TipoIngresoAnterior = h.TipoIngresoAnterior,
                     TipoIngresoNuevo = h.TipoIngresoNuevo,
                     ConvenioAnteriorId = h.ConvenioAnteriorId,
-                    ConvenioAnteriorNombre = h.ConvenioAnteriorNombre,
                     ConvenioNuevoId = h.ConvenioNuevoId,
-                    ConvenioNuevoNombre = h.ConvenioNuevoNombre,
                     TotalAnteriorUSD = h.TotalAnteriorUSD,
                     TotalNuevoUSD = h.TotalNuevoUSD,
                     ReciboTotalAnteriorUSD = h.ReciboTotalAnteriorUSD,
@@ -87,8 +83,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     ReciboVueltoNuevoUSD = h.ReciboVueltoNuevoUSD,
                     ReciboPagadoUSD = h.ReciboPagadoUSD,
                     CxCSaldoAnteriorUSD = h.CxCSaldoAnteriorUSD,
-                    CxCSaldoNuevoUSD = h.CxCSaldoNuevoUSD,
-                    DetalleServiciosCambiosJson = h.DetalleServiciosCambiosJson
+                    CxCSaldoNuevoUSD = h.CxCSaldoNuevoUSD
                 })
                 .ToListAsync(cancellationToken);
         }

@@ -6,6 +6,14 @@ namespace SistemaSatHospitalario.Core.Domain.Constants
     /// Centraliza los estados de las entidades para asegurar consistencia 
     /// en las consultas de base de datos y lógica de dominio. (Senior Pattern: State Constants)
     /// </summary>
+    /// public enum EstadoCuentaServicio
+    public enum EstadoCuentaServicio
+    {
+        Abierta = 1,
+        Facturada = 2,
+        Anulada = 3,
+        Validada = 4
+    }
     public static class EstadoConstants
     {
         // Estados Generales / Facturación

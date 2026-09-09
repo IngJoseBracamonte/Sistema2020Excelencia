@@ -25,5 +25,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
             Procesada = true;
             FechaProcesada = DateTime.UtcNow;
         }
+
+        public override decimal CalcularTotal() => 0m;
     }
 }

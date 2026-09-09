@@ -4,7 +4,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
     /// <summary>
     /// Catálogo maestro de estados de cuenta de servicios (3FN).
-    /// Reemplaza el texto libre en <see cref="CuentaServicios.Estado"/>.
+    /// Reemplaza el texto libre en <see cref="CuentaServicios.EstadoId"/>.
     /// </summary>
     public class EstadoCuenta
     {

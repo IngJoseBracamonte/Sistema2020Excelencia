@@ -50,30 +50,22 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected MovimientoInsumo() { }
 
-        public MovimientoInsumo(Guid insumoId, Guid sedeId, TipoMovimientoInsumo tipoMovimiento, decimal cantidadBase, UnidadMedida unidadMedidaOriginal, decimal cantidadOriginal, string usuario, string motivo, string? usuarioId = null)
+        public MovimientoInsumo(Guid insumoId, Guid sedeId, TipoMovimientoInsumo tipoMovimiento, decimal cantidadBase, UnidadMedida unidadMedidaOriginal, decimal cantidadOriginal, string motivo, string? usuarioId = null)
         {
             Id = Guid.NewGuid();
             InsumoId = insumoId;
             SedeId = sedeId;
             TipoMovimiento = tipoMovimiento;
             CantidadBase = cantidadBase;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UnidadMedidaOriginal = unidadMedidaOriginal;
-#pragma warning restore CS0618
             UnidadMedidaOriginalId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaOriginal);
             CantidadOriginal = cantidadOriginal;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
-            UsuarioId = usuarioId;
-#pragma warning restore CS0618
-            // 3FN: poblar la FK si el texto es un GUID válido
             UsuarioIdentityId = Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
             Fecha = DateTime.UtcNow;
             Motivo = motivo ?? string.Empty;
         }
 
-        public MovimientoInsumo(Guid insumoId, Guid sedeId, string tipoMovimiento, decimal cantidadBase, UnidadMedida unidadMedidaOriginal, decimal cantidadOriginal, string usuario, string motivo, string? usuarioId = null)
-            : this(insumoId, sedeId, ParseTipoMovimiento(tipoMovimiento), cantidadBase, unidadMedidaOriginal, cantidadOriginal, usuario, motivo, usuarioId)
+        public MovimientoInsumo(Guid insumoId, Guid sedeId, string tipoMovimiento, decimal cantidadBase, UnidadMedida unidadMedidaOriginal, decimal cantidadOriginal, string motivo, string? usuarioId = null)
+            : this(insumoId, sedeId, ParseTipoMovimiento(tipoMovimiento), cantidadBase, unidadMedidaOriginal, cantidadOriginal, motivo, usuarioId)
         {
         }
 

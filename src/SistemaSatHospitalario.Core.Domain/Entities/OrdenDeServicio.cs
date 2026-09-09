@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities
@@ -7,59 +8,37 @@ namespace SistemaSatHospitalario.Core.Domain.Entities
     {
         public Guid Id { get; protected set; }
         public int NumeroLlegadaDiario { get; protected set; }
-        // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; protected set; }
-
-        /// <summary>
-        /// LEGACY (3FN): nombre desnormalizado del paciente. Fuente de verdad:
-        /// la navegación <see cref="Paciente"/> vía <see cref="PacienteId"/>. Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar Paciente.NombreCorto vía PacienteId. Columna legacy pendiente de DROP.")]
-        public string NombrePaciente { get; protected set; }
         public string TipoIngreso { get; protected set; } // Particular, Seguro, Hospitalizacion, Emergencia
         public EstadoFacturacion EstadoFacturacion { get; protected set; }
-
-        /// <summary>
-        /// LEGACY (3FN): total cobrado calculado y persistido. Fuente de verdad:
-        /// los detalles de la orden (tabla hija). Alias de compatibilidad hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular desde los detalles de la orden. Columna legacy pendiente de DROP.")]
-        public decimal TotalCobrado { get; protected set; }
         public DateTime FechaCreacion { get; protected set; }
-        
-        // Se cambió de Guid? a int? para sincronización con Legacy
-        public int? ConvenioId { get; protected set; } // Opcional, asociado a Seguros/Convenios
+        public int? ConvenioId { get; protected set; }
 
-        [System.ComponentModel.DataAnnotations.Schema.ForeignKey(nameof(PacienteId))]
+        [ForeignKey(nameof(PacienteId))]
         public virtual Admision.PacienteAdmision? Paciente { get; protected set; }
 
         protected OrdenDeServicio() { }
 
-       protected OrdenDeServicio(int numeroLlegada, Guid pacienteId, string tipoIngreso, int? convenioId = null)
+        protected OrdenDeServicio(int numeroLlegada, Guid pacienteId, string tipoIngreso, int? convenioId = null)
         {
             Id = Guid.NewGuid();
             NumeroLlegadaDiario = numeroLlegada;
             PacienteId = pacienteId;
             TipoIngreso = tipoIngreso ?? throw new ArgumentNullException(nameof(tipoIngreso));
-            EstadoFacturacion = tipoIngreso == "Seguro" ? EstadoFacturacion.FacturaFiscal : EstadoFacturacion.SinFactura;
+            EstadoFacturacion = EstadoFacturacion.FacturaFiscal;
             FechaCreacion = DateTime.UtcNow;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            TotalCobrado = 0;
-#pragma warning restore CS0618
             ConvenioId = convenioId;
-        }
-
-        public void ActualizarTotalCobrado(decimal nuevoTotal)
-        {
-            if (nuevoTotal < 0) throw new ArgumentException("El total no puede ser negativo.");
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            TotalCobrado = nuevoTotal;
-#pragma warning restore CS0618
         }
 
         public void AsignarConvenio(int convenioId)
         {
             ConvenioId = convenioId;
         }
+
+        /// <summary>
+        /// Estrategia de cálculo en Dominio:
+        /// Cada tipo de orden (Rx, Lab, etc.) implementa la suma de sus propios detalles.
+        /// </summary>
+        public abstract decimal CalcularTotal();
     }
 }

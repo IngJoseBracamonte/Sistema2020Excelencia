@@ -34,7 +34,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 CuentaId = c.Id,
                 FechaCreacion = c.FechaCarga, // Alineado con Domain
                 FechaCierre = c.FechaCierre,
-                Estado = c.Estado,
+                Estado = c.EstadoId,
                 TipoIngreso = c.TipoIngreso,
                 Total = c.CalcularTotal(),
                 Servicios = c.Detalles.Select(d => new HistoryServiceDetailDto

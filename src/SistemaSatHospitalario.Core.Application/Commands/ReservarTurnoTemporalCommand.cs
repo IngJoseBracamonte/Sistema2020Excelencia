@@ -64,7 +64,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands
 
             if (reservaMismaHora != null)
             {
-                if (reservaMismaHora.UsuarioId != request.UsuarioId)
+                if (reservaMismaHora.UsuarioIdentityId != (Guid.TryParse(request.UsuarioId, out var uid) ? uid : (Guid?)null))
                 {
                     throw new InvalidOperationException("Este turno ya está siendo procesado por otro cajero. Intente en un momento.");
                 }

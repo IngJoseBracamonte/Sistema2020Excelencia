@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // El facturador es el que cargó el servicio si está pendiente, 
                 // o el que facturó (de la caja) si está facturado.
                 // Según el usuario: "Nombre Real, Rol"
-                string facturadorId = x.rf != null ? (x.rf.CajaDiariaId.HasValue ? _context.CajasDiarias.FirstOrDefault(cd => cd.Id == x.rf.CajaDiariaId)?.UsuarioId : x.d.UsuarioCarga) : x.d.UsuarioCarga;
+                string facturadorId = x.rf != null ? (x.rf.CajaDiariaId.HasValue ? _context.CajasDiarias.FirstOrDefault(cd => cd.Id == x.rf.CajaDiariaId)?.UsuarioIdentityId?.ToString() : x.d.UsuarioCarga) : x.d.UsuarioCarga;
                 
                 string facturadorInfo = "SISTEMA";
                 if (!string.IsNullOrEmpty(facturadorId) && userMap.TryGetValue(facturadorId, out var user))
@@ -133,7 +133,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     FacturadoPor = facturadorInfo,
                     Estado = (x.CitaEstado == EstadoConstants.Cancelado || x.CitaEstado == EstadoConstants.Cancelada) 
                         ? "No Efectuado" 
-                        : ((x.c.Estado == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente"),
+                        : ((x.c.EstadoId == EstadoConstants.Facturada && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente"),
                     TipoServicio = x.d.TipoServicio,
                     CuentaPorCobrarId = x.ar?.Id,
                     QuienAutorizo = x.ar?.QuienAutorizo,

@@ -70,7 +70,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 var recibo = await _context.RecibosFactura
                     .Include(r => r.DetallesPago)
-                    .FirstOrDefaultAsync(r => r.CuentaServicioId == cuenta.Id && r.EstadoFiscal != EstadoConstants.Anulada, cancellationToken);
+                    .FirstOrDefaultAsync(r => r.CuentaServicioId == cuenta.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada, cancellationToken);
 
                 decimal reciboTotalAnteriorUSD = recibo?.TotalFacturadoUSD ?? 0;
                 decimal reciboVueltoAnteriorUSD = recibo?.MontoVueltoUSD ?? 0;
@@ -301,15 +301,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     cuenta.Id,
                     request.UsuarioModificacion,
                     pacienteAnteriorId,
-                    pacienteAnteriorNombre,
                     pacienteNuevoId,
-                    pacienteNuevoNombre,
                     tipoIngresoAnterior,
                     tipoIngresoNuevo,
                     convenioAnteriorId,
-                    convenioAnteriorNombre,
                     convenioNuevoIdVal,
-                    convenioNuevoNombreVal,
                     totalAnteriorUSD,
                     totalNuevoUSD,
                     reciboTotalAnteriorUSD,
@@ -318,8 +314,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     reciboVueltoNuevoUSD,
                     reciboPagadoUSD,
                     cxcSaldoAnteriorUSD,
-                    cxcSaldoNuevoUSD,
-                    detalleServiciosCambiosJson
+                    cxcSaldoNuevoUSD
                 );
 
                 _context.HistorialModificacionCuentas.Add(logAuditoria);

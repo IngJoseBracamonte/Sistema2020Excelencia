@@ -35,8 +35,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
         public async Task<CajaDiaria?> ObtenerCajaAbiertaPorUsuarioAsync(string usuarioId, CancellationToken cancellationToken)
         {
+            var esGuid = Guid.TryParse(usuarioId, out var userIdGuid);
             return await _context.CajasDiarias
-                                 .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId && c.UsuarioId == usuarioId, cancellationToken);
+                                 .FirstOrDefaultAsync(c => c.EstadoId == EstadoCajaConstants.AbiertaId &&
+                                     (esGuid ? c.UsuarioIdentityId == userIdGuid : c.NombreUsuario == usuarioId), cancellationToken);
         }
 
         public async Task AgregarCajaAsync(CajaDiaria caja, CancellationToken cancellationToken)
@@ -65,7 +67,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
 
             if (!string.IsNullOrEmpty(usuarioId))
             {
-                query = query.Where(c => c.UsuarioId == usuarioId);
+                if (Guid.TryParse(usuarioId, out var userIdGuid))
+                {
+                    query = query.Where(c => c.UsuarioIdentityId == userIdGuid);
+                }
+                else
+                {
+                    query = query.Where(c => c.NombreUsuario == usuarioId);
+                }
             }
 
             return await query.OrderByDescending(c => c.FechaCierre)

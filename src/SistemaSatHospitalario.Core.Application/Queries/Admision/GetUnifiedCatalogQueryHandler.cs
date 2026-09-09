@@ -68,7 +68,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                          InsumoNombre = i != null ? i.Nombre : "Insumo Desconocido",
                                          InsumoCodigo = i != null ? i.Codigo : "",
                                          Cantidad = r.Cantidad,
-                                         UnidadMedidaConsumo = r.UnidadMedidaConsumo.ToString()
+                                         UnidadMedidaConsumo = r.UnidadMedidaNav.Nombre.ToString()
                                      })
                                      .ToListAsync(cancellationToken);
 
@@ -149,7 +149,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         InsumoNombre = insumo.Nombre,
                         InsumoCodigo = insumo.Codigo,
                         Cantidad = 1m,
-                        UnidadMedidaConsumo = insumo.UnidadMedidaBase.ToString()
+                        UnidadMedidaConsumo = insumo.UnidadMedidaNav.Nombre.ToString()
                     }
                 };
 
@@ -166,7 +166,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Activo = true,
                     PrecioUsd = insumo.CostoUnitarioBaseUSD > 0 ? insumo.CostoUnitarioBaseUSD : 1.00m,
                     HonorarioBase = 0m,
-                    UnidadMedida = insumo.UnidadMedidaBase.ToString(),
+                    UnidadMedida = insumo.UnidadMedidaNav.Nombre.ToString(),
                     PermiteFraccionamiento = insumo.PermiteFraccionamiento,
                     Receta = selfReceta,
                     InsumosReceta = selfReceta

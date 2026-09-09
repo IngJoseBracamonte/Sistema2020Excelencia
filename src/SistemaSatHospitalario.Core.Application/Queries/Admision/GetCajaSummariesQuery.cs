@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -45,7 +39,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public decimal MontoInicialBs { get; set; }
         public string Estado { get; set; } = string.Empty;
         public int EstadoId { get; set; }
-        
+
         public decimal? TotalIngresado { get; set; }
         public decimal? TotalCobrado { get; set; }
         public decimal? Diferencia { get; set; }
@@ -69,18 +63,21 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetCajaSummariesQueryHandler : IRequestHandler<GetCajaSummariesQuery, CajaSummaryDto>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public GetCajaSummariesQueryHandler(IApplicationDbContext context)
+        public GetCajaSummariesQueryHandler(IApplicationDbContext context, IUserResolverService userResolver)
         {
             _context = context;
+            _userResolver = userResolver;
         }
 
-        public async Task<CajaSummaryDto> Handle(GetCajaSummariesQuery request, CancellationToken cancellationToken)
+        public async Task<CajaSummaryDto> Handle(
+    GetCajaSummariesQuery request,
+    CancellationToken cancellationToken)
         {
             var start = request.Desde.Date;
             var end = request.Hasta.Date.AddDays(1).AddTicks(-1);
 
-            // Consultar todas las cajas deshabilitando tracking y forzando SingleQuery para compatibilidad con MySQL
             var query = _context.CajasDiarias
                 .AsNoTracking()
                 .Include(c => c.DeclaracionesPorMetodo)
@@ -89,29 +86,44 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             if (!string.IsNullOrEmpty(request.UsuarioId))
             {
-                query = query.Where(c => c.UsuarioId == request.UsuarioId);
+                if (Guid.TryParse(request.UsuarioId, out var userIdGuid))
+                {
+                    query = query.Where(c => c.UsuarioIdentityId == userIdGuid);
+                }
+                else
+                {
+                    var resolvedId = _userResolver.GetCurrentUserId();
+                    query = query.Where(c => c.UsuarioIdentityId == resolvedId);
+                }
             }
 
             var listCajas = await query
                 .OrderByDescending(c => c.FechaApertura)
                 .ToListAsync(cancellationToken);
 
+            var cajaUserIds = listCajas
+                .Where(c => c.UsuarioIdentityId.HasValue)
+                .Select(c => c.UsuarioIdentityId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userMap = await _userResolver.GetDisplayNameMapAsync(
+                cajaUserIds,
+                cancellationToken);
+
             var list = listCajas.Select(c => new CajaDetailDto
             {
                 Id = c.Id,
-                Usuario = c.NombreUsuario,
+                Usuario = c.UsuarioIdentityId.HasValue &&
+                          userMap.TryGetValue(c.UsuarioIdentityId.Value, out var nombre)
+                    ? nombre
+                    : "Sistema",
                 Apertura = c.FechaApertura,
                 Cierre = c.FechaCierre,
                 MontoInicialDivisa = c.MontoInicialDivisa,
                 MontoInicialBs = c.MontoInicialBs,
                 Estado = EstadoCajaConstants.ToLegacyString(c.EstadoId),
                 EstadoId = c.EstadoId,
-                TotalIngresado = c.TotalIngresado,
-                TotalCobrado = c.TotalCobrado,
-                Diferencia = c.Diferencia,
-#pragma warning disable CS0618 // fallback legacy para cajas históricas (frontend lo usa si Declaraciones está vacío)
-                DeclaracionCierreJson = c.DeclaracionCierreJson,
-#pragma warning restore CS0618
                 Declaraciones = c.DeclaracionesPorMetodo.Select(d => new CajaDeclaracionMetodoDto
                 {
                     MetodoPagoId = d.MetodoPagoId,
@@ -126,7 +138,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 }).ToList()
             }).ToList();
 
-            var openCajaIds = list.Where(c => c.EstadoId == EstadoCajaConstants.AbiertaId).Select(c => c.Id).ToList();
+            var openCajaIds = list
+                .Where(c => c.EstadoId == EstadoCajaConstants.AbiertaId)
+                .Select(c => c.Id)
+                .ToList();
+
             if (openCajaIds.Any())
             {
                 var catalogoMetodos = await _context.CatalogoMetodosPago
@@ -138,82 +154,138 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 var openCajaRecibos = await _context.RecibosFactura
                     .AsNoTracking()
                     .Include(r => r.DetallesPago)
-                    .Where(r => r.CajaDiariaId.HasValue && openCajaIds.Contains(r.CajaDiariaId.Value) && r.EstadoFiscal != EstadoConstants.Anulada)
+                    .Where(r =>
+                        r.CajaDiariaId.HasValue &&
+                        openCajaIds.Contains(r.CajaDiariaId.Value) &&
+                        r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
                     .ToListAsync(cancellationToken);
 
-                var receiptsByCaja = openCajaRecibos.GroupBy(r => r.CajaDiariaId!.Value).ToDictionary(g => g.Key, g => g.ToList());
+                var receiptsByCaja = openCajaRecibos
+                    .GroupBy(r => r.CajaDiariaId!.Value)
+                    .ToDictionary(g => g.Key, g => g.ToList());
 
                 foreach (var item in list)
                 {
-                    if (item.EstadoId == EstadoCajaConstants.AbiertaId)
+                    if (item.EstadoId != EstadoCajaConstants.AbiertaId)
+                        continue;
+
+                    var recibos = receiptsByCaja.TryGetValue(item.Id, out var rList)
+                        ? rList
+                        : new List<ReciboFactura>();
+
+                    var allPayments = recibos
+                        .SelectMany(r => r.DetallesPago)
+                        .ToList();
+
+                    var declaraciones = new List<CajaDeclaracionMetodoDto>();
+                    decimal totalCobradoBaseUSD = 0;
+
+                    var metodosPrincipales = catalogoMetodos
+                        .Where(m => !m.EsVuelto)
+                        .ToList();
+
+                    foreach (var metodo in metodosPrincipales)
                     {
-                        var recibos = receiptsByCaja.TryGetValue(item.Id, out var rList) ? rList : new List<ReciboFactura>();
-                        var allPayments = recibos.SelectMany(r => r.DetallesPago).ToList();
-
-                        var declaraciones = new List<CajaDeclaracionMetodoDto>();
-                        decimal totalCobradoBaseUSD = 0;
-
-                        var metodosPrincipales = catalogoMetodos.Where(m => !m.EsVuelto).ToList();
-                        foreach (var metodo in metodosPrincipales)
+                        string vueltoMetodoValor = metodo.Valor switch
                         {
-                            string vueltoMetodoValor = string.Empty;
-                            if (metodo.Valor == "Dolar Efectivo") vueltoMetodoValor = "Vuelto Efectivo USD";
-                            else if (metodo.Valor == "Efectivo BS") vueltoMetodoValor = "Vuelto Efectivo BS";
-                            else if (metodo.Valor == "Pago Movil") vueltoMetodoValor = "Vuelto Pago Movil";
+                            "Dolar Efectivo" => "Vuelto Efectivo USD",
+                            "Efectivo BS" => "Vuelto Efectivo BS",
+                            "Pago Movil" => "Vuelto Pago Movil",
+                            _ => string.Empty
+                        };
 
-                            var pagosMetodo = allPayments.Where(p => p.MetodoPago == metodo.Valor && p.MontoAbonadoMoneda > 0).ToList();
-                            decimal esperadoIngresoOriginal = pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
-                            decimal esperadoIngresoBase = pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
+                        var pagosMetodo = allPayments
+                            .Where(p =>
+                                p.MetodoPagoId == metodo.Id &&
+                                p.MontoAbonadoMoneda > 0)
+                            .ToList();
 
-                            decimal esperadoVueltosOriginal = 0;
-                            decimal esperadoVueltosBase = 0;
-                            if (!string.IsNullOrEmpty(vueltoMetodoValor))
+                        decimal esperadoIngresoOriginal =
+                            pagosMetodo.Sum(p => p.MontoAbonadoMoneda);
+
+                        decimal esperadoIngresoBase =
+                            pagosMetodo.Sum(p => p.EquivalenteAbonadoBase);
+
+                        decimal esperadoVueltosOriginal = 0;
+                        decimal esperadoVueltosBase = 0;
+
+                        if (!string.IsNullOrEmpty(vueltoMetodoValor))
+                        {
+                            var metodoVuelto = catalogoMetodos
+                                .FirstOrDefault(m => m.Valor == vueltoMetodoValor);
+
+                            if (metodoVuelto != null)
                             {
-                                var vueltosMetodo = allPayments.Where(p => p.MetodoPago == vueltoMetodoValor).ToList();
-                                esperadoVueltosOriginal = Math.Abs(vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
-                                esperadoVueltosBase = Math.Abs(vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
+                                var vueltosMetodo = allPayments
+                                    .Where(p => p.MetodoPagoId == metodoVuelto.Id)
+                                    .ToList();
+
+                                esperadoVueltosOriginal = Math.Abs(
+                                    vueltosMetodo.Sum(p => p.MontoAbonadoMoneda));
+
+                                esperadoVueltosBase = Math.Abs(
+                                    vueltosMetodo.Sum(p => p.EquivalenteAbonadoBase));
                             }
-
-                            decimal esperadoNetoBase = esperadoIngresoBase - esperadoVueltosBase;
-                            totalCobradoBaseUSD += esperadoNetoBase;
-
-                            declaraciones.Add(new CajaDeclaracionMetodoDto
-                            {
-                                MetodoPagoId = metodo.Id,
-                                MetodoPago = metodo.Valor,
-                                NombreMetodoPago = metodo.Nombre,
-                                MontoIngreso = esperadoIngresoOriginal,
-                                MontoVueltos = esperadoVueltosOriginal,
-                                MontoEsperadoIngreso = esperadoIngresoOriginal,
-                                MontoEsperadoVueltos = esperadoVueltosOriginal,
-                                DiferenciaOriginal = 0m,
-                                DiferenciaBase = 0m
-                            });
                         }
 
-                        item.TotalCobrado = totalCobradoBaseUSD;
-                        item.TotalIngresado = totalCobradoBaseUSD;
-                        item.Diferencia = 0m;
-                        item.Declaraciones = declaraciones;
+                        decimal esperadoNetoBase =
+                            esperadoIngresoBase - esperadoVueltosBase;
+
+                        totalCobradoBaseUSD += esperadoNetoBase;
+
+                        declaraciones.Add(new CajaDeclaracionMetodoDto
+                        {
+                            MetodoPagoId = metodo.Id,
+                            MetodoPago = metodo.Valor,
+                            NombreMetodoPago = metodo.Nombre,
+                            MontoIngreso = esperadoIngresoOriginal,
+                            MontoVueltos = esperadoVueltosOriginal,
+                            MontoEsperadoIngreso = esperadoIngresoOriginal,
+                            MontoEsperadoVueltos = esperadoVueltosOriginal,
+                            DiferenciaOriginal = 0m,
+                            DiferenciaBase = 0m
+                        });
                     }
+
+                    item.TotalCobrado = totalCobradoBaseUSD;
+                    item.TotalIngresado = totalCobradoBaseUSD;
+                    item.Diferencia = 0m;
+                    item.Declaraciones = declaraciones;
                 }
             }
 
             var today = DateTime.UtcNow.Date;
             var tomorrow = today.AddDays(1);
-            var cajasHoy = list.Where(c => c.Apertura >= today && c.Apertura < tomorrow).ToList();
 
-            var cajasActivas = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.AbiertaId);
-            var cierresPendientes = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId);
-            var cierresRealizados = cajasHoy.Count(c => c.EstadoId == EstadoCajaConstants.CerradaId);
+            var cajasHoy = list
+                .Where(c => c.Apertura >= today && c.Apertura < tomorrow)
+                .ToList();
 
-            decimal totalRecaudado = cajasHoy.Where(c => c.EstadoId != EstadoCajaConstants.AbiertaId).Sum(c => c.TotalIngresado ?? 0);
-            decimal totalEsperado = cajasHoy.Where(c => c.EstadoId != EstadoCajaConstants.AbiertaId).Sum(c => c.TotalCobrado ?? 0);
+            var cajasActivas = cajasHoy.Count(
+                c => c.EstadoId == EstadoCajaConstants.AbiertaId);
+
+            var cierresPendientes = cajasHoy.Count(
+                c => c.EstadoId == EstadoCajaConstants.CerradaPorAsistenteId);
+
+            var cierresRealizados = cajasHoy.Count(
+                c => c.EstadoId == EstadoCajaConstants.CerradaId);
+
+            decimal totalRecaudado = cajasHoy
+                .Where(c => c.EstadoId != EstadoCajaConstants.AbiertaId)
+                .Sum(c => c.TotalIngresado ?? 0);
+
+            decimal totalEsperado = cajasHoy
+                .Where(c => c.EstadoId != EstadoCajaConstants.AbiertaId)
+                .Sum(c => c.TotalCobrado ?? 0);
+
             decimal diferenciaNeta = totalRecaudado - totalEsperado;
             decimal efectivoEnBoveda = totalRecaudado;
 
-            decimal granTotalDivisa = list.Sum(x => x.TotalIngresado ?? x.MontoInicialDivisa);
-            decimal granTotalBs = list.Sum(x => x.MontoInicialBs);
+            decimal granTotalDivisa = list.Sum(
+                x => x.TotalIngresado ?? x.MontoInicialDivisa);
+
+            decimal granTotalBs = list.Sum(
+                x => x.MontoInicialBs);
 
             return new CajaSummaryDto
             {
@@ -229,5 +301,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 EfectivoEnBoveda = efectivoEnBoveda
             };
         }
+
     }
 }

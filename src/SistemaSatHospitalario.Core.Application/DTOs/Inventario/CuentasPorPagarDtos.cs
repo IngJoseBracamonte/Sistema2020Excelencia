@@ -11,7 +11,6 @@ namespace SistemaSatHospitalario.Core.Application.DTOs.Inventario
         public string ProveedorNombre { get; set; } = string.Empty;
         public DateTime FechaEmision { get; set; }
         public decimal MontoTotalUSD { get; set; }
-        public decimal MontoTotalBs { get; set; }
         public decimal TotalAbonadoUSD { get; set; }
         public decimal SaldoPendienteUSD { get; set; }
         public string Estado { get; set; } = "PorPagar";

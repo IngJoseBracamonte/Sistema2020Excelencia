@@ -53,7 +53,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 2. Obtener Cuenta de Servicios
             var cuenta = await _billingRepository.ObtenerCuentaPorIdAsync(request.CuentaServicioId, cancellationToken);
             if (cuenta == null) throw new InvalidOperationException("La cuenta de servicio referenciada no existe.");
-            if (cuenta.Estado != EstadoConstants.Abierta) throw new InvalidOperationException("La cuenta ya ha sido procesada.");
+            if (cuenta.EstadoId != EstadoConstants.Abierta) throw new InvalidOperationException("La cuenta ya ha sido procesada.");
 
             // 3. Crear Recibo (V11.2 Change Support / Vuelto)
             var metodosPagoCatalog = await _context.CatalogoMetodosPago

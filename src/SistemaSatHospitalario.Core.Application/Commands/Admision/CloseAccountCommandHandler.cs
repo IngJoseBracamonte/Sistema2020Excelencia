@@ -53,7 +53,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 .FirstOrDefaultAsync(c => c.Id == request.CuentaId, cancellationToken);
 
             if (cuenta == null) throw new Exception("Cuenta no encontrada.");
-            if (cuenta.Estado != EstadoConstants.Abierta) throw new Exception("La cuenta ya ha sido procesada.");
+            if (cuenta.EstadoId != EstadoConstants.Abierta) throw new Exception("La cuenta ya ha sido procesada.");
 
             // Resolver consolidación si aplica
             List<CuentaServicios> accountsToBill;
@@ -153,7 +153,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // 4.1 Validamos existencia física (AsNoTracking para frescura total)
                 var existe = await _context.CuentasServicios
                     .AsNoTracking()
-                    .AnyAsync(c => c.Id == request.CuentaId && c.Estado == EstadoConstants.Abierta, cancellationToken);
+                    .AnyAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoConstants.Abierta, cancellationToken);
                 
                 if (!existe) throw new Exception("La cuenta no existe o ya fue procesada.");
 

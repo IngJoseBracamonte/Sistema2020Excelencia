@@ -12,16 +12,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string Nombre { get; private set; }
         public virtual ICollection<StockSede> StocksPorSede { get; private set; } = new List<StockSede>();
         public decimal StockActual => Enumerable.Sum(StocksPorSede, s => s.StockActual);
-
-        /// <summary>
-        /// LEGACY (3FN): unidad de medida como enum persistido en varchar(20).
-        /// Fuente de verdad: <see cref="UnidadMedidaId"/> (FK a UnidadesMedida).
-        /// Alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Usar UnidadMedidaId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
-        public UnidadMedida UnidadMedidaBase => Constants.UnidadMedidaConstants.ToEnum(UnidadMedidaId);
-
-        /// <summary>FK al catálogo UnidadesMedida (3FN).</summary>
         public int UnidadMedidaId { get; private set; }
 
         /// <summary>Navegación al catálogo de unidades de medida.</summary>

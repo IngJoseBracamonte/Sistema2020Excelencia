@@ -23,16 +23,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? UsuarioCargaId { get; private set; }
         public DateTime FechaCarga { get; private set; }
         public DateTime? FechaCierre { get; private set; }
-
-        /// <summary>
-        /// LEGACY (3FN): texto del estado. Fuente de verdad: <see cref="EstadoId"/>
-        /// (FK a EstadosCuenta). Alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Usar EstadoId / EstadoNav. Columna legacy pendiente de DROP.")]
-        public string Estado { get; private set; } // Abierta, Facturada, Anulada
+        public int EstadoId { get; private set; } // Abierta, Facturada, Anulada
 
         /// <summary>FK al catálogo EstadosCuenta (3FN).</summary>
-        public int EstadoId { get; private set; }
 
         /// <summary>
         /// LEGACY (3FN): texto del tipo de ingreso. Fuente de verdad: <see cref="TipoIngresoId"/>
@@ -101,10 +94,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             FechaCarga = DateTime.UtcNow;
             EstadoId = EstadoCuentaConstants.AbiertaId;
             TipoIngresoId = TipoIngresoConstants.FromLegacyString(tipoIngreso);
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Estado = EstadoConstants.Abierta;
-            TipoIngreso = tipoIngreso ?? EstadoConstants.Particular;
-#pragma warning restore CS0618
             ConvenioId = convenioId;
             AreaClinicaId = areaClinicaId;
             SubAreaClinica = subAreaClinica;
@@ -141,7 +130,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, int? tipoServicioId = null)
         {
-            if (Estado != EstadoConstants.Abierta)
+            if (EstadoId != EstadoCajaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
 
             int resolvedTipoServicioId = tipoServicioId ?? (tipoServicio?.ToUpperInvariant() switch
@@ -161,7 +150,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RemoverServicio(Guid servicioId)
         {
-            if (Estado != EstadoConstants.Abierta)
+            if (EstadoId != EstadoCajaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.ServicioId == servicioId);
@@ -173,7 +162,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RemoverServicioPorDetalleId(Guid detalleId)
         {
-            if (Estado != EstadoConstants.Abierta)
+            if (EstadoId != EstadoCajaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.Id == detalleId);
@@ -195,9 +184,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         private void SetEstado(int estadoId)
         {
             EstadoId = estadoId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            Estado = EstadoCuentaConstants.ToLegacyString(estadoId);
-#pragma warning restore CS0618
         }
 
         /// <summary>3FN: indica si la cuenta está abierta (fuente de verdad: EstadoId).</summary>

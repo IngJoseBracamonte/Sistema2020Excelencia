@@ -17,13 +17,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? Observaciones { get; private set; }
         public DateTime FechaTransferencia { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
-        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
-        public string UsuarioId { get; private set; }
-
         /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que ejecutó la transferencia.</summary>
         public Guid? UsuarioIdentityId { get; private set; }
 
@@ -62,7 +55,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SedeDestinoId = sedeDestinoId;
             Cantidad = cantidad;
             Motivo = string.IsNullOrWhiteSpace(motivo) ? "Reposicion" : motivo.Trim();
-            UsuarioId = usuarioId.Trim();
+            UsuarioIdentityId = Guid.Parse(usuarioId.Trim());
             Observaciones = observaciones?.Trim();
             FechaTransferencia = DateTime.UtcNow;
         }

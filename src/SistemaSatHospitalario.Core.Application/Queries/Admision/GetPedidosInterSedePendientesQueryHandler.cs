@@ -58,17 +58,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         }
                     }
                     var correlativo = $"PED-{year}-{nextSeq.ToString().PadLeft(4, '0')}";
-                    var pacNombre = sol.OrdenCirugia?.Paciente != null 
+                    var pacNombre = sol.OrdenCirugia?.Paciente != null
                         ? sol.OrdenCirugia.Paciente.NombreCorto
                         : "Paciente Quirúrgico";
 
                     var pedido = new PedidoInterSede(
-                        correlativo,
-                        SeedConstants.SedeId_Cirugia,
-                        sol.AlmacenOrigenId != Guid.Empty ? sol.AlmacenOrigenId : SeedConstants.SedeId_Principal,
-                        sol.UsuarioSolicitud ?? "Sistema",
-                        $"[CIRUGIA_ADHOC:{sol.Id}:{sol.OrdenCirugiaId}] Paciente: {pacNombre} | Urgencia: {sol.Observaciones}"
-                    );
+                         correlativo,
+                         SeedConstants.SedeId_Cirugia,
+                         sol.AlmacenOrigenId != Guid.Empty ? sol.AlmacenOrigenId : SeedConstants.SedeId_Principal,
+                         sol.UsuarioSolicitudId?.ToString(),
+                         $"[CIRUGIA_ADHOC:{sol.Id}:{sol.OrdenCirugiaId}] Paciente: {pacNombre} | Urgencia: {sol.Observaciones}"
+                     );
                     pedido.AgregarDetalle(new PedidoInterSedeDetalle(sol.InsumoId, sol.CantidadSolicitada));
                     _context.PedidosInterSede.Add(pedido);
                     hayCambios = true;

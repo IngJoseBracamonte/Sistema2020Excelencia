@@ -12,16 +12,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid? CajaDiariaId { get; protected set; }
         public string? NroControlFiscal { get; protected set; }
         public decimal TasaCambioDia { get; protected set; }
+        public int EstadoFiscalId { get; protected set; }
 
         /// <summary>
         /// LEGACY (3FN): texto del estado fiscal. Fuente de verdad: <see cref="EstadoFiscalId"/>
         /// (FK a EstadosFiscales). Alias de compatibilidad hasta el DROP de columna.
         /// </summary>
         [Obsolete("Usar EstadoFiscalId / EstadoFiscalNav. Columna legacy pendiente de DROP.")]
-        public string EstadoFiscal { get; protected set; } // Borrador, Emitida, Anulada
-
-        /// <summary>FK al catálogo EstadosFiscales (3FN).</summary>
-        public int EstadoFiscalId { get; protected set; }
+        public string EstadoFiscal { get; protected set; } = string.Empty;
 
         /// <summary>Navegación al catálogo de estados fiscales.</summary>
         public virtual EstadoFiscal EstadoFiscalNav { get; protected set; } = null!;
@@ -33,18 +31,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal TasaBcvUsada => TasaCambioDia;
         public DateTime FechaEmision { get; protected set; }
 
-        /// <summary>
-        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
-        /// <see cref="UsuarioEmisionId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioEmisionId. Columna legacy pendiente de DROP.")]
-        public string? UsuarioEmision { get; protected set; }
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que emitió el recibo.</summary>
         public Guid? UsuarioEmisionId { get; protected set; }
-
-        /// <summary>Alias de lectura del estado fiscal (texto legacy).</summary>
-        public string Estado => EstadoFiscal;
 
         public CuentaServicios CuentaServicio { get; protected set; }
         public CajaDiaria CajaDiaria { get; protected set; }
@@ -64,9 +51,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             TotalFacturadoUSD = totalFacturadoUSD;
             MontoVueltoUSD = montoVueltoUSD;
             EstadoFiscalId = EstadoFiscalConstants.FromLegacyString(estadoFiscal);
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            EstadoFiscal = estadoFiscal;
-#pragma warning restore CS0618
             FechaEmision = DateTime.UtcNow;
             NumeroRecibo = $"REC-{DateTime.Now:yyyyMMdd}-{Id.ToString().Substring(0, 8)}";
             NumeroComprobante = numeroComprobante;
@@ -91,10 +75,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             if (EstadoFiscalId != EstadoFiscalConstants.BorradorId) throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
             NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioEmision = usuarioEmision ?? throw new ArgumentNullException(nameof(usuarioEmision));
-#pragma warning restore CS0618
-            // 3FN: poblar la FK si el texto es un GUID válido
             if (Guid.TryParse(usuarioEmision, out var parsed))
             {
                 UsuarioEmisionId = parsed;
@@ -109,9 +89,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             if (usuarioEmisionId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioEmisionId));
             NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
             UsuarioEmisionId = usuarioEmisionId;
-#pragma warning disable CS0618
-            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias)) UsuarioEmision = usuarioNombreAlias;
-#pragma warning restore CS0618
             SetEstadoFiscal(EstadoFiscalConstants.EmitidaId);
         }
 

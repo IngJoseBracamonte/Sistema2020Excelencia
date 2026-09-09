@@ -12,28 +12,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         // Paciente anterior y nuevo
         public Guid? PacienteAnteriorId { get; private set; }
 
-        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: PacienteAnteriorId → PacientesAdmision.</summary>
-        [Obsolete("Derivar del paciente vía PacienteAnteriorId. Columna legacy pendiente de DROP.")]
-        public string? PacienteAnteriorNombre { get; private set; }
         public Guid? PacienteNuevoId { get; private set; }
-
-        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: PacienteNuevoId → PacientesAdmision.</summary>
-        [Obsolete("Derivar del paciente vía PacienteNuevoId. Columna legacy pendiente de DROP.")]
-        public string? PacienteNuevoNombre { get; private set; }
 
         // Tipo de ingreso/Convenio anterior y nuevo
         public string? TipoIngresoAnterior { get; private set; }
         public string? TipoIngresoNuevo { get; private set; }
         public int? ConvenioAnteriorId { get; private set; }
 
-        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: ConvenioAnteriorId → SegurosConvenios.</summary>
-        [Obsolete("Derivar del convenio vía ConvenioAnteriorId. Columna legacy pendiente de DROP.")]
-        public string? ConvenioAnteriorNombre { get; private set; }
         public int? ConvenioNuevoId { get; private set; }
-
-        /// <summary>LEGACY (3FN): nombre desnormalizado. Fuente de verdad: ConvenioNuevoId → SegurosConvenios.</summary>
-        [Obsolete("Derivar del convenio vía ConvenioNuevoId. Columna legacy pendiente de DROP.")]
-        public string? ConvenioNuevoNombre { get; private set; }
 
         // Totales de la cuenta anterior y nuevo
         public decimal TotalAnteriorUSD { get; private set; }
@@ -50,15 +36,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal CxCSaldoAnteriorUSD { get; private set; }
         public decimal CxCSaldoNuevoUSD { get; private set; }
 
-        // Detalle en JSON de cambios de precios de servicios
-
-        /// <summary>
-        /// LEGACY (3FN): JSON desnormalizado de cambios. Fuente de verdad:
-        /// la colección normalizada <see cref="DetallesModificados"/>
-        /// (tabla HistorialModificacionCuentaDetalles). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar DetallesModificados. Columna legacy pendiente de DROP.")]
-        public string? DetalleServiciosCambiosJson { get; private set; }
         public virtual ICollection<HistorialModificacionCuentaDetalle> DetallesModificados { get; private set; } = new List<HistorialModificacionCuentaDetalle>();
 
         protected HistorialModificacionCuenta() { }
@@ -67,15 +44,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Guid cuentaServicioId,
             string usuario,
             Guid? pacienteAnteriorId,
-            string? pacienteAnteriorNombre,
             Guid? pacienteNuevoId,
-            string? pacienteNuevoNombre,
             string? tipoIngresoAnterior,
             string? tipoIngresoNuevo,
             int? convenioAnteriorId,
-            string? convenioAnteriorNombre,
             int? convenioNuevoId,
-            string? convenioNuevoNombre,
             decimal totalAnteriorUSD,
             decimal totalNuevoUSD,
             decimal reciboTotalAnteriorUSD,
@@ -84,8 +57,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             decimal reciboVueltoNuevoUSD,
             decimal reciboPagadoUSD,
             decimal cxcSaldoAnteriorUSD,
-            decimal cxcSaldoNuevoUSD,
-            string? detalleServiciosCambiosJson)
+            decimal cxcSaldoNuevoUSD)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
@@ -93,16 +65,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
             
             PacienteAnteriorId = pacienteAnteriorId;
-            PacienteAnteriorNombre = pacienteAnteriorNombre;
             PacienteNuevoId = pacienteNuevoId;
-            PacienteNuevoNombre = pacienteNuevoNombre;
 
             TipoIngresoAnterior = tipoIngresoAnterior;
             TipoIngresoNuevo = tipoIngresoNuevo;
             ConvenioAnteriorId = convenioAnteriorId;
-            ConvenioAnteriorNombre = convenioAnteriorNombre;
             ConvenioNuevoId = convenioNuevoId;
-            ConvenioNuevoNombre = convenioNuevoNombre;
 
             TotalAnteriorUSD = totalAnteriorUSD;
             TotalNuevoUSD = totalNuevoUSD;
@@ -116,7 +84,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CxCSaldoAnteriorUSD = cxcSaldoAnteriorUSD;
             CxCSaldoNuevoUSD = cxcSaldoNuevoUSD;
 
-            DetalleServiciosCambiosJson = detalleServiciosCambiosJson;
         }
     }
 }

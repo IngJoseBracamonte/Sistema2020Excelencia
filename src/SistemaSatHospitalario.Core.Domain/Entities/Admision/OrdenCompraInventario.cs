@@ -77,8 +77,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public PagoProveedor RegistrarAbono(decimal montoAbonadoUSD, decimal tasaCambio, string metodoPago, string referencia, string usuarioId, string? observaciones = null)
         {
-            if (montoAbonadoUSD > SaldoPendienteUSD) throw new InvalidOperationException($"El abono de ${montoAbonadoUSD:N2} supera el saldo pendiente de ${SaldoPendienteUSD:N2}.");
-            if (tasaCambio <= 0) throw new InvalidOperationException("La tasa de cambio debe ser mayor a cero.");
             if (string.IsNullOrWhiteSpace(metodoPago)) throw new InvalidOperationException("El método de pago es requerido.");
 
             var pago = new PagoProveedor(
@@ -87,23 +85,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 tasaCambio, 
                 metodoPago, 
                 referencia ?? string.Empty, 
-                usuarioId ?? "admin", 
+                usuarioId, 
                 observaciones);
 
             Pagos.Add(pago);
-
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            TotalAbonadoUSD = Math.Round(TotalAbonadoUSD + montoAbonadoUSD, 2);
-            SaldoPendienteUSD = Math.Round(MontoTotalUSD - TotalAbonadoUSD, 2);
-
-            // Regla Automática: Si SaldoPendienteUSD == 0 -> Pasa a Pagado
-            if (SaldoPendienteUSD <= 0m)
-            {
-                SaldoPendienteUSD = 0m;
-                Estado = "Pagado";
-            }
-#pragma warning restore CS0618
-
             return pago;
         }
     }

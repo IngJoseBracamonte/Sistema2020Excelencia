@@ -15,10 +15,12 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     public class GetKardexQueryHandler : IRequestHandler<GetKardexQuery, KardexResultDto>
     {
         private readonly IApplicationDbContext _context;
+        private readonly IUserResolverService _userResolver;
 
-        public GetKardexQueryHandler(IApplicationDbContext context)
+        public GetKardexQueryHandler(IApplicationDbContext context, IUserResolverService userResolver)
         {
             _context = context;
+            _userResolver = userResolver;
         }
 
         public async Task<KardexResultDto> Handle(GetKardexQuery request, CancellationToken cancellationToken)
@@ -106,6 +108,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
             decimal finalBalance = initialBalance + totalEntradas - totalSalidas;
 
+            var kardexUserIds = movimientosList
+                .Where(m => m.UsuarioIdentityId.HasValue)
+                .Select(m => m.UsuarioIdentityId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userMap = await _userResolver.GetDisplayNameMapAsync(kardexUserIds, cancellationToken);
+
             var result = new KardexResultDto
             {
                 InitialBalance = initialBalance,
@@ -117,7 +127,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     var esEntrada = IsEntrada(m.TipoMovimiento);
                     var cantAbs = Math.Abs(m.CantidadOriginal > 0 ? m.CantidadOriginal : m.CantidadBase);
                     var cantFinal = esEntrada ? cantAbs : -cantAbs;
-                    var unidadTxt = m.Insumo != null ? m.Insumo.UnidadMedidaBase.ToString() : m.UnidadMedidaOriginal.ToString();
+                    var unidadTxt = m.Insumo.UnidadMedidaNav.Nombre.ToString();
 
                     return new KardexMovimientoDto
                     {
@@ -132,7 +142,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Cantidad = cantFinal,
                         CantidadBase = cantFinal,
                         UnidadMedida = string.IsNullOrWhiteSpace(unidadTxt) ? "Unidad" : unidadTxt,
-                        Usuario = m.Usuario ?? "Sistema",
+                        Usuario = m.UsuarioIdentityId.HasValue && userMap.TryGetValue(m.UsuarioIdentityId.Value, out var nombre) ? nombre : "Sistema",
                         Motivo = m.Motivo ?? string.Empty,
                         EsEntrada = esEntrada
                     };

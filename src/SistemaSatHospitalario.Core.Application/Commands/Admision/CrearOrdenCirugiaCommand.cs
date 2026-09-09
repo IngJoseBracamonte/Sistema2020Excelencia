@@ -87,7 +87,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
 
                 var cuentaAbierta = await _context.CuentasServicios
-                    .FirstOrDefaultAsync(cuenta => cuenta.PacienteId == request.PacienteId && cuenta.Estado == "Abierta", cancellationToken);
+                    .FirstOrDefaultAsync(cuenta => cuenta.PacienteId == request.PacienteId && cuenta.EstadoId == "Abierta", cancellationToken);
                 if (cuentaAbierta != null)
                 {
                     return cuentaAbierta.Id;

@@ -73,9 +73,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Inventario
                     ProveedorNombre = o.Proveedor?.RazonSocial ?? string.Empty,
                     FechaEmision = o.FechaEmision,
                     MontoTotalUSD = o.MontoTotalUSD,
-                    MontoTotalBs = o.MontoTotalBs,
-                    TotalAbonadoUSD = o.TotalAbonadoUSD,
-                    SaldoPendienteUSD = o.SaldoPendienteUSD,
                     Estado = o.Estado,
                     Observaciones = o.Observaciones,
                     Pagos = (o.Pagos ?? new List<PagoProveedor>()).Select(p => new PagoProveedorDto

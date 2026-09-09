@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         {
             return await _context.CuentasServicios
                 .Include(c => c.Detalles)
-                .FirstOrDefaultAsync(c => c.PacienteId == pacienteId && c.Estado == EstadoConstants.Abierta, cancellationToken);
+                .FirstOrDefaultAsync(c => c.PacienteId == pacienteId && c.EstadoId == EstadoConstants.AbiertaId, cancellationToken);
         }
 
         public async Task<CuentaServicios?> ObtenerCuentaPorIdAsync(Guid cuentaId, CancellationToken cancellationToken)
@@ -104,7 +104,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
             var targetHora = new DateTime(hora.Year, hora.Month, hora.Day, hora.Hour, hora.Minute, 0, DateTimeKind.Unspecified);
 
             await _context.ReservasTemporales
-                .Where(r => r.MedicoId == medicoId && r.HoraPautada == targetHora && r.UsuarioId == usuarioId)
+                .Where(r => r.MedicoId == medicoId && r.HoraPautada == targetHora && r.UsuarioIdentityId.ToString() == usuarioId)
                 .ExecuteDeleteAsync(cancellationToken);
         }
 
