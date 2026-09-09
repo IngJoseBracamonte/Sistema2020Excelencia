@@ -252,7 +252,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 }
 
                 bool tieneEntrada = await _context.MovimientosInsumo
-                    .AnyAsync(m => m.SedeId == sedeId && m.TipoMovimiento == TipoMovimientoInsumoConstants.TransferenciaEntrada && m.Motivo != null && m.Motivo.Contains(ped.Correlativo), ct);
+                    .AnyAsync(m => m.SedeId == sedeId && m.TipoMovimiento == TipoMovimientoInsumo.TransferenciaEntrada && m.Motivo != null && m.Motivo.Contains(ped.Correlativo), ct);
 
                 if (!tieneEntrada)
                 {
@@ -277,7 +277,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                                 sedeId,
                                 "TransferenciaEntrada",
                                 cant,
-                               (SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants)det.Insumo.UnidadMedidaNav.Id,
+                               (UnidadMedidaEnum)det.Insumo.UnidadMedidaNav.Id,
                                 cant,
                                 ped.UsuarioCreadorId.ToString(),
                                 $"Recepción por despacho de pedido inter-sede {ped.Correlativo}"
@@ -300,7 +300,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 foreach (var dev in devolucionesCirugia)
                 {
                     bool tieneMov = await _context.MovimientosInsumo
-                        .AnyAsync(m => m.InsumoId == dev.InsumoId && m.SedeId == SeedConstants.SedeId_Principal && m.TipoMovimiento == TipoMovimientoInsumoConstants.Ingreso && m.Motivo != null && m.Motivo.Contains(dev.CuentaServicioId.ToString()), ct);
+                        .AnyAsync(m => m.InsumoId == dev.InsumoId && m.SedeId == SeedConstants.SedeId_Principal && m.TipoMovimiento == TipoMovimientoInsumo.Ingreso && m.Motivo != null && m.Motivo.Contains(dev.CuentaServicioId.ToString()), ct);
 
                     if (!tieneMov)
                     {
@@ -318,9 +318,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                         var movDev = new MovimientoInsumo(
                             dev.InsumoId,
                             SeedConstants.SedeId_Principal,
-                            TipoMovimientoInsumoConstants.Ingreso,
+                            TipoMovimientoInsumo.Ingreso,
                             dev.CantidadDevuelta,
-                            (SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants)dev.Insumo.UnidadMedidaNav.Id,
+                            (UnidadMedidaEnum)dev.Insumo.UnidadMedidaNav.Id,
                             dev.CantidadDevuelta,
                             "admin",
                             $"Devolución de sobrante de cirugía reconciliada (Cuenta: {dev.CuentaServicioId})"
@@ -791,11 +791,11 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         {
             var tipos = new[]
             {
-                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumoConstants.Ingreso.ToString(), Codigo = "ING", Nombre = "Ingreso / Compra Insumo" },
-                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumoConstants.Consumo.ToString(), Codigo = "ENV", Nombre = "Envío / Consumo Directo Sub-Área" },
-                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumoConstants.Descarte.ToString(), Codigo = "DES", Nombre = "Descarte / Baja de Inventario" },
-                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumoConstants.AjusteCierre.ToString(), Codigo = "AJU", Nombre = "Ajuste Kárdex Cierre / Auditoría" },
-                new { Id = SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumoConstants.TransferenciaSalida.ToString(), Codigo = "TRA", Nombre = "Transferencia entre Sedes" }
+                new { Id = TipoMovimientoInsumo.Ingreso.ToString(), Codigo = "ING", Nombre = "Ingreso / Compra Insumo" },
+                new { Id = TipoMovimientoInsumo.Consumo.ToString(), Codigo = "ENV", Nombre = "Envío / Consumo Directo Sub-Área" },
+                new { Id = TipoMovimientoInsumo.Descarte.ToString(), Codigo = "DES", Nombre = "Descarte / Baja de Inventario" },
+                new { Id = TipoMovimientoInsumo.AjusteCierre.ToString(), Codigo = "AJU", Nombre = "Ajuste Kárdex Cierre / Auditoría" },
+                new { Id = TipoMovimientoInsumo.TransferenciaSalida.ToString(), Codigo = "TRA", Nombre = "Transferencia entre Sedes" }
             };
             return Ok(tipos);
         }
@@ -894,9 +894,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 var mov = new MovimientoInsumo(
                     item.InsumoId,
                     principalSedeId,
-                    "Ingreso",
+                    TipoMovimientoInsumo.Ingreso,
                     item.Cantidad,
-                    (SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants)insumo.UnidadMedidaNav.Id,
+                    (UnidadMedidaEnum)insumo.UnidadMedidaNav.Id,
                     item.Cantidad,
                     username,
                     $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}"
@@ -1027,7 +1027,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 return NotFound(new { Message = "El servicio clínico o el insumo no existen." });
             }
 
-            Enum.TryParse<Core.Domain.Enums.UnidadMedidaConstants>(dto.UnidadMedidaConsumo ?? insumo.UnidadMedidaNav.Nombre.ToString(), true, out var unidad);
+            Enum.TryParse<UnidadMedidaEnum>(dto.UnidadMedidaConsumo ?? insumo.UnidadMedidaNav.Nombre.ToString(), true, out var unidad);
 
             var receta = new ServicioInsumoReceta(
                 servicio.Id,
@@ -1083,7 +1083,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public string Codigo { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
         public decimal StockInicial { get; set; }
-        public Core.Domain.Enums.UnidadMedidaConstants UnidadMedidaBase { get; set; }
+        public UnidadMedidaEnum UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
@@ -1094,7 +1094,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
     public class UpdateInsumoDto
     {
         public string Nombre { get; set; } = string.Empty;
-        public Core.Domain.Enums.UnidadMedidaConstants UnidadMedidaBase { get; set; }
+        public UnidadMedidaEnum UnidadMedidaBase { get; set; }
         public decimal CostoUnitarioBaseUSD { get; set; }
         public bool PermiteFraccionamiento { get; set; } = true;
         public string Categoria { get; set; } = TipoServicioConstants.CategoriaMedicamento;
@@ -1158,7 +1158,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public Guid SedeId { get; set; }
         public string TipoMovimiento { get; set; } = string.Empty;
         public decimal CantidadOriginal { get; set; }
-        public Core.Domain.Enums.UnidadMedidaConstants UnidadMedidaOriginal { get; set; }
+        public UnidadMedidaEnum UnidadMedidaOriginal { get; set; }
         public string? Usuario { get; set; }
         public string Motivo { get; set; } = string.Empty;
     }

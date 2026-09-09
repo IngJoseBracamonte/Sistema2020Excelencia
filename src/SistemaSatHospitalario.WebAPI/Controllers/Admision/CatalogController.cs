@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
@@ -158,14 +159,14 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
                 foreach (var ins in dto.Insumos)
                 {
-                    Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants>(ins.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
+                    Enum.TryParse<UnidadMedidaEnum>(ins.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
                     var receta = new ServicioInsumoReceta(servicio.Id, ins.InsumoId, ins.Cantidad, uom);
                     context.ServiciosInsumoRecetas.Add(receta);
                 }
             }
             else if (dto.InsumoId != Guid.Empty)
             {
-                Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.UnidadMedidaConstants>(dto.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
+                Enum.TryParse<UnidadMedidaEnum>(dto.UnidadMedidaConsumo ?? "UNIDAD", true, out var uom);
                 var receta = new ServicioInsumoReceta(servicio.Id, dto.InsumoId, dto.Cantidad, uom);
                 context.ServiciosInsumoRecetas.Add(receta);
             }
