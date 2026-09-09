@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(c => c.Paciente)
                 .Include(c => c.Medico)
                 .Include(c => c.Detalles)
-                .Where(c => c.EstadoId == "Abierta" && (c.AreaClinicaId != null || c.CamaRetenidaId != null))
+                .Where(c => c.EstadoId == EstadoCuentaConstants.AbiertaId && (c.AreaClinicaId != null || c.CamaRetenidaId != null))
                 .ToListAsync(cancellationToken);
 
             var result = new List<CamaMonitoreoDto>();
