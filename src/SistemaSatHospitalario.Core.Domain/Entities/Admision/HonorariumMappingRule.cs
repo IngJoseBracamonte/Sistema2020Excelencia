@@ -1,5 +1,5 @@
 using System;
-using SistemaSatHospitalario.Core.Domain.Enums; // ✅ Importa el Enum desde su namespace correspondiente
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -53,4 +53,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public void Activate() => IsActive = true;
     }
 
+      public enum MappingRuleType
+    {
+        Contains = 1,
+        StartsWith = 2,
+        Equals = 3,
+        Regex = 4
+    }
 }

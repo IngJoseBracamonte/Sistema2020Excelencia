@@ -535,7 +535,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.Usuario = User.Identity?.Name ?? "Sistema";
                 var result = await _mediator.Send(command);
                 if (result) return Ok(new { Message = "Devolución de insumo/medicamento de Quirófano procesada con éxito." });
                 return BadRequest(new { Error = "No se pudo procesar la devolución." });

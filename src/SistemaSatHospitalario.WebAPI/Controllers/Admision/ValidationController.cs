@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using System;
 using System.Security.Claims;
@@ -15,10 +16,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class ValidationController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ValidationController(IMediator mediator)
+        public ValidationController(IMediator mediator, ICurrentUserService currentUserService)
         {
             _mediator = mediator;
+            _currentUserService = currentUserService;
         }
 
         /// <summary>
@@ -46,7 +49,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public async Task<ActionResult<bool>> Validate([FromBody] ValidateTechnicalServiceCommand command)
         {
             // [SEC] Enforce the current user as the operator
-            command.UsuarioOperador = User.Identity?.Name ?? "Operador_Desconocido";
+            command.UsuarioOperador = _currentUserService.UserId;
             
             var result = await _mediator.Send(command);
             

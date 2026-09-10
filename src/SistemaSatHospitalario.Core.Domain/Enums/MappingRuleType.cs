@@ -1,4 +1,4 @@
-﻿namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
+﻿namespace SistemaSatHospitalario.Core.Domain.Enums
 {
     public enum MappingRuleType
     {

@@ -48,6 +48,9 @@ Generated\ Files/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
+
+# Test configuration files (contain sensitive data like database passwords)
+**/DatabaseTestConfiguration.cs
 [Bb]uild[Ll]og.*
 
 # NUnit

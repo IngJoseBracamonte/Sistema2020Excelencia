@@ -14,7 +14,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public Guid TargetId { get; set; }
         public bool IsAppointment { get; set; }
-        public Guid UsuarioOperador { get; set; } 
+        public Guid? UsuarioOperador { get; set; } 
     }
 
     public class ValidateTechnicalServiceCommandHandler : IRequestHandler<ValidateTechnicalServiceCommand, bool>
