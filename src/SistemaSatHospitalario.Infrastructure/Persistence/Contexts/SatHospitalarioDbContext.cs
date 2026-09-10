@@ -162,7 +162,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.MontoInicialDivisa).HasPrecision(18, 2);
                 entity.Property(c => c.MontoInicialBs).HasPrecision(18, 2);
-                entity.Property(c => c.TotalIngresado).HasPrecision(18, 2);
                 entity.Property(c => c.UsuarioIdentityId).HasColumnType("char(36)");
                 entity.HasIndex(c => c.UsuarioIdentityId);
 

@@ -20,15 +20,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         
         public Guid? UsuarioIdentityId { get; protected set; }
 
-
-
-        /// <summary>
-        /// LEGACY (3FN): total ingresado calculado y persistido. Fuente de verdad:
-        /// <see cref="DeclaracionesPorMetodo"/>.Sum(d => d.MontoIngresado). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular como DeclaracionesPorMetodo.Sum(d => d.MontoIngresado). Columna legacy pendiente de DROP.")]
-        public decimal? TotalIngresado { get; protected set; }
-
         public virtual ICollection<CajaDeclaracionMetodo> DeclaracionesPorMetodo { get; protected set; } = new List<CajaDeclaracionMetodo>();
 
         protected CajaDiaria() { }
