@@ -86,10 +86,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
-#pragma warning restore CS0618
-            // 3FN: si no se pasa la FK explícita, intentar parsear el texto como GUID
             UsuarioCargaId = usuarioCargaId ?? (Guid.TryParse(usuarioCarga, out var parsedCarga) ? parsedCarga : (Guid?)null);
             FechaCarga = DateTime.UtcNow;
             EstadoId = EstadoCuentaConstants.AbiertaId;

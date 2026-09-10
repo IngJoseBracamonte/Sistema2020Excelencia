@@ -4,7 +4,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
     /// <summary>
     /// Catálogo maestro de unidades de medida (3FN).
-    /// Reemplaza el enum <see cref="Enums.UnidadMedida"/> persistido como varchar(20).
+    /// Reemplaza el enum <see cref="Enums.UnidadMedidaConstants"/> persistido como varchar(20).
     /// </summary>
     public class UnidadMedidaCatalogo
     {

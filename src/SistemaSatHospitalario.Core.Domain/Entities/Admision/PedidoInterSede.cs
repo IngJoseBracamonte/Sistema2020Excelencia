@@ -12,7 +12,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public virtual Sede SedeSolicitante { get; private set; }
         public Guid SedeProveedoraId { get; private set; }
         public virtual Sede SedeProveedora { get; private set; }
-        public EstadoPedidoInterSede Estado { get; private set; }
+        public EstadoPedidoInterSedeConstants Estado { get; private set; }
         public DateTime FechaCreacion { get; private set; }
         public DateTime? FechaDespacho { get; private set; }
         public DateTime? FechaRecepcion { get; private set; }
@@ -49,18 +49,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             // 3FN: poblar la FK si el texto es un GUID válido
             UsuarioCreadorId = Guid.TryParse(usuarioCreador, out var parsed) ? parsed : (Guid?)null;
             Observaciones = observaciones ?? string.Empty;
-            Estado = EstadoPedidoInterSede.Solicitado;
+            Estado = EstadoPedidoInterSedeConstants.Solicitado;
             FechaCreacion = DateTime.UtcNow;
         }
 
-        public void CambiarEstado(EstadoPedidoInterSede nuevoEstado)
+        public void CambiarEstado(EstadoPedidoInterSedeConstants nuevoEstado)
         {
             Estado = nuevoEstado;
-            if (nuevoEstado == EstadoPedidoInterSede.Despachado)
+            if (nuevoEstado == EstadoPedidoInterSedeConstants.Despachado)
             {
                 FechaDespacho = DateTime.UtcNow;
             }
-            else if (nuevoEstado == EstadoPedidoInterSede.Recibido)
+            else if (nuevoEstado == EstadoPedidoInterSedeConstants.Recibido)
             {
                 FechaRecepcion = DateTime.UtcNow;
             }

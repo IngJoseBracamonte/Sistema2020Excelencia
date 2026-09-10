@@ -1,6 +1,6 @@
 namespace SistemaSatHospitalario.Core.Domain.Enums
 {
-    public enum EstadoPedidoInterSede
+    public enum EstadoPedidoInterSedeConstants
     {
         Solicitado = 1,
         Aprobado = 2,

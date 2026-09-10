@@ -15,7 +15,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
         {
             return tipoServicio.Equals("Insumo", StringComparison.OrdinalIgnoreCase) || 
                    tipoServicio.Equals("Medicamento", StringComparison.OrdinalIgnoreCase) ||
-                   (baseService != null && baseService.Category == ServiceCategory.Insumo);
+                   (baseService != null && baseService.Category == ServiceCategoryConstants.Insumo);
         }
 
         public Task ExecuteAsync(

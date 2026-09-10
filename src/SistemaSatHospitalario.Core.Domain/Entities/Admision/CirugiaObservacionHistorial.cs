@@ -11,7 +11,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public Guid OrdenCirugiaId { get; private set; }
         public string Observacion { get; private set; }
-        public TipoObservacionCirugia Tipo { get; private set; }
+        public TipoObservacionCirugiaConstants Tipo { get; private set; }
         public DateTime FechaRegistro { get; private set; }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CirugiaObservacionHistorial() { }
 
-        public CirugiaObservacionHistorial(Guid ordenCirugiaId, string observacion, TipoObservacionCirugia tipo, string usuarioRegistro, Guid? usuarioRegistroId = null)
+        public CirugiaObservacionHistorial(Guid ordenCirugiaId, string observacion, TipoObservacionCirugiaConstants tipo, string usuarioRegistro, Guid? usuarioRegistroId = null)
         {
             if (ordenCirugiaId == Guid.Empty)
                 throw new ArgumentException("El ID de la orden de cirugía es obligatorio.", nameof(ordenCirugiaId));

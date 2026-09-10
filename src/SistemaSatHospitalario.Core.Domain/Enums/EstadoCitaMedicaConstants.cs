@@ -1,6 +1,6 @@
 namespace SistemaSatHospitalario.Core.Domain.Enums
 {
-    public enum EstadoCitaMedica
+    public enum EstadoCitaMedicaConstants
     {
         Programada = 1,
         Confirmada = 2,

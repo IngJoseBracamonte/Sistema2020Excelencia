@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -50,7 +51,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 .Include(m => m.Insumo)
                 .AsNoTracking();
 
-            if (!string.IsNullOrWhiteSpace(request.TipoMovimiento) && Enum.TryParse<SistemaSatHospitalario.Core.Domain.Enums.TipoMovimientoInsumo>(request.TipoMovimiento, true, out var parsedTipo))
+            if (!string.IsNullOrWhiteSpace(request.TipoMovimiento) && Enum.TryParse<TipoMovimientoInsumo>(request.TipoMovimiento, true, out var parsedTipo))
             {
                 query = query.Where(m => m.TipoMovimiento == parsedTipo);
             }
@@ -73,9 +74,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 query = query.Where(m =>
                     (m.Insumo != null && m.Insumo.Nombre != null && m.Insumo.Nombre.ToLower().Contains(searchLower)) ||
                     (m.Insumo != null && m.Insumo.Codigo != null && m.Insumo.Codigo.ToLower().Contains(searchLower)) ||
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-                    (m.Usuario != null && m.Usuario.ToLower().Contains(searchLower)) ||
-#pragma warning restore CS0618
                     (m.Motivo != null && m.Motivo.ToLower().Contains(searchLower))
                 );
             }

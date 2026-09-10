@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -31,13 +32,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public virtual ICollection<InsumoPrincipioActivo> PrincipiosActivos { get; private set; } = new List<InsumoPrincipioActivo>();
 
         // Propiedades deprecadas/compatibilidad (eliminadas de la lógica de negocio activa)
+        /// <summary>
+        /// LEGACY (3FN): unidad de medida como enum persistido en varchar(20).
+        /// Fuente de verdad: <see cref="UnidadMedidaId"/> (FK a UnidadesMedida).
+        /// Alias de compatibilidad hasta el DROP de columna.
+        /// </summary>
+        [Obsolete("Usar UnidadMedidaId / UnidadMedidaNav. Columna legacy pendiente de DROP.")]
+        public string? UnidadMedidaBase { get; private set; }
         public string? ReactivosCombinados { get; private set; }
         public string? Indicaciones { get; private set; }
         public DateTime? FechaVencimiento { get; private set; }
 
         protected Insumo() { }
 
-        public Insumo(string codigo, string nombre, decimal stockActual, UnidadMedida unidadMedidaBase, decimal costoUnitarioBaseUSD, bool permiteFraccionamiento = true)
+        public Insumo(string codigo, string nombre, decimal stockActual, UnidadMedidaEnum unidadMedidaBase, decimal costoUnitarioBaseUSD, bool permiteFraccionamiento = true)
         {
             Id = Guid.NewGuid();
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
@@ -69,7 +77,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CostoUnitarioBaseUSD = costoUSD;
         }
 
-        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento)
+        public void ActualizarDetalles(string nombre, UnidadMedidaEnum unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento)
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             UnidadMedidaId = Constants.UnidadMedidaConstants.FromEnum(unidadMedidaBase);
@@ -86,7 +94,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         }
 
         // Overload para compatibilidad legacy mientras se completa migración total
-        public void ActualizarDetalles(string nombre, UnidadMedida unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string? reactivos, string? indicaciones, DateTime? vencimiento)
+        public void ActualizarDetalles(string nombre, UnidadMedidaEnum unidadMedidaBase, decimal costoUSD, bool permiteFraccionamiento, string? reactivos, string? indicaciones, DateTime? vencimiento)
         {
             ActualizarDetalles(nombre, unidadMedidaBase, costoUSD, permiteFraccionamiento);
         }

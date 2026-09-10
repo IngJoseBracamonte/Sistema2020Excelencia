@@ -6,24 +6,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Infrastructure.Identity; // <-- Asegura la referencia a tu ApplicationUser
 
 /// <summary>
 /// Resolves information about the currently authenticated user from the HTTP context.
 /// </summary>
 public sealed class UserResolverService : IUserResolverService
-{
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly UserManager<IdentityUser> _userManager;
+{  private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserManager<IdentityUser> _userManager; // <-- Cambiado a IdentityUser
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UserResolverService"/> class.
-    /// </summary>
-    /// <param name="httpContextAccessor">
-    /// Accessor for the current HTTP context.
-    /// </param>
-    /// <param name="userManager">
-    /// The ASP.NET Core Identity user manager.
-    /// </param>
     public UserResolverService(
         IHttpContextAccessor httpContextAccessor,
         UserManager<IdentityUser> userManager)
@@ -101,10 +92,6 @@ public sealed class UserResolverService : IUserResolverService
     {
         ArgumentNullException.ThrowIfNull(userIds);
 
-        // TODO:
-        // Replace this implementation with a query against
-        // the application's user repository/table.
-
         var result = userIds
             .Distinct()
             .ToDictionary(
@@ -114,13 +101,6 @@ public sealed class UserResolverService : IUserResolverService
         return Task.FromResult(result);
     }
 
-    /// <summary>
-    /// Gets the current authenticated user.
-    /// </summary>
-    /// <returns>The authenticated claims principal.</returns>
-    /// <exception cref="UnauthorizedAccessException">
-    /// Thrown when there is no authenticated user.
-    /// </exception>
     private ClaimsPrincipal GetAuthenticatedUser()
     {
         var user = _httpContextAccessor.HttpContext?.User;
@@ -156,9 +136,12 @@ public sealed class UserResolverService : IUserResolverService
     /// <inheritdoc />
     public async Task<string> ResolveUserIdAsync(Guid? targetUserId, CancellationToken cancellationToken)
     {
-        var httpContext = _httpContextAccessor.HttpContext;
+        // Si no se envía un ID específico, retorna el ID del usuario actualmente autenticado
+        if (!targetUserId.HasValue || targetUserId.Value == Guid.Empty)
+        {
+            return GetCurrentUserId().ToString();
+        }
 
-        // Si pasan un ID específico, buscamos el usuario en la base de datos usando UserManager
         var user = await _userManager.FindByIdAsync(targetUserId.Value.ToString());
 
         if (user == null)
@@ -166,7 +149,6 @@ public sealed class UserResolverService : IUserResolverService
             throw new KeyNotFoundException($"El usuario con ID '{targetUserId}' no existe en el sistema.");
         }
 
-        // Retornamos el nombre de usuario (ajusta a u.UserName o u.Email según tu modelo de identidad)
-        return user.UserName;
+        return user.UserName ?? user.Id;
     }
 }

@@ -1,14 +1,10 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+
 using MediatR;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
-using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -128,7 +124,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             var tipoServicioEfectivo = ResolveTipoServicioEfectivo(baseService, request.TipoServicio);
             bool esConsulta = baseService?.TipoServicioId == TipoServicioConstants.Medico
-                              || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Consultation
+                              || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Consultation
                               || EstadoConstants.EsConsulta(tipoServicioEfectivo);
 
             await ValidarPrecioYClaveSupervisorAsync(request, baseService, esConsulta, cancellationToken);
@@ -139,10 +135,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
             bool esLab = baseService?.TipoServicioId == TipoServicioConstants.Laboratorio
-                         || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory
+                         || baseService?.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Laboratory
                          || EstadoConstants.EsLaboratorio(tipoServicioEfectivo);
             bool esRx = baseService?.TipoServicioId is TipoServicioConstants.RX or TipoServicioConstants.Tomo
-                        || baseService?.Category is SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Radiology or SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Tomography
+                        || baseService?.Category is SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Radiology or SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Tomography
                         || tipoServicioEfectivo == EstadoConstants.RX
                         || tipoServicioEfectivo == EstadoConstants.TOMO;
 
@@ -355,7 +351,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             if (request.IsPrivilegedUser || baseService == null) return;
 
-            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategory.Laboratory);
+            bool esLab = EstadoConstants.EsLaboratorio(request.TipoServicio) || (baseService != null && baseService.Category == SistemaSatHospitalario.Core.Domain.Enums.ServiceCategoryConstants.Laboratory);
 
             decimal basePrice = baseService.PrecioBase;
             if (request.ConvenioId.HasValue)
@@ -558,7 +554,20 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default) => Task.FromResult<TResponse>(default!);
         public Task<object?> Send(object request, CancellationToken cancellationToken = default) => Task.FromResult<object?>(null);
         public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : IRequest => Task.CompletedTask;
-        public global::System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken = default) => AsyncEnumerable.Empty<TResponse>();
-        public global::System.Collections.Generic.IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken = default) => AsyncEnumerable.Empty<object?>();
+        public async global::System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(
+          IStreamRequest<TResponse> request,
+          [global::System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await global::System.Threading.Tasks.Task.CompletedTask;
+            yield break;
+        }
+
+        public async global::System.Collections.Generic.IAsyncEnumerable<object?> CreateStream(
+            object request,
+            [global::System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await global::System.Threading.Tasks.Task.CompletedTask;
+            yield break;
+        }
     }
 }

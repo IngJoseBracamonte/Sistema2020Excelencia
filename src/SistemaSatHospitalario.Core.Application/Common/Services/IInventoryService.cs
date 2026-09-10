@@ -24,7 +24,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid sedeId,
             string tipoMovimiento, // Ingreso, Descarte
             decimal cantidadOriginal,
-            UnidadMedida unidadMedidaOriginal,
+            UnidadMedidaEnum unidadMedidaOriginal,
             string usuario,
             string motivo,
             CancellationToken cancellationToken);

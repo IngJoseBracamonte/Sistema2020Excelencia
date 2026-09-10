@@ -1,6 +1,6 @@
 namespace SistemaSatHospitalario.Core.Domain.Enums
 {
-    public enum UnidadMedida
+    public enum UnidadMedidaEnum
     {
         UNIDAD = 1,
         KG = 2,

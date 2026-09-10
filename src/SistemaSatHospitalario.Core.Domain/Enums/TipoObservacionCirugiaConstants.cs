@@ -1,6 +1,6 @@
 namespace SistemaSatHospitalario.Core.Domain.Enums
 {
-    public enum TipoObservacionCirugia
+    public enum TipoObservacionCirugiaConstants
     {
         ObservacionMedica = 1,
         Reprogramacion = 2,

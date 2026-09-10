@@ -222,13 +222,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             var detalle = $"Reprogramada de {fechaAnterior:dd/MM/yyyy HH:mm} a {nuevaFecha:dd/MM/yyyy HH:mm}. Motivo: {motivo}";
             AgregarLog(usuarioId, "Reprogramacion", detalle);
-            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugia.Reprogramacion, usuarioId, ParseUsuarioId(usuarioId));
+            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugiaConstants.Reprogramacion, usuarioId, ParseUsuarioId(usuarioId));
         }
 
         private static Guid? ParseUsuarioId(string? usuarioId)
             => Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugia tipo = Enums.TipoObservacionCirugia.ObservacionMedica, string usuarioRegistro = "Sistema", Guid? usuarioRegistroId = null)
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugiaConstants tipo = Enums.TipoObservacionCirugiaConstants.ObservacionMedica, string usuarioRegistro = "Sistema", Guid? usuarioRegistroId = null)
         {
             var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro, usuarioRegistroId);
             _historialObservaciones.Add(item);
@@ -239,10 +239,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             var tipoEnum = tipo?.ToLowerInvariant() switch
             {
-                "reprogramacion" => Enums.TipoObservacionCirugia.Reprogramacion,
-                "hitoquirurgico" => Enums.TipoObservacionCirugia.HitoQuirurgico,
-                "cancelacion" => Enums.TipoObservacionCirugia.Cancelacion,
-                _ => Enums.TipoObservacionCirugia.ObservacionMedica
+                "reprogramacion" => Enums.TipoObservacionCirugiaConstants.Reprogramacion,
+                "hitoquirurgico" => Enums.TipoObservacionCirugiaConstants.HitoQuirurgico,
+                "cancelacion" => Enums.TipoObservacionCirugiaConstants.Cancelacion,
+                _ => Enums.TipoObservacionCirugiaConstants.ObservacionMedica
             };
             return AgregarHistorialObservacion(observacion, tipoEnum, usuarioRegistro, usuarioRegistroId);
         }

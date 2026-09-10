@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Domain.Common;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Common;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-
-using SistemaSatHospitalario.Core.Domain.Common;
-using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 {
@@ -18,7 +18,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         public DbSet<SeguroConvenio> SegurosConvenios { get; set; }
         public DbSet<PacienteAdmision> PacientesAdmision { get; set; }
         public DbSet<OrdenDeServicio> OrdenesDeServicio { get; set; }
-        public DbSet<OrdenRX> OrdenesRX { get; set; } // TPH o TPT
+        public DbSet<OrdenRX> OrdenesRX { get; set; }
 
         public DbSet<TurnoMedico> TurnosMedicos { get; set; }
         public DbSet<IncidenciaHorario> IncidenciasHorario { get; set; }
@@ -116,16 +116,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         {
             foreach (var entry in ChangeTracker.Entries<CirugiaLog>())
             {
-                if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified)
+                if (entry.State == EntityState.Modified)
                 {
-                    entry.State = Microsoft.EntityFrameworkCore.EntityState.Added;
+                    entry.State = EntityState.Added;
                 }
             }
             foreach (var entry in ChangeTracker.Entries<CirugiaObservacionHistorial>())
             {
-                if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified)
+                if (entry.State == EntityState.Modified)
                 {
-                    entry.State = Microsoft.EntityFrameworkCore.EntityState.Added;
+                    entry.State = EntityState.Added;
                 }
             }
         }
@@ -134,7 +134,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         {
             foreach (var entry in ChangeTracker.Entries<MovimientoInsumo>())
             {
-                if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified || entry.State == Microsoft.EntityFrameworkCore.EntityState.Deleted)
+                if (entry.State == EntityState.Modified || entry.State == EntityState.Deleted)
                 {
                     throw new InvalidOperationException("Los movimientos de insumos de inventario son inmutables y no se pueden modificar ni eliminar.");
                 }
@@ -145,11 +145,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
         {
             base.OnModelCreating(builder);
 
-            // MySQL no soporta esquemas, se ignora para compatibilidad multi-proveedor
-            // builder.HasDefaultSchema("Admision");
-
-            // [PHASE-5] Ignore Domain Events during persistence (V14.1 Senior Patch)
-            // Ensures purely in-memory event handling and prevents "Missing PK" EF errors.
             builder.Ignore<DomainEvent>();
 
             foreach (var entityType in builder.Model.GetEntityTypes())
@@ -166,12 +161,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(c => c.Id);
                 entity.Property(c => c.MontoInicialDivisa).HasPrecision(18, 2);
                 entity.Property(c => c.MontoInicialBs).HasPrecision(18, 2);
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
                 entity.Property(c => c.UsuarioIdentityId).HasColumnType("char(36)");
                 entity.HasIndex(c => c.UsuarioIdentityId);
 
-                // 3FN: FK al catálogo de estados de caja
                 entity.HasOne(c => c.EstadoNav)
                       .WithMany()
                       .HasForeignKey(c => c.EstadoId)
@@ -179,7 +171,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(c => c.EstadoId);
             });
 
-            // 3FN: Catálogo de estados de caja diaria
             builder.Entity<EstadoCaja>(entity =>
             {
                 entity.ToTable("EstadosCaja");
@@ -190,9 +181,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(e => e.Codigo).IsUnique();
 
                 entity.HasData(
-                    new EstadoCaja(SistemaSatHospitalario.Core.Domain.Constants.EstadoCajaConstants.AbiertaId, "ABIERTA", "Abierta"),
-                    new EstadoCaja(SistemaSatHospitalario.Core.Domain.Constants.EstadoCajaConstants.CerradaPorAsistenteId, "CERRADA_POR_ASISTENTE", "Cerrada por Asistente"),
-                    new EstadoCaja(SistemaSatHospitalario.Core.Domain.Constants.EstadoCajaConstants.CerradaId, "CERRADA", "Cerrada")
+                    new EstadoCaja(EstadoCajaConstants.AbiertaId, "ABIERTA", "Abierta"),
+                    new EstadoCaja(EstadoCajaConstants.CerradaPorAsistenteId, "CERRADA_POR_ASISTENTE", "Cerrada por Asistente"),
+                    new EstadoCaja(EstadoCajaConstants.CerradaId, "CERRADA", "Cerrada")
                 );
             });
 
@@ -238,11 +229,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(r => r.CuentaServicioId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid)
                 entity.Property(r => r.UsuarioEmisionId).HasColumnType("char(36)");
                 entity.HasIndex(r => r.UsuarioEmisionId);
 
-                // 3FN: FK al catálogo de estados fiscales
                 entity.HasOne(r => r.EstadoFiscalNav)
                       .WithMany()
                       .HasForeignKey(r => r.EstadoFiscalId)
@@ -250,7 +239,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(r => r.EstadoFiscalId);
             });
 
-            // 3FN: Catálogo de estados fiscales de recibo/factura
             builder.Entity<EstadoFiscal>(entity =>
             {
                 entity.ToTable("EstadosFiscales");
@@ -261,9 +249,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(e => e.Codigo).IsUnique();
 
                 entity.HasData(
-                    new EstadoFiscal(SistemaSatHospitalario.Core.Domain.Constants.EstadoFiscalConstants.BorradorId, "BORRADOR", "Borrador"),
-                    new EstadoFiscal(SistemaSatHospitalario.Core.Domain.Constants.EstadoFiscalConstants.EmitidaId, "EMITIDA", "Emitida"),
-                    new EstadoFiscal(SistemaSatHospitalario.Core.Domain.Constants.EstadoFiscalConstants.AnuladaId, "ANULADA", "Anulada")
+                    new EstadoFiscal(EstadoFiscalConstants.BorradorId, "BORRADOR", "Borrador"),
+                    new EstadoFiscal(EstadoFiscalConstants.EmitidaId, "EMITIDA", "Emitida"),
+                    new EstadoFiscal(EstadoFiscalConstants.AnuladaId, "ANULADA", "Anulada")
                 );
             });
 
@@ -280,10 +268,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(d => d.ReciboFacturaId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                // Índice para reporte de ingresos (Fase 7)
                 entity.HasIndex(d => d.FechaPago);
 
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid)
                 entity.Property(d => d.UsuarioCargaId).HasColumnType("char(36)");
                 entity.HasIndex(d => d.UsuarioCargaId);
             });
@@ -306,8 +292,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(h => h.CategoriaServicio).IsRequired().HasMaxLength(50);
                 entity.HasOne(h => h.MedicoDefault).WithMany().HasForeignKey(h => h.MedicoDefaultId).OnDelete(DeleteBehavior.SetNull);
                 entity.HasIndex(h => h.CategoriaServicio).IsUnique();
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
+
                 entity.Property(h => h.UsuarioConfiguroId).HasColumnType("char(36)");
                 entity.HasIndex(h => h.UsuarioConfiguroId);
             });
@@ -319,32 +304,50 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(l => l.TipoAccion).IsRequired().HasMaxLength(50);
                 entity.HasIndex(l => l.FechaAccion);
                 entity.HasIndex(l => l.DetalleServicioId);
+
+                entity.Property(l => l.UsuarioOperadorId).HasColumnType("char(36)");
+                entity.HasIndex(l => l.UsuarioOperadorId);
             });
 
-            builder.Entity<DetalleServicioCuenta>()
-                .HasOne<Medico>()
-                .WithMany()
-                .HasForeignKey(d => d.MedicoResponsableId)
-                .OnDelete(DeleteBehavior.SetNull);
+            builder.Entity<DetalleServicioCuenta>(entity =>
+            {
+                entity.ToTable("DetallesServicioCuenta");
+                entity.HasKey(d => d.Id);
+                entity.Property(d => d.Precio).HasPrecision(18, 2);
+                entity.Property(d => d.PrecioCatalogoHistorico).HasPrecision(18, 2);
+                entity.Property(d => d.IncluidoEnTarifaBase).IsRequired();
+                entity.Property(d => d.Cantidad).HasPrecision(18, 4);
 
-            builder.Entity<DetalleServicioCuenta>()
-                .HasOne(d => d.DetallePadre)
-                .WithMany()
-                .HasForeignKey(d => d.DetallePadreId)
-                .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne<Medico>()
+                      .WithMany()
+                      .HasForeignKey(d => d.MedicoResponsableId)
+                      .OnDelete(DeleteBehavior.SetNull);
 
-            builder.Entity<ServicioClinico>()
-                .HasOne(s => s.ServicioInforme)
-                .WithMany()
-                .HasForeignKey(s => s.ServicioInformeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.DetallePadre)
+                      .WithMany()
+                      .HasForeignKey(d => d.DetallePadreId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(d => d.AreaClinica)
+                      .WithMany()
+                      .HasForeignKey(d => d.AreaClinicaId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(d => d.TipoServicioNav)
+                      .WithMany()
+                      .HasForeignKey(d => d.TipoServicioId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(d => d.UsuarioCargaId).HasColumnType("char(36)");
+                entity.Property(d => d.UsuarioTecnicoId).HasColumnType("char(36)");
+                entity.HasIndex(d => d.UsuarioCargaId);
+                entity.HasIndex(d => d.UsuarioTecnicoId);
+            });
 
             builder.Entity<PacienteAdmision>(entity =>
             {
                 entity.ToTable("PacientesAdmision");
                 entity.HasKey(p => p.Id);
-                // Guid generado por el sistema nuevo (V11.0 Sync Pro)
                 entity.HasIndex(p => p.IdPacienteLegacy).IsUnique();
                 entity.HasIndex(p => p.CedulaPasaporte).IsUnique();
             });
@@ -354,13 +357,17 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("OrdenesDeServicio");
                 entity.HasKey(o => o.Id);
                 entity.Property(o => o.EstadoFacturacion).HasConversion<int>();
+
+                entity.HasDiscriminator<string>("Discriminator")
+                      .HasValue<OrdenDeServicio>("OrdenDeServicio")
+                      .HasValue<OrdenRX>("OrdenRX");
+
                 entity.HasOne(o => o.Paciente)
                       .WithMany(p => p.Ordenes)
                       .HasForeignKey(o => o.PacienteId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
             
-            // TPH Configuration for OrdenRX
             builder.Entity<OrdenRX>().HasBaseType<OrdenDeServicio>();
 
             builder.Entity<TurnoMedico>(entity => {
@@ -423,11 +430,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(c => c.MedicoId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(c => c.SubAreaClinica)
-                      .HasMaxLength(100);
+                entity.Property(c => c.SubAreaClinica).HasMaxLength(100);
 
-                // 3FN: FKs lógicas a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
                 entity.Property(c => c.UsuarioCargaId).HasColumnType("char(36)");
                 entity.Property(c => c.UsuarioValidacionId).HasColumnType("char(36)");
                 entity.Property(c => c.UsuarioAuditoriaId).HasColumnType("char(36)");
@@ -435,7 +439,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(c => c.UsuarioValidacionId);
                 entity.HasIndex(c => c.UsuarioAuditoriaId);
 
-                // 3FN: FKs a catálogos de estado y tipo de ingreso
                 entity.HasOne(c => c.EstadoNav)
                       .WithMany()
                       .HasForeignKey(c => c.EstadoId)
@@ -448,11 +451,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(c => c.TipoIngresoId);
 
-                // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.FechaCarga);
             });
 
-            // 3FN: Catálogo de estados de cuenta de servicios
             builder.Entity<EstadoCuenta>(entity =>
             {
                 entity.ToTable("EstadosCuenta");
@@ -463,14 +464,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(e => e.Codigo).IsUnique();
 
                 entity.HasData(
-                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.AbiertaId, "ABIERTA", "Abierta"),
-                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.FacturadaId, "FACTURADA", "Facturada"),
-                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.AnuladaId, "ANULADA", "Anulada"),
-                    new EstadoCuenta(SistemaSatHospitalario.Core.Domain.Constants.EstadoCuentaConstants.ValidadaId, "VALIDADA", "Validada")
+                    new EstadoCuenta(EstadoCuentaConstants.AbiertaId, "ABIERTA", "Abierta"),
+                    new EstadoCuenta(EstadoCuentaConstants.FacturadaId, "FACTURADA", "Facturada"),
+                    new EstadoCuenta(EstadoCuentaConstants.AnuladaId, "ANULADA", "Anulada"),
+                    new EstadoCuenta(EstadoCuentaConstants.ValidadaId, "VALIDADA", "Validada")
                 );
             });
 
-            // 3FN: Catálogo de tipos de ingreso
             builder.Entity<TipoIngreso>(entity =>
             {
                 entity.ToTable("TiposIngreso");
@@ -481,46 +481,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(t => t.Codigo).IsUnique();
 
                 entity.HasData(
-                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.ParticularId, "PARTICULAR", "Particular"),
-                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.SeguroId, "SEGURO", "Seguro"),
-                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.HospitalizacionId, "HOSPITALIZACION", "Hospitalización"),
-                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.EmergenciaId, "EMERGENCIA", "Emergencia"),
-                    new TipoIngreso(SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.UciId, "UCI", "UCI")
+                    new TipoIngreso(TipoIngresoConstants.ParticularId, "PARTICULAR", "Particular"),
+                    new TipoIngreso(TipoIngresoConstants.SeguroId, "SEGURO", "Seguro"),
+                    new TipoIngreso(TipoIngresoConstants.HospitalizacionId, "HOSPITALIZACION", "Hospitalización"),
+                    new TipoIngreso(TipoIngresoConstants.EmergenciaId, "EMERGENCIA", "Emergencia"),
+                    new TipoIngreso(TipoIngresoConstants.UciId, "UCI", "UCI")
                 );
-            });
-
-            builder.Entity<DetalleServicioCuenta>(entity =>
-            {
-                entity.ToTable("DetallesServicioCuenta");
-                entity.HasKey(d => d.Id);
-                entity.Property(d => d.Precio).HasPrecision(18, 2);
-                entity.Property(d => d.PrecioCatalogoHistorico).HasPrecision(18, 2);
-                entity.Property(d => d.IncluidoEnTarifaBase).IsRequired();
-                entity.Property(d => d.Cantidad).HasPrecision(18, 4);
-                entity.HasOne(d => d.AreaClinica)
-                      .WithMany()
-                      .HasForeignKey(d => d.AreaClinicaId)
-                      .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasOne(d => d.TipoServicioNav)
-                      .WithMany()
-                      .HasForeignKey(d => d.TipoServicioId)
-                      .OnDelete(DeleteBehavior.Restrict);
-
-                // 3FN: FKs lógicas a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
-                entity.Property(d => d.UsuarioCargaId).HasColumnType("char(36)");
-                entity.Property(d => d.UsuarioTecnicoId).HasColumnType("char(36)");
-                entity.HasIndex(d => d.UsuarioCargaId);
-                entity.HasIndex(d => d.UsuarioTecnicoId);
             });
 
             builder.Entity<CitaMedica>(entity =>
             {
                 entity.ToTable("CitasMedicas");
                 entity.HasKey(c => c.Id);
-
-                // Índice para búsqueda por fecha (Fase 7)
                 entity.HasIndex(c => c.HoraPautada);
 
                 entity.HasOne(c => c.AreaClinica)
@@ -528,7 +500,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(c => c.AreaClinicaId)
                       .OnDelete(DeleteBehavior.SetNull);
 
-                // 3FN: FK al catálogo de estados de cita
                 entity.HasOne(c => c.EstadoNav)
                       .WithMany()
                       .HasForeignKey(c => c.EstadoId)
@@ -536,7 +507,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(c => c.EstadoId);
             });
 
-            // 3FN: Catálogo de estados de cita médica
             builder.Entity<EstadoCitaMedica>(entity =>
             {
                 entity.ToTable("EstadosCitaMedica");
@@ -547,10 +517,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(e => e.Codigo).IsUnique();
 
                 entity.HasData(
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.PendienteId, "PENDIENTE", "Pendiente"),
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.ConfirmadaId, "CONFIRMADA", "Confirmada"),
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.AtendidaId, "ATENDIDA", "Atendida"),
-                    new EstadoCitaMedica(SistemaSatHospitalario.Core.Domain.Constants.EstadoCitaConstants.CanceladaId, "CANCELADA", "Cancelada")
+                    new EstadoCitaMedica(EstadoCitaConstants.PendienteId, "PENDIENTE", "Pendiente"),
+                    new EstadoCitaMedica(EstadoCitaConstants.ConfirmadaId, "CONFIRMADA", "Confirmada"),
+                    new EstadoCitaMedica(EstadoCitaConstants.AtendidaId, "ATENDIDA", "Atendida"),
+                    new EstadoCitaMedica(EstadoCitaConstants.CanceladaId, "CANCELADA", "Cancelada")
                 );
             });
 
@@ -578,6 +548,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(s => s.EspecialidadId)
                       .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(s => s.ServicioInforme)
+                      .WithMany()
+                      .HasForeignKey(s => s.ServicioInformeId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne<TipoServicio>()
+                      .WithMany()
+                      .HasForeignKey(s => s.TipoServicioId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
                 entity.Property(s => s.HonorariumCategory).HasMaxLength(50);
                 entity.Property(s => s.UnidadMedida).HasMaxLength(50);
             });
@@ -590,6 +570,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(t => t.MotivoConsulta).HasMaxLength(500).IsRequired();
                 entity.Property(t => t.Temperatura).HasPrecision(4, 2);
                 
+                entity.Property(t => t.UsuarioRegistroId).HasColumnType("char(36)");
+                entity.HasIndex(t => t.UsuarioRegistroId);
                 entity.HasIndex(t => t.FechaRegistro);
             });
 
@@ -605,6 +587,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(v => v.LlenadoCapilar).HasMaxLength(50).IsRequired();
                 entity.Property(v => v.Pupilas).HasMaxLength(50).IsRequired();
                 entity.Property(v => v.UsuarioRegistroId).HasColumnType("char(36)").IsRequired();
+                entity.HasIndex(v => v.UsuarioRegistroId);
                 entity.HasIndex(v => v.FechaRegistro);
             });
 
@@ -646,7 +629,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .HasForeignKey(c => c.SeguroConvenioId)
                       .OnDelete(DeleteBehavior.Cascade);
                 
-                // Índice para búsqueda rápida por convenio y perfil
                 entity.HasIndex(c => new { c.SeguroConvenioId, c.PerfilId }).IsUnique();
             });
 
@@ -657,8 +639,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(c => c.MontoTotalBase).HasPrecision(18, 2);
                 entity.Property(c => c.MontoPagadoBase).HasPrecision(18, 2);
                 entity.Ignore(c => c.SaldoPendienteBase);
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
+
                 entity.Property(c => c.UsuarioAuditoriaId).HasColumnType("char(36)");
                 entity.HasIndex(c => c.UsuarioAuditoriaId);
 
@@ -666,14 +647,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(c => c.CuentaServicioId);
 
-                // [V12.8] Relación 1:N con ítems de garantía prendaria
                 entity.HasMany(c => c.GarantiasItems)
                       .WithOne(g => g.CuentaPorCobrar)
                       .HasForeignKey(g => g.CuentaPorCobrarId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // [V12.8] Tabla de ítems de garantía prendaria
             builder.Entity<GarantiaItem>(entity =>
             {
                 entity.ToTable("GarantiasItems");
@@ -687,12 +666,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("CompromisosPago");
                 entity.HasKey(c => c.Id);
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
+
                 entity.Property(c => c.UsuarioCreacionId).HasColumnType("char(36)");
                 entity.HasIndex(c => c.UsuarioCreacionId);
 
-                // 3FN: FK al catálogo de motivos de autorización
                 entity.HasOne(c => c.MotivoAutorizacion)
                       .WithMany()
                       .HasForeignKey(c => c.MotivoAutorizacionId)
@@ -700,7 +677,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(c => c.MotivoAutorizacionId);
             });
 
-            // 3FN: Catálogo de motivos de autorización/omisión
             builder.Entity<MotivoAutorizacion>(entity =>
             {
                 entity.ToTable("MotivosAutorizacion");
@@ -721,7 +697,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("TasaCambio");
                 entity.HasKey(t => t.Id);
                 entity.Property(t => t.Monto).HasPrecision(18, 4);
-                entity.Property(t => t.Activo).IsRequired(); // Mapeo implícito a TINYINT(1)/BIT
+                entity.Property(t => t.Activo).IsRequired();
             });
 
             builder.Entity<ErrorTicket>(entity =>
@@ -730,6 +706,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.RequestPath).HasMaxLength(500);
                 entity.Property(e => e.MetodoHTTP).HasMaxLength(10);
+
+                entity.Property(e => e.UsuarioAsociadoId).HasColumnType("char(36)");
+                entity.Property(e => e.ResueltoPorId).HasColumnType("char(36)");
+                entity.HasIndex(e => e.UsuarioAsociadoId);
+                entity.HasIndex(e => e.ResueltoPorId);
             });
 
             builder.Entity<Especialidad>(entity =>
@@ -742,6 +723,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("ReservasTemporales");
                 entity.HasKey(r => r.Id);
+                entity.Property(r => r.UsuarioIdentityId).HasColumnType("char(36)");
+                entity.HasIndex(r => r.UsuarioIdentityId);
                 entity.HasIndex(r => new { r.MedicoId, r.HoraPautada }).IsUnique();
             });
 
@@ -762,7 +745,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
             builder.Entity<ServicioSugerencia>(entity =>
             {
-                entity.ToTable("serviciossugerencias"); // Obligatorio minúscula por restricción MySQL Cloud
+                entity.ToTable("serviciossugerencias");
                 entity.HasKey(s => s.Id);
 
                 entity.HasOne(s => s.ServicioOrigen)
@@ -783,12 +766,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(a => a.PrecioOriginal).HasPrecision(18, 2);
                 entity.Property(a => a.PrecioModificado).HasPrecision(18, 2);
                 entity.Property(a => a.DescripcionServicio).IsRequired().HasMaxLength(500);
+
+                entity.Property(a => a.UsuarioOperadorId).HasColumnType("char(36)");
+                entity.Property(a => a.AutorizadoPorId).HasColumnType("char(36)");
+                entity.HasIndex(a => a.UsuarioOperadorId);
+                entity.HasIndex(a => a.AutorizadoPorId);
             });
 
             builder.Entity<OrdenImagen>(entity =>
             {
                 entity.ToTable("OrdenesImagenes");
                 entity.HasKey(o => o.Id);
+                entity.Property(o => o.Estado).HasConversion<int>();
                 entity.HasIndex(o => o.Estado);
                 entity.HasIndex(o => o.TipoServicio);
 
@@ -843,9 +832,18 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(d => d.DocumentType).IsRequired().HasMaxLength(100);
                 entity.Property(d => d.ReferenceId).IsRequired().HasMaxLength(100);
                 entity.Property(d => d.Action).IsRequired().HasMaxLength(100);
-                entity.Property(d => d.UsuarioIdentityId).IsRequired().HasMaxLength(100);
+                entity.Property(d => d.UsuarioIdentityId).HasColumnType("char(36)").IsRequired();
+                entity.HasIndex(d => d.UsuarioIdentityId);
                 entity.HasIndex(d => d.ReferenceId);
                 entity.HasIndex(d => d.Timestamp);
+            });
+
+            builder.Entity<AuditLog>(entity =>
+            {
+                entity.ToTable("AuditLogs");
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.UsuarioIdentityId).HasColumnType("char(36)");
+                entity.HasIndex(a => a.UsuarioIdentityId);
             });
 
             builder.Entity<Notification>(entity =>
@@ -855,7 +853,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(n => n.Title).IsRequired().HasMaxLength(200);
                 entity.Property(n => n.Message).IsRequired().HasMaxLength(500);
                 entity.Property(n => n.Type).IsRequired().HasMaxLength(50);
-                entity.Property(n => n.TargetUserGuidId);
+                entity.Property(n => n.TargetUserGuidId).HasColumnType("char(36)");
                 entity.Property(n => n.TargetRole).HasMaxLength(100);
                 entity.HasIndex(n => n.TargetUserGuidId);
                 entity.HasIndex(n => n.TargetRole);
@@ -868,6 +866,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(h => h.Id);
                 entity.Property(h => h.Pattern).IsRequired().HasMaxLength(100);
                 entity.Property(h => h.Category).IsRequired().HasMaxLength(50);
+                entity.Property(h => h.UsuarioCreoId).HasColumnType("char(36)");
+                entity.HasIndex(h => h.UsuarioCreoId);
                 entity.HasIndex(h => h.Priority);
                 entity.HasIndex(h => h.IsActive);
             });
@@ -877,10 +877,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.ToTable("HonorariosMedicosServicios");
                 entity.HasKey(h => h.Id);
                 entity.Property(h => h.MontoHonorario).HasPrecision(18, 2);
+                entity.Property(h => h.UsuarioModificoId).HasColumnType("char(36)");
+                entity.HasIndex(h => h.UsuarioModificoId);
+
                 entity.HasOne(h => h.Servicio)
                       .WithMany(s => s.HonorariosMedicos)
                       .HasForeignKey(h => h.ServicioId)
                       .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasOne(h => h.Medico)
                       .WithMany()
                       .HasForeignKey(h => h.MedicoId)
@@ -938,12 +942,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(i => i.Codigo).IsRequired().HasMaxLength(50);
                 entity.Property(i => i.Nombre).IsRequired().HasMaxLength(200);
                 entity.Ignore(i => i.StockActual);
-                // 3FN: FK al catálogo de unidades de medida
+
                 entity.HasOne(i => i.UnidadMedidaNav)
                       .WithMany()
                       .HasForeignKey(i => i.UnidadMedidaId)
                       .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(i => i.UnidadMedidaId);
+
                 entity.Property(i => i.CostoUnitarioBaseUSD).HasPrecision(18, 4);
                 entity.Property(i => i.PermiteFraccionamiento).IsRequired().HasDefaultValue(true);
                 entity.Property(i => i.CategoriaInsumoId);
@@ -956,7 +961,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(i => i.Codigo).IsUnique();
             });
 
-            // 3FN: Catálogo de unidades de medida
             builder.Entity<UnidadMedidaCatalogo>(entity =>
             {
                 entity.ToTable("UnidadesMedida");
@@ -968,13 +972,13 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(u => u.Codigo).IsUnique();
 
                 entity.HasData(
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.UnidadId, "UNIDAD", "Unidad", "UND", true),
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.KgId, "KG", "Kilogramo", "kg", true),
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.GramoId, "G", "Gramo", "g", true),
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.DecigramoId, "DG", "Decigramo", "dg", true),
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.MiligramoId, "MG", "Miligramo", "mg", true),
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.LitroId, "L", "Litro", "L", true),
-                    new UnidadMedidaCatalogo(SistemaSatHospitalario.Core.Domain.Constants.UnidadMedidaConstants.MililitroId, "ML", "Mililitro", "mL", true)
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.UnidadId, "UNIDAD", "Unidad", "UND", true),
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.KgId, "KG", "Kilogramo", "kg", true),
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.GramoId, "G", "Gramo", "g", true),
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.DecigramoId, "DG", "Decigramo", "dg", true),
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.MiligramoId, "MG", "Miligramo", "mg", true),
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.LitroId, "L", "Litro", "L", true),
+                    new UnidadMedidaCatalogo(UnidadMedidaConstants.MililitroId, "ML", "Mililitro", "mL", true)
                 );
             });
 
@@ -1025,7 +1029,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("ServiciosInsumoRecetas");
                 entity.HasKey(r => r.Id);
-                // 3FN: FK al catálogo de unidades de medida
+
                 entity.HasOne(r => r.UnidadMedidaNav)
                       .WithMany()
                       .HasForeignKey(r => r.UnidadMedidaConsumoId)
@@ -1066,17 +1070,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("MovimientosInsumo");
                 entity.HasKey(m => m.Id);
-                entity.Property(m => m.TipoMovimiento).IsRequired().HasMaxLength(50);
+                
+                entity.Property(m => m.TipoMovimiento).HasConversion<int>();
                 entity.Property(m => m.CantidadBase).HasPrecision(18, 4);
-                // 3FN: FK al catálogo de unidades de medida
-                entity.HasOne(m => m.UnidadMedidaNav)
-                      .WithMany()
-                      .HasForeignKey(m => m.UnidadMedidaOriginalId)
-                      .OnDelete(DeleteBehavior.Restrict);
-                entity.HasIndex(m => m.UnidadMedidaOriginalId);
                 entity.Property(m => m.CantidadOriginal).HasPrecision(18, 4);
-                entity.Property(m => m.UsuarioIdentityId).IsRequired().HasMaxLength(100);
                 entity.Property(m => m.Motivo).HasMaxLength(500);
+
+                entity.Property(m => m.UsuarioIdentityId).HasColumnType("char(36)");
+                entity.HasIndex(m => m.UsuarioIdentityId);
 
                 entity.HasOne(m => m.Insumo)
                       .WithMany()
@@ -1087,19 +1088,20 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .WithMany()
                       .HasForeignKey(m => m.SedeId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(m => m.UnidadMedidaNav)
+                      .WithMany()
+                      .HasForeignKey(m => m.UnidadMedidaOriginalId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(m => m.UnidadMedidaOriginalId);
             });
 
             builder.Entity<CierreInventario>(entity =>
             {
                 entity.ToTable("CierresInventario");
                 entity.HasKey(c => c.Id);
-                entity.Property(c => c.UsuarioId).IsRequired().HasMaxLength(100);
-                entity.Property(c => c.Observaciones).HasMaxLength(1000);
-
-                entity.HasOne(c => c.Sede)
-                      .WithMany()
-                      .HasForeignKey(c => c.SedeId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                entity.Property(c => c.UsuarioId).HasColumnType("char(36)");
+                entity.HasIndex(c => c.UsuarioId);
             });
 
             builder.Entity<CierreInventarioDetalle>(entity =>
@@ -1159,32 +1161,105 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(a => a.Id);
                 entity.Property(a => a.Codigo).IsRequired().HasMaxLength(50);
                 entity.Property(a => a.Nombre).IsRequired().HasMaxLength(150);
-                entity.Property(a => a.Estado).IsRequired();
+                entity.Property(a => a.Estado).HasConversion<int>().IsRequired();
                 entity.Property(a => a.EsAreaAdmision).IsRequired();
+
                 entity.HasOne(a => a.Sede)
-                      .WithMany(s => s.AreasClinicas)
-                      .HasForeignKey(a => a.SedeId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany(s => s.AreasClinicas)
+                    .HasForeignKey(a => a.SedeId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(a => a.Clasificacion)
-                      .WithMany()
-                      .HasForeignKey(a => a.ClasificacionId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany()
+                    .HasForeignKey(a => a.ClasificacionId)
+                    .OnDelete(DeleteBehavior.Restrict);
                 
                 entity.HasOne(a => a.ServicioTarifaBase)
-                      .WithMany()
-                      .HasForeignKey(a => a.ServicioTarifaBaseId)
-                      .OnDelete(DeleteBehavior.SetNull);
+                    .WithMany()
+                    .HasForeignKey(a => a.ServicioTarifaBaseId)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasIndex(a => new { a.SedeId, a.Codigo }).IsUnique();
 
                 entity.HasData(
-                    new AreaClinica(SeedConstants.SedeId_Emergencia, "BOX-1", "Box Emergencia 1", true, null, SeedConstants.AreaId_Emergencia, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Hospitalizacion, "HAB-101", "Habitación 101", false, null, SeedConstants.AreaId_Hospitalizacion, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_UCI, "UCI-1", "Cama UCI 1", false, null, SeedConstants.AreaId_UCI, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Principal, "FARMACIA", "Farmacia Central", false, null, SeedConstants.AreaId_Farmacia, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Principal, "LABORATORIO", "Laboratorio Central", false, null, SeedConstants.AreaId_Laboratorio, SeedConstants.ClasificacionId_Cama),
-                    new AreaClinica(SeedConstants.SedeId_Cirugia, "QX-1", "Quirófano 1 (Cirugía Mayor)", false, null, SeedConstants.AreaId_Cirugia, SeedConstants.ClasificacionId_Quirofano)
+                    new 
+                    { 
+                        Id = SeedConstants.AreaId_Emergencia, 
+                        SedeId = SeedConstants.SedeId_Emergencia, 
+                        Codigo = "BOX-1", 
+                        Nombre = "Box Emergencia 1", 
+                        Activo = true, 
+                        Estado = EstadoUbicacion.Disponible, 
+                        EsSubAreaAlmacenPrincipal = false,
+                        EsAreaAdmision = true, 
+                        ServicioTarifaBaseId = (Guid?)null, 
+                        ClasificacionId = SeedConstants.ClasificacionId_Cama 
+                    },
+                    new 
+                    { 
+                        Id = SeedConstants.AreaId_Hospitalizacion, 
+                        SedeId = SeedConstants.SedeId_Hospitalizacion, 
+                        Codigo = "HAB-101", 
+                        Nombre = "Habitación 101", 
+                        Activo = true, 
+                        Estado = EstadoUbicacion.Disponible, 
+                        EsSubAreaAlmacenPrincipal = false,
+                        EsAreaAdmision = false, 
+                        ServicioTarifaBaseId = (Guid?)null, 
+                        ClasificacionId = SeedConstants.ClasificacionId_Cama 
+                    },
+                    new 
+                    { 
+                        Id = SeedConstants.AreaId_UCI, 
+                        SedeId = SeedConstants.SedeId_UCI, 
+                        Codigo = "UCI-1", 
+                        Nombre = "Cama UCI 1", 
+                        Activo = true, 
+                        Estado = EstadoUbicacion.Disponible, 
+                        EsSubAreaAlmacenPrincipal = false,
+                        EsAreaAdmision = false, 
+                        ServicioTarifaBaseId = (Guid?)null, 
+                        ClasificacionId = SeedConstants.ClasificacionId_Cama 
+                    },
+                    new 
+                    { 
+                        Id = SeedConstants.AreaId_Farmacia, 
+                        SedeId = SeedConstants.SedeId_Principal, 
+                        Codigo = "FARMACIA", 
+                        Nombre = "Farmacia Central", 
+                        Activo = true, 
+                        Estado = EstadoUbicacion.Disponible, 
+                        EsSubAreaAlmacenPrincipal = false,
+                        EsAreaAdmision = false, 
+                        ServicioTarifaBaseId = (Guid?)null, 
+                        ClasificacionId = SeedConstants.ClasificacionId_Cama 
+                    },
+                    new 
+                    { 
+                        Id = SeedConstants.AreaId_Laboratorio, 
+                        SedeId = SeedConstants.SedeId_Principal, 
+                        Codigo = "LABORATORIO", 
+                        Nombre = "Laboratorio Central", 
+                        Activo = true, 
+                        Estado = EstadoUbicacion.Disponible, 
+                        EsSubAreaAlmacenPrincipal = false,
+                        EsAreaAdmision = false, 
+                        ServicioTarifaBaseId = (Guid?)null, 
+                        ClasificacionId = SeedConstants.ClasificacionId_Cama 
+                    },
+                    new 
+                    { 
+                        Id = SeedConstants.AreaId_Cirugia, 
+                        SedeId = SeedConstants.SedeId_Cirugia, 
+                        Codigo = "QX-1", 
+                        Nombre = "Quirófano 1 (Cirugía Mayor)", 
+                        Activo = true, 
+                        Estado = EstadoUbicacion.Disponible, 
+                        EsSubAreaAlmacenPrincipal = false,
+                        EsAreaAdmision = false, 
+                        ServicioTarifaBaseId = (Guid?)null, 
+                        ClasificacionId = SeedConstants.ClasificacionId_Quirofano 
+                    }
                 );
             });
 
@@ -1247,21 +1322,15 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(s => new { s.SedeId, s.InsumoId }).IsUnique();
             });
 
-            builder.Entity<MovimientoInsumo>(entity =>
-            {
-                entity.ToTable("MovimientosInsumo");
-                entity.HasKey(m => m.Id);
-                entity.Property(m => m.TipoMovimiento).HasConversion<int>();
-                entity.Property(m => m.CantidadBase).HasPrecision(18, 4);
-                entity.Property(m => m.CantidadOriginal).HasPrecision(18, 4);
-            });
-
             builder.Entity<PedidoInterSede>(entity =>
             {
                 entity.ToTable("PedidosInterSede");
                 entity.HasKey(p => p.Id);
                 entity.Property(p => p.Correlativo).IsRequired().HasMaxLength(50);
                 entity.HasIndex(p => p.Correlativo).IsUnique();
+
+                entity.Property(p => p.UsuarioCreadorId).HasColumnType("char(36)");
+                entity.HasIndex(p => p.UsuarioCreadorId);
 
                 entity.HasOne(p => p.SedeSolicitante)
                       .WithMany()
@@ -1312,15 +1381,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            builder.Entity<ServicioClinico>(entity =>
-            {
-                entity.ToTable("ServiciosClinicos");
-                entity.HasOne<TipoServicio>()
-                      .WithMany()
-                      .HasForeignKey(s => s.TipoServicioId)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
-
             builder.Entity<TipoServicio>(entity =>
             {
                 entity.ToTable("TiposServicio");
@@ -1350,6 +1410,9 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(o => o.ModalidadAnestesia).HasMaxLength(100);
                 entity.Property(o => o.Estado).IsRequired().HasMaxLength(50);
                 entity.Property(o => o.MotivoCancelacion).HasMaxLength(500);
+
+                entity.Property(o => o.UsuarioCreacionId).HasColumnType("char(36)");
+                entity.HasIndex(o => o.UsuarioCreacionId);
 
                 entity.HasOne(o => o.CuentaServicio)
                       .WithMany()
@@ -1444,6 +1507,11 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(s => s.EstadoSolicitud).IsRequired().HasMaxLength(50);
                 entity.Property(s => s.Observaciones).HasMaxLength(500);
 
+                entity.Property(s => s.UsuarioSolicitudId).HasColumnType("char(36)");
+                entity.Property(s => s.UsuarioDespachoId).HasColumnType("char(36)");
+                entity.HasIndex(s => s.UsuarioSolicitudId);
+                entity.HasIndex(s => s.UsuarioDespachoId);
+
                 entity.HasOne(s => s.Insumo)
                       .WithMany()
                       .HasForeignKey(s => s.InsumoId)
@@ -1464,7 +1532,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(t => t.Id);
                 entity.Property(t => t.Cantidad).HasPrecision(18, 4);
                 entity.Property(t => t.Motivo).IsRequired().HasMaxLength(100);
-                entity.Property(t => t.UsuarioIdentityId).IsRequired();
+                entity.Property(t => t.UsuarioIdentityId).HasColumnType("char(36)").IsRequired();
+                entity.HasIndex(t => t.UsuarioIdentityId);
                 entity.Property(t => t.Observaciones).HasMaxLength(500);
 
                 entity.HasOne(t => t.Insumo)
@@ -1489,7 +1558,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
             {
                 entity.ToTable("CirugiaLogs");
                 entity.HasKey(l => l.Id);
-                entity.Property(l => l.UsuarioIdentityId).IsRequired().HasMaxLength(100);
+                entity.Property(l => l.UsuarioIdentityId).HasColumnType("char(36)").IsRequired();
+                entity.HasIndex(l => l.UsuarioIdentityId);
                 entity.Property(l => l.Evento).IsRequired().HasMaxLength(50);
                 entity.Property(l => l.Detalle).HasMaxLength(1000);
 
@@ -1540,10 +1610,8 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasKey(h => h.Id);
                 entity.Property(h => h.Observacion).IsRequired().HasMaxLength(1000);
                 entity.Property(h => h.Tipo).HasConversion<int>();
-                entity.Property(h => h.UsuarioRegistroId).IsRequired().HasMaxLength(100);
-                // 3FN: FK lógica a Usuarios (Identity, PK Guid). Sin restricción FK física
-                // porque la tabla Usuarios vive en el contexto de Identity.
-                entity.Property(h => h.UsuarioRegistroId).HasColumnType("char(36)");
+                entity.Property(h => h.UsuarioRegistroId).HasColumnType("char(36)").IsRequired();
+                entity.HasIndex(h => h.UsuarioRegistroId);
 
                 entity.HasOne(h => h.OrdenCirugia)
                       .WithMany(o => o.HistorialObservaciones)
@@ -1551,7 +1619,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(h => h.OrdenCirugiaId);
-                entity.HasIndex(h => h.UsuarioRegistroId);
             });
 
             builder.Entity<OrdenCompraInventario>(entity =>
@@ -1570,6 +1637,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.HasIndex(o => o.NumeroFactura);
                 entity.HasIndex(o => o.Estado);
+            }); 
 
             builder.Entity<PagoProveedor>(entity =>
             {
@@ -1581,18 +1649,12 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(p => p.MetodoPago).IsRequired().HasMaxLength(50);
                 entity.Property(p => p.Referencia).HasMaxLength(100);
                 entity.Property(p => p.UsuarioIdentityId).HasColumnType("char(36)");
+                entity.HasIndex(p => p.UsuarioIdentityId);
                 entity.Property(p => p.Observaciones).HasMaxLength(1000);
-            });
 
-            builder.Entity<OrdenImagen>(entity =>
-            {
-                entity.ToTable("OrdenesImagenes");
-                entity.HasKey(o => o.Id);
-                entity.Property(o => o.Estado).HasConversion<int>();
+                entity.HasIndex(p => p.OrdenCompraId);
+                entity.HasIndex(p => p.FechaPago);
             });
-
-            builder.Entity<PagoProveedor>().HasIndex(p => p.OrdenCompraId);
-            builder.Entity<PagoProveedor>().HasIndex(p => p.FechaPago);
 
             builder.Entity<Proveedor>(entity =>
             {
@@ -1606,76 +1668,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.HasIndex(p => p.RIF).IsUnique();
                 entity.HasIndex(p => p.RazonSocial);
             });
-
-            // ================================================================
-            // 3FN: FKs lógicas a Usuarios (Identity, PK Guid) — char(36) + índice.
-            // Sin restricción FK física porque la tabla Usuarios vive en el
-            // contexto de Identity (SatHospitalarioIdentityDbContext).
-            // ================================================================
-            builder.Entity<CirugiaLog>().Property(c => c.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<CirugiaLog>().HasIndex(c => c.UsuarioIdentityId);
-
-            builder.Entity<AuditLog>().Property(a => a.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<AuditLog>().HasIndex(a => a.UsuarioIdentityId);
-
-            builder.Entity<DocumentLog>().Property(d => d.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<DocumentLog>().HasIndex(d => d.UsuarioIdentityId);
-
-            builder.Entity<LogAsignacionHonorario>().Property(l => l.UsuarioOperadorId).HasColumnType("char(36)");
-            builder.Entity<LogAsignacionHonorario>().HasIndex(l => l.UsuarioOperadorId);
-
-            builder.Entity<LogAuditoriaPrecio>().Property(l => l.UsuarioOperadorId).HasColumnType("char(36)");
-            builder.Entity<LogAuditoriaPrecio>().Property(l => l.AutorizadoPorId).HasColumnType("char(36)");
-            builder.Entity<LogAuditoriaPrecio>().HasIndex(l => l.UsuarioOperadorId);
-            builder.Entity<LogAuditoriaPrecio>().HasIndex(l => l.AutorizadoPorId);
-
-            builder.Entity<ErrorTicket>().Property(e => e.UsuarioAsociadoId).HasColumnType("char(36)");
-            builder.Entity<ErrorTicket>().Property(e => e.ResueltoPorId).HasColumnType("char(36)");
-            builder.Entity<ErrorTicket>().HasIndex(e => e.UsuarioAsociadoId);
-            builder.Entity<ErrorTicket>().HasIndex(e => e.ResueltoPorId);
-
-            builder.Entity<TriageEnfermeria>().Property(t => t.UsuarioRegistroId).HasColumnType("char(36)");
-            builder.Entity<TriageEnfermeria>().HasIndex(t => t.UsuarioRegistroId);
-
-            builder.Entity<ValoracionFisica>().Property(v => v.UsuarioRegistroId).HasColumnType("char(36)");
-            builder.Entity<ValoracionFisica>().HasIndex(v => v.UsuarioRegistroId);
-
-            builder.Entity<SolicitudInsumoCirugia>().Property(s => s.UsuarioSolicitudId).HasColumnType("char(36)");
-            builder.Entity<SolicitudInsumoCirugia>().Property(s => s.UsuarioDespachoId).HasColumnType("char(36)");
-            builder.Entity<SolicitudInsumoCirugia>().HasIndex(s => s.UsuarioSolicitudId);
-            builder.Entity<SolicitudInsumoCirugia>().HasIndex(s => s.UsuarioDespachoId);
-
-            builder.Entity<PedidoInterSede>().Property(p => p.UsuarioCreadorId).HasColumnType("char(36)");
-            builder.Entity<PedidoInterSede>().HasIndex(p => p.UsuarioCreadorId);
-
-            builder.Entity<TransferenciaReposicionStock>().Property(t => t.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<TransferenciaReposicionStock>().HasIndex(t => t.UsuarioIdentityId);
-
-            builder.Entity<CierreInventario>().Property(c => c.UsuarioId).HasColumnType("char(36)");
-            builder.Entity<CierreInventario>().HasIndex(c => c.UsuarioId);
-
-            builder.Entity<ReservaTemporal>().Property(r => r.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<ReservaTemporal>().HasIndex(r => r.UsuarioIdentityId);
-
-            builder.Entity<HonorarioMedicoServicio>().Property(h => h.UsuarioModificoId).HasColumnType("char(36)");
-            builder.Entity<HonorarioMedicoServicio>().HasIndex(h => h.UsuarioModificoId);
-
-            builder.Entity<HonorariumMappingRule>().Property(h => h.UsuarioCreoId).HasColumnType("char(36)");
-            builder.Entity<HonorariumMappingRule>().HasIndex(h => h.UsuarioCreoId);
-
-            builder.Entity<OrdenCirugia>().Property(o => o.UsuarioCreacionId).HasColumnType("char(36)");
-            builder.Entity<OrdenCirugia>().HasIndex(o => o.UsuarioCreacionId);
-
-            builder.Entity<PagoProveedor>().Property(p => p.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<PagoProveedor>().HasIndex(p => p.UsuarioIdentityId);
-
-            builder.Entity<Notification>().Property(n => n.TargetUserGuidId).HasColumnType("char(36)");
-            builder.Entity<Notification>().HasIndex(n => n.TargetUserGuidId);
-
-            builder.Entity<MovimientoInsumo>().Property(m => m.UsuarioIdentityId).HasColumnType("char(36)");
-            builder.Entity<MovimientoInsumo>().HasIndex(m => m.UsuarioIdentityId);
-        });
         }
-
     }
 }
