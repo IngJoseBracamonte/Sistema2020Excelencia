@@ -253,60 +253,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task RecordDiscardAsync(
-            Guid insumoId,
-            decimal cantidad,
-            string motivo,
-            Guid usuarioId,
-            Guid? sedeId = null,
-            CancellationToken cancellationToken = default)
-        {
-            if (cantidad <= 0)
-            {
-                throw new ArgumentException("La cantidad a descartar debe ser mayor a cero.", nameof(cantidad));
-            }
-            if (string.IsNullOrWhiteSpace(motivo))
-            {
-                throw new ArgumentException("El motivo de descarte es obligatorio para auditoría.", nameof(motivo));
-            }
-
-            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == insumoId, cancellationToken);
-            if (insumo == null)
-            {
-                throw new KeyNotFoundException($"No se encontró el insumo con ID {insumoId}");
-            }
-
-            var targetSedeId = (sedeId.HasValue && sedeId.Value != Guid.Empty) 
-                ? sedeId.Value 
-                : SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
-
-            var stockSede = await _context.StocksSedes
-                .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == targetSedeId, cancellationToken);
-
-            if (stockSede == null || stockSede.StockActual < cantidad)
-            {
-                var disponible = stockSede?.StockActual ?? 0;
-                throw new InvalidOperationException($"Stock insuficiente en el área/sede seleccionada para descarte. Solicitado: {cantidad}, Disponible: {disponible}");
-            }
-
-            stockSede.RegistrarMovimientoStock(-cantidad, insumo.PermiteFraccionamiento);
-
-            var movimiento = new MovimientoInsumo(
-                insumoId,
-                targetSedeId,
-                TipoMovimientoInsumo.Descarte,
-                -cantidad,
-                (UnidadMedidaEnum)insumo.UnidadMedidaId,
-                cantidad,
-                motivo.Trim(),
-                usuarioId,
-                null
-            );
-
-            _context.MovimientosInsumo.Add(movimiento);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-
+       
         public async Task PerformClosingAsync(
             Guid sedeId,
             Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
@@ -314,7 +261,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             List<CierreDetalleInputDto> detalles,
             CancellationToken cancellationToken)
         {
-            var closure = new CierreInventario(sedeId, usuario, observaciones);
+            var closure = new CierreInventario(sedeId, usuarioId, observaciones);
             _context.CierresInventario.Add(closure);
 
             foreach (var item in detalles)
@@ -352,7 +299,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     variance,
                     (UnidadMedidaEnum)insumo.UnidadMedidaId,
                     variance,
-                    motivo,
+                    observaciones,
                     usuarioId,
                     null
                 );
@@ -364,7 +311,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
         public async Task DispatchPedidoAsync(
             Guid pedidoId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Dictionary<Guid, decimal>? cantidadesAprobadas = null,
             Dictionary<Guid, string>? observacionesPorDetalle = null,
             CancellationToken cancellationToken = default)
@@ -465,8 +412,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                 -cantidadADespachar,
                                 (UnidadMedidaEnum)detalle.Insumo.UnidadMedidaId,
                                 cantidadADespachar,
-                                usuario,
-                                motivoSalidaTxt
+                                motivoSalidaTxt,
+                                usuarioId
                             );
                             _context.MovimientosInsumo.Add(movimientoSalida);
 
@@ -492,8 +439,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                                     cantidadADespachar,
                                     (UnidadMedidaEnum)detalle.Insumo.UnidadMedidaId,
                                     cantidadADespachar,
-                                    usuario,
-                                    $"Recepción por despacho de pedido inter-sede {pedido.Correlativo}"
+                                    $"Recepción por despacho de pedido inter-sede {pedido.Correlativo}",
+                                    usuarioId
+
                                 );
                                 _context.MovimientosInsumo.Add(movimientoEntrada);
                             }
@@ -518,9 +466,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
                                             if (sol != null && sol.EstadoSolicitud == SistemaSatHospitalario.Core.Domain.Entities.Admision.EstadoSolicitudInsumoConstants.Pendiente)
                                             {
-                                                sol.Despachar(usuario);
-
-                                                var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(ordId, usuario, SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaEventoConstants.DespachoInsumos,
+                                                var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(ordId, usuarioId, SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaEventoConstants.DespachoInsumos,
                                                     $"Despachado pedido {pedido.Correlativo} desde Almacén Central: {cantidadADespachar} {detalle.Insumo.UnidadMedidaNav.Nombre} de '{detalle.Insumo.Nombre}'.");
                                                 _context.CirugiaLogs.Add(log);
                                             }
@@ -552,7 +498,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
         public async Task RejectPedidoAsync(
             Guid pedidoId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             string motivo,
             CancellationToken cancellationToken = default)
         {
@@ -570,7 +516,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             }
 
             pedido.CambiarEstado(EstadoPedidoInterSedeConstants.Rechazado);
-            pedido.SetObservaciones($"{pedido.Observaciones} | [RECHAZADO por {usuario}: {motivo}]".Trim());
+            pedido.SetObservaciones($"{pedido.Observaciones} | [RECHAZADO por {usuarioId}: {motivo}]".Trim());
 
             // Si es pedido quirúrgico ad-hoc, sincronizar rechazo en SolicitudInsumoCirugia
             if (!string.IsNullOrEmpty(pedido.Observaciones) && pedido.Observaciones.Contains("[CIRUGIA_ADHOC:"))
@@ -587,8 +533,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                             var sol = await _context.SolicitudesInsumosCirugia.FirstOrDefaultAsync(s => s.Id == solId, cancellationToken);
                             if (sol != null && sol.EstadoSolicitud == SistemaSatHospitalario.Core.Domain.Entities.Admision.EstadoSolicitudInsumoConstants.Pendiente)
                             {
-                                sol.Rechazar(usuario, motivo);
-                                var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(sol.OrdenCirugiaId, usuario, "RechazoInsumoExtra",
+                                var log = new SistemaSatHospitalario.Core.Domain.Entities.Admision.CirugiaLog(sol.OrdenCirugiaId, usuarioId, "RechazoInsumoExtra",
                                     $"Solicitud ad-hoc rechazada por Almacén Central: {motivo}");
                                 _context.CirugiaLogs.Add(log);
                             }
@@ -601,16 +546,16 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 }
             }
 
-            _logger.LogInformation("Pedido inter-sede {Correlativo} rechazada por {Usuario}. Motivo: {Motivo}", pedido.Correlativo, usuario, motivo);
+            _logger.LogInformation("Pedido inter-sede {Correlativo} rechazada por {UsuarioId}. Motivo: {Motivo}", pedido.Correlativo, usuarioId, motivo);
 
             await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task ReceivePedidoAsync(
             Guid pedidoId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Dictionary<Guid, decimal> discrepancias,
-                CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default)
         {
             var pedido = await _context.PedidosInterSede
                 .Include(p => p.Detalles)
@@ -654,8 +599,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     cantidadRecibida,
                     (UnidadMedidaEnum)detalle.Insumo.UnidadMedidaId,
                     cantidadRecibida,
-                    usuario,
-                    $"Recepción de pedido inter-sede {pedido.Correlativo}"
+                    $"Recepción de pedido inter-sede {pedido.Correlativo}",
+                     usuarioId
                 );
                 _context.MovimientosInsumo.Add(movimiento);
             }
@@ -698,6 +643,54 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             }
 
             return 1.0m;
+        }
+
+        public async Task RecordDiscardAsync(Guid insumoId, decimal cantidad, string motivo, Guid? usuarioId, Guid? sedeId = null, CancellationToken cancellationToken = default)
+        {
+             if (cantidad <= 0)
+            {
+                throw new ArgumentException("La cantidad a descartar debe ser mayor a cero.", nameof(cantidad));
+            }
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                throw new ArgumentException("El motivo de descarte es obligatorio para auditoría.", nameof(motivo));
+            }
+
+            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == insumoId, cancellationToken);
+            if (insumo == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el insumo con ID {insumoId}");
+            }
+
+            var targetSedeId = (sedeId.HasValue && sedeId.Value != Guid.Empty) 
+                ? sedeId.Value 
+                : SistemaSatHospitalario.Core.Domain.Constants.SeedConstants.SedeId_Principal;
+
+            var stockSede = await _context.StocksSedes
+                .FirstOrDefaultAsync(s => s.InsumoId == insumoId && s.SedeId == targetSedeId, cancellationToken);
+
+            if (stockSede == null || stockSede.StockActual < cantidad)
+            {
+                var disponible = stockSede?.StockActual ?? 0;
+                throw new InvalidOperationException($"Stock insuficiente en el área/sede seleccionada para descarte. Solicitado: {cantidad}, Disponible: {disponible}");
+            }
+
+            stockSede.RegistrarMovimientoStock(-cantidad, insumo.PermiteFraccionamiento);
+
+            var movimiento = new MovimientoInsumo(
+                insumoId,
+                targetSedeId,
+                TipoMovimientoInsumo.Descarte,
+                -cantidad,
+                (UnidadMedidaEnum)insumo.UnidadMedidaId,
+                cantidad,
+                motivo.Trim(),
+                usuarioId,
+                null
+            );
+
+            _context.MovimientosInsumo.Add(movimiento);
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

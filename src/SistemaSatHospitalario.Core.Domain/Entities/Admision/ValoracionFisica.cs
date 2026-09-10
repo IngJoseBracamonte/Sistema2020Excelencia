@@ -73,9 +73,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 AccesosVenosos = accesosVenosos ?? string.Empty;
                 Pertenencias = pertenencias ?? string.Empty;
                 AntecedentesMedicos = antecedentesMedicos ?? string.Empty;
-                UsuarioRegistroId = usuarioRegistroId;
-                UsuarioRegistro = usuarioRegistro;
-                FechaRegistro = DateTime.UtcNow;
             }
 
             public void ActualizarDatos(

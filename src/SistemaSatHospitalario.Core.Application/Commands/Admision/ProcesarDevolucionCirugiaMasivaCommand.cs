@@ -34,11 +34,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<ProcesarDevolucionCirugiaMasivaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ProcesarDevolucionCirugiaMasivaCommandHandler(IApplicationDbContext context, ILogger<ProcesarDevolucionCirugiaMasivaCommandHandler> logger)
+        public ProcesarDevolucionCirugiaMasivaCommandHandler(IApplicationDbContext context, ILogger<ProcesarDevolucionCirugiaMasivaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(ProcesarDevolucionCirugiaMasivaCommand request, CancellationToken cancellationToken)
@@ -87,8 +89,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     cantidadADevolver,
                     (UnidadMedidaEnum)kitAsignacion.Insumo.UnidadMedidaId,
                     cantidadADevolver,
-                    request.UsuarioId,
-                    $"Devolución masiva de Quirófano a Sede Principal (Orden: {request.OrdenCirugiaId})");
+                    $"Devolución masiva de Quirófano a Sede Principal (Orden: {request.OrdenCirugiaId})",
+                    _currentUserService.UserId);
                 _context.MovimientosInsumo.Add(movimiento);
 
                 // Ajustar cargo de facturación

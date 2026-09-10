@@ -92,13 +92,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             AreaClinicaId = areaClinicaId;
         }
 
-        public void MarcarRealizado(Guid usuarioId)
+        public void MarcarRealizado(Guid? usuarioId)
         {
             if (Realizado) return;
 
             Realizado = true;
             FechaRealizacion = DateTime.UtcNow;
-
             UsuarioTecnicoId = usuarioId;
         }
 

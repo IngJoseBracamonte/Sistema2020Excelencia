@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Application.Commands;
@@ -23,11 +24,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class BillingController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<BillingController> _logger;
  
-        public BillingController(IMediator mediator, ILogger<BillingController> logger)
+        public BillingController(IMediator mediator, ICurrentUserService currentUserService, ILogger<BillingController> logger)
         {
             _mediator = mediator;
+            _currentUserService = currentUserService;
             _logger = logger;
         }
 
@@ -40,7 +43,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             try
             {
                 // Enriquecimiento de Seguridad (V2.0 Core Extensions)
-                command.UsuarioCarga = User.GetUserName();
+                command.UsuarioCarga = _currentUserService.UserName ?? "Sistema";
                 command.IsPrivilegedUser = User.IsPrivileged();
 
                 var result = await _mediator.Send(command);
@@ -142,7 +145,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     MedicoId = medicoGuid,
                     AreaClinicaId = areaClinicaGuid,
                     PermitirBypassExcepcionMedica = dto.PermitirBypassExcepcionMedica,
-                    UsuarioCarga = User.GetUserName()
+                    UsuarioCarga = _currentUserService.UserName ?? "Sistema"
                 };
 
                 var accountId = await _mediator.Send(command);

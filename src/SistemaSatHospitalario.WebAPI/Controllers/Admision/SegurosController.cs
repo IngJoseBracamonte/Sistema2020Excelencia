@@ -61,8 +61,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                         "Compromiso de Pago", 
                         cxc.Id.ToString(), 
                         "Generación", 
-                        _currentUserService.UserId?.ToString() ?? "System", 
-                        _currentUserService.UserName ?? "Sistema",
+                        _currentUserService.UserId, 
+                        _currentUserService.UserName,
                         $"Generado para {dto.NombrePaciente}");
                     
                     _context.DocumentLogs.Add(log);
@@ -114,8 +114,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                         "Conformidad de Servicios", 
                         cxc.Id.ToString(), 
                         "Generación", 
-                        _currentUserService.UserId?.ToString() ?? "System", 
-                        _currentUserService.UserName ?? "Sistema",
+                        _currentUserService.UserId, 
+                        _currentUserService.UserName,
                         $"Conformidad generada para {dto.NombrePaciente}");
                     
                     _context.DocumentLogs.Add(log);
@@ -157,8 +157,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                         "Garantía de Pago", 
                         id.ToString(), 
                         "Generación", 
-                        _currentUserService.UserId?.ToString() ?? "System", 
-                        _currentUserService.UserName ?? "Sistema",
+                        _currentUserService.UserId, 
+                        _currentUserService.UserName,
                         $"Garantía para {dto.NombrePaciente}");
                     
                     _context.DocumentLogs.Add(log);
@@ -211,8 +211,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     "Garantía de Pago (Guardar)", 
                     cuentaPorCobrarId.ToString(), 
                     "Actualización", 
-                    _currentUserService.UserId?.ToString() ?? "System", 
-                    _currentUserService.UserName ?? "Sistema",
+                    _currentUserService.UserId, 
+                    _currentUserService.UserName,
                     $"Guardada lista de garantías para CuentaPorCobrar {cuentaPorCobrarId}");
                 
                 _context.DocumentLogs.Add(log);

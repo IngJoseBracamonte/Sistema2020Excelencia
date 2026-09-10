@@ -36,7 +36,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin.HonorariumRules
                 request.Category,
                 request.MatchType,
                 request.Priority,
-                _currentUser.UserName ?? "Sistema"
+                _currentUser.UserId
             );
 
             _context.HonorariumMappingRules.Add(rule);

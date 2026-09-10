@@ -2428,7 +2428,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 // ==========================================
                 // Conversiones y Estados Boleanos
                 // ==========================================
-                entity.Property(h => h.MatchType)
+                entity.Property(h => h.MappingRuleType)
                     .HasConversion<int>()
                     .IsRequired();
 

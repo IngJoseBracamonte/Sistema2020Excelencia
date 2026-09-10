@@ -54,7 +54,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoPagadoBase = MontoTotalBase;
         }
 
-        public void MarcarComoAuditada(Guid usuarioId, string? usuarioNombreAlias = null)
+        public void MarcarComoAuditada(Guid? usuarioId, string? usuarioNombreAlias = null)
         {
             if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
             IsAudited = true;

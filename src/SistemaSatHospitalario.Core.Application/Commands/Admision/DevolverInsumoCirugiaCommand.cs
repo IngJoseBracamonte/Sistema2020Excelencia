@@ -14,14 +14,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public Guid CuentaId { get; set; }
         public Guid InsumoId { get; set; }
         public decimal CantidadRestar { get; set; }
-        public string Usuario { get; set; } = string.Empty;
-
-        public DevolverInsumoCirugiaCommand(Guid cuentaId, Guid insumoId, decimal cantidadRestar, string usuario)
+        
+        public DevolverInsumoCirugiaCommand(Guid cuentaId, Guid insumoId, decimal cantidadRestar, ICurrentUserService currentUserService)
         {
             CuentaId = cuentaId;
             InsumoId = insumoId;
             CantidadRestar = cantidadRestar;
-            Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
         }
     }
 
@@ -29,11 +27,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<DevolverInsumoCirugiaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public DevolverInsumoCirugiaCommandHandler(IApplicationDbContext context, ILogger<DevolverInsumoCirugiaCommandHandler> logger)
+        public DevolverInsumoCirugiaCommandHandler(IApplicationDbContext context, ILogger<DevolverInsumoCirugiaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(DevolverInsumoCirugiaCommand request, CancellationToken cancellationToken)
@@ -88,8 +88,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.CantidadRestar,
                 (UnidadMedidaEnum)kitAsignacion.Insumo.UnidadMedidaId,
                 request.CantidadRestar,
-                request.Usuario,
-                $"Retorno/Devolución de Quirófano a stock (Cuenta ID: {request.CuentaId})"
+                $"Retorno/Devolución de Quirófano a stock (Cuenta ID: {request.CuentaId})",
+                 _currentUserService.UserId
             );
             _context.MovimientosInsumo.Add(movimiento);
 

@@ -79,6 +79,28 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _strategyFactory = strategyFactory;
         }
 
+        private readonly ICurrentUserService _currentUserService;
+
+        public SyncCarritoCommandHandler(
+            IBillingRepository repository, 
+            IApplicationDbContext context, 
+            ILegacyLabRepository legacyRepository,
+            IHonorariumMapperService mapperService,
+            IInventoryService inventoryService,
+            ILogger<SyncCarritoCommandHandler> logger,
+            ICurrentUserService currentUserService,
+            Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null)
+        {
+            _repository = repository;
+            _context = context;
+            _legacyRepository = legacyRepository;
+            _mapperService = mapperService;
+            _inventoryService = inventoryService;
+            _logger = logger;
+            _currentUserService = currentUserService;
+            _strategyFactory = strategyFactory;
+        }
+
         public async Task<SyncCarritoResult> Handle(SyncCarritoCommand request, CancellationToken ct)
         {
             using var activity = DiagnosticsConfig.ActivitySource.StartActivity("SyncCarrito.Handle");
@@ -455,7 +477,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         baseService?.Codigo ?? string.Empty,
                         detalle.Descripcion,
                         detalle.Cantidad,
-                        request.UsuarioCarga,
+                        _currentUserService.UserId,
                         cuenta.Id,
                         null,
                         ct
@@ -493,7 +515,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                             _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                                 detalle.Id, item.Descripcion, sourceAccion,
                                 null, null, finalMedicoId.Value, medicoNombre,
-                                request.UsuarioCarga, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante sincronización"));
+                                _currentUserService.UserId, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante sincronización"));
                         }
                     }
                     
@@ -512,8 +534,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                                 finalPrecio,
                                 expectedDefaultHonorario,
                                 finalHonorario,
-                                request.UsuarioCarga,
-                                string.IsNullOrEmpty(request.SupervisorKey) ? "Admin Privilegiado" : "Supervisor Key Autorizado"
+                                _currentUserService.UserId
                             );
                             await _context.AuditLogsPrecios.AddAsync(auditLog, ct);
                             _logger.LogInformation("[AUDIT] Cambio de precio/honorario detectado y registrado para '{Servicio}': P({OldP}->{NewP}), H({OldH}->{NewH})", 

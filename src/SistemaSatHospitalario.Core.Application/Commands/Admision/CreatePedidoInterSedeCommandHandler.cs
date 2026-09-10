@@ -13,6 +13,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class CreatePedidoInterSedeCommandHandler : IRequestHandler<CreatePedidoInterSedeCommand, Guid>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
         public CreatePedidoInterSedeCommandHandler(IApplicationDbContext context)
         {
@@ -49,7 +50,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 correlativo,
                 request.Dto.SedeSolicitanteId,
                 sedeProveedoraId,
-                request.Usuario ?? "Sistema",
+                _currentUserService.UserId,
                 request.Dto.Observaciones
             );
 

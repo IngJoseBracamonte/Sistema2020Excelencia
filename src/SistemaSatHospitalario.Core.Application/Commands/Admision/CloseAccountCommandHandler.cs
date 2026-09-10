@@ -27,6 +27,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IBillingRepository _billingRepository;
         private readonly ILegacyErrorReportingService _logger;
         private readonly IOrdenExternaService _ordenExternaService;
+        private readonly ICurrentUserService _currentUserService;
 
         public CloseAccountCommandHandler(
             IApplicationDbContext context, 
@@ -34,12 +35,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             ICajaAdministrativaRepository cajaRepository,
             IBillingRepository billingRepository,
             ILegacyErrorReportingService logger,
-            IOrdenExternaService ordenExternaService)
+            IOrdenExternaService ordenExternaService,
+            ICurrentUserService currentUserService)
         {
             _context = context;
             _legacyRepository = legacyRepository;
             _cajaRepository = cajaRepository;
             _billingRepository = billingRepository;
+            _currentUserService = currentUserService;
             _logger = logger;
             _ordenExternaService = ordenExternaService;
         }
@@ -163,7 +166,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
                     if (cuenta.ConvenioId == null)
                     {
-                        ar.MarcarComoAuditada("Sistema");
+                        ar.MarcarComoAuditada(_currentUserService.UserId);
                     }
                     _context.CuentasPorCobrar.Add(ar);
                 }

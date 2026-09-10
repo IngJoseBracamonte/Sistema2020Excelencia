@@ -33,15 +33,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ICajaAdministrativaRepository _cajaRepository;
         private readonly IBillingRepository _billingRepository;
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
         public RegistrarReciboFacturaCommandHandler(
             ICajaAdministrativaRepository cajaRepository, 
             IBillingRepository billingRepository,
-            IApplicationDbContext context)
+            IApplicationDbContext context,
+            ICurrentUserService currentUserService)
         {
             _cajaRepository = cajaRepository;
             _billingRepository = billingRepository;
             _context = context;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Guid> Handle(RegistrarReciboFacturaCommand request, CancellationToken cancellationToken)
@@ -117,7 +120,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 var deuda = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
                 if (cuenta.ConvenioId == null)
                 {
-                    deuda.MarcarComoAuditada("Sistema");
+                    deuda.MarcarComoAuditada(_currentUserService.UserId);
                 }
                 await _context.CuentasPorCobrar.AddAsync(deuda, cancellationToken);
             }

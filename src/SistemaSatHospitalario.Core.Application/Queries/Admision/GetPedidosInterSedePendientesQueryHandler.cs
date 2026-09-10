@@ -17,9 +17,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         private readonly IApplicationDbContext _context;
 
-        public GetPedidosInterSedePendientesQueryHandler(IApplicationDbContext context)
+        private readonly ICurrentUserService _currentUserService;
+        public GetPedidosInterSedePendientesQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
 
         public async Task<List<PedidoInterSedeDto>> Handle(GetPedidosInterSedePendientesQuery request, CancellationToken cancellationToken)
@@ -66,7 +68,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                          correlativo,
                          SeedConstants.SedeId_Cirugia,
                          sol.AlmacenOrigenId != Guid.Empty ? sol.AlmacenOrigenId : SeedConstants.SedeId_Principal,
-                         sol.UsuarioSolicitudId?.ToString(),
+                         _currentUserService.UserId,
                          $"[CIRUGIA_ADHOC:{sol.Id}:{sol.OrdenCirugiaId}] Paciente: {pacNombre} | Urgencia: {sol.Observaciones}"
                      );
                     pedido.AgregarDetalle(new PedidoInterSedeDetalle(sol.InsumoId, sol.CantidadSolicitada));

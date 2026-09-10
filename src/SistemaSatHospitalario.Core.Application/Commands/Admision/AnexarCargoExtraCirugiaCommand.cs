@@ -30,11 +30,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<AnexarCargoExtraCirugiaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUser;
 
-        public AnexarCargoExtraCirugiaCommandHandler(IApplicationDbContext context, ILogger<AnexarCargoExtraCirugiaCommandHandler> logger)
+        public AnexarCargoExtraCirugiaCommandHandler(IApplicationDbContext context, ILogger<AnexarCargoExtraCirugiaCommandHandler> logger, ICurrentUserService currentUser)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         }
 
         public async Task<bool> Handle(AnexarCargoExtraCirugiaCommand request, CancellationToken cancellationToken)
@@ -91,8 +93,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         request.Cantidad,
                         (UnidadMedidaEnum)insumo.UnidadMedidaId,
                         -request.Cantidad,
-                        request.UsuarioId,
-                        $"Consumo extra en Quirófano (Orden: {request.OrdenCirugiaId})");
+                        $"Consumo extra en Quirófano (Orden: {request.OrdenCirugiaId})",
+                        _currentUser.UserId);
                     _context.MovimientosInsumo.Add(movimiento);
 
                     // Registro / Actualización en InsumoCirugiaPaciente para habilitar devolución posterior si aplica

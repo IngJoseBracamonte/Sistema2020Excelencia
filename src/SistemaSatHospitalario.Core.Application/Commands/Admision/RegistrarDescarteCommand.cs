@@ -1,8 +1,9 @@
+using MediatR;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
-using SistemaSatHospitalario.Core.Application.Common.Services;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -18,10 +19,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class RegistrarDescarteCommandHandler : IRequestHandler<RegistrarDescarteCommand>
     {
         private readonly IInventoryService _inventoryService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public RegistrarDescarteCommandHandler(IInventoryService inventoryService)
+        public RegistrarDescarteCommandHandler(IInventoryService inventoryService, ICurrentUserService currentUserService   )
         {
             _inventoryService = inventoryService;
+            _currentUserService = currentUserService;
         }
 
         public async Task Handle(RegistrarDescarteCommand request, CancellationToken cancellationToken)
@@ -30,7 +33,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.InsumoId,
                 request.Cantidad,
                 request.Motivo,
-                request.Usuario,
+                _currentUserService.UserId,
                 request.SedeId,
                 cancellationToken);
         }

@@ -28,17 +28,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         private readonly IInventoryService _inventoryService;
         private readonly IMediator _mediator;
         private readonly ILogger<InventoryController> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
         public InventoryController(
             IApplicationDbContext context, 
             IInventoryService inventoryService, 
             IMediator mediator,
-            ILogger<InventoryController> logger)
+            ILogger<InventoryController> logger,
+            ICurrentUserService currentUserService)
         {
             _context = context;
             _inventoryService = inventoryService;
             _mediator = mediator;
             _logger = logger;
+            _currentUserService = currentUserService;
         }
 
         /// <summary>
@@ -275,12 +278,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                             var movEntrada = new MovimientoInsumo(
                                 det.InsumoId,
                                 sedeId,
-                                "TransferenciaEntrada",
+                                TipoMovimientoInsumo.TransferenciaEntrada,
                                 cant,
                                (UnidadMedidaEnum)det.Insumo.UnidadMedidaNav.Id,
                                 cant,
-                                ped.UsuarioCreadorId.ToString(),
-                                $"Recepción por despacho de pedido inter-sede {ped.Correlativo}"
+                                $"Recepción por despacho de pedido inter-sede {ped.Correlativo}",
+                                _currentUserService.UserId
                             );
                             _context.MovimientosInsumo.Add(movEntrada);
                             hayCambios = true;
@@ -322,8 +325,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                             dev.CantidadDevuelta,
                             (UnidadMedidaEnum)dev.Insumo.UnidadMedidaNav.Id,
                             dev.CantidadDevuelta,
-                            "admin",
-                            $"Devolución de sobrante de cirugía reconciliada (Cuenta: {dev.CuentaServicioId})"
+                            $"Devolución de sobrante de cirugía reconciliada (Cuenta: {dev.CuentaServicioId})",
+                            _currentUserService.UserId  
                         );
                         _context.MovimientosInsumo.Add(movDev);
                         hayCambios = true;
@@ -435,12 +438,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 var mov = new MovimientoInsumo(
                     insumo.Id,
                     targetSedeId,
-                    "Ingreso",
+                    TipoMovimientoInsumo.Ingreso,
                     dto.StockInicial,
                     dto.UnidadMedidaBase,
                     dto.StockInicial,
-                    User.Identity?.Name ?? "System",
-                    "Stock inicial de creación de insumo"
+                     "Stock inicial de creación de insumo",
+                    _currentUserService.UserId
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
@@ -806,7 +809,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var username = User.Identity?.Name ?? dto.Usuario ?? "System";
             await _inventoryService.PerformClosingAsync(
                 dto.SedeId,
-                username,
+                _currentUserService.UserId,
                 dto.Observaciones,
                 dto.Detalles,
                 ct
@@ -898,8 +901,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     item.Cantidad,
                     (UnidadMedidaEnum)insumo.UnidadMedidaNav.Id,
                     item.Cantidad,
-                    username,
-                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}"
+                    $"Compra de insumos registrada a costo unitario ${item.PrecioCostoUSD} USD.{descPres} Prov: {dto.ProveedorNombre ?? "General"}",
+                    _currentUserService.UserId
                 );
                 _context.MovimientosInsumo.Add(mov);
             }
@@ -913,13 +916,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 var numFact = !string.IsNullOrWhiteSpace(dto.NumeroFactura) ? dto.NumeroFactura.Trim() : $"FAC-{DateTime.Now:yyyyMMddHHmmss}";
                 var tasa = dto.TasaCambio.HasValue && dto.TasaCambio > 0 ? dto.TasaCambio.Value : 50.00m;
 
-                var ordenCompra = new SistemaSatHospitalario.Core.Domain.Entities.Admision.OrdenCompraInventario(
+                var ordenCompra = new OrdenCompraInventario(
                     numFact,
                     DateTime.Now,
                     totalCompraUSD > 0 ? totalCompraUSD : 1.00m,
-                    tasa,
                     dto.ProveedorId,
-                    $"Ingreso atómico de compra de insumos registrado por {username}."
+                    $"Ingreso atómico de compra de insumos registrado por {_currentUserService.UserId}."
                 );
                 _context.OrdenesCompraInventario.Add(ordenCompra);
                 await _context.SaveChangesAsync(ct);

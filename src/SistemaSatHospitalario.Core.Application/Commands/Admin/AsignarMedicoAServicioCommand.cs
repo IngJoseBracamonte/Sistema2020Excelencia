@@ -58,7 +58,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
                 request.DetalleServicioId, detalle.Descripcion, tipoAccion,
                 medicoAnteriorId, medicoAnteriorNombre,
                 request.MedicoId, medico.Nombre,
-                _currentUser.UserName ?? "Sistema", request.Observaciones);
+                _currentUser.UserId, request.Observaciones);
             _context.LogsAsignacionHonorario.Add(log);
 
             await _context.SaveChangesAsync(cancellationToken);
