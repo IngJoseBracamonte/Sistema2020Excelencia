@@ -55,7 +55,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
             foreach (var rule in rules.OrderBy(r => r.Priority))
             {
-                bool isMatch = rule.MatchType switch
+                bool isMatch = rule.MappingRuleType switch
                 {
                     MappingRuleType.Contains => normalizedType.Contains(rule.Pattern.ToUpperInvariant()),
                     MappingRuleType.StartsWith => normalizedType.StartsWith(rule.Pattern.ToUpperInvariant()),

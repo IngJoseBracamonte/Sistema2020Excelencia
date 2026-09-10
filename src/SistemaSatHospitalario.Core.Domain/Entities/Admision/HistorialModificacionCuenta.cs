@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 {
@@ -7,18 +8,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public Guid Id { get; private set; }
         public Guid CuentaServicioId { get; private set; }
         public DateTime FechaModificacion { get; private set; }
-        public string Usuario { get; private set; }
+        
+        // Auditoría e Identidad (3FN Limpio)
+        public Guid? UsuarioId { get; private set; }
         
         // Paciente anterior y nuevo
         public Guid? PacienteAnteriorId { get; private set; }
-
         public Guid? PacienteNuevoId { get; private set; }
 
         // Tipo de ingreso/Convenio anterior y nuevo
         public string? TipoIngresoAnterior { get; private set; }
         public string? TipoIngresoNuevo { get; private set; }
         public int? ConvenioAnteriorId { get; private set; }
-
         public int? ConvenioNuevoId { get; private set; }
 
         // Totales de la cuenta anterior y nuevo
@@ -30,12 +31,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public decimal ReciboTotalNuevoUSD { get; private set; }
         public decimal ReciboVueltoAnteriorUSD { get; private set; }
         public decimal ReciboVueltoNuevoUSD { get; private set; }
-        public decimal ReciboPagadoUSD { get; private set; } // El monto pagado/ingresado
+        public decimal ReciboPagadoUSD { get; private set; }
 
         // Cuentas por Cobrar saldo anterior y nuevo
         public decimal CxCSaldoAnteriorUSD { get; private set; }
         public decimal CxCSaldoNuevoUSD { get; private set; }
 
+        // Colección de detalles de servicios modificados (1:N)
         public virtual ICollection<HistorialModificacionCuentaDetalle> DetallesModificados { get; private set; } = new List<HistorialModificacionCuentaDetalle>();
 
         protected HistorialModificacionCuenta() { }
@@ -57,12 +59,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             decimal reciboVueltoNuevoUSD,
             decimal reciboPagadoUSD,
             decimal cxcSaldoAnteriorUSD,
-            decimal cxcSaldoNuevoUSD)
+            decimal cxcSaldoNuevoUSD,
+            Guid? usuarioId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;
             FechaModificacion = DateTime.UtcNow;
-            Usuario = usuario ?? throw new ArgumentNullException(nameof(usuario));
+            UsuarioId = usuarioId ?? (Guid.TryParse(usuario, out var parsed) ? parsed : (Guid?)null);
             
             PacienteAnteriorId = pacienteAnteriorId;
             PacienteNuevoId = pacienteNuevoId;
@@ -83,7 +86,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             CxCSaldoAnteriorUSD = cxcSaldoAnteriorUSD;
             CxCSaldoNuevoUSD = cxcSaldoNuevoUSD;
-
         }
     }
 }

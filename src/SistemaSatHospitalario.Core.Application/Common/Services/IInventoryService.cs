@@ -14,7 +14,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             string serviceCodigo,
             string serviceDescripcion,
             decimal cantidadServicio,
-            string usuarioCarga,
+            Guid? usuarioCargaId,   // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Guid cuentaId,
             Guid? sedeId,
             CancellationToken cancellationToken);
@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             string tipoMovimiento, // Ingreso, Descarte
             decimal cantidadOriginal,
             UnidadMedidaEnum unidadMedidaOriginal,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             string motivo,
             CancellationToken cancellationToken);
 
@@ -33,33 +33,33 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid insumoId,
             decimal cantidad,
             string motivo,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Guid? sedeId = null,
             CancellationToken cancellationToken = default);
 
         Task PerformClosingAsync(
             Guid sedeId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             string observaciones,
             List<CierreDetalleInputDto> detalles,
             CancellationToken cancellationToken);
 
         Task DispatchPedidoAsync(
             Guid pedidoId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Dictionary<Guid, decimal>? cantidadesAprobadas = null,
             Dictionary<Guid, string>? observacionesPorDetalle = null,
             CancellationToken cancellationToken = default);
 
         Task RejectPedidoAsync(
             Guid pedidoId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             string motivo,
             CancellationToken cancellationToken = default);
 
         Task ReceivePedidoAsync(
             Guid pedidoId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Dictionary<Guid, decimal> discrepancias,
             CancellationToken cancellationToken = default);
     }

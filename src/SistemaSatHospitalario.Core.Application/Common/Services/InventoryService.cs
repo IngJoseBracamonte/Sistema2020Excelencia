@@ -29,7 +29,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             string serviceCodigo,
             string serviceDescripcion,
             decimal cantidadServicio,
-            string usuarioCarga,
+            Guid? usuarioCargaId,   // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             Guid cuentaId,
             Guid? sedeId,
             CancellationToken cancellationToken)
@@ -202,7 +202,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             string tipoMovimiento,
             decimal cantidadOriginal,
             UnidadMedidaEnum unidadMedidaOriginal,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             string motivo,
             CancellationToken cancellationToken)
         {
@@ -243,8 +243,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 qtyBase,
                 unidadMedidaOriginal,
                 cantidadOriginal,
-                usuario,
-                motivo
+                motivo,
+                usuarioId,
+                null
             );
 
             _context.MovimientosInsumo.Add(movimiento);
@@ -256,7 +257,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             Guid insumoId,
             decimal cantidad,
             string motivo,
-            string usuario,
+            Guid usuarioId,
             Guid? sedeId = null,
             CancellationToken cancellationToken = default)
         {
@@ -297,8 +298,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                 -cantidad,
                 (UnidadMedidaEnum)insumo.UnidadMedidaId,
                 cantidad,
-                usuario,
-                motivo.Trim()
+                motivo.Trim(),
+                usuarioId,
+                null
             );
 
             _context.MovimientosInsumo.Add(movimiento);
@@ -307,7 +309,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
 
         public async Task PerformClosingAsync(
             Guid sedeId,
-            string usuario,
+            Guid? usuarioId,        // V14.3 - Usar Guid (ID) en lugar de string (nombre) por 3FN normalization
             string observaciones,
             List<CierreDetalleInputDto> detalles,
             CancellationToken cancellationToken)
@@ -350,8 +352,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
                     variance,
                     (UnidadMedidaEnum)insumo.UnidadMedidaId,
                     variance,
-                    usuario,
-                    $"Ajuste automático por cierre de inventario en Sede {sedeId}. Diferencia (Fisico - Teorico) = {variance} {(UnidadMedidaEnum)insumo.UnidadMedidaId}."
+                    motivo,
+                    usuarioId,
+                    null
                 );
                 _context.MovimientosInsumo.Add(adjustmentMov);
             }

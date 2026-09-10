@@ -13,15 +13,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? NroControlFiscal { get; protected set; }
         public decimal TasaCambioDia { get; protected set; }
         public int EstadoFiscalId { get; protected set; }
-
-        /// <summary>
-        /// LEGACY (3FN): texto del estado fiscal. Fuente de verdad: <see cref="EstadoFiscalId"/>
-        /// (FK a EstadosFiscales). Alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Usar EstadoFiscalId / EstadoFiscalNav. Columna legacy pendiente de DROP.")]
-        public string EstadoFiscal { get; protected set; } = string.Empty;
-
-        /// <summary>Navegación al catálogo de estados fiscales.</summary>
         public virtual EstadoFiscal EstadoFiscalNav { get; protected set; } = null!;
         public Guid PacienteId { get; protected set; }
         public string NumeroRecibo { get; protected set; }
@@ -60,9 +51,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         private void SetEstadoFiscal(int estadoFiscalId)
         {
             EstadoFiscalId = estadoFiscalId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            EstadoFiscal = EstadoFiscalConstants.ToLegacyString(estadoFiscalId);
-#pragma warning restore CS0618
         }
 
         /// <summary>3FN: indica si el recibo está en borrador (fuente de verdad: EstadoFiscalId).</summary>

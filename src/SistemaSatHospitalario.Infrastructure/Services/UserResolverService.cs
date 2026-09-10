@@ -1,23 +1,28 @@
 namespace SistemaSatHospitalario.Infrastructure.Services;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Constants;
-using SistemaSatHospitalario.Infrastructure.Identity; // <-- Asegura la referencia a tu ApplicationUser
+using SistemaSatHospitalario.Infrastructure.Identity.Models; // <-- Namespace de UsuarioHospital
 
 /// <summary>
 /// Resolves information about the currently authenticated user from the HTTP context.
 /// </summary>
 public sealed class UserResolverService : IUserResolverService
-{  private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly UserManager<IdentityUser> _userManager; // <-- Cambiado a IdentityUser
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly UserManager<UsuarioHospital> _userManager; // ✅ Cambiado a UsuarioHospital
 
     public UserResolverService(
         IHttpContextAccessor httpContextAccessor,
-        UserManager<IdentityUser> userManager)
+        UserManager<UsuarioHospital> userManager) // ✅ Cambiado a UsuarioHospital
     {
         _httpContextAccessor = httpContextAccessor
             ?? throw new ArgumentNullException(nameof(httpContextAccessor));
@@ -136,7 +141,6 @@ public sealed class UserResolverService : IUserResolverService
     /// <inheritdoc />
     public async Task<string> ResolveUserIdAsync(Guid? targetUserId, CancellationToken cancellationToken)
     {
-        // Si no se envía un ID específico, retorna el ID del usuario actualmente autenticado
         if (!targetUserId.HasValue || targetUserId.Value == Guid.Empty)
         {
             return GetCurrentUserId().ToString();
@@ -149,6 +153,6 @@ public sealed class UserResolverService : IUserResolverService
             throw new KeyNotFoundException($"El usuario con ID '{targetUserId}' no existe en el sistema.");
         }
 
-        return user.UserName ?? user.Id;
+        return user.UserName ?? user.Id.ToString();
     }
 }

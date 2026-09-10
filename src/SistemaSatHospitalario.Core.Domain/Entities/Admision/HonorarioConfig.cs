@@ -8,16 +8,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string CategoriaServicio { get; private set; } // RX, INFORME, CITOLOGIA, BIOPSIA, CONSULTA
         public Guid? MedicoDefaultId { get; private set; }
         public virtual Medico MedicoDefault { get; private set; }
-
-        /// <summary>
-        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
-        /// <see cref="UsuarioConfiguroId"/> (FK lógica a Usuarios, PK Guid).
-        /// Se mantiene mapeado como alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Usar UsuarioConfiguroId. Columna legacy pendiente de DROP.")]
-        public string UsuarioConfiguro { get; private set; }
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que configuró.</summary>
         public Guid? UsuarioConfiguroId { get; private set; }
         public DateTime FechaConfiguracion { get; private set; }
         public string? NotasConfig { get; private set; }

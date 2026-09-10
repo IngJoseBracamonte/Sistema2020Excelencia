@@ -1,95 +1,87 @@
 using System;
 using System.Collections.Generic;
-using SistemaSatHospitalario.Core.Domain.Constants;
+using System.Linq;
 
-namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
+namespace SistemaSatHospitalario.Core.Domain.Entities.Admision;
+
+public class OrdenCompraInventario
 {
-    public class OrdenCompraInventario
+    public Guid Id { get; private set; }
+    public string NumeroFactura { get; private set; } = string.Empty;
+    public Guid? ProveedorId { get; private set; }
+    public virtual Proveedor? Proveedor { get; private set; }
+    public DateTime FechaEmision { get; private set; }
+    public decimal MontoTotalUSD { get; private set; }
+    public string Estado { get; private set; } = "PorPagar"; // PorPagar, Pagado
+    public string? Observaciones { get; private set; }
+
+    private readonly List<PagoProveedor> _pagos = [];
+    public virtual IReadOnlyCollection<PagoProveedor> Pagos => _pagos.AsReadOnly();
+
+    // Propiedades calculadas en memoria (3FN Pura - No persistidas)
+    public decimal TotalAbonadoUSD => _pagos.Sum(p => p.MontoAbonadoUSD);
+    public decimal SaldoPendienteUSD => Math.Max(0m, MontoTotalUSD - TotalAbonadoUSD);
+
+    protected OrdenCompraInventario() { }
+
+    public OrdenCompraInventario(
+        string numeroFactura, 
+        DateTime fechaEmision, 
+        decimal montoTotalUSD, 
+        Guid? proveedorId = null, 
+        string? observaciones = null)
     {
-        public Guid Id { get; private set; }
-        public string NumeroFactura { get; private set; } = string.Empty;
-        public Guid? ProveedorId { get; private set; }
-        public virtual Proveedor? Proveedor { get; private set; }
-        public DateTime FechaEmision { get; private set; }
-        public decimal MontoTotalUSD { get; private set; }
+        ArgumentException.ThrowIfNullOrWhiteSpace(numeroFactura, nameof(numeroFactura));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(montoTotalUSD, nameof(montoTotalUSD));
 
-        /// <summary>
-        /// LEGACY (3FN): monto en bolívares calculado y persistido. Fuente de verdad:
-        /// <see cref="MontoTotalUSD"/> × tasa de cambio del día (no persistida aquí).
-        /// Alias de compatibilidad hasta el DROP de columna.
-        /// </summary>
-        [Obsolete("Calcular como MontoTotalUSD * tasaCambio. Columna legacy pendiente de DROP.")]
-        public decimal MontoTotalBs { get; private set; }
+        Id = Guid.NewGuid();
+        NumeroFactura = numeroFactura.Trim();
+        ProveedorId = proveedorId;
+        FechaEmision = fechaEmision;
+        MontoTotalUSD = Math.Round(montoTotalUSD, 2);
+        Estado = "PorPagar";
+        Observaciones = observaciones?.Trim();
+    }
 
-        /// <summary>
-        /// LEGACY (3FN): total abonado calculado y persistido. Fuente de verdad:
-        /// <see cref="Pagos"/>.Sum(p => p.MontoAbonadoUSD). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular como Pagos.Sum(p => p.MontoAbonadoUSD). Columna legacy pendiente de DROP.")]
-        public decimal TotalAbonadoUSD { get; private set; }
+    public void AsignarProveedor(Proveedor proveedor)
+    {
+        ArgumentNullException.ThrowIfNull(proveedor);
 
-        /// <summary>
-        /// LEGACY (3FN): saldo pendiente calculado y persistido. Fuente de verdad:
-        /// <see cref="MontoTotalUSD"/> - <see cref="TotalAbonadoUSD"/>. Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular como MontoTotalUSD - TotalAbonadoUSD. Columna legacy pendiente de DROP.")]
-        public decimal SaldoPendienteUSD { get; private set; }
-        public string Estado { get; private set; } = "PorPagar"; // PorPagar, Pagado
-        public string? Observaciones { get; private set; }
+        ProveedorId = proveedor.Id;
+        Proveedor = proveedor;
+    }
 
-        public virtual ICollection<PagoProveedor> Pagos { get; private set; } = new List<PagoProveedor>();
+    public PagoProveedor RegistrarAbono(
+        decimal montoAbonadoUSD, 
+        decimal tasaCambio, 
+        string metodoPago, 
+        string referencia, 
+        string usuarioId, 
+        string? observaciones = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(montoAbonadoUSD, nameof(montoAbonadoUSD));
+        ArgumentException.ThrowIfNullOrWhiteSpace(metodoPago, nameof(metodoPago));
 
-        private OrdenCompraInventario() { }
+        if (Estado == "Pagado" || SaldoPendienteUSD == 0)
+            throw new InvalidOperationException("La orden de compra ya se encuentra totalmente pagada.");
 
-        public OrdenCompraInventario(
-            string numeroFactura, 
-            DateTime fechaEmision, 
-            decimal montoTotalUSD, 
-            decimal tasaCambio, 
-            Guid? proveedorId = null, 
-            string? observaciones = null)
+        var pago = new PagoProveedor(
+            Id, 
+            montoAbonadoUSD, 
+            tasaCambio, 
+            metodoPago, 
+            referencia ?? string.Empty, 
+            usuarioId, 
+            observaciones);
+
+        _pagos.Add(pago);
+
+        // Actualización de estado del agregado si se liquida el saldo
+        if (SaldoPendienteUSD <= 0)
         {
-            if (string.IsNullOrWhiteSpace(numeroFactura)) throw new ArgumentException("El número de factura es requerido.", nameof(numeroFactura));
-            if (montoTotalUSD <= 0) throw new ArgumentException("El monto total debe ser mayor a cero.", nameof(montoTotalUSD));
-            if (tasaCambio <= 0) throw new ArgumentException("La tasa de cambio debe ser mayor a cero.", nameof(tasaCambio));
-
-            Id = Guid.NewGuid();
-            NumeroFactura = numeroFactura.Trim();
-            ProveedorId = proveedorId;
-            FechaEmision = fechaEmision;
-            MontoTotalUSD = Math.Round(montoTotalUSD, 2);
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            MontoTotalBs = Math.Round(montoTotalUSD * tasaCambio, 2);
-            TotalAbonadoUSD = 0m;
-            SaldoPendienteUSD = MontoTotalUSD;
-#pragma warning restore CS0618
-            Estado = "PorPagar";
-            Observaciones = observaciones;
+            Estado = "Pagado";
         }
 
-        public void AsignarProveedor(Proveedor proveedor)
-        {
-            ArgumentNullException.ThrowIfNull(proveedor);
-
-            ProveedorId = proveedor.Id;
-            Proveedor = proveedor;
-        }
-
-        public PagoProveedor RegistrarAbono(decimal montoAbonadoUSD, decimal tasaCambio, string metodoPago, string referencia, string usuarioId, string? observaciones = null)
-        {
-            if (string.IsNullOrWhiteSpace(metodoPago)) throw new InvalidOperationException("El método de pago es requerido.");
-
-            var pago = new PagoProveedor(
-                Id, 
-                montoAbonadoUSD, 
-                tasaCambio, 
-                metodoPago, 
-                referencia ?? string.Empty, 
-                usuarioId, 
-                observaciones);
-
-            Pagos.Add(pago);
-            return pago;
-        }
+        return pago;
     }
 }

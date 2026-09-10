@@ -31,6 +31,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal? PrecioModificado { get; set; }
         public decimal? HonorarioModificado { get; set; }
         public string? OrigenCarga { get; set; } // "Enfermeria", "Hospitalizacion", "UCI", "Emergencia", etc.
+        
+        // Usuario que realiza la operación (Guid para vinculación con UsuarioHospital)
+        public Guid? UsuarioOperadorId { get; set; }
 
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
@@ -490,7 +493,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                         detalle.Id, request.Descripcion, sourceAccion,
                         null, null, finalMedicoId.Value, medicoNombre,
-                        request.UsuarioCarga, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante carga directa"));
+                        request.UsuarioOperadorId, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante carga directa"));
                     
                     _logger.LogInformation("Asignado médico responsable {MedicoId} ({Accion}) para detalle {DetalleId}. Honorario: {Honorario}",
                         finalMedicoId.Value, sourceAccion, detalle.Id, honorarioAsignado);

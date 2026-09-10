@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
@@ -8,26 +6,22 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     {
         public Guid Id { get; private set; }
         public Guid CuentaServicioId { get; private set; }
-        // Se cambió de int a Guid para el nuevo sistema de identidad (V11.0 Sync Pro)
         public Guid PacienteId { get; private set; }
         public decimal MontoTotalBase { get; private set; }
         public decimal MontoPagadoBase { get; private set; }
+
+        // ✅ Propiedad calculada dinámica (Ignorada automáticamente en persistencia)
         public decimal SaldoPendienteBase => MontoTotalBase - MontoPagadoBase;
+
         public DateTime FechaCreacion { get; private set; }
-        public string Estado { get; private set; } // Pendiente, Parcial, Pagada
+        public string Estado { get; private set; } // Pendiente, Parcial, Pagada / Cobrada
         public bool IsAudited { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): username en texto plano. Fuente de verdad: <see cref="UsuarioAuditoriaId"/>
-        /// (FK lógica a Usuarios, PK Guid). Se mantiene mapeado como alias de compatibilidad
-        /// hasta el DROP de columna (delta posterior a validación en producción).
-        /// </summary>
-        [Obsolete("Usar UsuarioAuditoriaId. Columna legacy pendiente de DROP.")]
-        public string? UsuarioAuditoria { get; private set; }
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que auditó.</summary>
+        // Auditoría e Identidad (3FN Limpio)
         public Guid? UsuarioAuditoriaId { get; private set; }
+        public string? UsuarioAuditoria { get; private set; } // Alias legacy opcional
         public DateTime? FechaAuditoria { get; private set; }
+
         public bool CompromisoGenerado { get; private set; }
         public bool GarantiaGenerada { get; private set; }
         
@@ -35,10 +29,10 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? DoctorProcedimiento { get; private set; }
         public string? InformacionAdicional { get; private set; }
 
-        // [V12.8] Colección de ítems de garantía prendaria (1:N)
-        public ICollection<GarantiaItem> GarantiasItems { get; private set; } = new List<GarantiaItem>();
+        // Colección de ítems de garantía prendaria (1:N)
+        public virtual ICollection<GarantiaItem> GarantiasItems { get; private set; } = new List<GarantiaItem>();
 
-        public CuentaServicios Cuenta { get; private set; }
+        public virtual CuentaServicios Cuenta { get; private set; } = null!;
 
         protected CuentaPorCobrar() { }
 
@@ -60,41 +54,18 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MontoPagadoBase = MontoTotalBase;
         }
 
-        public void MarcarComoAuditada(string usuario)
-        {
-            IsAudited = true;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioAuditoria = usuario ?? throw new ArgumentNullException(nameof(usuario));
-#pragma warning restore CS0618
-            // 3FN: si el valor es un GUID válido, poblar también la FK
-            UsuarioAuditoriaId = Guid.TryParse(usuario, out var parsed) ? parsed : UsuarioAuditoriaId;
-            FechaAuditoria = DateTime.UtcNow;
-        }
-
-        /// <summary>3FN: variante con FK explícita al usuario de Identity.</summary>
         public void MarcarComoAuditada(Guid usuarioId, string? usuarioNombreAlias = null)
         {
             if (usuarioId == Guid.Empty) throw new ArgumentException("El ID de usuario no puede ser vacío.", nameof(usuarioId));
             IsAudited = true;
             UsuarioAuditoriaId = usuarioId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            if (!string.IsNullOrWhiteSpace(usuarioNombreAlias))
-            {
-                UsuarioAuditoria = usuarioNombreAlias;
-            }
-#pragma warning restore CS0618
+            UsuarioAuditoria = usuarioNombreAlias;
             FechaAuditoria = DateTime.UtcNow;
         }
 
-        public void MarcarCompromisoGenerado()
-        {
-            CompromisoGenerado = true;
-        }
+        public void MarcarCompromisoGenerado() => CompromisoGenerado = true;
 
-        public void MarcarGarantiaGenerada()
-        {
-            GarantiaGenerada = true;
-        }
+        public void MarcarGarantiaGenerada() => GarantiaGenerada = true;
 
         public void ActualizarMetadataDocumentos(string? quienAutorizo, string? doctorProcedimiento, string? informacionAdicional)
         {
