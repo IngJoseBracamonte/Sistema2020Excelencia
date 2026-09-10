@@ -51,10 +51,9 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             ServicioClinico? baseService, 
             CancellationToken cancellationToken)
         {
-            bool isClinical = !string.IsNullOrEmpty(request.OrigenCarga) || 
-                              cuenta.TipoIngresoNav.Nombre == EstadoConstants.Hospitalizacion || 
-                              cuenta.TipoIngresoNav.Nombre == EstadoConstants.Emergencia || 
-                              cuenta.TipoIngresoNav.Nombre == EstadoConstants.UCI;
+            bool isClinical = cuenta.TipoIngresoNav?.Nombre is EstadoConstants.Hospitalizacion
+                              or EstadoConstants.Emergencia
+                              or EstadoConstants.UCI;
 
             // Extracción robusta de LegacyMappingId con fallbacks
             string? mappingString = !string.IsNullOrEmpty(detalle.LegacyMappingId)

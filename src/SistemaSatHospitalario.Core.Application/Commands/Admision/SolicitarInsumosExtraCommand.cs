@@ -26,13 +26,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<SolicitarInsumosExtraCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
         public SolicitarInsumosExtraCommandHandler(
             IApplicationDbContext context,
-            ILogger<SolicitarInsumosExtraCommandHandler> logger)
+            ILogger<SolicitarInsumosExtraCommandHandler> logger,
+            ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<Guid> Handle(SolicitarInsumosExtraCommand request, CancellationToken cancellationToken)
@@ -86,14 +89,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 correlativo,
                 SeedConstants.SedeId_Cirugia,
                 request.AlmacenOrigenId != Guid.Empty ? request.AlmacenOrigenId : SeedConstants.SedeId_Principal,
-                usuario,
+                _currentUserService.UserId,
                 obsPedido
             );
             pedido.AgregarDetalle(new PedidoInterSedeDetalle(request.InsumoId, request.Cantidad));
             _context.PedidosInterSede.Add(pedido);
 
             // 3. Auditoría Inmutable
-            var log = new CirugiaLog(orden.Id, usuario, CirugiaEventoConstants.SolicitudInsumoExtra,
+            var log = new CirugiaLog(orden.Id, _currentUserService.UserId, CirugiaEventoConstants.SolicitudInsumoExtra,
                 $"Solicitud ad-hoc ({correlativo}): Insumo {request.InsumoId}, Cantidad {request.Cantidad}");
             _context.CirugiaLogs.Add(log);
 

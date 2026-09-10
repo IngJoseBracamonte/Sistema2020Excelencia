@@ -34,11 +34,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly IUserAuditLogger _auditLogger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UpdateCuentaAdministrativaCommandHandler(IApplicationDbContext context, IUserAuditLogger auditLogger)
+        public UpdateCuentaAdministrativaCommandHandler(IApplicationDbContext context, IUserAuditLogger auditLogger, ICurrentUserService currentUserService)
         {
             _context = context;
             _auditLogger = auditLogger;
+            _currentUserService = currentUserService;
         }
 
         public async Task<bool> Handle(UpdateCuentaAdministrativaCommand request, CancellationToken cancellationToken)
@@ -266,7 +268,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         arNueva.ActualizarMontoTotalAdministrativo(nuevoTotal);
                         if (cuenta.ConvenioId == null)
                         {
-                            arNueva.MarcarComoAuditada(request.UsuarioModificacion);
+                            arNueva.MarcarComoAuditada(_currentUserService.UserId);
                         }
                         _context.CuentasPorCobrar.Add(arNueva);
                     }

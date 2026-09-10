@@ -18,56 +18,8 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         /// <summary>Navegación al catálogo de estados de caja.</summary>
         public virtual EstadoCaja EstadoNav { get; protected set; } = null!;
         
-        // Identidad del Responsable (Micro-Ciclo 28)
-
-        /// <summary>
-        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
-        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
-        public string UsuarioId { get; protected set; }
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del cajero responsable.</summary>
         public Guid? UsuarioIdentityId { get; protected set; }
 
-        /// <summary>
-        /// LEGACY (3FN): nombre desnormalizado del usuario. Se deriva de
-        /// <see cref="UsuarioIdentityId"/> vía Identity. Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Derivar de UsuarioIdentityId vía Identity. Columna legacy pendiente de DROP.")]
-        public string NombreUsuario { get; protected set; }
-
-        // Campos de Auditoría y Cierre en 2 Fases (V13.0)
-
-        /// <summary>
-        /// LEGACY (3FN): JSON desnormalizado de declaración de cierre.
-        /// Fuente de verdad: <see cref="DeclaracionesPorMetodo"/> (tabla CajasDeclaracionesMetodos).
-        /// Se mantiene mapeado solo como fallback de lectura para cajas históricas
-        /// hasta el DROP de columna (delta posterior a validación en producción).
-        /// </summary>
-        [Obsolete("Usar DeclaracionesPorMetodo. Columna legacy pendiente de DROP.")]
-        public string? DeclaracionCierreJson { get; protected set; }
-
-        /// <summary>
-        /// LEGACY (3FN): total ingresado calculado y persistido. Fuente de verdad:
-        /// <see cref="DeclaracionesPorMetodo"/>.Sum(d => d.MontoIngresado). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular como DeclaracionesPorMetodo.Sum(d => d.MontoIngresado). Columna legacy pendiente de DROP.")]
-        public decimal? TotalIngresado { get; protected set; }
-
-        /// <summary>
-        /// LEGACY (3FN): total cobrado calculado y persistido. Fuente de verdad:
-        /// <see cref="DeclaracionesPorMetodo"/>.Sum(d => d.MontoEsperadoIngreso). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular como DeclaracionesPorMetodo.Sum(d => d.MontoEsperadoIngreso). Columna legacy pendiente de DROP.")]
-        public decimal? TotalCobrado { get; protected set; }
-
-        /// <summary>
-        /// LEGACY (3FN): diferencia calculada y persistida. Fuente de verdad:
-        /// <see cref="TotalIngresado"/> - <see cref="TotalCobrado"/>. Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Calcular como TotalIngresado - TotalCobrado. Columna legacy pendiente de DROP.")]
-        public decimal? Diferencia { get; protected set; }
         public virtual ICollection<CajaDeclaracionMetodo> DeclaracionesPorMetodo { get; protected set; } = new List<CajaDeclaracionMetodo>();
 
         protected CajaDiaria() { }

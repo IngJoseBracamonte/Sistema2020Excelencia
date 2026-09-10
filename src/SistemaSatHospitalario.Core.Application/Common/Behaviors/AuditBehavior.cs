@@ -58,8 +58,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Behaviors
                                 request.Precio,
                                 catalogo.HonorarioBase,
                                 request.Honorario,
-                                request.UsuarioCarga,
-                                string.IsNullOrEmpty(request.SupervisorKey) ? "Acceso Autorizado" : "Supervisor Key Verificada"
+                                request.UsuarioOperadorId,
+                                request.UsuarioCarga
                             );
 
                             await _context.AuditLogsPrecios.AddAsync(auditLog, cancellationToken);

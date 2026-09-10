@@ -47,10 +47,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class UpdateCatalogItemCommandHandler : IRequestHandler<UpdateCatalogItemCommand, bool>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UpdateCatalogItemCommandHandler(IApplicationDbContext context)
+        public UpdateCatalogItemCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
 
         public async Task<bool> Handle(UpdateCatalogItemCommand request, CancellationToken cancellationToken)
@@ -106,7 +108,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 {
                     if (h.Honorario > 0)
                     {
-                        var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, "Admin");
+                        var newHon = new HonorarioMedicoServicio(item.Id, h.MedicoId, h.Honorario, _currentUserService.UserId);
                         _context.HonorariosMedicosServicios.Add(newHon);
                     }
                 }

@@ -3,6 +3,7 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+
 # User-specific files
 *.rsuser
 *.suo
@@ -47,6 +48,9 @@ Generated\ Files/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
+
+# Test configuration files (contain sensitive data like database passwords)
+**/DatabaseTestConfiguration.cs
 [Bb]uild[Ll]og.*
 
 # NUnit
@@ -421,6 +425,11 @@ src/SistemaSatHospitalario.UnitTests/Application/FacturacionClinicaDbDirectTests
 src/SistemaSatHospitalario.UnitTests/Application/ServiceLoadingStrategyTests.cs
 src/SistemaSatHospitalario.IntegrationTests/
 
+#Secrets
+src/SistemaSatHospitalario.WebAPI/appsettings.Development.json
+src/SistemaSatHospitalario.WebAPI/appsettings.Development.json
+
+
 # Logs de diagnóstico de los tests de BD
 scratch/
 src/scratch/
@@ -473,3 +482,5 @@ Planificacion_de_Inventario
 # PowerShell scripts
 *.ps1
 
+src/SistemaSatHospitalario.WebAPI/appsettings.Development.json
+src/SistemaSatHospitalario.WebAPI/appsettings.Development.json

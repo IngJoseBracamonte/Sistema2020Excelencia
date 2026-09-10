@@ -40,22 +40,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public DetallePago(Guid reciboFacturaId, string metodoPago, string referenciaBancaria, decimal montoAbonadoMoneda, decimal equivalenteAbonadoBase, decimal tasaCambioAplicada, string usuarioCarga, Guid? metodoPagoId = null, Guid? usuarioCargaId = null)
         {
             if (montoAbonadoMoneda == 0) throw new ArgumentException("El monto no puede ser 0.");
-
             Id = Guid.NewGuid();
             ReciboFacturaId = reciboFacturaId;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            MetodoPago = metodoPago ?? throw new ArgumentNullException(nameof(metodoPago));
-#pragma warning restore CS0618
             MetodoPagoId = metodoPagoId;
             ReferenciaBancaria = referenciaBancaria;
             MontoAbonadoMoneda = montoAbonadoMoneda;
             EquivalenteAbonadoBase = equivalenteAbonadoBase;
             TasaCambioAplicada = tasaCambioAplicada;
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioCarga = usuarioCarga ?? throw new ArgumentNullException(nameof(usuarioCarga));
-#pragma warning restore CS0618
-            // 3FN: si no se pasa la FK explícita, intentar parsear el texto como GUID
-            UsuarioCargaId = usuarioCargaId ?? (Guid.TryParse(usuarioCarga, out var parsed) ? parsed : (Guid?)null);
+            UsuarioCargaId = usuarioCargaId;
             FechaPago = DateTime.UtcNow;
         }
     }

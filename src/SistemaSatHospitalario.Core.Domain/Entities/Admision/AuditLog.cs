@@ -6,19 +6,32 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        /// <summary>
-        /// LEGACY (3FN): ID de usuario como texto. Fuente de verdad:
-        /// <see cref="UsuarioIdentityId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioIdentityId. Columna legacy pendiente de DROP.")]
-        public string UserId { get; set; } = string.Empty;
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que ejecutó la acción.</summary>
+        // Auditoría e Identidad (3FN Limpio)
         public Guid? UsuarioIdentityId { get; set; }
-        public string ActionType { get; set; } = string.Empty;
-        public string? OldValue { get; set; }
-        public string? NewValue { get; set; }
+
+        public string ActionType { get; set; } = string.Empty; // INSERT, UPDATE, DELETE, LOGIN
+        public string? OldValue { get; set; } // JSON o snapshot del estado anterior
+        public string? NewValue { get; set; } // JSON o snapshot del nuevo estado
         public string? IpAddress { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        public AuditLog() { }
+
+        public AuditLog(
+            string actionType, 
+            Guid? usuarioIdentityId = null, 
+            string? userId = null, 
+            string? oldValue = null, 
+            string? newValue = null, 
+            string? ipAddress = null)
+        {
+            Id = Guid.NewGuid();
+            ActionType = actionType ?? throw new ArgumentNullException(nameof(actionType));
+            UsuarioIdentityId = usuarioIdentityId ?? (Guid.TryParse(userId, out var parsed) ? parsed : (Guid?)null);
+            OldValue = oldValue;
+            NewValue = newValue;
+            IpAddress = ipAddress;
+            Timestamp = DateTime.UtcNow;
+        }
     }
 }

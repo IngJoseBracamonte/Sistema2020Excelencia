@@ -6,47 +6,45 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
     {
         public Guid Id { get; private set; }
         public Guid ServicioId { get; private set; }
-        public virtual ServicioClinico Servicio { get; private set; }
+        public virtual ServicioClinico Servicio { get; private set; } = null!;
         public Guid MedicoId { get; private set; }
-        public virtual Medico Medico { get; private set; }
+        public virtual Medico Medico { get; private set; } = null!;
         public decimal MontoHonorario { get; private set; }
 
-        /// <summary>
-        /// LEGACY (3FN): nombre de usuario en texto plano. Fuente de verdad:
-        /// <see cref="UsuarioModificoId"/> (FK lógica a Usuarios, PK Guid). Alias hasta el DROP.
-        /// </summary>
-        [Obsolete("Usar UsuarioModificoId. Columna legacy pendiente de DROP.")]
-        public string UsuarioModifico { get; private set; }
-
-        /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que modificó el honorario.</summary>
+        // Auditoría e Identidad (3FN Limpio)
         public Guid? UsuarioModificoId { get; private set; }
         public DateTime FechaModificacion { get; private set; }
 
         protected HonorarioMedicoServicio() { }
 
-        public HonorarioMedicoServicio(Guid servicioId, Guid medicoId, decimal montoHonorario, string usuario)
+        public HonorarioMedicoServicio(
+            Guid servicioId, 
+            Guid medicoId, 
+            decimal montoHonorario, 
+            Guid? usuarioModificoId = null,
+            string? usuarioModifico = null)
         {
+            if (servicioId == Guid.Empty) throw new ArgumentException("El servicio es obligatorio.", nameof(servicioId));
+            if (medicoId == Guid.Empty) throw new ArgumentException("El médico es obligatorio.", nameof(medicoId));
+
             Id = Guid.NewGuid();
             ServicioId = servicioId;
             MedicoId = medicoId;
             MontoHonorario = montoHonorario;
-            SetUsuarioModifico(usuario, null);
+            SetUsuarioModifico(usuarioModificoId, usuarioModifico);
             FechaModificacion = DateTime.UtcNow;
         }
 
-        public void ActualizarHonorario(decimal nuevoMonto, string usuario)
+        public void ActualizarHonorario(decimal nuevoMonto, Guid? usuarioModificoId = null, string? usuarioModifico = null)
         {
             MontoHonorario = nuevoMonto;
-            SetUsuarioModifico(usuario, null);
+            SetUsuarioModifico(usuarioModificoId, usuarioModifico);
             FechaModificacion = DateTime.UtcNow;
         }
 
-        private void SetUsuarioModifico(string usuario, Guid? usuarioId)
+        private void SetUsuarioModifico(Guid? usuarioId, string? usuario)
         {
-#pragma warning disable CS0618 // alias legacy sincronizado hasta el DROP de columna
-            UsuarioModifico = usuario;
-#pragma warning restore CS0618
-            // 3FN: poblar la FK si el texto es un GUID válido
+            // 3FN: Asignar ID directo o intentar parsear string si vino el alias
             UsuarioModificoId = usuarioId ?? (Guid.TryParse(usuario, out var parsed) ? parsed : (Guid?)null);
         }
     }

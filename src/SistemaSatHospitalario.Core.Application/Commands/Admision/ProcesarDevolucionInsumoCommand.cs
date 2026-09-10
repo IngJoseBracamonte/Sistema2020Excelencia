@@ -25,12 +25,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<ProcesarDevolucionInsumoCommandHandler> _logger;
-
+        private readonly ICurrentUserService _currentUserService;
         public ProcesarDevolucionInsumoCommandHandler(
             IApplicationDbContext context,
-            ILogger<ProcesarDevolucionInsumoCommandHandler> logger)
+            ILogger<ProcesarDevolucionInsumoCommandHandler> logger,
+            ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -77,8 +79,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.CantidadDevuelta,
                 (UnidadMedidaEnum)insumo?.UnidadMedidaId,
                 request.CantidadDevuelta,
-                usuario,
-                $"Devolución de sobrante de cirugía (Cuenta: {request.CuentaServicioId})"
+                $"Devolución de sobrante de cirugía (Cuenta: {request.CuentaServicioId})",
+                _currentUserService.UserId
             );
             _context.MovimientosInsumo.Add(movDevolucion);
 

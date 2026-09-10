@@ -12,7 +12,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin.HonorariumRules
     {
         public string Pattern { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
-        public MappingRuleType MatchType { get; set; } = MappingRuleType.Contains;
+        public MappingRuleType MatchType { get; set; }
         public int Priority { get; set; }
     }
 
@@ -36,7 +36,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin.HonorariumRules
                 request.Category,
                 request.MatchType,
                 request.Priority,
-                _currentUser.UserName ?? "Sistema"
+                _currentUser.UserId
             );
 
             _context.HonorariumMappingRules.Add(rule);

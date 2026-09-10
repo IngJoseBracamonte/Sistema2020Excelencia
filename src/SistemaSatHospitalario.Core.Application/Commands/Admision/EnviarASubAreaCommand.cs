@@ -34,11 +34,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<EnviarASubAreaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public EnviarASubAreaCommandHandler(IApplicationDbContext context, ILogger<EnviarASubAreaCommandHandler> logger)
+        public EnviarASubAreaCommandHandler(IApplicationDbContext context, ILogger<EnviarASubAreaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context;
             _logger = logger;
+            _currentUserService = currentUserService;
         }
 
         public async Task<EnviarASubAreaResponseDto> Handle(EnviarASubAreaCommand request, CancellationToken cancellationToken)
@@ -88,8 +90,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Cantidad,
                 (UnidadMedidaEnum)insumo.UnidadMedidaId,
                 request.Cantidad,
-                request.Usuario,
-                motivoDetallado
+                motivoDetallado,
+                _currentUserService.UserId
+
             );
 
             _context.MovimientosInsumo.Add(movimiento);

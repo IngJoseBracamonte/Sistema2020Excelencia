@@ -65,7 +65,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 {
                     CamaId = cama.Id,
                     SedeId = cama.SedeId,
-                    ClasificacionId = cama.ClasificacionId,
+                    ClasificacionId = (Guid)cama.ClasificacionId,
                     Codigo = cama.Codigo,
                     Nombre = cama.Nombre,
                     SedeNombre = cama.Sede?.Nombre ?? "Sede General",

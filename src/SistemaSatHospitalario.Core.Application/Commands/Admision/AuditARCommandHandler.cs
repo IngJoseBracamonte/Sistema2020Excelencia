@@ -9,11 +9,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
     public class AuditARCommandHandler : IRequestHandler<AuditARCommand, bool>
     {
-        private readonly IApplicationDbContext _context;
+        private readonly IApplicationDbContext _context;    
+        private readonly ICurrentUserService _currentUserService;
 
-        public AuditARCommandHandler(IApplicationDbContext context)
+        public AuditARCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
 
         public async Task<bool> Handle(AuditARCommand request, CancellationToken cancellationToken)
@@ -24,7 +26,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             if (ar == null)
                 throw new Exception("La cuenta por cobrar no existe.");
 
-            ar.MarcarComoAuditada(request.UsuarioAuditor);
+            ar.MarcarComoAuditada(_currentUserService.UserId);
             
             await _context.SaveChangesAsync(cancellationToken);
             return true;

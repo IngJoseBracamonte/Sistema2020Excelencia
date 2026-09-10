@@ -19,6 +19,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         public Guid Id { get; set; }
         public Guid CuentaServicioId { get; set; }
         public DateTime FechaModificacion { get; set; }
+        public Guid? UsuarioId { get; set; }
         public string Usuario { get; set; } = null!;
         
         public Guid? PacienteAnteriorId { get; set; }
@@ -68,7 +69,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Id = h.Id,
                     CuentaServicioId = h.CuentaServicioId,
                     FechaModificacion = h.FechaModificacion,
-                    Usuario = h.Usuario,
+                    UsuarioId = h.UsuarioId,
+                    Usuario = h.UsuarioId.HasValue ? h.UsuarioId.Value.ToString() : string.Empty,
                     PacienteAnteriorId = h.PacienteAnteriorId,
                     PacienteNuevoId = h.PacienteNuevoId,
                     TipoIngresoAnterior = h.TipoIngresoAnterior,

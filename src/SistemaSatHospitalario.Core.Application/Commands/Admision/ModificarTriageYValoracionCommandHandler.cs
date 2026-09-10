@@ -55,7 +55,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.GlasgowOcular,
                 request.GlasgowVerbal,
                 request.GlasgowMotor,
-                request.GlasgowTotal,
                 request.ViaAerea,
                 request.Ventilacion,
                 request.Pulso,
@@ -65,8 +64,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Alergias,
                 request.AccesosVenosos,
                 request.Pertenencias,
-                request.AntecedentesMedicos,
-                request.UsuarioRegistro
+                request.AntecedentesMedicos
             );
 
             _context.TriagesEnfermeria.Update(triage);

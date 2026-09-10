@@ -230,7 +230,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugiaConstants tipo = Enums.TipoObservacionCirugiaConstants.ObservacionMedica, string usuarioRegistro = "Sistema", Guid? usuarioRegistroId = null)
         {
-            var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistro, usuarioRegistroId);
+            var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistroId);
             _historialObservaciones.Add(item);
             return item;
         }

@@ -32,7 +32,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
             var config = await _context.HonorariosConfig
             .FirstOrDefaultAsync(h => h.CategoriaServicio == request.CategoriaServicio, cancellationToken);
 
-            var usuario = _currentUser.UserName ?? "Sistema";
+            var usuario = _currentUser.UserName;
 
             if (config == null)
             {
@@ -57,7 +57,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admin
                 Guid.Empty, request.CategoriaServicio, HonorarioConstants.AccionConfiguracionCambio,
                 null, null,
                 request.MedicoId, medicoNombre,
-                usuario, request.Observaciones);
+                _currentUser.UserId, request.Observaciones);
             _context.LogsAsignacionHonorario.Add(log);
 
             await _context.SaveChangesAsync(cancellationToken);

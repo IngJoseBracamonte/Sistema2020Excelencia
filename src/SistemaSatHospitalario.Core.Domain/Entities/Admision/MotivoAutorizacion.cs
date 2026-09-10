@@ -15,6 +15,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         private MotivoAutorizacion() { }
 
+        // Constructor para nuevas creaciones
         public MotivoAutorizacion(string nombre, bool activo = true)
         {
             if (string.IsNullOrWhiteSpace(nombre))
@@ -22,6 +23,12 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             Nombre = nombre.Trim();
             Activo = activo;
+        }
+
+        // Constructor con ID (para inicialización / seeds / pruebas)
+        public MotivoAutorizacion(int id, string nombre, bool activo = true) : this(nombre, activo)
+        {
+            Id = id;
         }
 
         public void Actualizar(string nombre, bool activo)

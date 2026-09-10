@@ -24,17 +24,19 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         private readonly IHubContext<DashboardHub> _hubContext;
         private readonly IHonorariumMapperService _mapperService;
         private readonly INotificationService _notificationService;
-
+        private readonly ICurrentUserService _currentUserService;
         public ImagingController(
             IApplicationDbContext context, 
             IHubContext<DashboardHub> hubContext, 
             IHonorariumMapperService mapperService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ICurrentUserService currentUserService)
         {
             _context = context;
             _hubContext = hubContext;
             _mapperService = mapperService;
             _notificationService = notificationService;
+            _currentUserService = currentUserService;
         }
 
         [HttpGet("pending")]
@@ -224,7 +226,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 if (detalle != null)
                 {
                     // 1. Marcar como realizado (el asistente aceptó el estudio)
-                    detalle.MarcarRealizado(usuario);
+                    detalle.MarcarRealizado(_currentUserService.UserId);
 
                     var categoria = await _mapperService.MapToCategoryAsync(order.TipoServicio);
 
@@ -246,7 +248,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                         _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                             detalle.Id, detalle.Descripcion, HonorarioConstants.AccionAsignacionManual,
                             null, null, medicoId.Value, medicoNombre,
-                            usuario, "Asignado manualmente al procesar orden de imagen"));
+                            _currentUserService.UserId, "Asignado manualmente al procesar orden de imagen"));
                     }
                     // 3. Fallback: Si no tiene médico asignado y tiene honorario, auto-asignar desde HonorarioConfig
                     else if (detalle.MedicoResponsableId == null && detalle.Honorario > 0)
@@ -263,7 +265,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                 _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                                     detalle.Id, detalle.Descripcion, HonorarioConstants.AccionAsignacionDefault,
                                     null, null, config.MedicoDefaultId.Value, medicoNombre,
-                                    usuario, "Auto-asignado al procesar orden de imagen"));
+                                    _currentUserService.UserId, "Auto-asignado al procesar orden de imagen"));
                             }
                         }
                     }
@@ -588,8 +590,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     null, null,
                     medicoId.Value,
                     medicoNombre,
-                    usuario,
+                    _currentUserService.UserId,
                     "Asignado en validación de orden directa por el administrador"
+          
                 ));
             }
 

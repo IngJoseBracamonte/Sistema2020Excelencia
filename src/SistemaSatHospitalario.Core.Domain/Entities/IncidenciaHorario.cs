@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace SistemaSatHospitalario.Core.Domain.Entities
 {
-    public class IncidenciaHorario
-    {
-        public Guid Id { get; private set; }
-        public Guid MedicoId { get; private set; }
-        public DateTime Inicio { get; private set; }
-        public DateTime Fin { get; private set; }
-        public TipoComentarioHorario Tipo { get; private set; }
-        public string Descripcion { get; private set; }
-        public Guid CreadoPor { get; private set; }
-        public DateTime FechaCreacion { get; private set; }
+        public class IncidenciaHorario
+        {
+            public Guid Id { get; private set; }
+            public Guid MedicoId { get; private set; }
+            public DateTime Inicio { get; private set; }
+            public DateTime Fin { get; private set; }
+            public TipoComentarioHorario Tipo { get; private set; }
+            public string Descripcion { get; private set; }
+            public Guid CreadoPor { get; private set; }
+            public DateTime FechaCreacion { get; private set; }
 
         private IncidenciaHorario() { }
 

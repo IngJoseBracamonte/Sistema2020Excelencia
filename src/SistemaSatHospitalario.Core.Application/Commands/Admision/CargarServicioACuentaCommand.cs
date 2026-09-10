@@ -31,6 +31,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal? PrecioModificado { get; set; }
         public decimal? HonorarioModificado { get; set; }
         public string? OrigenCarga { get; set; } // "Enfermeria", "Hospitalizacion", "UCI", "Emergencia", etc.
+        
+        // Usuario que realiza la operación (Guid para vinculación con UsuarioHospital)
+        public Guid? UsuarioOperadorId { get; set; }
 
         // Datos para Cita Médica (solo si TipoServicio == "Medico")
         public Guid? MedicoId { get; set; }
@@ -63,17 +66,19 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IInventoryService _inventoryService;
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
+        private readonly ICurrentUserService _currentUserService;
 
         public CargarServicioACuentaCommandHandler(
-            IBillingRepository repository, 
-            IOrdenExternaService externaService, 
-            IApplicationDbContext context, 
-            IHonorariumMapperService mapperService, 
-            IInventoryService inventoryService,
-            ILegacyLabRepository legacyRepository,
-            ILogger<CargarServicioACuentaCommandHandler> logger,
-            Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null,
-            IMediator? mediator = null)
+     IBillingRepository repository,
+     IOrdenExternaService externaService,
+     IApplicationDbContext context,
+     IHonorariumMapperService mapperService,
+     IInventoryService inventoryService,
+     ILegacyLabRepository legacyRepository,
+     ILogger<CargarServicioACuentaCommandHandler> logger,
+     ICurrentUserService currentUserService, // <-- Movido aquí
+     Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null,
+     IMediator? mediator = null)
         {
             _repository = repository;
             _externaService = externaService;
@@ -81,7 +86,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _mapperService = mapperService;
             _inventoryService = inventoryService;
             _logger = logger;
-            
+            _currentUserService = currentUserService;
+
             if (strategyFactory != null)
             {
                 _strategyFactory = strategyFactory;
@@ -90,14 +96,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 var med = mediator ?? new NullMediator();
                 var list = new global::System.Collections.Generic.List<Common.Strategies.IServiceLoadingStrategy>
-                {
-                    new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
-                    new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
-                    new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
-                    new Common.Strategies.InventoryLoadingStrategy(),
-                    new Common.Strategies.OperatingRoomLoadingStrategy(),
-                    new Common.Strategies.FallbackLoadingStrategy()
-                };
+        {
+            new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
+            new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
+            new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
+            new Common.Strategies.InventoryLoadingStrategy(),
+            new Common.Strategies.OperatingRoomLoadingStrategy(),
+            new Common.Strategies.FallbackLoadingStrategy()
+        };
                 _strategyFactory = new Common.Strategies.ServiceLoadingStrategyFactory(list);
             }
         }
@@ -311,7 +317,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 baseService?.Codigo ?? string.Empty,
                 detalle.Descripcion,
                 detalle.Cantidad,
-                request.UsuarioCarga,
+                _currentUserService.UserId,
                 cuenta.Id,
                 targetSedeId,
                 cancellationToken
@@ -448,7 +454,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                         detalle.Id, request.Descripcion, HonorarioConstants.AccionAsignacionManual,
                         null, null, mr.MedicoId, medicoNombre,
-                        request.UsuarioCarga, $"Asignado rol {mr.Rol} en cirugía compleja"));
+                        _currentUserService.UserId, $"Asignado rol {mr.Rol} en cirugía compleja"));
                 }
                 
                 // Actualizar el honorario acumulado del detalle del servicio
@@ -490,7 +496,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.LogsAsignacionHonorario.Add(new LogAsignacionHonorario(
                         detalle.Id, request.Descripcion, sourceAccion,
                         null, null, finalMedicoId.Value, medicoNombre,
-                        request.UsuarioCarga, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante carga directa"));
+                        request.UsuarioOperadorId, sourceAccion == HonorarioConstants.AccionAsignacionDefault ? "Auto-asignado por configuración" : "Asignado durante carga directa"));
                     
                     _logger.LogInformation("Asignado médico responsable {MedicoId} ({Accion}) para detalle {DetalleId}. Honorario: {Honorario}",
                         finalMedicoId.Value, sourceAccion, detalle.Id, honorarioAsignado);

@@ -88,25 +88,23 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // Registrar Valoración Física
             var valoracion = new ValoracionFisica(
-                request.CuentaServicioId,
-                estadoConciencia,
-                glasgowOcular,
-                glasgowVerbal,
-                glasgowMotor,
-                glasgowTotal,
-                viaAerea,
-                ventilacion,
-                pulso,
-                pielMucosas,
-                llenadoCapilar,
-                pupilas,
-                alergias,
-                accesosVenosos,
-                pertenencias,
-                antecedentesMedicos,
-                request.UsuarioRegistro
-            );
-
+            request.CuentaServicioId,
+            estadoConciencia,
+            glasgowOcular,
+            glasgowVerbal,
+            glasgowMotor,
+            viaAerea,            
+            ventilacion,
+            pulso,
+            pielMucosas,
+            llenadoCapilar,
+            pupilas,
+            alergias,
+            accesosVenosos,
+            pertenencias,
+            antecedentesMedicos,
+            usuarioRegistroId: null, // O pasa el Guid si lo tienes
+            usuarioRegistro: request.UsuarioRegistro);
             await _context.TriagesEnfermeria.AddAsync(triage, cancellationToken);
             await _context.ValoracionesFisicas.AddAsync(valoracion, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
