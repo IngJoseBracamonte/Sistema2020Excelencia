@@ -99,7 +99,6 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
     await areaInputs.nth(0).fill(codigoArea);
     await areaInputs.nth(1).fill(nombreArea);
 
-    // Capturar cualquier POST que ocurra al crear el área
     const areaResponsePromise = page.waitForResponse(
       response =>
         response.request().method() === 'POST' &&
@@ -114,20 +113,17 @@ test.describe('Inventory Multi-Sede E2E Tests', () => {
 
     const areaResponse = await areaResponsePromise;
 
-    // Si el backend devuelve error, mostrar información útil
-    expect(
-      areaResponse.ok(),
-      `Error creando Área Clínica. HTTP ${areaResponse.status()} - ${areaResponse.url()}`
-    ).toBeTruthy();
+    // SI HAY ERROR 500, LANZAMOS EL DETALLE COMPLETO
+    if (!areaResponse.ok()) {
+      const errorBody = await areaResponse.text();
+      const payloadSent = areaResponse.request().postData();
 
-    // 5. Verificar Área Clínica
-    await expect(
-      page.getByText(nombreArea, {
-        exact: true
-      })
-    ).toBeVisible({
-      timeout: 10000
-    });
+      throw new Error(
+        `\n================ ERROR 500 EN BACKEND ================\n` +
+        `PAYLOAD ENVIADO: ${payloadSent}\n` +
+        `RESPUESTA BACKEND: ${errorBody}\n` +
+        `======================================================`
+      );
+    };
   });
-
 });

@@ -19,7 +19,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public bool EsAreaAdmision { get; private set; }
         public Guid? ServicioTarifaBaseId { get; private set; }
         public virtual ServicioClinico? ServicioTarifaBase { get; private set; }
-        public Guid ClasificacionId { get; private set; }
+        public Guid? ClasificacionId { get; private set; }
         public virtual ClasificacionArea? Clasificacion { get; private set; }
 
         private AreaClinica() { }
@@ -34,7 +34,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Estado = EstadoUbicacion.Disponible;
             EsAreaAdmision = esAreaAdmision;
             ServicioTarifaBaseId = servicioTarifaBaseId;
-            ClasificacionId = clasificacionId ?? SeedConstants.ClasificacionId_Cama;
+            ClasificacionId = clasificacionId;
         }
 
         public void Update(string codigo, string nombre, bool esAreaAdmision = false, Guid? servicioTarifaBaseId = null, Guid? clasificacionId = null)
