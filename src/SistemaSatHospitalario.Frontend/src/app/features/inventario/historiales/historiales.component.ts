@@ -119,7 +119,8 @@ export class HistorialesComponent implements OnInit {
         break;
 
       case 'envios':
-        this.inventoryService.getHistorialMovimientos('EnvioSubArea', fDesde, fHasta, q).subscribe({
+        // Corregido: Se reemplaza 'EnvioSubArea' por 'Consumo' para coincidir con TipoMovimientoInsumo.Consumo en C#
+        this.inventoryService.getHistorialMovimientos('Consumo', fDesde, fHasta, q).subscribe({
           next: (data: any[]) => { this.historialEnvios.set(Array.isArray(data) ? data : []); this.isLoading.set(false); },
           error: (e: any) => { console.error(e); this.historialEnvios.set([]); this.isLoading.set(false); }
         });

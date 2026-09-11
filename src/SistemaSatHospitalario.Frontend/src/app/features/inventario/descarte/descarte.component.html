@@ -207,8 +207,8 @@
                 {{ m.fecha | date:'dd/MM/yyyy HH:mm' }}
               </td>
               <td class="py-3 font-bold text-white">
-                {{ m.insumo?.nombre || 'Insumo' }}
-                <div class="text-[9px] text-slate-500">{{ m.insumo?.codigo }}</div>
+                {{ m.insumoNombre || m.insumo?.nombre || 'Insumo' }}
+                <div class="text-[9px] text-slate-500">{{ m.insumoCodigo || m.insumo?.codigo }}</div>
               </td>
               <td class="py-3 text-center font-black text-rose-400">
                 {{ m.cantidadOriginal < 0 ? (m.cantidadOriginal * -1) : m.cantidadOriginal }}

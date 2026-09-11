@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
@@ -15,12 +16,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IApplicationDbContext _context;
         private readonly ILogger<AbrirCuentaClinicaCommandHandler> _logger;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IAreaClinicaValidationService _areaClinicaValidationService;
 
-        public AbrirCuentaClinicaCommandHandler(IApplicationDbContext context, ILogger<AbrirCuentaClinicaCommandHandler> logger, ICurrentUserService currentUserService)
+        public AbrirCuentaClinicaCommandHandler(
+            IApplicationDbContext context, 
+            ILogger<AbrirCuentaClinicaCommandHandler> logger, 
+            ICurrentUserService currentUserService,
+            IAreaClinicaValidationService areaClinicaValidationService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _currentUserService = currentUserService;
+            _areaClinicaValidationService = areaClinicaValidationService ?? throw new ArgumentNullException(nameof(areaClinicaValidationService));
         }
 
         public async Task<Guid> Handle(AbrirCuentaClinicaCommand request, CancellationToken cancellationToken)
@@ -55,7 +62,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 return cuentaExistente.Id; // Retornar la cuenta existente para evitar duplicaciones
             }
 
-            // 4. Crear nueva cuenta clínica
+            // 4. Validar que el AreaClinicaId existe en la base de datos
+            await _areaClinicaValidationService.ValidateAreaClinicaExistsOrThrowAsync(request.AreaClinicaId, cancellationToken);
+
+            // 5. Crear nueva cuenta clínica
             var nuevaCuenta = new CuentaServicios(
                 paciente.Id,
                 request.TipoIngreso,
@@ -66,7 +76,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 _currentUserService.UserId
             );
 
-            // 5. Marcar la cama física como ocupada si fue especificada
+            // 6. Marcar la cama física como ocupada si fue especificada
             AreaClinica? cama = null;
             if (request.AreaClinicaId.HasValue)
             {

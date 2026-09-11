@@ -67,6 +67,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IAreaClinicaValidationService _areaClinicaValidationService;
 
         public CargarServicioACuentaCommandHandler(
      IBillingRepository repository,
@@ -76,7 +77,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
      IInventoryService inventoryService,
      ILegacyLabRepository legacyRepository,
      ILogger<CargarServicioACuentaCommandHandler> logger,
-     ICurrentUserService currentUserService, // <-- Movido aquí
+     ICurrentUserService currentUserService,
+     IAreaClinicaValidationService areaClinicaValidationService,
      Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null,
      IMediator? mediator = null)
         {
@@ -87,6 +89,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _inventoryService = inventoryService;
             _logger = logger;
             _currentUserService = currentUserService;
+            _areaClinicaValidationService = areaClinicaValidationService ?? throw new ArgumentNullException(nameof(areaClinicaValidationService));
 
             if (strategyFactory != null)
             {
@@ -137,6 +140,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 3. Asegurar cuenta activa usando el GUID local
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
+
+            // 3.1. Validar que el AreaClinicaId existe en la base de datos si se proporciona
+            if (request.AreaClinicaId.HasValue)
+            {
+                await _areaClinicaValidationService.ValidateAreaClinicaExistsOrThrowAsync(request.AreaClinicaId, cancellationToken);
+            }
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;

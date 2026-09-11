@@ -59,6 +59,11 @@ try
 
     // Core Services
     builder.AddServiceDefaults(); // Aspire
+    builder.Services.AddRouting(options => 
+    {
+        options.LowercaseUrls = true;
+        options.LowercaseQueryStrings = true; // Recomendado para los parámetros de URL
+    });
     builder.Services.AddOpenApi();
     builder.Services.AddControllers()
         .AddJsonOptions(options =>

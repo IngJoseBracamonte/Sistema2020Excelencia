@@ -10,12 +10,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
-    public class SettingsController : ControllerBase
+    [Route("api/settings")]
+    [Route("api/admision/settings")]
+    public class AdmisionSettingsController : ControllerBase
     {
         private readonly IMediator _mediator;
 
-        public SettingsController(IMediator mediator)
+        public AdmisionSettingsController(IMediator mediator)
         {
             _mediator = mediator;
         }

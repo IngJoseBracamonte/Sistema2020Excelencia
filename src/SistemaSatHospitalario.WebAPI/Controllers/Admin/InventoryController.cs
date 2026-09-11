@@ -15,6 +15,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using SistemaSatHospitalario.Core.Domain.DTOs;
 
 namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 {
@@ -76,6 +77,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         {
             var insumo = await _context.Insumos
                 .Include(i => i.StocksPorSede)
+                .Include(i => i.UnidadMedidaNav)
                 .FirstOrDefaultAsync(i => i.Codigo == codigo && !i.IsDeleted, ct);
 
             if (insumo == null) return NotFound(new { Message = $"No se encontró insumo con código {codigo}." });
@@ -159,6 +161,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     .ThenInclude(pa => pa.PrincipioActivo)
                 .Include(i => i.StocksPorSede)
                 .Include(i => i.CategoriaInsumo)
+                .Include(i => i.UnidadMedidaNav)
                 .FirstOrDefaultAsync(i => i.Id == id, ct);
 
             if (insumo == null) return NotFound();
@@ -243,6 +246,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             var pedidosDespachados = await _context.PedidosInterSede
                 .Include(p => p.Detalles)
                     .ThenInclude(d => d.Insumo)
+                        .ThenInclude(i => i.UnidadMedidaNav)
                 .Where(p => p.SedeSolicitanteId == sedeId && p.Estado == EstadoPedidoInterSedeConstants.Recibido)
                 .ToListAsync(ct);
 
@@ -297,6 +301,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             {
                 var devolucionesCirugia = await _context.InsumosCirugiasPacientes
                     .Include(i => i.Insumo)
+                        .ThenInclude(i => i.UnidadMedidaNav)
                     .Where(i => i.CantidadDevuelta > 0)
                     .ToListAsync(ct);
 
@@ -490,13 +495,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             _context.Notifications.Add(notification);
 
             await _context.SaveChangesAsync(ct);
+
+            // La navegación UnidadMedidaNav no está cargada en la entidad recién creada;
+            // se resuelve el nombre desde el catálogo por FK (3FN).
+            var unidadMedidaNombre = await _context.UnidadesMedida
+                .Where(u => u.Id == insumo.UnidadMedidaId)
+                .Select(u => u.Nombre)
+                .FirstOrDefaultAsync(ct) ?? UnidadMedidaConstants.ToCodigo(insumo.UnidadMedidaId);
+
             return Ok(new
             {
                 insumo.Id,
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = insumo.StockActual,
-                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre.ToString(),
+                UnidadMedidaBase = unidadMedidaNombre,
                 insumo.CostoUnitarioBaseUSD,
                 insumo.PermiteFraccionamiento,
                 Categoria = insumo.CategoriaInsumo?.Nombre ?? string.Empty,
@@ -511,7 +524,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         [HttpPut("insumos/{id}")]
         public async Task<IActionResult> UpdateInsumo(Guid id, [FromBody] UpdateInsumoDto dto, CancellationToken ct)
         {
-            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == id, ct);
+            var insumo = await _context.Insumos
+                .Include(i => i.UnidadMedidaNav)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
             if (insumo == null) return NotFound();
 
             insumo.ActualizarDetalles(
@@ -831,7 +846,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         [HttpPost("insumos/{id}/restaurar")]
         public async Task<IActionResult> RestoreInsumo(Guid id, CancellationToken ct)
         {
-            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == id, ct);
+            var insumo = await _context.Insumos
+                .Include(i => i.UnidadMedidaNav)
+                .FirstOrDefaultAsync(i => i.Id == id, ct);
             if (insumo == null) return NotFound();
 
             insumo.Restaurar();
@@ -867,7 +884,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 
             foreach (var item in dto.Items)
             {
-                var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == item.InsumoId, ct);
+                var insumo = await _context.Insumos
+                    .Include(i => i.UnidadMedidaNav)
+                    .FirstOrDefaultAsync(i => i.Id == item.InsumoId, ct);
                 if (insumo == null)
                 {
                     return BadRequest(new { Message = $"No se encontró el insumo con ID {item.InsumoId}." });
@@ -1023,7 +1042,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             }
 
             var servicio = await _context.ServiciosClinicos.FirstOrDefaultAsync(s => s.Id == dto.ServicioClinicoId, ct);
-            var insumo = await _context.Insumos.FirstOrDefaultAsync(i => i.Id == dto.InsumoId, ct);
+            var insumo = await _context.Insumos
+                .Include(i => i.UnidadMedidaNav)
+                .FirstOrDefaultAsync(i => i.Id == dto.InsumoId, ct);
             if (servicio == null || insumo == null)
             {
                 return NotFound(new { Message = "El servicio clínico o el insumo no existen." });
@@ -1041,6 +1062,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             _context.ServiciosInsumoRecetas.Add(receta);
             await _context.SaveChangesAsync(ct);
 
+            // La navegación UnidadMedidaNav de la receta no está cargada tras SaveChanges;
+            // se resuelve el nombre desde el catálogo por FK (3FN).
+            var unidadMedidaRecetaNombre = await _context.UnidadesMedida
+                .Where(u => u.Id == receta.UnidadMedidaConsumoId)
+                .Select(u => u.Nombre)
+                .FirstOrDefaultAsync(ct) ?? UnidadMedidaConstants.ToCodigo(receta.UnidadMedidaConsumoId);
+
             return Ok(new
                 {
                     Id = receta.Id,
@@ -1048,7 +1076,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                     InsumoId = receta.InsumoId,
                     InsumoNombre = insumo.Nombre,
                     Cantidad = receta.Cantidad,
-                    UnidadMedidaConsumo = receta.UnidadMedidaNav?.Nombre
+                    UnidadMedidaConsumo = unidadMedidaRecetaNombre
                 });
         }
 
@@ -1061,6 +1089,41 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             _context.ServiciosInsumoRecetas.Remove(receta);
             await _context.SaveChangesAsync(ct);
             return Ok(new { Message = "Receta eliminada con éxito." });
+        }
+        [HttpPost("movimientos")]
+        public async Task<IActionResult> RecordMovement([FromBody] RecordMovementDto dto, CancellationToken ct)
+        {
+            if (dto == null || dto.InsumoId == Guid.Empty || dto.SedeId == Guid.Empty)
+                return BadRequest(new { Message = "Insumo, sede y datos del movimiento son requeridos." });
+
+            if (dto.CantidadOriginal <= 0)
+                return BadRequest(new { Message = "La cantidad debe ser mayor a 0." });
+
+            // Uso directo de la extensión del dominio existente
+            var tipoMov = TipoMovimientoInsumoExtensions.Parse(dto.TipoMovimiento);
+
+            if (!tipoMov.HasValue)
+                return BadRequest(new { Message = $"El tipo de movimiento '{dto.TipoMovimiento}' no es válido." });
+
+            try
+            {
+                await _inventoryService.RecordMovementAsync(
+                    dto.InsumoId,
+                    dto.SedeId,
+                    tipoMov.Value.ToString(),
+                    dto.CantidadOriginal,
+                    dto.UnidadMedidaOriginal,
+                    _currentUserService.UserId,
+                    dto.Motivo ?? string.Empty,
+                    ct
+                );
+
+                return Ok(new { Success = true, Message = "Movimiento registrado exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 

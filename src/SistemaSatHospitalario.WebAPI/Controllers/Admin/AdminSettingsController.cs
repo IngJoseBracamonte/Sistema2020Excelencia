@@ -15,13 +15,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
-    public class SettingsController : ControllerBase
+    [Route("api/admin/settings")]
+    public class AdminSettingsController : ControllerBase
     {
         private readonly IMediator _mediator;
         private readonly IIdentityService _identityService;
 
-        public SettingsController(IMediator mediator, IIdentityService identityService)
+        public AdminSettingsController(IMediator mediator, IIdentityService identityService)
         {
             _mediator = mediator;
             _identityService = identityService;
