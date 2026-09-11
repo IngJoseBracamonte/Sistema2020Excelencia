@@ -58,9 +58,10 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Repositories
         public async Task ForzarCierreCuentaAsync(Guid cuentaId, DateTime fechaCierre, string? destinoPaciente, string? personalRelevo, CancellationToken cancellationToken)
         {
             // Senior Standard: Use named parameters in raw SQL for clarity and safety (Phase 4)
-            string sql = "UPDATE CuentasServicios SET Estado = @estado, FechaCierre = @fecha, DestinoPaciente = @destino, PersonalRelevo = @relevo WHERE Id = @id";
-            await _context.Database.ExecuteSqlRawAsync(sql, new object[] { 
-                new MySqlConnector.MySqlParameter("@estado", EstadoConstants.Facturada),
+            // 3FN: la tabla moderna usa EstadoId (FK a EstadosCuenta), no la columna legacy 'Estado'.
+            string sql = "UPDATE CuentasServicios SET EstadoId = @estado, FechaCierre = @fecha, DestinoPaciente = @destino, PersonalRelevo = @relevo WHERE Id = @id";
+            await _context.Database.ExecuteSqlRawAsync(sql, new object[] {
+                new MySqlConnector.MySqlParameter("@estado", EstadoCuentaConstants.FacturadaId),
                 new MySqlConnector.MySqlParameter("@fecha", fechaCierre),
                 new MySqlConnector.MySqlParameter("@destino", (object?)destinoPaciente ?? DBNull.Value),
                 new MySqlConnector.MySqlParameter("@relevo", (object?)personalRelevo ?? DBNull.Value),

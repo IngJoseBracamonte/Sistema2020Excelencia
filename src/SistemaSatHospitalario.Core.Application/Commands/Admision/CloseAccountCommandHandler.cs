@@ -161,9 +161,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.CuentasPorCobrar.Add(ar);
                 }
 
+                // 3FN: filtrar por TipoServicioId (FK al catálogo) con fallback a la navegación
+                // para no depender de que TipoServicioNav esté cargada en memoria.
                 var itemsLab = accountsToBill
                     .SelectMany(c => c.Detalles)
-                    .Where(d => d.TipoServicioNav != null && EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre))
+                    .Where(d => d.TipoServicioId == TipoServicioConstants.Laboratorio
+                             || (d.TipoServicioNav != null && EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre)))
                     .ToList();
 
                 bool debeCerrarCuenta = !request.MantenerCuentaAbierta && (totalPagado >= (totalCuenta - 0.01m) || request.CerrarConSaldoPendiente);

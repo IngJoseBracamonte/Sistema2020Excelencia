@@ -52,10 +52,14 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             detalle.LimpiarMedicoResponsable();
 
             // REGLA 2: Determinar si requiere informe (Por Toggle, por informe vinculado en catálogo, por médico asignado o en Seguros)
-            bool requiereInforme = request.RequiereInforme || 
+            // TipoIngresoNav puede no estar cargado (sin lazy loading); fallback al catálogo por FK.
+            var tipoIngresoNombre = cuenta.TipoIngresoNav?.Nombre
+                ?? SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.ToLegacyString(cuenta.TipoIngresoId);
+
+            bool requiereInforme = request.RequiereInforme ||
                                    request.MedicoInterpreteId.HasValue ||
                                    (baseService != null && (baseService.ServicioInformeId.HasValue || baseService.EsServicioInforme)) ||
-                                   (cuenta.TipoIngresoNav.Nombre ?? "").StartsWith(EstadoConstants.Seguro, StringComparison.OrdinalIgnoreCase) || 
+                                   (tipoIngresoNombre ?? "").StartsWith(EstadoConstants.Seguro, StringComparison.OrdinalIgnoreCase) ||
                                    (request.OrigenCarga ?? "").StartsWith(EstadoConstants.Seguro, StringComparison.OrdinalIgnoreCase);
 
             if (requiereInforme)
@@ -157,7 +161,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 
             // Emitir evento desacoplado vía MediatR para SignalR bandejas
             string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngresoNav.Nombre;
+            // TipoIngresoNav puede no estar cargado (sin lazy loading); fallback al catálogo por FK.
+            string areaOrigen = request.OrigenCarga
+                ?? cuenta.TipoIngresoNav?.Nombre
+                ?? SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.ToLegacyString(cuenta.TipoIngresoId);
             var notification = new ServicioCargadoNotification(
                 esRx ? TipoServicioConstants.RayosXString : TipoServicioConstants.TomografiaString,
                 request.OrigenCarga ?? request.TipoIngreso,
