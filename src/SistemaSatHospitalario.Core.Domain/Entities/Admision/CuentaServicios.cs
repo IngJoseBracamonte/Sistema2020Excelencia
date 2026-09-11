@@ -51,11 +51,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected CuentaServicios() { }
 
-        public CuentaServicios(Guid pacienteId, string usuarioCarga, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null, Guid? usuarioCargaId = null)
+        public CuentaServicios(Guid pacienteId, string tipoIngreso, int? convenioId = null, Guid? areaClinicaId = null, string? subAreaClinica = null, Guid? medicoId = null, Guid? usuarioCargaId = null)
         {
             Id = Guid.NewGuid();
             PacienteId = pacienteId;
-            UsuarioCargaId = usuarioCargaId ?? (Guid.TryParse(usuarioCarga, out var parsedCarga) ? parsedCarga : (Guid?)null);
+            UsuarioCargaId = usuarioCargaId;
             FechaCarga = DateTime.UtcNow;
             EstadoId = EstadoCuentaConstants.AbiertaId;
             TipoIngresoId = TipoIngresoConstants.FromLegacyString(tipoIngreso);
@@ -93,7 +93,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             CuentaPrincipalId = cuentaPrincipalId;
         }
 
-        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, int? tipoServicioId = null)
+        public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, Guid? usuarioAuditoriaId, string? legacyMappingId = null, Guid? areaClinicaId = null, int? tipoServicioId = null)
         {
             if (EstadoId != EstadoCajaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
@@ -108,7 +108,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 _ => Constants.TipoServicioConstants.Insumo
             });
 
-            var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, honorario, cantidad, tipoServicio, usuarioCarga, legacyMappingId, areaClinicaId, null, resolvedTipoServicioId);
+            var detalle = new DetalleServicioCuenta(Id, servicioId, descripcion, precio, honorario, cantidad, tipoServicio, legacyMappingId, areaClinicaId, null, resolvedTipoServicioId);
             _detalles.Add(detalle);
             return detalle;
         }

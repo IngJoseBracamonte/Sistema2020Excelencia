@@ -14,11 +14,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly INotificationService _notificationService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SettleARCommandHandler(IApplicationDbContext context, INotificationService notificationService)
+        public SettleARCommandHandler(IApplicationDbContext context, INotificationService notificationService, ICurrentUserService currentUserService)
         {
             _context = context;
             _notificationService = notificationService;
+            _currentUserService = currentUserService;
         }
 
 
@@ -110,7 +112,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     amountUSD = Math.Round(amountUSD, 2);
                     totalAbonadoUSD += amountUSD;
 
-                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD, tasaAplicada, request.UsuarioCarga);
+                    var detalle = new DetallePago(reciboId, payment.Method, payment.Reference, payment.AmountMoneda, amountUSD, tasaAplicada, _currentUserService.UserId);
                     _context.DetallesPago.Add(detalle);
                 }
 

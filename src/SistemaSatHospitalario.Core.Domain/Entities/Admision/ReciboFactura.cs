@@ -59,13 +59,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         /// <summary>3FN: indica si el recibo está anulado (fuente de verdad: EstadoFiscalId).</summary>
         public bool EsAnulada => EstadoFiscalId == EstadoFiscalConstants.AnuladaId;
 
-        public void Emitir(string nroControlFiscal, string usuarioEmision)
+        public void Emitir(string nroControlFiscal, Guid? usuarioEmision)
         {
             if (EstadoFiscalId != EstadoFiscalConstants.BorradorId) throw new InvalidOperationException("Solo los borradores pueden emitirse como facturas fiscales.");
             NroControlFiscal = nroControlFiscal ?? throw new ArgumentNullException(nameof(nroControlFiscal));
-            if (Guid.TryParse(usuarioEmision, out var parsed))
+            if (usuarioEmision.HasValue)
             {
-                UsuarioEmisionId = parsed;
+                UsuarioEmisionId = usuarioEmision.Value;
             }
             SetEstadoFiscal(EstadoFiscalConstants.EmitidaId);
         }
@@ -85,7 +85,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SetEstadoFiscal(EstadoFiscalConstants.AnuladaId);
         }
 
-        public void AgregarDetallePago(string metodoPago, Guid metodoPagoId, string referencia, decimal montoCambiario, decimal equivalenteBase, decimal tasaCambioAplicada = 1.0m, string usuarioCarga = "admin")
+        public void AgregarDetallePago(string metodoPago, Guid metodoPagoId, string referencia, decimal montoCambiario, decimal equivalenteBase, decimal tasaCambioAplicada = 1.0m,Guid? usuarioCarga = null)
         {
             if (EstadoFiscalId == EstadoFiscalConstants.AnuladaId) throw new InvalidOperationException("No se pueden agregar pagos a un recibo anulado.");
             if (metodoPagoId == Guid.Empty) throw new ArgumentException("El método de pago es requerido.", nameof(metodoPagoId));

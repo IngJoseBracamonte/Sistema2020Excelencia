@@ -58,8 +58,7 @@ namespace SistemaSatHospitalario.Core.Application.Common.Behaviors
                                 request.Precio,
                                 catalogo.HonorarioBase,
                                 request.Honorario,
-                                request.UsuarioOperadorId,
-                                request.UsuarioCarga
+                                request.UsuarioOperadorId
                             );
 
                             await _context.AuditLogsPrecios.AddAsync(auditLog, cancellationToken);

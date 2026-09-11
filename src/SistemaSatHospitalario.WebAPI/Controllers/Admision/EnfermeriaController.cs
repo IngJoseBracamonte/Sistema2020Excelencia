@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Infrastructure.Hubs;
@@ -20,11 +21,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     {
         private readonly IMediator _mediator;
         private readonly IHubContext<DashboardHub> _hubContext;
+        private readonly ICurrentUserService _currentUserService;
 
-        public EnfermeriaController(IMediator mediator, IHubContext<DashboardHub> hubContext)
+        public EnfermeriaController(IMediator mediator, IHubContext<DashboardHub> hubContext, ICurrentUserService currentUserService)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             _hubContext = hubContext;
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         [HttpPost("Triage")]
@@ -109,7 +112,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioCarga = User.GetUserName();
+                command.UsuarioCarga = _currentUserService.UserId;
                 var result = await _mediator.Send(command);
 
                 await _hubContext.Clients.All.SendAsync("ReceiveCamaUpdate", new

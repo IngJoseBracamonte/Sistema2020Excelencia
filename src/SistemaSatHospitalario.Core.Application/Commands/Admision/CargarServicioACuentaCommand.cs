@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal Honorario { get; set; }
         public decimal Cantidad { get; set; }
         public string TipoServicio { get; set; } = string.Empty; // Medico, RX, Laboratorio, Insumo
-        public string UsuarioCarga { get; set; } = string.Empty;
+
         public string? SupervisorKey { get; set; } // V1.0 Security Matrix
         public bool IsPrivilegedUser { get; set; } // V1.0 Security Matrix
         public decimal? PrecioModificado { get; set; }
@@ -99,8 +99,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
             new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
-            new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
-            new Common.Strategies.InventoryLoadingStrategy(),
+            new Common.Strategies.ImagingLoadingStrategy(externaService, context, med, _currentUserService),
+            new Common.Strategies.InventoryLoadingStrategy(),   
             new Common.Strategies.OperatingRoomLoadingStrategy(),
             new Common.Strategies.FallbackLoadingStrategy()
         };
@@ -257,7 +257,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 finalHonorario,
                 finalCantidad, 
                 tipoServicioEfectivo,
-                request.UsuarioCarga,
+                _currentUserService.UserId,
                 legacyId,
                 request.AreaClinicaId,
                 baseService?.TipoServicioId > 0 ? baseService.TipoServicioId : null);
@@ -427,11 +427,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (config == null || config.ClaveSupervisor != request.SupervisorKey)
                 {
                     _logger.LogWarning("[SEC-WARN] Intento de modificación de precio no autorizado por {Usuario}. Esperado: {Orig}, Enviado: {New}",
-                        request.UsuarioCarga, expectedPrecio, request.Precio);
+                        _currentUserService.UserId, expectedPrecio, request.Precio);
                     throw new InvalidOperationException("La modificación de precios requiere una Clave de Supervisor válida.");
                 }
                 _logger.LogInformation("[SEC] Precio modificado por {Usuario} con Clave de Supervisor válida. Original: {Orig}, Nuevo: {New}", 
-                    request.UsuarioCarga, expectedPrecio, request.Precio);
+                    _currentUserService.UserId, expectedPrecio, request.Precio);
             }
         }
 
@@ -519,7 +519,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (cuenta == null)
             {
-                cuenta = new CuentaServicios(pacienteId, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
+                cuenta = new CuentaServicios(pacienteId, request.TipoIngreso, request.ConvenioId, request.AreaClinicaId, null, request.MedicoId, _currentUserService.UserId);
                 await _repository.AgregarCuentaAsync(cuenta, ct);
             }
             return cuenta;

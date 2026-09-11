@@ -172,32 +172,32 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         // --- Métodos de Estado encapsulados (State Pattern) ---
 
-        public void IniciarEspera(string usuarioId)
+        public void IniciarEspera(Guid? usuarioId)
         {
             CurrentState.IniciarEspera(this, usuarioId);
         }
 
-        public void IniciarCirugia(string usuarioId)
+        public void IniciarCirugia(Guid? usuarioId)
         {
             CurrentState.IniciarCirugia(this, usuarioId);
         }
 
-        public void FinalizarCirugia(string usuarioId)
+        public void FinalizarCirugia(Guid? usuarioId)
         {
             CurrentState.FinalizarCirugia(this, usuarioId);
         }
 
-        public void CompletarCirugia(string usuarioId)
+        public void CompletarCirugia(Guid? usuarioId)
         {
             FinalizarCirugia(usuarioId);
         }
 
-        public void Reprogramar(DateTime nuevaFecha, string motivo, string usuarioId)
+        public void Reprogramar(DateTime nuevaFecha, string motivo, Guid? usuarioId)
         {
             CurrentState.Reprogramar(this, nuevaFecha, motivo, usuarioId);
         }
 
-        public void CancelarCirugia(string usuarioId, string motivo)
+        public void CancelarCirugia(Guid? usuarioId, string motivo)
         {
             CurrentState.Cancelar(this, motivo, usuarioId);
         }
@@ -215,20 +215,20 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             MotivoCancelacion = motivo;
         }
 
-        internal void ActualizarFechaYMotivoReprogramacion(DateTime nuevaFecha, string motivo, string usuarioId)
+        internal void ActualizarFechaYMotivoReprogramacion(DateTime nuevaFecha, string motivo, Guid? usuarioId)
         {
             var fechaAnterior = FechaHoraProgramada;
             FechaHoraProgramada = nuevaFecha;
 
             var detalle = $"Reprogramada de {fechaAnterior:dd/MM/yyyy HH:mm} a {nuevaFecha:dd/MM/yyyy HH:mm}. Motivo: {motivo}";
-            AgregarLog(usuarioId, "Reprogramacion", detalle);
-            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugiaConstants.Reprogramacion, usuarioId, ParseUsuarioId(usuarioId));
+            AgregarLog(usuarioId.ToString(), "Reprogramacion", detalle);
+            AgregarHistorialObservacion(detalle, Enums.TipoObservacionCirugiaConstants.Reprogramacion, usuarioId);
         }
 
         private static Guid? ParseUsuarioId(string? usuarioId)
             => Guid.TryParse(usuarioId, out var parsed) ? parsed : (Guid?)null;
 
-        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugiaConstants tipo = Enums.TipoObservacionCirugiaConstants.ObservacionMedica, string usuarioRegistro = "Sistema", Guid? usuarioRegistroId = null)
+        public CirugiaObservacionHistorial AgregarHistorialObservacion(string observacion, Enums.TipoObservacionCirugiaConstants tipo = Enums.TipoObservacionCirugiaConstants.ObservacionMedica, Guid? usuarioRegistroId = null)
         {
             var item = new CirugiaObservacionHistorial(Id, observacion, tipo, usuarioRegistroId);
             _historialObservaciones.Add(item);
@@ -244,7 +244,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
                 "cancelacion" => Enums.TipoObservacionCirugiaConstants.Cancelacion,
                 _ => Enums.TipoObservacionCirugiaConstants.ObservacionMedica
             };
-            return AgregarHistorialObservacion(observacion, tipoEnum, usuarioRegistro, usuarioRegistroId);
+            return AgregarHistorialObservacion(observacion, tipoEnum, usuarioRegistroId);
         }
 
         public OrdenCirugiaRequisito AgregarRequisito(Guid requisitoCirugiaId, bool cumplido = false)
@@ -254,7 +254,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             return req;
         }
 
-        public CirugiaLog AgregarLog(string usuarioId, string evento, string detalle)
+        public CirugiaLog AgregarLog(string? usuarioId, string evento, string detalle)
         {
             var log = new CirugiaLog(Id, usuarioId, evento, detalle);
             _logs.Add(log);

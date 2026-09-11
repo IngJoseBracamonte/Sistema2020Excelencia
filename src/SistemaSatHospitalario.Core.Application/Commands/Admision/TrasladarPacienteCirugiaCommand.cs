@@ -25,13 +25,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<TrasladarPacienteCirugiaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
         public TrasladarPacienteCirugiaCommandHandler(
             IApplicationDbContext context,
-            ILogger<TrasladarPacienteCirugiaCommandHandler> logger)
+            ILogger<TrasladarPacienteCirugiaCommandHandler> logger,
+            ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(TrasladarPacienteCirugiaCommand request, CancellationToken cancellationToken)
@@ -55,7 +58,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             var sedeNombre = sede?.Nombre ?? "Área Clínica";
             var camaNombre = camaArea.Nombre;
-            var usuario = string.IsNullOrWhiteSpace(request.UsuarioId) ? "Sistema" : request.UsuarioId.Trim();
 
             // Buscar cuenta de servicios activa si no venía cargada en la navegación
             var cuenta = await _context.CuentasServicios
@@ -65,9 +67,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 cuenta = new CuentaServicios(
                     orden.PacienteId,
-                    usuario,
                     sede?.Nombre?.Contains("Emerg", StringComparison.OrdinalIgnoreCase) == true ? "Emergencia" : "Hospitalizacion",
-                    convenioId: null,
+                    convenioId: 1,
                     areaClinicaId: camaArea.Id,
                     subAreaClinica: $"{sedeNombre} - {camaNombre}",
                     medicoId: orden.MedicoId != Guid.Empty ? orden.MedicoId : (Guid?)null
@@ -76,11 +77,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // Determinar si el destino es Quirófano o Sala de Cirugía
-            bool esDestinoQuirofano = (sede != null && (sede.Codigo == "CIR" || sede.Nombre.Contains("Cirug", StringComparison.OrdinalIgnoreCase))) ||
-                                      camaNombre.Contains("Quiróf", StringComparison.OrdinalIgnoreCase) ||
-                                      camaNombre.Contains("Quirof", StringComparison.OrdinalIgnoreCase) ||
-                                      camaArea.Codigo.Contains("QX", StringComparison.OrdinalIgnoreCase);
-
+            bool esDestinoQuirofano = cuenta.AreaClinica.ClasificacionId == AreaConstants.ClasificacionId_Quirofano;
             if (esDestinoQuirofano)
             {
                 // ESCENARIO 1: TRASLADO PRE-QUIRÚRGICO (Ingreso a Pabellón / Quirófano)
@@ -101,10 +98,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 // Ocupar sala de quirófano
                 camaArea.MarcarComoOcupada();
 
-                orden.AsignarSalaYAnestesia(camaNombre, orden.ModalidadAnestesia, usuario);
+                orden.AsignarSalaYAnestesia(camaNombre, orden.ModalidadAnestesia, _currentUserService.UserName);
                 if (orden.Estado == EstadoCirugiaConstants.Programada)
                 {
-                    orden.IniciarEspera(usuario);
+                    orden.IniciarEspera(_currentUserService.UserId);
                 }
 
                 cuenta.AsignarAreaClinica(camaArea.Id, $"{sedeNombre} - {camaNombre}");
@@ -171,7 +168,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                             0,
                             1,
                             servicioCatalogo.TipoServicio ?? "Hospitalario",
-                            usuario,
+                            _currentUserService.UserId,
                             servicioCatalogo.LegacyMappingId,
                             camaArea.Id
                         );
@@ -183,9 +180,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var obsTexto = string.IsNullOrWhiteSpace(request.Observacion) ? "" : $" | Obs: {request.Observacion.Trim()}";
             
             // Registrar auditoría inmutable a través de la raíz agregada
-            var log = orden.AgregarLog(usuario, "Traslado", $"Paciente trasladado a {sedeNombre} - {camaNombre}{obsTexto}");
-            var usuarioGuid = Guid.TryParse(usuario, out var parsedUsuario) ? parsedUsuario : (Guid?)null;
-            var hist = orden.AgregarHistorialObservacion($"Traslado a {sedeNombre} - {camaNombre}{obsTexto}", TipoObservacionCirugiaConstants.ObservacionMedica, usuario, usuarioGuid);
+            var log = orden.AgregarLog(_currentUserService.UserName, "Traslado", $"Paciente trasladado a {sedeNombre} - {camaNombre}{obsTexto}");
+            var usuarioGuid = _currentUserService.UserId;
+            var hist = orden.AgregarHistorialObservacion($"Traslado a {sedeNombre} - {camaNombre}{obsTexto}", TipoObservacionCirugiaConstants.ObservacionMedica, usuarioGuid);
 
             await _context.CirugiaLogs.AddAsync(log, cancellationToken);
             await _context.CirugiasObservacionesHistorial.AddAsync(hist, cancellationToken);

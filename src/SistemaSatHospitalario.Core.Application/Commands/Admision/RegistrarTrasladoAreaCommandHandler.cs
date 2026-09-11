@@ -12,10 +12,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class RegistrarTrasladoAreaCommandHandler : IRequestHandler<RegistrarTrasladoAreaCommand, RegistrarTrasladoAreaResult>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public RegistrarTrasladoAreaCommandHandler(IApplicationDbContext context)
+        public RegistrarTrasladoAreaCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentUserService = currentUserService;
         }
 
         public async Task<RegistrarTrasladoAreaResult> Handle(RegistrarTrasladoAreaCommand request, CancellationToken cancellationToken)
@@ -118,7 +120,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     0, // Honorario médico base
                     1, // Cantidad
                     servicioCatalogo?.TipoServicio ?? "Hospitalario",
-                    request.UsuarioTraslado,
+                    _currentUserService.UserId,
                     servicioCatalogo?.LegacyMappingId,
                     camaDestino.Id
                 );

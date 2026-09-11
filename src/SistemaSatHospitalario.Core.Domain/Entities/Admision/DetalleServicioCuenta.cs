@@ -14,8 +14,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public int TipoServicioId { get; private set; }
 
-        public string UsuarioCarga { get; private set; }
-
         /// <summary>FK lógica a Usuarios (Identity, PK Guid) del usuario que cargó el servicio.</summary>
         public Guid? UsuarioCargaId { get; private set; }
         public DateTime FechaCarga { get; private set; }
@@ -64,7 +62,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         protected DetalleServicioCuenta() { }
 
-        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string usuarioCarga, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null, int? tipoServicioId = null, Guid? usuarioCargaId = null)
+        public DetalleServicioCuenta(Guid cuentaServicioId, Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, string? legacyMappingId = null, Guid? areaClinicaId = null, Guid? detallePadreId = null, int? tipoServicioId = null, Guid? usuarioCargaId = null)
         {
             Id = Guid.NewGuid();
             CuentaServicioId = cuentaServicioId;

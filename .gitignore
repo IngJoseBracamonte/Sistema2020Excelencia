@@ -51,6 +51,9 @@ Generated\ Files/
 
 # Test configuration files (contain sensitive data like database passwords)
 **/DatabaseTestConfiguration.cs
+
+# Development appsettings files (contain sensitive connection strings)
+**/appsettings.Development.json
 [Bb]uild[Ll]og.*
 
 # NUnit

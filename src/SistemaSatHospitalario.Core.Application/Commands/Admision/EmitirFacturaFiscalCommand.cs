@@ -12,16 +12,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public Guid ReciboId { get; set; }
         public string NroControlFiscal { get; set; } = string.Empty;
-        public string UsuarioEmision { get; set; } = string.Empty;
+        public Guid? UsuarioEmision { get; set; } = null;
     }
 
     public class EmitirFacturaFiscalCommandHandler : IRequestHandler<EmitirFacturaFiscalCommand, bool>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public EmitirFacturaFiscalCommandHandler(IApplicationDbContext context)
+        public EmitirFacturaFiscalCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;   
         }
 
         public async Task<bool> Handle(EmitirFacturaFiscalCommand request, CancellationToken cancellationToken)
@@ -31,7 +33,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (recibo == null) return false;
 
-            recibo.Emitir(request.NroControlFiscal, request.UsuarioEmision);
+            recibo.Emitir(request.NroControlFiscal, _currentUserService.UserId);
             
             await _context.SaveChangesAsync(cancellationToken);
             return true;

@@ -14,11 +14,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<AbrirCuentaClinicaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public AbrirCuentaClinicaCommandHandler(IApplicationDbContext context, ILogger<AbrirCuentaClinicaCommandHandler> logger)
+        public AbrirCuentaClinicaCommandHandler(IApplicationDbContext context, ILogger<AbrirCuentaClinicaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService;
         }
 
         public async Task<Guid> Handle(AbrirCuentaClinicaCommand request, CancellationToken cancellationToken)
@@ -56,12 +58,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             // 4. Crear nueva cuenta clínica
             var nuevaCuenta = new CuentaServicios(
                 paciente.Id,
-                request.UsuarioCarga,
                 request.TipoIngreso,
-                request.ConvenioId,
+                (int)request.ConvenioId,
                 request.AreaClinicaId,
                 null,
-                request.MedicoId
+                request.MedicoId,
+                _currentUserService.UserId
             );
 
             // 5. Marcar la cama física como ocupada si fue especificada
@@ -123,7 +125,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     0m, // Honorario
                     1m, // Cantidad
                     "Servicio",
-                    request.UsuarioCarga,
+                    _currentUserService.UserId,
                     legacyMappingId,
                     cama?.Id
                 );

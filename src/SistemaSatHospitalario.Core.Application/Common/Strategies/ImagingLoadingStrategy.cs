@@ -20,12 +20,14 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
         private readonly IOrdenExternaService _externaService;
         private readonly IApplicationDbContext _context;
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ImagingLoadingStrategy(IOrdenExternaService externaService, IApplicationDbContext context, IMediator mediator)
+        public ImagingLoadingStrategy(IOrdenExternaService externaService, IApplicationDbContext context, IMediator mediator, ICurrentUserService currentUserService)
         {
             _externaService = externaService;
             _context = context;
             _mediator = mediator;
+            _currentUserService = currentUserService;
         }
 
         public bool CanHandle(string tipoServicio, ServicioClinico? baseService)
@@ -84,8 +86,8 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                         reportService.PrecioBase, 
                         reportService.HonorarioBase, 
                         1, 
-                        TipoServicioConstants.InformeString, 
-                        request.UsuarioCarga, 
+                        TipoServicioConstants.InformeString,
+                        _currentUserService.UserId,
                         null, 
                         request.AreaClinicaId);
 

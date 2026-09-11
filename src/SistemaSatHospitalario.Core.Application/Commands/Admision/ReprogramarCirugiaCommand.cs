@@ -20,11 +20,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<ReprogramarCirugiaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ReprogramarCirugiaCommandHandler(IApplicationDbContext context, ILogger<ReprogramarCirugiaCommandHandler> logger)
+        public ReprogramarCirugiaCommandHandler(IApplicationDbContext context, ILogger<ReprogramarCirugiaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(ReprogramarCirugiaCommand request, CancellationToken cancellationToken)
@@ -43,7 +45,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // Invocación del Patrón State en el Dominio (Exige motivo y evalúa estado actual)
-            orden.Reprogramar(request.NuevaFechaHora, request.Motivo, request.UsuarioId);
+            orden.Reprogramar(request.NuevaFechaHora, request.Motivo, _currentUserService.UserId);
 
             await _context.SaveChangesAsync(cancellationToken);
 

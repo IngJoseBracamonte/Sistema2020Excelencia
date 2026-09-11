@@ -43,7 +43,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             try
             {
                 // Enriquecimiento de Seguridad (V2.0 Core Extensions)
-                command.UsuarioCarga = _currentUserService.UserName ?? "Sistema";
                 command.IsPrivilegedUser = User.IsPrivileged();
 
                 var result = await _mediator.Send(command);
@@ -77,7 +76,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioCarga = User.GetUserName();
                 var result = await _mediator.Send(command);
                 return Ok(new { 
                     Message = "Servicios cargados masivamente con éxito.", 
@@ -144,8 +142,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                     ConvenioId = dto.ConvenioId,
                     MedicoId = medicoGuid,
                     AreaClinicaId = areaClinicaGuid,
-                    PermitirBypassExcepcionMedica = dto.PermitirBypassExcepcionMedica,
-                    UsuarioCarga = _currentUserService.UserName ?? "Sistema"
+                    PermitirBypassExcepcionMedica = dto.PermitirBypassExcepcionMedica
                 };
 
                 var accountId = await _mediator.Send(command);

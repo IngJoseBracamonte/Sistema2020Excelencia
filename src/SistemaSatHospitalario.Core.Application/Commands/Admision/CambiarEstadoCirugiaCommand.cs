@@ -24,11 +24,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<CambiarEstadoCirugiaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public CambiarEstadoCirugiaCommandHandler(IApplicationDbContext context, ILogger<CambiarEstadoCirugiaCommandHandler> logger)
+        public CambiarEstadoCirugiaCommandHandler(IApplicationDbContext context, ILogger<CambiarEstadoCirugiaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(CambiarEstadoCirugiaCommand request, CancellationToken cancellationToken)
@@ -47,21 +49,21 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (targetState.Equals(EstadoCirugiaConstants.EnEspera, StringComparison.OrdinalIgnoreCase))
             {
-                orden.IniciarEspera(usuario);
+                orden.IniciarEspera(_currentUserService.UserId);
             }
             else if (targetState.Equals(EstadoCirugiaConstants.EnCirugia, StringComparison.OrdinalIgnoreCase) ||
                      targetState.Equals("EnProceso", StringComparison.OrdinalIgnoreCase))
             {
-                orden.IniciarCirugia(usuario);
+                orden.IniciarCirugia(_currentUserService.UserId);
             }
             else if (targetState.Equals(EstadoCirugiaConstants.Finalizado, StringComparison.OrdinalIgnoreCase) ||
                      targetState.Equals("Completada", StringComparison.OrdinalIgnoreCase))
             {
-                orden.FinalizarCirugia(usuario);
+                orden.FinalizarCirugia(_currentUserService.UserId);
             }
             else if (targetState.Equals(EstadoCirugiaConstants.Cancelada, StringComparison.OrdinalIgnoreCase))
             {
-                orden.CancelarCirugia(usuario, request.MotivoCancelacion ?? "Sin motivo especificado");
+                orden.CancelarCirugia(_currentUserService.UserId, request.MotivoCancelacion ?? "Sin motivo especificado");
             }
             else
             {

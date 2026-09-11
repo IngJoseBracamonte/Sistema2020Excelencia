@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
+using SistemaSatHospitalario.Core.Domain.Constants;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Entities.Legacy;
 using SistemaSatHospitalario.Core.Domain.Interfaces;
 using SistemaSatHospitalario.Core.Domain.Interfaces.Legacy;
-using SistemaSatHospitalario.Core.Application.Common.Interfaces;
-using SistemaSatHospitalario.Core.Domain.Constants;
-using System.Text.RegularExpressions;
 
 namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 {
@@ -30,7 +30,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ICurrentUserService _currentUserService;
 
         public CloseAccountCommandHandler(
-            IApplicationDbContext context, 
+            IApplicationDbContext context,
             ILegacyLabRepository legacyRepository,
             ICajaAdministrativaRepository cajaRepository,
             IBillingRepository billingRepository,
@@ -51,20 +51,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             _logger.LogTrace($"[CLOSE-ACCOUNT] Iniciando proceso para Cuenta: {request.CuentaId}");
 
+            // ✅ Incluimos TipoServicioNav para evitar NullReferenceException
             var cuenta = await _context.CuentasServicios
                 .Include(c => c.Detalles)
+                    .ThenInclude(d => d.TipoServicioNav)
                 .FirstOrDefaultAsync(c => c.Id == request.CuentaId, cancellationToken);
 
             if (cuenta == null) throw new Exception("Cuenta no encontrada.");
             if (cuenta.EstadoId != EstadoCuentaConstants.AbiertaId) throw new Exception("La cuenta ya ha sido procesada.");
 
-            // Resolver consolidación si aplica
             List<CuentaServicios> accountsToBill;
             if (request.Consolidar)
             {
                 var rootId = cuenta.CuentaPrincipalId ?? cuenta.Id;
                 var allChainAccounts = await _context.CuentasServicios
                     .Include(c => c.Detalles)
+                        .ThenInclude(d => d.TipoServicioNav)
                     .Where(c => c.Id == rootId || c.CuentaPrincipalId == rootId)
                     .ToListAsync(cancellationToken);
 
@@ -87,17 +89,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 accountsToBill = new List<CuentaServicios> { cuenta };
             }
 
-            // 0. Gestión Automática de Caja (Micro-Ciclo 28)
-            // Si el usuario no tiene una caja abierta, la abrimos automáticamente
             var caja = await _cajaRepository.ObtenerCajaAbiertaPorUsuarioAsync(request.UsuarioId, cancellationToken);
             if (caja == null)
             {
                 caja = new CajaDiaria(0, 0, request.UsuarioId, request.UsuarioCajero);
                 await _cajaRepository.AgregarCajaAsync(caja, cancellationToken);
-                // El guardado se delega al SaveChangesAsync del final del handler
             }
 
-            // 1. Crear el Recibo/Factura vinculado a la caja (automática o existente)
             var metodosPagoCatalog = await _context.CatalogoMetodosPago
                 .Where(m => m.Activo)
                 .ToListAsync(cancellationToken);
@@ -135,32 +133,24 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             decimal montoVueltoUSD = Math.Max(0, totalPagado - totalCuenta);
-
             var numeroComprobante = await GenerarSiguienteNumeroComprobanteAsync(cancellationToken);
             var recibo = new ReciboFactura(cuenta.Id, cuenta.PacienteId, caja.Id, request.TasaCambio, totalCuenta, montoVueltoUSD, EstadoConstants.Borrador, numeroComprobante);
+
             foreach (var item in listaPagosValidados)
             {
-                recibo.AgregarDetallePago(item.MetodoPago.Valor, item.MetodoPago.Id, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, request.UsuarioCajero);
+                recibo.AgregarDetallePago(item.MetodoPago.Valor, item.MetodoPago.Id, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, _currentUserService.UserId);
             }
 
-            // 2. Gestionar Saldo Pendiente (AR)
-            // decimal totalCuenta = cuenta.CalcularTotal(); // Ya calculado arriba
-            // decimal totalPagado = recibo.ObtenerTotalPagadoBase(); // Ya calculado arriba
-
-            // 4. Finalizar Cuenta (V10.9 SQL Direct Fix)
-            // Usamos SQL Directo para puentear el Change Tracker de EF y evitar el error "Affected 0 rows"
             using var transaction = await _context.BeginTransactionAsync(cancellationToken);
             CuentaPorCobrar? ar = null;
-            try 
+            try
             {
-                // 4.1 Validamos existencia física (AsNoTracking para frescura total)
                 var existe = await _context.CuentasServicios
                     .AsNoTracking()
                     .AnyAsync(c => c.Id == request.CuentaId && c.EstadoId == EstadoCuentaConstants.AbiertaId, cancellationToken);
-                
+
                 if (!existe) throw new Exception("La cuenta no existe o ya fue procesada.");
 
-                // 4.2 Lógica de Negocio (AR y Legacy usando la cuenta original cargada al inicio)
                 if (totalPagado < totalCuenta)
                 {
                     ar = new CuentaPorCobrar(cuenta.Id, cuenta.PacienteId, totalCuenta, totalPagado);
@@ -171,10 +161,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _context.CuentasPorCobrar.Add(ar);
                 }
 
-                // Extraemos items para pasarlos después
-                var itemsLab = accountsToBill.SelectMany(c => c.Detalles).Where(d => EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre)).ToList();
+                var itemsLab = accountsToBill
+                    .SelectMany(c => c.Detalles)
+                    .Where(d => d.TipoServicioNav != null && EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre))
+                    .ToList();
 
-                // 4.3 Determinamos si se cierra la cuenta o permanece abierta como abono parcial
                 bool debeCerrarCuenta = !request.MantenerCuentaAbierta && (totalPagado >= (totalCuenta - 0.01m) || request.CerrarConSaldoPendiente);
 
                 if (debeCerrarCuenta)
@@ -196,30 +187,31 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     _logger.LogTrace($"[CLOSE-ACCOUNT] Abono registrado exitosamente. La cuenta {request.CuentaId} permanece ABIERTA.");
                 }
 
-                // Si es un traslado clínico interno, creamos automáticamente una nueva cuenta (hija) en la ubicación destino
-                bool esTrasladoClinico = request.DestinoPaciente == "Hospitalización (Piso)" || 
-                                         request.DestinoPaciente == "Quirófano" || 
+                // ✅ CORREGIDO: Llamada al constructor con los parámetros y tipos correctos
+                bool esTrasladoClinico = request.DestinoPaciente == "Hospitalización (Piso)" ||
+                                         request.DestinoPaciente == "Quirófano" ||
                                          request.DestinoPaciente == "UCI";
 
                 if (esTrasladoClinico)
                 {
                     Guid parentCuentaId = cuenta.CuentaPrincipalId ?? cuenta.Id;
                     var nuevaCuenta = new CuentaServicios(
-                        cuenta.PacienteId,
-                        request.UsuarioCajero ?? "cajero",
-                        EstadoConstants.Hospitalizacion, // "Hospitalizacion"
-                        cuenta.ConvenioId
+                        pacienteId: cuenta.PacienteId,
+                        tipoIngreso: EstadoConstants.Hospitalizacion,
+                        convenioId: cuenta.ConvenioId,
+                        areaClinicaId: null,
+                        subAreaClinica: request.DestinoPaciente,
+                        medicoId: cuenta.MedicoId,
+                        usuarioCargaId: _currentUserService.UserId
                     );
-                    
+
                     nuevaCuenta.VincularCuentaPrincipal(parentCuentaId);
                     await _context.CuentasServicios.AddAsync(nuevaCuenta, cancellationToken);
                 }
 
-                // 4.4 Persistimos los demás objetos locales (Recibo, AR)
                 _context.RecibosFactura.Add(recibo);
                 await _context.SaveChangesAsync(cancellationToken);
-                
-                // 4.5 EJECUCIÓN LEGACY: Justo antes del Commit local para prevenir órdenes huérfanas en MySQL si lo local revienta
+
                 if (itemsLab.Any())
                 {
                     _logger.LogTrace($"[CLOSE-ACCOUNT] Procesando {itemsLab.Count} ítems de Laboratorio para Legado.");
@@ -232,7 +224,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     }
                 }
 
-                // 4.6 EJECUCIÓN IMÁGENES (RX/TOMO) - Fase 16.2
                 var itemsImaging = accountsToBill.SelectMany(c => c.Detalles).ToList();
                 await ProcessImagingOrders(cuenta.PacienteId, itemsImaging, cancellationToken);
 
@@ -243,11 +234,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError($"[CLOSE-ACCOUNT] Error Crítico en Cuenta {request.CuentaId}", ex);
-                
-                string errorMsg = ex.InnerException is InvalidOperationException 
-                    ? $"Error de Infraestructura: {ex.Message}" 
+
+                string errorMsg = ex.InnerException is InvalidOperationException
+                    ? $"Error de Infraestructura: {ex.Message}"
                     : $"Error crítico en el cierre de cuenta (V10.9): {ex.Message}";
-                    
+
                 throw new Exception(errorMsg, ex);
             }
 
@@ -257,7 +248,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 CuentaId = cuenta.Id,
                 CuentaPorCobrarId = ar?.Id,
                 TotalUsd = recibo.TotalFacturadoUSD,
-                SincronizacionLegacyExitosa = true, // If we reached here, commit was successful
+                SincronizacionLegacyExitosa = true,
                 Mensaje = "Cuenta cerrada y sincronizada exitosamente."
             };
         }
@@ -265,24 +256,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private async Task<int> ProcessLegacyOrder(CuentaServicios cuenta, List<DetalleServicioCuenta> labItems, CancellationToken ct)
         {
             _logger.LogTrace($"[LEGACY-SYNC] === INICIO ProcessLegacyOrder para CuentaId: {cuenta.Id} ===");
-            
-            // Senior Logic: Sincronización basado en IDs persistentes (V12.1 ID-First)
+
             var paciente = await _context.PacientesAdmision
                 .FirstOrDefaultAsync(p => p.Id == cuenta.PacienteId, ct);
 
-            if (paciente == null) 
+            if (paciente == null)
             {
                 _logger.LogTrace($"[LEGACY-SYNC] ABORTADO: No se encontró el paciente nativo {cuenta.PacienteId}");
                 return 0;
             }
-            
+
             _logger.LogTrace($"[LEGACY-SYNC] Paciente encontrado: {paciente.CedulaPasaporte} | NombreCorto: {paciente.NombreCorto} | IdLegacy: {paciente.IdPacienteLegacy}");
 
-            // V12.3 JIT Sync Logic (Rule 7)
             if (!paciente.IdPacienteLegacy.HasValue || paciente.IdPacienteLegacy.Value == 0)
             {
                 _logger.LogTrace($"[LEGACY-SYNC] JIT: El paciente {paciente.CedulaPasaporte} {paciente.NombreCorto} no tiene ID Legacy. Intentando Onboarding...");
-                
+
                 var existinLegacy = await _legacyRepository.GetPatientByCedulaAsync(paciente.CedulaPasaporte, ct);
                 if (existinLegacy != null)
                 {
@@ -318,7 +307,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         return 0;
                     }
                 }
-                
+
                 await _context.SaveChangesAsync(ct);
             }
 
@@ -328,7 +317,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _logger.LogTrace($"[LEGACY-SYNC] Total detalles en cuenta: {labItems.Count}");
             foreach (var d in labItems)
             {
-                _logger.LogTrace($"[LEGACY-SYNC]   -> Detalle: '{d.Descripcion}' | TipoServicio: '{d.TipoServicioNav.Nombre}' | EsLab: {EstadoConstants.EsLaboratorio(d.TipoServicioNav.Nombre)} | LegacyMappingId: '{d.LegacyMappingId}'");
+                var tipoNombre = d.TipoServicioNav?.Nombre ?? string.Empty;
+                _logger.LogTrace($"[LEGACY-SYNC]   -> Detalle: '{d.Descripcion}' | TipoServicio: '{tipoNombre}' | EsLab: {EstadoConstants.EsLaboratorio(tipoNombre)} | LegacyMappingId: '{d.LegacyMappingId}'");
             }
 
             if (!labItems.Any())
@@ -345,7 +335,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 if (string.IsNullOrEmpty(mappingId) && item.Descripcion.Contains(EstadoConstants.PrefixLab))
                 {
-                    // Senior Self-Healing: Extract first positive integer after the prefix
                     var match = Regex.Match(item.Descripcion, $@"{Regex.Escape(EstadoConstants.PrefixLab)}(\d+)", RegexOptions.None, RegexTimeout);
                     if (match.Success)
                     {
@@ -356,11 +345,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
                 if (!string.IsNullOrEmpty(mappingId) && int.TryParse(mappingId, out int idPerfil))
                 {
-                    perfilesFacturados.Add(new PerfilesFacturadosLegacy 
-                    { 
+                    perfilesFacturados.Add(new PerfilesFacturadosLegacy
+                    {
                         IdOrden = 0,
                         IdPersona = legacyId,
-                        IdPerfil = idPerfil, 
+                        IdPerfil = idPerfil,
                         PrecioPerfil = item.Precio * item.Cantidad
                     });
                     _logger.LogTrace($"[LEGACY-SYNC] Perfil agregado: IdPerfil={idPerfil}, Precio={item.Precio * item.Cantidad}");
@@ -378,7 +367,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             _logger.LogTrace($"[LEGACY-SYNC] Generando orden con {perfilesFacturados.Count} perfiles para paciente legacy {legacyId}...");
-            
+
             var orden = new OrdenLegacy
             {
                 IdPersona = legacyId,
@@ -395,7 +384,10 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
         private async Task ProcessImagingOrders(Guid patientId, List<DetalleServicioCuenta> detalles, CancellationToken ct)
         {
-            var items = detalles.Where(d => d.TipoServicioNav.Nombre == EstadoConstants.RX || d.TipoServicioNav.Nombre == EstadoConstants.TOMO).ToList();
+            var items = detalles
+                .Where(d => d.TipoServicioNav != null && (d.TipoServicioNav.Nombre == EstadoConstants.RX || d.TipoServicioNav.Nombre == EstadoConstants.TOMO))
+                .ToList();
+
             if (!items.Any()) return;
 
             var paciente = await _context.PacientesAdmision.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId, ct);
@@ -404,7 +396,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             foreach (var item in items)
             {
                 bool requiereInforme = item.MedicoResponsableId.HasValue;
-                if (item.TipoServicioNav.Nombre == EstadoConstants.RX)
+                if (item.TipoServicioNav!.Nombre == EstadoConstants.RX)
                 {
                     await _ordenExternaService.EnviarOrdenRXAsync(item.CuentaServicioId, patientId, item.Descripcion, nombrePaciente, ct, requiereInforme, item.MedicoResponsableId);
                 }

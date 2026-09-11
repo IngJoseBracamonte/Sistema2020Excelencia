@@ -7,7 +7,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         public Guid CuentaId { get; set; }
         public Guid CamaDestinoId { get; set; }
-        public string UsuarioCarga { get; set; } = string.Empty;
+        public Guid? UsuarioCarga { get; set; } 
     }
 
     public class RegistrarCambioCamaResult
