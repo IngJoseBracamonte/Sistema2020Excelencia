@@ -21,8 +21,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         // Catálogo de Unidades de Medida (3FN)
         public int UnidadMedidaId { get; private set; }
         public virtual UnidadMedidaCatalogo UnidadMedidaNav { get; private set; } = null!;
-        public string? UnidadMedidaBase { get; private set; } // Alias legacy opcional
-
         public decimal CostoUnitarioBaseUSD { get; private set; }
         public bool PermiteFraccionamiento { get; private set; }
 
@@ -56,7 +54,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             Codigo = codigo ?? throw new ArgumentNullException(nameof(codigo));
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             UnidadMedidaId = UnidadMedidaConstants.FromEnum(unidadMedidaBase);
-            UnidadMedidaBase = unidadMedidaBase.ToString();
             CostoUnitarioBaseUSD = costoUnitarioBaseUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
             OcultoEnTraslados = false;
@@ -77,7 +74,6 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         {
             Nombre = nombre ?? throw new ArgumentNullException(nameof(nombre));
             UnidadMedidaId = UnidadMedidaConstants.FromEnum(unidadMedidaBase);
-            UnidadMedidaBase = unidadMedidaBase.ToString();
             CostoUnitarioBaseUSD = costoUSD;
             PermiteFraccionamiento = permiteFraccionamiento;
         }

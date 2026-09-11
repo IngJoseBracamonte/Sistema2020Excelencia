@@ -95,11 +95,9 @@ export class HistorialesComponent implements OnInit {
         break;
 
       case 'compras':
-        this.inventoryService.getHistorialMovimientos('Ingreso', fDesde, fHasta, q).subscribe({
+        this.cxpService.getOrdenes(undefined, q, fDesde, fHasta).subscribe({
           next: (data: any[]) => {
-            const list = Array.isArray(data) ? data : [];
-            const compras = list.filter((d: any) => d && ((d.motivo || '').toLowerCase().includes('compra') || d.tipoMovimiento === 'Ingreso'));
-            this.historialCompras.set(compras.length > 0 ? compras : list);
+            this.historialCompras.set(Array.isArray(data) ? data : []);
             this.isLoading.set(false);
           },
           error: (e: any) => { console.error(e); this.historialCompras.set([]); this.isLoading.set(false); }
@@ -107,7 +105,7 @@ export class HistorialesComponent implements OnInit {
         break;
 
       case 'pedidos':
-        this.multiSedeService.getPedidosRecibidos().subscribe({
+        this.multiSedeService.getPedidosHistorial().subscribe({
           next: (data: any[]) => {
             const list = Array.isArray(data) ? data : [];
             const pedidos = list.filter((p: any) => p && p.estado !== 'Pendiente');
@@ -134,7 +132,7 @@ export class HistorialesComponent implements OnInit {
         break;
 
       case 'cxp':
-        this.cxpService.getFacturas().subscribe({
+        this.cxpService.getFacturas(undefined, q, fDesde, fHasta).subscribe({
           next: (data: any[]) => { this.historialCxp.set(Array.isArray(data) ? data : []); this.isLoading.set(false); },
           error: (e: any) => { console.error(e); this.historialCxp.set([]); this.isLoading.set(false); }
         });

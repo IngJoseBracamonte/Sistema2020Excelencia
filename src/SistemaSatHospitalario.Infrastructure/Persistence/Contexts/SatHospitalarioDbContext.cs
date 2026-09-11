@@ -1622,7 +1622,6 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
 
                 entity.Property(i => i.Codigo).IsRequired().HasMaxLength(50);
                 entity.Property(i => i.Nombre).IsRequired().HasMaxLength(200);
-                entity.Property(i => i.UnidadMedidaBase).HasMaxLength(50);
                 entity.Property(i => i.ReactivosCombinados).HasMaxLength(500);
                 entity.Property(i => i.Indicaciones).HasMaxLength(1000);
 
