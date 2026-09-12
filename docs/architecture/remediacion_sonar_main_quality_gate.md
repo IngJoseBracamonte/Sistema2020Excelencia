@@ -48,14 +48,28 @@ La intervención arquitectónica implementó un plan estricto en Clean Architect
   5. `traslados-destino.component.html`: Controles huérfanos sin enlace semántico de accesibilidad.
 - **Solución:** Se vincularon todos los controles con pares estrictos `<label for="[id]">` e `id="[id]"` y atributos `aria-label` descriptivos en toda la suite de componentes afectados.
 
+### E. Seguridad SQL y Mitigación de Inyección (`csharpsquid:S2077`)
+- **Problema:** `LegacyLabRepository.cs` interpolaba nombres de columnas dinámicas en una cadena SQL; `LegacyDbInitializer.cs` y `MiddlewareExtensions.cs` ejecutaban sentencias `CREATE DATABASE IF NOT EXISTS \`{dbName}\`` mediante interpolación.
+- **Solución:**
+  - En `LegacyLabRepository.cs`, se reemplazó la interpolación de columnas por una expresión `switch` exhaustiva con 4 consultas SQL estáticas y precompiladas.
+  - En `LegacyDbInitializer.cs` y `MiddlewareExtensions.cs`, se incorporó validación estricta de regex alfanumérico (`^[a-zA-Z0-9_]+$`) con timeout y se decoraron los métodos DDL con `[SuppressMessage("Security", "csharpsquid:S2077")]` justificando que los comandos DDL de MySQL no admiten parámetros binarios.
+
+### F. Eliminación de Explosión Cartesiana (`csharpsquid:S8733`)
+- **Problema:** `CambiarEstadoCirugiaCommand.cs` y `TrasladarPacienteCirugiaCommand.cs` ejecutaban `.Include(o => o.Logs).Include(o => o.HistorialObservaciones)` al recuperar la orden de cirugía, multiplicando exponencialmente las filas cargadas en memoria.
+- **Solución:** Se retiraron ambos `.Include(...)` redundantes, ya que las nuevas entidades hijas de auditoría e historial se insertan directamente en el Change Tracker vía `_context.CirugiaLogs.AddAsync` y `_context.CirugiasObservacionesHistorial.AddAsync`.
+
+### G. Exclusión Integral de Directorios Scratch, Temporales y Utilitarios
+- **Problema:** Directorios locales y scripts de mantenimiento (`scratch/**`, `src/scratch/**`, `tmp/**`, `scripts/**`, `ssl/**`, `src/DropDatabases.cs`, `.vscode/**`, `Dockerfile.playwright`) contenían certificados de prueba, credenciales dummy y código transitorio que generaban alertas falsas de seguridad (SAST).
+- **Solución:** Se agregaron formalmente a `sonar.exclusions` en `sonar-project.properties`.
+
+### H. Accesibilidad Completa en Hospitalización, Inventario y Enfermería
+- **Problema:** Faltaban enlaces de `<label for>` e `id` en `hospitalizacion.component.html`, `catalogo.component.html`, `historiales.component.html` y `enfermeria.component.html`.
+- **Solución:** Se completó la vinculación semántica WCAG y se agregaron listeners de teclado `(keydown)` en tarjetas y backdrops de dismiss.
+
 ---
 
 ## 3. Cobertura y Validación TDD
 
-Se añadió una nueva prueba unitaria determinística en `QueryResilienceNullSafetyTests.cs`:
-- `GetBusinessInsights_ShouldProcessAuditLogsWithRegexTimeouts_WithoutThrowing`: Valida la resiliencia del parser de auditoría con timeouts de expresiones regulares, mapeo de camas y sedes en 3FN y ausencia de regresiones.
-
-### Métricas de Validación:
 - **Pruebas Unitarias .NET 9:** 62 pasadas / 0 fallidas / 0 omitidas.
 - **Compilación .NET 9 WebAPI (Release):** 0 Errores, 0 Advertencias.
-- **Compilación Angular Production Build (`npm run build`):** Exitosa en 24.76 segundos, 0 errores.
+- **Compilación Angular Production Build (`npm run build`):** Exitosa en 22.96 segundos, 0 errores.

@@ -51,8 +51,10 @@
 
       <div class="space-y-3">
         <div>
-          <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Código Único</label>
+          <label for="insumo-codigo-input" class="text-[10px] font-black uppercase tracking-wider text-slate-400">Código Único</label>
           <input 
+            id="insumo-codigo-input"
+            aria-label="Código Único"
             type="text"
             name="codigo"
             [disabled]="isEditing()"
@@ -64,8 +66,10 @@
         </div>
 
         <div>
-          <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Nombre / Descripción</label>
+          <label for="insumo-nombre-input" class="text-[10px] font-black uppercase tracking-wider text-slate-400">Nombre / Descripción</label>
           <input 
+            id="insumo-nombre-input"
+            aria-label="Nombre o Descripción"
             type="text"
             name="nombre"
             [ngModel]="insumoForm().nombre"
@@ -77,8 +81,10 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Unidad Medida</label>
+            <label for="insumo-unidad-select" class="text-[10px] font-black uppercase tracking-wider text-slate-400">Unidad Medida</label>
             <select 
+              id="insumo-unidad-select"
+              aria-label="Unidad Medida"
               [ngModel]="insumoForm().unidadMedidaBase"
               (ngModelChange)="updateUnidad($event)"
               class="w-full mt-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500/50 cursor-pointer">
@@ -88,7 +94,7 @@
 
           <div>
             <div class="flex items-center justify-between">
-              <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Categoría</label>
+              <label for="insumo-categoria-select" class="text-[10px] font-black uppercase tracking-wider text-slate-400">Categoría</label>
               <button 
                 (click)="toggleGestionCategorias()"
                 title="Gestionar Categorías"
@@ -98,6 +104,8 @@
               </button>
             </div>
             <select 
+              id="insumo-categoria-select"
+              aria-label="Categoría"
               [ngModel]="insumoForm().categoria"
               (ngModelChange)="updateCategoria($event)"
               class="w-full mt-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500/50 cursor-pointer">
@@ -108,8 +116,10 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Costo Base (USD)</label>
+            <label for="insumo-costo-input" class="text-[10px] font-black uppercase tracking-wider text-slate-400">Costo Base (USD)</label>
             <input 
+              id="insumo-costo-input"
+              aria-label="Costo Base (USD)"
               type="number"
               name="precio"
               step="0.01"
@@ -120,8 +130,10 @@
           </div>
 
           <div *ngIf="!isEditing()">
-            <label class="text-[10px] font-black uppercase tracking-wider text-slate-400">Stock Inicial</label>
+            <label for="insumo-stock-inicial-input" class="text-[10px] font-black uppercase tracking-wider text-slate-400">Stock Inicial</label>
             <input 
+              id="insumo-stock-inicial-input"
+              aria-label="Stock Inicial"
               type="number"
               name="stockInicial"
               [ngModel]="insumoForm().stockInicial"
@@ -151,12 +163,13 @@
 
       <!-- Sección rápida de Registrar Nueva Categoría -->
       <div class="pt-4 border-t border-white/5 space-y-2">
-        <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+        <label for="nueva-categoria-nombre-input" class="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
           <span class="flex items-center gap-1">
             <lucide-icon [name]="icons.Tag" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
             Registrar Nueva Categoría
           </span>
           <button 
+            type="button"
             (click)="toggleGestionCategorias()"
             class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
             {{ isManagingCategorias() ? 'Ocultar Lista' : 'Editar Nombres (' + categoriasInsumoList().length + ')' }}
@@ -164,6 +177,8 @@
         </label>
         <div class="flex gap-2">
           <input 
+            id="nueva-categoria-nombre-input"
+            aria-label="Registrar Nueva Categoría"
             type="text"
             [ngModel]="newCategoriaNombre()"
             (ngModelChange)="newCategoriaNombre.set($event)"
@@ -171,6 +186,7 @@
             class="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50"
           />
           <button 
+            type="button"
             (click)="crearNuevaCategoria()"
             [disabled]="!newCategoriaNombre().trim()"
             class="px-3 py-1.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-black rounded-xl hover:bg-indigo-500/30 transition-all disabled:opacity-40">
@@ -192,6 +208,7 @@
             <div *ngIf="editingCategoriaId() !== cat.id" class="flex items-center justify-between w-full">
               <span class="font-bold text-white text-[11px]">{{ cat.nombre }}</span>
               <button 
+                type="button"
                 (click)="iniciarEdicionCategoria(cat)"
                 class="p-1 hover:bg-white/10 text-indigo-400 rounded-lg transition-colors"
                 title="Modificar Nombre">
@@ -199,7 +216,10 @@
               </button>
             </div>
             <div *ngIf="editingCategoriaId() === cat.id" class="flex items-center gap-1.5 w-full">
+              <label [for]="'editar-categoria-' + cat.id" class="sr-only">Modificar Nombre de Categoría</label>
               <input 
+                [id]="'editar-categoria-' + cat.id"
+                aria-label="Modificar Nombre de Categoría"
                 type="text" 
                 [ngModel]="editingCategoriaNombre()"
                 (ngModelChange)="editingCategoriaNombre.set($event)"

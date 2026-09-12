@@ -277,10 +277,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
                     hasActivo = colList.Contains("ACTIVO");
                 }
 
-                string descCol = hasNombrePerfil ? "NombrePerfil" : "Descripcion";
-                string estadoCol = hasActivo ? "Activo" : "Estado";
+                string sql = (hasNombrePerfil, hasActivo) switch
+                {
+                    (true, true) => "SELECT IdPerfil, NombrePerfil AS Descripcion, Precio, PrecioDolar, Activo AS Estado FROM perfil",
+                    (true, false) => "SELECT IdPerfil, NombrePerfil AS Descripcion, Precio, PrecioDolar, Estado AS Estado FROM perfil",
+                    (false, true) => "SELECT IdPerfil, Descripcion AS Descripcion, Precio, PrecioDolar, Activo AS Estado FROM perfil",
+                    (false, false) => "SELECT IdPerfil, Descripcion AS Descripcion, Precio, PrecioDolar, Estado AS Estado FROM perfil"
+                };
 
-                string sql = $"SELECT IdPerfil, {descCol} AS Descripcion, Precio, PrecioDolar, {estadoCol} AS Estado FROM perfil";
                 var result = await connection.QueryAsync<PerfilLegacy>(sql);
                 var list = result.ToList();
                 _logger.LogTrace($"[LEGACY-REPO] GetAvailableProfilesAsync: Se recuperaron {list.Count} perfiles de la base de datos.");

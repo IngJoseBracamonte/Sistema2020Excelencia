@@ -25,6 +25,7 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
             return app;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "csharpsquid:S2077", Justification = "Database name is validated against strict alphanumeric regex; CREATE DATABASE DDL cannot be parameterized.")]
         public static async Task UseDatabaseInitializationAsync(this WebApplication app)
         {
             using (var scope = app.Services.CreateScope())
@@ -47,6 +48,10 @@ namespace SistemaSatHospitalario.WebAPI.Extensions
                         {
                             var builder = new MySqlConnectionStringBuilder(fullConStr);
                             var dbName = builder.Database;
+                            if (string.IsNullOrWhiteSpace(dbName) || !System.Text.RegularExpressions.Regex.IsMatch(dbName, @"^[a-zA-Z0-9_]+$", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromMilliseconds(250)))
+                            {
+                                continue;
+                            }
                             builder.Database = ""; // Conectar al servidor sin DB específica
 
                             using var conn = new MySqlConnection(builder.ConnectionString);

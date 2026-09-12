@@ -1,7 +1,9 @@
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Configuration;
 
-internal static class AppHostConfiguration
+namespace SistemaSatHospitalario.AppHost
+{
+    internal static class AppHostConfiguration
 {
     public static void ConfigureApiEnvironment(
         IResourceBuilder<IResourceWithEnvironment> resource,
@@ -88,4 +90,5 @@ internal static class AppHostConfiguration
 
         return processed;
     }
+}
 }
