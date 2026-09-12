@@ -16,9 +16,8 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
 
     // 2. Clic para abrir el dropdown
     await createBtn.click();
-    await page.waitForTimeout(200);
 
-    // 3. Verificar encabezado del dropdown flotante
+    // 3. Verificar encabezado del dropdown flotante reactivamente
     const dropdown = page.locator('div.absolute').filter({ hasText: /seleccionar proceso a crear/i }).first();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
@@ -43,7 +42,6 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
     const backdrop = page.locator('div.fixed.inset-0.z-40').first();
     if (await backdrop.isVisible()) {
       await backdrop.click({ force: true });
-      await page.waitForTimeout(200);
       await expect(dropdown).not.toBeVisible();
     }
   });
@@ -57,7 +55,7 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
     // Cerrar modal
     const closeBtn = modalConsulta.locator('button').filter({ has: page.locator('lucide-icon') }).first();
     await closeBtn.click();
-    await page.waitForTimeout(300);
+    await expect(modalConsulta).not.toBeVisible();
 
     // Probar Cirugía
     const modalCirugia = await catalogPage.openCreateDropdownAndSelectType('CIRUGIA');
@@ -66,7 +64,7 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
     
     const closeBtnCirugia = modalCirugia.locator('button').filter({ has: page.locator('lucide-icon') }).first();
     await closeBtnCirugia.click();
-    await page.waitForTimeout(300);
+    await expect(modalCirugia).not.toBeVisible();
 
     // Probar Tomografía
     const modalTomo = await catalogPage.openCreateDropdownAndSelectType('TOMOGRAFIA');
@@ -75,7 +73,7 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
     
     const closeBtnTomo = modalTomo.locator('button').filter({ has: page.locator('lucide-icon') }).first();
     await closeBtnTomo.click();
-    await page.waitForTimeout(300);
+    await expect(modalTomo).not.toBeVisible();
   });
 
   test('3. Debe filtrar reactivamente por selector de Estado (TODOS, ACTIVOS, DESACTIVADOS)', async ({ page }) => {
@@ -84,13 +82,11 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
 
     // Filtrar Solo Activos
     await estadoSelect.selectOption('ACTIVOS');
-    await page.waitForTimeout(400);
     const deactivatedBadgesActivos = page.locator('table span').filter({ hasText: /^DESACTIVADO$/i });
-    expect(await deactivatedBadgesActivos.count()).toBe(0);
+    await expect(deactivatedBadgesActivos).toHaveCount(0);
 
     // Filtrar Solo Desactivados
     await estadoSelect.selectOption('DESACTIVADOS');
-    await page.waitForTimeout(400);
     const rowsDesactivados = page.locator('table tbody tr');
     const countDesactivados = await rowsDesactivados.count();
     if (countDesactivados > 0) {
@@ -100,7 +96,7 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
 
     // Volver a Todos
     await estadoSelect.selectOption('TODOS');
-    await page.waitForTimeout(300);
+    await expect(page.locator('table tbody tr').first()).toBeVisible();
   });
 
   test('4. Flujo de Soft Delete y Reactivación en la grilla', async ({ page }) => {
@@ -119,12 +115,11 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
 
     const saveBtn = modal.locator('button').filter({ hasText: /guardar/i }).first();
     await saveBtn.click();
-    await page.waitForTimeout(1000);
+    await expect(modal).not.toBeVisible({ timeout: 10_000 });
 
     // 2. Buscar el servicio recién creado en la tabla
     const searchInput = page.locator('input[placeholder*="BUSCAR"]').first();
     await searchInput.fill(codigoItem);
-    await page.waitForTimeout(500);
 
     const fila = page.locator('table tbody tr').filter({ hasText: codigoItem }).first();
     await expect(fila).toBeVisible({ timeout: 10_000 });
@@ -133,13 +128,13 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
     const deleteBtn = fila.locator('button[title*="Desactivar"], button:has(lucide-icon)').filter({ has: page.locator('svg.lucide-trash-2') }).first();
     if (await deleteBtn.isVisible()) {
       await deleteBtn.click();
-      await page.waitForTimeout(300);
 
       // Confirmar en el modal de confirmación
       const confirmModal = page.locator('div.fixed').filter({ hasText: /¿desactivar servicio\?/i }).first();
+      await expect(confirmModal).toBeVisible();
       const confirmBtn = confirmModal.locator('button').filter({ hasText: /confirmar/i }).first();
       await confirmBtn.click();
-      await page.waitForTimeout(800);
+      await expect(confirmModal).not.toBeVisible();
 
       // 4. Verificar que permanece visible pero con badge DESACTIVADO
       const badgeDesactivado = fila.locator('span').filter({ hasText: /^DESACTIVADO$/i }).first();
@@ -149,10 +144,9 @@ test.describe('E2E: Maestro de Servicios - Selección Desplegable de Creación, 
       const reactivateBtn = fila.locator('button').filter({ hasText: /reactivar/i }).first();
       await expect(reactivateBtn).toBeVisible({ timeout: 5000 });
       await reactivateBtn.click();
-      await page.waitForTimeout(800);
 
       // 6. Verificar que el badge DESACTIVADO desapareció
-      await expect(badgeDesactivado).not.toBeVisible();
+      await expect(badgeDesactivado).not.toBeVisible({ timeout: 5000 });
     }
   });
 });

@@ -21,8 +21,8 @@
             </div>
 
             <div class="relative">
-                <!-- Backdrop invisible para cerrar al hacer click fuera -->
-                <div *ngIf="showCreateDropdown()" (click)="closeCreateDropdown()" class="fixed inset-0 z-40"></div>
+                <!-- Backdrop invisible para cerrar al hacer click fuera o presionar escape -->
+                <div *ngIf="showCreateDropdown()" (click)="closeCreateDropdown()" (keydown.escape)="closeCreateDropdown()" tabindex="0" role="button" aria-label="Cerrar opciones de creación" class="fixed inset-0 z-40 outline-none"></div>
 
                 <button type="button" (click)="toggleCreateDropdown(); $event.stopPropagation()"
                     class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-2 shrink-0 cursor-pointer relative z-50">
@@ -70,17 +70,17 @@
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
                         <lucide-icon [img]="icons.Search" class="w-4 h-4"></lucide-icon>
                     </span>
-                    <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
-                        placeholder="BUSCAR SERVICIO POR NOMBRE O CÓDIGO..."
+                    <input type="text" id="catalog-search-input" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+                        placeholder="BUSCAR SERVICIO POR NOMBRE O CÓDIGO..." aria-label="Buscar servicio por nombre o código"
                         class="w-full bg-white/5 border border-white/10 pl-11 pr-4 py-3 rounded-2xl text-white font-bold text-xs outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase placeholder:text-slate-600">
                 </div>
 
                 <!-- Selector de Filtro de Estado -->
                 <div class="flex items-center gap-2 shrink-0 w-full lg:w-auto">
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap flex items-center gap-1">
+                    <label for="catalog-status-filter" class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap flex items-center gap-1 cursor-pointer">
                         ESTADO:
-                    </span>
-                    <select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)"
+                    </label>
+                    <select id="catalog-status-filter" [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)" aria-label="Filtrar por estado del servicio"
                         class="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl text-xs font-black text-white outline-none focus:border-indigo-500/50 min-h-[44px] cursor-pointer">
                         <option value="TODOS">Todos (Activos y Desactivados)</option>
                         <option value="ACTIVOS">Solo Activos</option>
@@ -90,12 +90,12 @@
 
                 <!-- Selector de Ordenamiento -->
                 <div class="flex items-center gap-2 shrink-0 w-full lg:w-auto">
-                    <span
-                        class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap flex items-center gap-1">
+                    <label for="catalog-sort-select"
+                        class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap flex items-center gap-1 cursor-pointer">
                         <lucide-icon [img]="icons.ArrowUpDown" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
                         ORDENAR:
-                    </span>
-                    <select [ngModel]="sortOption()" (ngModelChange)="setSortOption($event)"
+                    </label>
+                    <select id="catalog-sort-select" [ngModel]="sortOption()" (ngModelChange)="setSortOption($event)" aria-label="Ordenar servicios"
                         class="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl text-xs font-black text-white outline-none focus:border-indigo-500/50 min-h-[44px] cursor-pointer">
                         <option value="nombre-asc">Nombre (A - Z)</option>
                         <option value="nombre-desc">Nombre (Z - A)</option>

@@ -545,8 +545,8 @@ export class EnfermeriaComponent implements OnInit {
       const rawB = b.fechaCarga || b.fechaIngreso || b.fechaApertura;
       const timeA = rawA ? new Date(rawA).getTime() : 0;
       const timeB = rawB ? new Date(rawB).getTime() : 0;
-      const validA = !isNaN(timeA) ? timeA : 0;
-      const validB = !isNaN(timeB) ? timeB : 0;
+      const validA = !Number.isNaN(timeA) ? timeA : 0;
+      const validB = !Number.isNaN(timeB) ? timeB : 0;
       return (validB - validA) || (b.cuentaId || '').localeCompare(a.cuentaId || '');
     });
   });
