@@ -23,12 +23,13 @@ async function runTests() {
                             'Content-Type': 'application/json',
                             'X-Testing-Token': TESTING_TOKEN
                         },
-                        body: JSON.stringify({
-                    requestPath: 'E2E/Playwright/Docker',
-                    metodoHTTP: 'TEST',
-                    mensajeExcepcion: 'Fallo CrÃtico en Pruebas de Integridad E2E (Playwright)',
-                    stackTrace: stdout + '\n' + stderr,
-                    usuarioAsociado: 'Playwright_Bot'
+                    body: JSON.stringify({
+                        requestPath: 'E2E/Playwright/Docker',
+                        metodoHTTP: 'TEST',
+                        mensajeExcepcion: 'Fallo Crítico en Pruebas de Integridad E2E (Playwright)',
+                        stackTrace: stdout + '\n' + stderr,
+                        usuarioAsociado: 'Playwright_Bot'
+                    })
                 });
 
                     if (!response.ok) {
