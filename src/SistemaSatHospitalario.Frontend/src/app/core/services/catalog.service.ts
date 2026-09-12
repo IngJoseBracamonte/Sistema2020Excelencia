@@ -12,15 +12,18 @@ export class CatalogService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/Catalog`;
 
-  getUnifiedCatalog(convenioId?: number | null): Observable<CatalogItem[]> {
-    const url = convenioId ? `${this.apiUrl}/unified?convenioId=${convenioId}` : `${this.apiUrl}/unified`;
+  getUnifiedCatalog(convenioId?: number | null, incluirInactivos: boolean = true): Observable<CatalogItem[]> {
+    let url = `${this.apiUrl}/unified?incluirInactivos=${incluirInactivos}`;
+    if (convenioId) {
+      url += `&convenioId=${convenioId}`;
+    }
     return this.http.get<any[]>(url).pipe(
       map(items => items.map(i => new CatalogItem(i)))
     );
   }
 
-  getItems(): Observable<CatalogItem[]> {
-    return this.getUnifiedCatalog();
+  getItems(incluirInactivos: boolean = true): Observable<CatalogItem[]> {
+    return this.getUnifiedCatalog(null, incluirInactivos);
   }
 
   getItemById(id: string): Observable<CatalogItem> {
@@ -86,5 +89,9 @@ export class CatalogService {
 
   deleteItem(id: string): Observable<boolean> {
     return this.http.delete<boolean>(`${this.apiUrl}/${id}`);
+  }
+
+  reactivateItem(id: string): Observable<boolean> {
+    return this.http.patch<boolean>(`${this.apiUrl}/${id}/reactivate`, {});
   }
 }

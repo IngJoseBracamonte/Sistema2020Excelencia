@@ -77,36 +77,50 @@ export class CatalogPage {
   }
 
   /**
-   * Abre el modal de creación correspondiente para el tipo de catálogo especificado.
+    * Abre el modal de creación correspondiente para el tipo de catálogo especificado usando el desplegable Nuevo Ítem.
    */
   async openCreateModalForType(type: CatalogType): Promise<Locator> {
-    // 1. Resetear filtros existentes haciendo clic en 'TODOS'
-    const todosChip = this.page.locator('button', { hasText: 'TODOS' }).first();
-    if (await todosChip.isVisible()) {
-      await todosChip.click();
-      await this.page.waitForTimeout(200);
-    }
+    return this.openCreateDropdownAndSelectType(type);
+  }
 
-    // 2. Seleccionar el chip de filtro del tipo deseado
-    const filterChip = this.page.locator('button').filter({ hasText: new RegExp(`^\\s*${type}\\s*$`, 'i') }).first();
-    if (await filterChip.isVisible()) {
-      await filterChip.click();
-      await this.page.waitForTimeout(300);
-    }
-
-    // 3. Hacer clic en "Nuevo Servicio"
-    const createBtn = this.page.locator('button').filter({ hasText: /nuevo servicio/i }).first();
+  /**
+   * Abre el menú desplegable "Nuevo Ítem ▼" y selecciona el proceso clínico específico.
+   */
+  async openCreateDropdownAndSelectType(type: CatalogType): Promise<Locator> {
+    const createBtn = this.page.locator('button').filter({ hasText: /nuevo (ítem|servicio)/i }).first();
     await expect(createBtn).toBeVisible({ timeout: 10_000 });
     await createBtn.click();
+    await this.page.waitForTimeout(200);
+
+    // Buscar la opción en el menú desplegable flotante por tipo o label
+    const dropdownOption = this.page.locator('div.absolute').locator('button').filter({
+      hasText: new RegExp(`(${type}|${this.mapTypeToLabel(type)})`, 'i')
+    }).first();
+
+    await expect(dropdownOption).toBeVisible({ timeout: 5000 });
+    await dropdownOption.click();
     await this.page.waitForTimeout(300);
 
-    // 4. Ubicar el subcomponente modal de edición activo en Angular
     const modalLocator = this.page.locator(
       'app-edit-servicio, app-edit-consulta, app-edit-cirugia, app-edit-tomografia, app-edit-hospitalario, app-edit-laboratorio, app-edit-procedimiento, app-edit-medicamento'
     ).first();
     const header = modalLocator.locator('h2').first();
     await expect(header).toBeVisible({ timeout: 10_000 });
     return modalLocator;
+  }
+
+  private mapTypeToLabel(type: CatalogType): string {
+    switch (type) {
+      case 'CONSULTA': return 'Consulta';
+      case 'CIRUGIA': return 'Cirugía';
+      case 'LABORATORIO': return 'Laboratorio';
+      case 'TOMOGRAFIA': return 'Tomografía';
+      case 'MEDICAMENTO': return 'Medicamento';
+      case 'PROCEDIMIENTO': return 'Procedimiento';
+      case 'HOSPITALARIO': return 'Estancia Hospitalaria';
+      case 'SERVICIO': return 'Servicio Base';
+      default: return type;
+    }
   }
 
   /**

@@ -20,20 +20,50 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <button (click)="openCreate()"
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-2 shrink-0">
+            <div class="relative">
+                <!-- Backdrop invisible para cerrar al hacer click fuera -->
+                <div *ngIf="showCreateDropdown()" (click)="closeCreateDropdown()" class="fixed inset-0 z-40"></div>
+
+                <button type="button" (click)="toggleCreateDropdown(); $event.stopPropagation()"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-2 shrink-0 cursor-pointer relative z-50">
                     <lucide-icon [img]="icons.Plus" class="w-4 h-4"></lucide-icon>
-                    Nuevo Servicio
+                    <span>Nuevo Ítem</span>
+                    <lucide-icon [img]="icons.ChevronDown" class="w-3.5 h-3.5 transition-transform duration-200" [class.rotate-180]="showCreateDropdown()"></lucide-icon>
                 </button>
+
+                <!-- Menú flotante de procesos especializados -->
+                <div *ngIf="showCreateDropdown()"
+                    class="absolute right-0 top-full mt-2 w-80 bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-2 space-y-1 z-50 animate-fade-in backdrop-blur-xl">
+                    <div class="px-3 py-2 border-b border-white/5 flex items-center justify-between">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Seleccionar Proceso a Crear</span>
+                        <span class="text-[8px] font-mono text-indigo-400 font-bold">8 PROCESOS</span>
+                    </div>
+                    <div class="space-y-1 max-h-96 overflow-y-auto custom-scrollbar">
+                        <button *ngFor="let opt of createTypeOptions" type="button" (click)="openCreateOfType(opt.type)"
+                            class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-all text-left group cursor-pointer">
+                            <div [class]="opt.colorClass" class="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                                <lucide-icon [img]="opt.icon" class="w-4 h-4"></lucide-icon>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors truncate">{{ opt.label }}</span>
+                                    <span [class]="getTipoBadgeStyle(opt.type)" class="px-1.5 py-0.5 border rounded-md text-[7px] font-black uppercase tracking-wider shrink-0 ml-1">
+                                        {{ opt.type }}
+                                    </span>
+                                </div>
+                                <p class="text-[9px] text-slate-400 truncate mt-0.5">{{ opt.sublabel }}</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Barra de Controles: Búsqueda, Filtro Múltiple de Tipos y Ordenamiento -->
+        <!-- Barra de Controles: Búsqueda, Filtro de Estado, Filtro Múltiple de Tipos y Ordenamiento -->
         <div class="space-y-4 bg-black/40 p-5 rounded-[2rem] border border-white/5">
 
-            <!-- Fila Superior: Buscador + Selector de Ordenamiento -->
-            <div class="flex flex-col md:flex-row items-center gap-4">
+            <!-- Fila Superior: Buscador + Selector de Estado + Selector de Ordenamiento -->
+            <div class="flex flex-col lg:flex-row items-center gap-4">
 
                 <!-- Buscador por Nombre o Código -->
                 <div class="relative flex-1 w-full">
@@ -45,8 +75,21 @@
                         class="w-full bg-white/5 border border-white/10 pl-11 pr-4 py-3 rounded-2xl text-white font-bold text-xs outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase placeholder:text-slate-600">
                 </div>
 
+                <!-- Selector de Filtro de Estado -->
+                <div class="flex items-center gap-2 shrink-0 w-full lg:w-auto">
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap flex items-center gap-1">
+                        ESTADO:
+                    </span>
+                    <select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)"
+                        class="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl text-xs font-black text-white outline-none focus:border-indigo-500/50 min-h-[44px] cursor-pointer">
+                        <option value="TODOS">Todos (Activos y Desactivados)</option>
+                        <option value="ACTIVOS">Solo Activos</option>
+                        <option value="DESACTIVADOS">Solo Desactivados</option>
+                    </select>
+                </div>
+
                 <!-- Selector de Ordenamiento -->
-                <div class="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                <div class="flex items-center gap-2 shrink-0 w-full lg:w-auto">
                     <span
                         class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap flex items-center gap-1">
                         <lucide-icon [img]="icons.ArrowUpDown" class="w-3.5 h-3.5 text-indigo-400"></lucide-icon>
@@ -115,7 +158,9 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
-                    <tr *ngFor="let s of filteredCatalog()" class="hover:bg-white/[0.04] transition-all group">
+                    <tr *ngFor="let s of filteredCatalog()" 
+                        [class.opacity-60]="s.activo === false"
+                        class="hover:bg-white/[0.04] transition-all group">
 
                         <!-- Columna 1: Servicio & Código -->
                         <td class="px-6 py-4">
@@ -126,6 +171,7 @@
                                 </div>
                                 <div class="space-y-0.5">
                                     <h3
+                                        [class.line-through]="s.activo === false"
                                         class="text-xs font-black text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
                                         {{ s.descripcion }}
                                     </h3>
@@ -136,12 +182,18 @@
                             </div>
                         </td>
 
-                        <!-- Columna 2: Tipo de Servicio -->
+                        <!-- Columna 2: Tipo de Servicio & Estado -->
                         <td class="px-6 py-4">
-                            <span [class]="getTipoBadgeStyle(s.tipo)"
-                                class="px-3 py-1 border rounded-xl text-[9px] font-black uppercase tracking-widest inline-block shadow-sm">
-                                {{ s.tipo || 'GENERAL' }}
-                            </span>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span [class]="getTipoBadgeStyle(s.tipo)"
+                                    class="px-3 py-1 border rounded-xl text-[9px] font-black uppercase tracking-widest inline-block shadow-sm">
+                                    {{ s.tipo || 'GENERAL' }}
+                                </span>
+                                <span *ngIf="s.activo === false"
+                                    class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[8px] font-black rounded-lg uppercase tracking-widest">
+                                    DESACTIVADO
+                                </span>
+                            </div>
                         </td>
 
                         <!-- Columna 3: Precio Base ($ USD) -->
@@ -173,11 +225,24 @@
                                     <lucide-icon [img]="icons.Edit" class="w-3.5 h-3.5"></lucide-icon>
                                     Editar
                                 </button>
-                                <button type="button" *ngIf="!s.esLegacy"
+                                
+                                <!-- Botón Desactivar (Soft Delete) si está activo -->
+                                <button type="button" *ngIf="!s.esLegacy && s.activo !== false"
                                     (click)="confirmDelete(s); $event.stopPropagation()"
+                                    title="Desactivar Servicio"
                                     class="h-9 w-9 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl flex items-center justify-center transition-all active:scale-95 cursor-pointer">
                                     <lucide-icon [img]="icons.Trash2" class="w-3.5 h-3.5"></lucide-icon>
                                 </button>
+
+                                <!-- Botón Reactivar si está desactivado -->
+                                <button type="button" *ngIf="!s.esLegacy && s.activo === false"
+                                    (click)="reactivateItem(s); $event.stopPropagation()"
+                                    title="Reactivar Servicio"
+                                    class="h-9 px-3 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                                    <lucide-icon [img]="icons.RotateCcw" class="w-3.5 h-3.5"></lucide-icon>
+                                    Reactivar
+                                </button>
+
                                 <span *ngIf="s.esLegacy"
                                     class="px-2 py-1 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-[8px] font-black rounded-xl uppercase tracking-widest">
                                     LEGACY
@@ -224,11 +289,11 @@
         </app-edit-laboratorio>
 
         <app-edit-tomografia *ngIf="activeEditorType() === 'TOMOGRAFIA'" [itemId]="selectedItemId()"
-            (saved)="onEditorSaved()" (closed)="onEditorClosed()">
+            [isEditing]="isEditing()" (saved)="onEditorSaved()" (closed)="onEditorClosed()">
         </app-edit-tomografia>
 
         <app-edit-procedimiento *ngIf="activeEditorType() === 'PROCEDIMIENTO'"
-            [itemId]="selectedItemId()" (saved)="onEditorSaved()" (closed)="onEditorClosed()">
+            [itemId]="selectedItemId()" [isEditing]="isEditing()" (saved)="onEditorSaved()" (closed)="onEditorClosed()">
         </app-edit-procedimiento>
 
         <app-edit-cirugia *ngIf="activeEditorType() === 'CIRUGIA'" [itemId]="selectedItemId()" [isEditing]="isEditing()"
