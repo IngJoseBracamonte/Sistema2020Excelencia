@@ -126,6 +126,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var directInsumos = await _context.Insumos
                 .AsNoTracking()
                 .Include(i => i.CategoriaInsumo)
+                .Include(i => i.UnidadMedidaNav)
                 .Where(i => !i.IsDeleted)
                 .ToListAsync(cancellationToken);
 
@@ -139,6 +140,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 // 3FN: preferir el nombre canónico desde la FK
                 var categoriaNombre = insumo.CategoriaInsumo?.Nombre ?? string.Empty;
                 var editorType = ResolveEditorType(categoriaNombre, false);
+                var unidadMedidaNombre = insumo.UnidadMedidaNav?.Nombre?.ToString() ?? "UND";
                 var selfReceta = new List<ServicioInsumoRecetaDto>
                 {
                     new ServicioInsumoRecetaDto
@@ -149,7 +151,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         InsumoNombre = insumo.Nombre,
                         InsumoCodigo = insumo.Codigo,
                         Cantidad = 1m,
-                        UnidadMedidaConsumo = insumo.UnidadMedidaNav.Nombre.ToString()
+                        UnidadMedidaConsumo = unidadMedidaNombre
                     }
                 };
 
@@ -166,7 +168,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Activo = true,
                     PrecioUsd = insumo.CostoUnitarioBaseUSD > 0 ? insumo.CostoUnitarioBaseUSD : 1.00m,
                     HonorarioBase = 0m,
-                    UnidadMedida = insumo.UnidadMedidaNav.Nombre.ToString(),
+                    UnidadMedida = unidadMedidaNombre,
                     PermiteFraccionamiento = insumo.PermiteFraccionamiento,
                     Receta = selfReceta,
                     InsumosReceta = selfReceta
@@ -178,7 +180,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             // 4. Obtener perfiles de Laboratorio del sistema Legacy
-            var perfilesLegacy = await _legacyRepository.GetAvailableProfilesAsync(cancellationToken);
+            var perfilesLegacyRaw = await _legacyRepository.GetAvailableProfilesAsync(cancellationToken);
+            var perfilesLegacy = perfilesLegacyRaw ?? new();
             
             // 5. Obtener excepciones de precios para perfiles legacy
             var excepcionesPerfiles = new Dictionary<int, (decimal hnl, decimal usd)>();

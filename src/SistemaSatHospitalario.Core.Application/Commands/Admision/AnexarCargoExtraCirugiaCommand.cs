@@ -61,7 +61,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.Honorario,
                 request.Cantidad,
                 request.TipoServicio,
-                request.UsuarioId);
+                _currentUser.UserId);
 
             // 2. Si el cargo corresponde a un insumo/medicamento físico, realizar descuento de stock y trazabilidad
             var insumo = await _context.Insumos

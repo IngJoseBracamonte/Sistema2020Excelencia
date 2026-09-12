@@ -153,11 +153,12 @@ export class MultiSedeService {
   }
 
   // --- API AREAS CLINICAS ---
-  getAreasClinicas(sedeId?: string, forceRefresh = false): Observable<AreaClinica[]> {
-    const key = sedeId || 'ALL';
+  getAreasClinicas(sedeId?: string, forceRefresh = false, includeInactive = false): Observable<AreaClinica[]> {
+    const key = `${sedeId || 'ALL'}_${includeInactive ? 'all' : 'active'}`;
     if (!this.areasCache.has(key) || forceRefresh) {
       let params: any = {};
       if (sedeId) params.sedeId = sedeId;
+      if (includeInactive) params.includeInactive = 'true';
       const obs = this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`, { params }).pipe(
         shareReplay({ bufferSize: 1, refCount: false })
       );
@@ -168,7 +169,10 @@ export class MultiSedeService {
 
   createAreaClinica(dto: { sedeId: string; codigo: string; nombre: string }): Observable<string> {
     return this.http.post<string>(`${environment.apiUrl}/api/AreaClinica`, dto).pipe(
-      tap(() => this.clearCache())
+      tap(() => {
+        this.sedesCache$ = null;   // Invalida caché de sedes (incluye areasClinicas)
+        this.areasCache.clear();   // Invalida caché de áreas
+      })
     );
   }
 
@@ -180,7 +184,19 @@ export class MultiSedeService {
 
   deleteAreaClinica(id: string): Observable<any> {
     return this.http.delete(`${environment.apiUrl}/api/AreaClinica/${id}`).pipe(
-      tap(() => this.clearCache())
+      tap(() => {
+        this.sedesCache$ = null;
+        this.areasCache.clear();
+      })
+    );
+  }
+
+  activarAreaClinica(id: string): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/api/AreaClinica/${id}/activar`, {}).pipe(
+      tap(() => {
+        this.sedesCache$ = null;
+        this.areasCache.clear();
+      })
     );
   }
 

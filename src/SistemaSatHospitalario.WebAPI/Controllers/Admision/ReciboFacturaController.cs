@@ -18,11 +18,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     {
         private readonly IMediator _mediator;
         private readonly IPdfService _pdfService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ReciboFacturaController(IMediator mediator, IPdfService pdfService)
+        public ReciboFacturaController(IMediator mediator, IPdfService pdfService, ICurrentUserService currentUserService)
         {
             _mediator = mediator;
             _pdfService = pdfService;
+            _currentUserService = currentUserService;
         }
 
         [HttpPost("RegistrarPagoMultidivisa")]
@@ -52,7 +54,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioEmision = User.Identity?.Name ?? "Sistama";
+                command.UsuarioEmision = _currentUserService.UserId;
                 var result = await _mediator.Send(command);
                 if (result) return Ok(new { Message = "Factura emitida formalmente." });
                 return BadRequest(new { Error = "No se pudo emitir la factura." });

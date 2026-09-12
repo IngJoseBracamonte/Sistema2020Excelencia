@@ -51,7 +51,11 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             ServicioClinico? baseService, 
             CancellationToken cancellationToken)
         {
-            bool isClinical = cuenta.TipoIngresoNav?.Nombre is EstadoConstants.Hospitalizacion
+            // TipoIngresoNav puede no estar cargado (sin lazy loading); fallback al catálogo por FK.
+            var tipoIngresoNombre = cuenta.TipoIngresoNav?.Nombre
+                ?? TipoIngresoConstants.ToLegacyString(cuenta.TipoIngresoId);
+
+            bool isClinical = tipoIngresoNombre is EstadoConstants.Hospitalizacion
                               or EstadoConstants.Emergencia
                               or EstadoConstants.UCI;
 
@@ -125,7 +129,10 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
 
             // Emitir evento desacoplado vía MediatR
             string pNombre = paciente.NombreCompleto ?? paciente.NombreCorto ?? "Paciente Desconocido";
-            string areaOrigen = request.OrigenCarga ?? cuenta.TipoIngresoNav.Nombre;
+            // TipoIngresoNav puede no estar cargado (sin lazy loading); fallback al catálogo por FK.
+            string areaOrigen = request.OrigenCarga
+                ?? cuenta.TipoIngresoNav?.Nombre
+                ?? SistemaSatHospitalario.Core.Domain.Constants.TipoIngresoConstants.ToLegacyString(cuenta.TipoIngresoId);
             var notification = new ServicioCargadoNotification(
                 "LAB",
                 request.OrigenCarga ?? request.TipoIngreso,

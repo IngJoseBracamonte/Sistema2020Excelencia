@@ -112,8 +112,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Id = o.Id,
                     CuentaServicioId = o.CuentaServicioId,
                     PacienteId = o.PacienteId,
-                    PacienteNombre = o.Paciente.NombreCorto,
-                    PacienteCedula = o.Paciente.CedulaPasaporte,
+                    PacienteNombre = o.Paciente?.NombreCorto ?? "Sin Nombre",
+                    PacienteCedula = o.Paciente?.CedulaPasaporte ?? string.Empty,
                     Ubicacion = new UbicacionPacienteDto
                     {
                         AreaClinicaId = o.CuentaServicio?.AreaClinicaId,
@@ -125,7 +125,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     },
                     IngresoCobertura = new TipoIngresoCoberturaDto
                     {
-                        Tipo = o.CuentaServicio?.TipoIngresoNav.Nombre ?? "Hospitalizacion",
+                        Tipo = o.CuentaServicio?.TipoIngresoNav?.Nombre ?? "Hospitalizacion",
                         ConvenioId = convenioId,
                         ConvenioNombre = o.CuentaServicio?.Convenio?.Nombre,
                         EsAsegurado = tieneConvenio
@@ -137,11 +137,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PrecioDerechoSalaUsd = o.PrecioDerechoSalaUsd,
                     PrecioBaseUsd = o.PrecioBaseUsd,
                     MedicoId = o.MedicoId,
-                    MedicoNombre = o.Medico.Nombre,
+                    MedicoNombre = o.Medico?.Nombre ?? "Sin Asignar",
                     FechaHoraProgramada = o.FechaHoraProgramada,
                     Estado = o.Estado,
-                    TotalRequisitos = o.Requisitos.Count,
-                    RequisitosCumplidos = o.Requisitos.Count(r => r.Cumplido)
+                    TotalRequisitos = o.Requisitos?.Count ?? 0,
+                    RequisitosCumplidos = o.Requisitos?.Count(r => r.Cumplido) ?? 0
                 };
             }).ToList();
         }

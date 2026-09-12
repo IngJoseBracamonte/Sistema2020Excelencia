@@ -36,12 +36,14 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class CrearOrdenCirugiaCommandHandler : IRequestHandler<CrearOrdenCirugiaCommand, Guid>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<CrearOrdenCirugiaCommandHandler> _logger;
 
-        public CrearOrdenCirugiaCommandHandler(IApplicationDbContext context, ILogger<CrearOrdenCirugiaCommandHandler> logger)
+        public CrearOrdenCirugiaCommandHandler(IApplicationDbContext context, ILogger<CrearOrdenCirugiaCommandHandler> logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<Guid> Handle(CrearOrdenCirugiaCommand request, CancellationToken cancellationToken)
@@ -94,16 +96,17 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     return cuentaAbierta.Id;
                 }
 
-                var nuevaCuenta = new CuentaServicios(
-                    request.PacienteId,
-                    ObtenerUsuarioCreacion(request),
-                    "Cirugia",
-                    convenioId: null,
-                    areaClinicaId: request.AreaClinicaId,
-                    subAreaClinica: "Pabellón Quirúrgico",
-                    medicoId: request.MedicoId != Guid.Empty ? request.MedicoId : null);
+            var nuevaCuenta = new CuentaServicios(
+             pacienteId: request.PacienteId,
+             tipoIngreso: "Hospitalizacion", // o "Cirugia" si tu catálogo lo contempla
+             convenioId: null,
+             areaClinicaId: request.AreaClinicaId,
+             subAreaClinica: "Pabellón Quirúrgico",
+             medicoId: request.MedicoId != Guid.Empty ? request.MedicoId : null,
+             usuarioCargaId: _currentUserService.UserId
+            );
 
-                _context.CuentasServicios.Add(nuevaCuenta);
+            _context.CuentasServicios.Add(nuevaCuenta);
                 await _context.SaveChangesAsync(cancellationToken);
                 return nuevaCuenta.Id;
             }

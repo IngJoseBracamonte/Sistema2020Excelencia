@@ -29,10 +29,11 @@
     <!-- MODAL DE INGRESO / ADMISIÓN DE PACIENTE -->
     <div *ngIf="showIngresoModal()"
         class="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-4 md:pt-8 overflow-y-auto">
-        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow"
-            (click)="showIngresoModal.set(false)"></div>
+        <!-- Backdrop sin (click): modal clínico no debe cerrarse con tap accidental en tablet -->
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow"></div>
         <div
-            class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in">
+            class="relative bg-surface-card rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl overflow-hidden border border-white/5 animate-scale-in"
+            (click)="$event.stopPropagation()">
 
             <!-- Encabezado Modal -->
             <div class="p-8 pb-4 flex items-center justify-between border-b border-white/5">
@@ -984,7 +985,8 @@
 
     <!-- MODAL INTERYECTOR DE SOLVENCIA -->
     <div *ngIf="showSolvenciaModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md" (click)="showSolvenciaModal.set(false)"></div>
+        <!-- Backdrop sin (click): modal clínico -->
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md"></div>
         <div
             class="relative bg-surface-card border border-amber-500/30 rounded-[2rem] p-8 max-w-md w-full shadow-2xl space-y-6">
             <div class="flex items-center space-x-4">
@@ -1018,7 +1020,8 @@
 
     <!-- MODAL REGISTRO DE ALTA MÉDICA -->
     <div *ngIf="showAltaModal()" class="fixed inset-0 z-[120] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md" (click)="showAltaModal.set(false)"></div>
+        <!-- Backdrop sin (click): modal clínico -->
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md"></div>
         <div
             class="relative bg-surface-card border border-rose-500/30 rounded-[2rem] p-8 max-w-lg w-full shadow-2xl space-y-6">
             <div class="flex items-center justify-between border-b border-white/5 pb-4">

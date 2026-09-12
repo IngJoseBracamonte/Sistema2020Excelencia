@@ -158,9 +158,14 @@ export class StockMultisedeComponent implements OnInit {
 
   public cargarKardex(): void {
     this.isKardexLoading.set(true);
+
+    // Transformar los valores centinela 'TODAS' y 'TODOS' a null para no romper el binding de Guid? en el backend
+    const sedeParam = this.kardexSedeId() === 'TODAS' ? undefined : this.kardexSedeId();
+    const insumoParam = this.kardexInsumoId() === 'TODOS' ? undefined : this.kardexInsumoId();
+
     this.inventoryService.getKardex(
-      this.kardexSedeId(),
-      this.kardexInsumoId(),
+      sedeParam,
+      insumoParam,
       this.kardexFechaDesde(),
       this.kardexFechaHasta()
     ).subscribe({
@@ -186,4 +191,3 @@ export class StockMultisedeComponent implements OnInit {
     window.print();
   }
 }
-

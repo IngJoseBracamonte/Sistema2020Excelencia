@@ -102,7 +102,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             foreach (var item in listaPagosValidados)
             {
-                recibo.AgregarDetallePago(item.MetodoPago.Valor, item.MetodoPago.Id, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, request.CajeroUserId);
+                recibo.AgregarDetallePago(item.MetodoPago.Valor, item.MetodoPago.Id, item.Pago.ReferenciaBancaria, item.Pago.MontoAbonadoMoneda, item.Equivalente, item.Tasa, _currentUserService.UserId);
             }
 
             // 4. Validar montos y cierre condicional (V11.5 Senior Pattern)

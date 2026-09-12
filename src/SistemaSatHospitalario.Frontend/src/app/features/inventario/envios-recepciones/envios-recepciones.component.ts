@@ -201,7 +201,8 @@ export class EnviosRecepcionesComponent implements OnInit {
   }
 
   loadHistorialEnviosDirectos() {
-    this.inventoryService.getHistorialMovimientos('EnvioSubArea').subscribe({
+    // Corregido: Se envía 'Consumo' para coincidir con TipoMovimientoInsumo.Consumo en backend
+    this.inventoryService.getHistorialMovimientos('Consumo').subscribe({
       next: (data) => this.historialEnviosDirectos.set(data),
       error: (err) => console.error('Error al cargar historial envíos directos:', err)
     });

@@ -105,161 +105,167 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<List<PacienteQuirurgicoItemDto>> Handle(GetPacientesQuirurgicosListaQuery request, CancellationToken cancellationToken)
+       public async Task<List<PacienteQuirurgicoItemDto>> Handle(GetPacientesQuirurgicosListaQuery request, CancellationToken cancellationToken)
+{
+    var query = _context.OrdenesCirugia
+        .AsNoTracking()
+        .Include(o => o.Paciente)
+        .Include(o => o.Medico)
+            .ThenInclude(m => m.Especialidad)
+        .Include(o => o.SedeQuirofano)
+        .Include(o => o.CuentaServicio)
+            .ThenInclude(c => c.AreaClinica)
+                .ThenInclude(a => a.Sede)
+        .Include(o => o.CuentaServicio)
+            .ThenInclude(c => c.CamaRetenida)
+                .ThenInclude(a => a.Sede)
+        .Include(o => o.CuentaServicio)
+            .ThenInclude(c => c.Convenio)
+        // FIX 1: Incluir la navegación TipoIngresoNav
+        .Include(o => o.CuentaServicio)
+            .ThenInclude(c => c.TipoIngresoNav)
+        .Include(o => o.Requisitos)
+            .ThenInclude(r => r.RequisitoCirugia)
+        .Include(o => o.MedicosHonorarios)
+            .ThenInclude(m => m.Medico)
+        .Include(o => o.MedicosHonorarios)
+            .ThenInclude(m => m.Especialidad)
+        .Include(o => o.SolicitudesInsumos)
+            .ThenInclude(s => s.Insumo)
+        .Include(o => o.Logs)
+        .AsQueryable();
+
+    query = ApplyFilters(query, request);
+
+    var ordenes = await query
+        .OrderByDescending(o => o.FechaHoraProgramada)
+        .ToListAsync(cancellationToken);
+
+    var cuentasIds = ordenes.Select(o => o.CuentaServicioId).Distinct().ToList();
+
+    var insumosPorCuenta = await _context.InsumosCirugiasPacientes
+        .AsNoTracking()
+        .Include(i => i.Insumo)
+        .Where(i => cuentasIds.Contains(i.CuentaServicioId))
+        .ToListAsync(cancellationToken);
+
+    return ordenes.Select(o =>
+    {
+        var sedeNombre = o.CuentaServicio?.AreaClinica?.Sede?.Nombre ?? (o.SedeQuirofano?.Nombre ?? string.Empty);
+        var camaNombre = o.CuentaServicio?.CamaRetenida?.Nombre ?? (o.CuentaServicio?.AreaClinica?.Nombre ?? o.SalaQuirofano);
+        var ubicacionFormateada = !string.IsNullOrWhiteSpace(sedeNombre) && !string.IsNullOrWhiteSpace(camaNombre)
+            ? $"{sedeNombre} - {camaNombre}"
+            : (o.CuentaServicio?.SubAreaClinica ?? (!string.IsNullOrWhiteSpace(camaNombre) ? camaNombre : "Sin Asignar"));
+        var convenioId = o.CuentaServicio?.ConvenioId;
+        var tieneConvenio = convenioId.HasValue && convenioId.Value > 0;
+
+        return new PacienteQuirurgicoItemDto
         {
-            var query = _context.OrdenesCirugia
-                .AsNoTracking()
-                .Include(o => o.Paciente)
-                .Include(o => o.Medico)
-                    .ThenInclude(m => m.Especialidad)
-                .Include(o => o.SedeQuirofano)
-                .Include(o => o.CuentaServicio)
-                    .ThenInclude(c => c.AreaClinica)
-                        .ThenInclude(a => a.Sede)
-                .Include(o => o.CuentaServicio)
-                    .ThenInclude(c => c.CamaRetenida)
-                        .ThenInclude(a => a.Sede)
-                .Include(o => o.CuentaServicio)
-                    .ThenInclude(c => c.Convenio)
-                .Include(o => o.Requisitos)
-                    .ThenInclude(r => r.RequisitoCirugia)
-                .Include(o => o.MedicosHonorarios)
-                    .ThenInclude(m => m.Medico)
-                .Include(o => o.MedicosHonorarios)
-                    .ThenInclude(m => m.Especialidad)
-                .Include(o => o.SolicitudesInsumos)
-                    .ThenInclude(s => s.Insumo)
-                .Include(o => o.Logs)
-                .AsQueryable();
-
-            query = ApplyFilters(query, request);
-
-            var ordenes = await query
-                .OrderByDescending(o => o.FechaHoraProgramada)
-                .ToListAsync(cancellationToken);
-
-            var cuentasIds = ordenes.Select(o => o.CuentaServicioId).Distinct().ToList();
-
-            var insumosPorCuenta = await _context.InsumosCirugiasPacientes
-                .AsNoTracking()
-                .Include(i => i.Insumo)
-                .Where(i => cuentasIds.Contains(i.CuentaServicioId))
-                .ToListAsync(cancellationToken);
-
-            return ordenes.Select(o =>
+            Id = o.Id,
+            CuentaServicioId = o.CuentaServicioId,
+            PacienteId = o.PacienteId,
+            // FIX 2: Navegación segura en Paciente
+            PacienteNombre = o.Paciente?.NombreCorto ?? "Sin Nombre",
+            PacienteCedula = o.Paciente?.CedulaPasaporte ?? string.Empty,
+            Ubicacion = new UbicacionPacienteDto
             {
-                var sedeNombre = o.CuentaServicio?.AreaClinica?.Sede?.Nombre ?? (o.SedeQuirofano?.Nombre ?? string.Empty);
-                var camaNombre = o.CuentaServicio?.CamaRetenida?.Nombre ?? (o.CuentaServicio?.AreaClinica?.Nombre ?? o.SalaQuirofano);
-                var ubicacionFormateada = !string.IsNullOrWhiteSpace(sedeNombre) && !string.IsNullOrWhiteSpace(camaNombre)
-                    ? $"{sedeNombre} - {camaNombre}"
-                    : (o.CuentaServicio?.SubAreaClinica ?? (!string.IsNullOrWhiteSpace(camaNombre) ? camaNombre : "Sin Asignar"));
-                var convenioId = o.CuentaServicio?.ConvenioId;
-                var tieneConvenio = convenioId.HasValue && convenioId.Value > 0;
-
-                return new PacienteQuirurgicoItemDto
+                AreaClinicaId = o.CuentaServicio?.AreaClinicaId,
+                AreaClinicaNombre = o.CuentaServicio?.AreaClinica?.Nombre ?? (!string.IsNullOrWhiteSpace(sedeNombre) ? sedeNombre : "Sin Asignar"),
+                CamaId = o.CuentaServicio?.CamaRetenidaId,
+                CamaNombre = camaNombre,
+                CamaCodigo = o.CuentaServicio?.CamaRetenida?.Codigo ?? string.Empty,
+                DescripcionCompleta = ubicacionFormateada
+            },
+            IngresoCobertura = new TipoIngresoCoberturaDto
+            {
+                // FIX 3: Operador seguro ?. en TipoIngresoNav
+                Tipo = o.CuentaServicio?.TipoIngresoNav?.Nombre ?? "Hospitalizacion",
+                ConvenioId = convenioId,
+                ConvenioNombre = o.CuentaServicio?.Convenio?.Nombre,
+                EsAsegurado = tieneConvenio
+            },
+            DescripcionCirugia = o.DescripcionCirugia,
+            SalaQuirofano = o.SalaQuirofano,
+            ModalidadAnestesia = o.ModalidadAnestesia,
+            EsAlquilado = o.EsAlquilado,
+            PrecioDerechoSalaUsd = o.PrecioDerechoSalaUsd,
+            PrecioBaseUsd = o.PrecioBaseUsd,
+            MedicoPrincipalId = o.MedicoId,
+            // FIX 4: Navegación segura en Medico
+            MedicoPrincipalNombre = o.Medico?.Nombre ?? "Sin Asignar",
+            FechaHoraProgramada = o.FechaHoraProgramada,
+            Estado = o.Estado,
+            FechaCreacion = o.FechaCreacion,
+            UsuarioCreacion = o.UsuarioCreacionId?.ToString() ?? "",
+            Requisitos = (o.Requisitos ?? Enumerable.Empty<OrdenCirugiaRequisito>()).Select(r => new OrdenCirugiaRequisitoDto
+            {
+                Id = r.Id,
+                RequisitoCirugiaId = r.RequisitoCirugiaId,
+                Nombre = r.RequisitoCirugia?.Nombre ?? "Requisito",
+                Descripcion = r.RequisitoCirugia?.Descripcion ?? "",
+                Cumplido = r.Cumplido,
+                FechaVerificacion = r.FechaVerificacion,
+                VerificadoPor = r.VerificadoPor
+            }).ToList(),
+            MedicosHonorarios = o.MedicosHonorarios != null && o.MedicosHonorarios.Any()
+                ? o.MedicosHonorarios.Select(m => new MedicoHonorarioItemDto
                 {
-                    Id = o.Id,
-                    CuentaServicioId = o.CuentaServicioId,
-                    PacienteId = o.PacienteId,
-                    PacienteNombre = o.Paciente.NombreCorto,
-                    PacienteCedula = o.Paciente.CedulaPasaporte,
-                    Ubicacion = new UbicacionPacienteDto
+                    Id = m.Id,
+                    MedicoId = m.MedicoId,
+                    MedicoNombre = m.Medico?.Nombre ?? "Desconocido",
+                    EspecialidadId = m.EspecialidadId,
+                    EspecialidadNombre = m.Especialidad?.Nombre ?? (m.Medico?.Especialidad?.Nombre ?? "General"),
+                    MontoHonorarioUsd = m.MontoHonorarioUsd,
+                    EsCirujanoPrincipal = m.EsCirujanoPrincipal
+                }).ToList()
+                : (o.Medico != null ? new List<MedicoHonorarioItemDto>
+                {
+                    new MedicoHonorarioItemDto
                     {
-                        AreaClinicaId = o.CuentaServicio?.AreaClinicaId,
-                        AreaClinicaNombre = o.CuentaServicio?.AreaClinica?.Nombre ?? (!string.IsNullOrWhiteSpace(sedeNombre) ? sedeNombre : "Sin Asignar"),
-                        CamaId = o.CuentaServicio?.CamaRetenidaId,
-                        CamaNombre = camaNombre,
-                        CamaCodigo = o.CuentaServicio?.CamaRetenida?.Codigo ?? string.Empty,
-                        DescripcionCompleta = ubicacionFormateada
-                    },
-                    IngresoCobertura = new TipoIngresoCoberturaDto
-                    {
-                        Tipo = o.CuentaServicio?.TipoIngresoNav.Nombre ?? "Hospitalizacion",
-                        ConvenioId = convenioId,
-                        ConvenioNombre = o.CuentaServicio?.Convenio?.Nombre,
-                        EsAsegurado = tieneConvenio
-                    },
-                    DescripcionCirugia = o.DescripcionCirugia,
-                    SalaQuirofano = o.SalaQuirofano,
-                    ModalidadAnestesia = o.ModalidadAnestesia,
-                    EsAlquilado = o.EsAlquilado,
-                    PrecioDerechoSalaUsd = o.PrecioDerechoSalaUsd,
-                    PrecioBaseUsd = o.PrecioBaseUsd,
-                    MedicoPrincipalId = o.MedicoId,
-                    MedicoPrincipalNombre = o.Medico.Nombre,
-                    FechaHoraProgramada = o.FechaHoraProgramada,
-                    Estado = o.Estado,
-                    FechaCreacion = o.FechaCreacion,
-                    UsuarioCreacion = o.UsuarioCreacionId?.ToString() ?? "",
-                    Requisitos = o.Requisitos.Select(r => new OrdenCirugiaRequisitoDto
-                    {
-                        Id = r.Id,
-                        RequisitoCirugiaId = r.RequisitoCirugiaId,
-                        Nombre = r.RequisitoCirugia?.Nombre ?? "Requisito",
-                        Descripcion = r.RequisitoCirugia?.Descripcion ?? "",
-                        Cumplido = r.Cumplido,
-                        FechaVerificacion = r.FechaVerificacion,
-                        VerificadoPor = r.VerificadoPor
-                    }).ToList(),
-                    MedicosHonorarios = o.MedicosHonorarios.Any()
-                        ? o.MedicosHonorarios.Select(m => new MedicoHonorarioItemDto
-                        {
-                            Id = m.Id,
-                            MedicoId = m.MedicoId,
-                            MedicoNombre = m.Medico?.Nombre ?? "Desconocido",
-                            EspecialidadId = m.EspecialidadId,
-                            EspecialidadNombre = m.Especialidad?.Nombre ?? (m.Medico?.Especialidad?.Nombre ?? "General"),
-                            MontoHonorarioUsd = m.MontoHonorarioUsd,
-                            EsCirujanoPrincipal = m.EsCirujanoPrincipal
-                        }).ToList()
-                        : (o.Medico != null ? new List<MedicoHonorarioItemDto>
-                        {
-                            new MedicoHonorarioItemDto
-                            {
-                                Id = Guid.NewGuid(),
-                                MedicoId = o.Medico.Id,
-                                MedicoNombre = o.Medico.Nombre,
-                                EspecialidadId = o.Medico.EspecialidadId,
-                                EspecialidadNombre = o.Medico.Especialidad?.Nombre ?? "Cirugía General",
-                                MontoHonorarioUsd = o.PrecioBaseUsd,
-                                EsCirujanoPrincipal = true
-                            }
-                        } : new List<MedicoHonorarioItemDto>()),
-                    InsumosAsignados = insumosPorCuenta
-                        .Where(i => i.CuentaServicioId == o.CuentaServicioId)
-                        .Select(i => new InsumoCirugiaConsumoDto
-                        {
-                            InsumoId = i.InsumoId,
-                            InsumoNombre = i.Insumo?.Nombre ?? "",
-                            InsumoCodigo = i.Insumo?.Codigo ?? "",
-                            CantidadEntregada = i.CantidadEntregada,
-                            CantidadDevuelta = i.CantidadDevuelta,
-                            CantidadConsumida = i.CantidadConsumida,
-                            PrecioUnitarioUsd = i.Insumo?.CostoUnitarioBaseUSD ?? 0
-                        }).ToList(),
-                    SolicitudesInsumos = o.SolicitudesInsumos.Select(s => new SolicitudInsumoDetalleDto
-                    {
-                        Id = s.Id,
-                        InsumoId = s.InsumoId,
-                        InsumoNombre = s.Insumo?.Nombre ?? "",
-                        InsumoCodigo = s.Insumo?.Codigo ?? "",
-                        CantidadSolicitada = s.CantidadSolicitada,
-                        EstadoSolicitud = s.EstadoSolicitud,
-                        FechaSolicitud = s.FechaSolicitud,
-                        UsuarioSolicitud = s.UsuarioSolicitudId?.ToString()
-                    }).ToList(),
-                    Logs = o.Logs.Select(l => new CirugiaLogDto
-                    {
-                        Id = l.Id,
-                        OrdenCirugiaId = l.OrdenCirugiaId,
-                        UsuarioId = l.UsuarioIdentityId?.ToString() ?? string.Empty,
-                        Evento = l.Evento,
-                        Detalle = l.Detalle,
-                        Timestamp = l.Timestamp
-                    }).ToList()
-                };
-            }).ToList();
-        }
+                        Id = Guid.NewGuid(),
+                        MedicoId = o.Medico.Id,
+                        MedicoNombre = o.Medico.Nombre,
+                        EspecialidadId = o.Medico.EspecialidadId,
+                        EspecialidadNombre = o.Medico.Especialidad?.Nombre ?? "Cirugía General",
+                        MontoHonorarioUsd = o.PrecioBaseUsd,
+                        EsCirujanoPrincipal = true
+                    }
+                } : new List<MedicoHonorarioItemDto>()),
+            InsumosAsignados = insumosPorCuenta
+                .Where(i => i.CuentaServicioId == o.CuentaServicioId)
+                .Select(i => new InsumoCirugiaConsumoDto
+                {
+                    InsumoId = i.InsumoId,
+                    InsumoNombre = i.Insumo?.Nombre ?? "",
+                    InsumoCodigo = i.Insumo?.Codigo ?? "",
+                    CantidadEntregada = i.CantidadEntregada,
+                    CantidadDevuelta = i.CantidadDevuelta,
+                    CantidadConsumida = i.CantidadConsumida,
+                    PrecioUnitarioUsd = i.Insumo?.CostoUnitarioBaseUSD ?? 0
+                }).ToList(),
+            SolicitudesInsumos = (o.SolicitudesInsumos ?? Enumerable.Empty<SolicitudInsumoCirugia>()).Select(s => new SolicitudInsumoDetalleDto
+            {
+                Id = s.Id,
+                InsumoId = s.InsumoId,
+                InsumoNombre = s.Insumo?.Nombre ?? "",
+                InsumoCodigo = s.Insumo?.Codigo ?? "",
+                CantidadSolicitada = s.CantidadSolicitada,
+                EstadoSolicitud = s.EstadoSolicitud,
+                FechaSolicitud = s.FechaSolicitud,
+                UsuarioSolicitud = s.UsuarioSolicitudId?.ToString() ?? string.Empty
+            }).ToList(),
+            Logs = (o.Logs ?? Enumerable.Empty<CirugiaLog>()).Select(l => new CirugiaLogDto
+            {
+                Id = l.Id,
+                OrdenCirugiaId = l.OrdenCirugiaId,
+                UsuarioId = l.UsuarioIdentityId?.ToString() ?? string.Empty,
+                Evento = l.Evento,
+                Detalle = l.Detalle,
+                Timestamp = l.Timestamp
+            }).ToList()
+        };
+    }).ToList();
+}
 
         private static IQueryable<OrdenCirugia> ApplyFilters(
             IQueryable<OrdenCirugia> query,

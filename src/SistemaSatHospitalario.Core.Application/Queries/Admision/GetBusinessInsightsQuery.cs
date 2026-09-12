@@ -8,8 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 using SistemaSatHospitalario.Core.Domain.Constants;
+using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 
 namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 {
@@ -305,6 +307,17 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
 
                     var userMap = await _userResolver.GetDisplayNameMapAsync(auditUserIds, cancellationToken);
 
+                    // Mapeo de Camas y Sedes para auditoría de traslados
+                    var hasTraslado = rawAudits.Any(a => string.Equals(a.ActionType, "TRASLADO_AREA", StringComparison.OrdinalIgnoreCase));
+                    Dictionary<Guid, AreaClinica>? camasMap = null;
+                    if (hasTraslado && _context.AreasClinicas != null)
+                    {
+                        camasMap = await _context.AreasClinicas
+                            .Include(a => a.Sede)
+                            .AsNoTracking()
+                            .ToDictionaryAsync(a => a.Id, cancellationToken);
+                    }
+
                     var recentAudits = rawAudits
                         .Select(a =>
                         {
@@ -318,11 +331,13 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                                 ? nombre
                                 : "admin";
 
+                            var descripcion = FormatAuditDescription(actType, a.NewValue, a.OldValue, camasMap);
+
                             return new DashboardAuditEntryDto
                             {
                                 Modulo = mod,
                                 Timestamp = a.Timestamp,
-                                Descripcion = $"{actType}: {a.NewValue ?? a.OldValue ?? "Registro actualizado"}",
+                                Descripcion = descripcion,
                                 Usuario = usuario,
                                 TipoEvento = actType
                             };
@@ -387,6 +402,42 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             }
 
             return response;
+        }
+
+        private static string FormatAuditDescription(string actType, string? rawNewValue, string? rawOldValue, Dictionary<Guid, AreaClinica>? camasMap)
+        {
+            if (string.Equals(actType, "TRASLADO_AREA", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(rawNewValue) && camasMap != null)
+            {
+                var text = rawNewValue;
+                // Detectar si contiene Cama: <GUID>
+                var match = Regex.Match(text, @"Cama:\s*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})");
+                if (match.Success && Guid.TryParse(match.Groups[1].Value, out var camaGuid))
+                {
+                    if (camasMap.TryGetValue(camaGuid, out var camaObj) && camaObj != null)
+                    {
+                        var sedeNom = camaObj.Sede?.Nombre ?? "Sede General";
+                        var camaNom = camaObj.Nombre;
+                        text = Regex.Replace(text, @"AreaDestino:[^,]+,", $"AreaDestino: {sedeNom},");
+                        text = text.Replace(match.Value, $"Cama: {camaNom}");
+                    }
+                }
+                else
+                {
+                    // Detectar si AreaDestino tiene el nombre de una cama en lugar del nombre de la Sede
+                    foreach (var c in camasMap.Values)
+                    {
+                        if (!string.IsNullOrWhiteSpace(c.Nombre) && text.Contains($"AreaDestino: {c.Nombre}"))
+                        {
+                            var sedeNom = c.Sede?.Nombre ?? "Sede General";
+                            text = text.Replace($"AreaDestino: {c.Nombre}", $"AreaDestino: {sedeNom}");
+                            break;
+                        }
+                    }
+                }
+                return $"{actType}: {text}";
+            }
+
+            return $"{actType}: {rawNewValue ?? rawOldValue ?? "Registro actualizado"}";
         }
     }
 }

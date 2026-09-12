@@ -16,7 +16,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public string TipoIngreso { get; set; } = string.Empty;
         public int? ConvenioId { get; set; }
         public string? OrigenCarga { get; set; } // "Enfermeria", "Hospitalizacion", "UCI", "Emergencia", etc.
-        public string? UsuarioCarga { get; set; }
         public List<ServicioMasivoItemDto> Items { get; set; } = new List<ServicioMasivoItemDto>();
     }
 
@@ -41,15 +40,18 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly IRequestHandler<CargarServicioACuentaCommand, CargarServicioResult> _singleHandler;
         private readonly IApplicationDbContext _context;
         private readonly ILogger<CargarServiciosMasivoCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
 
         public CargarServiciosMasivoCommandHandler(
             IRequestHandler<CargarServicioACuentaCommand, CargarServicioResult> singleHandler,
             IApplicationDbContext context,
-            ILogger<CargarServiciosMasivoCommandHandler> logger)
+            ILogger<CargarServiciosMasivoCommandHandler> logger,
+            ICurrentUserService currentUserService)
         {
             _singleHandler = singleHandler;
             _context = context;
             _logger = logger;
+            _currentUserService = currentUserService;
         }
 
         public async Task<List<CargarServicioResult>> Handle(CargarServiciosMasivoCommand request, CancellationToken cancellationToken)
@@ -59,7 +61,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             
             var results = new List<CargarServicioResult>();
             
-            using var transaction = await _context.BeginTransactionAsync(cancellationToken);
             try
             {
                 for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
@@ -78,7 +79,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         Honorario = item.Honorario,
                         Cantidad = item.Cantidad,
                         TipoServicio = item.TipoServicio,
-                        UsuarioCarga = request.UsuarioCarga ?? "NursingAssistant",
+                        UsuarioOperadorId = _currentUserService.UserId,
                         MedicoId = item.MedicoId,
                         HoraCita = item.HoraCita,
                         AreaClinicaId = item.AreaClinicaId,
@@ -93,25 +94,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     results.Add(res);
                 }
 
-                if (transaction != null)
-                {
-                    await transaction.CommitAsync(cancellationToken);
-                }
-
                 _logger.LogInformation("Carga masiva completada exitosamente. Total cargados: {Count}", results.Count);
                 return results;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Error durante la carga masiva para paciente {PacienteId}, cuenta {CuentaId}, tras procesar {ProcessedCount} items. Revirtiendo transacción.",
+                    "Error durante la carga masiva para paciente {PacienteId}, cuenta {CuentaId}, tras procesar {ProcessedCount} items.",
                     request.PacienteId,
                     request.CuentaId,
                     results.Count);
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
                 throw;
             }
         }

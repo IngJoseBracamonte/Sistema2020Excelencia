@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Common.Interfaces;
 using SistemaSatHospitalario.Core.Application.DTOs.Admision;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 
@@ -16,10 +17,12 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
     public class ReceivablesController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ReceivablesController(IMediator mediator)
+        public ReceivablesController(IMediator mediator, ICurrentUserService currentUserService)
         {
             _mediator = mediator;
+            _currentUserService = currentUserService;
         }
 
         [HttpGet("Pending")]
@@ -52,7 +55,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             try
             {
-                command.UsuarioCarga = User.Identity?.Name ?? "Sistama";
+                command.UsuarioCarga = _currentUserService.UserId;
                 var success = await _mediator.Send(command);
                 return Ok(new { Message = "Cobro procesado exitosamente.", Success = success });
             }

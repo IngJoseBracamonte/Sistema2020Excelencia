@@ -41,8 +41,22 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
             ServicioClinico? baseService, 
             CancellationToken cancellationToken)
         {
-            Guid? citaAreaClinicaId = request.AreaClinicaId;
-            if (!string.IsNullOrEmpty(request.OrigenCarga) && request.OrigenCarga.StartsWith("ENFERMERIA", StringComparison.OrdinalIgnoreCase))
+            Guid? citaAreaClinicaId = null;
+            if (request.AreaClinicaId.HasValue && request.AreaClinicaId.Value != Guid.Empty)
+            {
+                var areaDirecta = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Id == request.AreaClinicaId.Value, cancellationToken);
+                if (areaDirecta != null)
+                {
+                    citaAreaClinicaId = areaDirecta.Id;
+                }
+                else
+                {
+                    var areaSede = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.SedeId == request.AreaClinicaId.Value, cancellationToken);
+                    citaAreaClinicaId = areaSede?.Id;
+                }
+            }
+
+            if (!citaAreaClinicaId.HasValue && !string.IsNullOrEmpty(request.OrigenCarga) && request.OrigenCarga.StartsWith("ENFERMERIA", StringComparison.OrdinalIgnoreCase))
             {
                 var areaEnf = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.Codigo == "ENFERMERIA", cancellationToken);
                 if (areaEnf == null)
@@ -52,6 +66,14 @@ namespace SistemaSatHospitalario.Core.Application.Common.Strategies
                     await _context.SaveChangesAsync(cancellationToken);
                 }
                 citaAreaClinicaId = areaEnf.Id;
+            }
+
+            if (!citaAreaClinicaId.HasValue && cuenta.AreaClinicaId.HasValue)
+            {
+                if (await _context.AreasClinicas.AnyAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken))
+                {
+                    citaAreaClinicaId = cuenta.AreaClinicaId;
+                }
             }
 
             // Bifurcación: Facturación (HoraCita programada) vs Enfermería/Demanda (HoraCita == null)

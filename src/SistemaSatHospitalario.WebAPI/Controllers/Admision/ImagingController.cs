@@ -25,18 +25,22 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         private readonly IHonorariumMapperService _mapperService;
         private readonly INotificationService _notificationService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IAreaClinicaValidationService _areaClinicaValidationService;
+
         public ImagingController(
             IApplicationDbContext context, 
             IHubContext<DashboardHub> hubContext, 
             IHonorariumMapperService mapperService,
             INotificationService notificationService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IAreaClinicaValidationService areaClinicaValidationService)
         {
             _context = context;
             _hubContext = hubContext;
             _mapperService = mapperService;
             _notificationService = notificationService;
             _currentUserService = currentUserService;
+            _areaClinicaValidationService = areaClinicaValidationService;
         }
 
         [HttpGet("pending")]
@@ -55,7 +59,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                                     OrderId = o.Id,
                                     CuentaId = o.CuentaId,
                                     PacienteId = o.PacienteId,
-                                    PacienteNombre = p != null && !string.IsNullOrEmpty(p.NombreCorto),
+                                    PacienteNombre =p.NombreCompleto,
                                     PacienteCedula = p != null ? p.CedulaPasaporte : "N/A",
                                     Estudio = o.Estudio,
                                     TipoServicio = o.TipoServicio,
@@ -226,7 +230,10 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 if (detalle != null)
                 {
                     // 1. Marcar como realizado (el asistente aceptó el estudio)
-                    detalle.MarcarRealizado(_currentUserService.UserId);
+                    if (_currentUserService.UserId.HasValue)
+                    {
+                        detalle.MarcarRealizado(_currentUserService.UserId.Value);
+                    }
 
                     var categoria = await _mapperService.MapToCategoryAsync(order.TipoServicio);
 
@@ -511,7 +518,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             var servicio = await _context.ServiciosClinicos.FindAsync(request.ServicioId);
             if (servicio == null) return BadRequest(new { Message = "El servicio clínico especificado no existe en el catálogo." });
 
-            var usuario = User.Identity?.Name ?? "Sistema";
+            var usuario = _currentUserService.UserName ?? "Sistema";
+            Guid? usuarioCargaGuid = null;
+            if (Guid.TryParse(usuario, out var parsedGuid))
+            {
+                usuarioCargaGuid = parsedGuid;
+            }
+
+            // Validar que el AreaClinicaId existe en la base de datos si se proporciona
+            if (request.AreaClinicaId.HasValue)
+            {
+                await _areaClinicaValidationService.ValidateAreaClinicaExistsOrThrowAsync(request.AreaClinicaId);
+            }
 
             CuentaServicios? cuenta = null;
             if (request.CuentaId.HasValue && request.CuentaId.Value != Guid.Empty)
@@ -536,7 +554,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 if (cuenta == null)
                 {
                     // Crear nueva cuenta si no hay una reutilizable
-                    cuenta = new CuentaServicios(order.PacienteId, usuario, targetTipo, request.ConvenioId);
+                    cuenta = new CuentaServicios(order.PacienteId, targetTipo, request.ConvenioId, null, null, null, usuarioCargaGuid);
                     _context.CuentasServicios.Add(cuenta);
                 }
             }
@@ -552,8 +570,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
                 honorario,
                 1,
                 order.TipoServicio,
-                usuario,
-                servicio.LegacyMappingId
+                usuarioCargaGuid,
+                servicio.LegacyMappingId,
+                request.AreaClinicaId // Usar el AreaClinicaId del request
             );
 
             // Sincronizar el nombre del estudio de la orden con la descripción del catálogo oficial
@@ -670,6 +689,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         public int? ConvenioId { get; set; }
         public Guid? MedicoSolicitanteId { get; set; }
         public string? MedicoSolicitanteNombre { get; set; }
+        public Guid? AreaClinicaId { get; set; } // ID del área clínica (cama) donde se realiza el servicio
     }
 
     public class UpdateInformeRequest

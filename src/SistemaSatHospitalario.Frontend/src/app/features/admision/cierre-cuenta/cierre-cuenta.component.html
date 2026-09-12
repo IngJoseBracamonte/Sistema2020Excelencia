@@ -1252,7 +1252,20 @@
                     </div>
                 </div>
 
-                <div *ngIf="type() === 'Emergencia' || type() === 'Hospitalizacion'" class="border-t border-white/5 pt-4 flex justify-end">
+                <div *ngIf="type() === 'Emergencia' || type() === 'Hospitalizacion'" class="border-t border-white/5 pt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest block">Condición y Destino Final de Egreso</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] text-slate-400 font-bold">Destino del Paciente:</span>
+                            <select [ngModel]="destinoPaciente()" (ngModelChange)="destinoPaciente.set($event)"
+                                class="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white uppercase focus:outline-none focus:border-rose-500">
+                                <option value="Alta Médica">Alta Médica</option>
+                                <option value="Hospitalización">Hospitalización</option>
+                                <option value="UCI">UCI</option>
+                                <option value="Traslado a Otra Institución">Traslado a Otra Institución</option>
+                            </select>
+                        </div>
+                    </div>
                     <button (click)="procesarCierre()" [disabled]="isLoading()"
                         class="w-full md:w-auto px-8 py-4 bg-primary hover:bg-rose-600 text-white rounded-[1.2rem] font-black uppercase text-[10px] tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all disabled:opacity-50 min-h-[48px]">
                         {{ isLoading() ? 'Procesando...' : 'Procesar Traslado y Egreso' }}

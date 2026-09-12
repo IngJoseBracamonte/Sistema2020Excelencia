@@ -25,7 +25,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public decimal Honorario { get; set; }
         public decimal Cantidad { get; set; }
         public string TipoServicio { get; set; } = string.Empty; // Medico, RX, Laboratorio, Insumo
-        public string UsuarioCarga { get; set; } = string.Empty;
+
         public string? SupervisorKey { get; set; } // V1.0 Security Matrix
         public bool IsPrivilegedUser { get; set; } // V1.0 Security Matrix
         public decimal? PrecioModificado { get; set; }
@@ -67,6 +67,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         private readonly ILogger<CargarServicioACuentaCommandHandler> _logger;
         private readonly Common.Strategies.IServiceLoadingStrategyFactory _strategyFactory;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IAreaClinicaValidationService _areaClinicaValidationService;
 
         public CargarServicioACuentaCommandHandler(
      IBillingRepository repository,
@@ -76,7 +77,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
      IInventoryService inventoryService,
      ILegacyLabRepository legacyRepository,
      ILogger<CargarServicioACuentaCommandHandler> logger,
-     ICurrentUserService currentUserService, // <-- Movido aquí
+     ICurrentUserService currentUserService,
+     IAreaClinicaValidationService areaClinicaValidationService,
      Common.Strategies.IServiceLoadingStrategyFactory? strategyFactory = null,
      IMediator? mediator = null)
         {
@@ -87,6 +89,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             _inventoryService = inventoryService;
             _logger = logger;
             _currentUserService = currentUserService;
+            _areaClinicaValidationService = areaClinicaValidationService ?? throw new ArgumentNullException(nameof(areaClinicaValidationService));
 
             if (strategyFactory != null)
             {
@@ -99,8 +102,8 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         {
             new Common.Strategies.ConsultationLoadingStrategy(repository, context, med),
             new Common.Strategies.LegacyLabLoadingStrategy(legacyRepository, context, new Microsoft.Extensions.Logging.Abstractions.NullLogger<Common.Strategies.LegacyLabLoadingStrategy>(), med),
-            new Common.Strategies.ImagingLoadingStrategy(externaService, context, med),
-            new Common.Strategies.InventoryLoadingStrategy(),
+            new Common.Strategies.ImagingLoadingStrategy(externaService, context, med, _currentUserService),
+            new Common.Strategies.InventoryLoadingStrategy(),   
             new Common.Strategies.OperatingRoomLoadingStrategy(),
             new Common.Strategies.FallbackLoadingStrategy()
         };
@@ -137,6 +140,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             // 3. Asegurar cuenta activa usando el GUID local
             var cuenta = await GetOrCreateCuentaAsync(paciente.Id, request, cancellationToken);
+
+            // 3.1. Validar que el AreaClinicaId existe en la base de datos si se proporciona
+            if (request.AreaClinicaId.HasValue)
+            {
+                await _areaClinicaValidationService.ValidateAreaClinicaExistsOrThrowAsync(request.AreaClinicaId, cancellationToken);
+            }
 
             // Senior Enrichment: Capturar LegacyMappingId del catálogo (V12.2)
             string? legacyId = null;
@@ -250,6 +259,25 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
             }
 
+            Guid? effectiveAreaClinicaId = null;
+            if (request.AreaClinicaId.HasValue && request.AreaClinicaId.Value != Guid.Empty)
+            {
+                var existsInAreas = await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == request.AreaClinicaId.Value, cancellationToken);
+                if (existsInAreas)
+                {
+                    effectiveAreaClinicaId = request.AreaClinicaId.Value;
+                }
+                else
+                {
+                    var areaDeSede = await _context.AreasClinicas.AsNoTracking().FirstOrDefaultAsync(a => a.SedeId == request.AreaClinicaId.Value, cancellationToken);
+                    effectiveAreaClinicaId = areaDeSede?.Id ?? (cuenta.AreaClinicaId.HasValue && await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken) ? cuenta.AreaClinicaId : null);
+                }
+            }
+            else if (cuenta.AreaClinicaId.HasValue && await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken))
+            {
+                effectiveAreaClinicaId = cuenta.AreaClinicaId;
+            }
+
             var detalle = cuenta.AgregarServicio(
                 esLab ? Guid.Empty : (Guid.TryParse(request.ServicioId, out var g) ? g : Guid.Empty), 
                 request.Descripcion, 
@@ -257,9 +285,9 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 finalHonorario,
                 finalCantidad, 
                 tipoServicioEfectivo,
-                request.UsuarioCarga,
+                _currentUserService.UserId,
                 legacyId,
-                request.AreaClinicaId,
+                effectiveAreaClinicaId,
                 baseService?.TipoServicioId > 0 ? baseService.TipoServicioId : null);
 
             if (_context.DetallesServicioCuenta != null)
@@ -427,11 +455,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (config == null || config.ClaveSupervisor != request.SupervisorKey)
                 {
                     _logger.LogWarning("[SEC-WARN] Intento de modificación de precio no autorizado por {Usuario}. Esperado: {Orig}, Enviado: {New}",
-                        request.UsuarioCarga, expectedPrecio, request.Precio);
+                        _currentUserService.UserId, expectedPrecio, request.Precio);
                     throw new InvalidOperationException("La modificación de precios requiere una Clave de Supervisor válida.");
                 }
                 _logger.LogInformation("[SEC] Precio modificado por {Usuario} con Clave de Supervisor válida. Original: {Orig}, Nuevo: {New}", 
-                    request.UsuarioCarga, expectedPrecio, request.Precio);
+                    _currentUserService.UserId, expectedPrecio, request.Precio);
             }
         }
 
@@ -519,7 +547,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
 
             if (cuenta == null)
             {
-                cuenta = new CuentaServicios(pacienteId, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
+                cuenta = new CuentaServicios(pacienteId, request.TipoIngreso, request.ConvenioId, request.AreaClinicaId, null, request.MedicoId, _currentUserService.UserId);
                 await _repository.AgregarCuentaAsync(cuenta, ct);
             }
             return cuenta;
@@ -540,7 +568,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 horaNormalizada = horaNormalizada.AddMinutes(1);
             }
 
-            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, request.AreaClinicaId);
+            Guid? safeAreaId = null;
+            if (request.AreaClinicaId.HasValue && request.AreaClinicaId.Value != Guid.Empty)
+            {
+                var isArea = await _context.AreasClinicas.AnyAsync(a => a.Id == request.AreaClinicaId.Value, ct);
+                if (isArea)
+                {
+                    safeAreaId = request.AreaClinicaId.Value;
+                }
+                else
+                {
+                    var areaSede = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.SedeId == request.AreaClinicaId.Value, ct);
+                    safeAreaId = areaSede?.Id;
+                }
+            }
+
+            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, safeAreaId);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
         }
 

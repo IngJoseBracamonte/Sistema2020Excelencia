@@ -14,7 +14,8 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Inventario
 {
     [Authorize(Roles = AuthorizationConstants.AdminRoles + "," + AuthorizationConstants.Supervisor)]
     [ApiController]
-    [Route("api/Inventario/[controller]")]
+    // Se estandariza a minúsculas y se usa 'inventory' como recurso base
+    [Route("api/inventory/reposicion")] 
     public class ReposicionController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -49,7 +50,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Inventario
         /// <summary>
         /// Obtiene el historial de reposiciones y transferencias de insumos con filtros.
         /// </summary>
-        [HttpGet("Historial")]
+        [HttpGet("historial")] // Ruta del endpoint en minúsculas
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetHistorial([FromQuery] Guid? sedeId, [FromQuery] Guid? insumoId, [FromQuery] DateTime? fechaDesde, [FromQuery] DateTime? fechaHasta, [FromQuery] string? motivo)
         {

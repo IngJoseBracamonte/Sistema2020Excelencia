@@ -12,7 +12,6 @@ namespace SistemaSatHospitalario.Core.Application.Common.Interfaces
         string Descripcion { get; }
         decimal Precio { get; }
         decimal Honorario { get; }
-        string UsuarioCarga { get; }
         string? SupervisorKey { get; }
         Guid? UsuarioOperadorId { get; }
     }

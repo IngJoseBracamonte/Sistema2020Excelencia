@@ -4,7 +4,7 @@
 # ═══════════════════════════════════════════════════════════
 
 # Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
 # Copiar csproj y restaurar dependencias (cache layer optimization)
@@ -21,12 +21,21 @@ COPY . .
 WORKDIR "/app/SistemaSatHospitalario.WebAPI"
 RUN dotnet build "SistemaSatHospitalario.WebAPI.csproj" -c Release -o /app/build
 
+# Stage Dev: Auto-reload with dotnet watch for local live updates
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "watch", "--project", "SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj", "run", "--no-launch-profile", "--urls", "http://0.0.0.0:8080"]
+
 # Stage 2: Publish
 FROM build AS publish
 RUN dotnet publish "SistemaSatHospitalario.WebAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 3: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 
 LABEL maintainer="SistemaSatHospitalario" \
       description="Hospital System WebAPI" \

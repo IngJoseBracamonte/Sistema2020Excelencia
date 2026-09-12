@@ -177,7 +177,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 if (cuenta == null)
                 {
                     _logger.LogInformation("[SYNC] Creando NUEVO INGRESO para el paciente {PacienteId}", paciente.Id);
-                    cuenta = new CuentaServicios(paciente.Id, request.UsuarioCarga, request.TipoIngreso, request.ConvenioId);
+                    cuenta = new CuentaServicios(paciente.Id, request.TipoIngreso, request.ConvenioId,null,null,null,_currentUserService.UserId);
                     await _repository.AgregarCuentaAsync(cuenta, ct);
                 }
                 else
@@ -435,7 +435,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         finalHonorario,
                         item.Cantidad, 
                         item.TipoServicio, 
-                        request.UsuarioCarga,
+                        _currentUserService.UserId,
                         legacyId);
 
                     if (_context.DetallesServicioCuenta != null)
@@ -460,7 +460,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                                 Honorario = item.Honorario,
                                 Cantidad = item.Cantidad,
                                 TipoServicio = item.TipoServicio,
-                                UsuarioCarga = request.UsuarioCarga,
+                                UsuarioOperadorId = _currentUserService.UserId,
                                 MedicoId = item.MedicoId,
                                 HoraCita = item.HoraCita,
                                 RequiereInforme = item.RequiereInforme,

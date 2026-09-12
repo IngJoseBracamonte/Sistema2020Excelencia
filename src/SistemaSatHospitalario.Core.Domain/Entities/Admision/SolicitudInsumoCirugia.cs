@@ -24,9 +24,9 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
         public string? Observaciones { get; private set; }
 
         // Navegación
-        public virtual OrdenCirugia OrdenCirugia { get; private set; }
-        public virtual Insumo Insumo { get; private set; }
-        public virtual Sede AlmacenOrigen { get; private set; }
+        public virtual OrdenCirugia OrdenCirugia { get; private set; } = null!;
+        public virtual Insumo Insumo { get; private set; } = null!;
+        public virtual Sede AlmacenOrigen { get; private set; } = null!;
 
         protected SolicitudInsumoCirugia() { }
 
@@ -56,8 +56,23 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             AlmacenOrigenId = almacenOrigenId;
             EstadoSolicitud = EstadoSolicitudInsumoConstants.Pendiente;
             FechaSolicitud = DateTime.UtcNow;
-            UsuarioSolicitudId = Guid.Parse(usuarioSolicitud);
+            
+            // Parse seguro: si viene un Guid lo asigna; si viene un texto ("admin") no tumba la ejecución
+            UsuarioSolicitudId = Guid.TryParse(usuarioSolicitud, out var parsedId) ? parsedId : null;
             Observaciones = observaciones?.Trim();
+        }
+
+        // Sobrecarga recomendada cuando ya dispones del Guid del usuario (ICurrentUserService)
+        public SolicitudInsumoCirugia(
+            Guid ordenCirugiaId,
+            Guid insumoId,
+            decimal cantidadSolicitada,
+            Guid almacenOrigenId,
+            Guid usuarioSolicitudId,
+            string? observaciones = null)
+            : this(ordenCirugiaId, insumoId, cantidadSolicitada, almacenOrigenId, usuarioSolicitudId.ToString(), observaciones)
+        {
+            UsuarioSolicitudId = usuarioSolicitudId;
         }
 
         public void Despachar(string usuarioDespacho)
@@ -67,7 +82,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             EstadoSolicitud = EstadoSolicitudInsumoConstants.Despachado;
             FechaDespacho = DateTime.UtcNow;
-            UsuarioDespachoId = Guid.Parse(usuarioDespacho);
+            UsuarioDespachoId = Guid.TryParse(usuarioDespacho, out var parsedId) ? parsedId : null;
+        }
+
+        public void Despachar(Guid usuarioDespachoId)
+        {
+            Despachar(usuarioDespachoId.ToString());
+            UsuarioDespachoId = usuarioDespachoId;
         }
 
         public void Rechazar(string usuarioDespacho, string motivo)
@@ -77,8 +98,14 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
             EstadoSolicitud = EstadoSolicitudInsumoConstants.Rechazado;
             FechaDespacho = DateTime.UtcNow;
-            UsuarioDespachoId = Guid.Parse(usuarioDespacho);
+            UsuarioDespachoId = Guid.TryParse(usuarioDespacho, out var parsedId) ? parsedId : null;
             Observaciones = string.IsNullOrWhiteSpace(Observaciones) ? motivo : $"{Observaciones} | Rechazo: {motivo}";
+        }
+
+        public void Rechazar(Guid usuarioDespachoId, string motivo)
+        {
+            Rechazar(usuarioDespachoId.ToString(), motivo);
+            UsuarioDespachoId = usuarioDespachoId;
         }
     }
 

@@ -1,57 +1,78 @@
 using System;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
+using SistemaSatHospitalario.Core.Domain.Enums;
 
 namespace SistemaSatHospitalario.Core.Domain.State
 {
     /// <summary>
-    /// Contrato del Patrón State para encapsular la lógica de transiciones de ciclo de vida de una cirugía.
+    /// Contrato del Patrón State para el ciclo de vida de una cirugía.
+    /// Recibe Guid? directamente de ICurrentUserService.UserId y valida que el usuario esté autenticado.
     /// </summary>
     public interface ICirugiaState
     {
         string NombreEstado { get; }
-        void IniciarEspera(OrdenCirugia cirugia, string usuarioId);
-        void IniciarCirugia(OrdenCirugia cirugia, string usuarioId);
-        void FinalizarCirugia(OrdenCirugia cirugia, string usuarioId);
-        void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, string usuarioId);
-        void Cancelar(OrdenCirugia cirugia, string motivo, string usuarioId);
+        void IniciarEspera(OrdenCirugia cirugia, Guid? usuarioId);
+        void IniciarCirugia(OrdenCirugia cirugia, Guid? usuarioId);
+        void FinalizarCirugia(OrdenCirugia cirugia, Guid? usuarioId);
+        void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, Guid? usuarioId);
+        void Cancelar(OrdenCirugia cirugia, string motivo, Guid? usuarioId);
     }
 
     public abstract class BaseCirugiaState : ICirugiaState
     {
         public abstract string NombreEstado { get; }
 
-        public virtual void IniciarEspera(OrdenCirugia cirugia, string usuarioId)
+        /// <summary>
+        /// Valida que el Guid? proveniente de ICurrentUserService sea válido y pertenezca a un usuario autenticado.
+        /// </summary>
+        protected static Guid ValidarUsuarioAutenticado(Guid? usuarioId)
         {
-            throw new InvalidOperationException($"Solo se puede ingresar a sala de espera en estado Pendiente de Ejecución / Programada.");
+            if (!usuarioId.HasValue || usuarioId.Value == Guid.Empty)
+            {
+                throw new InvalidOperationException("Operación quirúrgica denegada: se requiere un usuario autenticado en el sistema.");
+            }
+
+            return usuarioId.Value;
         }
 
-        public virtual void IniciarCirugia(OrdenCirugia cirugia, string usuarioId)
+        public virtual void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, Guid? usuarioId)
         {
-            throw new InvalidOperationException($"Solo se puede iniciar una cirugía en estado Pendiente de Ejecución / Programada o En Espera.");
-        }
+            var id = ValidarUsuarioAutenticado(usuarioId);
 
-        public virtual void FinalizarCirugia(OrdenCirugia cirugia, string usuarioId)
-        {
-            throw new InvalidOperationException($"Solo se puede completar / finalizar una cirugía que está En Proceso / En Cirugía.");
-        }
-
-        public virtual void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, string usuarioId)
-        {
             if (string.IsNullOrWhiteSpace(motivo))
                 throw new ArgumentException("El motivo u observación es obligatorio para reprogramar una cirugía.", nameof(motivo));
 
-            cirugia.ActualizarFechaYMotivoReprogramacion(nuevaFecha, motivo, usuarioId);
+            cirugia.ActualizarFechaYMotivoReprogramacion(nuevaFecha, motivo, id);
         }
 
-        public virtual void Cancelar(OrdenCirugia cirugia, string motivo, string usuarioId)
+        public virtual void Cancelar(OrdenCirugia cirugia, string motivo, Guid? usuarioId)
         {
+            var id = ValidarUsuarioAutenticado(usuarioId);
+
             if (string.IsNullOrWhiteSpace(motivo))
                 throw new ArgumentException("El motivo de cancelación es obligatorio.", nameof(motivo));
 
             cirugia.SetEstadoInternal(EstadoCirugiaConstants.Cancelada, new CanceladaState());
             cirugia.MotivoCancelacionInternal(motivo);
-            cirugia.AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado, $"Cirugía cancelada desde {NombreEstado}. Motivo: {motivo}");
-            cirugia.AgregarHistorialObservacion($"Cirugía cancelada desde {NombreEstado}. Motivo: {motivo}", "Cancelacion", usuarioId);
+
+            var idStr = id.ToString();
+            cirugia.AgregarLog(idStr, CirugiaEventoConstants.TransicionEstado, $"Cirugía cancelada desde {NombreEstado}. Motivo: {motivo}");
+            cirugia.AgregarHistorialObservacion($"Cirugía cancelada desde {NombreEstado}. Motivo: {motivo}", TipoObservacionCirugiaConstants.Cancelacion, id);
+        }
+
+        public virtual void IniciarEspera(OrdenCirugia cirugia, Guid? usuarioId)
+        {
+            throw new InvalidOperationException($"No se puede ingresar a sala de espera desde el estado actual ({NombreEstado}). Solo permitido desde Programada.");
+        }
+
+        public virtual void IniciarCirugia(OrdenCirugia cirugia, Guid? usuarioId)
+        {
+            throw new InvalidOperationException($"No se puede iniciar la cirugía desde el estado actual ({NombreEstado}). Solo permitido desde Programada o En Espera.");
+        }
+
+        public virtual void FinalizarCirugia(OrdenCirugia cirugia, Guid? usuarioId)
+        {
+            throw new InvalidOperationException($"Solo se puede completar / finalizar una cirugía que está En Proceso / En Cirugía.");
         }
     }
 
@@ -59,18 +80,24 @@ namespace SistemaSatHospitalario.Core.Domain.State
     {
         public override string NombreEstado => EstadoCirugiaConstants.Programada;
 
-        public override void IniciarEspera(OrdenCirugia cirugia, string usuarioId)
+        public override void IniciarEspera(OrdenCirugia cirugia, Guid? usuarioId)
         {
+            var id = ValidarUsuarioAutenticado(usuarioId);
+            var idStr = id.ToString();
+
             cirugia.SetEstadoInternal(EstadoCirugiaConstants.EnEspera, new EnEsperaState());
-            cirugia.AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado, $"Paso de Programada a EnEspera");
-            cirugia.AgregarHistorialObservacion("Paciente ingresado a sala de espera pre-quirúrgica.", "CambioEstado", usuarioId);
+            cirugia.AgregarLog(idStr, CirugiaEventoConstants.TransicionEstado, "Paso de Programada a EnEspera");
+            cirugia.AgregarHistorialObservacion("Paciente ingresado a sala de espera pre-quirúrgica.", TipoObservacionCirugiaConstants.ObservacionMedica,  id);
         }
 
-        public override void IniciarCirugia(OrdenCirugia cirugia, string usuarioId)
+        public override void IniciarCirugia(OrdenCirugia cirugia, Guid? usuarioId)
         {
+            var id = ValidarUsuarioAutenticado(usuarioId);
+            var idStr = id.ToString();
+
             cirugia.SetEstadoInternal(EstadoCirugiaConstants.EnCirugia, new EnCirugiaState());
-            cirugia.AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado, $"Paso de Programada a EnCirugia");
-            cirugia.AgregarHistorialObservacion("Cirugía iniciada directamente desde Programada.", "CambioEstado", usuarioId);
+            cirugia.AgregarLog(idStr, CirugiaEventoConstants.TransicionEstado, "Paso de Programada a EnCirugia");
+            cirugia.AgregarHistorialObservacion("Cirugía iniciada directamente desde Programada.", TipoObservacionCirugiaConstants.ObservacionMedica,id);
         }
     }
 
@@ -78,11 +105,14 @@ namespace SistemaSatHospitalario.Core.Domain.State
     {
         public override string NombreEstado => EstadoCirugiaConstants.EnEspera;
 
-        public override void IniciarCirugia(OrdenCirugia cirugia, string usuarioId)
+        public override void IniciarCirugia(OrdenCirugia cirugia, Guid? usuarioId)
         {
+            var id = ValidarUsuarioAutenticado(usuarioId);
+            var idStr = id.ToString();
+
             cirugia.SetEstadoInternal(EstadoCirugiaConstants.EnCirugia, new EnCirugiaState());
-            cirugia.AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado, $"Paso de EnEspera a EnCirugia");
-            cirugia.AgregarHistorialObservacion("Paciente trasladado a pabellón e inicio de cirugía.", "CambioEstado", usuarioId);
+            cirugia.AgregarLog(idStr, CirugiaEventoConstants.TransicionEstado, "Paso de EnEspera a EnCirugia");
+            cirugia.AgregarHistorialObservacion("Paciente trasladado a pabellón e inicio de procedimiento quirúrgico.", TipoObservacionCirugiaConstants.ObservacionMedica, id);
         }
     }
 
@@ -90,14 +120,17 @@ namespace SistemaSatHospitalario.Core.Domain.State
     {
         public override string NombreEstado => EstadoCirugiaConstants.EnCirugia;
 
-        public override void FinalizarCirugia(OrdenCirugia cirugia, string usuarioId)
+        public override void FinalizarCirugia(OrdenCirugia cirugia, Guid? usuarioId)
         {
+            var id = ValidarUsuarioAutenticado(usuarioId);
+            var idStr = id.ToString();
+
             cirugia.SetEstadoInternal(EstadoCirugiaConstants.Finalizado, new FinalizadoState());
-            cirugia.AgregarLog(usuarioId, CirugiaEventoConstants.TransicionEstado, $"Paso de EnCirugia a Finalizado");
-            cirugia.AgregarHistorialObservacion("Cirugía finalizada exitosamente.", "CambioEstado", usuarioId);
+            cirugia.AgregarLog(idStr, CirugiaEventoConstants.TransicionEstado, "Paso de EnCirugia a Finalizado");
+            cirugia.AgregarHistorialObservacion("Procedimiento quirúrgico finalizado exitosamente.", TipoObservacionCirugiaConstants.ObservacionMedica, id);
         }
 
-        public override void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, string usuarioId)
+        public override void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, Guid? usuarioId)
         {
             throw new InvalidOperationException("No se puede reprogramar una cirugía que se encuentra actualmente en procedimiento (EnCirugia).");
         }
@@ -107,12 +140,12 @@ namespace SistemaSatHospitalario.Core.Domain.State
     {
         public override string NombreEstado => EstadoCirugiaConstants.Finalizado;
 
-        public override void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, string usuarioId)
+        public override void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, Guid? usuarioId)
         {
             throw new InvalidOperationException("No se puede reprogramar una cirugía que ya ha sido finalizada.");
         }
 
-        public override void Cancelar(OrdenCirugia cirugia, string motivo, string usuarioId)
+        public override void Cancelar(OrdenCirugia cirugia, string motivo, Guid? usuarioId)
         {
             throw new InvalidOperationException("No se puede cancelar una cirugía ya completada / finalizada.");
         }
@@ -122,14 +155,14 @@ namespace SistemaSatHospitalario.Core.Domain.State
     {
         public override string NombreEstado => EstadoCirugiaConstants.Cancelada;
 
-        public override void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, string usuarioId)
+        public override void Reprogramar(OrdenCirugia cirugia, DateTime nuevaFecha, string motivo, Guid? usuarioId)
         {
-            throw new InvalidOperationException("No se puede reprogramar una cirugía cancelada.");
+            throw new InvalidOperationException("No se puede reprogramar una cirugía que ya fue cancelada.");
         }
 
-        public override void Cancelar(OrdenCirugia cirugia, string motivo, string usuarioId)
+        public override void Cancelar(OrdenCirugia cirugia, string motivo, Guid? usuarioId)
         {
-            throw new InvalidOperationException("La cirugía ya está cancelada.");
+            throw new InvalidOperationException("La cirugía ya se encuentra cancelada.");
         }
     }
 

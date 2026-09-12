@@ -13,10 +13,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class TrasladarPacienteCommandHandler : IRequestHandler<TrasladarPacienteCommand, TrasladarPacienteResult>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public TrasladarPacienteCommandHandler(IApplicationDbContext context)
+        public TrasladarPacienteCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<TrasladarPacienteResult> Handle(TrasladarPacienteCommand request, CancellationToken cancellationToken)
@@ -104,7 +106,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                             0, // Honorario
                             cantidadEstancia,
                             servicio.TipoServicio,
-                            request.UsuarioTraslado,
+                            _currentUserService.UserId,
                             servicio.LegacyMappingId,
                             camaAnterior.Id
                         );
@@ -150,11 +152,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             {
                 var nuevaCuenta = new CuentaServicios(
                     request.PacienteId,
-                    request.UsuarioTraslado,
                     request.NuevoTipoIngreso, // ej: "Hospitalizacion", "Emergencia", etc.
                     request.NuevoConvenioId,
                     request.NuevaAreaClinicaId,
-                    request.NuevaSubAreaClinica
+                    request.NuevaSubAreaClinica,
+                    _currentUserService.UserId
                 );
 
                 // Enlazar a la cuenta principal
@@ -240,7 +242,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                         0m, // Honorario
                         1m, // Cantidad
                         "Servicio",
-                        request.UsuarioTraslado,
+                        _currentUserService.UserId,
                         legacyMappingId,
                         nuevaCama?.Id
                     );

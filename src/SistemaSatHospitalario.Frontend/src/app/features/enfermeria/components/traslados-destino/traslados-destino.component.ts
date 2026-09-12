@@ -287,11 +287,13 @@ export class TrasladosDestinoComponent {
 
       const areaId = this.areaDestinoId();
       const areaObj = (this.areasClinicas || []).find(a => a.id === areaId);
+      const filtered = this.filteredCamas();
+      const effectiveCamaId = this.selectedCamaId() || (filtered.length > 0 ? filtered[0].camaId : null) || areaId;
 
       const payload = {
         cuentaId: cuentaId,
-        areaDestino: areaObj?.nombre || 'ÁREA DESTINO',
-        camaDestinoId: this.selectedCamaId(),
+        areaDestino: areaObj?.nombre || areaId || 'ÁREA DESTINO',
+        camaDestinoId: effectiveCamaId,
         cantidadHoras: Number(this.cantidadHoras()) || 1,
         cambiaMedicoTratante: Boolean(this.cambiaMedico()),
         nuevoMedicoId: nuevoMedicoIdSaneado,

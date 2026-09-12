@@ -86,8 +86,8 @@ test.describe('E2E: Registro de Medicamentos, Armado de Kits y Descuento Multim�
         }
       }
 
-      // Hacer clic en "Nuevo Ítem" / "Nuevo Insumo"
-      const newBtn = page.locator('button').filter({ hasText: /nuevo ítem|nuevo insumo/i }).first();
+      // Hacer clic en "Nuevo Ítem" usando el ID semántico
+      const newBtn = page.locator('#btnNuevoInsumo');
       await expect(newBtn).toBeVisible({ timeout: 10_000 });
       await newBtn.click();
       await page.waitForTimeout(100);
@@ -117,8 +117,8 @@ test.describe('E2E: Registro de Medicamentos, Armado de Kits y Descuento Multim�
         await precioInput.dispatchEvent('change');
       }
 
-      // Guardar
-      const saveBtn = page.locator('button').filter({ hasText: /crear ítem|guardar/i }).first();
+      // Guardar usando ID semántico
+      const saveBtn = page.locator('#btnGuardarInsumo');
       await saveBtn.click();
       await expect(page.locator('.toast-success, div:has-text("creado")').first()).toBeVisible({ timeout: 10_000 });
       await page.waitForTimeout(300);

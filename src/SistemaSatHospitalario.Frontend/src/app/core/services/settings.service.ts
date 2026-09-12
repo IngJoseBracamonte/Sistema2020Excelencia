@@ -1,6 +1,6 @@
 import { Injectable, inject, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, first } from 'rxjs';
+import { Observable, BehaviorSubject, first, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ConfiguracionGeneral, UserDto } from '../models/settings.model';
 import { AuthService } from './auth.service';
@@ -122,7 +122,9 @@ export class SettingsService {
   }
 
   getMedicosHorarios(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.proApiUrl}/medicos/horarios`);
+    return this.http.get<any[]>(`${this.proApiUrl}/medicos/horarios`).pipe(
+      catchError(() => of([]))
+    );
   }
 
   syncMedicoSchedules(medicoId: string, horarios: any[], telefono?: string): Observable<any> {

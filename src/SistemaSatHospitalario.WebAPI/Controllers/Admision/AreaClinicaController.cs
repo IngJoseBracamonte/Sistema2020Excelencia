@@ -26,9 +26,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetBySede([FromQuery] Guid? sedeId)
+        public async Task<IActionResult> GetBySede([FromQuery] Guid? sedeId, [FromQuery] bool includeInactive = false)
         {
-            var result = await _mediator.Send(new GetAreasClinicasQuery { SedeId = sedeId });
+            var result = await _mediator.Send(new GetAreasClinicasQuery
+            {
+                SedeId = sedeId,
+                SoloActivas = !includeInactive
+            });
             return Ok(result);
         }
 
@@ -65,6 +69,20 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         {
             if (id != command.Id) return BadRequest();
             await _mediator.Send(command);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            await _mediator.Send(new DeleteAreaClinicaCommand { Id = id });
+            return NoContent();
+        }
+
+        [HttpPatch("{id}/activar")]
+        public async Task<IActionResult> Activar(Guid id)
+        {
+            await _mediator.Send(new ActivarAreaClinicaCommand { Id = id });
             return NoContent();
         }
     }

@@ -37,8 +37,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             var config = await _context.ConfiguracionGeneral.FirstOrDefaultAsync(cancellationToken);
             bool facturarLaboratorio = config?.FacturarLaboratorio ?? false;
 
-            var query = from d in _context.DetallesServicioCuenta
-                        join c in _context.CuentasServicios on d.CuentaServicioId equals c.Id
+            var query = from d in _context.DetallesServicioCuenta.Include(d => d.TipoServicioNav)
+                        join c in _context.CuentasServicios.Include(c => c.TipoIngresoNav) on d.CuentaServicioId equals c.Id
                         join p in _context.PacientesAdmision on c.PacienteId equals p.Id
                         join rf in _context.RecibosFactura on c.Id equals rf.CuentaServicioId into rfGroup
                         from rf in rfGroup.DefaultIfEmpty()
@@ -100,8 +100,11 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             return results.Select(x => {
                 // El facturador es el que cargó el servicio si está pendiente, 
                 // o el que facturó (de la caja) si está facturado.
-                // Según el usuario: "Nombre Real, Rol"
-                string facturadorId = _context.CajasDiarias.FirstOrDefault(cd => cd.Id == x.rf.CajaDiariaId)?.UsuarioIdentityId?.ToString();
+                string facturadorId = null;
+                if (x.rf != null && x.rf.CajaDiariaId.HasValue)
+                {
+                    facturadorId = _context.CajasDiarias.FirstOrDefault(cd => cd.Id == x.rf.CajaDiariaId.Value)?.UsuarioIdentityId?.ToString();
+                }
                 
                 string facturadorInfo = "SISTEMA";
                 if (!string.IsNullOrEmpty(facturadorId) && userMap.TryGetValue(facturadorId, out var user))
@@ -114,8 +117,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                 string metodo = "N/A";
                 if (x.rf != null)
                 {
-                    var payment = _context.DetallesPago.FirstOrDefault(dp => dp.ReciboFacturaId == x.rf.Id);
-                    metodo = payment?.MetodoPagoNav.Nombre;
+                    var payment = _context.DetallesPago.Include(dp => dp.MetodoPagoNav).FirstOrDefault(dp => dp.ReciboFacturaId == x.rf.Id);
+                    metodo = payment?.MetodoPagoNav?.Nombre ?? "N/A";
                 }
 
                 return new ExpedienteFacturacionDto
@@ -126,7 +129,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PacienteCedula = x.p.CedulaPasaporte,
                     PacienteTelefono = x.p.TelefonoContact,
                     Estudio = x.d.Descripcion,
-                    TipoIngreso = x.c.TipoIngresoNav.Nombre,
+                    TipoIngreso = x.c.TipoIngresoNav?.Nombre ?? "General",
                     SeguroNombre = x.sm?.Nombre ?? "PARTICULAR",
                     MetodoPago = metodo,
                     MontoUSD = x.d.Precio * x.d.Cantidad,
@@ -134,7 +137,7 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     Estado = (x.CitaEstado == EstadoConstants.Cancelado || x.CitaEstado == EstadoConstants.Cancelada) 
                         ? "No Efectuado" 
                         : ((x.c.EstadoId == EstadoCuentaConstants.FacturadaId && (x.c.ConvenioId == null || x.ar == null || x.ar.IsAudited)) ? "Facturado" : "Pendiente"),
-                    TipoServicio = x.d.TipoServicioNav.Nombre,
+                    TipoServicio = x.d.TipoServicioNav?.Nombre ?? "Servicio",
                     CuentaPorCobrarId = x.ar?.Id,
                     QuienAutorizo = x.ar?.QuienAutorizo,
                     DoctorProcedimiento = x.ar?.DoctorProcedimiento,

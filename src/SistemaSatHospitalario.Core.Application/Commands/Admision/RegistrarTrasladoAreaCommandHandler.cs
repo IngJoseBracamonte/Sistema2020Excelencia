@@ -12,10 +12,12 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     public class RegistrarTrasladoAreaCommandHandler : IRequestHandler<RegistrarTrasladoAreaCommand, RegistrarTrasladoAreaResult>
     {
         private readonly IApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public RegistrarTrasladoAreaCommandHandler(IApplicationDbContext context)
+        public RegistrarTrasladoAreaCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentUserService = currentUserService;
         }
 
         public async Task<RegistrarTrasladoAreaResult> Handle(RegistrarTrasladoAreaCommand request, CancellationToken cancellationToken)
@@ -40,19 +42,67 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
             }
 
-            // 2. Ocupa la cama destino
-            var camaDestino = await _context.AreasClinicas
-                .FirstOrDefaultAsync(a => a.Id == request.CamaDestinoId, cancellationToken);
+            // 2. Ocupa la cama destino (búsqueda resiliente por ID directo, GUID de área o coincidencia por Nombre/Código)
+            AreaClinica? camaDestino = null;
+            if (request.CamaDestinoId != Guid.Empty)
+            {
+                camaDestino = await _context.AreasClinicas
+                    .Include(a => a.Sede)
+                    .FirstOrDefaultAsync(a => a.Id == request.CamaDestinoId, cancellationToken);
+            }
+
+            if (camaDestino == null && Guid.TryParse(request.AreaDestino, out var areaGuid))
+            {
+                camaDestino = await _context.AreasClinicas
+                    .Include(a => a.Sede)
+                    .FirstOrDefaultAsync(a => a.Id == areaGuid, cancellationToken);
+            }
+
+            if (camaDestino == null && !string.IsNullOrWhiteSpace(request.AreaDestino))
+            {
+                var areaUpper = request.AreaDestino.Trim().ToUpperInvariant();
+                camaDestino = await _context.AreasClinicas
+                    .Include(a => a.Sede)
+                    .FirstOrDefaultAsync(a => a.Activo && (a.Nombre.ToUpper() == areaUpper || a.Codigo.ToUpper() == areaUpper), cancellationToken);
+
+                if (camaDestino == null)
+                {
+                    camaDestino = await _context.AreasClinicas
+                        .Include(a => a.Sede)
+                        .FirstOrDefaultAsync(a => a.Activo && (a.Nombre.ToUpper().Contains(areaUpper) || a.Codigo.ToUpper().Contains(areaUpper)), cancellationToken);
+                }
+            }
 
             if (camaDestino == null)
             {
-                throw new InvalidOperationException($"No se encontró la cama destino con ID {request.CamaDestinoId}.");
+                throw new InvalidOperationException($"No se encontró la cama destino con ID {request.CamaDestinoId} ni coincidencia para el área '{request.AreaDestino}'.");
             }
 
             camaDestino.MarcarComoOcupada();
 
-            // 3. Actualiza el área clínica y subárea en la cuenta
-            cuenta.AsignarAreaClinica(camaDestino.Id, request.AreaDestino);
+            // Resolver nombre de la Sede/Área agrupadora y el nombre físico de la Cama/Habitación
+            string? sedeNombre = camaDestino.Sede?.Nombre;
+            if (string.IsNullOrWhiteSpace(sedeNombre) && _context.Sedes != null)
+            {
+                var sede = await _context.Sedes.FirstOrDefaultAsync(s => s.Id == camaDestino.SedeId, cancellationToken);
+                sedeNombre = sede?.Nombre;
+            }
+            if (string.IsNullOrWhiteSpace(sedeNombre))
+            {
+                sedeNombre = !string.IsNullOrWhiteSpace(request.AreaDestino) ? request.AreaDestino : "Sede General";
+            }
+
+            var camaNombre = camaDestino.Nombre;
+
+            // 3. Actualiza el área clínica y subárea en la cuenta, y sincroniza el TipoIngreso (3FN)
+            cuenta.AsignarAreaClinica(camaDestino.Id, sedeNombre);
+            var nuevoTipoId = (sedeNombre ?? request.AreaDestino).ToUpperInvariant() switch
+            {
+                var a when a.Contains("UCI") || a.Contains("INTENSIV") => TipoIngresoConstants.UciId,
+                var a when a.Contains("EMERG") => TipoIngresoConstants.EmergenciaId,
+                _ => TipoIngresoConstants.HospitalizacionId
+            };
+            cuenta.ActualizarTipoIngreso(nuevoTipoId);
 
             // 4. Si cambia el médico tratante, actualizar el médico asignado a la cuenta
             if (request.CambiaMedicoTratante && request.NuevoMedicoId.HasValue && request.NuevoMedicoId.Value != Guid.Empty)
@@ -118,7 +168,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     0, // Honorario médico base
                     1, // Cantidad
                     servicioCatalogo?.TipoServicio ?? "Hospitalario",
-                    request.UsuarioTraslado,
+                    _currentUserService.UserId,
                     servicioCatalogo?.LegacyMappingId,
                     camaDestino.Id
                 );
@@ -128,12 +178,13 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             }
 
             // Registrar Auditoría Inmutable (AuditLog)
+            // Semántica estricta: AreaDestino = Sede/Área agrupadora (ej. "Depósito UCI"), Cama = Habitación/Cama física (ej. "Cama UCI 1")
             var auditLog = new AuditLog
             {
                 UsuarioIdentityId = Guid.TryParse(request.UsuarioTraslado, out var uid) ? uid : (Guid?)null,
                 ActionType = "TRASLADO_AREA",
                 OldValue = $"AreaOrigen: {cuenta.SubAreaClinica ?? "N/A"}",
-                NewValue = $"AreaDestino: {request.AreaDestino}, Cama: {request.CamaDestinoId}, Monto: ${request.MontoACobrarUsd:F2}",
+                NewValue = $"AreaDestino: {sedeNombre}, Cama: {camaNombre}, Monto: ${request.MontoACobrarUsd:F2}",
                 IpAddress = "127.0.0.1",
                 Timestamp = DateTime.UtcNow
             };

@@ -137,17 +137,16 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await firstPatient.click();
     console.log('Selected patient in close account screen.');
 
+    // Esperar a que la vista de detalle de cuenta cargue
+    const fastChargeTitle = page.locator('h3:has-text("Cargar Servicio o Medicamento")');
+    await expect(fastChargeTitle).toBeVisible({ timeout: 10000 });
+    console.log('Quick charge service panel is available for clinical assistants.');
+
     // Verify date/time inputs are read-only text elements for clinical users
     const dateInput = page.locator('input[type="date"]');
     const countDateInput = await dateInput.count();
     expect(countDateInput).toBe(0); // Hidden/replaced for nurses
     console.log('Admission date input is hidden (Read-only view verified).');
-
-    // Clinical assistants can add services with an assigned treating doctor.
-    const fastChargeTitle = page.locator('h3:has-text("Cargar Servicio o Medicamento")');
-    const countFastCharge = await fastChargeTitle.count();
-    expect(countFastCharge).toBe(1);
-    console.log('Quick charge service panel is available for clinical assistants.');
 
     // Verify "Condición y Destino Final de Egreso de Urgencias" is visible
     await expect(page.locator('span:has-text("Condición y Destino Final de Egreso")')).toBeVisible();
@@ -225,10 +224,10 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await step3Btn2.click();
     await page.waitForTimeout(2000);
 
-    // --- 3. Informe Category ---
+    // --- 3. Medicamento / Insumo Category ---
     const searchInput3 = page.locator('input[placeholder*="Escriba código o nombre"]');
     await expect(searchInput3).toBeVisible({ timeout: 10000 });
-    await searchInput3.fill('Informe Médico Especializado');
+    await searchInput3.fill('Ibuprofeno');
     await page.waitForTimeout(1000);
     const firstRes3 = page.locator('app-step-catalog-search div.hover\\:bg-white\\/5').first();
     await expect(firstRes3).toBeVisible({ timeout: 10000 });

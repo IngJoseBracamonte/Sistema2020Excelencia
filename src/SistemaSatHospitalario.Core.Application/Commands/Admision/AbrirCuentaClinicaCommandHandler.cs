@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SistemaSatHospitalario.Core.Application.Common.Interfaces;
+using SistemaSatHospitalario.Core.Application.Common.Services;
 using SistemaSatHospitalario.Core.Domain.Entities.Admision;
 using SistemaSatHospitalario.Core.Domain.Constants;
 
@@ -14,11 +15,19 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<AbrirCuentaClinicaCommandHandler> _logger;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IAreaClinicaValidationService _areaClinicaValidationService;
 
-        public AbrirCuentaClinicaCommandHandler(IApplicationDbContext context, ILogger<AbrirCuentaClinicaCommandHandler> logger)
+        public AbrirCuentaClinicaCommandHandler(
+            IApplicationDbContext context, 
+            ILogger<AbrirCuentaClinicaCommandHandler> logger, 
+            ICurrentUserService currentUserService,
+            IAreaClinicaValidationService areaClinicaValidationService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService;
+            _areaClinicaValidationService = areaClinicaValidationService ?? throw new ArgumentNullException(nameof(areaClinicaValidationService));
         }
 
         public async Task<Guid> Handle(AbrirCuentaClinicaCommand request, CancellationToken cancellationToken)
@@ -43,28 +52,32 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
       
 
             // 3. Buscar si ya tiene una cuenta abierta de ese tipo de ingreso
+            var tipoIngresoIdTarget = TipoIngresoConstants.FromLegacyString(request.TipoIngreso);
             var cuentaExistente = await _context.CuentasServicios
                 .FirstOrDefaultAsync(c => c.PacienteId == paciente.Id && 
                                            c.EstadoId == EstadoCuentaConstants.AbiertaId && 
-                                           c.TipoIngresoNav.Nombre == request.TipoIngreso, cancellationToken);
+                                           c.TipoIngresoId == tipoIngresoIdTarget, cancellationToken);
 
             if (cuentaExistente != null)
             {
                 return cuentaExistente.Id; // Retornar la cuenta existente para evitar duplicaciones
             }
 
-            // 4. Crear nueva cuenta clínica
+            // 4. Validar que el AreaClinicaId existe en la base de datos
+            await _areaClinicaValidationService.ValidateAreaClinicaExistsOrThrowAsync(request.AreaClinicaId, cancellationToken);
+
+            // 5. Crear nueva cuenta clínica
             var nuevaCuenta = new CuentaServicios(
                 paciente.Id,
-                request.UsuarioCarga,
                 request.TipoIngreso,
                 request.ConvenioId,
                 request.AreaClinicaId,
                 null,
-                request.MedicoId
+                request.MedicoId,
+                _currentUserService.UserId
             );
 
-            // 5. Marcar la cama física como ocupada si fue especificada
+            // 6. Marcar la cama física como ocupada si fue especificada
             AreaClinica? cama = null;
             if (request.AreaClinicaId.HasValue)
             {
@@ -123,7 +136,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     0m, // Honorario
                     1m, // Cantidad
                     "Servicio",
-                    request.UsuarioCarga,
+                    _currentUserService.UserId,
                     legacyMappingId,
                     cama?.Id
                 );

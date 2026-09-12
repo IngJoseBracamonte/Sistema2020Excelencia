@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SistemaSatHospitalario.Core.Application.Commands.Admin;
 using SistemaSatHospitalario.Core.Application.Commands.Admision;
+using SistemaSatHospitalario.Core.Application.Queries.Admin;
 using SistemaSatHospitalario.Core.Application.Queries.Admision;
 using System;
 using System.Threading.Tasks;
@@ -10,12 +12,13 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
-    public class SettingsController : ControllerBase
+    [Route("api/settings")]
+    [Route("api/admision/settings")]
+    public class AdmisionSettingsController : ControllerBase
     {
         private readonly IMediator _mediator;
 
-        public SettingsController(IMediator mediator)
+        public AdmisionSettingsController(IMediator mediator)
         {
             _mediator = mediator;
         }
@@ -58,6 +61,18 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
         [HttpPost("users/roles")]
         public async Task<IActionResult> UpdateUserRoles([FromBody] UpdateUserRolesCommand command)
+        {
+            return Ok(await _mediator.Send(command));
+        }
+
+        [HttpGet("medicos/horarios")]
+        public async Task<IActionResult> GetMedicosHorarios()
+        {
+            return Ok(await _mediator.Send(new GetMedicosHorariosQuery()));
+        }
+
+        [HttpPost("medicos/horarios/sync")]
+        public async Task<IActionResult> SyncMedicoSchedules([FromBody] SyncMedicoSchedulesCommand command)
         {
             return Ok(await _mediator.Send(command));
         }

@@ -51,6 +51,8 @@ export interface MovimientoInsumo {
   id: string;
   insumoId: string;
   insumo?: Insumo;
+  insumoNombre?: string;
+  insumoCodigo?: string;
   sedeId: string;
   tipoMovimiento: TipoMovimientoInsumo | string;
   cantidadBase: number;
