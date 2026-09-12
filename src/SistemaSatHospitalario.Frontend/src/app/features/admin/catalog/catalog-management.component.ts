@@ -24,7 +24,13 @@ import {
   Filter,
   List,
   SlidersHorizontal,
-  Building2
+  Building2,
+  ChevronDown,
+  Scissors,
+  FlaskConical,
+  Pill,
+  Syringe,
+  RotateCcw
 } from 'lucide-angular';
 import { EditCirugiaComponent } from './components/edit-cirugia.component';
 import { EditConsultaComponent } from './components/edit-consulta.component';
@@ -37,6 +43,14 @@ import { EditServicioComponent } from './components/edit-servicio.component';
 import { getTipoBadgeStyle as getBadgeStyle, CatalogEditorType } from './models/catalog-edit.models';
 
 export type SortOption = 'nombre-asc' | 'nombre-desc' | 'precio-desc' | 'precio-asc' | 'codigo-asc';
+
+export interface CreateTypeOption {
+  type: CatalogEditorType;
+  label: string;
+  sublabel: string;
+  icon: any;
+  colorClass: string;
+}
 
 @Component({
   selector: 'app-catalog-management',
@@ -77,11 +91,75 @@ export class CatalogManagementComponent implements OnInit {
   readonly activeEditorType = signal<CatalogEditorType | null>(null);
   readonly itemToDelete = signal<CatalogItem | null>(null);
 
+  // ── Estado del Menú Desplegable de Creación y Filtro de Estado ───────────
+  readonly showCreateDropdown = signal<boolean>(false);
+  readonly filtroEstado = signal<'TODOS' | 'ACTIVOS' | 'DESACTIVADOS'>('TODOS');
+
   readonly availableTypes = ['SERVICIO', 'CONSULTA', 'MEDICAMENTO', 'RX', 'TOMOGRAFIA', 'PROCEDIMIENTO', 'CIRUGIA', 'LABORATORIO', 'HOSPITALARIO'];
+
+  readonly createTypeOptions: CreateTypeOption[] = [
+    {
+      type: 'CONSULTA',
+      label: 'Consulta Médica',
+      sublabel: 'Honorarios por médico, recetas BOM y sugerencias',
+      icon: Stethoscope,
+      colorClass: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'
+    },
+    {
+      type: 'CIRUGIA',
+      label: 'Cirugía / Pabellón',
+      sublabel: 'Tiempos, equipo quirúrgico y kits de quirófano',
+      icon: Scissors,
+      colorClass: 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+    },
+    {
+      type: 'LABORATORIO',
+      label: 'Laboratorio Clínico',
+      sublabel: 'Pruebas bioanalíticas, reactivos e insumos BOM',
+      icon: FlaskConical,
+      colorClass: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+    },
+    {
+      type: 'TOMOGRAFIA',
+      label: 'Tomografía / Imágenes',
+      sublabel: 'Cortes, placas, contrastes e informe médico',
+      icon: Scan,
+      colorClass: 'text-violet-400 bg-violet-500/10 border-violet-500/20'
+    },
+    {
+      type: 'MEDICAMENTO',
+      label: 'Medicamento / Fármaco',
+      sublabel: 'Principio activo, dosis y control de Kárdex',
+      icon: Pill,
+      colorClass: 'text-teal-400 bg-teal-500/10 border-teal-500/20'
+    },
+    {
+      type: 'PROCEDIMIENTO',
+      label: 'Procedimiento Ambulatorio',
+      sublabel: 'Salas de cura, honorarios y descartables',
+      icon: Syringe,
+      colorClass: 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+    },
+    {
+      type: 'HOSPITALARIO',
+      label: 'Estancia Hospitalaria',
+      sublabel: 'Habitaciones, camas, tarifa día y lencería',
+      icon: Building2,
+      colorClass: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20'
+    },
+    {
+      type: 'SERVICIO',
+      label: 'Servicio Base / General',
+      sublabel: 'Servicios generales y administrativos',
+      icon: Package,
+      colorClass: 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+    }
+  ];
 
   readonly icons = {
     Package, Search, Plus, Edit, Trash2, Database, Stethoscope, Scan, X, Check, Clock,
-    ArrowUpDown, ArrowUp, ArrowDown, Filter, List, SlidersHorizontal, Building2
+    ArrowUpDown, ArrowUp, ArrowDown, Filter, List, SlidersHorizontal, Building2,
+    ChevronDown, Scissors, FlaskConical, Pill, Syringe, RotateCcw
   };
 
   // ── Computed Signal: Filtrado y ordenamiento reactivo declarativo ──────────
@@ -90,8 +168,16 @@ export class CatalogManagementComponent implements OnInit {
     const selected = this.selectedTypes();
     const query = this.searchQuery().trim().toLowerCase();
     const sort = this.sortOption();
+    const estado = this.filtroEstado();
 
-    // 1. Filtro por tipos de servicio seleccionados
+    // 1. Filtro por Estado (TODOS / ACTIVOS / DESACTIVADOS)
+    if (estado === 'ACTIVOS') {
+      list = list.filter(item => item.activo !== false);
+    } else if (estado === 'DESACTIVADOS') {
+      list = list.filter(item => item.activo === false);
+    }
+
+    // 2. Filtro por tipos de servicio seleccionados
     if (selected.length > 0) {
       list = list.filter(item => {
         const itemType = (item.editorType || item.tipo || 'SERVICIO').toUpperCase();
@@ -99,7 +185,7 @@ export class CatalogManagementComponent implements OnInit {
       });
     }
 
-    // 2. Filtro por texto (Nombre o Código)
+    // 3. Filtro por texto (Nombre o Código)
     if (query) {
       list = list.filter(item =>
         (item.descripcion || '').toLowerCase().includes(query) ||
@@ -107,7 +193,7 @@ export class CatalogManagementComponent implements OnInit {
       );
     }
 
-    // 3. Ordenamiento declarativo
+    // 4. Ordenamiento declarativo
     return list.sort((a, b) => {
       switch (sort) {
         case 'nombre-asc':
@@ -233,13 +319,24 @@ export class CatalogManagementComponent implements OnInit {
     }
   }
 
-  openCreate(): void {
+  toggleCreateDropdown(): void {
+    this.showCreateDropdown.update(v => !v);
+  }
+
+  closeCreateDropdown(): void {
+    this.showCreateDropdown.set(false);
+  }
+
+  openCreateOfType(type: CatalogEditorType): void {
+    this.closeCreateDropdown();
     this.isEditing.set(false);
     this.selectedItemId.set(null);
-    const selected = this.selectedTypes();
-    const firstType = selected.length > 0 ? selected[0] : 'SERVICIO';
-    this.activeEditorType.set(this.resolveEditorType({ tipo: firstType } as any));
+    this.activeEditorType.set(type);
     this.showModal.set(true);
+  }
+
+  openCreate(): void {
+    this.toggleCreateDropdown();
   }
 
   openEdit(item: CatalogItem): void {
@@ -266,10 +363,27 @@ export class CatalogManagementComponent implements OnInit {
 
     this.catalogService.deleteItem(id).subscribe({
       next: () => {
-        this.catalog.set(this.catalog().filter(i => (i.id || (i as any)._id) !== id));
+        // Soft delete: actualizar el ítem localmente a activo = false para mantenerlo visible
+        this.catalog.update(items =>
+          items.map(i => (i.id || (i as any)._id) === id ? ({ ...i, activo: false } as CatalogItem) : i)
+        );
         this.itemToDelete.set(null);
       },
-      error: (err) => console.error('Error eliminando ítem:', err)
+      error: (err) => console.error('Error desactivando ítem:', err)
+    });
+  }
+
+  reactivateItem(item: CatalogItem): void {
+    const id = item.id || (item as any)._id;
+    if (!id) return;
+
+    this.catalogService.reactivateItem(id).subscribe({
+      next: () => {
+        this.catalog.update(items =>
+          items.map(i => (i.id || (i as any)._id) === id ? ({ ...i, activo: true } as CatalogItem) : i)
+        );
+      },
+      error: (err) => console.error('Error reactivando ítem:', err)
     });
   }
 

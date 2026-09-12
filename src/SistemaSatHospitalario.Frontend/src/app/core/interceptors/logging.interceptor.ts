@@ -9,9 +9,9 @@ export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
 
     return next(req).pipe(
         catchError((err: HttpErrorResponse) => {
-            // Redirección profesional a pantalla de error en español
-            if (err.status === 401 || err.status === 403 || err.status === 404 || err.status >= 500 || err.status === 0) {
-                router.navigate(['/error', err.status || '0']);
+            // No redirigir en endpoints de autenticación ni en errores 401/404 manejados por componentes
+            if (!req.url.includes('/Auth/') && (err.status === 502 || err.status === 503)) {
+                router.navigate(['/error', err.status]);
             }
 
             return throwError(() => err);

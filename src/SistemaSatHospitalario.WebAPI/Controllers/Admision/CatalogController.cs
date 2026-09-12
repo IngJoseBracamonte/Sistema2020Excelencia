@@ -34,9 +34,9 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
 
         [HttpGet]
         [HttpGet("unified")]
-        public async Task<ActionResult<List<CatalogItemDto>>> GetUnifiedCatalog([FromQuery] int? convenioId)
+        public async Task<ActionResult<List<CatalogItemDto>>> GetUnifiedCatalog([FromQuery] int? convenioId, [FromQuery] bool incluirInactivos = true)
         {
-            var query = new GetUnifiedCatalogQuery { ConvenioId = convenioId };
+            var query = new GetUnifiedCatalogQuery { ConvenioId = convenioId, IncluirInactivos = incluirInactivos };
             var result = await _mediator.Send(query);
             return Ok(result);
         }
@@ -108,6 +108,21 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             _logger.LogWarning("[CATALOG-API] DELETE RESULT FOR {Id}: {Result}", id, result);
             
             if (!result) return NotFound(new { message = "El servicio no existe o el ID es inválido" });
+            
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/reactivate")]
+        [Authorize(Roles = AuthorizationConstants.AdminRoles)]
+        public async Task<ActionResult<bool>> Reactivate(Guid id)
+        {
+            _logger.LogWarning("[CATALOG-API] ATTEMPTING TO REACTIVATE ITEM ID: {Id}", id);
+            
+            var result = await _mediator.Send(new ReactivateCatalogItemCommand { Id = id });
+            
+            _logger.LogWarning("[CATALOG-API] REACTIVATE RESULT FOR {Id}: {Result}", id, result);
+            
+            if (!result) return NotFound(new { message = "El servicio no existe o no se pudo reactivar" });
             
             return Ok(result);
         }

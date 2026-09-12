@@ -9,5 +9,6 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
     {
         // Se cambió de Guid? a int? para sincronización con Legacy
         public int? ConvenioId { get; set; }
+        public bool IncluirInactivos { get; set; } = true;
     }
 }

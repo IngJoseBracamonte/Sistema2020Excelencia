@@ -347,11 +347,21 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   public filteredAccounts = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
     const list = this.accounts();
-    if (!term) return list;
-    return list.filter(acc =>
+    const filtered = !term ? list : list.filter(acc =>
       acc.pacienteNombre.toLowerCase().includes(term) ||
       acc.pacienteCedula.toLowerCase().includes(term)
     );
+
+    // Ordenar de más reciente a más antiguo (descendente por fecha)
+    return filtered.slice().sort((a, b) => {
+      const rawA = a.fechaCarga || a.fechaIngreso || a.fechaApertura;
+      const rawB = b.fechaCarga || b.fechaIngreso || b.fechaApertura;
+      const timeA = rawA ? new Date(rawA).getTime() : 0;
+      const timeB = rawB ? new Date(rawB).getTime() : 0;
+      const validA = !isNaN(timeA) ? timeA : 0;
+      const validB = !isNaN(timeB) ? timeB : 0;
+      return (validB - validA) || (b.cuentaId || '').localeCompare(a.cuentaId || '');
+    });
   });
 
   public enrichedAccounts = computed(() => {

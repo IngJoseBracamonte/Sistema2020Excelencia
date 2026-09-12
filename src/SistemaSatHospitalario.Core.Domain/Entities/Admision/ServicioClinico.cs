@@ -63,6 +63,13 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void Desactivar() => Desactivar("Sistema");
 
+        public void Activar()
+        {
+            Activo = true;
+            DesactivadoPorUsuarioId = null;
+            FechaDesactivacion = null;
+        }
+
         public void ActualizarPrecio(decimal nuevoPrecio) => PrecioBase = nuevoPrecio;
 
         public void ValidarInvariantes()

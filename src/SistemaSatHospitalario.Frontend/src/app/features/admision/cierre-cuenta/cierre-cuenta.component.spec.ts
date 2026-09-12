@@ -229,4 +229,26 @@ describe('CierreCuentaComponent', () => {
     expect(component.cartItems()[0].precioBase).toBe(10);
     expect(component.cartTotalUSD()).toBe(30);
   });
+
+  it('debe ordenar filteredAccounts de más reciente a más antiguo', () => {
+    const accAntigua: any = {
+      cuentaId: 'acc-1',
+      pacienteNombre: 'Juan Antiguo',
+      pacienteCedula: '111',
+      fechaCarga: '2026-09-10T08:00:00.000Z'
+    };
+    const accReciente: any = {
+      cuentaId: 'acc-2',
+      pacienteNombre: 'Pedro Reciente',
+      pacienteCedula: '222',
+      fechaCarga: '2026-09-12T14:00:00.000Z'
+    };
+
+    component.accounts.set([accAntigua, accReciente]);
+    component.searchTerm.set('');
+
+    const resultado = component.filteredAccounts();
+    expect(resultado[0].cuentaId).toBe('acc-2');
+    expect(resultado[1].cuentaId).toBe('acc-1');
+  });
 });
