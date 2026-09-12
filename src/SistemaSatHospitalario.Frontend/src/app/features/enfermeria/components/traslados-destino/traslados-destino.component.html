@@ -93,10 +93,10 @@
     <div *ngIf="modoTraslado() === 'TRASLADO_AREA'" class="space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-[#0b1120]/50 border border-white/5 rounded-3xl">
         <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Área Médico-Clínica
+          <label for="selectAreaDestino" class="text-[10px] font-black text-slate-400 uppercase tracking-widest block cursor-pointer">Área Médico-Clínica
             Destino</label>
-          <select id="selectAreaDestino" [ngModel]="areaDestinoId()" (ngModelChange)="onAreaDestinoChange($event)"
-            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
+          <select id="selectAreaDestino" [ngModel]="areaDestinoId()" (ngModelChange)="onAreaDestinoChange($event)" aria-label="Área Médico-Clínica Destino"
+            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase cursor-pointer">
             <option [value]="null" class="bg-[#152035]">--- SELECCIONAR ÁREA DESTINO ---</option>
             <ng-container *ngIf="areasClinicas && areasClinicas.length > 0; else fallbackAreas">
               <option *ngFor="let area of areasClinicas" [value]="area.id" class="bg-[#152035]">
@@ -112,10 +112,10 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar Cama en Área
+          <label for="selectCamaDestino" class="text-[10px] font-black text-slate-400 uppercase tracking-widest block cursor-pointer">Asignar Cama en Área
             Destino</label>
-          <select id="selectCamaDestino" [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
-            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
+          <select id="selectCamaDestino" [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)" aria-label="Asignar Cama en Área Destino"
+            class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase cursor-pointer">
             <option [value]="null" class="bg-[#152035]">--- SELECCIONAR CAMA ---</option>
             <option *ngFor="let cama of filteredCamas()" [value]="cama.camaId" class="bg-[#152035]">
               {{ cama.nombre }} ({{ cama.codigo }})
@@ -124,10 +124,10 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Horas Estimadas de
+          <label for="inputHorasEstancia" class="text-[10px] font-black text-slate-400 uppercase tracking-widest block cursor-pointer">Horas Estimadas de
             Estancia</label>
-          <input type="number" [ngModel]="cantidadHoras()" (ngModelChange)="cantidadHoras.set($event)" min="1"
-            placeholder="Ej: 24"
+          <input type="number" id="inputHorasEstancia" [ngModel]="cantidadHoras()" (ngModelChange)="cantidadHoras.set($event)" min="1"
+            placeholder="Ej: 24" aria-label="Horas Estimadas de Estancia"
             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30">
         </div>
 

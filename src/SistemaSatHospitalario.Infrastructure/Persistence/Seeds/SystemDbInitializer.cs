@@ -58,14 +58,14 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Seeds
                     foreach (var log in logsToFix)
                     {
                         var text = log.NewValue!;
-                        var match = System.Text.RegularExpressions.Regex.Match(text, @"Cama:\s*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})");
+                        var match = System.Text.RegularExpressions.Regex.Match(text, @"Cama:\s*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromMilliseconds(250));
                         if (match.Success && Guid.TryParse(match.Groups[1].Value, out var camaId))
                         {
                             var cama = camas.FirstOrDefault(c => c.Id == camaId);
                             if (cama != null)
                             {
                                 var sedeNom = cama.Sede?.Nombre ?? "Sede General";
-                                text = System.Text.RegularExpressions.Regex.Replace(text, @"AreaDestino:[^,]+,", $"AreaDestino: {sedeNom},");
+                                text = System.Text.RegularExpressions.Regex.Replace(text, @"AreaDestino:[^,]+,", $"AreaDestino: {sedeNom},", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromMilliseconds(250));
                                 text = text.Replace(match.Value, $"Cama: {cama.Nombre}");
                                 log.NewValue = text;
                             }
