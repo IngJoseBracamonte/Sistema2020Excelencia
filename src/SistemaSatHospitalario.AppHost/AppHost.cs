@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using SistemaSatHospitalario.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 

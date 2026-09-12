@@ -194,10 +194,16 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Legacy
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "csharpsquid:S2077", Justification = "Database name is validated against strict alphanumeric regex; CREATE DATABASE DDL cannot be parameterized.")]
         private async Task EnsureDatabaseExistsAsync(string connStr)
         {
             var builder = new MySqlConnectionStringBuilder(connStr);
             var databaseName = builder.Database;
+
+            if (string.IsNullOrWhiteSpace(databaseName) || !System.Text.RegularExpressions.Regex.IsMatch(databaseName, @"^[a-zA-Z0-9_]+$", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromMilliseconds(250)))
+            {
+                throw new ArgumentException("Nombre de base de datos inválido en la cadena de conexión.", nameof(connStr));
+            }
 
             // Conectamos sin base de datos seleccionada para poder crearla
             builder.Database = null; 

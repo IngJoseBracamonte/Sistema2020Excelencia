@@ -63,20 +63,20 @@
   <div class="bg-surface-card p-4 rounded-2xl border border-white/5 flex flex-wrap items-center justify-between gap-4">
     <div class="flex flex-wrap items-center gap-3">
       <div class="space-y-1">
-        <label class="text-[10px] uppercase font-black tracking-widest text-slate-500">Fecha Desde</label>
-        <input type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)"
+        <label for="historial-fecha-desde" class="text-[10px] uppercase font-black tracking-widest text-slate-500">Fecha Desde</label>
+        <input id="historial-fecha-desde" aria-label="Fecha Desde" type="date" [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)"
           class="bg-surface-main/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500" />
       </div>
 
       <div class="space-y-1">
-        <label class="text-[10px] uppercase font-black tracking-widest text-slate-500">Fecha Hasta</label>
-        <input type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)"
+        <label for="historial-fecha-hasta" class="text-[10px] uppercase font-black tracking-widest text-slate-500">Fecha Hasta</label>
+        <input id="historial-fecha-hasta" aria-label="Fecha Hasta" type="date" [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)"
           class="bg-surface-main/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500" />
       </div>
 
       <div class="space-y-1">
-        <label class="text-[10px] uppercase font-black tracking-widest text-slate-500">Buscar</label>
-        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+        <label for="historial-search-input" class="text-[10px] uppercase font-black tracking-widest text-slate-500">Buscar</label>
+        <input id="historial-search-input" aria-label="Buscar por código, insumo o motivo" type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
           placeholder="Código, insumo o motivo..."
           class="bg-surface-main/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 w-48 md:w-64" />
       </div>

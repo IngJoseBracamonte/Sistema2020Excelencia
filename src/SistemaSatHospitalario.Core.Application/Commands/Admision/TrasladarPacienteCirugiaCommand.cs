@@ -40,8 +40,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
         public async Task<bool> Handle(TrasladarPacienteCirugiaCommand request, CancellationToken cancellationToken)
         {
             var orden = await _context.OrdenesCirugia
-                .Include(o => o.Logs)
-                .Include(o => o.HistorialObservaciones)
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCirugiaId, cancellationToken);
 
             if (orden == null)

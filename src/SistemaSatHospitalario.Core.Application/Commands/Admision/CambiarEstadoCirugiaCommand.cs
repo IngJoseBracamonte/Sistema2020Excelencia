@@ -39,8 +39,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 request.OrdenCirugiaId, request.NuevoEstado);
 
             var orden = await _context.OrdenesCirugia
-                .Include(o => o.Logs)
-                .Include(o => o.HistorialObservaciones)
                 .FirstOrDefaultAsync(o => o.Id == request.OrdenCirugiaId, cancellationToken)
                 ?? throw new InvalidOperationException("La orden de cirugía no fue encontrada.");
 

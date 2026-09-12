@@ -313,7 +313,12 @@
 
     <!-- MODAL DE ANEXAR QUIRÓFANO -->
     <div *ngIf="showCreateQuirofanoModal() && isAdmin()" class="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-4 md:pt-8 overflow-y-auto">
-        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" (click)="cerrarModalCrearQuirofano()"></div>
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-fade-in-slow" 
+            (click)="cerrarModalCrearQuirofano()" 
+            (keydown.escape)="cerrarModalCrearQuirofano()" 
+            tabindex="0" 
+            role="button" 
+            aria-label="Cerrar modal de crear quirófano"></div>
         <div class="relative bg-surface-card rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden border border-sky-500/20 animate-scale-in">
             
             <!-- Encabezado Modal -->
@@ -335,14 +340,14 @@
             <!-- Modal Body -->
             <div class="p-6 space-y-4">
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Código del Quirófano *</label>
-                    <input type="text" [(ngModel)]="nuevoQuirofano.codigo" placeholder="Ej: QX-03, SALA-02"
+                    <label for="nuevo-quirofano-codigo" class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Código del Quirófano *</label>
+                    <input id="nuevo-quirofano-codigo" aria-label="Código del Quirófano" type="text" [(ngModel)]="nuevoQuirofano.codigo" placeholder="Ej: QX-03, SALA-02"
                         class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-xs font-bold text-white outline-none focus:border-sky-500/50 transition-all uppercase">
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre / Descripción del Quirófano *</label>
-                    <input type="text" [(ngModel)]="nuevoQuirofano.nombre" placeholder="Ej: Quirófano 3 (Traumatología)"
+                    <label for="nuevo-quirofano-nombre" class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre / Descripción del Quirófano *</label>
+                    <input id="nuevo-quirofano-nombre" aria-label="Nombre del Quirófano" type="text" [(ngModel)]="nuevoQuirofano.nombre" placeholder="Ej: Quirófano 3 (Traumatología)"
                         class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-xs font-bold text-white outline-none focus:border-sky-500/50 transition-all">
                 </div>
 
