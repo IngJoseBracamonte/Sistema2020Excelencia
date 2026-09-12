@@ -52,10 +52,11 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
       
 
             // 3. Buscar si ya tiene una cuenta abierta de ese tipo de ingreso
+            var tipoIngresoIdTarget = TipoIngresoConstants.FromLegacyString(request.TipoIngreso);
             var cuentaExistente = await _context.CuentasServicios
                 .FirstOrDefaultAsync(c => c.PacienteId == paciente.Id && 
                                            c.EstadoId == EstadoCuentaConstants.AbiertaId && 
-                                           c.TipoIngresoNav.Nombre == request.TipoIngreso, cancellationToken);
+                                           c.TipoIngresoId == tipoIngresoIdTarget, cancellationToken);
 
             if (cuentaExistente != null)
             {
@@ -69,7 +70,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             var nuevaCuenta = new CuentaServicios(
                 paciente.Id,
                 request.TipoIngreso,
-                (int)request.ConvenioId,
+                request.ConvenioId,
                 request.AreaClinicaId,
                 null,
                 request.MedicoId,

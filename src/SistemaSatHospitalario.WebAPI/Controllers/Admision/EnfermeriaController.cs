@@ -43,7 +43,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -60,7 +60,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -77,7 +77,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -101,7 +101,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -124,7 +124,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -147,7 +147,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
@@ -171,7 +171,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
     }

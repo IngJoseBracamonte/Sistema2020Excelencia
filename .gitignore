@@ -51,6 +51,18 @@ Generated\ Files/
 
 # Test configuration files (contain sensitive data like database passwords)
 **/DatabaseTestConfiguration.cs
+**/*ScriptRunner*.cs
+
+# Environment variables and secrets
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.pfx
+*.cert
+*.crt
+**/ETL_Migracion*
 
 # Development appsettings files (contain sensitive connection strings)
 **/appsettings.Development.json

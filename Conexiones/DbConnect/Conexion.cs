@@ -20,8 +20,8 @@ namespace Conexiones.DbConnect
     {
         private static string server = "";
         private static string database = "sistema2020";
-        private static string uid = "root";
-        private static string password = "Labordono1818";
+        private static string uid = Environment.GetEnvironmentVariable("MYSQL_USER") ?? "root";
+        private static string password = Environment.GetEnvironmentVariable("MYSQL_PASSWORD") ?? Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
         private static string connection = "SERVER=" + server + ";" + "DATABASE=" +
             database + ";" + "UID=" + uid + ";" + "PASSWORD=" + password + ";";
         private static MySqlConnection con = new MySqlConnection(connection);

@@ -94,7 +94,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
                 insumo.Codigo,
                 insumo.Nombre,
                 StockActual = stockPrincipal,
-                UnidadMedidaBase = insumo.UnidadMedidaNav.Nombre.ToString()
+                UnidadMedidaBase = insumo.UnidadMedidaNav?.Nombre?.ToString() ?? "UND"
             });
         }
 

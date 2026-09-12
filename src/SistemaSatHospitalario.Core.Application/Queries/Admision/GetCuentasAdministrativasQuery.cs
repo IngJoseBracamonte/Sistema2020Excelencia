@@ -31,33 +31,40 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
         {
             var query = _context.CuentasServicios
                 .Include(c => c.Detalles)
+                    .ThenInclude(d => d.TipoServicioNav)
                 .Include(c => c.Paciente)
                 .Include(c => c.Convenio)
                 .Include(c => c.AreaClinica)
                 .Include(c => c.Medico)
+                .Include(c => c.EstadoNav)
+                .Include(c => c.TipoIngresoNav)
                 .AsNoTracking();
 
             if (!string.IsNullOrEmpty(request.SearchTerm))
             {
                 var term = request.SearchTerm.ToLower();
-                query = query.Where(c => c.Paciente.NombreCorto.ToLower().Contains(term) || c.Paciente.CedulaPasaporte.ToLower().Contains(term));
+                query = query.Where(c => (c.Paciente != null && c.Paciente.NombreCorto.ToLower().Contains(term)) || 
+                                         (c.Paciente != null && c.Paciente.CedulaPasaporte.ToLower().Contains(term)));
             }
 
             if (!string.IsNullOrEmpty(request.TipoIngreso))
             {
                 if (request.TipoIngreso == EstadoConstants.Hospitalizacion)
                 {
-                    query = query.Where(c => c.TipoIngresoNav.Nombre == EstadoConstants.Hospitalizacion || c.TipoIngresoNav.Nombre == SubAreas.UCI);
+                    query = query.Where(c => (c.TipoIngresoNav != null && (c.TipoIngresoNav.Nombre == EstadoConstants.Hospitalizacion || c.TipoIngresoNav.Nombre == SubAreas.UCI)) ||
+                                             c.TipoIngresoId == TipoIngresoConstants.HospitalizacionId || c.TipoIngresoId == TipoIngresoConstants.UciId);
                 }
                 else
                 {
-                    query = query.Where(c => c.TipoIngresoNav.Nombre == request.TipoIngreso);
+                    var targetTipoId = TipoIngresoConstants.FromLegacyString(request.TipoIngreso);
+                    query = query.Where(c => (c.TipoIngresoNav != null && c.TipoIngresoNav.Nombre == request.TipoIngreso) || c.TipoIngresoId == targetTipoId);
                 }
             }
 
             if (!string.IsNullOrEmpty(request.Estado))
             {
-                query = query.Where(c => c.EstadoNav.Nombre.Contains(request.Estado));
+                var targetEstadoId = EstadoCuentaConstants.FromLegacyString(request.Estado);
+                query = query.Where(c => (c.EstadoNav != null && c.EstadoNav.Nombre.Contains(request.Estado)) || c.EstadoId == targetEstadoId);
             }
 
             var cuentas = await query
@@ -70,17 +77,19 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 var recibo = await _context.RecibosFactura
                     .AsNoTracking()
-                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
+                    .Where(r => r.CuentaServicioId == c.Id && (r.EstadoFiscalNav == null || r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada))
                     .OrderByDescending(r => r.FechaEmision)
                     .FirstOrDefaultAsync(cancellationToken);
 
                 var totalPagado = await _context.RecibosFactura
                     .AsNoTracking()
-                    .Where(r => r.CuentaServicioId == c.Id && r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada)
+                    .Where(r => r.CuentaServicioId == c.Id && (r.EstadoFiscalNav == null || r.EstadoFiscalNav.Nombre != EstadoConstants.Anulada))
                     .SumAsync(r => (decimal?)r.TotalFacturadoUSD, cancellationToken) ?? 0m;
 
                 var totalCuenta = c.CalcularTotal();
                 var saldoPendiente = Math.Max(0m, totalCuenta - totalPagado);
+
+                var estadoNombre = c.EstadoNav?.Nombre ?? EstadoCuentaConstants.ToLegacyString(c.EstadoId);
 
                 var dto = new CuentaAdministrativaDto
                 {
@@ -90,7 +99,8 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                     PacienteCedula = c.Paciente?.CedulaPasaporte ?? string.Empty,
                     FechaCarga = c.FechaCarga,
                     FechaCierre = c.FechaCierre,
-                    Estado = c.EstadoNav.Nombre,
+                    Estado = estadoNombre,
+                    TipoIngreso = c.TipoIngresoNav?.Nombre ?? TipoIngresoConstants.ToLegacyString(c.TipoIngresoId),
                     ConvenioId = c.ConvenioId,
                     SeguroNombre = c.Convenio?.Nombre ?? "PARTICULAR",
                     Total = totalCuenta,
@@ -111,7 +121,15 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
                         Precio = d.Precio,
                         Honorario = d.Honorario,
                         Cantidad = d.Cantidad,
-                        TipoServicio = d.TipoServicioNav.Nombre,
+                        TipoServicio = d.TipoServicioNav?.Nombre ?? (d.TipoServicioId switch
+                        {
+                            TipoServicioConstants.Medico => "MEDICO",
+                            TipoServicioConstants.Laboratorio => "LABORATORIO",
+                            TipoServicioConstants.RX => "RX",
+                            TipoServicioConstants.Tomo => "TOMO",
+                            TipoServicioConstants.Informe => "INFORME",
+                            _ => "Insumo"
+                        }),
                         FechaCarga = d.FechaCarga,
                         LegacyMappingId = d.LegacyMappingId,
                         IncluidoEnTarifaBase = d.IncluidoEnTarifaBase,

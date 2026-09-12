@@ -57,7 +57,8 @@ test.describe('New Features Integrity Tests', () => {
 
     // Set start date to include seeded records
     const desdeInput = page.locator('input[type="date"]').first();
-    await desdeInput.fill('2026-05-25');
+    await desdeInput.waitFor({ state: 'attached' });
+    await desdeInput.fill('2026-05-25', { force: true });
 
     // Click "Filtrar ahora" button
     await page.click('button:has-text("Filtrar ahora")');

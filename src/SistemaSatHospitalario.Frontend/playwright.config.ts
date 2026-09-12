@@ -13,6 +13,7 @@ export default defineConfig({
   use: {
     baseURL: 'https://localhost',
     ignoreHTTPSErrors: true,
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
     actionTimeout: 15_000,
     navigationTimeout: 20_000,

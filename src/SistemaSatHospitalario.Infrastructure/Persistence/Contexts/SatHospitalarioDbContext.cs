@@ -889,7 +889,7 @@ namespace SistemaSatHospitalario.Infrastructure.Persistence.Contexts
                 entity.Property(t => t.Temperatura).HasPrecision(4, 2);
                 entity.Property(t => t.FechaRegistro).IsRequired();
 
-                entity.HasOne<CuentaServicios>()
+                entity.HasOne(t => t.CuentaServicio)
                     .WithMany(c => c.Triages)
                     .HasForeignKey(t => t.CuentaServicioId)
                     .OnDelete(DeleteBehavior.Cascade);

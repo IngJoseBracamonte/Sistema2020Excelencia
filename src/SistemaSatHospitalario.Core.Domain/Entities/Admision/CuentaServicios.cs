@@ -71,6 +71,11 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
             SubAreaClinica = subAreaClinica;
         }
 
+        public void ActualizarTipoIngreso(int nuevoTipoIngresoId)
+        {
+            TipoIngresoId = nuevoTipoIngresoId;
+        }
+
         public void AsignarCamaRetenida(Guid? camaRetenidaId)
         {
             CamaRetenidaId = camaRetenidaId;
@@ -95,7 +100,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public DetalleServicioCuenta AgregarServicio(Guid servicioId, string descripcion, decimal precio, decimal honorario, decimal cantidad, string tipoServicio, Guid? usuarioAuditoriaId, string? legacyMappingId = null, Guid? areaClinicaId = null, int? tipoServicioId = null)
         {
-            if (EstadoId != EstadoCajaConstants.AbiertaId)
+            if (EstadoId != EstadoCuentaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden agregar servicios a una cuenta que no está abierta.");
 
             int resolvedTipoServicioId = tipoServicioId ?? (tipoServicio?.ToUpperInvariant() switch
@@ -115,7 +120,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RemoverServicio(Guid servicioId)
         {
-            if (EstadoId != EstadoCajaConstants.AbiertaId)
+            if (EstadoId != EstadoCuentaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.ServicioId == servicioId);
@@ -127,7 +132,7 @@ namespace SistemaSatHospitalario.Core.Domain.Entities.Admision
 
         public void RemoverServicioPorDetalleId(Guid detalleId)
         {
-            if (EstadoId != EstadoCajaConstants.AbiertaId)
+            if (EstadoId != EstadoCuentaConstants.AbiertaId)
                 throw new InvalidOperationException("No se pueden remover servicios de una cuenta que no está abierta.");
 
             var detalle = _detalles.FirstOrDefault(d => d.Id == detalleId);

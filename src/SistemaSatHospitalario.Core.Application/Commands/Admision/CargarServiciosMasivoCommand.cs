@@ -61,7 +61,6 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
             
             var results = new List<CargarServicioResult>();
             
-            using var transaction = await _context.BeginTransactionAsync(cancellationToken);
             try
             {
                 for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
@@ -95,25 +94,16 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                     results.Add(res);
                 }
 
-                if (transaction != null)
-                {
-                    await transaction.CommitAsync(cancellationToken);
-                }
-
                 _logger.LogInformation("Carga masiva completada exitosamente. Total cargados: {Count}", results.Count);
                 return results;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Error durante la carga masiva para paciente {PacienteId}, cuenta {CuentaId}, tras procesar {ProcessedCount} items. Revirtiendo transacción.",
+                    "Error durante la carga masiva para paciente {PacienteId}, cuenta {CuentaId}, tras procesar {ProcessedCount} items.",
                     request.PacienteId,
                     request.CuentaId,
                     results.Count);
-                if (transaction != null)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                }
                 throw;
             }
         }

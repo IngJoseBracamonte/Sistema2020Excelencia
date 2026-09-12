@@ -137,17 +137,16 @@ test.describe('Emergency Nursing & Egress Integrity Tests', () => {
     await firstPatient.click();
     console.log('Selected patient in close account screen.');
 
+    // Esperar a que la vista de detalle de cuenta cargue
+    const fastChargeTitle = page.locator('h3:has-text("Cargar Servicio o Medicamento")');
+    await expect(fastChargeTitle).toBeVisible({ timeout: 10000 });
+    console.log('Quick charge service panel is available for clinical assistants.');
+
     // Verify date/time inputs are read-only text elements for clinical users
     const dateInput = page.locator('input[type="date"]');
     const countDateInput = await dateInput.count();
     expect(countDateInput).toBe(0); // Hidden/replaced for nurses
     console.log('Admission date input is hidden (Read-only view verified).');
-
-    // Clinical assistants can add services with an assigned treating doctor.
-    const fastChargeTitle = page.locator('h3:has-text("Cargar Servicio o Medicamento")');
-    const countFastCharge = await fastChargeTitle.count();
-    expect(countFastCharge).toBe(1);
-    console.log('Quick charge service panel is available for clinical assistants.');
 
     // Verify "Condición y Destino Final de Egreso de Urgencias" is visible
     await expect(page.locator('span:has-text("Condición y Destino Final de Egreso")')).toBeVisible();

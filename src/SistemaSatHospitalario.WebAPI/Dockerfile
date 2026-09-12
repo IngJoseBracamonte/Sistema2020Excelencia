@@ -21,6 +21,15 @@ COPY . .
 WORKDIR "/app/SistemaSatHospitalario.WebAPI"
 RUN dotnet build "SistemaSatHospitalario.WebAPI.csproj" -c Release -o /app/build
 
+# Stage Dev: Auto-reload with dotnet watch for local live updates
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS dev
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "watch", "--project", "SistemaSatHospitalario.WebAPI/SistemaSatHospitalario.WebAPI.csproj", "run", "--no-launch-profile", "--urls", "http://0.0.0.0:8080"]
+
 # Stage 2: Publish
 FROM build AS publish
 RUN dotnet publish "SistemaSatHospitalario.WebAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false

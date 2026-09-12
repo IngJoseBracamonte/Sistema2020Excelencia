@@ -15,7 +15,17 @@ RUN npm ci --ignore-scripts --prefer-offline --no-audit --legacy-peer-deps
 COPY . .
 RUN npm run build -- --configuration docker
 
-# Stage 2: Serve con Nginx
+# Stage Dev: Live reload with ng serve
+FROM node:22-alpine AS dev
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --ignore-scripts --prefer-offline --no-audit --legacy-peer-deps
+COPY . .
+ENV CHOKIDAR_USEPOLLING=true
+EXPOSE 80 4200
+ENTRYPOINT ["npm", "start", "--", "--host", "0.0.0.0", "--port", "80", "--poll", "2000"]
+
+# Stage 2: Serve con Nginx (Production Default)
 FROM nginx:alpine AS final
 
 LABEL maintainer="SistemaSatHospitalario" \

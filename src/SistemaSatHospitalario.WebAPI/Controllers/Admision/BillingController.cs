@@ -153,7 +153,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message, error = ex.Message, message = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
         
@@ -447,7 +447,7 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         }
 
         [HttpGet("cuentas-administrativas")]
-        [Authorize(Roles = "Admin,Administrador,Supervisor,Asistente Particular,Asistente Seguro,Asistente de Seguros,Asistente Hospitalario,Asistente de Emergencia")]
+        [Authorize(Roles = "Admin,Administrador,Supervisor,Asistente Particular,Asistente Seguro,Asistente de Seguros,Asistente Hospitalario,Asistente de Emergencia,Enfermera,Enfermero,Enfermeria")]
         public async Task<IActionResult> GetCuentasAdministrativas([FromQuery] string? searchTerm, [FromQuery] string? tipoIngreso, [FromQuery] string? estado)
         {
             try

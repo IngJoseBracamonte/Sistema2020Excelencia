@@ -1,4 +1,4 @@
-﻿# =========================================================
+# =========================================================
 # Docker Compose -- Sistema Sat Hospitalario
 # Orquestador de contenedores para despliegue local y servidor
 #
@@ -78,6 +78,14 @@ services:
       - sat-network
     volumes:
       - api-logs:/app/Logs
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
+          ignore:
+            - "**/bin"
+            - "**/obj"
+            - "SistemaSatHospitalario.Frontend"
 
   # --- Frontend (Angular PWA + Nginx Proxy) ---
   frontend:
@@ -92,6 +100,7 @@ services:
       - "${HOST_SSL_PORT:-443}:443"
     volumes:
       - ./ssl:/etc/nginx/ssl:ro
+      - ./src/SistemaSatHospitalario.Frontend/dist/sistema-sat-hospitalario.frontend/browser:/usr/share/nginx/html:ro
     depends_on:
       api:
         condition: service_healthy
@@ -103,6 +112,17 @@ services:
       start_period: 10s
     networks:
       - sat-network
+    develop:
+      watch:
+        - action: sync
+          path: ./src/SistemaSatHospitalario.Frontend/dist/sistema-sat-hospitalario.frontend/browser
+          target: /usr/share/nginx/html
+        - action: rebuild
+          path: ./src/SistemaSatHospitalario.Frontend
+          ignore:
+            - node_modules
+            - dist
+            - .angular
 
   # --- Watchtower ---
   watchtower:
@@ -154,6 +174,7 @@ volumes:
     name: sat-api-logs
   redis-data:
     name: sat-redis-data
+
 
 
 

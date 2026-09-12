@@ -24,6 +24,11 @@ async function loginAs(
 test.describe('E2E: Traslados, UCI e Inventario Permisivo (V1.3.0)', () => {
   test.beforeEach(async ({ page }) => {
     page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
+    page.on('response', res => {
+      if (res.status() >= 400 || res.url().includes('api/')) {
+        console.log(`[HTTP ${res.status()}] ${res.url()}`);
+      }
+    });
     await loginAs(page, 'user_emergencia', 'Hospital2026*!');
   });
 
@@ -82,7 +87,11 @@ test.describe('E2E: Traslados, UCI e Inventario Permisivo (V1.3.0)', () => {
     // 8. Esperar a que se complete y refresque la lista de activos
     await page.waitForTimeout(3000);
     
-    // Buscar al paciente recién creado en la lista de activos
+    // Buscar al paciente recién creado en la lista de activos mediante el buscador
+    const searchPatientInput = page.locator('input[placeholder="Buscar por cédula o nombre..."]');
+    await searchPatientInput.fill(testCedula);
+    await page.waitForTimeout(500);
+
     const newlyCreatedPatient = page.locator(`.space-y-3.max-h-\\[600px\\] >> text=${testCedula}`).first();
     await expect(newlyCreatedPatient).toBeVisible({ timeout: 15000 });
     await newlyCreatedPatient.click();
@@ -98,14 +107,33 @@ test.describe('E2E: Traslados, UCI e Inventario Permisivo (V1.3.0)', () => {
     // ─────────────────────────────────────────────────────────────────────────────
     console.log('[TRANSFER 1] Starting transfer from Emergencia to Hospitalización...');
     await page.click('button:has-text("Traslados y Destino")');
-    await expect(page.locator('h3:has-text("Registrar Traslado o Alta Clínica")')).toBeVisible();
+    await expect(page.locator('h3:has-text("Traslado Inteligente de Pacientes")')).toBeVisible();
 
-    // Seleccionar Hospitalización en el dropdown
-    const locationDropdown = page.locator('label:has-text("Ubicación Destino de Traslado") + select');
-    await locationDropdown.selectOption({ value: 'Hospitalizacion' });
+    // Activar modalidad de Traslado de Área
+    const trasladoAreaBtn = page.locator('button:has-text("TRASLADO DE ÁREA")');
+    if (await trasladoAreaBtn.isVisible()) {
+      await trasladoAreaBtn.click();
+    }
+
+    // Seleccionar Hospitalización en el dropdown de área destino
+    const areaSelect1 = page.locator('select').filter({ hasText: 'SELECCIONAR ÁREA DESTINO' });
+    const hosOption = areaSelect1.locator('option').filter({ hasText: /HAB|Hospital/i }).first();
+    const hosVal = await hosOption.getAttribute('value');
+    if (hosVal) {
+      await areaSelect1.selectOption(hosVal);
+    } else {
+      await areaSelect1.selectOption({ index: 1 });
+    }
+
+    // Seleccionar cama si hay disponibles
+    const camaSelect1 = page.locator('select').filter({ hasText: 'SELECCIONAR CAMA' }).last();
+    if (await camaSelect1.isVisible()) {
+      const optsCount = await camaSelect1.locator('option').count();
+      if (optsCount > 1) await camaSelect1.selectOption({ index: 1 });
+    }
 
     // Hacer click en confirmar traslado
-    const confirmTransferBtn = page.locator('button:has-text("Confirmar Traslado de Ubicación")');
+    const confirmTransferBtn = page.locator('button:has-text("Confirmar Traslado de Área")');
     await confirmTransferBtn.click();
     console.log('Clicked Confirmar Traslado to Hospitalización.');
 
@@ -127,13 +155,32 @@ test.describe('E2E: Traslados, UCI e Inventario Permisivo (V1.3.0)', () => {
     // ─────────────────────────────────────────────────────────────────────────────
     console.log('[TRANSFER 2] Starting transfer from Hospitalización to UCI...');
     await page.click('button:has-text("Traslados y Destino")');
-    
+    await expect(page.locator('h3:has-text("Traslado Inteligente de Pacientes")')).toBeVisible();
+
+    const trasladoAreaBtn2 = page.locator('button:has-text("TRASLADO DE ÁREA")');
+    if (await trasladoAreaBtn2.isVisible()) {
+      await trasladoAreaBtn2.click();
+    }
+
     // Seleccionar UCI en el dropdown
-    const locationDropdown2 = page.locator('label:has-text("Ubicación Destino de Traslado") + select');
-    await locationDropdown2.selectOption({ value: 'UCI' });
+    const areaSelect2 = page.locator('select').filter({ hasText: 'SELECCIONAR ÁREA DESTINO' });
+    const uciOption = areaSelect2.locator('option').filter({ hasText: /UCI/i }).first();
+    const uciVal = await uciOption.getAttribute('value');
+    if (uciVal) {
+      await areaSelect2.selectOption(uciVal);
+    } else {
+      await areaSelect2.selectOption({ index: 2 });
+    }
+
+    // Seleccionar cama si hay disponibles
+    const camaSelect2 = page.locator('select').filter({ hasText: 'SELECCIONAR CAMA' }).last();
+    if (await camaSelect2.isVisible()) {
+      const optsCount2 = await camaSelect2.locator('option').count();
+      if (optsCount2 > 1) await camaSelect2.selectOption({ index: 1 });
+    }
 
     // Confirmar traslado a UCI
-    const confirmTransferBtn2 = page.locator('button:has-text("Confirmar Traslado de Ubicación")');
+    const confirmTransferBtn2 = page.locator('button:has-text("Confirmar Traslado de Área")');
     await confirmTransferBtn2.click();
     console.log('Clicked Confirmar Traslado to UCI.');
 

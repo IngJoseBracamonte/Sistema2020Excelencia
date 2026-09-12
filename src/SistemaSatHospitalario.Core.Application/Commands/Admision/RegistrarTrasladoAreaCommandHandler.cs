@@ -42,19 +42,49 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
             }
 
-            // 2. Ocupa la cama destino
-            var camaDestino = await _context.AreasClinicas
-                .FirstOrDefaultAsync(a => a.Id == request.CamaDestinoId, cancellationToken);
+            // 2. Ocupa la cama destino (búsqueda resiliente por ID directo, GUID de área o coincidencia por Nombre/Código)
+            AreaClinica? camaDestino = null;
+            if (request.CamaDestinoId != Guid.Empty)
+            {
+                camaDestino = await _context.AreasClinicas
+                    .FirstOrDefaultAsync(a => a.Id == request.CamaDestinoId, cancellationToken);
+            }
+
+            if (camaDestino == null && Guid.TryParse(request.AreaDestino, out var areaGuid))
+            {
+                camaDestino = await _context.AreasClinicas
+                    .FirstOrDefaultAsync(a => a.Id == areaGuid, cancellationToken);
+            }
+
+            if (camaDestino == null && !string.IsNullOrWhiteSpace(request.AreaDestino))
+            {
+                var areaUpper = request.AreaDestino.Trim().ToUpperInvariant();
+                camaDestino = await _context.AreasClinicas
+                    .FirstOrDefaultAsync(a => a.Activo && (a.Nombre.ToUpper() == areaUpper || a.Codigo.ToUpper() == areaUpper), cancellationToken);
+
+                if (camaDestino == null)
+                {
+                    camaDestino = await _context.AreasClinicas
+                        .FirstOrDefaultAsync(a => a.Activo && (a.Nombre.ToUpper().Contains(areaUpper) || a.Codigo.ToUpper().Contains(areaUpper)), cancellationToken);
+                }
+            }
 
             if (camaDestino == null)
             {
-                throw new InvalidOperationException($"No se encontró la cama destino con ID {request.CamaDestinoId}.");
+                throw new InvalidOperationException($"No se encontró la cama destino con ID {request.CamaDestinoId} ni coincidencia para el área '{request.AreaDestino}'.");
             }
 
             camaDestino.MarcarComoOcupada();
 
-            // 3. Actualiza el área clínica y subárea en la cuenta
+            // 3. Actualiza el área clínica y subárea en la cuenta, y sincroniza el TipoIngreso (3FN)
             cuenta.AsignarAreaClinica(camaDestino.Id, request.AreaDestino);
+            var nuevoTipoId = request.AreaDestino.ToUpperInvariant() switch
+            {
+                var a when a.Contains("UCI") || a.Contains("INTENSIV") => TipoIngresoConstants.UciId,
+                var a when a.Contains("EMERG") => TipoIngresoConstants.EmergenciaId,
+                _ => TipoIngresoConstants.HospitalizacionId
+            };
+            cuenta.ActualizarTipoIngreso(nuevoTipoId);
 
             // 4. Si cambia el médico tratante, actualizar el médico asignado a la cuenta
             if (request.CambiaMedicoTratante && request.NuevoMedicoId.HasValue && request.NuevoMedicoId.Value != Guid.Empty)
