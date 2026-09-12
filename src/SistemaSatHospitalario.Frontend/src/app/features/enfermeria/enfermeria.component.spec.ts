@@ -274,3 +274,149 @@ describe('EnfermeriaComponent - Médico Tratante en Ingreso', () => {
   });
 });
 
+describe('EnfermeriaComponent - Ordenamiento de Pacientes Activos por fecha más reciente primero', () => {
+  let component: EnfermeriaComponent;
+  let fixture: ComponentFixture<EnfermeriaComponent>;
+
+  beforeEach(async () => {
+    const mockAuthService = {
+      currentUser: signal({ id: 'user-1', username: 'enfermero1', role: 'Enfermero' })
+    };
+
+    const mockMedicoService = {
+      getMedicos: jasmine.createSpy('getMedicos').and.returnValue(of([])),
+      getAll: jasmine.createSpy('getAll').and.returnValue(of([]))
+    };
+
+    const mockMultiSedeService = {
+      activeSede: signal({ id: 'sede-1', nombre: 'Sede Principal' }),
+      areas: signal([]),
+      getAreasClinicas: jasmine.createSpy('getAreasClinicas').and.returnValue(of([]))
+    };
+
+    const mockPatientService = {
+      searchPatients: jasmine.createSpy('searchPatients').and.returnValue(of([]))
+    };
+
+    const mockFacturacionService = {
+      getCuentaPorId: jasmine.createSpy('getCuentaPorId').and.returnValue(of(null)),
+      abrirCuenta: jasmine.createSpy('abrirCuenta').and.returnValue(of({ cuentaId: 'acc-test' }))
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [EnfermeriaComponent, HttpClientTestingModule],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: MedicoService, useValue: mockMedicoService },
+        { provide: MultiSedeService, useValue: mockMultiSedeService },
+        { provide: PatientService, useValue: mockPatientService },
+        { provide: FacturacionService, useValue: mockFacturacionService }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EnfermeriaComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('debe ordenar filteredAccounts de más reciente a más antiguo por fechaCarga', () => {
+    component.nursingAreaFilter.set('Emergencia');
+    component.dateFilter.set('todos');
+    component.searchTerm.set('');
+
+    const cuentaAntigua: any = {
+      cuentaId: 'acc-antigua',
+      pacienteId: 'pac-1',
+      pacienteNombre: 'Paciente Antiguo',
+      pacienteCedula: 'V-11111111',
+      tipoIngreso: 'Emergencia',
+      fechaCarga: '2026-09-12T08:00:00.000Z'
+    };
+
+    const cuentaReciente: any = {
+      cuentaId: 'acc-reciente',
+      pacienteId: 'pac-2',
+      pacienteNombre: 'Paciente Reciente',
+      pacienteCedula: 'V-22222222',
+      tipoIngreso: 'Emergencia',
+      fechaCarga: '2026-09-12T13:39:00.000Z'
+    };
+
+    component.activeAccounts.set([cuentaAntigua, cuentaReciente]);
+
+    const resultado = component.filteredAccounts();
+    expect(resultado.length).toBe(2);
+    expect(resultado[0].cuentaId).toBe('acc-reciente');
+    expect(resultado[1].cuentaId).toBe('acc-antigua');
+  });
+
+  it('debe considerar fechaIngreso o fechaApertura cuando fechaCarga no esté definida', () => {
+    component.nursingAreaFilter.set('Emergencia');
+    component.dateFilter.set('todos');
+
+    const cuenta1: any = {
+      cuentaId: 'acc-1',
+      pacienteId: 'p-1',
+      pacienteNombre: 'Paciente 1',
+      pacienteCedula: 'V-101',
+      tipoIngreso: 'Emergencia',
+      fechaIngreso: '2026-09-10T10:00:00.000Z'
+    };
+
+    const cuenta2: any = {
+      cuentaId: 'acc-2',
+      pacienteId: 'p-2',
+      pacienteNombre: 'Paciente 2',
+      pacienteCedula: 'V-102',
+      tipoIngreso: 'Emergencia',
+      fechaApertura: '2026-09-12T15:00:00.000Z'
+    };
+
+    component.activeAccounts.set([cuenta1, cuenta2]);
+
+    const resultado = component.filteredAccounts();
+    expect(resultado[0].cuentaId).toBe('acc-2');
+    expect(resultado[1].cuentaId).toBe('acc-1');
+  });
+
+  it('debe preservar el orden descendente de fechas al aplicar búsqueda por texto', () => {
+    component.nursingAreaFilter.set('Emergencia');
+    component.dateFilter.set('todos');
+    component.searchTerm.set('JOSE');
+
+    const cuentaJoseAntiguo: any = {
+      cuentaId: 'acc-jose-1',
+      pacienteId: 'p-1',
+      pacienteNombre: 'Jose Perez',
+      pacienteCedula: 'V-101',
+      tipoIngreso: 'Emergencia',
+      fechaCarga: '2026-09-11T10:00:00.000Z'
+    };
+
+    const cuentaJoseNuevo: any = {
+      cuentaId: 'acc-jose-2',
+      pacienteId: 'p-2',
+      pacienteNombre: 'Jose Bracamonte',
+      pacienteCedula: 'V-102',
+      tipoIngreso: 'Emergencia',
+      fechaCarga: '2026-09-12T13:39:00.000Z'
+    };
+
+    const cuentaOtro: any = {
+      cuentaId: 'acc-otro',
+      pacienteId: 'p-3',
+      pacienteNombre: 'Carlos Gomez',
+      pacienteCedula: 'V-103',
+      tipoIngreso: 'Emergencia',
+      fechaCarga: '2026-09-12T14:00:00.000Z'
+    };
+
+    component.activeAccounts.set([cuentaJoseAntiguo, cuentaOtro, cuentaJoseNuevo]);
+
+    const resultado = component.filteredAccounts();
+    expect(resultado.length).toBe(2);
+    expect(resultado[0].cuentaId).toBe('acc-jose-2');
+    expect(resultado[1].cuentaId).toBe('acc-jose-1');
+  });
+});
+

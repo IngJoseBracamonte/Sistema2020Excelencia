@@ -24,6 +24,8 @@ export interface CuentaAdministrativaDto {
   pacienteNombre: string;
   pacienteCedula: string;
   fechaCarga: string;
+  fechaIngreso?: string;
+  fechaApertura?: string;
   fechaCierre?: string;
   estado: string;
   tipoIngreso: string;
@@ -40,6 +42,7 @@ export interface CuentaAdministrativaDto {
   medicoId?: string;
   medicoNombre?: string;
   detalles: CuentaAdministrativaDetailDto[];
+  [key: string]: any;
 }
 
 export interface DetallePrecioCorreccionDto {

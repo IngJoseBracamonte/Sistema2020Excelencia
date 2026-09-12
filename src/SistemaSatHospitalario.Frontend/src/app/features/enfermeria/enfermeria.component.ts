@@ -529,13 +529,26 @@ export class EnfermeriaComponent implements OnInit {
       matchTipoIngreso(acc.tipoIngreso, currentTab) && this.matchesDateFilter(acc)
     );
 
-    if (!term) return areaFiltered;
-    const termNorm = normalizeTipoIngreso(term);
-    return areaFiltered.filter(acc =>
-      normalizeTipoIngreso(acc.pacienteNombre).includes(termNorm) ||
-      normalizeTipoIngreso(acc.pacienteCedula).includes(termNorm) ||
-      normalizeTipoIngreso(acc.tipoIngreso).includes(termNorm)
-    );
+    let result = areaFiltered;
+    if (term) {
+      const termNorm = normalizeTipoIngreso(term);
+      result = areaFiltered.filter(acc =>
+        normalizeTipoIngreso(acc.pacienteNombre).includes(termNorm) ||
+        normalizeTipoIngreso(acc.pacienteCedula).includes(termNorm) ||
+        normalizeTipoIngreso(acc.tipoIngreso).includes(termNorm)
+      );
+    }
+
+    // Ordenar de más reciente a más antiguo (descendente por fecha)
+    return result.slice().sort((a, b) => {
+      const rawA = a.fechaCarga || a.fechaIngreso || a.fechaApertura;
+      const rawB = b.fechaCarga || b.fechaIngreso || b.fechaApertura;
+      const timeA = rawA ? new Date(rawA).getTime() : 0;
+      const timeB = rawB ? new Date(rawB).getTime() : 0;
+      const validA = !isNaN(timeA) ? timeA : 0;
+      const validB = !isNaN(timeB) ? timeB : 0;
+      return (validB - validA) || (b.cuentaId || '').localeCompare(a.cuentaId || '');
+    });
   });
 
   public pagedAccounts = computed(() =>

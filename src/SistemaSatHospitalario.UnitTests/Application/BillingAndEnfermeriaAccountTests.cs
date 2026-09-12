@@ -132,5 +132,44 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.False(string.IsNullOrEmpty(item.Estado));
             Assert.Equal("Emergencia", item.TipoIngreso);
         }
+
+        [Fact]
+        public async Task GetCuentasAdministrativasQuery_Should_Order_Accounts_By_FechaCarga_Descending()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var pacId = Guid.NewGuid();
+            var paciente = new PacienteAdmision(
+                cedulaPasaporte: "V-12345678",
+                nombreCorto: "Jose Perez",
+                telefonoContact: "04141234567",
+                idLegacy: 102
+            );
+
+            var cuentaAntigua = new CuentaServicios(pacId, "Emergencia");
+            var cuentaReciente = new CuentaServicios(pacId, "Emergencia");
+
+            typeof(CuentaServicios).GetProperty(nameof(CuentaServicios.FechaCarga))!
+                .SetValue(cuentaAntigua, DateTime.UtcNow.AddHours(-5));
+            typeof(CuentaServicios).GetProperty(nameof(CuentaServicios.FechaCarga))!
+                .SetValue(cuentaReciente, DateTime.UtcNow);
+
+            var cuentasList = new List<CuentaServicios> { cuentaAntigua, cuentaReciente }.BuildMockDbSet();
+            var recibosList = new List<ReciboFactura>().BuildMockDbSet();
+
+            mockContext.Setup(c => c.CuentasServicios).Returns(cuentasList.Object);
+            mockContext.Setup(c => c.RecibosFactura).Returns(recibosList.Object);
+
+            var handler = new GetCuentasAdministrativasQueryHandler(mockContext.Object);
+
+            // Act
+            var result = await handler.Handle(new GetCuentasAdministrativasQuery(), CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Count);
+            Assert.Equal(cuentaReciente.Id, result[0].CuentaId);
+            Assert.Equal(cuentaAntigua.Id, result[1].CuentaId);
+        }
     }
 }
