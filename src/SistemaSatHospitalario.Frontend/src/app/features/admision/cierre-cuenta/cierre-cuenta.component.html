@@ -1256,8 +1256,8 @@
                     <div class="space-y-1">
                         <span class="text-[9px] font-black text-rose-400 uppercase tracking-widest block">Condición y Destino Final de Egreso</span>
                         <div class="flex items-center space-x-2">
-                            <span class="text-[10px] text-slate-400 font-bold">Destino del Paciente:</span>
-                            <select [ngModel]="destinoPaciente()" (ngModelChange)="destinoPaciente.set($event)"
+                            <label for="destino-paciente-select" class="text-[10px] text-slate-400 font-bold">Destino del Paciente:</label>
+                            <select id="destino-paciente-select" aria-label="Destino del Paciente" [ngModel]="destinoPaciente()" (ngModelChange)="destinoPaciente.set($event)"
                                 class="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white uppercase focus:outline-none focus:border-rose-500">
                                 <option value="Alta Médica">Alta Médica</option>
                                 <option value="Hospitalización">Hospitalización</option>

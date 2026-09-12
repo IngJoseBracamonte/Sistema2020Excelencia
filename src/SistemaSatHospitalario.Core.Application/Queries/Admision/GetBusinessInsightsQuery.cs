@@ -410,14 +410,14 @@ namespace SistemaSatHospitalario.Core.Application.Queries.Admision
             {
                 var text = rawNewValue;
                 // Detectar si contiene Cama: <GUID>
-                var match = Regex.Match(text, @"Cama:\s*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})");
+                var match = Regex.Match(text, @"Cama:\s*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})", RegexOptions.None, TimeSpan.FromMilliseconds(250));
                 if (match.Success && Guid.TryParse(match.Groups[1].Value, out var camaGuid))
                 {
                     if (camasMap.TryGetValue(camaGuid, out var camaObj) && camaObj != null)
                     {
                         var sedeNom = camaObj.Sede?.Nombre ?? "Sede General";
                         var camaNom = camaObj.Nombre;
-                        text = Regex.Replace(text, @"AreaDestino:[^,]+,", $"AreaDestino: {sedeNom},");
+                        text = Regex.Replace(text, @"AreaDestino:[^,]+,", $"AreaDestino: {sedeNom},", RegexOptions.None, TimeSpan.FromMilliseconds(250));
                         text = text.Replace(match.Value, $"Cama: {camaNom}");
                     }
                 }

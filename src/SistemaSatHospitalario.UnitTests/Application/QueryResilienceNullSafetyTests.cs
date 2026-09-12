@@ -114,5 +114,76 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.True(tasa > 0);
             Assert.Equal(36.5m, tasa);
         }
+
+        [Fact]
+        public async Task GetBusinessInsights_ShouldProcessAuditLogsWithRegexTimeouts_WithoutThrowing()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var mockUserService = new Mock<ICurrentUserService>();
+            var mockDateTime = new Mock<IDateTimeProvider>();
+            var mockLogger = new Mock<ILogger<GetBusinessInsightsQueryHandler>>();
+            var mockUserResolver = new Mock<IUserResolverService>();
+
+            mockUserService.Setup(u => u.Role).Returns("Admin");
+            var now = new DateTime(2026, 9, 12, 12, 0, 0, DateTimeKind.Utc);
+            mockDateTime.Setup(d => d.UtcNow).Returns(now);
+            mockDateTime.Setup(d => d.TodayUtc).Returns(now.Date);
+            mockDateTime.Setup(d => d.TomorrowUtc).Returns(now.Date.AddDays(1));
+            mockDateTime.Setup(d => d.HospitalNow).Returns(now);
+
+            var camaId = Guid.NewGuid();
+            var sedeId = Guid.NewGuid();
+            var sede = new Sede("SED-01", "Sede Central", true);
+            var area = new AreaClinica(sedeId, "HAB-101", "Cama 101", false, null, camaId);
+            typeof(AreaClinica).GetProperty("Sede")?.SetValue(area, sede);
+
+            var auditLog = new AuditLog(
+                actionType: "TRASLADO_AREA",
+                usuarioIdentityId: null,
+                userId: null,
+                oldValue: null,
+                newValue: $"AreaDestino: Temporal, Cama: {camaId}",
+                ipAddress: "127.0.0.1"
+            );
+
+            var auditList = new List<AuditLog> { auditLog }.BuildMockDbSet();
+            var areasList = new List<AreaClinica> { area }.BuildMockDbSet();
+            var pagosList = new List<DetallePago>().BuildMockDbSet();
+            var cuentasList = new List<CuentaServicios>().BuildMockDbSet();
+            var ticketsList = new List<SistemaSatHospitalario.Core.Domain.Entities.ErrorTicket>().BuildMockDbSet();
+            var citasMedicasList = new List<CitaMedica>().BuildMockDbSet();
+            var cuentasPorCobrarList = new List<CuentaPorCobrar>().BuildMockDbSet();
+            var ordenesRxList = new List<SistemaSatHospitalario.Core.Domain.Entities.OrdenRX>().BuildMockDbSet();
+            var recibosList = new List<ReciboFactura>().BuildMockDbSet();
+
+            mockContext.Setup(c => c.AuditLogs).Returns(auditList.Object);
+            mockContext.Setup(c => c.AreasClinicas).Returns(areasList.Object);
+            mockContext.Setup(c => c.DetallesPago).Returns(pagosList.Object);
+            mockContext.Setup(c => c.CuentasServicios).Returns(cuentasList.Object);
+            mockContext.Setup(c => c.ErrorTickets).Returns(ticketsList.Object);
+            mockContext.Setup(c => c.CitasMedicas).Returns(citasMedicasList.Object);
+            mockContext.Setup(c => c.CuentasPorCobrar).Returns(cuentasPorCobrarList.Object);
+            mockContext.Setup(c => c.OrdenesRX).Returns(ordenesRxList.Object);
+            mockContext.Setup(c => c.RecibosFactura).Returns(recibosList.Object);
+
+            var handler = new GetBusinessInsightsQueryHandler(
+                mockContext.Object,
+                mockUserService.Object,
+                mockDateTime.Object,
+                mockLogger.Object,
+                mockUserResolver.Object
+            );
+
+            // Act
+            var result = await handler.Handle(new GetBusinessInsightsQuery(), CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEmpty(result.HistorialAuditoria);
+            var entry = result.HistorialAuditoria.First();
+            Assert.Contains("AreaDestino: Sede Central", entry.Descripcion);
+            Assert.Contains("Cama: Cama 101", entry.Descripcion);
+        }
     }
 }

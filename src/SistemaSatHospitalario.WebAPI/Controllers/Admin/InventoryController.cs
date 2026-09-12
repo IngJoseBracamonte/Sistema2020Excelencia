@@ -200,7 +200,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             await ReconciliarDespachosPendientesDeEntradaAsync(sedeId, ct);
 
             var stocks = await _context.StocksSedes
-                .Include(s => s.Insumo)
                 .Where(s => s.SedeId == sedeId && !s.Insumo.IsDeleted)
                 .Select(s => new
                 {
@@ -223,7 +222,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
             await ReconciliarDespachosPendientesDeEntradaAsync(sedeId, ct);
 
             var stocks = await _context.StocksSedes
-                .Include(s => s.Insumo)
                 .Where(s => s.SedeId == sedeId && !s.Insumo.IsDeleted)
                 .Select(s => new
                 {
@@ -349,7 +347,6 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admin
         public async Task<IActionResult> GetStockConsolidado(CancellationToken ct)
         {
             var insumos = await _context.Insumos
-                .Include(i => i.StocksPorSede)
                 .Where(i => !i.IsDeleted)
                 .Select(i => new
                 {

@@ -137,6 +137,7 @@
                 <td class="py-3 text-center font-bold text-slate-300">{{ det.cantidadSolicitada }}</td>
                 <td class="py-3 text-center">
                   <input type="number" min="0" [max]="det.stockDisponibleSedeProveedora || det.cantidadSolicitada"
+                    aria-label="Cantidad a despachar"
                     [value]="getCantidad(pedido.id, det.id, det.cantidadSolicitada)"
                     (input)="updateCantidad(pedido.id, det.id, +$any($event.target).value)"
                     class="w-24 bg-slate-950 border border-white/20 rounded-lg px-2 py-1 text-center font-bold text-white focus:outline-none focus:border-indigo-500">
@@ -166,8 +167,8 @@
 
       <div class="space-y-4">
         <div>
-          <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Sub-Área Destino</label>
-          <select [ngModel]="nuevoEnvio().areaClinicaId" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: $event, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
+          <label for="subarea-destino-select" class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Sub-Área Destino</label>
+          <select id="subarea-destino-select" aria-label="Sub-Área Destino" [ngModel]="nuevoEnvio().areaClinicaId" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: $event, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
             class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
             <option value="">-- Seleccionar Sub-Área Destino --</option>
             <option *ngFor="let area of subAreasDisponibles()" [value]="area.id">
@@ -177,8 +178,8 @@
         </div>
 
         <div>
-          <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Insumo / Medicamento</label>
-          <select [ngModel]="nuevoEnvio().insumoId" (ngModelChange)="nuevoEnvio.set({ insumoId: $event, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
+          <label for="insumo-material-select" class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Insumo / Medicamento</label>
+          <select id="insumo-material-select" aria-label="Insumo o Medicamento" [ngModel]="nuevoEnvio().insumoId" (ngModelChange)="nuevoEnvio.set({ insumoId: $event, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: nuevoEnvio().cantidad, motivo: nuevoEnvio().motivo })"
             class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
             <option value="">-- Seleccionar Material --</option>
             <option *ngFor="let ins of insumos()" [value]="ins.id">
@@ -194,14 +195,14 @@
         </div>
 
         <div>
-          <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Cantidad a Despachar</label>
-          <input type="number" min="1" [max]="selectedInsumoStock()" [ngModel]="nuevoEnvio().cantidad" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: +$event, motivo: nuevoEnvio().motivo })"
+          <label for="cantidad-despachar-input" class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Cantidad a Despachar</label>
+          <input id="cantidad-despachar-input" aria-label="Cantidad a Despachar" type="number" min="1" [max]="selectedInsumoStock()" [ngModel]="nuevoEnvio().cantidad" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: +$event, motivo: nuevoEnvio().motivo })"
             class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-indigo-500">
         </div>
 
         <div>
-          <label class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Justificación / Motivo</label>
-          <textarea rows="3" [ngModel]="nuevoEnvio().motivo" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: nuevoEnvio().cantidad, motivo: $event })"
+          <label for="justificacion-motivo-input" class="block text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1">Justificación / Motivo</label>
+          <textarea id="justificacion-motivo-input" aria-label="Justificación o Motivo" rows="3" [ngModel]="nuevoEnvio().motivo" (ngModelChange)="nuevoEnvio.set({ insumoId: nuevoEnvio().insumoId, areaClinicaId: nuevoEnvio().areaClinicaId, cantidad: nuevoEnvio().cantidad, motivo: $event })"
             placeholder="Ej: Reposición de insumos operativos..."
             class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
         </div>
@@ -274,7 +275,8 @@
       <lucide-icon [name]="icons.AlertCircle" class="w-6 h-6"></lucide-icon>
       <h3 class="text-base font-black uppercase tracking-wider text-white">Motivo de Rechazo</h3>
     </div>
-    <textarea rows="3" [(ngModel)]="motivoRechazo" (ngModelChange)="motivoRechazo.set($event)"
+    <label for="motivo-rechazo-textarea" class="sr-only">Motivo de Rechazo</label>
+    <textarea id="motivo-rechazo-textarea" aria-label="Motivo de Rechazo" rows="3" [(ngModel)]="motivoRechazo" (ngModelChange)="motivoRechazo.set($event)"
       placeholder="Ingresa el motivo del rechazo para auditoría..."
       class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 mb-4 focus:outline-none focus:border-rose-500"></textarea>
     <div class="flex items-center justify-end space-x-3">
