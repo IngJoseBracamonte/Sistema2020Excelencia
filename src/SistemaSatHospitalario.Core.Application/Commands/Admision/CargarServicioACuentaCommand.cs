@@ -549,7 +549,22 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 horaNormalizada = horaNormalizada.AddMinutes(1);
             }
 
-            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, request.AreaClinicaId);
+            Guid? safeAreaId = null;
+            if (request.AreaClinicaId.HasValue && request.AreaClinicaId.Value != Guid.Empty)
+            {
+                var isArea = await _context.AreasClinicas.AnyAsync(a => a.Id == request.AreaClinicaId.Value, ct);
+                if (isArea)
+                {
+                    safeAreaId = request.AreaClinicaId.Value;
+                }
+                else
+                {
+                    var areaSede = await _context.AreasClinicas.FirstOrDefaultAsync(a => a.SedeId == request.AreaClinicaId.Value, ct);
+                    safeAreaId = areaSede?.Id;
+                }
+            }
+
+            var cita = new CitaMedica(request.MedicoId.Value, pacienteId, cuentaId, horaNormalizada, null, safeAreaId);
             await _repository.AgregarCitaMedicaAsync(cita, ct);
         }
 

@@ -45,9 +45,12 @@ namespace SistemaSatHospitalario.Core.Application.Common.Services
             if (!areaClinicaId.HasValue || areaClinicaId.Value == Guid.Empty)
                 return true; // null o empty es válido (no se asigna área)
 
-            return await _context.AreasClinicas
-                .AsNoTracking()
-                .AnyAsync(a => a.Id == areaClinicaId.Value, cancellationToken);
+            if (await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == areaClinicaId.Value, cancellationToken))
+            {
+                return true;
+            }
+
+            return await _context.Sedes.AsNoTracking().AnyAsync(s => s.Id == areaClinicaId.Value, cancellationToken);
         }
 
         public async Task ValidateAreaClinicaExistsOrThrowAsync(Guid? areaClinicaId, CancellationToken cancellationToken = default)
