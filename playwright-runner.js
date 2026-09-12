@@ -1,14 +1,15 @@
-const { exec } = require('node:child_process');
+const { execFile } = require('node:child_process');
 
 const API_URL = process.env.API_URL;
 const TESTING_TOKEN = process.env.TESTING_TOKEN;
 const INTERVAL = 15 * 60 * 1000; // 15 minutes
 const SECURE_PATH = '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+const NPX_BINARY = process.platform === 'win32' ? 'npx.cmd' : '/usr/bin/npx';
 
 function runTests() {
     console.log(`[${new Date().toISOString()}] Iniciando pruebas de integridad Playwright...`);
     
-    exec('npx playwright test', { env: { ...process.env, PATH: SECURE_PATH } }, async (error, stdout, stderr) => {
+    execFile(NPX_BINARY, ['playwright', 'test'], { env: { ...process.env, PATH: SECURE_PATH } }, async (error, stdout, stderr) => {
         if (error) {
             console.error(`[${new Date().toISOString()}] ❌ Fallo en las pruebas detectado!`);
             console.error(stderr);
