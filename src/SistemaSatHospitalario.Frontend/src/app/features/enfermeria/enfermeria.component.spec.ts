@@ -345,7 +345,7 @@ describe('EnfermeriaComponent - Ordenamiento de Pacientes Activos por fecha más
     component.activeAccounts.set([cuentaAntigua, cuentaReciente]);
 
     const resultado = component.filteredAccounts();
-    expect(resultado.length).toBe(2);
+    expect(resultado).toHaveSize(2);
     expect(resultado[0].cuentaId).toBe('acc-reciente');
     expect(resultado[1].cuentaId).toBe('acc-antigua');
   });
@@ -414,7 +414,7 @@ describe('EnfermeriaComponent - Ordenamiento de Pacientes Activos por fecha más
     component.activeAccounts.set([cuentaJoseAntiguo, cuentaOtro, cuentaJoseNuevo]);
 
     const resultado = component.filteredAccounts();
-    expect(resultado.length).toBe(2);
+    expect(resultado).toHaveSize(2);
     expect(resultado[0].cuentaId).toBe('acc-jose-2');
     expect(resultado[1].cuentaId).toBe('acc-jose-1');
   });

@@ -1,28 +1,30 @@
-const { exec } = require('child_process');
+const { execFile } = require('node:child_process');
 
 const API_URL = process.env.API_URL;
 const TESTING_TOKEN = process.env.TESTING_TOKEN;
 const INTERVAL = 15 * 60 * 1000; // 15 minutes
+const SECURE_PATH = '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
+const NPX_BINARY = process.platform === 'win32' ? 'npx.cmd' : '/usr/bin/npx';
 
-async function runTests() {
+function runTests() {
     console.log(`[${new Date().toISOString()}] Iniciando pruebas de integridad Playwright...`);
     
-    exec('npx playwright test', async (error, stdout, stderr) => {
+    execFile(NPX_BINARY, ['playwright', 'test'], { env: { ...process.env, PATH: SECURE_PATH } }, async (error, stdout, stderr) => {
         if (error) {
-            console.error(`[${new Date().toISOString()}] â Œ Fallo en las pruebas detectado!`);
+            console.error(`[${new Date().toISOString()}] ❌ Fallo en las pruebas detectado!`);
             console.error(stderr);
 
             try {
-                    if (!API_URL || !TESTING_TOKEN) {
-                        throw new Error('API_URL y TESTING_TOKEN deben configurarse para reportar fallos de pruebas.');
-                    }
+                if (!API_URL || !TESTING_TOKEN) {
+                    throw new Error('API_URL y TESTING_TOKEN deben configurarse para reportar fallos de pruebas.');
+                }
 
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Testing-Token': TESTING_TOKEN
-                        },
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Testing-Token': TESTING_TOKEN
+                    },
                     body: JSON.stringify({
                         requestPath: 'E2E/Playwright/Docker',
                         metodoHTTP: 'TEST',
@@ -32,21 +34,22 @@ async function runTests() {
                     })
                 });
 
-                    if (!response.ok) {
-                        throw new Error(`La API devolvió el estado ${response.status}.`);
-                    }
-                console.log(`[${new Date().toISOString()}] âœ… Alerta enviada al sistema de tickets.`);
+                if (!response.ok) {
+                    throw new Error(`La API devolvió el estado ${response.status}.`);
+                }
+                console.log(`[${new Date().toISOString()}] ✅ Alerta enviada al sistema de tickets.`);
             } catch (apiError) {
-                console.error(`[${new Date().toISOString()}] â Œ No se pudo enviar la alerta a la API:`, apiError.message);
+                console.error(`[${new Date().toISOString()}] ❌ No se pudo enviar la alerta a la API:`, apiError.message);
             }
         } else {
-            console.log(`[${new Date().toISOString()}] âœ… Pruebas superadas con Ã©xito.`);
+            console.log(`[${new Date().toISOString()}] ✅ Pruebas superadas con éxito.`);
         }
 
-        // Programar la siguiente ejecuciÃ³n
+        // Programar la siguiente ejecución
         setTimeout(runTests, INTERVAL);
     });
 }
 
 // Iniciar primer ciclo
 runTests();
+

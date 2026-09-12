@@ -109,20 +109,20 @@ describe('CatalogManagementComponent (Senior Refactoring - Procesos CRUD y Soft 
   describe('Filtrado por Estado y Búsqueda', () => {
     it('debería mostrar todos los ítems (activos e inactivos) cuando filtroEstado es TODOS', () => {
       component.filtroEstado.set('TODOS');
-      expect(component.filteredCatalog().length).toBe(3);
+      expect(component.filteredCatalog()).toHaveSize(3);
     });
 
     it('debería filtrar únicamente ítems activos cuando filtroEstado es ACTIVOS', () => {
       component.filtroEstado.set('ACTIVOS');
       const items = component.filteredCatalog();
-      expect(items.length).toBe(2);
+      expect(items).toHaveSize(2);
       expect(items.every(i => i.activo)).toBeTrue();
     });
 
     it('debería filtrar únicamente ítems desactivados cuando filtroEstado es DESACTIVADOS', () => {
       component.filtroEstado.set('DESACTIVADOS');
       const items = component.filteredCatalog();
-      expect(items.length).toBe(1);
+      expect(items).toHaveSize(1);
       expect(items[0].codigo).toBe('CIR-001');
       expect(items[0].activo).toBeFalse();
     });

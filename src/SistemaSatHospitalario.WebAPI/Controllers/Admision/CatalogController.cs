@@ -101,14 +101,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<bool>> Delete(Guid id)
         {
-            _logger.LogWarning("[CATALOG-API] ATTEMPTING TO DELETE ITEM ID: {Id}", id);
+            _logger.LogInformation("[CATALOG-API] ATTEMPTING TO DELETE ITEM ID: {Id}", id);
             
             var result = await _mediator.Send(new DeleteCatalogItemCommand { Id = id });
             
-            _logger.LogWarning("[CATALOG-API] DELETE RESULT FOR {Id}: {Result}", id, result);
+            if (!result)
+            {
+                _logger.LogWarning("[CATALOG-API] DELETE FAILED FOR ITEM ID: {Id}", id);
+                return NotFound(new { message = "El servicio no existe o el ID es inválido" });
+            }
             
-            if (!result) return NotFound(new { message = "El servicio no existe o el ID es inválido" });
-            
+            _logger.LogInformation("[CATALOG-API] DELETE RESULT FOR {Id}: {Result}", id, result);
             return Ok(result);
         }
 
@@ -116,14 +119,17 @@ namespace SistemaSatHospitalario.WebAPI.Controllers.Admision
         [Authorize(Roles = AuthorizationConstants.AdminRoles)]
         public async Task<ActionResult<bool>> Reactivate(Guid id)
         {
-            _logger.LogWarning("[CATALOG-API] ATTEMPTING TO REACTIVATE ITEM ID: {Id}", id);
+            _logger.LogInformation("[CATALOG-API] ATTEMPTING TO REACTIVATE ITEM ID: {Id}", id);
             
             var result = await _mediator.Send(new ReactivateCatalogItemCommand { Id = id });
             
-            _logger.LogWarning("[CATALOG-API] REACTIVATE RESULT FOR {Id}: {Result}", id, result);
+            if (!result)
+            {
+                _logger.LogWarning("[CATALOG-API] REACTIVATE FAILED FOR ITEM ID: {Id}", id);
+                return NotFound(new { message = "El servicio no existe o no se pudo reactivar" });
+            }
             
-            if (!result) return NotFound(new { message = "El servicio no existe o no se pudo reactivar" });
-            
+            _logger.LogInformation("[CATALOG-API] REACTIVATE RESULT FOR {Id}: {Result}", id, result);
             return Ok(result);
         }
 
