@@ -95,7 +95,7 @@
         <div class="space-y-2">
           <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Área Médico-Clínica
             Destino</label>
-          <select [ngModel]="areaDestinoId()" (ngModelChange)="onAreaDestinoChange($event)"
+          <select id="selectAreaDestino" [ngModel]="areaDestinoId()" (ngModelChange)="onAreaDestinoChange($event)"
             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
             <option [value]="null" class="bg-[#152035]">--- SELECCIONAR ÁREA DESTINO ---</option>
             <ng-container *ngIf="areasClinicas && areasClinicas.length > 0; else fallbackAreas">
@@ -114,7 +114,7 @@
         <div class="space-y-2">
           <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar Cama en Área
             Destino</label>
-          <select [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
+          <select id="selectCamaDestino" [ngModel]="selectedCamaId()" (ngModelChange)="selectedCamaId.set($event)"
             class="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 text-sm text-white outline-none focus:border-rose-500/30 uppercase">
             <option [value]="null" class="bg-[#152035]">--- SELECCIONAR CAMA ---</option>
             <option *ngFor="let cama of filteredCamas()" [value]="cama.camaId" class="bg-[#152035]">

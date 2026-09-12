@@ -259,6 +259,25 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 }
             }
 
+            Guid? effectiveAreaClinicaId = null;
+            if (request.AreaClinicaId.HasValue && request.AreaClinicaId.Value != Guid.Empty)
+            {
+                var existsInAreas = await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == request.AreaClinicaId.Value, cancellationToken);
+                if (existsInAreas)
+                {
+                    effectiveAreaClinicaId = request.AreaClinicaId.Value;
+                }
+                else
+                {
+                    var areaDeSede = await _context.AreasClinicas.AsNoTracking().FirstOrDefaultAsync(a => a.SedeId == request.AreaClinicaId.Value, cancellationToken);
+                    effectiveAreaClinicaId = areaDeSede?.Id ?? (cuenta.AreaClinicaId.HasValue && await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken) ? cuenta.AreaClinicaId : null);
+                }
+            }
+            else if (cuenta.AreaClinicaId.HasValue && await _context.AreasClinicas.AsNoTracking().AnyAsync(a => a.Id == cuenta.AreaClinicaId.Value, cancellationToken))
+            {
+                effectiveAreaClinicaId = cuenta.AreaClinicaId;
+            }
+
             var detalle = cuenta.AgregarServicio(
                 esLab ? Guid.Empty : (Guid.TryParse(request.ServicioId, out var g) ? g : Guid.Empty), 
                 request.Descripcion, 
@@ -268,7 +287,7 @@ namespace SistemaSatHospitalario.Core.Application.Commands.Admision
                 tipoServicioEfectivo,
                 _currentUserService.UserId,
                 legacyId,
-                request.AreaClinicaId,
+                effectiveAreaClinicaId,
                 baseService?.TipoServicioId > 0 ? baseService.TipoServicioId : null);
 
             if (_context.DetallesServicioCuenta != null)

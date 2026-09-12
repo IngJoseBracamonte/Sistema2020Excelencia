@@ -150,5 +150,65 @@ namespace SistemaSatHospitalario.UnitTests.Application
             Assert.Equal(TipoIngresoConstants.HospitalizacionId, cuenta.TipoIngresoId);
             mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task Handle_Should_Record_AuditLog_With_SedeName_In_AreaDestino_And_BedName_In_Cama()
+        {
+            // Arrange
+            var mockContext = new Mock<IApplicationDbContext>();
+            var mockUserService = new Mock<ICurrentUserService>();
+            mockUserService.Setup(u => u.UserId).Returns(Guid.NewGuid());
+
+            var pacienteId = Guid.NewGuid();
+            var cuenta = new CuentaServicios(pacienteId, "Hospitalizacion");
+
+            var sedeUci = new Sede("SEDE-UCI", "Depósito UCI", false, SeedConstants.SedeId_UCI);
+            var camaUci = new AreaClinica(sedeUci.Id, "UCI-1", "Cama UCI 1");
+
+            // Asociar la Sede a la Cama
+            typeof(AreaClinica).GetProperty("Sede")?.SetValue(camaUci, sedeUci);
+
+            var cuentasList = new List<CuentaServicios> { cuenta }.BuildMockDbSet();
+            var areasList = new List<AreaClinica> { camaUci }.BuildMockDbSet();
+            var sedesList = new List<Sede> { sedeUci }.BuildMockDbSet();
+            var serviciosList = new List<ServicioClinico>().BuildMockDbSet();
+            var detallesList = new List<DetalleServicioCuenta>().BuildMockDbSet();
+            var auditLogsList = new List<AuditLog>().BuildMockDbSet();
+
+            AuditLog? capturedAudit = null;
+            mockContext.Setup(c => c.CuentasServicios).Returns(cuentasList.Object);
+            mockContext.Setup(c => c.AreasClinicas).Returns(areasList.Object);
+            mockContext.Setup(c => c.Sedes).Returns(sedesList.Object);
+            mockContext.Setup(c => c.ServiciosClinicos).Returns(serviciosList.Object);
+            mockContext.Setup(c => c.DetallesServicioCuenta).Returns(detallesList.Object);
+            mockContext.Setup(c => c.AuditLogs).Returns(auditLogsList.Object);
+
+            mockContext.Setup(c => c.AuditLogs.AddAsync(It.IsAny<AuditLog>(), It.IsAny<CancellationToken>()))
+                .Callback<AuditLog, CancellationToken>((log, _) => capturedAudit = log)
+                .Returns(new System.Threading.Tasks.ValueTask<Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<AuditLog>>((Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<AuditLog>)null!));
+
+            var handler = new RegistrarTrasladoAreaCommandHandler(mockContext.Object, mockUserService.Object);
+
+            var command = new RegistrarTrasladoAreaCommand
+            {
+                CuentaId = cuenta.Id,
+                AreaDestino = "Cama UCI 1", // Pasado por error o legacy desde frontend
+                CamaDestinoId = camaUci.Id,
+                CantidadHoras = 12,
+                MontoACobrarUsd = 0m,
+                UsuarioTraslado = "admin"
+            };
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(capturedAudit);
+            Assert.Contains("AreaDestino: Depósito UCI", capturedAudit!.NewValue);
+            Assert.Contains("Cama: Cama UCI 1", capturedAudit.NewValue);
+            Assert.DoesNotContain(camaUci.Id.ToString(), capturedAudit.NewValue);
+            Assert.Equal("Depósito UCI", cuenta.SubAreaClinica);
+        }
     }
 }

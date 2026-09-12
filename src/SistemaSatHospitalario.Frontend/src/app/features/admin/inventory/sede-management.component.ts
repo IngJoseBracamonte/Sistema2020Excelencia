@@ -1,7 +1,13 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/multi-sede.service';
+import { environment } from '../../../../environments/environment';
+
+interface SedeConAreas extends Sede {
+  todasLasAreas?: AreaClinica[];
+}
 
 @Component({
   selector: 'app-sede-management',
@@ -10,7 +16,7 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
   template: `
     <div class="p-6 space-y-6 animate-fade-in text-main">
 
-      <!-- Encabezado con patrón global del sistema -->
+      <!-- Encabezado -->
       <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div class="flex items-center space-x-3">
           <div class="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/5">
@@ -24,18 +30,32 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
             <p class="text-xs text-muted font-bold uppercase tracking-wider">Configuración del mapeo de sucursales físicas y departamentos del hospital</p>
           </div>
         </div>
-        <button
-          (click)="openCreateSedeModal()"
-          class="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 font-black text-white transition-all shadow-lg shadow-primary/25 active:scale-[0.98] text-xs uppercase tracking-widest flex items-center justify-center gap-2"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Nueva Sede
-        </button>
+        <div class="flex items-center gap-3">
+          <!-- Toggle: Mostrar inactivas -->
+          <label class="flex items-center gap-2 cursor-pointer bg-surface-card border border-glass-border px-4 py-2.5 rounded-xl hover:border-white/10 transition-all select-none">
+            <input type="checkbox"
+              id="chkMostrarInactivas"
+              [(ngModel)]="mostrarInactivas"
+              class="w-4 h-4 rounded border-glass-border bg-surface text-primary focus:ring-primary cursor-pointer" />
+            <span class="text-[10px] font-black uppercase tracking-wider"
+              [class.text-primary]="mostrarInactivas"
+              [class.text-muted]="!mostrarInactivas">
+              Ver Desactivadas
+            </span>
+          </label>
+          <button
+            (click)="openCreateSedeModal()"
+            class="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 font-black text-white transition-all shadow-lg shadow-primary/25 active:scale-[0.98] text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nueva Sede
+          </button>
+        </div>
       </div>
 
-      <!-- Lista de Sedes con Grid Premium -->
+      <!-- Lista de Sedes -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div
           *ngFor="let sede of sedes"
@@ -68,7 +88,7 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
 
             <h3 class="text-lg font-black text-main mt-3 uppercase tracking-tight">{{ sede.nombre }}</h3>
 
-            <!-- Áreas Clínicas / Quirófanos por Sede -->
+            <!-- Áreas Clínicas por Sede -->
             <div class="mt-4 border-t border-glass-border pt-4">
               <div class="flex justify-between items-center mb-3">
                 <h4 class="text-[10px] font-black uppercase tracking-widest text-muted">
@@ -79,23 +99,46 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
                   {{ sede.codigo === 'CIRUGIA' || sede.nombre.toLowerCase().includes('cirug') ? '+ Anexar Quirófano' : '+ Agregar Área' }}
                 </button>
               </div>
-              <ul class="space-y-1" *ngIf="sede.areasClinicas && sede.areasClinicas.length > 0; else noAreas">
-                <li
-                  *ngFor="let area of sede.areasClinicas"
-                  class="text-xs flex items-center justify-between py-1.5 px-3 rounded-lg bg-surface-card border border-glass-border hover:border-white/10 transition-all"
-                >
-                  <span class="text-main/80 font-bold">[{{ area.codigo }}] {{ area.nombre }}</span>
-                  <button (click)="deleteArea(area.id)"
-                    class="text-[10px] font-black uppercase tracking-wider text-rose-400/60 hover:text-rose-400 transition-colors">
-                    Eliminar
-                  </button>
-                </li>
-              </ul>
-              <ng-template #noAreas>
-                <p class="text-[11px] text-muted font-bold italic">
-                  {{ sede.codigo === 'CIRUGIA' || sede.nombre.toLowerCase().includes('cirug') ? 'Sin quirófanos configurados en esta sede.' : 'Sin áreas configuradas en esta sede.' }}
+
+              <ng-container *ngIf="getAreasParaSede(sede.id) as areas">
+                <!-- Áreas ACTIVAS -->
+                <ul class="space-y-1" *ngIf="getAreasActivas(areas).length > 0">
+                  <li
+                    *ngFor="let area of getAreasActivas(areas)"
+                    class="text-xs flex items-center justify-between py-1.5 px-3 rounded-lg bg-surface-card border border-glass-border hover:border-white/10 transition-all"
+                  >
+                    <span class="text-main/80 font-bold">[{{ area.codigo }}] {{ area.nombre }}</span>
+                    <button (click)="deleteArea(area.id)"
+                      class="text-[10px] font-black uppercase tracking-wider text-rose-400/60 hover:text-rose-400 transition-colors">
+                      Eliminar
+                    </button>
+                  </li>
+                </ul>
+
+                <!-- Áreas INACTIVAS (solo si toggle activo) -->
+                <ng-container *ngIf="mostrarInactivas && getAreasInactivas(areas).length > 0">
+                  <div class="mt-2 pt-2 border-t border-dashed border-glass-border/50">
+                    <p class="text-[9px] font-black uppercase tracking-widest text-muted/50 mb-1.5">Desactivadas</p>
+                    <ul class="space-y-1">
+                      <li
+                        *ngFor="let area of getAreasInactivas(areas)"
+                        class="text-xs flex items-center justify-between py-1.5 px-3 rounded-lg bg-surface border border-dashed border-glass-border/30 opacity-60 hover:opacity-90 transition-all"
+                      >
+                        <span class="text-muted font-bold line-through">[{{ area.codigo }}] {{ area.nombre }}</span>
+                        <button (click)="activarArea(area.id)"
+                          class="text-[10px] font-black uppercase tracking-wider text-emerald-400/70 hover:text-emerald-400 transition-colors no-underline">
+                          Activar
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </ng-container>
+
+                <p *ngIf="getAreasActivas(areas).length === 0 && (!mostrarInactivas || getAreasInactivas(areas).length === 0)"
+                  class="text-[11px] text-muted font-bold italic">
+                  {{ sede.codigo === 'CIRUGIA' || sede.nombre.toLowerCase().includes('cirug') ? 'Sin quirófanos configurados.' : 'Sin áreas configuradas.' }}
                 </p>
-              </ng-template>
+              </ng-container>
             </div>
           </div>
         </div>
@@ -183,8 +226,13 @@ import { MultiSedeService, Sede, AreaClinica } from '../../../core/services/mult
 })
 export class SedeManagementComponent implements OnInit {
   private multiSedeService = inject(MultiSedeService);
+  private http = inject(HttpClient);
 
   public sedes: Sede[] = [];
+  // Mapa sedeId -> todas las áreas (activas + inactivas)
+  public areasMap: Map<string, AreaClinica[]> = new Map();
+
+  public mostrarInactivas = false;
 
   // Form states
   public showSedeModal = false;
@@ -200,9 +248,45 @@ export class SedeManagementComponent implements OnInit {
 
   loadData() {
     this.multiSedeService.getSedes().subscribe({
-      next: (res) => this.sedes = res,
+      next: (res) => {
+        this.sedes = res;
+        this.loadAllAreas();
+      },
       error: (err) => console.error(err)
     });
+  }
+
+  loadAllAreas() {
+    // Carga todas las áreas (activas + inactivas) para todas las sedes
+    this.http.get<AreaClinica[]>(`${environment.apiUrl}/api/AreaClinica`, {
+      params: { includeInactive: 'true' }
+    }).subscribe({
+      next: (areas) => {
+        this.areasMap.clear();
+        for (const area of areas) {
+          const sedeId = area.sedeId ?? '';
+          if (!this.areasMap.has(sedeId)) this.areasMap.set(sedeId, []);
+          this.areasMap.get(sedeId)!.push(area);
+        }
+      },
+      error: (err) => console.error('[AREAS] Error cargando áreas:', err)
+    });
+  }
+
+  getAreasParaSede(sedeId: string): AreaClinica[] {
+    return this.areasMap.get(sedeId) ?? [];
+  }
+
+  getAreasActivas(areas: AreaClinica[]): AreaClinica[] {
+    return areas.filter(a => a.activo !== false);
+  }
+
+  getAreasInactivas(areas: AreaClinica[]): AreaClinica[] {
+    return areas.filter(a => a.activo === false);
+  }
+
+  onToggleInactivas(value: boolean) {
+    this.mostrarInactivas = value;
   }
 
   // --- SEDE METHODS ---
@@ -237,7 +321,7 @@ export class SedeManagementComponent implements OnInit {
   }
 
   deleteSede(id: string) {
-    if (confirm('¿Está seguro de desactivar esta sede? Se desactivarán las áreas clínicas asociadas.')) {
+    if (confirm('¿Está seguro de desactivar esta sede?')) {
       this.multiSedeService.deleteSede(id).subscribe(() => this.loadData());
     }
   }
@@ -255,6 +339,7 @@ export class SedeManagementComponent implements OnInit {
   saveAreaClinica() {
     this.multiSedeService.createAreaClinica(this.areaForm).subscribe({
       next: () => {
+        this.multiSedeService.clearCache();
         this.loadData();
         this.closeAreaModal();
       },
@@ -263,8 +348,24 @@ export class SedeManagementComponent implements OnInit {
   }
 
   deleteArea(id: string) {
-    if (confirm('¿Desea eliminar esta área clínica?')) {
-      this.multiSedeService.deleteAreaClinica(id).subscribe(() => this.loadData());
+    if (confirm('¿Desea desactivar esta área clínica?')) {
+      this.multiSedeService.deleteAreaClinica(id).subscribe({
+        next: () => {
+          this.multiSedeService.clearCache();
+          this.loadData();
+        },
+        error: (err) => alert(err.error?.message || 'Error al desactivar el área')
+      });
     }
+  }
+
+  activarArea(id: string) {
+    this.multiSedeService.activarAreaClinica(id).subscribe({
+      next: () => {
+        this.multiSedeService.clearCache();
+        this.loadData();
+      },
+      error: (err) => alert(err.error?.message || 'Error al activar el área')
+    });
   }
 }

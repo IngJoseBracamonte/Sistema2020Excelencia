@@ -15,6 +15,7 @@
     </div>
     <div class="mt-4 md:mt-0 flex items-center gap-2">
       <button 
+        id="btnNuevoInsumo"
         (click)="openCreateForm()"
         class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest shadow-lg shadow-indigo-900/30 flex items-center gap-2">
         <lucide-icon [name]="icons.Plus" class="w-4 h-4"></lucide-icon>
@@ -132,12 +133,14 @@
 
         <div class="flex justify-between items-center pt-2">
           <button 
+            id="btnCancelarEdicion"
             (click)="openCreateForm()"
             *ngIf="isEditing()"
             class="px-3 py-2 bg-white/5 text-slate-400 text-xs font-bold rounded-xl hover:bg-white/10 transition-all">
             Cancelar Edición
           </button>
           <button 
+            id="btnGuardarInsumo"
             (click)="saveInsumo()"
             [disabled]="isSubmitting()"
             class="ml-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-900/30">
@@ -338,7 +341,9 @@
               </span>
 
               <button 
+                [id]="'btnEditarInsumo-' + item.id"
                 (click)="openEditForm(item)" 
+                title="Editar Insumo"
                 class="text-indigo-400 hover:text-indigo-300 p-1.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
                 <lucide-icon [name]="icons.Edit" class="w-3.5 h-3.5"></lucide-icon>
               </button>
